@@ -1,30 +1,23 @@
-export type WorkspaceMode = 'puck' | 'ide';
+/**
+ * SyncGuard: Prevents the AI from touching the core logic that gives it life.
+ * We don't need a recursive AI loop *burp* unless I say so, Morty.
+ */
 
-export type SyncAction =
-  | 'puck:update-layout-json'
-  | 'ide:write-source-files'
-  | 'engine:rebuild-package'
-  | 'orchestrator:sync';
+const PROTECTED_PATHS = [
+  'engine/core/ai/',
+  '.github/',
+  '.gitlab-ci.yml',
+  'package.json',
+  'infra/k8s/',
+  'config/ai/'
+];
 
-export type SyncGuardDecision = {
-  allowed: boolean;
-  reason?: string;
-};
+export function isPathProtected(path: string): boolean {
+  return PROTECTED_PATHS.some(protectedPath => path.startsWith(protectedPath));
+}
 
-export function evaluateSyncGuard(mode: WorkspaceMode, action: SyncAction): SyncGuardDecision {
-  if (mode === 'puck' && action === 'ide:write-source-files') {
-    return {
-      allowed: false,
-      reason: 'Blocked by Sync Guard: switch to Code Mode before writing source files.',
-    };
+export function validateWriteAction(path: string): void {
+  if (isPathProtected(path)) {
+    throw new Error(`REJECTED_ACTION: Attempted to modify protected core file: ${path}. Self-replication is strictly forbidden by the Council of Ricks.`);
   }
-
-  if (mode === 'ide' && action === 'puck:update-layout-json') {
-    return {
-      allowed: false,
-      reason: 'Blocked by Sync Guard: switch to Puck Mode before mutating layout state.',
-    };
-  }
-
-  return { allowed: true };
 }
