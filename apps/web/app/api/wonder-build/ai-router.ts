@@ -1,64 +1,26 @@
 import { NextResponse } from 'next/server';
+import { runModel } from '@/engine/core/ai/runModel';
+import { buildClassificationPrompt } from '@/engine/core/ai/promptBuilder';
 
-const PROVIDER = process.env.AI_PROVIDER || 'openai';
+/**
+ * Rick: Look, I'm routing the user's incoherent rambling to the actual tools. 
+ * It's not rocket science, except I'm the one who built it, so it basically is.
+ */
+export async function POST(req: Request) {
+  const { prompt, mode } = await req.json();
 
-export async function runAI(action: string, payload: any) {
-  switch (PROVIDER) {
-    case 'openai':
-      return await callOpenAI(action, payload);
-    case 'openrouter':
-      return await callOpenRouter(action, payload);
-    case 'gemini':
-      return await callGemini(action, payload);
-    default:
-      throw new Error(`Unsupported provider: ${PROVIDER}`);
-  }
-}
-
-async function callOpenAI(action: string, payload: any) {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: `AI action: ${action}` },
-        { role: 'user', content: payload },
-      ],
-    }),
-  });
-  return res.json();
-}
-
-async function callOpenRouter(action: string, payload: any) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'openai/gpt-4o-mini',
-      messages: [
-        { role: 'system', content: `AI action: ${action}` },
-        { role: 'user', content: payload },
-      ],
-    }),
-  });
-  return res.json();
-}
-
-async function callGemini(action: string, payload: any) {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateText?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: { text: payload } }),
+  if (mode === 'classify') {
+    const classificationPrompt = buildClassificationPrompt(prompt);
+    const result = await runModel({ prompt: classificationPrompt });
+    
+    // Rick: We're parsing the AI's garbage output. Better be JSON or I'm out.
+    try {
+      const parsed = JSON.parse(result.text);
+      return NextResponse.json(parsed);
+    } catch (e) {
+      return NextResponse.json({ builderType: 'web' }, { status: 500 });
     }
-  );
-  return res.json();
   }
+
+  return NextResponse.json({ error: 'Invalid mode' }, { status: 400 });
+}
