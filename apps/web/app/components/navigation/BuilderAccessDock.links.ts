@@ -1,11 +1,28 @@
-export const BUILDER_LINKS = [
-  { href: "/wonder-build/ai-builder", label: "✨ AI Builder" },
-  { href: "/wonderspace",             label: "🧬 WonderSpace IDE" },
-  { href: "/wonder-build/playcanvas", label: "🌐 3D Studio (PlayCanvas/WebGPU)" },
-  { href: "/wonder-build/puck",       label: "Puck Layout Studio" },
-] as const;
+import { Layout, Code, Terminal, Database } from "lucide-react";
 
-export const BUILDER_DOCK_FOOTER_LINKS = {
-  leavePageFallbackHref: "/dashboard",
-  dashboardHref: "/dashboard",
-} as const;
+export const builderLinks = [
+  {
+    name: "Wonder-Build",
+    href: "/wonder-build",
+    icon: Layout,
+    description: "Visual 3D Canvas Editor"
+  },
+  {
+    name: "Cloud IDE",
+    href: "/ide",
+    icon: Code,
+    description: "Full cloud-based development environment (code-server)"
+  },
+  {
+    name: "Playground",
+    href: "/playground",
+    icon: Terminal,
+    description: "Isolated API and Logic Testing"
+  },
+  {
+    name: "Data Vault",
+    href: "/settings/cloud-storage",
+    icon: Database,
+    description: "Manage BYOC storage connections"
+  }
+];
