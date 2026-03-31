@@ -1,15 +1,12 @@
-.
-├── apps/
-│   └── web/                # Main Next.js SaaS app (routes + APIs + UI)
-├── docs/                   # Docs site output, generated API docs, and guides
-├── scripts/                # Maintenance/sync/smoke automation scripts
-├── supabase/               # DB migrations and edge function assets
-├── tests/                  # Vitest route, config, and contract checks
-├── ui/                     # Shared UI primitives/components
-├── Wonder-build/             # Standalone WonderPlay runtime assets
-├── ARCHITECTURE.md
-├── CONTRIBUTING.md
-├── DEPLOYMENT.md
-├── FAQ.md
-├── README.md
-└── openapi.yaml            # API contract source
+wonderingtribe/psychic-octo-fishstick
+├── apps/web (Next.js Frontend & API)
+│   ├── ai-modules/ (Egyptian/Voice specialized modules)
+│   ├── app/ (App Router)
+│   └── public/ (Static assets including WebGLStudio)
+├── engine/core/ (The heavy lifting)
+│   ├── ai/ (Orchestrator, Prompt Builders, Safety Guards)
+│   ├── ide/ (Filesystem, Code Scanners)
+│   └── playground/ (Code execution runtime)
+├── infra/ (Kubernetes templates & Cloud providers)
+├── packages/ (Shared component libraries)
+└── docs/ (API and Architecture guides)
