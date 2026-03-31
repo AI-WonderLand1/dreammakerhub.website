@@ -1,3 +1,7 @@
 {
-  "gemini_api": {}
+  "integrations": [
+    "playcanvas",
+    "webglstudio",
+    "puck"
+  ]
 }
