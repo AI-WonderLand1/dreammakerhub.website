@@ -1,0 +1,95 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "jsx": "preserve",
+    "strict": true,
+    "allowJs": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@app/*": [
+        "./app/*"
+      ],
+      "@builder/*": [
+        "./app/(builder)/wonder-build/*"
+      ],
+      "@core/*": [
+        "../../engine/core/*"
+      ],
+      "@components/*": [
+        "../../ui/components/*"
+      ],
+      "@lib/*": [
+        "./lib/*"
+      ],
+      "@engine/*": [
+        "../../engine/*"
+      ],
+      "@ui/*": [
+        "../../ui/*"
+      ],
+      "@infra/*": [
+        "../../infra/*"
+      ],
+      "@runners/*": [
+        "../../runners/*"
+      ],
+      "@services/*": [
+        "../../infra/services/*"
+      ],
+      "@types/*": [
+        "../../types/*"
+      ],
+      "@/utils/*": [
+        "./app/utils/*",
+        "./utils/*"
+      ]
+    },
+    "skipLibCheck": true,
+    "incremental": true,
+    "types": [
+      "next"
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "../../engine/core/**/*.ts",
+    "../../engine/core/**/*.tsx",
+    "../../ui/components/**/*.ts",
+    "../../ui/components/**/*.tsx",
+    "../../packages/**/*.ts",
+    "../../packages/**/*.tsx",
+    "../../engine/**/*.ts",
+    "../../ui/**/*.ts",
+    "../../runners/**/*.ts",
+    "../../infra/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist"
+  ]
+}

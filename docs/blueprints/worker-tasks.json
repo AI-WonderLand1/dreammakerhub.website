@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "masterSchemaFile": "docs/blueprints/master-schema.json",
+  "workers": [
+    {
+      "id": "A",
+      "name": "foundation",
+      "scope": [
+        "global state contract",
+        "theme providers",
+        "api routing contracts"
+      ],
+      "deliverables": [
+        "typed app-level contract module",
+        "state/provider wiring",
+        "api request/response type map"
+      ],
+      "mustNotChange": [
+        "state shape"
+      ]
+    },
+    {
+      "id": "B",
+      "name": "visuals",
+      "scope": [
+        "ui components",
+        "styling",
+        "header contract application"
+      ],
+      "deliverables": [
+        "dashboard/settings/builder header parity",
+        "aria labels and focus states",
+        "trust-layer visual states"
+      ],
+      "mustNotChange": [
+        "state shape",
+        "api contracts"
+      ]
+    },
+    {
+      "id": "C",
+      "name": "logic",
+      "scope": [
+        "deterministic ai schema validation",
+        "typed block rendering",
+        "rollback safeguards",
+        "repo git action handlers"
+      ],
+      "deliverables": [
+        "deterministic validator",
+        "action-state machine",
+        "error/retry behavior"
+      ],
+      "mustNotChange": [
+        "state shape"
+      ]
+    },
+    {
+      "id": "D",
+      "name": "assets",
+      "scope": [
+        "media placeholders",
+        "external data integration points",
+        "empty-state assets"
+      ],
+      "deliverables": [
+        "asset contract map",
+        "fallback content blocks",
+        "integration checklist"
+      ],
+      "mustNotChange": [
+        "state shape",
+        "worker A/B/C source files"
+      ]
+    }
+  ],
+  "protocol": {
+    "stateShapeLocked": true,
+    "requireMasterSchemaInjection": true,
+    "namingConventionLocked": true,
+    "overlapForbidden": true
+  }
+}

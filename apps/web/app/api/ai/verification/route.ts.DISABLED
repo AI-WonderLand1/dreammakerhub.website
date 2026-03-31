@@ -1,0 +1,109 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@lib/logger';
+import { requirePaidAIUser } from '@/app/api/ai/auth';
+import { MegaProvider } from '@services/storage/MegaProvider';
+
+export const runtime = "nodejs";
+
+type VerificationResult = {
+  responseId: string;
+  wasAccurate: boolean;
+  userFeedback: string;
+  timestamp: string;
+  modelId?: string;
+};
+
+const VERIFICATION_PATH = 'ai/verifications.json';
+
+async function readVerifications(): Promise<VerificationResult[]> {
+  const raw = await MegaProvider.getObject(VERIFICATION_PATH);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as VerificationResult[];
+  } catch {
+    return [];
+  }
+}
+
+async function appendVerification(entry: VerificationResult) {
+  const existing = await readVerifications();
+  existing.push(entry);
+  await MegaProvider.putObject(VERIFICATION_PATH, JSON.stringify(existing, null, 2));
+}
+
+export async function POST(request: NextRequest) {
+  const paidUser = await requirePaidAIUser(request);
+  if (paidUser instanceof NextResponse) return paidUser;
+
+  try {
+    const { responseId, wasAccurate, userFeedback, aiModel } = await request.json();
+
+    if (!responseId || wasAccurate === undefined) {
+      return NextResponse.json(
+        { success: false, message: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Record the verification
+    const verification: VerificationResult = {
+      responseId,
+      wasAccurate,
+      userFeedback: userFeedback || '',
+      timestamp: new Date().toISOString(),
+      modelId: aiModel,
+    };
+
+    await appendVerification(verification);
+
+    return NextResponse.json({
+      success: true,
+      message: wasAccurate
+        ? '✅ AI response verified as accurate! Trust score increased.'
+        : '⚠️ Inaccuracy reported. Will improve future responses.',
+      verification,
+    });
+  } catch (error: any) {
+    logger.error("Verification POST failed", { error });
+    return NextResponse.json(
+      { success: false, message: 'Failed to record verification' },
+      { status: 500 }
+    );
+  }
+}
+
+// Get AI model trust score
+export async function GET(request: NextRequest) {
+  const paidUser = await requirePaidAIUser(request);
+  if (paidUser instanceof NextResponse) return paidUser;
+
+  const { searchParams } = new URL(request.url);
+  const modelId = searchParams.get('modelId');
+
+  if (!modelId) {
+    return NextResponse.json(
+      { success: false, message: 'Missing modelId' },
+      { status: 400 }
+    );
+  }
+
+  const records = await readVerifications();
+  const modelRecords = records.filter((entry) => entry.modelId === modelId);
+
+  const totalResponses = modelRecords.length;
+  const accurateResponses = modelRecords.filter((entry) => entry.wasAccurate).length;
+  const accuracyRate = totalResponses > 0 ? (accurateResponses / totalResponses) * 100 : 0;
+  const trustScore = Math.max(0, Math.min(5, accuracyRate / 20));
+
+  return NextResponse.json({
+    success: true,
+    stats: {
+      modelId,
+      totalResponses,
+      accurateResponses,
+      accuracyRate: Number(accuracyRate.toFixed(2)),
+      trustScore: Number(trustScore.toFixed(2)),
+      lastUpdated: new Date().toISOString(),
+    },
+  });
+}

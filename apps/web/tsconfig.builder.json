@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "app/(builder)/**/*"
+  ],
+  "exclude": [
+    "app/(workspace)/**/*",
+    "app/(tools)/**/*",
+    "app/(preview)/**/*",
+    "app/api/**/*",
+    "app/utils/**/*"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "id": "unreal-wonder-build",
+      "source": "local",
+      "kind": "code-package",
+      "path": "unreal-wonder-build",
+      "targetDirectory": "unreal-wonder-build"
+    },
+    {
+      "id": "puck-editor",
+      "source": "local",
+      "kind": "code-package",
+      "path": "packages/puckeditor-core",
+      "targetDirectory": "packages/puckeditor-core"
+    }
+  ]
+}

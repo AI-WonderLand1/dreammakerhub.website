@@ -1,0 +1,30 @@
+{
+  "name": "ai-wonderland",
+  "private": true,
+  "workspaces": [
+    "WonderSpace",
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "swarm:unreal": "node scripts/swarm/run-unreal-stack.mjs",
+    "registry:sync": "node scripts/registry/sync-assets.mjs",
+    "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run"
+  },
+  
+  "devDependencies": {
+    "@next/swc-linux-x64-gnu": "^16.1.6",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "jsdom": "^29.0.0",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "@tiptap/extension-superscript": "^3.20.4"
+  }
+}

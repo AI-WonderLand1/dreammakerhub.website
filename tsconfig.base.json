@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "preserve",
+    "strict": true,
+    "allowJs": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@engine/*": [
+        "engine/*"
+      ],
+      "@ui/*": [
+        "ui/*"
+      ],
+      "@infra/*": [
+        "infra/*"
+      ],
+      "@types/*": [
+        "types/*"
+      ],
+      "@runners/*": [
+        "runners/*"
+      ],
+      "@config/*": [
+        "config/*"
+      ],
+      "@core/*": [
+        "engine/core/*"
+      ],
+      "@components/*": [
+        "ui/components/*"
+      ],
+      "@puckeditor/core": [
+        "packages/puckeditor-core/index.js"
+      ],
+      "@puckeditor/core/*": [
+        "packages/puckeditor-core/*"
+      ]
+    }
+  }
+}

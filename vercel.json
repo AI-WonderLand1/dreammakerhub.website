@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "ide.yourdomain.com"
+        }
+      ],
+      "destination": "/api/tenant-ide-proxy/:path*"
+    }
+  ]
+}

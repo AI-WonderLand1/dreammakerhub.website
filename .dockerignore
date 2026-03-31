@@ -1,0 +1,44 @@
+# Dependency Directories
+node_modules
+**/node_modules
+.pnpm-store
+
+# Next.js Build Artifacts
+.next
+out
+apps/web/.next
+
+# Supabase & Data
+supabase/.temp
+supabase/storage
+supabase/functions/.external
+supabase.tar.gz
+
+# Version Control
+.git
+.gitignore
+.gitattributes
+
+# Environment & Secrets
+.env
+*.local
+.env.production
+.env.development
+
+# Theia & IDE Specifics
+.theia
+.plugins
+dist
+lib-gen
+src-gen
+
+# Testing & Logs
+tests/integration/screenshots
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vitest-results
+
+# Project Specific Large Assets
+WonderSpace/api/files/watch/.tmp

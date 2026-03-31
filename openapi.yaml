@@ -1,0 +1,549 @@
+openapi: 3.1.0
+info:
+  title: AI Wonderland API
+  version: 0.1.0
+  description: |
+    API for AI Wonderland workspace, projects, playground, marketplace, and AI modules.
+
+servers:
+  - url: https://ai-wonder-pwfl95asz-wonderingtribes-projects.vercel.app/api
+    description: Vercel preview API
+
+tags:
+  - name: AI
+    description: AI chat, modules, and execution
+  - name: Playground
+    description: Run and test modules in the playground
+  - name: Projects
+    description: Projects, files, snapshots, and publishing
+  - name: Marketplace
+    description: Extension and module marketplace
+  - name: Domains
+    description: Custom domain resolution
+  - name: Auth
+    description: Authentication and user session operations
+
+paths:
+  /ai/chat:
+    post:
+      tags: [AI]
+      summary: Send a chat request to the AI assistant
+      operationId: postAiChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, system, assistant]
+                      content:
+                        type: string
+                  description: Ordered conversation history.
+                metadata:
+                  type: object
+                  description: Optional metadata for routing, workspace, or project context.
+              required: [messages]
+      responses:
+        "200":
+          description: Chat response from the AI assistant.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                  tokensUsed:
+                    type: integer
+                  traceId:
+                    type: string
+        "400":
+          description: Invalid payload.
+        "500":
+          description: Internal error.
+
+  /ai/modules:
+    get:
+      tags: [AI]
+      summary: List available AI modules
+      operationId: getAiModules
+      parameters:
+        - name: plan
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter modules by subscription plan.
+      responses:
+        "200":
+          description: List of AI modules.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        category:
+                          type: string
+                        planRequired:
+                          type: string
+        "500":
+          description: Internal error.
+
+  /ai/run:
+    post:
+      tags: [AI]
+      summary: Run an AI module or pipeline
+      operationId: postAiRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                moduleId:
+                  type: string
+                input:
+                  type: object
+                options:
+                  type: object
+              required: [moduleId, input]
+      responses:
+        "200":
+          description: Result of the module run.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                  traceId:
+                    type: string
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Module not found.
+        "500":
+          description: Internal error.
+
+  /playground/run:
+    post:
+      tags: [Playground]
+      summary: Execute a playground run
+      operationId: postPlaygroundRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId:
+                  type: string
+                moduleId:
+                  type: string
+                input:
+                  type: object
+              required: [projectId, moduleId, input]
+      responses:
+        "200":
+          description: Playground run output.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                  logs:
+                    type: array
+                    items:
+                      type: string
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Project or module not found.
+        "500":
+          description: Internal error.
+
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      operationId: getProjects
+      responses:
+        "200":
+          description: List of projects.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+        "500":
+          description: Internal error.
+    post:
+      tags: [Projects]
+      summary: Create a new project
+      operationId: postProjects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          description: Invalid payload.
+        "500":
+          description: Internal error.
+
+  /projects/{projectId}/files:
+    get:
+      tags: [Projects]
+      summary: List project files
+      operationId: getProjectFiles
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: List of files in the project.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/File"
+        "404":
+          description: Project not found.
+    post:
+      tags: [Projects]
+      summary: Create or update a file in the project
+      operationId: postProjectFiles
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertFileRequest"
+      responses:
+        "200":
+          description: File upserted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/File"
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Project not found.
+
+  /projects/{projectId}/snapshots:
+    get:
+      tags: [Projects]
+      summary: List project snapshots
+      operationId: getProjectSnapshots
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: List of snapshots.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Snapshot"
+        "404":
+          description: Project not found.
+    post:
+      tags: [Projects]
+      summary: Create a snapshot for a project
+      operationId: postProjectSnapshots
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSnapshotRequest"
+      responses:
+        "201":
+          description: Snapshot created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Project not found.
+
+  /projects/{projectId}/publish:
+    post:
+      tags: [Projects]
+      summary: Publish a project artifact
+      operationId: postProjectPublish
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target:
+                  type: string
+                  description: Publish target, e.g. "production" or "preview".
+                planOverride:
+                  type: string
+              required: [target]
+      responses:
+        "200":
+          description: Publish started or completed.
+        "402":
+          description: Plan does not allow publishing.
+        "404":
+          description: Project not found.
+
+  /marketplace/list:
+    get:
+      tags: [Marketplace]
+      summary: List marketplace items
+      operationId: getMarketplaceList
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marketplace items.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MarketplaceItem"
+        "500":
+          description: Internal error.
+
+  /marketplace/install:
+    post:
+      tags: [Marketplace]
+      summary: Install a marketplace item into a project
+      operationId: postMarketplaceInstall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId:
+                  type: string
+                itemId:
+                  type: string
+              required: [projectId, itemId]
+      responses:
+        "200":
+          description: Item installed.
+        "400":
+          description: Invalid input.
+        "404":
+          description: Project or item not found.
+
+  /marketplace/uninstall:
+    post:
+      tags: [Marketplace]
+      summary: Uninstall a marketplace item from a project
+      operationId: postMarketplaceUninstall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId:
+                  type: string
+                itemId:
+                  type: string
+              required: [projectId, itemId]
+      responses:
+        "200":
+          description: Item uninstalled.
+        "400":
+          description: Invalid input.
+        "404":
+          description: Project or item not found.
+
+  /domain/resolve:
+    post:
+      tags: [Domains]
+      summary: Resolve a custom domain to a project
+      operationId: postDomainResolve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                domain:
+                  type: string
+                preview:
+                  type: boolean
+              required: [domain]
+      responses:
+        "200":
+          description: Resolved domain mapping.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId:
+                    type: string
+                  status:
+                    type: string
+        "400":
+          description: Invalid domain.
+        "404":
+          description: Domain not mapped.
+
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique identifier of the project.
+
+  schemas:
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        templateId:
+          type: string
+          nullable: true
+      required: [name]
+
+    File:
+      type: object
+      properties:
+        path:
+          type: string
+        content:
+          type: string
+        language:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpsertFileRequest:
+      type: object
+      properties:
+        path:
+          type: string
+        content:
+          type: string
+        language:
+          type: string
+      required: [path, content]
+
+    Snapshot:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        label:
+          type: string
+
+    CreateSnapshotRequest:
+      type: object
+      properties:
+        label:
+          type: string
+      required: [label]
+
+    MarketplaceItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        planRequired:
+          type: string

@@ -1,0 +1,51 @@
+.puck-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.puck-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.9);
+}
+.puck-toolbar button {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.puck-content {
+  padding: 14px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.puck-node {
+  position: relative;
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.8);
+}
+.puck-node-remove {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+  padding: 4px 6px;
+  cursor: pointer;
+}

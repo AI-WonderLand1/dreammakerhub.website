@@ -1,0 +1,261 @@
+openapi: 3.0.3
+
+info:
+  title: AI Wonderland API
+  version: 0.1.0
+  description: >
+    API for AI Wonderland workspace, projects, playground,
+    marketplace, domains, and AI execution.
+
+servers:
+  - url: https://ai-wonder-pwfl95asz-wonderingtribes-projects.vercel.app/api
+    description: Vercel Preview API
+
+tags:
+  - name: AI
+    description: AI chat, modules, and execution
+  - name: Playground
+    description: Playground execution
+  - name: Projects
+    description: Projects, files, snapshots, publishing
+  - name: Marketplace
+    description: Extensions and modules
+  - name: Domains
+    description: Custom domain resolution
+  - name: Auth
+    description: Authentication
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    AiModule:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        planRequired:
+          type: boolean
+
+    MarketplaceItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        planRequired:
+          type: boolean
+
+    CreateProjectRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        templateId:
+          type: string
+          nullable: true
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+paths:
+
+  /ai/chat:
+    post:
+      tags: [AI]
+      summary: Chat with AI assistant
+      operationId: postAiChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    required: [role, content]
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, system, assistant]
+                      content:
+                        type: string
+                metadata:
+                  type: object
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                  tokensUsed:
+                    type: integer
+                  traceId:
+                    type: string
+
+  /ai/modules:
+    get:
+      tags: [AI]
+      summary: List AI modules
+      operationId: getAiModules
+      parameters:
+        - in: query
+          name: plan
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Module list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modules:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AiModule"
+
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      operationId: getProjects
+      responses:
+        "200":
+          description: Projects list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+
+    post:
+      tags: [Projects]
+      summary: Create project
+      operationId: postProjects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}/publish:
+    post:
+      tags: [Projects]
+      summary: Publish project
+      operationId: postProjectPublish
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target]
+              properties:
+                target:
+                  type: string
+                planOverride:
+                  type: string
+      responses:
+        "200":
+          description: Publish success
+
+  /marketplace/list:
+    get:
+      tags: [Marketplace]
+      summary: List marketplace items
+      operationId: getMarketplaceList
+      responses:
+        "200":
+          description: Marketplace items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MarketplaceItem"
+
+  /domain/resolve:
+    post:
+      tags: [Domains]
+      summary: Resolve custom domain
+      operationId: postDomainResolve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain]
+              properties:
+                domain:
+                  type: string
+                preview:
+                  type: boolean
+      responses:
+        "200":
+          description: Domain resolved

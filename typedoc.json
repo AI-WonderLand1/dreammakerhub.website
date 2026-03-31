@@ -1,0 +1,29 @@
+{
+  "entryPoints": [
+    "apps/web/app",
+    "engine",
+    "infra",
+    "ui",
+    "workers",
+    "types"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "exclude": [
+    "**/node_modules/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/tests/**",
+    "**/WonderSpace/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/docs/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "skipErrorChecking": true,
+  "name": "My Ecosystem API Documentation",
+  "readme": "README.md",
+  "includeVersion": true,
+  "tsconfig": "./tsconfig.docs.json"
+}

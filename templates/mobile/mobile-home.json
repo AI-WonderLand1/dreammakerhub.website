@@ -1,0 +1,19 @@
+{
+  "type": "mobile-screen",
+  "layout": {
+    "type": "column",
+    "padding": 16,
+    "children": [
+      { "type": "heading", "text": "Home" },
+      {
+        "type": "list",
+        "items": [
+          { "title": "Item One", "subtitle": "Description" },
+          { "title": "Item Two", "subtitle": "Description" },
+          { "title": "Item Three", "subtitle": "Description" }
+        ]
+      }
+    ]
+  }
+}
+

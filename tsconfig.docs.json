@@ -1,0 +1,72 @@
+{
+  "extends": "./apps/web/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@/*": [
+        "./apps/web/*"
+      ],
+      "@app/*": [
+        "./apps/web/app/*"
+      ],
+      "@builder/*": [
+        "./apps/web/app/(builder)/wonder-build/builder/*"
+      ],
+      "@builder-engine/*": [
+        "./apps/web/app/(builder)/wonder-build/builder/engine/*"
+      ],
+      "@engine/*": [
+        "./engine/*"
+      ],
+      "@ui/*": [
+        "./ui/*"
+      ],
+      "@infra/*": [
+        "./infra/*"
+      ],
+      "@distribution/*": [
+        "./distribution/*"
+      ],
+      "@types/*": [
+        "./types/*"
+      ],
+      "@runners/*": [
+        "./runners/*"
+      ],
+      "@config/*": [
+        "./config/*"
+      ],
+      "@lib/*": [
+        "./infra/lib/*"
+      ],
+      "@services/*": [
+        "./infra/services/*"
+      ],
+      "@core/*": [
+        "./engine/core/*"
+      ],
+      "@components/*": [
+        "./ui/components/*"
+      ]
+    }
+  },
+  "include": [
+    "apps/web/app/(builder)/wonder-build/**/*.ts",
+    "apps/web/app/(builder)/wonder-build/**/*.tsx",
+    "apps/web/app/(builder)/builder/**/*.ts",
+    "apps/web/app/(builder)/builder/**/*.tsx",
+    "ui/components/ui/toast.tsx"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/distribution/**",
+    "docs/api/**"
+  ]
+}

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Wonder Builder Engine</title>
+        <style>
+            /* Ensure the canvas fills the entire black area of your builder */
+            body { margin: 0; overflow: hidden; background-color: #000; }
+            canvas { width: 100vw; height: 100vh; display: block; }
+        </style>
+        <!-- This loads the 3D engine so your main.js can actually run -->
+        <script src="https://code.playcanvas.com"></script>
+    </head>
+    <body>
+        <canvas id='application'></canvas>
+        <!-- main.js must come AFTER the canvas and the engine script -->
+        <script type="module" src="main.js"></script>
+    </body>
+</html>

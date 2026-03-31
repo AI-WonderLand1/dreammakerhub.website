@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "camera_main",
+      "type": "camera",
+      "transform": {
+        "position": [0, 2, 5],
+        "rotation": [0, 0, 0]
+      },
+      "props": {
+        "fov": 60,
+        "near": 0.1,
+        "far": 1000
+      }
+    },
+    {
+      "id": "light_ambient",
+      "type": "light",
+      "lightType": "ambient",
+      "color": [1, 1, 1],
+      "intensity": 0.4
+    }
+  ],
+  "environment": {
+    "skybox": null,
+    "ambient": [0.4, 0.4, 0.4]
+  }
+}
+

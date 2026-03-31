@@ -1,0 +1,30 @@
+.heroFrame {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 16 / 10;
+}
+
+.heroLabel {
+  position: relative;
+  z-index: 3;
+  transform: translate(-50%, -50%); 
+  white-space: nowrap;
+}
+
+.loadingPulse {
+  animation: homepagePulse 1.35s ease-in-out infinite;
+}
+
+@keyframes homepagePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.heroFrame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%);
+}

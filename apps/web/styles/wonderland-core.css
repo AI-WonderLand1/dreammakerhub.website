@@ -1,0 +1,113 @@
+:root {
+  --glory-gold: #D4AF37;
+  --obsidian-depth: #0a0a0a;
+  --soul-purple: #a855f7;
+  --tie-dye-pink: #ff1493;
+  --tie-dye-cyan: #00ffff;
+  --tie-dye-purple: #d946ef;
+  --tie-dye-lime: #00ff00;
+}
+
+/* The "Non-Generic" layer */
+.wonder-block {
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: linear-gradient(135deg, rgba(10,10,10,0.8), rgba(20,20,20,0.4));
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.egyptian-glow {
+  text-shadow: 0 0 15px var(--glory-gold);
+  font-family: var(--font-ancient); /* Hooked to your assets */
+}
+
+/* ─── TIE-DYE STYLING ─────────────────────────────────────────────────── */
+
+.tie-dye-gradient {
+  background: linear-gradient(
+    135deg,
+    #ff1493 0%,
+    #d946ef 25%,
+    #00ffff 50%,
+    #00ff00 75%,
+    #ff1493 100%
+  );
+  background-size: 200% 200%;
+  animation: tieDyeShift 8s ease infinite;
+}
+
+@keyframes tieDyeShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.tie-dye-accent {
+  background: linear-gradient(
+    45deg,
+    rgba(255, 20, 147, 0.2),
+    rgba(217, 70, 239, 0.2),
+    rgba(0, 255, 255, 0.2),
+    rgba(0, 255, 0, 0.2)
+  );
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.4), 
+              inset 0 0 20px rgba(0, 255, 255, 0.2);
+  border: 2px solid transparent;
+  border-image: linear-gradient(135deg, #ff1493, #d946ef, #00ffff, #00ff00) 1;
+}
+
+.tie-dye-border {
+  border: 2px solid transparent;
+  background-image: linear-gradient(#0a0a0a, #0a0a0a), 
+                    linear-gradient(135deg, #ff1493, #d946ef, #00ffff, #00ff00);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.tie-dye-text {
+  background: linear-gradient(135deg, #ff1493, #d946ef, #00ffff, #00ff00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
+}
+
+.tie-dye-glow {
+  text-shadow: 0 0 10px rgba(255, 20, 147, 0.8),
+               0 0 20px rgba(217, 70, 239, 0.6),
+               0 0 30px rgba(0, 255, 255, 0.4);
+}
+
+.tie-dye-shadow {
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.4),
+              0 0 40px rgba(217, 70, 239, 0.3),
+              0 0 60px rgba(0, 255, 255, 0.2);
+}
+
+/* Apply tie-dye across engine interfaces */
+.quad-engine-shell .neon-header {
+  background: linear-gradient(90deg, 
+    rgba(255, 20, 147, 0.1) 0%,
+    rgba(217, 70, 239, 0.1) 25%,
+    rgba(0, 255, 255, 0.1) 50%,
+    rgba(0, 255, 0, 0.1) 100%
+  );
+  border-bottom: 1px solid rgba(255, 20, 147, 0.3);
+}
+
+.quad-engine-shell .engine-tab.active {
+  background: linear-gradient(135deg, 
+    rgba(255, 20, 147, 0.15),
+    rgba(0, 255, 255, 0.15)
+  );
+  box-shadow: 0 0 15px rgba(255, 20, 147, 0.3), inset 0 0 15px rgba(0, 255, 255, 0.15);
+}
+
+.ai-command-center {
+  background: linear-gradient(180deg,
+    rgba(217, 70, 239, 0.05),
+    rgba(0, 255, 255, 0.05)
+  );
+  border-left: 2px solid transparent;
+  border-image: linear-gradient(180deg, #ff1493, #d946ef, #00ffff) 1;
+}

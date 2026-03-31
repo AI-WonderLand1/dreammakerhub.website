@@ -1,0 +1,25 @@
+{
+  "type": "page",
+  "layout": {
+    "type": "section",
+    "direction": "row",
+    "gap": 32,
+    "children": [
+      {
+        "type": "column",
+        "width": "50%",
+        "children": [
+          { "type": "heading", "text": "Welcome to Your Product" },
+          { "type": "paragraph", "text": "A short description that explains the value clearly." },
+          { "type": "button", "text": "Get Started", "variant": "primary" }
+        ]
+      },
+      {
+        "type": "image",
+        "width": "50%",
+        "src": "placeholder"
+      }
+    ]
+  }
+}
+

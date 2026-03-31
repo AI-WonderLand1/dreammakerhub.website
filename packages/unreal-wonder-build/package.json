@@ -1,0 +1,27 @@
+{
+  "name": "unreal-wonder-build",
+  "version": "0.1.0",
+  "main": "./src/UnrealWonderBuildPage.tsx",
+  "types": "./src/UnrealWonderBuildPage.tsx",
+  "dependencies": {
+    "playcanvas": "^2.17.0"
+  },
+  "scripts": {
+    "verify:logic": "node scripts/verify_logic.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run verify:logic && npm run typecheck"
+  },
+  "puckIntegration": {
+    "requiredPackages": [
+      "@puckeditor/plugin-ai",
+      "@puckeditor/cloud-client",
+      "zod"
+    ],
+    "registryStatus": "blocked_403_requires_credentials",
+    "installCommands": [
+      "npm install @puckeditor/plugin-ai",
+      "npm install @puckeditor/cloud-client",
+      "npm install zod"
+    ]
+  }
+}

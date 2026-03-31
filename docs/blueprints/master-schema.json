@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WonderBuild Master Schema",
+  "version": "1.0.0",
+  "coreEngine": {
+    "web": "nextjs-react-app-router",
+    "builder": "layout-tree-engine",
+    "renderers": ["web-canvas", "multi-canvas", "runtime-renderer"]
+  },
+  "state": {
+    "app": {
+      "session": {
+        "userId": "string|null",
+        "plan": "free|pro|enterprise",
+        "isAuthenticated": "boolean"
+      },
+      "routing": {
+        "pathname": "string",
+        "breadcrumbs": [
+          {
+            "label": "string",
+            "href": "string"
+          }
+        ],
+        "activeWorkspaceId": "string|null"
+      },
+      "theme": {
+        "tokens": {
+          "--wb-bg": "string",
+          "--wb-text": "string",
+          "--wb-accent": "string"
+        },
+        "mode": "dark|light|system"
+      },
+      "trustLayer": {
+        "dashboard": "idle|loading|empty|error|ready",
+        "collaboration": "idle|loading|empty|error|ready",
+        "builderGeneration": "idle|loading|error|ready"
+      }
+    },
+    "projects": {
+      "activeProjectId": "string|null",
+      "list": [
+        {
+          "id": "string",
+          "name": "string",
+          "updatedAt": "iso-string",
+          "publishedUrl": "string|null"
+        }
+      ],
+      "gitOps": {
+        "push": "idle|loading|success|error",
+        "pull": "idle|loading|success|error",
+        "commit": "idle|loading|success|error",
+        "merge": "idle|loading|success|error"
+      }
+    },
+    "builder": {
+      "ui": {
+        "leftOpen": "boolean",
+        "rightOpen": "boolean",
+        "prototypeMode": "boolean",
+        "previewMode": "boolean",
+        "breakpoint": "desktop|tablet|mobile",
+        "zoom": "number",
+        "gridEnabled": "boolean",
+        "snapEnabled": "boolean",
+        "selectedId": "string|null",
+        "hoveredId": "string|null"
+      },
+      "layoutTree": {
+        "root": {
+          "id": "string",
+          "type": "root",
+          "children": "LayoutNode[]"
+        }
+      },
+      "wonderBuildState": {
+        "blocks": [
+          {
+            "id": "string",
+            "type": "hero|features|footer",
+            "content": "Record<string, unknown>"
+          }
+        ],
+        "theme": "Record<string, string>",
+        "layout": {
+          "sections": [
+            {
+              "id": "string",
+              "type": "hero|features|footer",
+              "order": "number",
+              "children": [
+                {
+                  "id": "string",
+                  "type": "string",
+                  "text": "string|undefined"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "history": {
+        "past": "LayoutNode[]",
+        "future": "LayoutNode[]"
+      }
+    }
+  },
+  "namingConvention": {
+    "components": "DomainEntityPanel",
+    "state": "state.domain.entity.field",
+    "api": "/api/<domain>/<resource>"
+  }
+}

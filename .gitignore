@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.pnpm-store/
+.env*
+*.pack
+.env.local
+.vercel
+.env*.local
+.nx/
+
+UnrealEngine_Source/
+UE5_Source/
+Archive/
+Saved/
+Intermediate/
+DerivedDataCache/
+.next/

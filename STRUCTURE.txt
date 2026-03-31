@@ -1,0 +1,15 @@
+.
+├── apps/
+│   └── web/                # Main Next.js SaaS app (routes + APIs + UI)
+├── docs/                   # Docs site output, generated API docs, and guides
+├── scripts/                # Maintenance/sync/smoke automation scripts
+├── supabase/               # DB migrations and edge function assets
+├── tests/                  # Vitest route, config, and contract checks
+├── ui/                     # Shared UI primitives/components
+├── Wonder-build/             # Standalone WonderPlay runtime assets
+├── ARCHITECTURE.md
+├── CONTRIBUTING.md
+├── DEPLOYMENT.md
+├── FAQ.md
+├── README.md
+└── openapi.yaml            # API contract source

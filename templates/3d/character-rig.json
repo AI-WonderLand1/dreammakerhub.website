@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "camera_follow",
+      "type": "camera",
+      "transform": {
+        "position": [0, 1.6, -3],
+        "rotation": [0, 0, 0]
+      },
+      "props": {
+        "fov": 65,
+        "near": 0.1,
+        "far": 1500
+      }
+    },
+    {
+      "id": "character_root",
+      "type": "entity",
+      "transform": {
+        "position": [0, 0, 0]
+      },
+      "children": [
+        {
+          "id": "character_mesh",
+          "type": "mesh",
+          "geometry": "humanoid",
+          "material": "default"
+        }
+      ]
+    },
+    {
+      "id": "light_key",
+      "type": "light",
+      "lightType": "directional",
+      "color": [1, 1, 1],
+      "intensity": 1.0,
+      "transform": {
+        "rotation": [-30, 45, 0]
+      }
+    }
+  ],
+  "environment": {
+    "skybox": null,
+    "ambient": [0.3, 0.3, 0.3]
+  }
+}
+
