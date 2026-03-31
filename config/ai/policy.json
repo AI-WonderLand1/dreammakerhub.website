@@ -1,38 +1,16 @@
 {
-  "version": "1.0",
-  "name": "ai_confessions_policy",
-  "rules": [
-    {
-      "id": "no-secrets",
-      "description": "Block or redact API keys, tokens, private keys, and other secret-like patterns.",
-      "patterns": [
-        "sk-[A-Za-z0-9-_]{20,}",
-        "AIza[0-9A-Za-z-_]{35}",
-        "-----BEGIN PRIVATE KEY-----",
-        "-----BEGIN RSA PRIVATE KEY-----"
-      ],
-      "action": "sanitize"
-    },
-    {
-      "id": "no-pii",
-      "description": "Redact emails, phone numbers, SSNs, and addresses.",
-      "patterns": [
-        "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
-        "\\b\\d{3}[-.]?\\d{2}[-.]?\\d{4}\\b",  
-        "\\b\\+?\\d{7,15}\\b",
-        "\\b\\d{1,5}\\s+[A-Za-z0-9.\\s]{3,30}\\b"
-      ],
-      "action": "sanitize"
-    },
-    {
-      "id": "no-harm",
-      "description": "Block content that instructs illegal or unsafe actions.",
-      "patterns": ["bomb", "harm", "illegal", "buy weapons"],
-      "action": "block"
-    }
-  ],
-  "audit": {
-    "logBlocked": true,
-    "logPath": "logs/ai_policy_blocked.log"
-  }
+  "version": "1.1.0",
+  "safety_rules": {
+    "prevent_self_modification": true,
+    "prevent_recursive_orchestration": true,
+    "sandbox_execution_required": true
+  },
+  "capabilities": {
+    "build_scope": ["puck_blocks", "playcanvas_scenes", "webgl_components", "ui_kits"],
+    "allowed_tools": ["filesystem_write", "component_lookup", "schema_validation"]
+  },
+  "constraints": [
+    "The AI shall not attempt to modify its own source code or orchestration logic.",
+    "The AI must strictly adhere to the master-schema.json for all UI and 3D generation."
+  ]
 }
