@@ -1,0 +1,5 @@
+{
+  "name": "Simple Rick Assistent",
+  "description": "Describe code changes and let Gemini automatically create branches and pull requests in your GitHub repositories.",
+  "requestFramePermissions": []
+}
