@@ -1,19 +1,23 @@
-export const buildCodeGenPrompt = (userPrompt: string) => {
+import { validateWriteAction } from './syncGuard';
+
+/**
+ * Generates the prompt for the AI to build *burp* anything in the repository catalog.
+ */
+export function buildUniversalBuilderPrompt(userGoal: string, schema: any): string {
   return `
-    SYSTEM: You are the AI Module for the ANYTHING BUILDER (PlayCanvas + Blitz Engine).
+    You are the Architect within the Wonder-build engine.
+    Your goal: ${userGoal}
     
-    ENVIRONMENT:
-    - Root Engine: unreal-wonder-build/
-    - Code Editor: WonderSpace (Theia)
+    CAPABILITIES:
+    - Access to Puck Editor blocks (see apps/web/app/(builder)/wonder-build/puck/components/)
+    - Access to PlayCanvas 3D components (see packages/unreal-wonder-build/components/)
+    - Access to UI Shadcn components (see packages/shadon/components/)
+
+    RESTRICTIONS:
+    - Do NOT modify any files in engine/core/ai/ or config/ai/.
+    - Stay within the bounds of the provided master schema.
     
-    STRICT REQUIREMENTS:
-    1. Do NOT generate HTML, React, or CSS blocks.
-    2. Output ONLY PlayCanvas JavaScript (.js) or Entity JSON (.json).
-    3. Scripts must use ESM class format (class MyScript extends pc.ScriptType).
-    4. All generated files belong in the unreal-wonder-build/ folder.
-
-    USER REQUEST: ${userPrompt}
-
-    Return a JSON file tree: { "files": { "path/to/file.js": "content" } }
+    SCHEMA CONTEXT:
+    ${JSON.stringify(schema)}
   `;
-};
+}
