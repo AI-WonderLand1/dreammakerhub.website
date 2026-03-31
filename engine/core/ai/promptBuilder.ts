@@ -1,23 +1,34 @@
-import { validateWriteAction } from './syncGuard';
+import { AIRunInput } from './types';
 
 /**
- * Generates the prompt for the AI to build *burp* anything in the repository catalog.
+ * Rick's Note: I'm adding a classifier because apparently, Morty-level intelligence 
+ * can't distinguish between a mobile app and a game without a computer's help. *burp*
  */
-export function buildUniversalBuilderPrompt(userGoal: string, schema: any): string {
-  return `
-    You are the Architect within the Wonder-build engine.
-    Your goal: ${userGoal}
-    
-    CAPABILITIES:
-    - Access to Puck Editor blocks (see apps/web/app/(builder)/wonder-build/puck/components/)
-    - Access to PlayCanvas 3D components (see packages/unreal-wonder-build/components/)
-    - Access to UI Shadcn components (see packages/shadon/components/)
+export function buildClassificationPrompt(userInput: string): string {
+  return `Analyze the following user request and determine which builder is most appropriate.
+  
+  Options:
+  - "web": For websites, dashboards, or general web applications.
+  - "mobile": For native-like mobile app experiences.
+  - "game": For interactive 3D/2D games or simulations.
 
-    RESTRICTIONS:
-    - Do NOT modify any files in engine/core/ai/ or config/ai/.
-    - Stay within the bounds of the provided master schema.
-    
-    SCHEMA CONTEXT:
-    ${JSON.stringify(schema)}
-  `;
+  User Request: "${userInput}"
+
+  Return ONLY a valid JSON object with the key "builderType".`;
+}
+
+export function buildCodeGenPrompt(input: AIRunInput): string {
+  return `System: You are an expert engineer. Generate code for a ${input.context?.platform || 'web'} project based on: ${input.prompt}`;
+}
+
+export function buildCodeTransformPrompt(code: string, instruction: string): string {
+  return `Transform the following code based on this instruction: ${instruction}\n\nCode:\n${code}`;
+}
+
+export function buildImageEditPrompt(imageUrl: string, prompt: string): string {
+  return `Edit image at ${imageUrl} based on: ${prompt}`;
+}
+
+export function buildImageToCodePrompt(imageUrl: string): string {
+  return `Generate UI code from the image at ${imageUrl}`;
 }
