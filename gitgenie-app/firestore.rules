@@ -1,0 +1,168 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: memories
+    // Document ID: auto-generated
+    // Fields:
+    //   - repo: string (required, < 100 chars) - "owner/repo"
+    //   - content: string (required, < 10000 chars) - The memory text
+    //   - timestamp: number (required) - When it was created
+    //   - userId: string (required, immutable) - The owner's UID
+    //
+    // Collection: chats
+    // Document ID: auto-generated
+    // Fields:
+    //   - repo: string (required, < 100 chars) - "owner/repo"
+    //   - messages: list (required, < 1000 items) - The chat messages
+    //   - updatedAt: number (required) - Last update time
+    //   - userId: string (required, immutable) - The owner's UID
+    //
+    // Collection: installations
+    // Document ID: {installationId}
+    // Fields:
+    //   - installationId: string (required)
+    //   - userId: string (required, immutable)
+    //   - repos: list (required)
+    //   - createdAt: number (required)
+    //
+    // Collection: webhook_logs
+    // Document ID: auto-generated
+    // Fields:
+    //   - deliveryId: string (required)
+    //   - event: string (required)
+    //   - repo: string (required)
+    //   - action: string (optional)
+    //   - timestamp: timestamp (required)
+    //
+    // Collection: confessions
+    // Document ID: auto-generated
+    // Fields:
+    //   - type: string (required, < 50 chars)
+    //   - title: string (required, < 100 chars)
+    //   - detail: string (required, < 1000 chars)
+    //   - timestamp: number (required)
+    //   - userId: string (required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    function uidUnchanged() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+             request.resource.data[field].size() >= minLen &&
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidMemory() {
+      return hasRequiredFields(['repo', 'content', 'timestamp', 'userId']) &&
+             validStringLength('repo', 1, 100) &&
+             validStringLength('content', 1, 10000) &&
+             request.resource.data.timestamp is number &&
+             request.resource.data.userId is string;
+    }
+
+    function isValidChat() {
+      return hasRequiredFields(['repo', 'messages', 'updatedAt', 'userId']) &&
+             validStringLength('repo', 1, 100) &&
+             request.resource.data.messages is list &&
+             request.resource.data.messages.size() <= 1000 &&
+             request.resource.data.updatedAt is number &&
+             request.resource.data.userId is string;
+    }
+
+    function isValidInstallation() {
+      return hasRequiredFields(['installationId', 'userId', 'repos', 'createdAt']) &&
+             request.resource.data.installationId is string &&
+             request.resource.data.userId is string &&
+             request.resource.data.repos is list &&
+             request.resource.data.createdAt is number;
+    }
+
+    function isValidWebhookLog() {
+      return hasRequiredFields(['deliveryId', 'event', 'repo', 'timestamp']) &&
+             request.resource.data.deliveryId is string &&
+             request.resource.data.event is string &&
+             request.resource.data.repo is string;
+    }
+
+    function isValidConfession() {
+      return hasRequiredFields(['type', 'title', 'detail', 'timestamp', 'userId']) &&
+             validStringLength('type', 1, 50) &&
+             validStringLength('title', 1, 100) &&
+             validStringLength('detail', 1, 1000) &&
+             request.resource.data.timestamp is number &&
+             request.resource.data.userId is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /memories/{memoryId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidMemory() && uidUnchanged();
+      allow update: if isDocOwner() && isValidMemory() && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /chats/{chatId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidChat() && uidUnchanged();
+      allow update: if isDocOwner() && isValidChat() && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /installations/{installationId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidInstallation() && uidUnchanged();
+      allow update: if isDocOwner() && isValidInstallation() && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /webhook_logs/{logId} {
+      // Webhook logs are created by the backend admin SDK, which bypasses these rules.
+      // Users can only read logs for their repos if we implement that, but for now, no client writes.
+      allow read: if isAuthenticated(); // Simplified for now, ideally restrict by repo ownership
+      allow write: if false; // Only backend can write
+    }
+
+    match /confessions/{confessionId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidConfession() && uidUnchanged();
+      allow update: if isDocOwner() && isValidConfession() && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+  }
+}

@@ -1,25 +1,33 @@
 import { useState } from 'react';
-import { Send, Loader2, Paperclip, BookOpen, Zap, Code2 } from 'lucide-react';
-import { RickSanchez } from './RickSanchez';
+import { Send, Loader2, Paperclip, BookOpen, Zap, Code2, Download, Trash2, ChevronDown } from 'lucide-react';
+import { PersonaAvatar, PersonaType } from './PersonaAvatar';
 
 interface SystemAgentProps {
   messages: any[];
   loading: boolean;
+  forensicReport: any;
   onSendMessage: (message: string, file?: { data: string; mimeType: string; name: string }) => void;
   selectedRepo: string;
   trainingBoxOpen: boolean;
   setTrainingBoxOpen: (open: boolean) => void;
   onMemoryAdd: (content: string) => void;
+  onClearChat: () => void;
+  persona: PersonaType;
+  setPersona: (persona: PersonaType) => void;
 }
 
 export const SystemAgent = ({ 
   messages, 
   loading, 
+  forensicReport,
   onSendMessage, 
   selectedRepo,
   trainingBoxOpen,
   setTrainingBoxOpen,
-  onMemoryAdd
+  onMemoryAdd,
+  onClearChat,
+  persona,
+  setPersona
 }: SystemAgentProps) => {
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<{ data: string; mimeType: string; name: string } | null>(null);
@@ -29,7 +37,8 @@ export const SystemAgent = ({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('File too large. Max 10MB. *burp*');
+      const sound = persona === 'rick' ? '*burp*' : persona === 'morty' ? '*aw geez*' : persona === 'rick_and_morty' ? '*burp* *aw geez*' : '*beep boop*';
+      alert(`File too large. Max 10MB. ${sound}`);
       return;
     }
 
@@ -49,17 +58,82 @@ export const SystemAgent = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input && !selectedFile) || !selectedRepo || loading) return;
-    onSendMessage(input, selectedFile || undefined);
+    
+    let finalInput = input;
+    if (forensicReport) {
+      finalInput = `[Forensic Architect Report]: ${JSON.stringify(forensicReport)}\n\nUser Message: ${input}`;
+    }
+    
+    onSendMessage(finalInput, selectedFile || undefined);
     setInput('');
     setSelectedFile(null);
   };
 
+  const handleSaveChat = () => {
+    const chatText = messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
+    const blob = new Blob([chatText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gitgenie-chat-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="bg-gradient-to-br from-blue-900/20 via-green-900/20 to-yellow-900/20 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col h-full shadow-2xl">
+    <div className="bg-gradient-to-br from-blue-900/20 via-green-900/20 to-yellow-900/20 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col h-full shadow-2xl relative">
+      <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xs font-bold text-white/40 uppercase tracking-widest">System Agent</h2>
+          <button 
+            onClick={() => setTrainingBoxOpen(!trainingBoxOpen)} 
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-[10px] font-bold uppercase tracking-wider ${
+              trainingBoxOpen 
+                ? 'bg-green-600/20 border-green-600 text-green-400' 
+                : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <BookOpen className="w-3 h-3" />
+            Train AI
+          </button>
+          
+          <div className="relative group">
+            <select 
+              value={persona}
+              onChange={(e) => setPersona(e.target.value as PersonaType)}
+              className="appearance-none bg-white/5 border border-white/10 text-white/80 text-[10px] font-bold uppercase tracking-wider rounded-lg px-3 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-green-500/50 cursor-pointer hover:bg-white/10 transition-colors"
+            >
+              <option value="alice" className="bg-gray-900 text-white">Alice</option>
+              <option value="rick" className="bg-gray-900 text-white">Rick</option>
+              <option value="morty" className="bg-gray-900 text-white">Morty</option>
+              <option value="rick_and_morty" className="bg-gray-900 text-white">Rick & Morty</option>
+            </select>
+            <ChevronDown className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleSaveChat} 
+            disabled={messages.length === 0}
+            className="text-white/40 hover:text-white disabled:opacity-30 transition-colors" 
+            title="Save Chat"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={onClearChat} 
+            disabled={messages.length === 0}
+            className="text-white/40 hover:text-red-400 disabled:opacity-30 transition-colors" 
+            title="Clear Chat"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white/10">
-        {messages.length === 0 && (
+        {messages.length === 0 && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-white/20 space-y-6">
-            <RickSanchez message="Select a repo and ask me something. I don't have all day. *burp*" />
+            <PersonaAvatar persona={persona} message={persona === 'rick' ? "Select a repo and ask me something. I don't have all day. *burp*" : persona === 'morty' ? "A-aw geez, pick a repo and ask a question, okay?" : persona === 'rick_and_morty' ? "Select a repo, Morty! We gotta-- *burp* we gotta code!" : "Select a repo and ask me something. I don't have all day."} />
             <p className="text-sm font-bold uppercase tracking-widest">System Agent Ready</p>
           </div>
         )}
@@ -93,9 +167,11 @@ export const SystemAgent = ({
           </div>
         ))}
         {loading && (
-          <div className="bg-green-900/10 border border-green-900/30 p-4 rounded-2xl mr-auto animate-pulse flex items-center gap-3">
-            <Loader2 className="w-4 h-4 animate-spin text-green-500" />
-            <p className="text-xs font-medium text-green-500/70 italic">Rick is thinking... *burp*</p>
+          <div className="flex flex-col items-center justify-center mt-8 mb-4">
+            <PersonaAvatar persona={persona} isWorking={true} />
+            <p className="text-xs font-medium text-cyan-400/70 italic mt-4 animate-pulse">
+              {persona === 'rick' ? "Rick is thinking... *burp*" : persona === 'morty' ? "Morty is trying his best..." : persona === 'rick_and_morty' ? "Rick and Morty are figuring it out... *burp*" : "Alice is processing your request..."}
+            </p>
           </div>
         )}
       </div>
@@ -149,19 +225,6 @@ export const SystemAgent = ({
       )}
 
       <form onSubmit={handleSubmit} className="flex gap-2 items-center mt-4 pt-4 border-t border-white/10">
-        <button 
-          type="button" 
-          onClick={() => setTrainingBoxOpen(!trainingBoxOpen)} 
-          className={`p-3 rounded-xl border transition-all flex-shrink-0 hover:scale-105 active:scale-95 ${
-            trainingBoxOpen 
-              ? 'bg-green-600/20 border-green-600 text-green-400' 
-              : 'bg-black/20 border-white/10 text-white/40 hover:text-white/60'
-          }`}
-          title="Train AI"
-        >
-          <BookOpen className="w-4 h-4" />
-        </button>
-        
         <label className={`p-3 backdrop-blur-md border rounded-xl cursor-pointer transition-all flex-shrink-0 hover:scale-105 active:scale-95 ${selectedFile ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-black/20 border-white/10 text-white/40 hover:text-white/60'}`}>
           <Paperclip className="w-4 h-4" />
           <input type="file" className="hidden" onChange={handleFileChange} />
@@ -169,7 +232,11 @@ export const SystemAgent = ({
 
         <button
           type="button"
-          onClick={() => onSendMessage("Rick, review this repository and propose some improvements. Don't be gentle. *burp*")}
+          onClick={() => {
+            const sound = persona === 'rick' ? '*burp*' : persona === 'morty' ? '*aw geez*' : persona === 'rick_and_morty' ? '*burp* *aw geez*' : '*beep boop*';
+            const name = persona === 'rick' ? 'Rick' : persona === 'morty' ? 'Morty' : persona === 'rick_and_morty' ? 'Rick and Morty' : 'Alice';
+            onSendMessage(`${name}, review this repository and propose some improvements. Be precise. ${sound}`);
+          }}
           disabled={!selectedRepo || loading}
           className="p-3 rounded-xl border border-white/10 bg-black/20 text-white/40 hover:text-white/60 hover:bg-white/5 transition-all flex-shrink-0 hover:scale-105 active:scale-95"
           title="Review Repo"
@@ -181,7 +248,7 @@ export const SystemAgent = ({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={selectedRepo ? "Ask Rick anything..." : "Select a repo first..."}
+          placeholder={selectedRepo ? `Ask ${persona === 'rick' ? 'Rick' : persona === 'morty' ? 'Morty' : persona === 'rick_and_morty' ? 'Rick & Morty' : 'Alice'} anything...` : "Select a repo first..."}
           disabled={!selectedRepo || loading}
           className="flex-1 min-w-0 bg-black/20 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600/50 transition-all disabled:opacity-50"
         />

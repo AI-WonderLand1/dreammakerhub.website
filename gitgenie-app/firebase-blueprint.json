@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "Memory": {
+      "title": "Memory",
+      "description": "An architectural memory or context learned by the AI for a specific repository.",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "The repository identifier (e.g., owner/repo)."
+        },
+        "content": {
+          "type": "string",
+          "description": "The memory content."
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "When the memory was created."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this memory."
+        }
+      },
+      "required": ["repo", "content", "timestamp", "userId"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "A chat session for a specific repository.",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "The repository identifier (e.g., owner/repo)."
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string" },
+              "content": { "type": "string" },
+              "type": { "type": "string" }
+            }
+          },
+          "description": "The messages in the chat session."
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "When the chat was last updated."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this chat session."
+        }
+      },
+      "required": ["repo", "messages", "updatedAt", "userId"]
+    },
+    "Installation": {
+      "title": "Installation",
+      "description": "GitHub App installation data.",
+      "type": "object",
+      "properties": {
+        "installationId": {
+          "type": "string",
+          "description": "The GitHub installation ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The user ID who installed the app."
+        },
+        "repos": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of repositories this installation has access to."
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "When the installation was recorded."
+        }
+      },
+      "required": ["installationId", "userId", "repos", "createdAt"]
+    },
+    "WebhookLog": {
+      "title": "WebhookLog",
+      "description": "Log of received GitHub webhooks.",
+      "type": "object",
+      "properties": {
+        "deliveryId": {
+          "type": "string",
+          "description": "The GitHub delivery ID."
+        },
+        "event": {
+          "type": "string",
+          "description": "The GitHub event type (e.g., push, pull_request)."
+        },
+        "repo": {
+          "type": "string",
+          "description": "The repository the event is for."
+        },
+        "action": {
+          "type": "string",
+          "description": "The action of the payload (e.g., opened, closed)."
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "When the webhook was received."
+        }
+      },
+      "required": ["deliveryId", "event", "repo", "timestamp"]
+    },
+    "Confession": {
+      "title": "Confession",
+      "description": "A confession made by the AI agent.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The type of confession (e.g., RISK_FLAG, CORRECTION)."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the confession."
+        },
+        "detail": {
+          "type": "string",
+          "description": "The detail of the confession."
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "When the confession was created."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who triggered the confession."
+        }
+      },
+      "required": ["type", "title", "detail", "timestamp", "userId"]
+    }
+  },
+  "firestore": {
+    "memories/{memoryId}": {
+      "schema": "Memory",
+      "description": "Stores AI memories per repository."
+    },
+    "chats/{chatId}": {
+      "schema": "ChatSession",
+      "description": "Stores chat history per repository."
+    },
+    "installations/{installationId}": {
+      "schema": "Installation",
+      "description": "Stores GitHub App installations."
+    },
+    "webhook_logs/{logId}": {
+      "schema": "WebhookLog",
+      "description": "Stores logs of incoming GitHub webhooks."
+    },
+    "confessions/{confessionId}": {
+      "schema": "Confession",
+      "description": "Stores AI agent confessions."
+    }
+  }
+}

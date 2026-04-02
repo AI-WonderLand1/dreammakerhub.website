@@ -5,8 +5,23 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import { Octokit } from 'octokit';
+import Stripe from 'stripe';
+import jwt from 'jsonwebtoken';
 import { promises as fsPromises } from 'fs';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore, FieldValue, Firestore } from 'firebase-admin/firestore';
 import { createUncertaintyConfession, createRejectedActionConfession, createRiskFlagConfession, createLimitationConfession, createCorrectionConfession } from './src/confessions';
+
+// Initialize Firebase Admin
+let db: Firestore | null = null;
+try {
+  initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID || 'project-1f759584-5d77-4640-8d3'
+  });
+  db = getFirestore();
+} catch (e) {
+  console.log('Firebase admin already initialized or failed', e);
+}
 
 // dotenv.config(); // Removed to avoid shadowing platform-provided env vars
 
@@ -144,6 +159,36 @@ async function startServer() {
     }
   });
 
+  // --- Stripe ---
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+
+  app.post('/api/create-checkout-session', async (req, res) => {
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Pro Subscription',
+              },
+              unit_amount: 2000, // $20.00
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${process.env.APP_URL}/success`,
+        cancel_url: `${process.env.APP_URL}/cancel`,
+      });
+      res.json({ id: session.id });
+    } catch (error) {
+      console.error('Stripe error:', error);
+      res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+  });
+
   app.post('/api/logout', (req, res) => {
     res.clearCookie('github_token', {
       httpOnly: true,
@@ -153,6 +198,83 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // --- License Validation ---
+  app.post('/api/validate-license', (req, res) => {
+    const { licenseKey } = req.body;
+    
+    // Check for Dev Mode
+    const isDevMode = process.env.DEV_MODE === 'true';
+    const isValid = licenseKey === 'RICK-MORTY-PRO-2026' || (isDevMode && licenseKey === 'DEV-MODE');
+    
+    if (isValid) {
+      const token = jwt.sign({ isLicensed: true }, process.env.JWT_SECRET || 'super-secret-key', { expiresIn: '7d' });
+      res.cookie('license_token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      res.json({ valid: true });
+    } else {
+      res.json({ valid: false });
+    }
+  });
+
+  // --- GitHub Webhook Endpoint ---
+  app.post('/api/webhooks/github', async (req, res) => {
+    const event = req.headers['x-github-event'] as string;
+    const deliveryId = req.headers['x-github-delivery'] as string;
+    const payload = req.body;
+
+    if (!event || !deliveryId) {
+      return res.status(400).send('Missing GitHub webhook headers');
+    }
+
+    try {
+      const repoFullName = payload.repository?.full_name || 'unknown';
+      const action = payload.action || 'none';
+
+      // 1. Log the webhook event securely in Firestore
+      if (db) {
+        await db.collection('webhook_logs').add({
+          deliveryId,
+          event,
+          repo: repoFullName,
+          action,
+          timestamp: FieldValue.serverTimestamp(),
+        });
+      } else {
+        console.warn('Firestore DB not initialized, skipping webhook log');
+      }
+
+      console.log(`[Webhook] Received ${event} event for ${repoFullName}`);
+
+      // 2. Retrieve relevant repository memory (AI Context)
+      if (repoFullName !== 'unknown' && db) {
+        const memoriesSnapshot = await db.collection('memories')
+          .where('repo', '==', repoFullName)
+          .get();
+        
+        const context = memoriesSnapshot.docs.map(d => d.data().content);
+        console.log(`[Webhook] Retrieved ${context.length} memories for ${repoFullName}`);
+        
+        // 3. Trigger AI Responses (Mock implementation for now)
+        if (event === 'pull_request' && action === 'opened') {
+           console.log(`[Webhook] AI Review triggered for PR: ${payload.pull_request?.html_url}`);
+           // Here we would call Gemini with the retrieved context and post a comment back to GitHub
+        } else if (event === 'push') {
+           console.log(`[Webhook] Push event detected. Updating AI context for ${repoFullName}`);
+           // Here we would analyze the new commits and add a new memory to Firestore
+        }
+      }
+
+      res.status(200).send('Webhook processed successfully');
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+
   app.get('/api/repo-context/:owner/:repo', async (req, res) => {
     const token = req.cookies.github_token;
     const { owner, repo } = req.params;
@@ -160,56 +282,143 @@ async function startServer() {
 
     try {
       const octokit = new Octokit({ auth: token });
+      console.log(`[RepoContext] Fetching repo: ${owner}/${repo}`);
       const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
       const defaultBranch = repoData.default_branch;
+      console.log(`[RepoContext] Default branch: ${defaultBranch}`);
       
       let fileList = '';
-      let topFiles: { path: string, content: string }[] = [];
+      let topFiles: { path: string, content: string, lastModified?: string }[] = [];
+      let commitHistory = '';
+      let prHistory = '';
       
       try {
+        console.log(`[RepoContext] Fetching tree for ${defaultBranch}`);
         const { data: treeData } = await octokit.rest.git.getTree({
           owner,
           repo,
           tree_sha: defaultBranch,
           recursive: 'true',
         });
+        console.log(`[RepoContext] Tree fetched, items: ${treeData.tree.length}`);
         
         const blobs = treeData.tree.filter(item => item.type === 'blob');
         
-        fileList = blobs
-          .map(item => item.path)
+        // Get most recently modified files by checking recent commits
+        const recentFilesMap = new Map<string, string>();
+        try {
+          console.log(`[RepoContext] Fetching recent commits`);
+          const { data: commits } = await octokit.rest.repos.listCommits({
+            owner,
+            repo,
+            sha: defaultBranch,
+            per_page: 15 // Fetch recent commits to find modified files
+          });
+          console.log(`[RepoContext] Commits fetched: ${commits.length}`);
+
+          commitHistory = commits.map(c => `- [${c.sha.substring(0, 7)}] ${c.commit.author?.date}: ${c.commit.message.split('\n')[0]} (by ${c.commit.author?.name})`).join('\n');
+
+          for (const commit of commits) {
+            if (recentFilesMap.size >= 20) break;
+            const { data: commitDetails } = await octokit.rest.repos.getCommit({
+              owner,
+              repo,
+              ref: commit.sha
+            });
+            const date = commit.commit.author?.date || commit.commit.committer?.date || '';
+            if (commitDetails.files) {
+              for (const file of commitDetails.files) {
+                if (file.status !== 'removed' && file.filename && !recentFilesMap.has(file.filename)) {
+                  recentFilesMap.set(file.filename, date);
+                }
+              }
+            }
+          }
+        } catch (commitErr: any) {
+          console.error('[RepoContext] Failed to fetch recent commits', commitErr);
+        }
+
+        try {
+          console.log(`[RepoContext] Fetching recent PRs`);
+          const { data: pulls } = await octokit.rest.pulls.list({
+            owner,
+            repo,
+            state: 'all',
+            sort: 'updated',
+            direction: 'desc',
+            per_page: 5
+          });
+          prHistory = pulls.map(pr => `- PR #${pr.number} [${pr.state}]: ${pr.title} (by ${pr.user?.login})\n  Body: ${pr.body ? pr.body.substring(0, 100).replace(/\n/g, ' ') + '...' : 'No description'}`).join('\n');
+        } catch (prErr: any) {
+          console.error('[RepoContext] Failed to fetch recent PRs', prErr);
+        }
+
+        // Sort blobs: recently modified first
+        const sortedBlobsForList = [...blobs].sort((a, b) => {
+          const dateA = recentFilesMap.get(a.path || '') || '';
+          const dateB = recentFilesMap.get(b.path || '') || '';
+          if (dateA && dateB) return new Date(dateB).getTime() - new Date(dateA).getTime();
+          if (dateA) return -1;
+          if (dateB) return 1;
+          return 0;
+        });
+
+        fileList = sortedBlobsForList
+          .map(item => {
+            const date = recentFilesMap.get(item.path || '');
+            return date ? `${item.path} (Last modified: ${date})` : item.path;
+          })
           .join('\n');
 
-        // Get top 5 largest files
-        const sortedBlobs = [...blobs].sort((a, b) => (b.size || 0) - (a.size || 0));
-        const top5Blobs = sortedBlobs.slice(0, 5);
+        const validBlobPaths = new Set(blobs.map(b => b.path));
+        const top5Recent = Array.from(recentFilesMap.entries())
+          .filter(([path]) => validBlobPaths.has(path))
+          .slice(0, 5)
+          .map(([path, date]) => ({ path, date }));
 
-        topFiles = await Promise.all(top5Blobs.map(async (blob) => {
+        if (top5Recent.length < 5) {
+          const existingPaths = new Set(top5Recent.map(f => f.path));
+          // Fallback to largest files if we don't have enough recent files
+          const sortedBySizeFb = [...blobs].sort((a, b) => (b.size || 0) - (a.size || 0));
+          for (const blob of sortedBySizeFb) {
+            if (top5Recent.length >= 5) break;
+            if (blob.path && !existingPaths.has(blob.path)) {
+              top5Recent.push({ path: blob.path, date: 'Unknown' });
+              existingPaths.add(blob.path);
+            }
+          }
+        }
+
+        topFiles = await Promise.all(top5Recent.map(async (fileObj) => {
           try {
+            console.log(`[RepoContext] Fetching content for ${fileObj.path}`);
             const { data: fileData } = await octokit.rest.repos.getContent({
               owner,
               repo,
-              path: blob.path || '',
+              path: fileObj.path,
               ref: defaultBranch,
             });
             if (!Array.isArray(fileData) && 'content' in fileData) {
               return {
-                path: blob.path || '',
+                path: fileObj.path,
                 content: Buffer.from(fileData.content, 'base64').toString('utf-8'),
+                lastModified: fileObj.date
               };
             }
           } catch (e) {
-            console.error(`Failed to fetch content for ${blob.path}`, e);
+            console.error(`[RepoContext] Failed to fetch content for ${fileObj.path}`, e);
           }
-          return { path: blob.path || '', content: '(Failed to fetch content)' };
+          return { path: fileObj.path, content: '(Failed to fetch content)', lastModified: fileObj.date };
         }));
 
       } catch (e: any) {
-        fileList = '(Empty repository)';
+        console.error('[RepoContext] Tree fetch error:', e);
+        fileList = '(Empty repository or error fetching tree)';
       }
-      res.json({ fileList, defaultBranch, topFiles });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch repo context' });
+      res.json({ fileList, defaultBranch, topFiles, commitHistory, prHistory });
+    } catch (error: any) {
+      console.error('[RepoContext] Critical error:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch repo context' });
     }
   });
 
