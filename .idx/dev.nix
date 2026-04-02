@@ -22,8 +22,8 @@
       enable = true;
       previews = {
         web = {
-          # FIXED: This syntax prevents Next.js from thinking the port is a directory
-          command = ["pnpm" "run" "dev" "--prefix" "apps/web" "--" "-p" "$PORT" "-H" "0.0.0.0"];
+          # FIXED: Switched from pnpm to npm to match the onCreate install command and prevent build-time mismatch
+          command = ["npm" "run" "dev" "--prefix" "apps/web" "--" "-p" "$PORT" "-H" "0.0.0.0"];
           manager = "web";
         };
       };
