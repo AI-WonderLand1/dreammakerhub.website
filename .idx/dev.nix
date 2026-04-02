@@ -15,7 +15,7 @@
     workspace = {
       onCreate = {
         # This installs dependencies at the root so the engine and UI are linked
-        install = "pnpm install";
+        install = "npm install";
       };
     };
     previews = {
