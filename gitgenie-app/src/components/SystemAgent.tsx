@@ -5,6 +5,8 @@ import { RickSanchez } from './RickSanchez';
 interface SystemAgentProps {
   messages: any[];
   loading: boolean;
+  liveEvents: string[];
+  aiLaws: string[];
   onSendMessage: (message: string, file?: { data: string; mimeType: string; name: string }) => void;
   selectedRepo: string;
   trainingBoxOpen: boolean;
@@ -15,6 +17,8 @@ interface SystemAgentProps {
 export const SystemAgent = ({ 
   messages, 
   loading, 
+  liveEvents,
+  aiLaws,
   onSendMessage, 
   selectedRepo,
   trainingBoxOpen,
@@ -57,6 +61,32 @@ export const SystemAgent = ({
   return (
     <div className="bg-gradient-to-br from-blue-900/20 via-green-900/20 to-yellow-900/20 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col h-full shadow-2xl">
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white/10">
+        <div className="bg-black/30 border border-emerald-500/20 rounded-2xl p-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80 font-bold mb-2">AI Law</p>
+          <ul className="space-y-1 text-[11px] text-white/70">
+            {aiLaws.map((law, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">{idx + 1}.</span>
+                <span>{law}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {(loading || liveEvents.length > 0) && (
+          <div className="bg-black/30 border border-purple-500/30 rounded-2xl p-3">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-purple-300/80 font-bold mb-2">Live confession stream</p>
+            <div className="space-y-1">
+              {liveEvents.map((event, idx) => (
+                <div key={`${event}-${idx}`} className="text-xs text-white/70 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                  <span>{event}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-white/20 space-y-6">
             <RickSanchez message="Select a repo and ask me something. I don't have all day. *burp*" />

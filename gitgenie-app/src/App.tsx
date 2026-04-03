@@ -24,6 +24,13 @@ interface Repo {
 }
 
 export default function App() {
+  const AI_LAWS = [
+    'You cannot lie. If unsure, say so.',
+    'Be transparent: explain what, how, and why.',
+    'Prefer safe, auditable repository actions.',
+    'Always emit at least one limitation/risk confession.'
+  ];
+
   const [user, setUser] = useState<User | null>(null);
   const [repos, setRepos] = useState<Repo[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>('');
@@ -40,6 +47,7 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isReplicating, setIsReplicating] = useState(false);
   const [showReplicateConfirm, setShowReplicateConfirm] = useState(false);
+  const [liveEvents, setLiveEvents] = useState<string[]>([]);
 
   const handleSelfReplicate = async () => {
     if (!selectedRepo) return;
@@ -153,8 +161,29 @@ export default function App() {
       file: file
     }]);
     setLoading(true);
+    setLiveEvents([
+      'Booting AI law engine…',
+      'Law #1 check: truthfulness lock engaged.',
+      'Law #2 check: explanation scaffolding prepared.',
+      'Law #3 check: safe repo action mode enabled.',
+      'Law #4 check: confession slot reserved.'
+    ]);
 
     const [owner, repo] = selectedRepo.split('/');
+    const liveSteps = [
+      'Fetching repository context…',
+      'Ranking important files for context…',
+      'Running neutrality pre-check…',
+      'Drafting response with AI laws in scope…',
+      'Preparing confession log and result payload…'
+    ];
+    const intervalId = window.setInterval(() => {
+      setLiveEvents((prev) => {
+        if (prev.length >= 10) return prev;
+        const nextStep = liveSteps[prev.length - 5];
+        return nextStep ? [...prev, nextStep] : prev;
+      });
+    }, 900);
 
     try {
       // 1. Neutrality Monitor
@@ -388,7 +417,9 @@ export default function App() {
       setLastAiMessage(error);
       setMessages(prev => [...prev, { role: 'ai', content: error }]);
     } finally {
+      window.clearInterval(intervalId);
       setLoading(false);
+      setLiveEvents([]);
     }
   };
 
@@ -598,6 +629,8 @@ export default function App() {
               <SystemAgent 
                 messages={messages}
                 loading={loading}
+                liveEvents={liveEvents}
+                aiLaws={AI_LAWS}
                 onSendMessage={handleChat}
                 selectedRepo={selectedRepo}
                 trainingBoxOpen={trainingBoxOpen}
