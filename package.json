@@ -2,6 +2,7 @@
   "name": "ai-wonderland",
   "private": true,
   "workspaces": [
+    "gitgenie-app",
     "WonderSpace",
     "apps/*",
     "packages/*"
