@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { getGeminiApiKey } from "./env";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
 export async function generateCodeChanges(description: string, repoContext: string) {
   const model = "gemini-3.1-pro-preview";
