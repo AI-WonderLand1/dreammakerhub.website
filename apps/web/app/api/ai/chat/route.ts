@@ -5,6 +5,7 @@ import { ensureDefaultProject } from '@lib/projects/storage';
 import { generateAndSaveProject } from '@core/ai/orchestrator';
 import { runAIPipeline } from '@core/ai/index.ts/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
+import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 
 export const runtime = "nodejs";
@@ -123,6 +124,24 @@ export async function POST(req: NextRequest) {
       agentId,
     } as any);
 
+    let memoryStore: { ok: boolean; bucket?: string; path?: string; error?: string } = { ok: true };
+    try {
+      const memoryRef = await writeAiMemoryEntry({
+        userId: paidUser.userId,
+        projectId: project.id,
+        traceId,
+        prompt,
+        response: pipelineResult.finalText,
+        confessions: pipelineResult.confessions,
+        persona: persona.id,
+        aiLaws: AI_LAWS,
+        language: detectedHumanLang,
+      });
+      memoryStore = { ok: true, ...memoryRef };
+    } catch (memoryError: any) {
+      memoryStore = { ok: false, error: memoryError?.message || 'Failed to write memory' };
+    }
+
     return NextResponse.json({
       ok: true,
       message: "generated",
@@ -134,6 +153,7 @@ export async function POST(req: NextRequest) {
         detectedHumanLang: detectedHumanLang,
         persona: persona.id,
         aiLaws: AI_LAWS,
+        memoryStore,
       }
     });
 
