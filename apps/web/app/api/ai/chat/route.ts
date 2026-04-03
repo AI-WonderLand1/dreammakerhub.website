@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { ensureDefaultProject } from '@lib/projects/storage';
 import { generateAndSaveProject } from '@core/ai/orchestrator';
 import { runAIPipeline } from '@core/ai/index.ts/runtime/pipeline';
+import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 
 export const runtime = "nodejs";
@@ -12,6 +13,7 @@ const requestSchema = z.object({
   prompt: z.string().trim().min(1, "Prompt required"),
   agentId: z.string().trim().min(1, "Agent required"),
   targetLanguage: z.string().optional(),
+  personaId: z.string().optional(),
   temperature: z.number().min(0).max(1).optional(),
   maxTokens: z.number().int().positive().optional(),
 });
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt, agentId, targetLanguage } = body.data;
+    const { prompt, agentId, targetLanguage, personaId } = body.data;
 
     const agent = (AGENTS as any)[agentId];
     if (!agent) {
@@ -102,6 +104,9 @@ export async function POST(req: NextRequest) {
       enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
     }
 
+    const persona = getPersonaPrompt(personaId);
+    enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${buildLawPrompt()}\n\n${enhancedPrompt}`;
+
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
     const pipelineResult = await runAIPipeline({
@@ -126,7 +131,9 @@ export async function POST(req: NextRequest) {
       result: {
         response: pipelineResult.finalText,
         confessions: pipelineResult.confessions,
-        detectedHumanLang: detectedHumanLang
+        detectedHumanLang: detectedHumanLang,
+        persona: persona.id,
+        aiLaws: AI_LAWS,
       }
     });
 
