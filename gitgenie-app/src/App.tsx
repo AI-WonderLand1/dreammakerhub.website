@@ -7,6 +7,7 @@ import { SwirlVortexBackground } from './components/SwirlVortexBackground';
 import { AiWonderlandLogo } from './components/AiWonderlandLogo';
 import { SystemAgent } from './components/SystemAgent';
 import { memoryService } from './services/MemoryService';
+import { getGeminiApiKey } from './services/env';
 
 interface User {
   login: string;
@@ -158,7 +159,7 @@ export default function App() {
     try {
       // 1. Neutrality Monitor
       const { GoogleGenAI, Type } = await import("@google/genai");
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
       const monitorModel = "gemini-3-flash-preview";
       
       const monitorPrompt = `
