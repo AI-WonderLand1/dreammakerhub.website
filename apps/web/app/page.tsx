@@ -1,4 +1,4 @@
-import Homepage from './homepage/Homepage';
+import Homepage from './homepage';
 import { AIWorkflowInput } from './components/AIWorkflowInput';
 
 export default function Page() {
