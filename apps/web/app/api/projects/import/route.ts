@@ -16,6 +16,20 @@ function normalizePath(p: string) {
   return normalized;
 }
 
+
+const TEXT_FILE_EXTENSIONS = new Set([
+  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
+  ".json", ".md", ".txt", ".css", ".scss", ".sass",
+  ".html", ".htm", ".xml", ".yml", ".yaml", ".env",
+  ".sh", ".py", ".java", ".go", ".rs", ".php", ".rb",
+  ".sql", ".graphql", ".gql", ".toml", ".ini", ".conf",
+]);
+
+function shouldTreatAsText(filePath: string) {
+  const ext = path.extname(filePath).toLowerCase();
+  return TEXT_FILE_EXTENSIONS.has(ext);
+}
+
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
@@ -85,6 +99,9 @@ with zipfile.ZipFile(src, 'r') as z:
     }
 
     let importedMeta: any = null;
+    let importedFiles = 0;
+    let importedBinaryFiles = 0;
+    let skippedBinaryFiles = 0;
 
     const walker = async (dir: string) => {
       const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -101,6 +118,7 @@ with zipfile.ZipFile(src, 'r') as z:
         if (safe === "wonderbuild.json") {
           const content = buf.toString("utf8");
           await writeFile(project.id, ownerId, "wonderbuild.json", content);
+          importedFiles += 1;
           try {
             importedMeta = JSON.parse(content);
           } catch(e) {
@@ -109,8 +127,20 @@ with zipfile.ZipFile(src, 'r') as z:
         } else if (safe.startsWith("files/")) {
           const relFile = safe.replace(/^files\//, "");
           await writeFile(project.id, ownerId, relFile, buf.toString("utf8"));
+          importedFiles += 1;
         } else if (safe.startsWith("snapshots/")) {
           await storage.upload(`projects/${project.id}/${safe}`, buf);
+          importedFiles += 1;
+        } else if (shouldTreatAsText(safe)) {
+          await writeFile(project.id, ownerId, safe, buf.toString("utf8"));
+          importedFiles += 1;
+        } else {
+          try {
+            await storage.upload(`projects/${project.id}/assets/${safe}`, buf);
+            importedBinaryFiles += 1;
+          } catch {
+            skippedBinaryFiles += 1;
+          }
         }
       }
     };
@@ -121,7 +151,7 @@ with zipfile.ZipFile(src, 'r') as z:
       tool: importedMeta?.tool || project.tool,
     });
     
-    return NextResponse.json({ ok: true, projectId: project.id });
+    return NextResponse.json({ ok: true, projectId: project.id, importedFiles, importedBinaryFiles, skippedBinaryFiles });
   } catch (error: any) {
     console.error("Failed to import project", error);
     return NextResponse.json({ error: "Failed to import project" }, { status: 500 });

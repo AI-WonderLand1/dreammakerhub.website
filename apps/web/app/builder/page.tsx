@@ -22,7 +22,7 @@ function BuilderLoader() {
           Warming up engines
         </p>
         <div className="flex gap-1.5">
-          {['Theia', 'WebGLS', 'PlayCanvas', 'Puck'].map((name, i) => (
+          {['Coder', 'WebGLS', 'PlayCanvas', 'Puck'].map((name, i) => (
             <span
               key={name}
               className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white/20"
