@@ -42,10 +42,6 @@ import PricingTableBlock from "./components/PricingTableBlock";
 import NavigationBlock from "./components/NavigationBlock";
 import FooterBlock from "./components/FooterBlock";
 import { MasterBlock } from "./blocks/MasterBlock";
-import { layoutConfig } from "./categories/layout";
-import { creativeConfig } from "./categories/creative";
-import { mediaConfig } from "./categories/media";
-import { marketingConfig } from "./categories/marketing";
 
 type Props = {
   HeadingBlock: HeadingBlockProps;
@@ -78,54 +74,6 @@ type Props = {
     title: string;
     glowColor: string;
   };
-  Accordion: {
-    title: string;
-    items: Array<{ label: string; content: string }>;
-    variant: "glass" | "neon";
-    glowColor: string;
-  };
-  Tabs: {
-    title: string;
-    tabs: Array<{ label: string; content: string }>;
-    glowColor: string;
-  };
-  MotionText: {
-    text: string;
-    speed: number;
-    glowColor: string;
-  };
-  AICodeGen: {
-    prompt: string;
-    language: "ts" | "py";
-  };
-  ImageComparison: {
-    title: string;
-    beforeImage: string;
-    afterImage: string;
-    glowColor: string;
-  };
-  VideoPlayer: {
-    url: string;
-    thumbnail: string;
-    autoPlay: "true" | "false";
-  };
-  PricingCard: {
-    title: string;
-    price: string;
-    billingCycle: string;
-    features: Array<{ feature: string }>;
-    ctaLabel: string;
-    ctaHref: string;
-    glowColor: string;
-  };
-  DataBindingSupabaseAssets: DataBindingSupabaseAssetsBlockProps;
-};
-
-export const componentCategories = {
-  layout: { components: Object.keys(layoutConfig) },
-  creative: { components: Object.keys(creativeConfig) },
-  media: { components: Object.keys(mediaConfig) },
-  marketing: { components: Object.keys(marketingConfig) },
 };
 
 export const config: Config<Props> = {
@@ -706,11 +654,6 @@ export const config: Config<Props> = {
         </MasterBlock>
       ),
     },
-
-    ...layoutConfig,
-    ...creativeConfig,
-    ...mediaConfig,
-    ...marketingConfig,
   },
 };
 

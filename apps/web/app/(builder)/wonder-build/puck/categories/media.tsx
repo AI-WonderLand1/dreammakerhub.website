@@ -1,5 +1,4 @@
 import { MasterBlock } from "../blocks/MasterBlock";
-import DataBindingSupabaseAssetsBlock from "../components/DataBindingSupabaseAssetsBlock";
 
 export const mediaConfig = {
   ImageComparison: {
@@ -64,46 +63,6 @@ export const mediaConfig = {
           </div>
           <div className="absolute left-0 top-0 h-[2px] w-full animate-pulse bg-cyan-400 opacity-50 shadow-[0_0_15px_cyan]" />
         </div>
-      </MasterBlock>
-    ),
-  },
-
-  DataBindingSupabaseAssets: {
-    fields: {
-      title: { type: "text" },
-      workspaceId: { type: "text" },
-      kind: {
-        type: "select",
-        options: [
-          { label: "All", value: "all" },
-          { label: "Image", value: "image" },
-          { label: "Video", value: "video" },
-          { label: "Model", value: "model" },
-          { label: "Scene", value: "scene" },
-          { label: "Misc", value: "misc" },
-        ],
-      },
-      limit: { type: "number" },
-      glowColor: { type: "text" },
-    },
-    defaultProps: {
-      title: "Supabase AI Assets",
-      workspaceId: "",
-      kind: "all",
-      limit: 8,
-      iconName: "Database",
-      variant: "glass",
-      glowColor: "#00f3ff",
-      triggerEvent: "onHover",
-    },
-    render: ({ title, workspaceId, kind, limit, ...props }: any) => (
-      <MasterBlock title={title || "Supabase AI Assets"} iconName="Database" variant="glass" {...props}>
-        <DataBindingSupabaseAssetsBlock
-          title={title || "Supabase AI Assets"}
-          workspaceId={workspaceId || ""}
-          kind={kind || "all"}
-          limit={Number(limit) || 8}
-        />
       </MasterBlock>
     ),
   },
