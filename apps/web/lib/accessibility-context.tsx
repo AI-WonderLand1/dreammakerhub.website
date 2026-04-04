@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { screenReader } from './screen-reader';
 
-export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia';
+export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder' | 'theia';
 
 export interface TranscriptItem {
   id: string;
@@ -80,7 +80,8 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
           playcanvas: 'In PlayCanvas: ',
           webgl: 'In WebGL Studio: ',
           puck: 'In Puck UI: ',
-          theia: 'In Theia Editor: ',
+          coder: 'In Coder IDE: ',
+          theia: 'In Coder IDE: ',
         };
         fullText = contextPrefix[context] + text;
       }

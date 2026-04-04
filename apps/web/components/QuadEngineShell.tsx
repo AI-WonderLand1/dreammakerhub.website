@@ -2,7 +2,7 @@
 
 /**
  * QuadEngineShell - Main Component for AI-WONDERLAND
- * Manages 4 engines: PlayCanvas (3D), WebGL Studio (Shaders), Puck (UI), Theia IDE (Code)
+ * Manages 4 engines: PlayCanvas (3D), WebGL Studio (Shaders), Puck (UI), Coder IDE (Code)
  * Uses next/dynamic with ssr: false for optimal performance
  */
 
@@ -28,12 +28,12 @@ const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), {
   loading: () => <EngineLoader engine="Puck" />,
 });
 
-const TheiaIDEEngine = dynamic(() => import('./engines/TheiaIDEEngine'), {
+const CoderIDEEngine = dynamic(() => import('./engines/TheiaIDEEngine'), {
   ssr: false,
-  loading: () => <EngineLoader engine="Theia" />,
+  loading: () => <EngineLoader engine="Coder IDE" />,
 });
 
-type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia';
+type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder';
 
 interface EngineConfig {
   id: EngineType;
@@ -66,11 +66,11 @@ const ENGINES: EngineConfig[] = [
     component: PuckUIEngine,
   },
   {
-    id: 'theia',
-    label: 'Theia IDE',
+    id: 'coder',
+    label: 'Coder IDE',
     color: '#ff0055',
     icon: '💻',
-    component: TheiaIDEEngine,
+    component: CoderIDEEngine,
   },
 ];
 
@@ -93,7 +93,7 @@ export function QuadEngineShell() {
     playcanvas: null,
     webgl: null,
     puck: null,
-    theia: null,
+    coder: null,
   });
 
   const currentEngine = ENGINES.find((e) => e.id === activeEngine)!;
