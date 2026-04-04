@@ -1,10 +1,22 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { SceneFile } from "@/lib/scene/schema"
+import { requirePaidAIUser } from '@/app/api/ai/auth'
+import { uploadAiAssetEntry } from '@lib/ai/assetStore'
+import { generate3DSceneDraft } from '@lib/ai/threeDGenerator'
 
-export async function POST(req: Request) {
+export const runtime = 'nodejs'
+
+export async function POST(req: NextRequest) {
+  const paidUser = await requirePaidAIUser(req)
+  if (paidUser instanceof NextResponse) return paidUser
+
   const { prompt, workspaceId } = await req.json()
 
-  const ai = await generateScene(prompt)
+  if (!workspaceId || !prompt) {
+    return NextResponse.json({ ok: false, error: { code: 'INVALID_REQUEST', message: 'prompt and workspaceId are required' } }, { status: 400 })
+  }
+
+  const ai = generate3DSceneDraft(prompt)
 
   const scene: SceneFile = {
     id: crypto.randomUUID(),
@@ -21,22 +33,14 @@ export async function POST(req: Request) {
     skybox: ai.skybox
   }
 
-  await uploadToTemp(`temp/${workspaceId}/ai/scenes/${scene.id}.json`, scene)
+  const stored = await uploadAiAssetEntry({
+    userId: paidUser.userId,
+    workspaceId,
+    kind: 'scene',
+    filename: `${scene.id}.json`,
+    contentType: 'application/json',
+    body: JSON.stringify(scene),
+  })
 
-  return NextResponse.json(scene)
-}
-
-// --- helpers ---
-async function generateScene(prompt: string) {
-  return {
-    objects: [],
-    materials: [],
-    lights: [],
-    camera: { position: [0,5,10] as [number,number,number], target: [0,0,0] as [number,number,number], fov: 60 },
-    skybox: undefined
-  }
-}
-
-async function uploadToTemp(path: string, data: any) {
-  console.log("TEMP upload:", path)
+  return NextResponse.json({ ok: true, scene, storage: stored })
 }

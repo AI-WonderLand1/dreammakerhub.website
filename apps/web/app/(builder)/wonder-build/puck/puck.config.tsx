@@ -20,6 +20,7 @@ import type { FeatureCardsBlockProps } from "./components/FeatureCardsBlock";
 import type { PricingTableBlockProps } from "./components/PricingTableBlock";
 import type { NavigationBlockProps } from "./components/NavigationBlock";
 import type { FooterBlockProps } from "./components/FooterBlock";
+import type { DataBindingSupabaseAssetsBlockProps } from "./components/DataBindingSupabaseAssetsBlock";
 
 import HeadingBlock from "./components/HeadingBlock";
 import TextBlock from "./components/TextBlock";
@@ -40,6 +41,11 @@ import FeatureCardsBlock from "./components/FeatureCardsBlock";
 import PricingTableBlock from "./components/PricingTableBlock";
 import NavigationBlock from "./components/NavigationBlock";
 import FooterBlock from "./components/FooterBlock";
+import { MasterBlock } from "./blocks/MasterBlock";
+import { layoutConfig } from "./categories/layout";
+import { creativeConfig } from "./categories/creative";
+import { mediaConfig } from "./categories/media";
+import { marketingConfig } from "./categories/marketing";
 
 type Props = {
   HeadingBlock: HeadingBlockProps;
@@ -61,6 +67,65 @@ type Props = {
   PricingTableBlock: PricingTableBlockProps;
   NavigationBlock: NavigationBlockProps;
   FooterBlock: FooterBlockProps;
+  ImageAccordion: {
+    title: string;
+    iconName: string;
+    variant: "glass" | "neon" | "ghost";
+    glowColor: string;
+    triggerEvent: "onClick" | "onHover" | "onLoad";
+  };
+  AI_Voice_Processor: {
+    title: string;
+    glowColor: string;
+  };
+  Accordion: {
+    title: string;
+    items: Array<{ label: string; content: string }>;
+    variant: "glass" | "neon";
+    glowColor: string;
+  };
+  Tabs: {
+    title: string;
+    tabs: Array<{ label: string; content: string }>;
+    glowColor: string;
+  };
+  MotionText: {
+    text: string;
+    speed: number;
+    glowColor: string;
+  };
+  AICodeGen: {
+    prompt: string;
+    language: "ts" | "py";
+  };
+  ImageComparison: {
+    title: string;
+    beforeImage: string;
+    afterImage: string;
+    glowColor: string;
+  };
+  VideoPlayer: {
+    url: string;
+    thumbnail: string;
+    autoPlay: "true" | "false";
+  };
+  PricingCard: {
+    title: string;
+    price: string;
+    billingCycle: string;
+    features: Array<{ feature: string }>;
+    ctaLabel: string;
+    ctaHref: string;
+    glowColor: string;
+  };
+  DataBindingSupabaseAssets: DataBindingSupabaseAssetsBlockProps;
+};
+
+export const componentCategories = {
+  layout: { components: Object.keys(layoutConfig) },
+  creative: { components: Object.keys(creativeConfig) },
+  media: { components: Object.keys(mediaConfig) },
+  marketing: { components: Object.keys(marketingConfig) },
 };
 
 export const config: Config<Props> = {
@@ -581,6 +646,71 @@ export const config: Config<Props> = {
       },
       render: ({ text }) => <TextBlock text={text} />,
     },
+
+    ImageAccordion: {
+      fields: {
+        title: { type: "text" },
+        iconName: { type: "text" },
+        variant: {
+          type: "select",
+          options: [
+            { label: "Glass", value: "glass" },
+            { label: "Neon", value: "neon" },
+            { label: "Ghost", value: "ghost" },
+          ],
+        },
+        glowColor: { type: "text" },
+      },
+      defaultProps: {
+        title: "Image Accordion",
+        iconName: "Image",
+        variant: "glass",
+        glowColor: "#00f3ff",
+        triggerEvent: "onHover",
+      },
+      render: (props) => (
+        <MasterBlock {...props}>
+          <div className="h-32 flex gap-2">
+            <div className="flex-1 overflow-hidden rounded bg-zinc-800 transition-all hover:flex-[3] cursor-pointer">
+              <img src="https://picsum.photos/200" className="object-cover w-full h-full" alt="Accordion 1" />
+            </div>
+            <div className="flex-1 overflow-hidden rounded bg-zinc-700 transition-all hover:flex-[3] cursor-pointer">
+              <img src="https://picsum.photos/201" className="object-cover w-full h-full" alt="Accordion 2" />
+            </div>
+          </div>
+        </MasterBlock>
+      ),
+    },
+
+    AI_Voice_Processor: {
+      fields: {
+        title: { type: "text" },
+        glowColor: { type: "text" },
+      },
+      defaultProps: {
+        title: "AI Voice Processor",
+        glowColor: "#00f3ff",
+      },
+      render: (props) => (
+        <MasterBlock
+          title={props.title}
+          iconName="Mic"
+          variant="neon"
+          glowColor={props.glowColor}
+          triggerEvent="onHover"
+        >
+          <div className="mt-2 border-t border-zinc-800 py-4">
+            <p className="text-xs font-mono text-zinc-500">VOICE_INPUT_READY...</p>
+            <button className="mt-2 w-full rounded bg-zinc-900 py-2 text-xs hover:bg-zinc-800">INITIATE DECODE</button>
+          </div>
+        </MasterBlock>
+      ),
+    },
+
+    ...layoutConfig,
+    ...creativeConfig,
+    ...mediaConfig,
+    ...marketingConfig,
   },
 };
 
