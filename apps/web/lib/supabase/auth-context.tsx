@@ -33,6 +33,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const supabase = createClient()
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null)
@@ -51,19 +55,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string): Promise<{ error?: Error }> => {
     const supabase = createClient()
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured in this environment.') }
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return error ? { error: new Error(error.message) } : {}
   }
 
   const signUp = async (email: string, password: string): Promise<{ error?: Error }> => {
     const supabase = createClient()
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured in this environment.') }
+    }
     const { error } = await supabase.auth.signUp({ email, password })
     return error ? { error: new Error(error.message) } : {}
   }
 
   const signOut = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     setUser(null)
     setSession(null)
   }
