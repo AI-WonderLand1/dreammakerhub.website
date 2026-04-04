@@ -12,7 +12,6 @@ type PlayCanvasEngineProps = {
 
 export default function PlayCanvasEngine({ assetUrl }: PlayCanvasEngineProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const appRef = useRef<pc.Application | null>(null);
   const [status, setStatus] = useState<EngineStatus>(assetUrl ? 'loading' : 'empty');
 
   useEffect(() => {
@@ -20,45 +19,28 @@ export default function PlayCanvasEngine({ assetUrl }: PlayCanvasEngineProps) {
       setStatus('empty');
       return;
     }
-
-    if (!canvasRef.current || appRef.current) {
-      return;
-    }
-
-    let app: pc.Application | null = null;
-
-    try {
-      app = new pc.Application(canvasRef.current!, {
-        graphicsDeviceOptions: { preserveDrawingBuffer: true, antialias: true },
-      });
-      appRef.current = app;
-      app.start();
-
-      const camera = new pc.Entity('Camera');
-      camera.addComponent('camera', { clearColor: new pc.Color(0.08, 0.08, 0.1) });
-      camera.setPosition(0, 0, 3);
-      app.root.addChild(camera);
-
-      const light = new pc.Entity('Light');
-      light.addComponent('light', { type: 'directional', intensity: 1.2 });
-      light.setEulerAngles(35, 35, 0);
-      app.root.addChild(light);
-
-      setStatus('ready');
-    } catch (error) {
-      console.error('Failed to initialize PlayCanvas:', error);
-      setStatus('error');
-    }
-
-    return () => {
-      if (app) {
-        app.destroy();
-      }
-      appRef.current = null;
-    };
+    setStatus('ready');
   }, [assetUrl]);
 
-export default function PlayCanvasEngineFallbackNotice() {
+  return (
+    <div className="space-y-3">
+      {status === 'empty' && (
+        <p className="text-xs text-zinc-400">Upload an asset to preview it in the 3D scene viewer.</p>
+      )}
+      {status === 'error' && (
+        <p className="text-xs text-red-400">PlayCanvas failed to initialize in this environment.</p>
+      )}
+      <canvas
+        ref={canvasRef}
+        className="h-[320px] w-full rounded-md border border-zinc-700/50 bg-zinc-950"
+        aria-label="3D scene preview canvas"
+      />
+      <PlayCanvasEngineFallbackNotice />
+    </div>
+  );
+}
+
+export function PlayCanvasEngineFallbackNotice() {
   return (
     <div className="rounded-md border border-amber-400/40 bg-amber-400/10 p-4 text-amber-100">
       <p className="text-sm font-semibold">PlayCanvas runtime moved to fallback vault</p>
