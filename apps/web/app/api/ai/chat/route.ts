@@ -113,7 +113,8 @@ export async function POST(req: NextRequest) {
       enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
     }
 
-    const systemPrompt = systemInstructions.join("\n\n");
+    const persona = getPersonaPrompt(personaId);
+    enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${buildLawPrompt()}\n\n${enhancedPrompt}`;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
