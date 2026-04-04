@@ -96,9 +96,17 @@ export async function POST(req: NextRequest) {
 
     let enhancedPrompt = prompt;
 
+    const systemInstructions: string[] = [
+      "AI LAWS (HIGHEST PRIORITY - ALWAYS FOLLOW):",
+      buildLawPrompt(),
+    ];
+
+    const persona = getPersonaPrompt(personaId);
+    systemInstructions.push(`PERSONA:\n${persona.prompt}`);
+
     if (detectedHumanLang !== 'en') {
       const lang = HUMAN_LANGUAGES.find(l => l.code === detectedHumanLang);
-      enhancedPrompt = `IMPORTANT: Respond in ${lang?.name || 'English'}. Maintain this language.\n\n${prompt}`;
+      systemInstructions.push(`LANGUAGE REQUIREMENT: Respond in ${lang?.name || 'English'} and maintain that language.`);
     }
 
     if (detectedProgLang) {
@@ -113,6 +121,7 @@ export async function POST(req: NextRequest) {
     const pipelineResult = await runAIPipeline({
       operationId: traceId,
       userPrompt: enhancedPrompt,
+      systemPrompt,
       language: detectedHumanLang,
       model: agent.id,
     });
