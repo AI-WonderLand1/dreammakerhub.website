@@ -1,4 +1,4 @@
-import { runModel } from "../../runModel";
+import { runModel } from "../../../runModel";
 import {
   emitProcessStep,
   emitConfession,
@@ -12,6 +12,7 @@ import type { LocalizedConfession } from "../confessions/types";
 interface PipelineOptions {
   operationId: string;
   userPrompt: string;
+  systemPrompt?: string;
   language: string; // "en", "es", "egy-X-wonderland", etc.
   model: string;    // e.g. "google:gemini-pro" or "openrouter:anthropic/claude-3"
 }
@@ -22,7 +23,7 @@ export interface PipelineResult {
 }
 
 export async function runAIPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { operationId, userPrompt, language, model } = options;
+  const { operationId, userPrompt, systemPrompt, language, model } = options;
   const confessions: LocalizedConfession[] = [];
 
   try {
@@ -39,8 +40,8 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
 
     const modelResponse = await runModel({
       model,
-      prompt: userPrompt,
-      // extend as needed to match your runModel signature
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
     });
 
     const text =

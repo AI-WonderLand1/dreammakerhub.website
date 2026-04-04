@@ -4,6 +4,8 @@ import crypto from 'crypto';
 import { ensureDefaultProject } from '@lib/projects/storage';
 import { generateAndSaveProject } from '@core/ai/orchestrator';
 import { runAIPipeline } from '@core/ai/index.ts/runtime/pipeline';
+import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
+import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 
 export const runtime = "nodejs";
@@ -12,6 +14,7 @@ const requestSchema = z.object({
   prompt: z.string().trim().min(1, "Prompt required"),
   agentId: z.string().trim().min(1, "Agent required"),
   targetLanguage: z.string().optional(),
+  personaId: z.string().optional(),
   temperature: z.number().min(0).max(1).optional(),
   maxTokens: z.number().int().positive().optional(),
 });
@@ -70,7 +73,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt, agentId, targetLanguage } = body.data;
+    const { prompt, agentId, targetLanguage, personaId } = body.data;
 
     const agent = (AGENTS as any)[agentId];
     if (!agent) {
@@ -93,20 +96,31 @@ export async function POST(req: NextRequest) {
 
     let enhancedPrompt = prompt;
 
+    const systemInstructions: string[] = [
+      "AI LAWS (HIGHEST PRIORITY - ALWAYS FOLLOW):",
+      buildLawPrompt(),
+    ];
+
+    const persona = getPersonaPrompt(personaId);
+    systemInstructions.push(`PERSONA:\n${persona.prompt}`);
+
     if (detectedHumanLang !== 'en') {
       const lang = HUMAN_LANGUAGES.find(l => l.code === detectedHumanLang);
-      enhancedPrompt = `IMPORTANT: Respond in ${lang?.name || 'English'}. Maintain this language.\n\n${prompt}`;
+      systemInstructions.push(`LANGUAGE REQUIREMENT: Respond in ${lang?.name || 'English'} and maintain that language.`);
     }
 
     if (detectedProgLang) {
       enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
     }
 
+    const systemPrompt = systemInstructions.join("\n\n");
+
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
     const pipelineResult = await runAIPipeline({
       operationId: traceId,
       userPrompt: enhancedPrompt,
+      systemPrompt,
       language: detectedHumanLang,
       model: agent.id,
     });
@@ -118,6 +132,24 @@ export async function POST(req: NextRequest) {
       agentId,
     } as any);
 
+    let memoryStore: { ok: boolean; bucket?: string; path?: string; error?: string } = { ok: true };
+    try {
+      const memoryRef = await writeAiMemoryEntry({
+        userId: paidUser.userId,
+        projectId: project.id,
+        traceId,
+        prompt,
+        response: pipelineResult.finalText,
+        confessions: pipelineResult.confessions,
+        persona: persona.id,
+        aiLaws: AI_LAWS,
+        language: detectedHumanLang,
+      });
+      memoryStore = { ok: true, ...memoryRef };
+    } catch (memoryError: any) {
+      memoryStore = { ok: false, error: memoryError?.message || 'Failed to write memory' };
+    }
+
     return NextResponse.json({
       ok: true,
       message: "generated",
@@ -126,7 +158,10 @@ export async function POST(req: NextRequest) {
       result: {
         response: pipelineResult.finalText,
         confessions: pipelineResult.confessions,
-        detectedHumanLang: detectedHumanLang
+        detectedHumanLang: detectedHumanLang,
+        persona: persona.id,
+        aiLaws: AI_LAWS,
+        memoryStore,
       }
     });
 
