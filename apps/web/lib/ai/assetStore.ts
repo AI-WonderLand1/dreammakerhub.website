@@ -1,27 +1,31 @@
-import { randomUUID } from 'crypto'
-import { supabaseRouteClient } from '@lib/supabase/route'
+/**
+ * *burp* This is where we keep the shiny things so the AI doesn't 
+ * have to guess what's in the 'robots' folder. 
+ */
+export const AVAILABLE_3D_ASSETS = [
+  {
+    id: "robot-1",
+    name: "Robot 1",
+    path: "/robots/robot1.glb",
+    tags: ["robot", "character", "3d", "mechanical"],
+    description: "A standard humanoid robot model for drag-and-drop builders."
+  },
+  {
+    id: "robot-2",
+    name: "Robot 2",
+    path: "/robots/robot2.glb",
+    tags: ["robot", "heavy", "3d", "android"],
+    description: "A bulky, high-detail mechanical robot model."
+  },
+  {
+    id: "robot-3",
+    name: "Robot 3",
+    path: "/robots/robot3.glb",
+    tags: ["robot", "scout", "3d", "drone"],
+    description: "A nimble scavenger robot model."
+  }
+];
 
-export type UploadAiAssetInput = {
-  userId: string
-  workspaceId: string
-  kind: 'image' | 'video' | 'model' | 'scene' | 'misc'
-  filename: string
-  contentType: string
-  body: Buffer | string
-}
-
-export async function uploadAiAssetEntry(input: UploadAiAssetInput) {
-  const bucket = process.env.AI_ASSETS_BUCKET?.trim() || 'ai-assets'
-  const safeFilename = input.filename.replace(/[^a-zA-Z0-9._-]+/g, '_')
-  const date = new Date().toISOString().slice(0, 10)
-  const path = `users/${input.userId}/workspaces/${input.workspaceId}/${input.kind}/${date}/${randomUUID()}-${safeFilename}`
-
-  const { error } = await supabaseRouteClient().storage.from(bucket).upload(path, input.body, {
-    contentType: input.contentType,
-    upsert: true,
-  })
-
-  if (error) throw error
-
-  return { bucket, path }
-}
+export const getAiAssetContext = () => {
+  return JSON.stringify(AVAILABLE_3D_ASSETS);
+};
