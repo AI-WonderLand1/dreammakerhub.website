@@ -17,7 +17,7 @@ export function useEngineAccessibility(engine: EngineType) {
 
   /**
    * Narrate engine-specific actions
-   * E.g., in Theia: "Code line 42 selected: const x = 5"
+   * E.g., in Coder IDE: "Code line 42 selected: const x = 5"
    * E.g., in PlayCanvas: "Selected: Red Cube at position (0, 5, 0)"
    */
   const narrate = (text: string) => {
@@ -43,10 +43,10 @@ export function useEngineAccessibility(engine: EngineType) {
 }
 
 /**
- * Theia IDE specific accessibility
+ * Coder IDE specific accessibility
  */
-export function useTheiaAccessibility() {
-  const { narrate, addNarration } = useEngineAccessibility('theia');
+export function useCoderIDEAccessibility() {
+  const { narrate, addNarration } = useEngineAccessibility('coder');
 
   const announceSelection = (lineNumber: number, selectedText: string, language: string) => {
     const message = `Line ${lineNumber}, ${language}: ${selectedText}`;
@@ -77,6 +77,13 @@ export function useTheiaAccessibility() {
     announceFileOpen,
     announceTerminalOutput,
   };
+}
+
+/**
+ * Backward-compatible alias for legacy callers.
+ */
+export function useTheiaAccessibility() {
+  return useCoderIDEAccessibility();
 }
 
 /**

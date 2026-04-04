@@ -11,7 +11,7 @@ export default function WonderSpaceIdeLaunchPage() {
   const [workspaceName, setWorkspaceName] = useState("");
   const [owner, setOwner] = useState("");
   const [platform, setPlatform] = useState<Platform>("web");
-  const [imageTag, setImageTag] = useState("theia-ide:latest");
+  const [imageTag, setImageTag] = useState("coder-ide:latest");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +70,7 @@ export default function WonderSpaceIdeLaunchPage() {
           <h1 className="mt-2 text-3xl font-semibold">Create your cloud workspace</h1>
           <p className="mt-3 max-w-3xl text-sm text-white/70">
             This launch flow mirrors a GitHub Codespaces style onboarding: create a named workspace, select runtime profile,
-            and jump straight into Theia.
+            and jump straight into Coder IDE.
           </p>
         </div>
 
