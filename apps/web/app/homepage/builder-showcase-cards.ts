@@ -25,7 +25,7 @@ export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
     desc: "UI component builder with responsive grids and design tokens.",
   },
   {
-    title: "Theia IDE Workspace",
+    title: "Coder IDE Workspace",
     image: "/images/screenshots/theia-builder.svg",
     href: "/ide",
     desc: "Cloud IDE for custom coding, debugging, and deployment flows.",
