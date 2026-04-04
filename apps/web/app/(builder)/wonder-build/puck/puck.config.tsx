@@ -20,6 +20,7 @@ import type { FeatureCardsBlockProps } from "./components/FeatureCardsBlock";
 import type { PricingTableBlockProps } from "./components/PricingTableBlock";
 import type { NavigationBlockProps } from "./components/NavigationBlock";
 import type { FooterBlockProps } from "./components/FooterBlock";
+import type { DataBindingSupabaseAssetsBlockProps } from "./components/DataBindingSupabaseAssetsBlock";
 
 import HeadingBlock from "./components/HeadingBlock";
 import TextBlock from "./components/TextBlock";
