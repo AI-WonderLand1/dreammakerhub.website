@@ -66,16 +66,7 @@ function PlayCanvasInner() {
         lead={<Breadcrumbs items={[{ href: "/wonder-build", label: "Wonder Build" }, { label: "WonderPlay" }]} />}
         title="WonderPlay Bridge"
         subtitle="Open and validate your PlayCanvas scene in a dedicated builder route with graceful loading and failure states."
-        action={
-          <a
-            href={editorUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-10 items-center rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-black"
-          >
-            Open in PlayCanvas
-          </a>
-        }
+        action={null}
       />
 
       <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80">
@@ -88,16 +79,7 @@ function PlayCanvasInner() {
         <EmptyState
           title="Add a PlayCanvas scene ID"
           description="Use ?sceneId=<your-scene-id> on this URL to load WonderPlay in the embedded bridge."
-          cta={
-            <a
-              href="https://playcanvas.com/editor"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-10 items-center rounded-lg border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90"
-            >
-              Find Scene ID
-            </a>
-          }
+          cta={null}
         />
       ) : (
         <div className="relative min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black/40">
@@ -108,16 +90,7 @@ function PlayCanvasInner() {
                 <p className="mx-auto mt-2 max-w-2xl text-sm text-white/70">
                   The in-app WonderPlay embed did not report readiness in time. Open the editor in a new tab to continue building.
                 </p>
-                <div className="mt-5">
-                  <a
-                    href={editorUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 items-center rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-black"
-                  >
-                    Open PlayCanvas in New Tab
-                  </a>
-                </div>
+                <div className="mt-5"></div>
               </div>
             </div>
           ) : (

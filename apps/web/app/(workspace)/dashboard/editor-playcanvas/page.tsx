@@ -329,16 +329,7 @@ export default function EditorPlayCanvasPage() {
         lead={<Breadcrumbs items={[{ href: "/dashboard", label: "Dashboard" }, { label: "PlayCanvas Bridge" }]} />}
         title="PlayCanvas Editor Bridge"
         subtitle="Connect your PlayCanvas scene in one click. Use ?sceneId=<id> on this route to load your editor context."
-        action={
-          <a
-            href={editorUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 px-4 text-sm font-bold"
-          >
-            Open in PlayCanvas
-          </a>
-        }
+        action={null}
       />
 
       <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80">
@@ -602,16 +593,7 @@ export default function EditorPlayCanvasPage() {
         <EmptyState
           title="Add a PlayCanvas scene ID"
           description="Select a saved project record or open this page with ?sceneId=<your-scene-id> to launch the embedded editor bridge."
-          cta={
-            <a
-              href="https://playcanvas.com/editor"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-10 items-center rounded-lg border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90"
-            >
-              Find Scene ID in PlayCanvas
-            </a>
-          }
+          cta={null}
         />
       ) : (
         <div className="relative min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black/40">
@@ -622,16 +604,7 @@ export default function EditorPlayCanvasPage() {
                 <p className="mx-auto mt-2 max-w-2xl text-sm text-white/70">
                   The in-app PlayCanvas embed did not report readiness in time. Open the editor in a new tab to keep building.
                 </p>
-                <div className="mt-5">
-                  <a
-                    href={editorUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 px-4 text-sm font-bold"
-                  >
-                    Open PlayCanvas in New Tab
-                  </a>
-                </div>
+                <div className="mt-5"></div>
               </div>
             </div>
           ) : (

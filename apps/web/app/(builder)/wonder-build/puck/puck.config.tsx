@@ -1,6 +1,6 @@
 import React from "react";
 import { Config } from "@web-builder/puck";
-import { ThreeCanvasWrapperBlock } from "./components/ThreeCanvasWrapperBlock";
+import ThreeCanvasWrapperBlock from "./components/ThreeCanvasWrapperBlock";
 
 // *burp* Listen, I'm adding the robot models to the registry so they actually show up 
 // in your little playground. It's not rocket science, it's barely even web dev.
