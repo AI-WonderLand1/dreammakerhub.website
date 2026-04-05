@@ -130,7 +130,9 @@ The production build passes cleanly (`pnpm run build` in `apps/web`). Key settin
 - Module playground route: `/playground`
 
 ## Replit Migration Notes
-- Dependencies installed via `pnpm install --no-frozen-lockfile`
+- Package manager: **npm** (not pnpm). Run `npm install --legacy-peer-deps` from the root.
+- Workspace packages use `"*"` version references so npm resolves them from `packages/*`.
+- `pnpm-workspace.yaml` removed; workspaces defined in root `package.json` `"workspaces"` field.
 - `allowedDevOrigins` in `next.config.js` includes `*.worf.replit.dev` and other Replit domains to fix cross-origin iframe warnings
 - `experimental.turbo` deprecated config moved to top-level `turbopack`
 - Dev port: 5000 (Replit requires port 5000 for webview)
