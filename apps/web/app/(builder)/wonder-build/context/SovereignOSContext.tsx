@@ -153,10 +153,13 @@ export function SovereignOSProvider({ children }: { children: ReactNode }) {
         buf = parts.pop() ?? '';
 
         for (const chunk of parts) {
-          const dataLine = chunk.split('\n').find((l) => l.startsWith('data: '));
+          const lines = chunk.split('\n');
+          const eventLine = lines.find((l) => l.startsWith('event: '));
+          const dataLine = lines.find((l) => l.startsWith('data: '));
           if (!dataLine) continue;
           try {
-            const { event, data } = JSON.parse(dataLine.slice(6));
+            const event = eventLine ? eventLine.slice(7).trim() : null;
+            const data = JSON.parse(dataLine.slice(6));
             if (event === 'agent') {
               const ev: AgentEvent = { ...data, ts: Date.now() };
               setAgents((prev) => ({ ...prev, [data.stage]: ev }));
@@ -172,7 +175,7 @@ export function SovereignOSProvider({ children }: { children: ReactNode }) {
                 };
                 setConfessions((prev) => [...prev, c]);
               }
-            } else if (event === 'result') {
+            } else if (event === 'complete' || event === 'result') {
               const built: BuildResult = {
                 type: buildType,
                 code: data.code,
