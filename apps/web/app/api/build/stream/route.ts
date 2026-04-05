@@ -60,44 +60,52 @@ Rules:
 - Follow the existing WonderSpace coding conventions
 - Output ONLY the code — no markdown fences, no explanation`;
 
-const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-001",
-  "gemini-2.5-pro",
+const OPENROUTER_MODELS = [
+  "google/gemini-3.1-flash-lite-preview",
+  "google/gemini-3-flash-preview",
+  "anthropic/claude-haiku-4.5",
+  "openai/gpt-4o-mini",
 ];
 
-async function callGemini(system: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
+async function callOpenRouter(system: string, userPrompt: string): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured.");
 
   let lastError = "";
-  for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    const res = await fetch(url, {
+  for (const model of OPENROUTER_MODELS) {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://ai-wonderland.replit.app",
+        "X-Title": "AI Wonderland Builder",
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${system}\n\nUser request: ${userPrompt}` }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 8192 },
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.8,
+        max_tokens: 8192,
       }),
     });
 
     const data = await res.json();
     if (data.error) {
       const msg: string = data.error.message ?? "";
-      if (msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("rate")) {
-        lastError = `${model}: quota exceeded`;
+      if (res.status === 429 || msg.includes("quota") || msg.includes("rate")) {
+        lastError = `${model}: rate limited`;
         continue;
       }
-      throw new Error(`Gemini (${model}): ${msg}`);
+      throw new Error(`OpenRouter (${model}): ${msg}`);
     }
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = data.choices?.[0]?.message?.content;
     if (text) return text;
     lastError = `${model}: empty response`;
   }
-  throw new Error(`All Gemini models exhausted. Last error: ${lastError}`);
+  throw new Error(`All models exhausted. Last error: ${lastError}`);
 }
 
 function sse(event: string, data: object): string {
@@ -164,7 +172,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}…` });
 
-        const plan = await callGemini(
+        const plan = await callOpenRouter(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
           `Plan a ${typeLabel} based on: "${prompt}"`
         );
@@ -174,7 +182,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code…` });
 
-        const rawCode = await callGemini(
+        const rawCode = await callOpenRouter(
           getSystemPrompt(type),
           `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`
         );
@@ -185,7 +193,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callGemini(getReviewerSystem(type), `Improve this code:\n\n${code}`);
+        const reviewed = await callOpenRouter(getReviewerSystem(type), `Improve this code:\n\n${code}`);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });
