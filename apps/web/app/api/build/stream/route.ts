@@ -61,10 +61,10 @@ Rules:
 - Output ONLY the code — no markdown fences, no explanation`;
 
 const OPENROUTER_MODELS = [
-  "google/gemini-3.1-flash-lite-preview",
-  "google/gemini-3-flash-preview",
-  "anthropic/claude-haiku-4.5",
-  "openai/gpt-4o-mini",
+  "openai/gpt-oss-120b:free",
+  "qwen/qwen3.6-plus:free",
+  "openai/gpt-oss-20b:free",
+  "minimax/minimax-m2.5:free",
 ];
 
 async function callOpenRouter(system: string, userPrompt: string): Promise<string> {
