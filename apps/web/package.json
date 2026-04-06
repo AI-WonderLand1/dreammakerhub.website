@@ -28,7 +28,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@octokit/rest": "^21.1.1",
     "@puckeditor/cloud-client": "^0.6.0",
-    "@puckeditor/core": "*",
+    "@puckeditor/core": "^0.21.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@supabase/ssr": "^0.8.0",
