@@ -45,7 +45,7 @@ export async function runExtension(extensionId: string) {
 
   const vm = new VM({
     timeout: 5000,
-    sandbox: createSandbox(data.manifest.permissions)
+    sandbox: createSandbox(data.manifest.permissions, extensionId)
   })
 
   const extension = vm.run(decrypted)
@@ -53,7 +53,7 @@ export async function runExtension(extensionId: string) {
   return extension.hooks || {}
 }
 
-function createSandbox(permissions: string[]) {
+function createSandbox(permissions: string[], extensionId: string) {
   const sandbox: any = {
     console: console,
     setTimeout, setInterval, clearTimeout, clearInterval

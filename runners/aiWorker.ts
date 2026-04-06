@@ -62,13 +62,12 @@ export const aiWorker = async (task: AIWorkerTask): Promise<AIWorkerResult> => {
 
     logs.push(`Calling AI model...`);
 
-    const result = await runModel(
-      {
-        id: task.modelId || "openrouter/auto",
-        provider: "openrouter",
-      },
-      { prompt, system }
-    );
+    const modelId = task.modelId || "openrouter/auto";
+    const result = await runModel({
+      model: modelId,
+      messages: [{ role: "user", content: prompt }],
+      system,
+    });
 
     logs.push(`AI response received (${result.text.length} chars)`);
 
@@ -78,7 +77,6 @@ export const aiWorker = async (task: AIWorkerTask): Promise<AIWorkerResult> => {
       status: "COMPLETED",
       taskId: task.id,
       output: result.text,
-      artifacts: result.artifacts?.map((a) => ({ path: a.path, content: a.content })),
       logs,
       timing: {
         startedAt: startedAt.toISOString(),

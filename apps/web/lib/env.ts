@@ -10,10 +10,10 @@ export const env = {
   NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
 }
 
-export function requireEnv(key: string): string {
+export function requireEnv(key: string, friendlyName?: string): string {
   const value = process.env[key]
   if (!value) {
-    throw new Error(`Missing environment variable: ${key}`)
+    throw new Error(`Missing environment variable: ${friendlyName || key}`)
   }
   return value
 }
