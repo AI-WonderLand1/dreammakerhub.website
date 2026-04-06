@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { manifestVisualBlock } from "../../../../../../engine/core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
-import { getModelTier, getDefaultModel } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 
