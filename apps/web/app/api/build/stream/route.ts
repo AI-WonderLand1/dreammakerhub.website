@@ -169,6 +169,14 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Prompt required" }), { status: 400 });
   }
 
+  let user: AuthUser | null = null;
+  try {
+    user = await getAuthUser();
+  } catch {
+    // Anonymous user - will use free tier
+  }
+
+  const isPaid = user?.isPaid ?? false;
   const encoder = new TextEncoder();
   const typeLabel = getTypeLabel(type);
 
@@ -179,22 +187,26 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        const tierLabel = isPaid ? "Pro" : "Free";
+
         // --- STAGE 1: ARCHITECT ---
-        send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}…` });
+        send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel})` });
 
         const plan = await callOpenRouter(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
-          `Plan a ${typeLabel} based on: "${prompt}"`
+          `Plan a ${typeLabel} based on: "${prompt}"`,
+          isPaid
         );
 
         send("agent", { stage: "architect", status: "done", label: "Architect Agent", message: plan.slice(0, 300) });
 
         // --- STAGE 2: BUILDER ---
-        send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code…` });
+        send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel})` });
 
         const rawCode = await callOpenRouter(
           getSystemPrompt(type),
-          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`
+          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
+          isPaid
         );
         const code = stripCodeFences(rawCode);
 
@@ -203,7 +215,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callOpenRouter(getReviewerSystem(type), `Improve this code:\n\n${code}`);
+        const reviewed = await callOpenRouter(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });
@@ -220,7 +232,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- COMPLETE ---
-        send("complete", { type, code: finalCode, plan, savedPath, timestamp: Date.now() });
+        send("complete", { type, code: finalCode, plan, savedPath, timestamp: Date.now(), tier: isPaid ? "pro" : "free" });
       } catch (err: any) {
         send("error", { message: err.message ?? "Build failed" });
       } finally {
