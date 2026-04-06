@@ -2,7 +2,7 @@
 
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState } from "react";
-import "@measured/puck/puck.css";
+import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error";
