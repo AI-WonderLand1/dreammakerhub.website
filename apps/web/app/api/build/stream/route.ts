@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { manifestVisualBlock } from "../../../../../../engine/core/ai/bridge";
+import { getAuthUser, AuthUser } from "@/lib/auth";
+import { getModelTier, getDefaultModel } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 
@@ -60,19 +62,27 @@ Rules:
 - Follow the existing WonderSpace coding conventions
 - Output ONLY the code — no markdown fences, no explanation`;
 
-const OPENROUTER_MODELS = [
+const FREE_MODELS = [
   "openai/gpt-oss-120b:free",
   "qwen/qwen3.6-plus:free",
   "openai/gpt-oss-20b:free",
   "minimax/minimax-m2.5:free",
-];
+] as const;
 
-async function callOpenRouter(system: string, userPrompt: string): Promise<string> {
+const PAID_MODELS = [
+  "anthropic/claude-3.5-sonnet",
+  "openai/gpt-4o",
+  "google/gemini-2.5-pro",
+] as const;
+
+async function callOpenRouter(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured.");
 
+  const models = isPaid ? PAID_MODELS : FREE_MODELS;
   let lastError = "";
-  for (const model of OPENROUTER_MODELS) {
+
+  for (const model of models) {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
