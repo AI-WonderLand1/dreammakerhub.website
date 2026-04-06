@@ -186,8 +186,8 @@ export function createPuckUILayout(context: RunnerContext): RunnerResult {
   const warnings: string[] = [];
 
   const code = `
-import { Puck } from '@measured/puck';
-import '@measured/puck/puck.css';
+import { Puck } from '@puckeditor/core';
+import '@puckeditor/core/puck.css';
 
 // Define component library
 const config = {
@@ -255,7 +255,7 @@ export default function Editor() {
     code,
     language: 'typescript',
     imports: [
-      "import { Puck } from '@measured/puck';",
+      "import { Puck } from '@puckeditor/core';",
       "import PuckUIEngine from '@/components/engines/PuckUIEngine';",
     ],
     errors,

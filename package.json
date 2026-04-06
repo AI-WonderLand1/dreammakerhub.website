@@ -2,9 +2,11 @@
   "name": "ai-wonderland",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
+  "overrides": {
+    "@puckeditor/core": "^0.21.2"
+  },
   "scripts": {
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
