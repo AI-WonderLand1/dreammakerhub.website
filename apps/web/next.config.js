@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Azure proxy configuration
+  basePath: "/cc-QMRU-C7DE2BA6/proxy/5000",
+  assetPrefix: "/cc-QMRU-C7DE2BA6/proxy/5000",
+
   allowedDevOrigins: ["*.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.worf.replit.dev", "*.repl.co"],
 
   experimental: {
@@ -45,7 +49,7 @@ const nextConfig = {
             },
             // Separate UI editor libraries
             editors: {
-              test: /[\\/]node_modules[\\/](@measured|monaco|codemirror|ace)/,
+              test: /[\\/]node_modules[\\/](monaco|codemirror|ace)/,
               name: 'chunk-editors',
               priority: 25,
               reuseExistingChunk: true,
