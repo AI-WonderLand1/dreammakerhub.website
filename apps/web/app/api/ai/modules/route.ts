@@ -24,24 +24,24 @@ async function fetchGoogleAIModules(): Promise<RegistryModule[]> {
     // Return static list of Google AI models since they don't have a models API
     const models: RegistryModule[] = [
       {
-        id: "google-gemini-1.5-flash",
-        name: "Gemini 1.5 Flash",
+        id: "google-gemini-2.5-flash",
+        name: "Gemini 2.5 Flash",
         description: "Fast and efficient Gemini model for general tasks",
         category: "chat",
         source: "google",
         private: false,
       },
       {
-        id: "google-gemini-1.5-pro",
-        name: "Gemini 1.5 Pro",
+        id: "google-gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
         description: "Advanced Gemini model with enhanced capabilities",
         category: "chat",
         source: "google",
         private: false,
       },
       {
-        id: "google-gemini-1.5-pro-vision",
-        name: "Gemini 1.5 Pro Vision",
+        id: "google-gemini-2.5-pro-vision",
+        name: "Gemini 2.5 Pro Vision",
         description: "Gemini model with vision capabilities",
         category: "vision",
         source: "google",

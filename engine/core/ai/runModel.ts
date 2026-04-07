@@ -24,7 +24,7 @@ export async function runModel({
 
   console.log(`🤖 Wonder-Build Engine: Routing to ${model}`);
 
-  // If your agent IDs are like "google/gemini-1.5-flash" or "google/gemini-1.5-pro"
+  // If your agent IDs are like "google/gemini-2.5-flash" or "google/gemini-2.5-pro"
   const isGoogle = typeof model === "string" && model.startsWith("google/");
 
   if (isGoogle) {

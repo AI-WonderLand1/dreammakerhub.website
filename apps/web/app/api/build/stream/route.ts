@@ -69,15 +69,15 @@ const FREE_MODELS = [
 ] as const;
 
 const PAID_MODELS = [
-  "gemini-1.5-pro",
-  "gemini-1.5-pro-002",
+  "gemini-2.5-pro",
+  "gemini-2.5-pro-002",
 ] as const;
 
 async function callGoogleAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY is not configured.");
 
-  const model = isPaid ? "gemini-1.5-pro" : "gemini-1.5-flash";
+  const model = isPaid ? "gemini-2.5-pro" : "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const res = await fetch(url, {

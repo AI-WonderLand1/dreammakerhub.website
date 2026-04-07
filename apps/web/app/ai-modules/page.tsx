@@ -57,7 +57,7 @@ export default function AiModulesPage() {
 
   // Training
   const [trainingFile, setTrainingFile] = useState<File | null>(null);
-  const [trainingModel, setTrainingModel] = useState("gemini-1.5-flash");
+  const [trainingModel, setTrainingModel] = useState("gemini-2.5-flash");
   const [trainingStatus, setTrainingStatus] = useState<TrainingStatus>("idle");
   const [trainingLog, setTrainingLog] = useState<string[]>([]);
 
@@ -381,10 +381,11 @@ export default function AiModulesPage() {
                   onChange={(e) => setTrainingModel(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white/80 outline-none focus:border-sky-500/50"
                 >
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Google)</option>
-                  <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B (Google)</option>
-                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
-                  <option value="gemini-1.5-pro-002">Gemini 1.5 Pro 002 (Google)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Google)</option>
+                  <option value="gemini-2.5-flash-8b">Gemini 2.5 Flash 8B (Google)</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Google)</option>
+                  <option value="gemini-2.5-pro-002">Gemini 2.5 Pro 002 (Google)</option>
+                  <option value="gemini-2.5-pro-vision">Gemini 2.5 Pro Vision (Google)</option>
                 </select>
               </div>
 

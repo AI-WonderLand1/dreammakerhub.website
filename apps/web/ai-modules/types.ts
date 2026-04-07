@@ -1,9 +1,10 @@
 // Google AI model strings
 export type ModelName =
-  | 'gemini-1.5-flash'
-  | 'gemini-1.5-flash-8b'
-  | 'gemini-1.5-pro'
-  | 'gemini-1.5-pro-002';
+  | 'gemini-2.5-flash'
+  | 'gemini-2.5-flash-8b'
+  | 'gemini-2.5-pro'
+  | 'gemini-2.5-pro-002'
+  | 'gemini-2.5-pro-vision';
 
 export interface PlaygroundConfig {
   model: ModelName;
