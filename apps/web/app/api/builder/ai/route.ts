@@ -4,7 +4,7 @@ import { appendAIConfession } from "@core/projects/aiConfessions";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Provider = "openai" | "gemini";
+type Provider = "openai" | "gemini" | "groq";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -86,11 +86,41 @@ async function callGemini(apiKey: string, prompt: string) {
   return content;
 }
 
+async function callGroq(apiKey: string, prompt: string) {
+  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "llama3-8b-8192",
+      messages: [
+        {
+          role: "user",
+          content: 'Output ONLY strict JSON: {"message": string, "html": string, "css": string}. No markdown. No extra keys.\n\n' + prompt
+        }
+      ],
+      temperature: 0.2,
+      response_format: { type: "json_object" }
+    }),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`GROQ error ${resp.status}: ${text}`);
+  }
+
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content ?? "";
+  return content;
+}
+
 export async function POST(req: Request) {
   try {
-    // Provider passed by client (defaults to gemini if missing)
+    // Provider passed by client (defaults to groq if missing)
     const provider =
-      ((req.headers.get("x-ai-provider") || "gemini") as Provider) ?? "gemini";
+      ((req.headers.get("x-ai-provider") || "groq") as Provider) ?? "groq";
 
     // Key passed via Authorization: Bearer <key>
     const auth = req.headers.get("authorization") || "";
@@ -98,7 +128,7 @@ export async function POST(req: Request) {
 
     if (!apiKey)
       return jsonError("Missing BYOK key. Add your key in AI settings.", 401);
-    if (provider !== "openai" && provider !== "gemini")
+    if (provider !== "openai" && provider !== "gemini" && provider !== "groq")
       return jsonError("Unsupported provider.");
 
     const body = await req.json().catch(() => null);
@@ -122,6 +152,8 @@ ${prompt}
     const raw =
       provider === "openai"
         ? await callOpenAI(apiKey, fullPrompt)
+        : provider === "groq"
+        ? await callGroq(apiKey, fullPrompt)
         : await callGemini(apiKey, fullPrompt);
 
     // Try parse strict JSON; if it fails, wrap it.

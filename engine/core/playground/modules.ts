@@ -11,7 +11,7 @@ const moduleMeta: Record<PlaygroundModuleId, PlaygroundModuleSummary> = Object.f
 
 // Helper: pick a default model if none is passed in context
 const getModel = (ctx: any) => ({
-  id: ctx?.modelId || "gemini-2.5-flash",
+  id: ctx?.modelId || "llama-3.1-8b-instant",
   provider: "google" as const,
 });
 

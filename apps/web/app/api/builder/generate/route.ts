@@ -21,49 +21,41 @@ export async function POST(req: Request) {
       Use Tailwind CSS for styling. Do not explain the code.
     `;
 
-    // Map user selection to Google AI model strings
+    // Map user selection to GROQ model strings
     const modelMap: Record<string, string> = {
-      'fast': 'gemini-2.5-flash',
-      'pro': 'gemini-2.5-pro',
-      'creative': 'gemini-2.5-pro',
-      'vision': 'gemini-2.5-pro' // Gemini supports vision
+      'fast': 'llama3-8b-8192',
+      'pro': 'llama3-70b-8192',
+      'creative': 'mixtral-8x7b-32768',
+      'vision': 'llama3-70b-8192' // GROQ doesn't have native vision, use best model
     };
 
     const selectedModel = modelMap[modelId] || modelMap['fast'];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`;
 
-    const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [];
-    parts.push({ text: `${systemPrompt}\n\n${prompt}` });
-
-    // Handle image input if provided
-    if (image) {
-      // For simplicity, we'll just include the image URL in text for now
-      // Google AI API requires base64 encoded images, but this is a complex change
-      parts.push({ text: `Image reference: ${image}` });
-    }
-
-    const response = await fetch(url, {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.7,
-          responseMimeType: "application/json",
-        },
+        model: selectedModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" },
       }),
     });
 
     const data = await response.json();
 
     if (data.error) {
-      throw new Error(`Google AI API Error: ${data.error.message}`);
+      throw new Error(`GROQ API Error: ${data.error.message}`);
     }
 
     // Parse the AI's content string back into JSON for the Engine
-    const aiContent = JSON.parse(data.candidates[0].content.parts[0].text);
+    const aiContent = JSON.parse(data.choices[0].message.content);
 
     return NextResponse.json(aiContent);
   } catch (error) {

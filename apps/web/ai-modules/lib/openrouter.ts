@@ -1,37 +1,57 @@
 export const callOpenRouter = async (config: PlaygroundConfig, prompt: string, onDelta: (chunk: string) => void) => {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY}`;
-
-  const parts: { text: string }[] = [];
-  if (config.systemInstruction) parts.push({ text: `System Instructions: ${config.systemInstruction}` });
-  parts.push({ text: prompt });
-
-  const response = await fetch(url, {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: {
-        temperature: config.temperature,
-        topP: config.topP,
-        maxOutputTokens: 4096,
-      },
+      model: config.model,
+      messages: [
+        ...(config.systemInstruction ? [{ role: "system", content: config.systemInstruction }] : []),
+        { role: "user", content: prompt }
+      ],
+      temperature: config.temperature,
+      top_p: config.topP,
+      max_tokens: 4096,
+      stream: true,
     })
   });
 
-  const data = await response.json();
-
-  if (data.error) {
-    throw new Error(`Google AI API Error: ${data.error.message}`);
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`GROQ API Error: ${error}`);
   }
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  // Since Google AI doesn't stream, we'll simulate streaming by sending the text in chunks
-  const words = text.split(' ');
-  for (const word of words) {
-    onDelta(word + ' ');
-    // Small delay to simulate streaming
-    await new Promise(resolve => setTimeout(resolve, 50));
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const data = line.slice(6);
+        if (data === "[DONE]") continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            onDelta(content);
+          }
+        } catch (e) {
+          // Ignore parsing errors for incomplete chunks
+        }
+      }
+    }
   }
 };
