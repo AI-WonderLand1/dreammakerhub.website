@@ -74,47 +74,43 @@ const PAID_MODELS = [
   "google/gemini-2.5-pro",
 ] as const;
 
-async function callOpenRouter(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
+async function callGoogleAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY is not configured.");
 
-  const models = isPaid ? PAID_MODELS : FREE_MODELS;
-  let lastError = "";
+  const model = isPaid ? "gemini-1.5-pro" : "gemini-1.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  for (const model of models) {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://ai-wonderland.replit.app",
-        "X-Title": "AI Wonderland Builder",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: userPrompt },
-        ],
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: `System Instructions: ${system}` },
+          { text: userPrompt }
+        ]
+      }],
+      generationConfig: {
         temperature: 0.8,
-        max_tokens: 8192,
-      }),
-    });
+        maxOutputTokens: 8192,
+      },
+    }),
+  });
 
-    const data = await res.json();
-    if (data.error) {
-      const msg: string = data.error.message ?? "";
-      if (res.status === 429 || msg.includes("quota") || msg.includes("rate")) {
-        lastError = `${model}: rate limited`;
-        continue;
-      }
-      throw new Error(`OpenRouter (${model}): ${msg}`);
-    }
-    const text = data.choices?.[0]?.message?.content;
-    if (text) return text;
-    lastError = `${model}: empty response`;
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(`Google AI (${model}): ${data.error.message}`);
   }
-  throw new Error(`All models exhausted. Last error: ${lastError}`);
+
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error(`${model}: empty response`);
+  }
+
+  return text;
 }
 
 function sse(event: string, data: object): string {
@@ -191,7 +187,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel})` });
 
-        const plan = await callOpenRouter(
+        const plan = await callGoogleAI(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
           `Plan a ${typeLabel} based on: "${prompt}"`,
           isPaid
@@ -202,7 +198,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel})` });
 
-        const rawCode = await callOpenRouter(
+        const rawCode = await callGoogleAI(
           getSystemPrompt(type),
           `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
           isPaid
@@ -214,7 +210,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callOpenRouter(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
+        const reviewed = await callGoogleAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });

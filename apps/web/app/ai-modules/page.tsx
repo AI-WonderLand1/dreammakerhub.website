@@ -475,7 +475,7 @@ export default function AiModulesPage() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">BYOK Key</h3>
                 <p className="text-xs text-slate-500">
-                  Add your OpenRouter or OpenAI key to unlock training. Stored locally only.
+                  Add your Google AI API key to unlock training. Stored locally only.
                 </p>
                 <button
                   onClick={() => setShowKeyModal(true)}

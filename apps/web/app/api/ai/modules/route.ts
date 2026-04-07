@@ -16,38 +16,40 @@ type RegistryModule = {
   source?: string;
 };
 
-async function fetchOpenRouterModules(): Promise<RegistryModule[]> {
+async function fetchGoogleAIModules(): Promise<RegistryModule[]> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) return [];
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/models", {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
+    // Return static list of Google AI models since they don't have a models API
+    const models: RegistryModule[] = [
+      {
+        id: "google-gemini-1.5-flash",
+        name: "Gemini 1.5 Flash",
+        description: "Fast and efficient Gemini model for general tasks",
+        category: "chat",
+        source: "google",
+        private: false,
       },
-      next: { revalidate: 300 },
-    });
+      {
+        id: "google-gemini-1.5-pro",
+        name: "Gemini 1.5 Pro",
+        description: "Advanced Gemini model with enhanced capabilities",
+        category: "chat",
+        source: "google",
+        private: false,
+      },
+      {
+        id: "google-gemini-1.5-pro-vision",
+        name: "Gemini 1.5 Pro Vision",
+        description: "Gemini model with vision capabilities",
+        category: "vision",
+        source: "google",
+        private: false,
+      },
+    ];
 
-    if (!res.ok) {
-      console.error("OpenRouter models fetch failed", await res.text());
-      return [];
-    }
-
-    const data = await res.json();
-    const models = Array.isArray(data?.data) ? data.data : [];
-
-    return models.map((model: any) => {
-      const modality = (model?.architecture?.modality || "").toString().toLowerCase();
-      const id = `openrouter-${model?.id || crypto.randomUUID()}`;
-      const name = model?.name || model?.id || "OpenRouter model";
-      const description =
-        model?.description || model?.meta?.description || `Model ${name} available via OpenRouter`;
-
-      let category: string = "chat";
-      if (modality.includes("vision") || /vision|image/.test(String(model?.id ?? ""))) {
-        category = "vision";
-      } else if (/code/.test(String(model?.id ?? ""))) {
-        category = "code";
+    return models;
       }
 
       return {
@@ -69,12 +71,12 @@ export async function GET(req: NextRequest) {
   if (paidUser instanceof NextResponse) return paidUser;
 
   const registryModules = publicAiModules;
-  const openRouterModules = await fetchOpenRouterModules();
+  const googleAIModules = await fetchGoogleAIModules();
   const modules: RegistryModule[] = [
     ...registryModules.map((module) => ({ ...module, source: "public-registry" })),
-    ...openRouterModules,
+    ...googleAIModules,
   ];
-  const source = openRouterModules.length > 0 ? "public-registry+openrouter" : "public-registry";
+  const source = googleAIModules.length > 0 ? "public-registry+google" : "public-registry";
 
   return NextResponse.json({ ok: true, source, modules });
 }
