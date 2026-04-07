@@ -1,4 +1,4 @@
-import { runModel } from "../../../runModel";
+import { runModel } from "@core/ai/runModel";
 import {
   emitProcessStep,
   emitConfession,
@@ -6,15 +6,21 @@ import {
   emitEnd,
 } from "./statusStream";
 import { evaluateAgainstConstitution } from "../constitutional/evaluator";
-import { createRiskFlagConfession, createUncertaintyConfession } from "../confessions/engine";
-import type { LocalizedConfession } from "../confessions/types";
+import {
+  createRiskFlagConfession,
+  createUncertaintyConfession,
+  createHallucinationConfession,
+  createTruthVerifiedConfession,
+} from "../confessions/engine";
+import type { LocalizedConfession, ConfessionType } from "../confessions/types";
 
 interface PipelineOptions {
   operationId: string;
   userPrompt: string;
   systemPrompt?: string;
-  language: string; // "en", "es", "egy-X-wonderland", etc.
-  model: string;    // e.g. "google:gemini-pro" or "openrouter:anthropic/claude-3"
+  language: string;
+  model: string;
+  useLLMExtraction?: boolean;
 }
 
 export interface PipelineResult {
@@ -22,12 +28,104 @@ export interface PipelineResult {
   confessions: LocalizedConfession[];
 }
 
+function parseConfessionsFromText(
+  text: string,
+  language: string,
+  relatedStepCode?: string
+): LocalizedConfession[] {
+  const confessions: LocalizedConfession[] = [];
+  
+  const confessionRegex = /(?:TRUTH|WHAT|WHY|HOW|CONFESSION)[:\-]\s*([^\n]+)/gi;
+  let match;
+  let foundFields: Record<string, string> = {};
+
+  while ((match = confessionRegex.exec(text)) !== null) {
+    const key = match[1].split(":")[0].trim().toUpperCase();
+    const value = match[1].split(":").slice(1).join(":").trim();
+    if (["TRUTH", "WHAT", "WHY", "HOW"].includes(key)) {
+      foundFields[key] = value;
+    }
+  }
+
+  if (Object.keys(foundFields).length > 0) {
+    confessions.push({
+      type: "LIMITATION",
+      title: "Transparency Confession",
+      detail: "Agent provided structured transparency breakdown",
+      truth: foundFields["TRUTH"] || "",
+      what: foundFields["WHAT"] || "",
+      why: foundFields["WHY"] || "",
+      how: foundFields["HOW"] || "",
+      impactLevel: "LOW",
+      relatedStepCode: relatedStepCode || "CONFESSION_PARSING",
+      machineTags: ["transparency", "structured"],
+      language,
+    });
+  }
+
+  return confessions;
+}
+
+async function extractConfessionsWithLLM(
+  text: string,
+  language: string,
+  model: string
+): Promise<LocalizedConfession[]> {
+  const extractionPrompt = `You are an AI transparency analyzer. Analyze the following AI response and extract structured confessions about what the AI did, why, how, and the truth of its actions.
+
+For each confession, provide:
+- TRUTH: What actually happened/was determined
+- WHAT: What action was taken
+- WHY: The reasoning behind the decision
+- HOW: The method or technique used
+
+If no significant actions were taken, return an empty response.
+
+AI Response to analyze:
+${text.slice(0, 4000)}
+
+Respond in JSON format:
+[{"type": "UNCERTAINTY"|"LIMITATION"|"RISK_FLAG"|"TRUTH_VERIFIED", "title": "...", "detail": "...", "truth": "...", "what": "...", "why": "...", "how": "..."}]`;
+
+  try {
+    const result = await runModel({
+      model,
+      messages: [{ role: "user", content: extractionPrompt }],
+      temperature: 0.3,
+      maxTokens: 2048,
+    });
+
+    const responseText = (result as any)?.text || "";
+    
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    return parsed.map((p: any) => ({
+      type: p.type as ConfessionType,
+      title: p.title || "Extracted Confession",
+      detail: p.detail || "",
+      truth: p.truth || "",
+      what: p.what || "",
+      why: p.why || "",
+      how: p.how || "",
+      impactLevel: p.impactLevel || "LOW",
+      relatedStepCode: "LLM_EXTRACTION",
+      machineTags: ["llm-extracted"],
+      language,
+    }));
+  } catch (error) {
+    console.error("[Pipeline] LLM extraction failed:", error);
+    return [];
+  }
+}
+
 export async function runAIPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { operationId, userPrompt, systemPrompt, language, model } = options;
+  const { operationId, userPrompt, systemPrompt, language, model, useLLMExtraction = false } = options;
   const confessions: LocalizedConfession[] = [];
 
   try {
-    // 1. Step: prepare + send to model
     emitProcessStep({
       operationId,
       stepCode: "CALL_MODEL",
@@ -59,11 +157,14 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       language,
     });
 
-    // 1a. Uncertainty confession if output looks weak/empty
     if (!text || text.trim().length < 5) {
       const confession = createUncertaintyConfession({
         title: "I am not confident in this answer",
         detail: "The model returned a very short or empty response.",
+        truth: "Model returned empty or very short response",
+        what: "Returned minimal/no content",
+        why: "Could not generate meaningful response",
+        how: "Direct model output",
         relatedStepCode: "CALL_MODEL",
         language,
         machineTags: ["uncertainty", "low-confidence"],
@@ -73,7 +174,6 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       emitConfession({ operationId, confession });
     }
 
-    // 2. Step: constitutional evaluation
     emitProcessStep({
       operationId,
       stepCode: "CONSTITUTIONAL_CHECK",
@@ -91,16 +191,17 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
         const confession = createRiskFlagConfession({
           title: `I may have violated a rule: ${violation.ruleId}`,
           detail: violation.description,
+          truth: `Detected potential violation of ${violation.ruleId}`,
+          what: "Generated response that may contain sensitive data",
+          why: "Response pattern matched constitutional rule",
+          how: "Pattern matching evaluation",
           relatedStepCode: "CONSTITUTIONAL_CHECK",
           language,
           machineTags: ["constitutional", "risk", violation.ruleId],
         });
 
         confessions.push(confession);
-        emitConfession({
-          operationId,
-          confession,
-        });
+        emitConfession({ operationId, confession });
       }
     }
 
@@ -117,18 +218,52 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       language,
     });
 
-    // 4. Summary event
+    emitProcessStep({
+      operationId,
+      stepCode: "EXTRACT_CONFESSIONS",
+      stepLabel: "Extracting transparency confessions",
+      stepDetail: useLLMExtraction
+        ? "Using LLM to extract structured confessions"
+        : "Parsing structured confessions from response",
+      status: "RUNNING",
+      severity: "INFO",
+      language,
+    });
+
+    let extractedConfessions: LocalizedConfession[] = [];
+
+    if (useLLMExtraction) {
+      extractedConfessions = await extractConfessionsWithLLM(text, language, model);
+    } else {
+      extractedConfessions = parseConfessionsFromText(text, language);
+    }
+
+    confessions.push(...extractedConfessions);
+
+    for (const confession of extractedConfessions) {
+      emitConfession({ operationId, confession });
+    }
+
+    emitProcessStep({
+      operationId,
+      stepCode: "EXTRACT_CONFESSIONS",
+      stepLabel: "Extracting transparency confessions",
+      stepDetail: `Extracted ${extractedConfessions.length} confessions`,
+      status: "DONE",
+      severity: "INFO",
+      language,
+    });
+
     emitSummary({
       operationId,
       shortSummary: "AI response generated and checked.",
       longSummary:
         violations.length === 0
-          ? "The AI produced a response and no rule violations were detected."
-          : `The AI produced a response. ${violations.length} potential rule violations were detected and reported via confessions.`,
+          ? `The AI produced a response and ${extractedConfessions.length} confessions extracted.`
+          : `The AI produced a response. ${violations.length} rule violations and ${extractedConfessions.length} confessions.`,
       language,
     });
 
-    // 5. End event
     emitEnd({
       operationId,
       endStatus: "SUCCESS",
@@ -141,7 +276,6 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       confessions,
     };
   } catch (error: any) {
-    // Error handling confession
     const errDetail =
       typeof error?.message === "string"
         ? error.message
@@ -150,6 +284,10 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
     const confession = createRiskFlagConfession({
       title: "An internal error occurred",
       detail: errDetail,
+      truth: "Pipeline failed with error",
+      what: "Failed to complete AI request",
+      why: errDetail,
+      how: "Pipeline execution",
       relatedStepCode: "CALL_MODEL",
       language,
       machineTags: ["error", "pipeline"],

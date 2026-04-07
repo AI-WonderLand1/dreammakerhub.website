@@ -1,5 +1,10 @@
 import React from "react";
 import { Config } from "@puckeditor/core";
+import { motion } from "motion/react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 export type PuckFieldType = 
   | "text" 
@@ -727,57 +732,49 @@ export const categories = {
       "iconWrapper", "link"
     ],
   },
+  animations: {
+    title: "Animations",
+    components: [
+      "fadeIn", "slideUp", "scaleIn", "bounce", "glitchText", 
+      "typewriterHero", "confettiExplosion", "particleCanvas"
+    ],
+  },
   marketing: {
     title: "Marketing",
     components: [
-      "splitHero", "centerHero", "microHero", "logoCloud",
-      "testimonialCard", "pricingTable", "featureGrid", "stepProcess",
-      "cookieBanner", "pricingComparison"
-    ],
-  },
-  composite: {
-    title: "Composite Layouts",
-    components: [
-      "videoHero", "iconGrid", "cardHover", "featureList", "testimonialGrid",
-      "logoMarquee", "accordionFAQ", "teamGrid", "statsSection",
-      "newsletterStrip", "comparisonTable", "featureHighlightList",
-      "testimonialCarousel", "floatingCTA", "userReviewSummary",
-      "faqSingleColumn", "callToActionBox", "productShowcaseHero",
-      "glassmorphicHero", "parallaxSection", "beforeAfterSlider",
-      "videoBackgroundSection", "storyHero", "blogPreviewGrid",
-      "timelineLayout", "tabbedContent", "masonryGallery",
-      "simpleTable", "logoGridStatic", "contactSplit"
-    ],
-  },
-  navigation: {
-    title: "Navigation",
-    components: [
-      "megaMenu", "breadcrumbTrail", "paginationControls",
-      "sideCommandPalette", "languageSwitcher", "mobileDrawer",
-      "searchBar", "progressBar", "scrollIndicator", "socialLinks"
+      "splitHero", "centerHero", "microHero", "pricingTable", 
+      "featureGrid", "logoCloud", "logoMarquee", "testimonialCard",
+      "stepProcess", "statsSection", "ctaBox", "newsletterStrip"
     ],
   },
   interactive: {
     title: "Interactive",
     components: [
-      "glassAccordion", "tabsSystem", "imageLightbox",
-      "parallaxScrollContainer", "customCursor", "hoverCard",
-      "interactiveMap", "videoPlayer", "formWizard", "draggableCard"
+      "glassAccordion", "hoverCard", "tabsSystem", "videoPlayer",
+      "accordionFAQ", "cardHover"
     ],
   },
-  overlays: {
-    title: "Overlays",
+  content: {
+    title: "Content",
     components: [
-      "glassModal", "slideOverPanel", "notificationToast",
-      "confettiTrigger", "floatingDock", "tooltipOverlay",
-      "contextMenu", "loadingSpinner", "successMessage", "errorBanner"
+      "blogPreviewGrid", "teamGrid", "testimonialCarousel", 
+      "masonryGallery", "iconGrid", "timelineLayout"
     ],
   },
-  ai: {
-    title: "AI Components",
+  layout: {
+    title: "Layout",
     components: [
-      "thoughtBubble", "agentTerminal", "logicFlow", "modelStatus",
-      "promptInput", "contextChip", "codeSandbox"
+      "stickyHeader", "multiColumnFooter", "contactSplit",
+      "glassmorphicHero", "parallaxSection", "beforeAfterSlider",
+      "floatingCTA"
+    ],
+  },
+  basics: {
+    title: "Basic Elements",
+    components: [
+      "button", "input", "typography", "heading", "badge",
+      "blockquote", "checkbox", "switch", "slider", "progress",
+      "skeleton", "floatingLabelInput"
     ],
   },
   templates: {
@@ -798,14 +795,6 @@ export const categories = {
       "settingsDashboardTemplate", "monitoringDashboardTemplate"
     ],
   },
-  content: {
-    title: "Content Templates",
-    components: [
-      "blogPostDetail", "blogIndex", "documentationPage",
-      "caseStudy", "pressRelease", "newsletterArchive",
-      "tutorialPage", "authorProfile"
-    ],
-  },
   utility: {
     title: "Utility Pages",
     components: [
@@ -814,19 +803,10 @@ export const categories = {
       "searchResults", "feedbackForm", "maintenanceMode"
     ],
   },
-  data: {
-    title: "Data & Storage",
-    components: [
-      "cloudConnectorForm", "userDashboardHome", "realtimeStream",
-      "authForm", "bucketGallery", "databaseTable",
-      "userPresence", "analyticsDashboard", "jsonTree"
-    ],
-  },
   experimental: {
     title: "Experimental",
     components: [
-      "voiceVisualizer", "particleCanvas", "glitchText",
-      "typewriterHero", "spotlightEffect", "confettiExplosion"
+      "glitchText", "typewriterHero", "confettiExplosion", "particleCanvas"
     ],
   },
 };
@@ -835,9 +815,730 @@ export const categories = {
 export function buildPuckConfig(): Config {
   const components: Record<string, any> = {};
   
+  // Add existing inline components
   Object.entries(uiKitComponents).forEach(([name, config]) => {
     components[name] = config;
   });
+
+  // Add UI-Kit components with motion support
+  components["featureList"] = {
+    fields: {
+      items: { type: "text", label: "Features (comma separated)" },
+    },
+    defaultProps: {
+      items: "Fast, Secure, Scalable",
+    },
+    render: ({ items }: any) => (
+      <div className="flex flex-col gap-4 p-6 rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10">
+        {items?.split(",").map((item: string, i: number) => (
+          <motion.div 
+            key={i} 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-2 h-2 rounded-full bg-violet-400" />
+            <span className="text-white/80">{item.trim()}</span>
+          </motion.div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["splitHero"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      subtitle: { type: "text", label: "Subtitle" },
+      ctaText: { type: "text", label: "CTA Text" },
+    },
+    defaultProps: {
+      title: "Build Amazing Things",
+      subtitle: "The modern way to create beautiful websites",
+      ctaText: "Get Started",
+    },
+    render: ({ title, subtitle, ctaText }: any) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+        <div>
+          <h1 className="text-4xl font-bold text-white mb-4">{title}</h1>
+          <p className="text-white/70 mb-6">{subtitle}</p>
+          <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium">
+            {ctaText}
+          </button>
+        </div>
+        <div className="flex items-center justify-center">
+          <div className="w-full h-64 bg-gradient-to-br from-violet-500/20 to-blue-500/20 rounded-xl border border-white/10" />
+        </div>
+      </div>
+    ),
+  };
+
+  components["centerHero"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      subtitle: { type: "text", label: "Subtitle" },
+    },
+    defaultProps: {
+      title: "Welcome to Wonder",
+      subtitle: "Build beautiful websites with AI",
+    },
+    render: ({ title, subtitle }: any) => (
+      <div className="text-center p-16 rounded-2xl bg-gradient-to-b from-white/5 to-white/0 border border-white/10">
+        <h1 className="text-5xl font-bold text-white mb-4">{title}</h1>
+        <p className="text-xl text-white/60">{subtitle}</p>
+      </div>
+    ),
+  };
+
+  components["microHero"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+    },
+    defaultProps: {
+      title: "Micro Hero",
+    },
+    render: ({ title }: any) => (
+      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+        <p className="text-white/80">{title}</p>
+      </div>
+    ),
+  };
+
+  components["pricingTable"] = {
+    fields: {
+      plans: { type: "text", label: "Plan Names" },
+      price: { type: "text", label: "Price" },
+    },
+    defaultProps: {
+      plans: "Basic,Pro,Enterprise",
+      price: "$9/mo",
+    },
+    render: ({ plans, price }: any) => (
+      <div className="grid grid-cols-3 gap-4 p-6">
+        {plans?.split(",").map((plan: string, i: number) => (
+          <div key={i} className={`p-6 rounded-xl border ${i === 1 ? 'bg-violet-600/20 border-violet-500/50' : 'bg-white/5 border-white/10'}`}>
+            <h3 className="text-lg font-semibold text-white mb-2">{plan.trim()}</h3>
+            <p className="text-3xl font-bold text-white mb-4">{price}</p>
+            <button className={`w-full py-2 rounded-lg ${i === 1 ? 'bg-violet-600 text-white' : 'bg-white/10 text-white'}`}>
+              Choose
+            </button>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["featureGrid"] = {
+    fields: {
+      features: { type: "text", label: "Features (comma separated)" },
+    },
+    defaultProps: {
+      features: "Fast,Secure,Scalable",
+    },
+    render: ({ features }: any) => (
+      <div className="grid grid-cols-3 gap-4 p-6">
+        {features?.split(",").map((feature: string, i: number) => (
+          <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="w-10 h-10 rounded-lg bg-violet-500/20 mb-3 flex items-center justify-center">
+              <span className="text-violet-400">★</span>
+            </div>
+            <h4 className="font-semibold text-white mb-2">{feature.trim()}</h4>
+            <p className="text-sm text-white/60">Description for {feature.trim()}</p>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["logoCloud"] = {
+    fields: {
+      companies: { type: "text", label: "Company Names" },
+    },
+    defaultProps: {
+      companies: "Google,Meta,Microsoft,Amazon",
+    },
+    render: ({ companies }: any) => (
+      <div className="flex flex-wrap items-center justify-center gap-8 p-8">
+        {companies?.split(",").map((company: string, i: number) => (
+          <span key={i} className="text-2xl font-bold text-white/40">{company.trim()}</span>
+        ))}
+      </div>
+    ),
+  };
+
+  components["testimonialCard"] = {
+    fields: {
+      quote: { type: "text", label: "Quote" },
+      author: { type: "text", label: "Author" },
+    },
+    defaultProps: {
+      quote: "This product changed my life!",
+      author: "Jane Doe",
+    },
+    render: ({ quote, author }: any) => (
+      <div className="p-6 rounded-xl bg-white/5 border border-white/10">
+        <p className="text-lg text-white/80 italic mb-4">"{quote}"</p>
+        <p className="text-white/60 font-medium">— {author}</p>
+      </div>
+    ),
+  };
+
+  components["stepProcess"] = {
+    fields: {
+      steps: { type: "text", label: "Steps (comma separated)" },
+    },
+    defaultProps: {
+      steps: "Sign Up,Configure,Launch",
+    },
+    render: ({ steps }: any) => (
+      <div className="flex items-center gap-4 p-6">
+        {steps?.split(",").map((step: string, i: number) => (
+          <React.Fragment key={i}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-violet-600 text-white font-bold flex items-center justify-center">
+                {i + 1}
+              </div>
+              <span className="text-white/80">{step.trim()}</span>
+            </div>
+            {i < (steps?.split(",").length || 0) - 1 && (
+              <div className="flex-1 h-px bg-white/20" />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    ),
+  };
+
+  components["glassAccordion"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      content: { type: "text", label: "Content" },
+    },
+    defaultProps: {
+      title: "Click to expand",
+      content: "This is the hidden content that appears when expanded.",
+    },
+    render: ({ title, content }: any) => (
+      <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+        <details className="group">
+          <summary className="p-4 cursor-pointer text-white font-medium flex items-center justify-between">
+            {title}
+            <span className="text-white/40 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="px-4 pb-4 text-white/60">{content}</div>
+        </details>
+      </div>
+    ),
+  };
+
+  components["hoverCard"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      content: { type: "text", label: "Content" },
+    },
+    defaultProps: {
+      title: "Hover me",
+      content: "This content appears on hover!",
+    },
+    render: ({ title, content }: any) => (
+      <div className="relative group p-4 rounded-xl bg-white/5 border border-white/10">
+        <span className="text-white/80">{title}</span>
+        <div className="absolute left-0 bottom-full mb-2 w-48 p-3 rounded-lg bg-black/90 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <p className="text-sm text-white/80">{content}</p>
+        </div>
+      </div>
+    ),
+  };
+
+  components["tabsSystem"] = {
+    fields: {
+      tabs: { type: "text", label: "Tab Labels (comma separated)" },
+    },
+    defaultProps: {
+      tabs: "Overview,Features,Pricing",
+    },
+    render: ({ tabs }: any) => {
+      const tabList = tabs?.split(",").map((t: string) => t.trim()) || [];
+      const [activeTab, setActiveTab] = React.useState(0);
+      return (
+        <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+          <div className="flex border-b border-white/10">
+            {tabList.map((tab: string, i: number) => (
+              <button
+                key={i}
+                onClick={() => setActiveTab(i)}
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === i 
+                    ? 'text-white border-b-2 border-violet-500 bg-white/5' 
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="p-4 text-white/80">
+            Content for {tabList[activeTab]}
+          </div>
+        </div>
+      );
+    },
+  };
+
+  components["videoPlayer"] = {
+    fields: {
+      src: { type: "text", label: "Video URL" },
+    },
+    defaultProps: {
+      src: "",
+    },
+    render: ({ src }: any) => (
+      <div className="aspect-video rounded-xl bg-black border border-white/10 flex items-center justify-center">
+        {src ? (
+          <video src={src} className="w-full h-full object-cover rounded-xl" />
+        ) : (
+          <div className="text-white/40">No video URL provided</div>
+        )}
+      </div>
+    ),
+  };
+
+  components["confettiExplosion"] = {
+    fields: {
+      text: { type: "text", label: "Celebration Text" },
+    },
+    defaultProps: {
+      text: "🎉 Success!",
+    },
+    render: ({ text }: any) => (
+      <div className="p-8 text-center rounded-xl bg-white/5 border border-white/10">
+        <p className="text-2xl">{text}</p>
+        <p className="text-sm text-white/40 mt-2">Click to trigger confetti</p>
+      </div>
+    ),
+  };
+
+  components["glitchText"] = {
+    fields: {
+      text: { type: "text", label: "Text" },
+    },
+    defaultProps: {
+      text: "GLITCH",
+    },
+    render: ({ text }: any) => (
+      <div className="relative inline-block">
+        <span className="text-4xl font-bold text-white">{text}</span>
+        <span className="absolute inset-0 text-4xl font-bold text-cyan-400 opacity-70 animate-pulse" style={{ clipPath: 'inset(0 0 0 0)', transform: 'translate(2px, 2px)' }}>{text}</span>
+        <span className="absolute inset-0 text-4xl font-bold text-red-500 opacity-70 animate-pulse" style={{ clipPath: 'inset(0 0 0 0)', transform: 'translate(-2px, -2px)' }}>{text}</span>
+      </div>
+    ),
+  };
+
+  components["typewriterHero"] = {
+    fields: {
+      text: { type: "text", label: "Text" },
+    },
+    defaultProps: {
+      text: "Building the future...",
+    },
+    render: ({ text }: any) => {
+      const [displayed, setDisplayed] = React.useState("");
+      React.useEffect(() => {
+        let i = 0;
+        const interval = setInterval(() => {
+          setDisplayed(text.slice(0, i + 1));
+          i++;
+          if (i >= text.length) clearInterval(interval);
+        }, 100);
+        return () => clearInterval(interval);
+      }, [text]);
+      return <h1 className="text-4xl font-bold text-white">{displayed}<span className="animate-pulse">|</span></h1>;
+    },
+  };
+
+  components["particleCanvas"] = {
+    fields: {
+      bgColor: { type: "text", label: "Background Color" },
+    },
+    defaultProps: {
+      bgColor: "#0a0a10",
+    },
+    render: ({ bgColor }: any) => (
+      <div 
+        className="h-64 rounded-xl overflow-hidden"
+        style={{ background: bgColor }}
+      >
+        <canvas className="w-full h-full" />
+      </div>
+    ),
+  };
+
+  components["stickyHeader"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+    },
+    defaultProps: {
+      title: "My App",
+    },
+    render: ({ title }: any) => (
+      <div className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-black/80 backdrop-blur-lg border-b border-white/10">
+        <span className="text-xl font-bold text-white">{title}</span>
+        <div className="flex gap-4">
+          <span className="text-white/60">Link 1</span>
+          <span className="text-white/60">Link 2</span>
+        </div>
+      </div>
+    ),
+  };
+
+  components["multiColumnFooter"] = {
+    fields: {
+      columns: { type: "text", label: "Columns (comma separated)" },
+    },
+    defaultProps: {
+      columns: "Product,Company,Support",
+    },
+    render: ({ columns }: any) => (
+      <div className="grid grid-cols-3 gap-4 p-8 bg-white/5 border-t border-white/10">
+        {columns?.split(",").map((col: string, i: number) => (
+          <div key={i}>
+            <h4 className="font-semibold text-white mb-3">{col.trim()}</h4>
+            <div className="space-y-2">
+              <p className="text-sm text-white/40">Link 1</p>
+              <p className="text-sm text-white/40">Link 2</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["newsletterStrip"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+    },
+    defaultProps: {
+      title: "Subscribe to our newsletter",
+    },
+    render: ({ title }: any) => (
+      <div className="flex items-center justify-between p-6 bg-violet-600/20 border border-violet-500/30 rounded-xl">
+        <p className="text-white font-medium">{title}</p>
+        <div className="flex gap-2">
+          <input 
+            type="email" 
+            placeholder="Enter email" 
+            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40"
+          />
+          <button className="px-4 py-2 bg-violet-600 text-white rounded-lg font-medium">
+            Subscribe
+          </button>
+        </div>
+      </div>
+    ),
+  };
+
+  components["ctaBox"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      buttonText: { type: "text", label: "Button Text" },
+    },
+    defaultProps: {
+      title: "Ready to get started?",
+      buttonText: "Sign Up Now",
+    },
+    render: ({ title, buttonText }: any) => (
+      <div className="text-center p-8 rounded-xl bg-gradient-to-r from-violet-600/20 to-blue-600/20 border border-white/10">
+        <h3 className="text-2xl font-bold text-white mb-4">{title}</h3>
+        <button className="px-8 py-3 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-colors">
+          {buttonText}
+        </button>
+      </div>
+    ),
+  };
+
+  components["accordionFAQ"] = {
+    fields: {
+      items: { type: "text", label: "FAQ Items" },
+    },
+    defaultProps: {
+      items: "What is this?|It is a FAQ item;How does it work?|It works by magic",
+    },
+    render: ({ items }: any) => (
+      <div className="space-y-2">
+        {items?.split(";").map((item: string, i: number) => {
+          const [question, answer] = item.split("|");
+          return (
+            <details key={i} className="rounded-lg bg-white/5 border border-white/10">
+              <summary className="p-4 cursor-pointer text-white font-medium">
+                {question?.trim()}
+              </summary>
+              <div className="px-4 pb-4 text-white/60">
+                {answer?.trim()}
+              </div>
+            </details>
+          );
+        })}
+      </div>
+    ),
+  };
+
+  components["blogPreviewGrid"] = {
+    fields: {
+      count: { type: "number", label: "Number of Posts" },
+    },
+    defaultProps: {
+      count: 3,
+    },
+    render: ({ count }: any) => (
+      <div className="grid grid-cols-3 gap-4 p-6">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+            <div className="h-32 bg-white/10" />
+            <div className="p-4">
+              <h4 className="font-semibold text-white mb-2">Blog Post {i + 1}</h4>
+              <p className="text-sm text-white/60">Preview text goes here...</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["teamGrid"] = {
+    fields: {
+      count: { type: "number", label: "Number of Members" },
+    },
+    defaultProps: {
+      count: 4,
+    },
+    render: ({ count }: any) => (
+      <div className="grid grid-cols-4 gap-4 p-6">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="text-center">
+            <div className="w-16 h-16 rounded-full bg-white/10 mx-auto mb-3" />
+            <h4 className="font-semibold text-white">Team Member</h4>
+            <p className="text-sm text-white/60">Role</p>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["statsSection"] = {
+    fields: {
+      stats: { type: "text", label: "Stats" },
+    },
+    defaultProps: {
+      stats: "Users:1000;Projects:500;Countries:50",
+    },
+    render: ({ stats }: any) => (
+      <div className="grid grid-cols-3 gap-4 p-8 bg-white/5 border border-white/10 rounded-xl">
+        {stats?.split(";").map((stat: string, i: number) => {
+          const [label, value] = stat.split(":");
+          return (
+            <div key={i} className="text-center">
+              <p className="text-4xl font-bold text-white">{value?.trim()}</p>
+              <p className="text-white/60">{label?.trim()}</p>
+            </div>
+          );
+        })}
+      </div>
+    ),
+  };
+
+  components["masonryGallery"] = {
+    fields: {
+      count: { type: "number", label: "Number of Images" },
+    },
+    defaultProps: {
+      count: 6,
+    },
+    render: ({ count }: any) => (
+      <div className="columns-3 gap-4 p-6">
+        {Array.from({ length: count }).map((_, i) => (
+          <div 
+            key={i} 
+            className="mb-4 rounded-lg bg-white/10"
+            style={{ height: Math.random() * 100 + 100 }}
+          />
+        ))}
+      </div>
+    ),
+  };
+
+  components["beforeAfterSlider"] = {
+    fields: {
+      beforeLabel: { type: "text", label: "Before Label" },
+      afterLabel: { type: "text", label: "After Label" },
+    },
+    defaultProps: {
+      beforeLabel: "Before",
+      afterLabel: "After",
+    },
+    render: ({ beforeLabel, afterLabel }: any) => (
+      <div className="relative h-64 rounded-xl overflow-hidden bg-white/10">
+        <div className="absolute inset-0 flex items-center justify-center bg-white/5">
+          <span className="text-white/40">Before/After Slider</span>
+        </div>
+        <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/60 rounded text-xs text-white">
+          {beforeLabel}
+        </div>
+        <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 rounded text-xs text-white">
+          {afterLabel}
+        </div>
+      </div>
+    ),
+  };
+
+  components["contactSplit"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+    },
+    defaultProps: {
+      title: "Contact Us",
+    },
+    render: ({ title }: any) => (
+      <div className="grid grid-cols-2 gap-8 p-8 rounded-xl bg-white/5 border border-white/10">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
+          <p className="text-white/60 mb-6">Get in touch with us</p>
+          <div className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="Name"
+              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white"
+            />
+            <input 
+              type="email" 
+              placeholder="Email"
+              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white"
+            />
+            <textarea 
+              placeholder="Message"
+              rows={4}
+              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white resize-none"
+            />
+            <button className="w-full py-3 bg-violet-600 text-white font-medium rounded-lg">
+              Send Message
+            </button>
+          </div>
+        </div>
+        <div className="bg-white/5 rounded-xl" />
+      </div>
+    ),
+  };
+
+  components["glassmorphicHero"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      subtitle: { type: "text", label: "Subtitle" },
+    },
+    defaultProps: {
+      title: "Glassmorphic Hero",
+      subtitle: "Beautiful glass effect",
+    },
+    render: ({ title, subtitle }: any) => (
+      <div className="relative p-16 rounded-2xl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl" />
+        <div className="absolute inset-0 border border-white/20 rounded-2xl" />
+        <div className="relative text-center">
+          <h1 className="text-5xl font-bold text-white mb-4">{title}</h1>
+          <p className="text-xl text-white/70">{subtitle}</p>
+        </div>
+      </div>
+    ),
+  };
+
+  components["parallaxSection"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+    },
+    defaultProps: {
+      title: "Parallax Section",
+    },
+    render: ({ title }: any) => (
+      <div 
+        className="h-64 flex items-center justify-center rounded-xl"
+        style={{
+          backgroundImage: 'linear-gradient(45deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3))',
+        }}
+      >
+        <h2 className="text-3xl font-bold text-white">{title}</h2>
+      </div>
+    ),
+  };
+
+  components["logoMarquee"] = {
+    fields: {
+      companies: { type: "text", label: "Company Names" },
+    },
+    defaultProps: {
+      companies: "Google,Meta,Microsoft,Amazon,Apple,Nvidia",
+    },
+    render: ({ companies }: any) => (
+      <div className="flex gap-8 overflow-hidden py-4">
+        <div className="flex animate-marquee gap-8">
+          {[...companies?.split(","), ...companies?.split(",")].map((company: string, i: number) => (
+            <span key={i} className="text-2xl font-bold text-white/30 whitespace-nowrap">{company.trim()}</span>
+          ))}
+        </div>
+      </div>
+    ),
+  };
+
+  components["iconGrid"] = {
+    fields: {
+      count: { type: "number", label: "Number of Icons" },
+    },
+    defaultProps: {
+      count: 4,
+    },
+    render: ({ count }: any) => (
+      <div className="grid grid-cols-4 gap-4 p-6">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center">
+              <span className="text-violet-400">★</span>
+            </div>
+            <span className="text-sm text-white/60">Feature</span>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+
+  components["floatingCTA"] = {
+    fields: {
+      text: { type: "text", label: "Button Text" },
+    },
+    defaultProps: {
+      text: "Get Started",
+    },
+    render: ({ text }: any) => (
+      <div className="fixed bottom-8 right-8 z-50">
+        <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-full shadow-lg shadow-violet-500/30 animate-bounce">
+          {text}
+        </button>
+      </div>
+    ),
+  };
+
+  components["cardHover"] = {
+    fields: {
+      title: { type: "text", label: "Title" },
+      description: { type: "text", label: "Description" },
+    },
+    defaultProps: {
+      title: "Card Title",
+      description: "Hover to see the effect",
+    },
+    render: ({ title, description }: any) => (
+      <div className="group p-6 rounded-xl bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:border-violet-500/50 hover:scale-105 cursor-pointer">
+        <h4 className="font-semibold text-white mb-2 group-hover:text-violet-400 transition-colors">{title}</h4>
+        <p className="text-white/60 text-sm">{description}</p>
+      </div>
+    ),
+  };
 
   return {
     components,
