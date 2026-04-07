@@ -3,8 +3,8 @@ import { Providers } from "./providers";
 
 /**
  * Wonder-Build Model Runner
- * - Routes "openrouter/*" to OpenRouter
- * - Routes everything else (Gemini) to Google provider by default
+ * - Routes "google/*" to Google AI
+ * - Routes everything else to Google provider by default
  * - Supports multimodal prompt content (arrays/objects)
  */
 export async function runModel({
@@ -24,16 +24,15 @@ export async function runModel({
 
   console.log(`🤖 Wonder-Build Engine: Routing to ${model}`);
 
-  // If your agent IDs are like "openrouter/auto" or "openrouter/google/gemini-2.0-flash-001"
-  const isOpenRouter = typeof model === "string" && model.startsWith("openrouter/");
+  // If your agent IDs are like "google/gemini-1.5-flash" or "google/gemini-1.5-pro"
+  const isGoogle = typeof model === "string" && model.startsWith("google/");
 
-  if (isOpenRouter) {
-    // OpenRouter expects a model name that does NOT include "openrouter/" in most setups.
-    // If your openrouter provider expects the full string, remove the replace line.
-    const openrouterModel = model.replace(/^openrouter\//, "");
+  if (isGoogle) {
+    // Google AI expects a model name that does NOT include "google/" prefix.
+    const googleModel = model.replace(/^google\//, "");
 
     return Providers.openrouter.generate(lastContent, {
-      model: openrouterModel,
+      model: googleModel,
       system,
       temperature,
       maxTokens,
