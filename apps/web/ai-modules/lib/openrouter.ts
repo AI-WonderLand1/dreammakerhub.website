@@ -1,8 +1,8 @@
 export const callOpenRouter = async (config: PlaygroundConfig, prompt: string, onDelta: (chunk: string) => void) => {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+      "Authorization": `Bearer ${process.env.GITHUB_MODELS_API_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
@@ -20,7 +20,7 @@ export const callOpenRouter = async (config: PlaygroundConfig, prompt: string, o
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`GROQ API Error: ${error}`);
+    throw new Error(`GitHub Models API Error: ${error}`);
   }
 
   const reader = response.body?.getReader();
