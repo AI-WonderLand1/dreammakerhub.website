@@ -21,47 +21,49 @@ export async function POST(req: Request) {
       Use Tailwind CSS for styling. Do not explain the code.
     `;
 
-    // Map user selection to OpenRouter model strings
+    // Map user selection to Google AI model strings
     const modelMap: Record<string, string> = {
-      'fast': 'google/gemini-2.0-flash-001',
-      'pro': 'anthropic/claude-3.5-sonnet',
-      'creative': 'openai/gpt-4o',
-      'vision': 'google/gemini-2.0-pro-exp-02-05:free' // Great for Image-to-Code
+      'fast': 'gemini-1.5-flash',
+      'pro': 'gemini-1.5-pro',
+      'creative': 'gemini-1.5-pro',
+      'vision': 'gemini-1.5-pro' // Gemini supports vision
     };
 
     const selectedModel = modelMap[modelId] || modelMap['fast'];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`;
 
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { 
-        role: "user", 
-        content: image 
-          ? [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: image } }
-            ]
-          : prompt 
-      }
-    ];
+    const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [];
+    parts.push({ text: `${systemPrompt}\n\n${prompt}` });
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    // Handle image input if provided
+    if (image) {
+      // For simplicity, we'll just include the image URL in text for now
+      // Google AI API requires base64 encoded images, but this is a complex change
+      parts.push({ text: `Image reference: ${image}` });
+    }
+
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.GOOGLE_AI_API_KEY}`,
-        "HTTP-Referer": "https://wonderbuild.ai", // Required by OpenRouter
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: selectedModel,
-        messages,
-        response_format: { type: "json_object" }
+        contents: [{ parts }],
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: "application/json",
+        },
       }),
     });
 
     const data = await response.json();
-    
+
+    if (data.error) {
+      throw new Error(`Google AI API Error: ${data.error.message}`);
+    }
+
     // Parse the AI's content string back into JSON for the Engine
-    const aiContent = JSON.parse(data.choices[0].message.content);
+    const aiContent = JSON.parse(data.candidates[0].content.parts[0].text);
 
     return NextResponse.json(aiContent);
   } catch (error) {

@@ -14,7 +14,7 @@ interface EngineResponse {
 
 export async function handleAIRequest(req: EngineRequest): Promise<EngineResponse> {
   const language = req.language ?? "en";
-  const model = req.model ?? "openrouter:anthropic/claude-3"; // default, adjust as needed
+  const model = req.model ?? "google/gemini-1.5-flash"; // default, adjust as needed
 
   const result = await runAIPipeline({
     operationId: req.operationId,
