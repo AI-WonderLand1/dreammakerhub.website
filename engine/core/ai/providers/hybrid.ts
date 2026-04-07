@@ -15,4 +15,5 @@ export const getAIProvider = (preference: string = "github") => {
   if (preference === "groq") return groqProvider;
   if (preference === "openrouter") return openrouterProvider;
   return githubProvider;
+};
 
