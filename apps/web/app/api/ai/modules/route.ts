@@ -17,7 +17,7 @@ type RegistryModule = {
 };
 
 async function fetchOpenRouterModules(): Promise<RegistryModule[]> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) return [];
 
   try {

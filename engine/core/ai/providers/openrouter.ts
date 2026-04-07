@@ -11,7 +11,7 @@ export const openrouterProvider: AIProvider = {
   name: "openrouter",
 
   async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
+    const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
     const { 
       model = "google/gemini-2.0-flash-001", // Default to high-speed multimodal
       system, 
