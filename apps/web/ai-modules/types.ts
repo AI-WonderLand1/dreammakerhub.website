@@ -1,7 +1,7 @@
 // GROQ and Google AI model strings
 export type ModelName =
   | 'llama-3.1-8b-instant'
-  | 'llama3-70b-8192'
+  | 'llama-3.1-70b-versatile'
   | 'mixtral-8x7b-32768'
   | 'gemma-7b-it'
   | 'gemini-2.5-flash'

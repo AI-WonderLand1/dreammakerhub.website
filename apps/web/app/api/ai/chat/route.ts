@@ -55,7 +55,7 @@ function detectHumanLanguage(prompt: string): string {
 const AGENTS = {
   "builder-default": { id: "llama-3.1-8b-instant", provider: "groq" },
   "groq-fast": { id: "llama-3.1-8b-instant", provider: "groq" },
-  "groq-powerful": { id: "llama3-70b-8192", provider: "groq" },
+  "groq-powerful": { id: "llama-3.1-70b-versatile", provider: "groq" },
   "google-vision": { id: "gemini-2.5-pro-vision", provider: "google" },
   "openrouter-general": { id: "openrouter/auto", provider: "openrouter" },
 };
