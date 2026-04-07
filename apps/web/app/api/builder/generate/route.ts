@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${process.env.GOOGLE_AI_API_KEY}`,
         "HTTP-Referer": "https://wonderbuild.ai", // Required by OpenRouter
         "Content-Type": "application/json",
       },
