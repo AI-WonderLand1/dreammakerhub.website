@@ -32,9 +32,9 @@ async function fetchGroqModules(): Promise<RegistryModule[]> {
         private: false,
       },
       {
-        id: "groq-llama3-70b-8192",
-        name: "Llama 3 70B",
-        description: "High-performance Llama 3 model with enhanced capabilities",
+        id: "groq-llama-3.1-70b-versatile",
+        name: "Llama 3.1 70B Versatile",
+        description: "High-performance Llama 3.1 model with enhanced capabilities",
         category: "chat",
         source: "groq",
         private: false,
