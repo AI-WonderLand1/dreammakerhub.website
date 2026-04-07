@@ -1,6 +1,6 @@
 export type AIModel = {
   id: string;
-  provider: "anthropic" | "google" | "groq" | "local" | "openrouter";
+  provider: "anthropic" | "google" | "github" | "groq" | "local" | "openrouter";
 };
 
 /**

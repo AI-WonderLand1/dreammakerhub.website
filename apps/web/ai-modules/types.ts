@@ -1,5 +1,8 @@
-// GROQ and Google AI model strings
+// GitHub Models, GROQ and Google AI model strings
 export type ModelName =
+  | 'gpt-4o'
+  | 'gpt-4o-mini'
+  | 'gpt-3.5-turbo'
   | 'llama-3.1-8b-instant'
   | 'llama-3.1-70b-versatile'
   | 'mixtral-8x7b-32768'

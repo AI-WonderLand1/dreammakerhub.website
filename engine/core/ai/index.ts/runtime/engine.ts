@@ -14,7 +14,7 @@ interface EngineResponse {
 
 export async function handleAIRequest(req: EngineRequest): Promise<EngineResponse> {
   const language = req.language ?? "en";
-  const model = req.model ?? "llama-3.1-8b-instant"; // default, adjust as needed
+  const model = req.model ?? "gpt-4o-mini"; // default, adjust as needed
 
   const result = await runAIPipeline({
     operationId: req.operationId,
