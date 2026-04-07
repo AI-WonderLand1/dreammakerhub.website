@@ -2,6 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
 
 type BuildType = "website" | "game" | "component";
 type AgentStage = "architect" | "builder" | "reviewer";
@@ -54,15 +56,33 @@ const EXAMPLES: Record<BuildType, string[]> = {
 };
 
 export default function AIBuilderPage() {
+  const router = useRouter();
   const [buildType, setBuildType] = useState<BuildType>("website");
   const [prompt, setPrompt] = useState("");
   const [agents, setAgents] = useState<Partial<Record<AgentStage, AgentEvent>>>({});
   const [result, setResult] = useState<BuildResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [tab, setTab] = useState<"preview" | "code">("preview");
   const previewRef = useRef<HTMLIFrameElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const acceptToPuck = useCallback(() => {
+    if (!result?.code) return;
+
+    try {
+      // Convert HTML to Puck blocks
+      const puckData = htmlToPuckBlocks(result.code);
+      
+      // Store the data in session storage
+      const dataKey = storePuckData(puckData);
+      
+      // Navigate to Puck editor with the data key
+      router.push(`/wonder-build/puck?ai_data=${dataKey}`);
+    } catch (err) {
+      console.error("[AI Builder] Failed to accept to Puck:", err);
+      alert("Failed to prepare content for Puck editor");
+    }
+  }, [result?.code, router]);
 
   const runBuild = useCallback(async () => {
     if (!prompt.trim() || running) return;
@@ -305,27 +325,12 @@ export default function AIBuilderPage() {
           )}
         </div>
 
-        {/* RIGHT PANEL — Preview + Code */}
+        {/* RIGHT PANELS — Preview (bigger, middle) + Code (smaller, right) */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {result ? (
             <>
-              {/* Tabs + actions */}
-              <div className="flex items-center gap-1 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
-                <div className="flex gap-1">
-                  {(["preview", "code"] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        tab === t
-                          ? "bg-white/10 text-white"
-                          : "text-white/40 hover:text-white"
-                      }`}
-                    >
-                      {t === "preview" ? "👁 Preview" : "📄 Code"}
-                    </button>
-                  ))}
-                </div>
+              {/* Action buttons header */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={copyCode}
@@ -340,6 +345,12 @@ export default function AIBuilderPage() {
                     Download
                   </button>
                   <button
+                    onClick={acceptToPuck}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center gap-1"
+                  >
+                    ✨ Accept to Puck
+                  </button>
+                  <button
                     onClick={() => { setResult(null); setAgents({}); setError(null); }}
                     className="px-3 py-1.5 rounded-lg text-xs bg-violet-600 hover:bg-violet-500 text-white transition-colors"
                   >
@@ -348,23 +359,35 @@ export default function AIBuilderPage() {
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 overflow-hidden">
-                {tab === "preview" ? (
-                  <iframe
-                    ref={previewRef}
-                    srcDoc={result.code}
-                    sandbox="allow-scripts allow-same-origin"
-                    className="w-full h-full border-0 bg-white"
-                    title="Live Preview"
-                  />
-                ) : (
-                  <div className="h-full overflow-auto bg-[#0d0d16] p-6">
-                    <pre className="text-xs text-white/70 font-mono leading-relaxed whitespace-pre-wrap break-words">
+              {/* Two-column layout: Preview (2x bigger) + Code */}
+              <div className="flex-1 flex overflow-hidden gap-1 p-2">
+                {/* Preview (left/middle, larger) */}
+                <div className="flex-[2] flex flex-col overflow-hidden bg-white/[0.02] rounded-lg border border-white/10">
+                  <div className="px-3 py-2 border-b border-white/10 text-xs font-semibold text-white/70">
+                    👁 Live Preview
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <iframe
+                      ref={previewRef}
+                      srcDoc={result.code}
+                      sandbox="allow-scripts allow-same-origin"
+                      className="w-full h-full border-0 bg-white"
+                      title="Live Preview"
+                    />
+                  </div>
+                </div>
+
+                {/* Code (right, smaller) */}
+                <div className="flex-1 flex flex-col overflow-hidden bg-[#0d0d16] rounded-lg border border-white/10">
+                  <div className="px-3 py-2 border-b border-white/10 text-xs font-semibold text-white/70">
+                    📄 Code
+                  </div>
+                  <div className="flex-1 overflow-auto">
+                    <pre className="text-[10px] text-white/60 font-mono leading-relaxed whitespace-pre-wrap break-words p-4">
                       {result.code}
                     </pre>
                   </div>
-                )}
+                </div>
               </div>
             </>
           ) : (

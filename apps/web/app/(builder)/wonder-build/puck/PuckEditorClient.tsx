@@ -2,8 +2,10 @@
 
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
+import { retrievePuckData } from "@/lib/ai-to-puck";
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error" | "saving" | "saved";
 
@@ -31,10 +33,23 @@ export function PuckEditorClient({
   const [data, setData] = useState<InitialData | null>(initialData);
   const [saveStatus, setSaveStatus] = useState<string>("");
   const [localProjectId, setLocalProjectId] = useState<string | undefined>(projectId);
+  const searchParams = useSearchParams();
 
   const hasContent = (data?.content?.length ?? 0) > 0;
 
   useEffect(() => {
+    // Check for AI-generated data from session storage
+    const aiDataKey = searchParams.get("ai_data");
+    if (aiDataKey) {
+      const aiData = retrievePuckData(aiDataKey);
+      if (aiData) {
+        setStatus("loaded");
+        setData(aiData);
+        return;
+      }
+    }
+
+    // Otherwise, use initialnData or load project
     if (initialData?.content?.length) {
       setStatus("loaded");
       setData(initialData);
@@ -43,7 +58,7 @@ export function PuckEditorClient({
     } else {
       setStatus("empty");
     }
-  }, [initialData, projectId]);
+  }, [initialData, projectId, searchParams]);
 
   const loadProject = async (pid: string) => {
     setStatus("loading");
