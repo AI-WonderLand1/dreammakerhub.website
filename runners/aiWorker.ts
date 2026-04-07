@@ -62,7 +62,7 @@ export const aiWorker = async (task: AIWorkerTask): Promise<AIWorkerResult> => {
 
     logs.push(`Calling AI model...`);
 
-    const modelId = task.modelId || "groq/llama-3.1-8b-instant";
+    const modelId = task.modelId || "github/gpt-4o-mini";
     const result = await runModel({
       model: modelId,
       messages: [{ role: "user", content: prompt }],

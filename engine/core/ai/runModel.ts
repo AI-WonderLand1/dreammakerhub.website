@@ -3,9 +3,10 @@ import { Providers } from "./providers";
 
 /**
  * Wonder-Build Model Runner
+ * - Routes "github/*" to GitHub Models
  * - Routes "groq/*" to GROQ AI
  * - Routes "google/*" to Google AI
- * - Routes everything else to GROQ provider by default
+ * - Routes everything else to GitHub Models provider by default
  * - Supports multimodal prompt content (arrays/objects)
  */
 export async function runModel({
@@ -25,9 +26,22 @@ export async function runModel({
 
   console.log(`🤖 Wonder-Build Engine: Routing to ${model}`);
 
-  // If your agent IDs are like "groq/llama-3.1-8b-instant" or "google/gemini-2.5-flash"
+  // If your agent IDs are like "github/gpt-4o-mini" or "groq/llama-3.1-8b-instant" or "google/gemini-2.5-flash"
+  const isGithub = typeof model === "string" && model.startsWith("github/");
   const isGroq = typeof model === "string" && model.startsWith("groq/");
   const isGoogle = typeof model === "string" && model.startsWith("google/");
+
+  if (isGithub) {
+    // GitHub Models expects a model name that does NOT include "github/" prefix.
+    const githubModel = model.replace(/^github\//, "");
+
+    return Providers.github.generate(lastContent, {
+      model: githubModel,
+      system,
+      temperature,
+      maxTokens,
+    });
+  }
 
   if (isGroq) {
     // GROQ expects a model name that does NOT include "groq/" prefix.
@@ -53,8 +67,8 @@ export async function runModel({
     });
   }
 
-  // Default: GROQ provider for fast inference
-  return Providers.groq.generate(lastContent, {
+  // Default: GitHub Models provider for high-quality inference
+  return Providers.github.generate(lastContent, {
     model,
     system,
     temperature,
