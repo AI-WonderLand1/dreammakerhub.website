@@ -13,7 +13,7 @@ export const openrouterProvider: AIProvider = {
   async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
     const {
-      model = "gemini-2.0-flash-exp",
+      model = "gemini-1.5-flash",
       system,
       temperature = 0.7,
       maxTokens = 4096
