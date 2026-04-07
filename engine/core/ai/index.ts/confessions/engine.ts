@@ -8,6 +8,10 @@ import {
 export interface ConfessionFactoryOptions {
   title: string;
   detail: string;
+  truth: string;
+  what: string;
+  why: string;
+  how: string;
   relatedStepCode?: string | null;
   machineTags?: string[];
   impactLevel?: ImpactLevel;
@@ -25,6 +29,10 @@ export function createConfession(
   const {
     title,
     detail,
+    truth,
+    what,
+    why,
+    how,
     relatedStepCode = null,
     machineTags = [],
     impactLevel,
@@ -34,6 +42,10 @@ export function createConfession(
     type,
     title,
     detail,
+    truth: truth || detail,
+    what: what || "",
+    why: why || "",
+    how: how || "",
     relatedStepCode,
     machineTags,
     impactLevel: impactLevel ?? getDefaultImpactLevel(type),
@@ -54,8 +66,10 @@ function getDefaultImpactLevel(type: ConfessionType): ImpactLevel {
   switch (type) {
     case "RISK_FLAG":
     case "REJECTED_ACTION":
+    case "HALLUCINATION_DETECTED":
       return "HIGH";
     case "CORRECTION":
+    case "TRUTH_VERIFIED":
       return "MEDIUM";
     default:
       return "LOW";
@@ -81,3 +95,11 @@ export const createLimitationConfession = (
 export const createCorrectionConfession = (
   opts: LocalizedConfessionFactoryOptions
 ) => createLocalizedConfession("CORRECTION", opts);
+
+export const createHallucinationConfession = (
+  opts: LocalizedConfessionFactoryOptions
+) => createLocalizedConfession("HALLUCINATION_DETECTED", opts);
+
+export const createTruthVerifiedConfession = (
+  opts: LocalizedConfessionFactoryOptions
+) => createLocalizedConfession("TRUTH_VERIFIED", opts);

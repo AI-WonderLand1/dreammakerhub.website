@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { ensureDefaultProject } from '@lib/projects/storage';
-import { generateAndSaveProject } from '@core/ai/orchestrator';
 import { runAIPipeline } from '@core/ai/index.ts/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
 import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
+import { storeConfessionToMem0, isMem0Enabled } from '@lib/ai/mem0Client';
+import { getConfessionConfig } from '@lib/ai/confessionConfig';
 
 export const runtime = "nodejs";
 
@@ -94,14 +95,15 @@ export async function POST(req: NextRequest) {
     const detectedHumanLang = targetLanguage || detectHumanLanguage(prompt);
     const detectedProgLang = detectProgrammingLanguage(prompt);
 
-    let enhancedPrompt = prompt;
+    const persona = getPersonaPrompt(personaId);
+    const lawPrompt = buildLawPrompt();
+
+    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}`;
 
     const systemInstructions: string[] = [
       "AI LAWS (HIGHEST PRIORITY - ALWAYS FOLLOW):",
-      buildLawPrompt(),
+      lawPrompt,
     ];
-
-    const persona = getPersonaPrompt(personaId);
     systemInstructions.push(`PERSONA:\n${persona.prompt}`);
 
     if (detectedHumanLang !== 'en') {
@@ -113,25 +115,19 @@ export async function POST(req: NextRequest) {
       enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
     }
 
-    const persona = getPersonaPrompt(personaId);
-    enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${buildLawPrompt()}\n\n${enhancedPrompt}`;
+    const config = getConfessionConfig(plan, isMem0Enabled());
+    const useLLMExtraction = config.mode === "paid" && config.enableMem0;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
     const pipelineResult = await runAIPipeline({
       operationId: traceId,
       userPrompt: enhancedPrompt,
-      systemPrompt,
+      systemPrompt: systemInstructions.join('\n\n'),
       language: detectedHumanLang,
       model: agent.id,
+      useLLMExtraction,
     });
-
-    await generateAndSaveProject({
-      projectId: project.id,
-      ownerId: paidUser.userId,
-      prompt,
-      agentId,
-    } as any);
 
     let memoryStore: { ok: boolean; bucket?: string; path?: string; error?: string } = { ok: true };
     try {
@@ -151,6 +147,35 @@ export async function POST(req: NextRequest) {
       memoryStore = { ok: false, error: memoryError?.message || 'Failed to write memory' };
     }
 
+    let mem0Store: { ok: boolean; stored?: number; error?: string } = { ok: false };
+    if (config.enableMem0) {
+      try {
+        let stored = 0;
+        for (const confession of pipelineResult.confessions) {
+          const storedConfession = {
+            userId: paidUser.userId,
+            projectId: project.id,
+            traceId,
+            type: confession.type,
+            title: confession.title,
+            detail: confession.detail,
+            truth: confession.truth,
+            what: confession.what,
+            why: confession.why,
+            how: confession.how,
+            impactLevel: confession.impactLevel,
+            machineTags: confession.machineTags,
+            createdAt: new Date().toISOString(),
+          };
+          const result = await storeConfessionToMem0(storedConfession);
+          if (result) stored++;
+        }
+        mem0Store = { ok: true, stored };
+      } catch (mem0Error: any) {
+        mem0Store = { ok: false, error: mem0Error?.message || 'Failed to store to Mem0' };
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       message: "generated",
@@ -163,6 +188,8 @@ export async function POST(req: NextRequest) {
         persona: persona.id,
         aiLaws: AI_LAWS,
         memoryStore,
+        mem0Store,
+        confessionMode: config.mode,
       }
     });
 
