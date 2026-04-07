@@ -77,7 +77,7 @@ async function callGroqAI(system: string, userPrompt: string, isPaid: boolean): 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error("GROQ_API_KEY is not configured.");
 
-  const model = isPaid ? "llama3-70b-8192" : "llama3-8b-8192";
+  const model = isPaid ? "llama3-70b-8192" : "llama-3.1-8b-instant";
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
