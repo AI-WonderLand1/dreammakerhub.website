@@ -213,7 +213,7 @@ export function AgentPanel() {
         })}
       </div>
 
-      <div className="px-3 pb-3 overflow-hidden">
+      <div className="flex flex-1 flex-col px-3 pb-3 overflow-hidden">
         <div className="flex gap-2 mb-3">
           <button
             onClick={() => setActiveLogTab('log')}
