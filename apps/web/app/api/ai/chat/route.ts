@@ -53,9 +53,9 @@ function detectHumanLanguage(prompt: string): string {
 }
 
 const AGENTS = {
-  "builder-default": { id: "llama-3.1-8b-instant", provider: "groq" },
-  "groq-fast": { id: "llama-3.1-8b-instant", provider: "groq" },
-  "groq-powerful": { id: "llama-3.1-70b-versatile", provider: "groq" },
+  "builder-default": { id: "gpt-4o-mini", provider: "github" },
+  "github-fast": { id: "gpt-4o-mini", provider: "github" },
+  "github-powerful": { id: "gpt-4o", provider: "github" },
   "google-vision": { id: "gemini-2.5-pro-vision", provider: "google" },
   "openrouter-general": { id: "openrouter/auto", provider: "openrouter" },
 };

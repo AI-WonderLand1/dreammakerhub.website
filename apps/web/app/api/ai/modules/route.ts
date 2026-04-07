@@ -16,50 +16,50 @@ type RegistryModule = {
   source?: string;
 };
 
-async function fetchGroqModules(): Promise<RegistryModule[]> {
-  const apiKey = process.env.GROQ_API_KEY;
+async function fetchGithubModules(): Promise<RegistryModule[]> {
+  const apiKey = process.env.GITHUB_MODELS_API_KEY;
   if (!apiKey) return [];
 
   try {
-    // Return static list of GROQ models
+    // Return static list of GitHub Models
     const models: RegistryModule[] = [
       {
-        id: "groq-llama-3.1-8b-instant",
-        name: "Llama 3.1 8B Instant",
-        description: "Fast and efficient Llama 3.1 model for general tasks",
+        id: "github-gpt-4o-mini",
+        name: "GPT-4o Mini",
+        description: "Fast and efficient GPT-4o model for general tasks",
         category: "chat",
-        source: "groq",
+        source: "github",
         private: false,
       },
       {
-        id: "groq-llama-3.1-70b-versatile",
-        name: "Llama 3.1 70B Versatile",
-        description: "High-performance Llama 3.1 model with enhanced capabilities",
+        id: "github-gpt-4o",
+        name: "GPT-4o",
+        description: "High-performance GPT-4o model with enhanced capabilities",
         category: "chat",
-        source: "groq",
+        source: "github",
         private: false,
       },
       {
-        id: "groq-mixtral-8x7b-32768",
-        name: "Mixtral 8x7B",
-        description: "Mixture of experts model for complex reasoning",
+        id: "github-gpt-4-turbo",
+        name: "GPT-4 Turbo",
+        description: "Advanced GPT-4 model for complex reasoning",
         category: "chat",
-        source: "groq",
+        source: "github",
         private: false,
       },
       {
-        id: "groq-gemma-7b-it",
-        name: "Gemma 7B",
-        description: "Lightweight and efficient instruction-tuned model",
+        id: "github-gpt-3.5-turbo",
+        name: "GPT-3.5 Turbo",
+        description: "Lightweight and efficient GPT-3.5 model",
         category: "chat",
-        source: "groq",
+        source: "github",
         private: false,
       },
     ];
 
     return models;
   } catch (error) {
-    console.error("GROQ models fetch errored", error);
+    console.error("GitHub Models fetch errored", error);
     return [];
   }
 }
@@ -70,15 +70,15 @@ export async function GET(req: NextRequest) {
 
   const registryModules = publicAiModules;
   const googleAIModules = await fetchGoogleAIModules();
-  const groqModules = await fetchGroqModules();
+  const githubModules = await fetchGithubModules();
   const modules: RegistryModule[] = [
     ...registryModules.map((module) => ({ ...module, source: "public-registry" })),
     ...googleAIModules,
-    ...groqModules,
+    ...githubModules,
   ];
   const sources = [];
   if (googleAIModules.length > 0) sources.push("google");
-  if (groqModules.length > 0) sources.push("groq");
+  if (githubModules.length > 0) sources.push("github");
   sources.push("public-registry");
   const source = sources.join("+");
 
