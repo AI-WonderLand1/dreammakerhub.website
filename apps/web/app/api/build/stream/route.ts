@@ -75,8 +75,8 @@ const PAID_MODELS = [
 ] as const;
 
 async function callOpenRouter(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured.");
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY is not configured.");
 
   const models = isPaid ? PAID_MODELS : FREE_MODELS;
   let lastError = "";
