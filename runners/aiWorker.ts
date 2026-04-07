@@ -62,7 +62,7 @@ export const aiWorker = async (task: AIWorkerTask): Promise<AIWorkerResult> => {
 
     logs.push(`Calling AI model...`);
 
-    const modelId = task.modelId || "openrouter/auto";
+    const modelId = task.modelId || "groq/llama-3.1-8b-instant";
     const result = await runModel({
       model: modelId,
       messages: [{ role: "user", content: prompt }],

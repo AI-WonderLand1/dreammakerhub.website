@@ -16,52 +16,50 @@ type RegistryModule = {
   source?: string;
 };
 
-async function fetchGoogleAIModules(): Promise<RegistryModule[]> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+async function fetchGroqModules(): Promise<RegistryModule[]> {
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return [];
 
   try {
-    // Return static list of Google AI models since they don't have a models API
+    // Return static list of GROQ models
     const models: RegistryModule[] = [
       {
-        id: "google-gemini-2.5-flash",
-        name: "Gemini 2.5 Flash",
-        description: "Fast and efficient Gemini model for general tasks",
+        id: "groq-llama3-8b-8192",
+        name: "Llama 3 8B",
+        description: "Fast and efficient Llama 3 model for general tasks",
         category: "chat",
-        source: "google",
+        source: "groq",
         private: false,
       },
       {
-        id: "google-gemini-2.5-pro",
-        name: "Gemini 2.5 Pro",
-        description: "Advanced Gemini model with enhanced capabilities",
+        id: "groq-llama3-70b-8192",
+        name: "Llama 3 70B",
+        description: "High-performance Llama 3 model with enhanced capabilities",
         category: "chat",
-        source: "google",
+        source: "groq",
         private: false,
       },
       {
-        id: "google-gemini-2.5-pro-vision",
-        name: "Gemini 2.5 Pro Vision",
-        description: "Gemini model with vision capabilities",
-        category: "vision",
-        source: "google",
+        id: "groq-mixtral-8x7b-32768",
+        name: "Mixtral 8x7B",
+        description: "Mixture of experts model for complex reasoning",
+        category: "chat",
+        source: "groq",
+        private: false,
+      },
+      {
+        id: "groq-gemma-7b-it",
+        name: "Gemma 7B",
+        description: "Lightweight and efficient instruction-tuned model",
+        category: "chat",
+        source: "groq",
         private: false,
       },
     ];
 
     return models;
-      }
-
-      return {
-        id,
-        name,
-        description,
-        category,
-        source: "openrouter",
-      } satisfies RegistryModule;
-    });
   } catch (error) {
-    console.error("OpenRouter models fetch errored", error);
+    console.error("GROQ models fetch errored", error);
     return [];
   }
 }
@@ -72,11 +70,17 @@ export async function GET(req: NextRequest) {
 
   const registryModules = publicAiModules;
   const googleAIModules = await fetchGoogleAIModules();
+  const groqModules = await fetchGroqModules();
   const modules: RegistryModule[] = [
     ...registryModules.map((module) => ({ ...module, source: "public-registry" })),
     ...googleAIModules,
+    ...groqModules,
   ];
-  const source = googleAIModules.length > 0 ? "public-registry+google" : "public-registry";
+  const sources = [];
+  if (googleAIModules.length > 0) sources.push("google");
+  if (groqModules.length > 0) sources.push("groq");
+  sources.push("public-registry");
+  const source = sources.join("+");
 
   return NextResponse.json({ ok: true, source, modules });
 }

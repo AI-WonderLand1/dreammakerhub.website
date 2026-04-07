@@ -5,6 +5,7 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY || '',
   NEXT_PUBLIC_GOOGLE_AI_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || '',
+  GROQ_API_KEY: process.env.GROQ_API_KEY || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
   NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
