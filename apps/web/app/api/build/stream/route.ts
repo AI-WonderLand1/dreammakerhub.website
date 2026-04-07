@@ -69,42 +69,39 @@ const FREE_MODELS = [
 ] as const;
 
 const PAID_MODELS = [
-  "gemini-2.5-pro",
-  "gemini-2.5-pro-002",
+  "llama3-70b-8192",
+  "mixtral-8x7b-32768",
 ] as const;
 
-async function callGoogleAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY is not configured.");
+async function callGroqAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_API_KEY is not configured.");
 
-  const model = isPaid ? "gemini-2.5-pro" : "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const model = isPaid ? "llama3-70b-8192" : "llama3-8b-8192";
 
-  const res = await fetch(url, {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
+      "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: `System Instructions: ${system}` },
-          { text: userPrompt }
-        ]
-      }],
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 8192,
-      },
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 8192,
     }),
   });
 
   const data = await res.json();
   if (data.error) {
-    throw new Error(`Google AI (${model}): ${data.error.message}`);
+    throw new Error(`GROQ AI (${model}): ${data.error.message}`);
   }
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = data.choices?.[0]?.message?.content;
   if (!text) {
     throw new Error(`${model}: empty response`);
   }
@@ -186,7 +183,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel})` });
 
-        const plan = await callGoogleAI(
+        const plan = await callGroqAI(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
           `Plan a ${typeLabel} based on: "${prompt}"`,
           isPaid
@@ -197,7 +194,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel})` });
 
-        const rawCode = await callGoogleAI(
+        const rawCode = await callGroqAI(
           getSystemPrompt(type),
           `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
           isPaid
@@ -209,7 +206,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callGoogleAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
+        const reviewed = await callGroqAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });
