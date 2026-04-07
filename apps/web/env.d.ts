@@ -6,6 +6,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
     NEXT_PUBLIC_URL?: string;
     NEXT_PUBLIC_ENABLE_GRAPES_BUILDER?: string;
+    NEXT_PUBLIC_ENABLE_MEM0_MEMORY?: string;
     NODE_ENV?: string;
 
     // OPTIONAL (disabled infra)

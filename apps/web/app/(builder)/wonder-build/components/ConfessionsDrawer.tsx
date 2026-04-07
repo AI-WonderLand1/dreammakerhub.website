@@ -1,12 +1,19 @@
 'use client';
 
+import { useState } from "react";
+
 export interface ConfessionEntry {
   label: string;
   text: string;
+  truth?: string;
+  what?: string;
+  why?: string;
+  how?: string;
   trustScore?: number;
   constitutionalCheck?: 'pending' | 'passed' | 'failed';
   workerId?: string;
   at: string;
+  type?: string;
 }
 
 interface ConfessionsDrawerProps {
@@ -19,6 +26,15 @@ const CHECK_COLORS = {
   passed: 'text-green-400 bg-green-500/10 border-green-500/25',
   failed: 'text-red-400 bg-red-500/10 border-red-500/25',
   pending: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/25',
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  UNCERTAINTY: 'text-yellow-400 border-yellow-500/25',
+  RISK_FLAG: 'text-red-400 border-red-500/25',
+  LIMITATION: 'text-blue-400 border-blue-500/25',
+  CORRECTION: 'text-orange-400 border-orange-500/25',
+  TRUTH_VERIFIED: 'text-green-400 border-green-500/25',
+  HALLUCINATION_DETECTED: 'text-red-400 border-red-500/25',
 };
 
 function TrustBar({ score }: { score: number }) {
@@ -34,12 +50,41 @@ function TrustBar({ score }: { score: number }) {
   );
 }
 
+function TransparencySection({ 
+  label, 
+  value, 
+  color 
+}: { 
+  label: string; 
+  value: string; 
+  color: string;
+}) {
+  if (!value) return null;
+  return (
+    <div className="flex gap-2">
+      <span className={`text-[10px] font-bold ${color} shrink-0 w-14`}>{label}:</span>
+      <span className="text-[10px] text-white/60">{value}</span>
+    </div>
+  );
+}
+
 export function ConfessionsDrawer({ confessions, open }: ConfessionsDrawerProps) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (idx: number) => {
+    const newExpanded = new Set(expanded);
+    if (newExpanded.has(idx)) {
+      newExpanded.delete(idx);
+    } else {
+      newExpanded.add(idx);
+    }
+    setExpanded(newExpanded);
+  };
+
   if (!open) return null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden border-t border-violet-500/20 bg-[#0a0a10]">
-      {/* Header — view-only label, no buttons */}
       <div className="flex shrink-0 items-center gap-2 border-b border-white/10 bg-black/60 px-3 py-2 pointer-events-none select-none">
         <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400">
           AI Confessions
@@ -50,7 +95,6 @@ export function ConfessionsDrawer({ confessions, open }: ConfessionsDrawerProps)
         <span className="text-[9px] text-white/20 ml-1">read-only · view only</span>
       </div>
 
-      {/* Confessions list — scrollable but not interactive */}
       <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-2">
         {confessions.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-center pointer-events-none select-none">
@@ -61,41 +105,70 @@ export function ConfessionsDrawer({ confessions, open }: ConfessionsDrawerProps)
           </div>
         )}
 
-        {confessions.map((c, i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-white/8 bg-white/[0.02] p-3 pointer-events-none select-none cursor-default"
-            aria-readonly="true"
-          >
-            <div className="flex items-start gap-2 mb-1.5">
-              <span className="text-[10px] font-bold text-violet-400 shrink-0 mt-0.5">#{i + 1}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] font-semibold text-white/70">{c.label}</span>
-                  {c.workerId && (
-                    <span className="rounded border border-white/10 bg-white/5 px-1 text-[9px] text-white/30 font-mono">
-                      Worker {c.workerId}
-                    </span>
-                  )}
-                  {c.constitutionalCheck && (
-                    <span className={`rounded border px-1.5 py-0.5 text-[9px] font-bold ${CHECK_COLORS[c.constitutionalCheck]}`}>
-                      {c.constitutionalCheck}
-                    </span>
-                  )}
+        {confessions.map((c, i) => {
+          const hasTransparency = c.truth || c.what || c.why || c.how;
+          const isExpanded = expanded.has(i);
+          const typeColor = TYPE_COLORS[c.type || ''] || 'text-violet-400 border-violet-500/25';
+
+          return (
+            <div
+              key={i}
+              className="rounded-xl border border-white/8 bg-white/[0.02] p-3 pointer-events-none select-none cursor-default"
+              aria-readonly="true"
+            >
+              <div className="flex items-start gap-2 mb-1.5">
+                <span className="text-[10px] font-bold text-violet-400 shrink-0 mt-0.5">#{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-white/70">{c.label}</span>
+                    {c.workerId && (
+                      <span className="rounded border border-white/10 bg-white/5 px-1 text-[9px] text-white/30 font-mono">
+                        Worker {c.workerId}
+                      </span>
+                    )}
+                    {c.type && (
+                      <span className={`rounded border px-1.5 py-0.5 text-[9px] font-bold ${typeColor.split(' ')[0]} bg-white/5`}>
+                        {c.type}
+                      </span>
+                    )}
+                    {c.constitutionalCheck && (
+                      <span className={`rounded border px-1.5 py-0.5 text-[9px] font-bold ${CHECK_COLORS[c.constitutionalCheck]}`}>
+                        {c.constitutionalCheck}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-white/25 mt-0.5 font-mono">
+                    {new Date(c.at).toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-[10px] text-white/25 mt-0.5 font-mono">
-                  {new Date(c.at).toLocaleString()}
-                </p>
               </div>
+
+              <p className="text-[11px] text-white/60 leading-relaxed rounded-lg bg-white/[0.03] border border-white/5 p-2 font-mono">
+                {c.text}
+              </p>
+
+              {hasTransparency && (
+                <button
+                  onClick={() => toggleExpand(i)}
+                  className="mt-2 text-[10px] text-violet-400 hover:text-violet-300 pointer-events-auto"
+                >
+                  {isExpanded ? '▼ Hide details' : '▶ Show truth/what/why/how'}
+                </button>
+              )}
+
+              {isExpanded && hasTransparency && (
+                <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/5 space-y-1">
+                  <TransparencySection label="TRUTH" value={c.truth || ''} color="text-green-400" />
+                  <TransparencySection label="WHAT" value={c.what || ''} color="text-blue-400" />
+                  <TransparencySection label="WHY" value={c.why || ''} color="text-yellow-400" />
+                  <TransparencySection label="HOW" value={c.how || ''} color="text-purple-400" />
+                </div>
+              )}
+
+              {c.trustScore != null && <TrustBar score={c.trustScore} />}
             </div>
-
-            <p className="text-[11px] text-white/60 leading-relaxed rounded-lg bg-white/[0.03] border border-white/5 p-2 font-mono">
-              {c.text}
-            </p>
-
-            {c.trustScore != null && <TrustBar score={c.trustScore} />}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
