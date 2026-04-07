@@ -63,6 +63,7 @@ export default function AIBuilderPage() {
   const [result, setResult] = useState<BuildResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [viewMode, setViewMode] = useState<"iframe" | "code">("iframe");
   const previewRef = useRef<HTMLIFrameElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -331,63 +332,83 @@ export default function AIBuilderPage() {
             <>
               {/* Action buttons header */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setViewMode("iframe")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      viewMode === "iframe"
+                        ? "bg-white/10 text-white"
+                        : "text-white/40 hover:text-white"
+                    }`}
+                  >
+                    👁 Preview
+                  </button>
+                  <button
+                    onClick={() => setViewMode("code")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      viewMode === "code"
+                        ? "bg-white/10 text-white"
+                        : "text-white/40 hover:text-white"
+                    }`}
+                  >
+                    📄 Code
+                  </button>
+                </div>
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={copyCode}
                     className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
-                    Copy
+                    📋 Copy
                   </button>
                   <button
                     onClick={downloadFile}
                     className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
-                    Download
-                  </button>
-                  <button
-                    onClick={acceptToPuck}
-                    className="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center gap-1"
-                  >
-                    ✨ Accept to Puck
+                    ⬇ Download
                   </button>
                   <button
                     onClick={() => { setResult(null); setAgents({}); setError(null); }}
                     className="px-3 py-1.5 rounded-lg text-xs bg-violet-600 hover:bg-violet-500 text-white transition-colors"
                   >
-                    Build again
+                    🔄 Build again
+                  </button>
+                  <button
+                    onClick={acceptToPuck}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-lg shadow-emerald-600/50 flex items-center gap-2"
+                  >
+                    ✨ Accept & Continue
                   </button>
                 </div>
               </div>
 
-              {/* Two-column layout: Preview (2x bigger) + Code */}
+              {/* Content view - Full width, switchable between preview and code */}
               <div className="flex-1 flex overflow-hidden gap-1 p-2">
-                {/* Preview (left/middle, larger) */}
-                <div className="flex-[2] flex flex-col overflow-hidden bg-white/[0.02] rounded-lg border border-white/10">
-                  <div className="px-3 py-2 border-b border-white/10 text-xs font-semibold text-white/70">
-                    👁 Live Preview
+                {viewMode === "iframe" ? (
+                  <div className="flex-1 flex flex-col overflow-hidden bg-white/[0.02] rounded-lg border border-white/10">
+                    <div className="flex-1 overflow-hidden relative bg-white">
+                      <iframe
+                        ref={previewRef}
+                        srcDoc={result.code}
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-presentation"
+                        className="w-full h-full border-0"
+                        title="Live Preview"
+                      />
+                      {/* Fallback message if iframe is blank */}
+                      <div className="absolute inset-0 pointer-events-none text-center flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/50">
+                        <p className="text-white/70 text-sm">If preview is blank, check the Code tab or download to test locally.</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 overflow-hidden">
-                    <iframe
-                      ref={previewRef}
-                      srcDoc={result.code}
-                      sandbox="allow-scripts allow-same-origin"
-                      className="w-full h-full border-0 bg-white"
-                      title="Live Preview"
-                    />
+                ) : (
+                  <div className="flex-1 flex flex-col overflow-hidden bg-[#0d0d16] rounded-lg border border-white/10">
+                    <div className="flex-1 overflow-auto">
+                      <pre className="text-[10px] text-white/60 font-mono leading-relaxed whitespace-pre-wrap break-words p-4">
+                        {result.code}
+                      </pre>
+                    </div>
                   </div>
-                </div>
-
-                {/* Code (right, smaller) */}
-                <div className="flex-1 flex flex-col overflow-hidden bg-[#0d0d16] rounded-lg border border-white/10">
-                  <div className="px-3 py-2 border-b border-white/10 text-xs font-semibold text-white/70">
-                    📄 Code
-                  </div>
-                  <div className="flex-1 overflow-auto">
-                    <pre className="text-[10px] text-white/60 font-mono leading-relaxed whitespace-pre-wrap break-words p-4">
-                      {result.code}
-                    </pre>
-                  </div>
-                </div>
+                )}
               </div>
             </>
           ) : (
