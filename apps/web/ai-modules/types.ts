@@ -1,9 +1,9 @@
-// OpenRouter specific model strings
-export type ModelName = 
-  | 'google/gemini-3-flash-preview' 
-  | 'google/gemini-3.1-pro-preview' 
-  | 'google/gemini-2.5-flash-image' 
-  | 'google/gemini-3.1-flash-lite-preview';
+// Google AI model strings
+export type ModelName =
+  | 'gemini-1.5-flash'
+  | 'gemini-1.5-flash-8b'
+  | 'gemini-1.5-pro'
+  | 'gemini-1.5-pro-002';
 
 export interface PlaygroundConfig {
   model: ModelName;

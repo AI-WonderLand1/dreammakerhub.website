@@ -1,35 +1,26 @@
 export const FREE_MODELS = [
-  "google/gemini-2.0-flash-001",
-  "openai/gpt-oss-120b:free",
-  "qwen/qwen3.6-plus:free",
-  "openai/gpt-oss-20b:free",
-  "minimax/minimax-m2.5:free",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
 ] as const;
 
 export const PAID_MODELS = [
-  "anthropic/claude-3.5-sonnet",
-  "openai/gpt-4o",
-  "google/gemini-2.5-pro",
-  "anthropic/claude-3-opus",
-  "meta-ai/llama-4-scout",
-  "mistralai/mistral-nemo",
+  "gemini-1.5-pro",
+  "gemini-1.5-pro-002",
 ] as const;
 
 export const VISION_MODELS = {
-  free: ["google/gemini-2.0-flash-001"],
+  free: ["gemini-1.5-flash"],
   paid: [
-    "google/gemini-2.0-flash-thinking",
-    "anthropic/claude-3.5-sonnet",
-    "openai/gpt-4o",
+    "gemini-1.5-pro",
+    "gemini-1.5-pro-002",
   ],
 } as const;
 
 export const CODE_MODELS = {
-  free: ["qwen/qwen3.6-plus:free"],
+  free: ["gemini-1.5-flash"],
   paid: [
-    "anthropic/claude-3.5-sonnet",
-    "openai/gpt-4o",
-    "google/gemini-2.5-pro",
+    "gemini-1.5-pro",
+    "gemini-1.5-pro-002",
   ],
 } as const;
 
@@ -65,7 +56,7 @@ export function selectModelForTask(
     case "vision":
       return tier.visionModels[0];
     case "build":
-      return isPaid ? "google/gemini-2.5-pro" : "google/gemini-2.0-flash-001";
+      return isPaid ? "gemini-1.5-pro" : "gemini-1.5-flash";
     default:
       return tier.models[0];
   }

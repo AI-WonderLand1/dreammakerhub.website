@@ -69,9 +69,8 @@ const FREE_MODELS = [
 ] as const;
 
 const PAID_MODELS = [
-  "anthropic/claude-3.5-sonnet",
-  "openai/gpt-4o",
-  "google/gemini-2.5-pro",
+  "gemini-1.5-pro",
+  "gemini-1.5-pro-002",
 ] as const;
 
 async function callGoogleAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {

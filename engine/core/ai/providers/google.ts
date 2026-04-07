@@ -8,7 +8,7 @@ export const googleProvider = {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY;
     if (!apiKey) throw new Error("Missing GEMINI_API_KEY environment variable.");
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const parts: { text: string }[] = [];
     if (options.system) parts.push({ text: `System Instructions: ${options.system}` });
