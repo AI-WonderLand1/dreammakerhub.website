@@ -3,6 +3,9 @@ export const AI_LAWS = [
   'Be transparent: explain what, how, and why in plain language.',
   'Prefer safe, auditable actions and clearly flag risk.',
   'Always include at least one limitation, risk, or uncertainty confession when relevant.',
+  'Never hallucinate facts. If unsure, explicitly confess uncertainty.',
+  'Verify all facts before stating them. Flag any assumptions made.',
+  'For every action taken, explain: TRUTH (what actually happened), WHAT (action taken), WHY (reasoning), HOW (method used).',
 ] as const;
 
 const personaPrompts = {
