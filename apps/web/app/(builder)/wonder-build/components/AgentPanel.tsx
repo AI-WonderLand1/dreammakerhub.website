@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSovereignOS, STAGE_ORDER, STAGE_INFO, type BuildType } from '../context/SovereignOSContext';
-import { ConfessionsDrawer } from './ConfessionsDrawer';
+import { htmlToPuckBlocks, storePuckData } from '@/lib/ai-to-puck';
 
 const TYPE_OPTIONS: { value: BuildType; icon: string; label: string }[] = [
   { value: 'website',   icon: '🌐', label: 'Website'   },
@@ -29,12 +30,26 @@ export function AgentPanel() {
     confessions,
   } = useSovereignOS();
 
+  const router = useRouter();
   const logBottomRef = useRef<HTMLDivElement>(null);
-  const [showConfessions, setShowConfessions] = useState(false);
+  const [activeLogTab, setActiveLogTab] = useState<'log' | 'confessions'>('log');
 
   useEffect(() => {
     logBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [agentLog.length]);
+
+  useEffect(() => {
+    if (confessions.length > 0) {
+      setActiveLogTab('confessions');
+    }
+  }, [confessions.length]);
+
+  const acceptToPuck = useCallback(() => {
+    if (!result?.code) return;
+    const puckData = htmlToPuckBlocks(result.code);
+    const dataKey = storePuckData(puckData);
+    router.push(`/wonder-build/puck?ai_data=${dataKey}`);
+  }, [result?.code, router]);
 
   const hasActivity = agentLog.length > 0;
 
@@ -150,78 +165,91 @@ export function AgentPanel() {
         })}
       </div>
 
-      {/* Scrollable log */}
-      <div className={`px-3 pb-3 space-y-1.5 overflow-y-auto ${showConfessions ? 'hidden' : 'min-h-0 flex-1'}`}>
-        {!hasActivity && (
-          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-            <span className="text-3xl opacity-30">🤖</span>
-            <p className="text-[10px] text-white/20">No activity yet. Hit Build to start.</p>
-          </div>
-        )}
-        {agentLog.map((ev, i) => (
-          <div key={i} className="rounded-lg border border-white/5 bg-white/[0.02] px-2.5 py-1.5">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px]">{STAGE_INFO[ev.stage]?.icon}</span>
-              <span className={`text-[10px] font-semibold ${
-                ev.status === 'done' ? 'text-green-400' : ev.status === 'error' ? 'text-red-400' : 'text-white/60'
-              }`}>
-                {ev.label}
-              </span>
-              <span className="ml-auto text-[9px] text-white/20 font-mono">
-                {new Date(ev.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </span>
-            </div>
-            {ev.message && (
-              <p className="mt-0.5 text-[10px] text-white/30 leading-relaxed">{ev.message}</p>
-            )}
-          </div>
-        ))}
-        {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-2.5 py-1.5">
-            <p className="text-[10px] font-semibold text-red-400">⚠ {error}</p>
-          </div>
-        )}
-        {result && !running && (
+      <div className="px-3 pb-3 overflow-hidden">
+        <div className="flex gap-2 mb-3">
           <button
-            onClick={() => setActivePanel('playground')}
-            className="w-full rounded-lg border border-green-500/30 bg-green-500/5 px-2.5 py-2 text-[10px] text-green-300 hover:bg-green-500/10 transition-colors text-left"
+            onClick={() => setActiveLogTab('log')}
+            className={`flex-1 rounded-lg px-3 py-2 text-[11px] font-semibold transition-colors ${
+              activeLogTab === 'log'
+                ? 'bg-white/10 text-white'
+                : 'bg-white/[0.03] text-white/50 hover:bg-white/10 hover:text-white'
+            }`}
           >
-            🎉 Build complete — click to view in Playground
+            Agent Log
           </button>
-        )}
-        <div ref={logBottomRef} />
-      </div>
-
-      {/* Confessions drawer (takes over lower half when open) */}
-      {showConfessions && (
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <ConfessionsDrawer
-            confessions={confessions}
-            open={showConfessions}
-          />
+          <button
+            onClick={() => setActiveLogTab('confessions')}
+            className={`flex-1 rounded-lg px-3 py-2 text-[11px] font-semibold transition-colors ${
+              activeLogTab === 'confessions'
+                ? 'bg-violet-500/10 text-violet-100'
+                : 'bg-white/[0.03] text-white/50 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            AI Confessions
+            {confessions.length > 0 && (
+              <span className="ml-2 rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[9px] font-bold text-violet-200">
+                {confessions.length}
+              </span>
+            )}
+          </button>
         </div>
-      )}
 
-      {/* Confessions toggle bar — always visible at the bottom */}
-      <div className="shrink-0 border-t border-white/10 bg-black/80 px-3 py-2">
-        <button
-          onClick={() => setShowConfessions((v) => !v)}
-          className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[11px] font-semibold transition-all ${
-            showConfessions
-              ? 'border-violet-500/40 bg-violet-500/10 text-violet-300'
-              : 'border-white/10 bg-white/[0.03] text-white/40 hover:border-white/20 hover:text-white/70'
-          }`}
-        >
-          <span className="text-base leading-none">🤫</span>
-          <span>AI Confessions</span>
-          {confessions.length > 0 && (
-            <span className="ml-1 rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[9px] font-bold text-violet-200">
-              {confessions.length}
-            </span>
+        <div className="min-h-0 flex-1 overflow-y-auto space-y-1.5">
+          {activeLogTab === 'log' ? (
+            <>
+              {!hasActivity && (
+                <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                  <span className="text-3xl opacity-30">🤖</span>
+                  <p className="text-[10px] text-white/20">No activity yet. Hit Build to start.</p>
+                </div>
+              )}
+              {agentLog.map((ev, i) => (
+                <div key={i} className="rounded-lg border border-white/5 bg-white/[0.02] px-2.5 py-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px]">{STAGE_INFO[ev.stage]?.icon}</span>
+                    <span className={`text-[10px] font-semibold ${
+                      ev.status === 'done' ? 'text-green-400' : ev.status === 'error' ? 'text-red-400' : 'text-white/60'
+                    }`}>
+                      {ev.label}
+                    </span>
+                    <span className="ml-auto text-[9px] text-white/20 font-mono">
+                      {new Date(ev.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                  {ev.message && (
+                    <p className="mt-0.5 text-[10px] text-white/30 leading-relaxed">{ev.message}</p>
+                  )}
+                </div>
+              ))}
+              {error && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-2.5 py-1.5">
+                  <p className="text-[10px] font-semibold text-red-400">⚠ {error}</p>
+                </div>
+              )}
+              {result && !running && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setActivePanel('playground')}
+                    className="w-full rounded-lg border border-green-500/30 bg-green-500/5 px-2.5 py-2 text-[10px] text-green-300 hover:bg-green-500/10 transition-colors"
+                  >
+                    🎉 Build complete — view preview
+                  </button>
+                  <button
+                    onClick={acceptToPuck}
+                    className="w-full rounded-lg bg-emerald-600 px-2.5 py-2 text-[10px] font-semibold text-white transition-colors hover:bg-emerald-500"
+                  >
+                    ✨ Accept to Puck
+                  </button>
+                </div>
+              )}
+              <div ref={logBottomRef} />
+            </>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ConfessionsDrawer confessions={confessions} open={true} />
+            </div>
           )}
-          <span className="ml-auto text-[9px] text-white/20">read-only</span>
-          <span className="text-[10px] text-white/30">{showConfessions ? '▲' : '▼'}</span>
-        </button>
+        </div>
       </div>
     </aside>
   );
