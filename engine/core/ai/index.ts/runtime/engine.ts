@@ -14,7 +14,7 @@ interface EngineResponse {
 
 export async function handleAIRequest(req: EngineRequest): Promise<EngineResponse> {
   const language = req.language ?? "en";
-  const model = req.model ?? "gemini-1.5-flash"; // default, adjust as needed
+  const model = req.model ?? "gemini-2.5-flash"; // default, adjust as needed
 
   const result = await runAIPipeline({
     operationId: req.operationId,

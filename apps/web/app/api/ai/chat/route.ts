@@ -53,7 +53,7 @@ function detectHumanLanguage(prompt: string): string {
 }
 
 const AGENTS = {
-  "builder-default": { id: "gemini-1.5-flash-latest", provider: "google" },
+  "builder-default": { id: "gemini-2.5-flash", provider: "google" },
   "openrouter-general": { id: "openrouter/auto", provider: "openrouter" },
 };
 

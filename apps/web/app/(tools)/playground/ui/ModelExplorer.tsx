@@ -13,24 +13,25 @@ export default function ModelExplorer() {
         // Static list of Google AI models
         const googleModels = [
           {
-            id: "gemini-1.5-flash",
-            name: "Gemini 1.5 Flash",
+            id: "gemini-2.5-flash",
+            name: "Gemini 2.5 Flash",
             description: "Fast and efficient model for general tasks",
             context_length: 1048576,
           },
           {
-            id: "gemini-1.5-pro",
-            name: "Gemini 1.5 Pro",
+            id: "gemini-2.5-pro",
+            name: "Gemini 2.5 Pro",
             description: "Advanced model with enhanced capabilities",
             context_length: 2097152,
           },
           {
-            id: "gemini-1.5-pro-vision",
-            name: "Gemini 1.5 Pro Vision",
+            id: "gemini-2.5-pro-vision",
+            name: "Gemini 2.5 Pro Vision",
             description: "Model with vision capabilities",
             context_length: 2097152,
           },
         ];
+
         setModels(googleModels);
       } catch (err) {
         console.error("Failed to load models", err);
