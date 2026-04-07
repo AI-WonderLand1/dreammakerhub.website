@@ -24,9 +24,9 @@ async function fetchGroqModules(): Promise<RegistryModule[]> {
     // Return static list of GROQ models
     const models: RegistryModule[] = [
       {
-        id: "groq-llama3-8b-8192",
-        name: "Llama 3 8B",
-        description: "Fast and efficient Llama 3 model for general tasks",
+        id: "groq-llama-3.1-8b-instant",
+        name: "Llama 3.1 8B Instant",
+        description: "Fast and efficient Llama 3.1 model for general tasks",
         category: "chat",
         source: "groq",
         private: false,
