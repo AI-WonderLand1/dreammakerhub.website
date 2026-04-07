@@ -107,5 +107,4 @@ export const groqProvider: AIProvider = {
       };
     }
   },
-};</content>
-<parameter name="filePath">/workspaces/psychic-octo-fishstick/engine/core/ai/providers/groq.ts
+};
