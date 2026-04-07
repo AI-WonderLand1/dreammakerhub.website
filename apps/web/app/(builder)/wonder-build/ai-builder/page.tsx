@@ -183,9 +183,10 @@ export default function AIBuilderPage() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT PANEL — Controls + Agent Log */}
-        <div className="w-[380px] min-w-[320px] border-r border-white/10 flex flex-col overflow-y-auto">
-          <div className="p-6 flex flex-col gap-6">
+        {/* LEFT PANEL — Controls + Agent Log (Scrollable) */}
+        <div className="w-[380px] min-w-[320px] border-r border-white/10 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 flex flex-col gap-6">
             {/* Type selector */}
             <div>
               <label className="text-xs text-white/50 uppercase tracking-widest mb-3 block">
@@ -324,6 +325,8 @@ export default function AIBuilderPage() {
               )}
             </div>
           )}
+            </div>
+          </div>
         </div>
 
         {/* RIGHT PANELS — Preview (bigger, middle) + Code (smaller, right) */}
