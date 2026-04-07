@@ -23,10 +23,10 @@ export async function POST(req: Request) {
 
     // Map user selection to Google AI model strings
     const modelMap: Record<string, string> = {
-      'fast': 'gemini-1.5-flash',
-      'pro': 'gemini-1.5-pro',
-      'creative': 'gemini-1.5-pro',
-      'vision': 'gemini-1.5-pro' // Gemini supports vision
+      'fast': 'gemini-2.5-flash',
+      'pro': 'gemini-2.5-pro',
+      'creative': 'gemini-2.5-pro',
+      'vision': 'gemini-2.5-pro' // Gemini supports vision
     };
 
     const selectedModel = modelMap[modelId] || modelMap['fast'];

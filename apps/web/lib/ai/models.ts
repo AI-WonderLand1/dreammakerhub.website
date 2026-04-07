@@ -1,26 +1,26 @@
 export const FREE_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-8b",
 ] as const;
 
 export const PAID_MODELS = [
-  "gemini-1.5-pro",
-  "gemini-1.5-pro-002",
+  "gemini-2.5-pro",
+  "gemini-2.5-pro-002",
 ] as const;
 
 export const VISION_MODELS = {
-  free: ["gemini-1.5-flash"],
+  free: ["gemini-2.5-flash"],
   paid: [
-    "gemini-1.5-pro",
-    "gemini-1.5-pro-002",
+    "gemini-2.5-pro",
+    "gemini-2.5-pro-002",
   ],
 } as const;
 
 export const CODE_MODELS = {
-  free: ["gemini-1.5-flash"],
+  free: ["gemini-2.5-flash"],
   paid: [
-    "gemini-1.5-pro",
-    "gemini-1.5-pro-002",
+    "gemini-2.5-pro",
+    "gemini-2.5-pro-002",
   ],
 } as const;
 
@@ -56,7 +56,7 @@ export function selectModelForTask(
     case "vision":
       return tier.visionModels[0];
     case "build":
-      return isPaid ? "gemini-1.5-pro" : "gemini-1.5-flash";
+      return isPaid ? "gemini-2.5-pro" : "gemini-2.5-flash";
     default:
       return tier.models[0];
   }
