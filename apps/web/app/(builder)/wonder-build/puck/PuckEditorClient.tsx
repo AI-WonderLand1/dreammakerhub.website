@@ -6,7 +6,8 @@ import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
 import { PuckAIPanel, PuckAIButton } from "@/components/PuckAIPanel";
 import { PuckPreview } from "./PuckPreview";
-import { Sparkles, Code, Eye, Monitor, Download, ExternalLink } from "lucide-react";
+import { Sparkles, Code, Eye, Monitor, Download, ExternalLink, Clock } from "lucide-react";
+import { TempStorageWarning, TempStorageBadge } from "@/components/TempStorageWarning";
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error" | "saving" | "saved";
 
@@ -39,6 +40,12 @@ export function PuckEditorClient({
   const [showAI, setShowAI] = useState(false);
   const [editorMode, setEditorMode] = useState<"visual" | "code" | "preview">("visual");
   const [showExportModal, setShowExportModal] = useState(false);
+  const [storageInfo, setStorageInfo] = useState<{
+    type: string;
+    hoursRemaining: number | null;
+    expiresAt: string | null;
+  } | null>(null);
+  const [showTempWarning, setShowTempWarning] = useState(false);
 
   const hasContent = (data?.content?.length ?? 0) > 0;
 
@@ -106,6 +113,15 @@ export function PuckEditorClient({
         setData(json.project.content);
         setLocalProjectId(pid);
         setStatus("loaded");
+        
+        if (json.storageInfo) {
+          setStorageInfo(json.storageInfo);
+          if (json.storageInfo.type === 'temp' && 
+              json.storageInfo.hoursRemaining !== null && 
+              json.storageInfo.hoursRemaining < 24) {
+            setShowTempWarning(true);
+          }
+        }
       } else {
         setStatus("empty");
       }
@@ -165,6 +181,34 @@ export function PuckEditorClient({
     [],
   );
 
+  const handleSaveToPlatform = useCallback(async () => {
+    if (!localProjectId) return;
+    
+    try {
+      const res = await fetch("/api/puck/save", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: localProjectId,
+          storageType: "platform",
+        }),
+      });
+      
+      const json = await res.json();
+      if (json.ok) {
+        setStorageInfo({ type: "platform", hoursRemaining: null, expiresAt: null });
+        setShowTempWarning(false);
+        setSaveStatus("Saved to platform!");
+      }
+    } catch (error) {
+      console.error("[Puck] Save to platform failed:", error);
+    }
+  }, [localProjectId]);
+
+  const handleConnectCloud = useCallback(() => {
+    window.location.href = "/dashboard/settings/cloud";
+  }, []);
+
   return (
     <div className="relative">
       {showAIPanel && (
@@ -213,6 +257,9 @@ export function PuckEditorClient({
 
       {showAIPanel && (
         <div className="absolute top-2 right-2 z-40 flex items-center gap-2">
+          {storageInfo?.type === 'temp' && storageInfo.hoursRemaining !== null && (
+            <TempStorageBadge hoursRemaining={storageInfo.hoursRemaining} />
+          )}
           <button
             onClick={() => setShowExportModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white/80 transition-colors"
@@ -316,6 +363,17 @@ export function PuckEditorClient({
           onApplyData={handleApplyAIData}
           isOpen={showAI}
           onClose={() => setShowAI(false)}
+        />
+      )}
+
+      {showTempWarning && (
+        <TempStorageWarning
+          isOpen={showTempWarning}
+          onClose={() => setShowTempWarning(false)}
+          onSaveToPlatform={handleSaveToPlatform}
+          onConnectCloud={handleConnectCloud}
+          onExport={() => setShowExportModal(true)}
+          hoursRemaining={storageInfo?.hoursRemaining || 24}
         />
       )}
 
