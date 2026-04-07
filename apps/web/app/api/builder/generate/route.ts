@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     // Map user selection to GROQ model strings
     const modelMap: Record<string, string> = {
-      'fast': 'llama3-8b-8192',
+      'fast': 'llama-3.1-8b-instant',
       'pro': 'llama3-70b-8192',
       'creative': 'mixtral-8x7b-32768',
       'vision': 'llama3-70b-8192' // GROQ doesn't have native vision, use best model

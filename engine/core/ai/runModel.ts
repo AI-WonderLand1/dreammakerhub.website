@@ -25,7 +25,7 @@ export async function runModel({
 
   console.log(`🤖 Wonder-Build Engine: Routing to ${model}`);
 
-  // If your agent IDs are like "groq/llama3-8b-8192" or "google/gemini-2.5-flash"
+  // If your agent IDs are like "groq/llama-3.1-8b-instant" or "google/gemini-2.5-flash"
   const isGroq = typeof model === "string" && model.startsWith("groq/");
   const isGoogle = typeof model === "string" && model.startsWith("google/");
 
