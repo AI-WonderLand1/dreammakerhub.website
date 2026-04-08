@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # 1. Check for updates in the Root folder
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # 2. Check for updates in the Web App (where the vulnerabilities usually hide)
+  - package-ecosystem: "npm"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+
+  # 3. Check for GitHub Action updates (optional but recommended)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
