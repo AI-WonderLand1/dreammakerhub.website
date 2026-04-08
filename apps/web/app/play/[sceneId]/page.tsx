@@ -9,6 +9,58 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [sceneData, setSceneData] = useState<any>(null)
+  const [showSaveMenu, setShowSaveMenu] = useState(false)
+
+  async function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setLoading(true)
+    
+    try {
+      const buffer = await file.arrayBuffer()
+      const blob = new Blob([buffer], { type: file.type })
+      const url = URL.createObjectURL(blob)
+      
+      alert(`File "${file.name}" loaded! Opening in editor...`)
+      window.location.href = `/wonder-build/playcanvas?import=${encodeURIComponent(url)}`
+    } catch (err: any) {
+      alert("Failed to import file: " + err.message)
+      setLoading(false)
+    }
+  }
+
+  async function saveToSupabase() {
+    try {
+      const res = await fetch('/api/scenes/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sceneId: params.sceneId,
+          data: sceneData
+        })
+      })
+      if (res.ok) {
+        alert('Scene saved to Wonderland Cloud!')
+        setShowSaveMenu(false)
+      } else {
+        alert('Failed to save. You may need to log in.')
+      }
+    } catch (e) {
+      alert('Error saving scene')
+    }
+  }
+
+  function downloadScene() {
+    const blob = new Blob([JSON.stringify(sceneData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${sceneData.name || 'scene'}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    setShowSaveMenu(false)
+  }
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -234,6 +286,48 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
           </div>
           
           <div className="flex gap-3">
+            <button
+              onClick={() => document.getElementById('file-input')?.click()}
+              className="px-4 py-2 rounded-lg border border-white/20 text-white/70 text-sm hover:bg-white/10 transition flex items-center gap-2"
+            >
+              📁 Import
+            </button>
+            <button
+              onClick={() => setShowSaveMenu(!showSaveMenu)}
+              className="px-4 py-2 rounded-lg border border-white/20 text-white/70 text-sm hover:bg-white/10 transition flex items-center gap-2"
+            >
+              💾 Save
+            </button>
+            {showSaveMenu && (
+              <div className="absolute top-full right-0 mt-2 bg-black/95 border border-white/20 rounded-lg p-4 z-50 min-w-[200px]">
+                <p className="text-white/60 text-xs mb-3">Choose storage location:</p>
+                <button
+                  onClick={() => saveToSupabase()}
+                  className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded flex items-center gap-2"
+                >
+                  ☁️ Save to Wonderland Cloud
+                </button>
+                <button
+                  onClick={() => downloadScene()}
+                  className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded flex items-center gap-2"
+                >
+                  💿 Download as JSON
+                </button>
+                <button
+                  onClick={() => window.location.href = '/settings/cloud-storage'}
+                  className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded flex items-center gap-2"
+                >
+                  🔗 Connect Your Own Storage
+                </button>
+              </div>
+            )}
+            <input
+              id="file-input"
+              type="file"
+              accept=".glb,.gltf,.fbx,.obj"
+              className="hidden"
+              onChange={handleFileImport}
+            />
             <Link
               href={`/wonder-build/playcanvas?scene=${params.sceneId}`}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition"

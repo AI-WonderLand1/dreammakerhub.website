@@ -210,7 +210,7 @@ export default function Homepage() {
               📚 Scene Library
             </Link>
             <Link
-              href="/import"
+              href="/wonder-build/playcanvas"
               className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-5 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
             >
               📁 Import Files
