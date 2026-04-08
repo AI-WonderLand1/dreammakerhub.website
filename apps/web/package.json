@@ -42,7 +42,7 @@
     "clsx": "^2.1.1",
     "colyseus.js": "^0.16.22",
     "framer": "^2.4.1",
-    "groq-sdk": "^0.3.0",
+    "groq-sdk": "^1.1.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "motion": "^12.25.0",
