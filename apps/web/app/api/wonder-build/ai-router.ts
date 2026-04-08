@@ -3,6 +3,7 @@ import { runModel } from '@/engine/core/ai/runModel';
 import { buildClassificationPrompt } from '@/engine/core/ai/promptBuilder';
 
 const HF_TOKEN = process.env.Wonder_Build_2026;
+const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 
 const MODE_PROMPTS: Record<string, string> = {
   'image-to-code': 'Analyze this image and generate the corresponding HTML/CSS code. Return only valid JSON with the layout structure.',
@@ -11,52 +12,94 @@ const MODE_PROMPTS: Record<string, string> = {
   'code-convert': 'Convert the following code to the target language. Return only valid JSON with the converted code.',
 };
 
-export async function runAI(mode: string, prompt: string): Promise<any> {
-  if (!HF_TOKEN) {
-    return { error: 'HuggingFace token not configured', success: false };
+async function callCerebras(prompt: string, systemPrompt: string) {
+  if (!CEREBRAS_API_KEY) {
+    throw new Error('Cerebras API key not configured');
   }
 
-  const modelMap: Record<string, string> = {
-    'image-to-code': 'microsoft/Phi-4-mini-instruct',
-    'video-to-code': 'microsoft/Phi-4-mini-instruct',
-    'ai-style': 'microsoft/Phi-4-mini-instruct',
-    'code-convert': 'microsoft/Phi-4-mini-instruct',
-  };
+  const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${CEREBRAS_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 4096,
+    }),
+  });
 
-  const model = modelMap[mode] || 'microsoft/Phi-4-mini-instruct';
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Cerebras API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callHuggingFace(prompt: string, systemPrompt: string) {
+  if (!HF_TOKEN) {
+    throw new Error('HuggingFace token not configured');
+  }
+
+  const response = await fetch('https://api-inference.huggingface.co/models/microsoft/Phi-4-mini-instruct', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${HF_TOKEN}`,
+    },
+    body: JSON.stringify({
+      inputs: `${systemPrompt}\n\nUser: ${prompt}`,
+      parameters: {
+        max_new_tokens: 4096,
+        return_full_text: false,
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HF API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data[0]?.generated_text : data.generated_text || '';
+}
+
+export async function runAI(mode: string, prompt: string): Promise<any> {
   const systemPrompt = MODE_PROMPTS[mode] || 'Respond with valid JSON.';
 
-  try {
-    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${HF_TOKEN}`,
-      },
-      body: JSON.stringify({
-        inputs: `${systemPrompt}\n\nUser: ${prompt}`,
-        parameters: {
-          max_new_tokens: 4096,
-          return_full_text: false,
-        }
-      }),
-    });
+  let content = '';
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return { error: `HF API error: ${response.status}`, details: errorText, success: false };
-    }
-
-    const data = await response.json();
-    const content = Array.isArray(data) ? data[0]?.generated_text : data.generated_text || '';
-
+  if (CEREBRAS_API_KEY) {
     try {
-      return { ...JSON.parse(content), success: true };
-    } catch {
-      return { text: content, success: true };
+      content = await callCerebras(prompt, systemPrompt);
+    } catch (error: any) {
+      console.error('Cerebras failed, falling back to HuggingFace:', error.message);
     }
-  } catch (error: any) {
-    return { error: error.message || 'Unknown error', success: false };
+  }
+
+  if (!content && HF_TOKEN) {
+    try {
+      content = await callHuggingFace(prompt, systemPrompt);
+    } catch (error: any) {
+      return { error: error.message || 'All AI providers failed', success: false };
+    }
+  }
+
+  if (!content) {
+    return { error: 'No AI provider configured', success: false };
+  }
+
+  try {
+    return { ...JSON.parse(content), success: true };
+  } catch {
+    return { text: content, success: true };
   }
 }
 

@@ -194,26 +194,26 @@ export default function Homepage() {
             </p>
           </div>
 
-          {/* Bottom: builder action buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Bottom: 3D Game Builder Workflow Buttons */}
+          <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/wonder-build/playcanvas"
-              className="inline-flex items-center gap-2 rounded-full bg-blue-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 backdrop-blur-sm transition hover:bg-blue-500"
+              href="/game-builder/create"
+              className="inline-flex items-center gap-2 rounded-full bg-green-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/40 backdrop-blur-sm transition hover:bg-green-500"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Open WebGL Studio
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 16v.01"/><path d="M12 12v.01"/></svg>
+              Describe to AI
             </Link>
             <Link
-              href="/wonder-build/ai-builder"
-              className="inline-flex items-center gap-2 rounded-full bg-violet-600/90 border border-violet-500/50 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 backdrop-blur-sm transition hover:bg-violet-500"
+              href="/library"
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600/90 border border-indigo-500/50 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 backdrop-blur-sm transition hover:bg-indigo-500"
             >
-              ✨ AI Builder
+              📚 Scene Library
             </Link>
             <Link
-              href="/marketplace"
+              href="/import"
               className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-5 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
             >
-              🗂 Registry
+              📁 Import Files
             </Link>
           </div>
         </div>
