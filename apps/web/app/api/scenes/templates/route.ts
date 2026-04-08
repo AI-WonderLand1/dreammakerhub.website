@@ -5,11 +5,10 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    // First try to get from Supabase
+    // First try to get user-created scenes from Supabase
     const supabaseScenes = await listPublicScenes(20);
     
     if (supabaseScenes.length > 0) {
-      // Format for template display
       const templates = supabaseScenes.map(scene => ({
         id: scene.id,
         name: scene.name || "Untitled Scene",
@@ -19,6 +18,38 @@ export async function GET() {
       }));
       
       return NextResponse.json({ templates });
+    }
+    
+    // Also try to get from 3d-assets bucket
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      
+      if (supabase) {
+        const { data: files } = await supabase.storage
+          .from("3d-assets")
+          .list("", { limit: 50 });
+        
+        if (files && files.length > 0) {
+          const bucketTemplates = files
+            .filter(f => f.name.endsWith(".json"))
+            .slice(0, 8)
+            .map(f => ({
+              id: `asset_${f.name.replace(".json", "")}`,
+              name: f.name.replace(".json", "").replace(/_/g, " "),
+              description: "Pre-made scene from library",
+              category: "custom",
+              thumbnail: null,
+              isAsset: true
+            }));
+          
+          if (bucketTemplates.length > 0) {
+            return NextResponse.json({ templates: bucketTemplates });
+          }
+        }
+      }
+    } catch (e) {
+      console.log("3d-assets bucket not available");
     }
     
     // Fallback to hardcoded templates
