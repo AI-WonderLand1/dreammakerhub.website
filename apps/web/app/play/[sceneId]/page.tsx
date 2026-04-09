@@ -3,6 +3,13 @@
 import { useEffect, useState, useRef } from "react"
 import * as pc from "playcanvas"
 import Link from "next/link"
+import { History, RotateCcw } from "lucide-react"
+
+interface Version {
+  id: string
+  created_at: string
+  snapshot: string | null
+}
 
 export default function PlayPage({ params }: { params: { sceneId: string } }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -10,6 +17,10 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
   const [error, setError] = useState("")
   const [sceneData, setSceneData] = useState<any>(null)
   const [showSaveMenu, setShowSaveMenu] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [versions, setVersions] = useState<Version[]>([])
+  const [loadingVersions, setLoadingVersions] = useState(false)
+  const [restoring, setRestoring] = useState<string | null>(null)
 
   async function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
