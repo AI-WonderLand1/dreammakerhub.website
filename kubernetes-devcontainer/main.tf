@@ -427,28 +427,3 @@ module "code-server" {
 }
 
 # See https://registry.coder.com/modules/coder/jetbrains
-module "jetbrains" {
-  count      = data.coder_workspace.me.start_count
-  source     = "registry.coder.com/coder/jetbrains/coder"
-  version    = "~> 1.0"
-  agent_id   = coder_agent.main.id
-  agent_name = "main"
-  folder     = "/home/coder"
-}
-
-resource "coder_metadata" "container_info" {
-  count       = data.coder_workspace.me.start_count
-  resource_id = coder_agent.main.id
-  item {
-    key   = "workspace image"
-    value = var.cache_repo == "" ? local.devcontainer_builder_image : envbuilder_cached_image.cached.0.image
-  }
-  item {
-    key   = "git url"
-    value = local.repo_url
-  }
-  item {
-    key   = "cache repo"
-    value = var.cache_repo == "" ? "not enabled" : var.cache_repo
-  }
-}

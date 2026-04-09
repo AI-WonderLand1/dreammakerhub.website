@@ -25,7 +25,7 @@ COPY --chown=coder:coder config.yaml /home/coder/.config/code-server/config.yaml
 RUN code-server --install-extension ms-playwright.playwright \
     && code-server --install-extension dbaeumer.vscode-eslint \
     && code-server --install-extension bradlc.vscode-tailwindcss \
-    && code-server --install-extension ώξformulahendry.auto-rename-tag \
+    && code-server --install-extension formulahendry.auto-rename-tag \
     && code-server --install-extension esbenp.prettier-vscode \
     || true
 

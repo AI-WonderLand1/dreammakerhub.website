@@ -13,6 +13,7 @@ function cx(...xs: Array<string | false | undefined | null>) {
 
 const TABS = [
   { href: "/dashboard/settings", label: "Overview" },
+  { href: "/dashboard/settings/coder", label: "Coder IDE" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/features", label: "Features" },
   { href: "/dashboard/settings/webhooks", label: "Webhooks" },
