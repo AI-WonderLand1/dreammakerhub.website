@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
-import { env, requireEnv } from '@lib/env';
+import { requireEnv } from '@lib/env';
 import { logger } from '@lib/logger';
 
 export const runtime = "nodejs";
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       type: 'signup',
       email: email.toLowerCase().trim(),
       options: {
-        emailRedirectTo: `${requireEnv(env.NEXT_PUBLIC_URL, "NEXT_PUBLIC_URL")}/auth/verify-email`,
+        emailRedirectTo: `${requireEnv('NEXT_PUBLIC_URL')}/auth/verify-email`,
       }
     });
 
