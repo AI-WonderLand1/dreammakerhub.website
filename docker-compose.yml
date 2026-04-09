@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  ide:
+    build:
+      context: .
+      dockerfile: Dockerfile.workspace
+    ports:
+      - "8080:8080"
+    volumes:
+      - ide-data:/home/coder/project
+    environment:
+      - PORT=8080
+      - WS_DIR=/home/coder/project
+    restart: unless-stopped
+
+volumes:
+  ide-data:
