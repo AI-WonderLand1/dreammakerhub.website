@@ -1,5 +1,5 @@
 import { createClient } from '../../../utils/supabase/server';
-import { env, requireEnv } from '@lib/env';
+import { requireEnv } from '@lib/env';
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ export async function GET() {
     
     const aiResponse = await fetch('https://api.openai.com/v1/models', {
       headers: {
-        'Authorization': `Bearer ${requireEnv(env.OPENAI_API_KEY, "OPENAI_API_KEY")}`,
+        'Authorization': `Bearer ${requireEnv('OPENAI_API_KEY')}`,
       }
     });
 
@@ -28,7 +28,7 @@ export async function GET() {
       status: 'major_outage',
       timestamp: new Date().toISOString(),
       message: 'AI services unavailable',
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 503 });
   }
 }
