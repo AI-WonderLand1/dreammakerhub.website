@@ -71,6 +71,22 @@ export default function SettingsMenu() {
             Webhooks
           </Link>
 
+          <Link
+            href="/dashboard/settings/coder"
+            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
+            onClick={() => setOpen(false)}
+          >
+            Coder IDE Workspaces
+          </Link>
+
+          <Link
+            href="/dashboard/settings/byoc"
+            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
+            onClick={() => setOpen(false)}
+          >
+            BYOC Storage
+          </Link>
+
           <div className="h-px bg-white/10" />
 
           <Link

@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Production build: standalone output for Docker containers
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+
   // Local development
   basePath: "",
   assetPrefix: "",
@@ -82,7 +85,7 @@ const nextConfig = {
     return config;
   },
 
-  // Headers for WebGL & Cross-Origin
+  // Headers for WebGL & Cross-Origin & Security
   headers: async () => [
     {
       source: '/:path*',
@@ -91,6 +94,21 @@ const nextConfig = {
         { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        {
+          key: 'Content-Security-Policy',
+          value: [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js-mtls-com.s3.amazonaws.com",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' blob: data: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' https://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai",
+            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+            "worker-src 'self' blob:",
+          ].join('; ')
+        },
       ],
     },
   ],

@@ -16,6 +16,7 @@ const SETTINGS_NAV_ITEMS = [
   { href: "/settings/security", label: "Security" },
   { href: "/settings/subscriptions", label: "Subscriptions" },
   { href: "/settings/cloud-storage", label: "Cloud Storage (BYOC)" },
+  { href: "/dashboard/settings/coder", label: "Coder IDE" },
 ] as const;
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

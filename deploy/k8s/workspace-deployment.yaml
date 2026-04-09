@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wonderland-workspace
+  namespace: wonderland
+  labels:
+    app: wonderland-workspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wonderland-workspace
+  template:
+    metadata:
+      labels:
+        app: wonderland-workspace
+    spec:
+      containers:
+        - name: code-server
+          image: wonderspace/workspace:latest
+          ports:
+            - containerPort: 8080
+              name: ide
+            - containerPort: 3001
+              name: playcanvas
+            - containerPort: 3002
+              name: webgl
+          env:
+            - name: PORT
+              value: "8080"
+            - name: WS_DIR
+              value: "/home/coder/project"
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "4000m"
+              memory: "8Gi"
+          volumeMounts:
+            - name: workspace-data
+              mountPath: /home/coder/project
+      volumes:
+        - name: workspace-data
+          persistentVolumeClaim:
+            claimName: wonderland-workspace-pvc
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wonderland-workspace-pvc
+  namespace: wonderland
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wonderland-workspace
+  namespace: wonderland
+  labels:
+    app: wonderland-workspace
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: ide
+  selector:
+    app: wonderland-workspace
