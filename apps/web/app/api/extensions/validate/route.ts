@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { env, requireEnv } from '@lib/env'
+import { serverEnv } from '@lib/env'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${requireEnv(env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY")}`
+        Authorization: `Bearer ${requireEnv(serverEnv.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY")}`
       },
       body: JSON.stringify(body)
     }

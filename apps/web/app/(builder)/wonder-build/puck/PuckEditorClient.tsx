@@ -6,8 +6,9 @@ import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
 import { PuckAIPanel, PuckAIButton } from "@/components/PuckAIPanel";
 import { PuckPreview } from "./PuckPreview";
-import { Sparkles, Code, Eye, Monitor, Download, ExternalLink, Clock } from "lucide-react";
+import { Sparkles, Code, Eye, Monitor, Download, ExternalLink, Clock, History } from "lucide-react";
 import { TempStorageWarning, TempStorageBadge } from "@/components/TempStorageWarning";
+import { VersionHistory, useAutoSave } from "@/components/VersionHistory";
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error" | "saving" | "saved";
 
@@ -48,6 +49,9 @@ export function PuckEditorClient({
   const [showTempWarning, setShowTempWarning] = useState(false);
 
   const hasContent = (data?.content?.length ?? 0) > 0;
+
+  // Auto-save version history
+  const { lastSaved, saving: autoSaving } = useAutoSave(localProjectId || null, data, 60000);
 
   const handleApplyAIData = useCallback((newData: InitialData) => {
     setData(newData);
@@ -259,6 +263,24 @@ export function PuckEditorClient({
         <div className="absolute top-2 right-2 z-40 flex items-center gap-2">
           {storageInfo?.type === 'temp' && storageInfo.hoursRemaining !== null && (
             <TempStorageBadge hoursRemaining={storageInfo.hoursRemaining} />
+          )}
+          {localProjectId && (
+            <VersionHistory
+              projectId={localProjectId}
+              onRestore={(content) => {
+                setData(content);
+                setStatus("loaded");
+              }}
+            />
+          )}
+          {lastSaved && (
+            <span className="text-[10px] text-white/30 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {lastSaved.toLocaleTimeString()}
+            </span>
+          )}
+          {autoSaving && (
+            <span className="text-[10px] text-white/30 animate-pulse">Saving...</span>
           )}
           <button
             onClick={() => setShowExportModal(true)}

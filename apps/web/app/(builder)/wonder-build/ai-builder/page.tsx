@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type BuildType = "website" | "game" | "component";
 type AgentStage = "architect" | "builder" | "reviewer";
@@ -54,12 +55,14 @@ const EXAMPLES: Record<BuildType, string[]> = {
 };
 
 export default function AIBuilderPage() {
+  const router = useRouter();
   const [buildType, setBuildType] = useState<BuildType>("website");
   const [prompt, setPrompt] = useState("");
   const [agents, setAgents] = useState<Partial<Record<AgentStage, AgentEvent>>>({});
   const [result, setResult] = useState<BuildResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"preview" | "code">("preview");
   const previewRef = useRef<HTMLIFrameElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -139,6 +142,37 @@ export default function AIBuilderPage() {
     a.download = `wonder-build.${ext}`;
     a.click();
   };
+
+  const acceptProject = useCallback(async () => {
+    if (!result || saving) return;
+    setSaving(true);
+    
+    try {
+      const res = await fetch("/api/projects/create-from-build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: buildType,
+          code: result.code,
+          prompt,
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.url) {
+        router.push(data.url);
+      } else {
+        alert("Project saved! Redirecting to editor...");
+        router.push(`/wonder-build/puck?project=${data.projectId}`);
+      }
+    } catch (err) {
+      console.error("Failed to save project:", err);
+      alert("Failed to save project. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }, [result, buildType, prompt, router, saving]);
 
   const isBuilding = running;
   const isDone = !!result;
@@ -340,8 +374,15 @@ export default function AIBuilderPage() {
                     Download
                   </button>
                   <button
+                    onClick={acceptProject}
+                    disabled={saving}
+                    className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-900/30"
+                  >
+                    {saving ? "Saving..." : "✓ Accept & Edit"}
+                  </button>
+                  <button
                     onClick={() => { setResult(null); setAgents({}); setError(null); }}
-                    className="px-3 py-1.5 rounded-lg text-xs bg-violet-600 hover:bg-violet-500 text-white transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
                     Build again
                   </button>

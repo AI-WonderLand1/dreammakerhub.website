@@ -5,12 +5,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
 
   const res = await fetch(
-    `${requireEnv(env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL")}/functions/v1/extensions`,
+    `${requireEnv('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/extensions`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${requireEnv(env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY")}`
+        Authorization: `Bearer ${requireEnv('SUPABASE_SERVICE_ROLE_KEY')}`
       },
       body: JSON.stringify(body)
     }
@@ -24,12 +24,12 @@ export async function DELETE(req: NextRequest) {
   const body = await req.json()
 
   const res = await fetch(
-    `${requireEnv(env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL")}/functions/v1/extensions`,
+    `${requireEnv('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/extensions`,
     {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${requireEnv(env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY")}`
+        Authorization: `Bearer ${requireEnv('SUPABASE_SERVICE_ROLE_KEY')}`
       },
       body: JSON.stringify(body)
     }

@@ -1,58 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callOpenRouter } from "../build/stream/route";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const runtime = "nodejs";
 
-const OPENROUTER_MODELS = [
-  "openai/gpt-oss-120b:free",
-  "qwen/qwen3.6-plus:free",
-  "openai/gpt-oss-20b:free",
-  "minimax/minimax-m2.5:free",
-];
+function getGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY is not configured.");
+  return new GoogleGenerativeAI(apiKey);
+}
 
-async function callOpenRouterGame(system: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.OpenRouter_Api_key;
-  if (!apiKey) throw new Error("OpenRouter API key not configured.");
-
-  let lastError = "";
-  for (const model of OPENROUTER_MODELS) {
-    try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://ai-wonderland.replit.app",
-          "X-Title": "Wonderland Game Builder",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.8,
-          max_tokens: 8192,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.error) {
-        const msg = data.error.message || "";
-        if (res.status === 429 || msg.includes("quota") || msg.includes("rate")) {
-          lastError = `${model}: rate limited`;
-          continue;
-        }
-        throw new Error(`OpenRouter (${model}): ${msg}`);
-      }
-      const text = data.choices?.[0]?.message?.content;
-      if (text) return text;
-      lastError = `${model}: empty response`;
-    } catch (e: any) {
-      lastError = `${model}: ${e.message}`;
-    }
-  }
-  throw new Error(`All models exhausted. Last error: ${lastError}`);
+async function callGemini(system: string, userPrompt: string): Promise<string> {
+  const genAI = getGeminiClient();
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+  
+  const result = await model.generateContent([
+    { text: system },
+    { text: userPrompt },
+  ]);
+  
+  const response = await result.response;
+  const text = response.text();
+  
+  if (!text) throw new Error("Empty response from Gemini");
+  return text;
 }
 
 const GAME_SCENE_SYSTEM = `You are an expert PlayCanvas 3D scene architect. Create complete 3D scene definitions for PlayCanvas engine.
@@ -118,7 +88,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sceneJson = await callOpenRouterGame(
+    const sceneJson = await callGemini(
       GAME_SCENE_SYSTEM,
       `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`
     );
