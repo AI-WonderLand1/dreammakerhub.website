@@ -19,7 +19,7 @@ export interface WorkspaceInfo {
   id: string;
   name: string;
   type: WorkspaceType;
-  status: 'provisioning' | 'running' | 'stopped' | 'error' | 'deleted';
+  status: 'provisioning' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error' | 'deleted';
   url: string;
   playcanvasUrl: string;
   webglStudioUrl: string;
@@ -71,7 +71,6 @@ function hashCode(str: string): number {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
   }
   return Math.abs(hash);
 }
@@ -139,7 +138,7 @@ export async function provisionWorkspace(config: WorkspaceConfig): Promise<Works
       id: config.workspaceId,
       name: config.name,
       type: config.type,
-      status: 'provisioning',
+      status: 'starting',
       url: urls.ide,
       playcanvasUrl: urls.playcanvas,
       webglStudioUrl: urls.webglStudio,
@@ -172,6 +171,36 @@ async function ensureNetwork(docker: Dockerode): Promise<void> {
       Driver: 'bridge',
       Labels: { 'wonderspace.managed': 'true' },
     });
+  }
+}
+
+export async function stopWorkspace(workspaceId: string): Promise<boolean> {
+  if (!isDockerAvailable()) return true;
+
+  const docker = getDocker();
+
+  try {
+    const container = docker.getContainer(`ws-${workspaceId}`);
+    await container.stop();
+    return true;
+  } catch (error) {
+    console.error('Workspace stop error:', error);
+    return false;
+  }
+}
+
+export async function startWorkspace(workspaceId: string): Promise<boolean> {
+  if (!isDockerAvailable()) return true;
+
+  const docker = getDocker();
+
+  try {
+    const container = docker.getContainer(`ws-${workspaceId}`);
+    await container.start();
+    return true;
+  } catch (error) {
+    console.error('Workspace start error:', error);
+    return false;
   }
 }
 
@@ -213,7 +242,14 @@ export async function getWorkspaceStatus(workspaceId: string): Promise<Workspace
   try {
     const container = docker.getContainer(`ws-${workspaceId}`);
     const info = await container.inspect();
-    const status = info.State.Running ? 'running' : 'stopped';
+    let status: WorkspaceInfo['status'] = 'stopped';
+    if (info.State.Running) {
+      status = 'running';
+    } else if (info.State.Status === 'exited') {
+      status = 'stopped';
+    } else if (info.State.Status === 'created') {
+      status = 'provisioning';
+    }
 
     return {
       id: workspaceId,
