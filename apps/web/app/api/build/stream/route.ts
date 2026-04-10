@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { manifestVisualBlock } from "../../../../../../engine/core/ai/bridge";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getAuthUser, AuthUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -61,25 +61,51 @@ Rules:
 - Follow the existing WonderSpace coding conventions
 - Output ONLY the code — no markdown fences, no explanation`;
 
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY is not configured.");
-  return new GoogleGenerativeAI(apiKey);
-}
+const FREE_MODELS = [
+  "openai/gpt-oss-120b:free",
+  "qwen/qwen3.6-plus:free",
+  "openai/gpt-oss-20b:free",
+  "minimax/minimax-m2.5:free",
+] as const;
 
-async function callGemini(system: string, userPrompt: string): Promise<string> {
-  const genAI = getGeminiClient();
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-  
-  const result = await model.generateContent([
-    { text: system },
-    { text: userPrompt },
-  ]);
-  
-  const response = await result.response;
-  const text = response.text();
-  
-  if (!text) throw new Error("Empty response from Gemini");
+const PAID_MODELS = [
+  "gpt-4o",
+  "llama-3.1-70b-versatile",
+] as const;
+
+async function callGithubAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
+  const apiKey = process.env.GITHUB_MODELS_API_KEY;
+  if (!apiKey) throw new Error("GITHUB_MODELS_API_KEY is not configured.");
+
+  const model = isPaid ? "gpt-4o" : "gpt-4o-mini";
+
+  const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 8192,
+    }),
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(`GitHub Models (${model}): ${data.error.message}`);
+  }
+
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error(`${model}: empty response`);
+  }
+
   return text;
 }
 
@@ -134,6 +160,14 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Prompt required" }), { status: 400 });
   }
 
+  let user: AuthUser | null = null;
+  try {
+    user = await getAuthUser();
+  } catch {
+    // Anonymous user - will use free tier
+  }
+
+  const isPaid = user?.isPaid ?? false;
   const encoder = new TextEncoder();
   const typeLabel = getTypeLabel(type);
 
@@ -144,22 +178,26 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        // --- STAGE 1: ARCHITECT ---
-        send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}…` });
+        const tierLabel = isPaid ? "Pro" : "Free";
 
-        const plan = await callGemini(
+        // --- STAGE 1: ARCHITECT ---
+        send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel})` });
+
+        const plan = await callGithubAI(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
-          `Plan a ${typeLabel} based on: "${prompt}"`
+          `Plan a ${typeLabel} based on: "${prompt}"`,
+          isPaid
         );
 
         send("agent", { stage: "architect", status: "done", label: "Architect Agent", message: plan.slice(0, 300) });
 
         // --- STAGE 2: BUILDER ---
-        send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code…` });
+        send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel})` });
 
-        const rawCode = await callGemini(
+        const rawCode = await callGithubAI(
           getSystemPrompt(type),
-          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`
+          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
+          isPaid
         );
         const code = stripCodeFences(rawCode);
 
@@ -168,7 +206,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callGemini(getReviewerSystem(type), `Improve this code:\n\n${code}`);
+        const reviewed = await callGithubAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });
@@ -185,7 +223,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- COMPLETE ---
-        send("complete", { type, code: finalCode, plan, savedPath, timestamp: Date.now() });
+        send("complete", { type, code: finalCode, plan, savedPath, timestamp: Date.now(), tier: isPaid ? "pro" : "free" });
       } catch (err: any) {
         send("error", { message: err.message ?? "Build failed" });
       } finally {
