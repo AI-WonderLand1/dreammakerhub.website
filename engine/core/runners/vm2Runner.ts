@@ -45,7 +45,7 @@ export async function runExtension(extensionId: string) {
 
   const vm = new VM({
     timeout: 5000,
-    sandbox: createSandbox(data.manifest.permissions)
+    sandbox: createSandbox(data.manifest.permissions, extensionId)
   })
 
   const extension = vm.run(decrypted)
@@ -53,7 +53,7 @@ export async function runExtension(extensionId: string) {
   return extension.hooks || {}
 }
 
-function createSandbox(permissions: string[]) {
+function createSandbox(permissions: string[], extensionId: string) {
   const sandbox: any = {
     console: console,
     setTimeout, setInterval, clearTimeout, clearInterval
@@ -64,12 +64,25 @@ function createSandbox(permissions: string[]) {
   }
 
   if (permissions.includes('storage')) {
+    const storageClient = getSupabaseClient()
     sandbox.storage = {
       get: async (key: string) => {
-        // Implement storage
+        const { data } = await storageClient
+          .from('extension_storage')
+          .select('value')
+          .eq('extension_id', extensionId)
+          .eq('key', key)
+          .single()
+        return data?.value ?? null
       },
       set: async (key: string, value: any) => {
-        // Implement storage
+        await storageClient
+          .from('extension_storage')
+          .upsert({
+            extension_id: extensionId,
+            key,
+            value: JSON.stringify(value)
+          })
       }
     }
   }
