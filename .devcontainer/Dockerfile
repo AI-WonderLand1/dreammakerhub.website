@@ -35,8 +35,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 # Install global npm packages
 RUN npm install -g \
-    pnpm \
-    yarn \
     typescript \
     ts-node \
     nodemon \
