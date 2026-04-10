@@ -1,0 +1,59 @@
+{
+  "name": "WonderSpace Base",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "cacheFrom": "ghcr.io/wonderingtribe/wonderspace/workspace:latest"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    }
+  },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.fontSize": 14,
+    "editor.fontSize": 14,
+    "editor.formatOnSave": true,
+    "files.eol": "\n",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/.git": true
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode-remote.remote-containers",
+        "ms-azuretools.vscode-docker",
+        "bradlc.vscode-tailwindcss",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "remote.containers.copyGitCredentials": true
+      }
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "portsAttributes": {
+    "8080": {
+      "label": "IDE",
+      "onAutoForward": "openPreview"
+    },
+    "3000": {
+      "label": "Web App",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "remoteEnv": {
+    "WORKSPACE_TYPE": "${localEnv:WORKSPACE_TYPE}"
+  }
+}
