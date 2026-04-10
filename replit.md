@@ -1,18 +1,18 @@
 # AI Wonderland
 
 ## Overview
-A Next.js monorepo (pnpm workspaces) running on Replit. The main web app lives in `apps/web` and uses Next.js 15 with React 18, Supabase for auth/database, and various AI integrations (OpenAI, Google Generative AI).
+A Next.js monorepo (npm workspaces) running on Replit. The main web app lives in `apps/web` and uses Next.js 15 with React 18, Supabase for auth/database, and various AI integrations (OpenAI, Google Generative AI).
 
 ## Architecture
-- **Monorepo**: pnpm workspaces managing `apps/*`, `packages/*`, `engine/**`, `WonderSpace`, `ui`
+- **Monorepo**: npm workspaces managing `apps/*`, `packages/*`, `engine/**`, `WonderSpace`, `ui`
 - **Web app**: `apps/web` — Next.js 15 App Router, Tailwind CSS, Supabase SSR
 - **Packages**: Shared packages including `@puckeditor/core`, `unreal-wonder-build`, `@wonder/shadon`, etc.
-- **Package manager**: pnpm 10.26.1
+- **Package manager**: npm 10+
 
 ## Running the App
 The app runs via the "Start application" workflow:
 ```
-cd apps/web && PORT=5000 pnpm run dev
+cd apps/web && PORT=5000 npm run dev
 ```
 This starts Next.js dev server on port 5000 (required for Replit preview).
 
@@ -95,7 +95,7 @@ Layout Studio for building reusable page sections. Config at `apps/web/app/(buil
 | TextBlock | Rich text with superscript support |
 
 ## Build Status
-The production build passes cleanly (`pnpm run build` in `apps/web`). Key settings in `next.config.js`:
+The production build passes cleanly (`npm run build` in `apps/web`). Key settings in `next.config.js`:
 - `eslint.ignoreDuringBuilds: true` — ESLint runs separately in CI, not during builds
 - `typescript.ignoreBuildErrors: true` — Pre-existing Supabase type issues are tracked but don't block builds
 - `supabaseServer` in `lib/supabaseServer.ts` uses a Proxy for lazy initialization (prevents build-time crash when `SUPABASE_SERVICE_ROLE_KEY` is absent)
@@ -129,12 +129,11 @@ The production build passes cleanly (`pnpm run build` in `apps/web`). Key settin
 - 3D robot: `apps/web/ai-modules/scene/RobotScene.tsx` — shows BYOK/BYOC status
 - Module playground route: `/playground`
 
-## Replit Migration Notes
-- Package manager: **npm** (not pnpm). Run `npm install --legacy-peer-deps` from the root.
-- Workspace packages use `"*"` version references so npm resolves them from `packages/*`.
-- `pnpm-workspace.yaml` removed; workspaces defined in root `package.json` `"workspaces"` field.
+## Replit Setup
+- Package manager: **npm** (standard, no pnpm)
+- Run `npm install` from the root
+- Workspaces defined in root `package.json` `"workspaces"` field
 - `allowedDevOrigins` in `next.config.js` includes `*.worf.replit.dev` and other Replit domains to fix cross-origin iframe warnings
-- `experimental.turbo` deprecated config moved to top-level `turbopack`
 - Dev port: 5000 (Replit requires port 5000 for webview)
-- Supabase auth is kept as-is (stub auth context wraps real Supabase calls)
+- Supabase auth is kept as-is
 - PostgreSQL database provisioned via Replit (DATABASE_URL env var set)

@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g pnpm typescript @playcanvas/cli
+    && npm install -g typescript @playcanvas/cli
 
 RUN mkdir -p /home/coder/.local/share/code-server/User \
     && mkdir -p /home/coder/project \
