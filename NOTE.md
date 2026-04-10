@@ -33,3 +33,6 @@ ide.dreammakerhub.website      → OKE (Coder dashboard)
 
 ### Key Blocker
 Need OCI Cloud Shell access to deploy. Local machine can't reach the OKE API server.
+
+### Update - April 2026
+Need to make image or use kurbunat.devcontainer
