@@ -9,6 +9,7 @@ import { SpiritGuideSearch } from "@/app/components/navigation/SpiritGuideSearch
 import { PlayCanvasBootstrapStartup } from "@/app/components/startup/PlayCanvasBootstrapStartup";
 import { ClientAccessibilityWrapper } from "@/components/ClientAccessibilityWrapper";
 import { cn } from "@/lib/utils";
+import SpiritGuideChat from "@/app/components/SpiritGuideChat";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
               {children}
+              <SpiritGuideChat />
               {/* Persistent accessibility components - wrapped in client component */}
               <ClientAccessibilityWrapper />
             </AccessibilityProvider>

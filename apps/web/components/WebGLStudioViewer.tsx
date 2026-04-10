@@ -1,25 +1,49 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 interface WebGLStudioViewerProps {
     src: string; // The URL to your WebGLStudio editor
 }
 
+/**
+ * Extracts the origin from a URL string.
+ * Returns null if the URL is invalid.
+ */
+function getOriginFromUrl(url: string): string | null {
+    try {
+        return new URL(url).origin;
+    } catch {
+        return null;
+    }
+}
+
 const WebGLStudioViewer: React.FC<WebGLStudioViewerProps> = ({ src }) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
+    // Memoize the target origin to avoid recalculating on every render
+    const targetOrigin = getOriginFromUrl(src) || window.location.origin;
+
     // Function to send commands to the editor
-    const sendCommand = (command: string, data: any) => {
+    const sendCommand = useCallback((command: string, data: unknown) => {
         if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage({ command, data }, '*');
+            // SECURITY: Use specific origin instead of '*' to prevent message interception
+            iframeRef.current.contentWindow.postMessage({ command, data }, targetOrigin);
         }
-    };
+    }, [targetOrigin]);
 
     useEffect(() => {
         // --- How to listen for events from the editor ---
         const handleMessage = (event: MessageEvent) => {
-            // Optional: Check the origin for security
-            // if (event.origin !== "http://your-editor-url.com") return;
+            // SECURITY: Verify the message came from the expected origin
+            if (event.origin !== targetOrigin) {
+                console.warn('Rejected message from unexpected origin:', event.origin);
+                return;
+            }
+
+            // SECURITY: Verify the message came from our iframe
+            if (event.source !== iframeRef.current?.contentWindow) {
+                console.warn('Rejected message from unexpected source');
+                return;
+            }
 
             const { event: editorEvent, data } = event.data;
 
@@ -43,7 +67,7 @@ const WebGLStudioViewer: React.FC<WebGLStudioViewerProps> = ({ src }) => {
         return () => {
             window.removeEventListener('message', handleMessage);
         };
-    }, []);
+    }, [targetOrigin]);
 
     // Example of sending a command to the editor
     const handleLoadScene = () => {

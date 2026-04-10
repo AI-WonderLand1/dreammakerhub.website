@@ -1,14 +1,33 @@
 import "server-only";
 import { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { env, requireEnv } from "../lib/env";
+import { createClient } from "@supabase/supabase-js";
+import { requireEnv } from "../lib/env";
 import { logger } from "../lib/logger";
+
+function getServerClient() {
+  return createClient(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  );
+}
 
 export async function verifyAuth(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: requireEnv(env.NEXTAUTH_SECRET, "NEXTAUTH_SECRET") });
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
     if (!token) {
+      return {
+        authenticated: false,
+        user: null,
+      };
+    }
+
+    const supabase = getServerClient();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      logger.error("AuthWorker: token verification failed", error?.message);
       return {
         authenticated: false,
         user: null,
@@ -18,9 +37,9 @@ export async function verifyAuth(req: NextRequest) {
     return {
       authenticated: true,
       user: {
-        id: token.sub,
-        email: token.email,
-        name: token.name,
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name ?? user.email,
       },
     };
   } catch (err) {

@@ -28,7 +28,7 @@ const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), {
   loading: () => <EngineLoader engine="Puck" />,
 });
 
-const CoderIDEEngine = dynamic(() => import('./engines/TheiaIDEEngine'), {
+const CoderIDEEngine = dynamic(() => import('./engines/CoderIDEEngine'), {
   ssr: false,
   loading: () => <EngineLoader engine="Coder IDE" />,
 });

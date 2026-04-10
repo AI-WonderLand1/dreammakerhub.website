@@ -1,13 +1,14 @@
 # AI Wonderland
 
-AI Wonderland is a monorepo for building and running AI-powered web experiences.
+AI Wonderland is a monorepo for building and running AI-powered web experiences with isolated cloud development environments.
 
 ## Basic Info
 
 - **Main app:** `apps/web` (Next.js)
 - **Language:** TypeScript
 - **Architecture:** Monorepo with apps, packages, engine, UI, and infra modules
-- **Core integrations:** Supabase, Vercel, Docker, Theia, PlayCanvas/WebGLStudio
+- **Core integrations:** Supabase, Vercel, Docker, Coder, PlayCanvas/WebGLStudio
+- **Key Feature:** Isolated cloud development environments for each user with persistent storage and dedicated resources
 
 ## Repository Structure
 

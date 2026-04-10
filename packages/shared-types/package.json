@@ -1,0 +1,17 @@
+{
+  "name": "@wonder/shared-types",
+  "version": "1.0.0",
+  "description": "Shared type definitions - Master Schema contracts, scene types",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

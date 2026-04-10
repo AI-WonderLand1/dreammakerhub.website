@@ -4,8 +4,18 @@ const ALGO = "aes-256-gcm";
 
 export type ByocCredentialPayload = Record<string, string>;
 
-function getKey() {
-  const raw = process.env.BYOC_CREDENTIALS_ENCRYPTION_KEY ?? process.env.SECRETS_ENCRYPTION_KEY ?? "development-only-byoc-key";
+function getKey(): Buffer {
+  const raw = process.env.BYOC_CREDENTIALS_ENCRYPTION_KEY || process.env.SECRETS_ENCRYPTION_KEY;
+  
+  if (!raw) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('BYOC_CREDENTIALS_ENCRYPTION_KEY or SECRETS_ENCRYPTION_KEY is required in production')
+    }
+    console.warn('WARNING: Using fallback encryption key in development. Set BYOC_CREDENTIALS_ENCRYPTION_KEY for production.')
+    // Fallback only for development - should never reach here in production
+    return crypto.createHash('sha256').update('dev-only-fallback-key-change-me').digest()
+  }
+  
   return crypto.createHash("sha256").update(raw).digest();
 }
 
