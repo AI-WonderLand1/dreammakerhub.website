@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wonderland-config
+  namespace: wonderland
+data:
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+  NEXT_PUBLIC_URL: "https://your-domain.com"
+  NEXT_PUBLIC_WORKSPACE_DOMAIN: "ws.your-domain.com"
+  WORKSPACE_DOMAIN: "ws.your-domain.com"
+  WORKSPACE_DOCKER_IMAGE: "wonderspace/workspace:latest"
+  WORKSPACE_DOCKER_NETWORK: "wonderspace"

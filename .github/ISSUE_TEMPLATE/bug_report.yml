@@ -1,0 +1,23 @@
+---
+name: "Bug Report"
+about: "Something isn't working as expected"
+title: "[BUG] "
+labels: bug
+---
+
+description: >-
+  A clear and concise description of what the bug is.
+
+steps_to_reproduce: >-
+  1. Go to "..."
+  2. Click on "..."
+  3. See error
+
+expected_behavior: >-
+  What you expected to happen.
+
+screenshots: >-
+  Add screenshots if applicable.
+
+additional_context: >-
+  Any other context about the problem.

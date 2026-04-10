@@ -53,5 +53,7 @@ export const callOpenRouter = async (config: PlaygroundConfig, prompt: string, o
         }
       }
     }
+  } finally {
+    reader.releaseLock();
   }
 };

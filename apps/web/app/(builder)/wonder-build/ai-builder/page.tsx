@@ -161,6 +161,37 @@ export default function AIBuilderPage() {
     a.click();
   };
 
+  const acceptProject = useCallback(async () => {
+    if (!result || saving) return;
+    setSaving(true);
+    
+    try {
+      const res = await fetch("/api/projects/create-from-build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: buildType,
+          code: result.code,
+          prompt,
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.url) {
+        router.push(data.url);
+      } else {
+        alert("Project saved! Redirecting to editor...");
+        router.push(`/wonder-build/puck?project=${data.projectId}`);
+      }
+    } catch (err) {
+      console.error("Failed to save project:", err);
+      alert("Failed to save project. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }, [result, buildType, prompt, router, saving]);
+
   const isBuilding = running;
   const isDone = !!result;
   const hasStarted = Object.keys(agents).length > 0 || isDone || !!error;
@@ -371,8 +402,15 @@ export default function AIBuilderPage() {
                     ⬇ Download
                   </button>
                   <button
+                    onClick={acceptProject}
+                    disabled={saving}
+                    className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-900/30"
+                  >
+                    {saving ? "Saving..." : "✓ Accept & Edit"}
+                  </button>
+                  <button
                     onClick={() => { setResult(null); setAgents({}); setError(null); }}
-                    className="px-3 py-1.5 rounded-lg text-xs bg-violet-600 hover:bg-violet-500 text-white transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
                     🔄 Build again
                   </button>

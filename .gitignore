@@ -1,12 +1,16 @@
 node_modules/
 .next/
 .pnpm-store/
-.env*
 *.pack
-.env.local
 .vercel
-.env*.local
 .nx/
+
+# Environment files - NEVER commit secrets
+.env
+.env.*
+.env.local
+.env*.local
+my-agent/.env
 
 UnrealEngine_Source/
 UE5_Source/
@@ -14,4 +18,3 @@ Archive/
 Saved/
 Intermediate/
 DerivedDataCache/
-.next/
