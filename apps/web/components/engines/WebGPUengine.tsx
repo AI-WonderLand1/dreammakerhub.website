@@ -15,10 +15,13 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
   onInitializationError,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gpuDevice, setGpuDevice] = useState<GPUDevice | null>(null);
+  const deviceRef = useRef<GPUDevice | null>(null);
   const [message, setMessage] = useState<string>('Initializing WebGPU...');
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const initializeWebGPU = async () => {
       setMessage('Checking for WebGPU support...');
       if (!navigator.gpu) {
@@ -31,6 +34,8 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
       setMessage('Requesting adapter...');
       try {
         const adapter = await navigator.gpu.requestAdapter();
+        if (cancelled) return;
+        
         if (!adapter) {
           const errorMsg = 'No suitable GPU adapter found.';
           setMessage(errorMsg);
@@ -40,7 +45,13 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
 
         setMessage('Requesting device...');
         const device = await adapter.requestDevice();
-        setGpuDevice(device);
+        if (cancelled) {
+          device.destroy();
+          return;
+        }
+        
+        deviceRef.current = device;
+        setIsReady(true);
         setMessage('WebGPU initialized successfully!');
         onInitializationSuccess?.();
 
@@ -86,6 +97,7 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
         // --- End Basic Rendering Setup ---
 
       } catch (error: any) {
+        if (cancelled) return;
         const errorMsg = `WebGPU initialization failed: ${error.message}`;
         setMessage(errorMsg);
         onInitializationError?.(errorMsg);
@@ -95,10 +107,12 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
 
     initializeWebGPU();
 
-    // Cleanup function
+    // Cleanup function - uses ref to avoid stale closure
     return () => {
-      if (gpuDevice) {
-        gpuDevice.destroy(); // Release GPU resources
+      cancelled = true;
+      if (deviceRef.current) {
+        deviceRef.current.destroy(); // Release GPU resources
+        deviceRef.current = null;
         console.log('WebGPU device destroyed.');
       }
     };
@@ -108,7 +122,7 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
     <div className="w-full h-full flex flex-col items-center justify-center bg-gray-800 text-white p-4">
       <h2 className="text-2xl font-bold mb-4">WebGPU Engine Integration</h2>
       <p className="text-lg mb-2">{message}</p>
-      {gpuDevice ? (
+      {isReady ? (
         <p className="text-green-400 mb-4">GPU Device Ready!</p>
       ) : (
         <p className="text-red-400 mb-4">Waiting for GPU device...</p>
@@ -120,7 +134,7 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
         width={800} // Default width, could be responsive
         height={600} // Default height, could be responsive
         className="border-2 border-blue-500 bg-black"
-        style={{ display: gpuDevice ? 'block' : 'none' }} // Only show canvas if device is ready
+        style={{ display: isReady ? 'block' : 'none' }} // Only show canvas if device is ready
       >
         Your browser does not support the canvas element or WebGPU.
       </canvas>

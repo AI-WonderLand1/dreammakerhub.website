@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: workspace-${WORKSPACE_ID}
+  labels:
+    app: wonderspace-workspace
+    workspace-id: "${WORKSPACE_ID}"
+    user-id: "${USER_ID}"
+    engine: coder
+spec:
+  containers:
+    - name: workspace
+      image: wonderspace/workspace:latest
+      ports:
+        - containerPort: 8080
+          name: ide
+          protocol: TCP
+        - containerPort: 3001
+          name: playcanvas
+          protocol: TCP
+        - containerPort: 3002
+          name: webglstudio
+          protocol: TCP
+      env:
+        - name: WORKSPACE_NAME
+          value: "${WORKSPACE_NAME}"
+        - name: WORKSPACE_ID
+          value: "${WORKSPACE_ID}"
+        - name: WS_DIR
+          value: "/home/coder/project"
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "2Gi"
+          cpu: "1000m"
+      volumeMounts:
+        - name: workspace-data
+          mountPath: /home/coder/project
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 30
+  volumes:
+    - name: workspace-data
+      persistentVolumeClaim:
+        claimName: workspace-${WORKSPACE_ID}-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workspace-${WORKSPACE_ID}-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workspace-${WORKSPACE_ID}-svc
+spec:
+  selector:
+    workspace-id: "${WORKSPACE_ID}"
+  ports:
+    - name: ide
+      port: 8080
+      targetPort: 8080
+    - name: playcanvas
+      port: 3001
+      targetPort: 3001
+    - name: webglstudio
+      port: 3002
+      targetPort: 3002

@@ -2,26 +2,31 @@ import { AiNpcProvider, type NpcResponse, NpcProviderError, type NpcSession } fr
 
 type ProviderEnv = {
   NEXT_PUBLIC_ENABLE_CONVAI_NPC?: string;
-  NEXT_PUBLIC_CONVAI_API_KEY?: string;
   NEXT_PUBLIC_CONVAI_CHARACTER_ID?: string;
 };
 
 type Subscriber = (response: NpcResponse) => void;
 
+/**
+ * Convai NPC Provider - Client-side implementation.
+ * 
+ * SECURITY NOTE: This provider does NOT store API keys on the client.
+ * All API calls are proxied through the server-side /api/convai/chat endpoint.
+ */
 export class ConvaiNpcProvider implements AiNpcProvider {
   readonly name = "convai";
   readonly isConfigured: boolean;
 
   private readonly enabled: boolean;
-  private readonly apiKey?: string;
   private readonly characterId?: string;
   private readonly subscribers = new Map<string, Set<Subscriber>>();
 
   constructor(env: ProviderEnv = process.env) {
     this.enabled = env.NEXT_PUBLIC_ENABLE_CONVAI_NPC === "true";
-    this.apiKey = env.NEXT_PUBLIC_CONVAI_API_KEY;
     this.characterId = env.NEXT_PUBLIC_CONVAI_CHARACTER_ID;
-    this.isConfigured = Boolean(this.enabled && this.apiKey && this.characterId);
+    // Only check for feature flag and character ID on client
+    // API key is stored server-side only
+    this.isConfigured = Boolean(this.enabled && this.characterId);
   }
 
   async createSession(): Promise<NpcSession> {
@@ -44,12 +49,44 @@ export class ConvaiNpcProvider implements AiNpcProvider {
       return;
     }
 
-    const response: NpcResponse = {
-      id: `${sessionId}-${Date.now().toString(36)}`,
-      text: `Convai placeholder response: ${trimmed}`,
-    };
+    try {
+      // Call server-side proxy instead of Convai directly
+      const response = await fetch("/api/convai/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId,
+          utterance: trimmed,
+          characterId: this.characterId,
+        }),
+      });
 
-    listeners.forEach((listener) => listener(response));
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new NpcProviderError(error.error || `Convai API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const npcResponse: NpcResponse = {
+        id: `${sessionId}-${Date.now().toString(36)}`,
+        text: data.text || data.response || "No response from Convai",
+      };
+
+      listeners.forEach((listener) => listener(npcResponse));
+    } catch (error) {
+      console.error("Error calling Convai:", error);
+      
+      // Fallback to placeholder for development
+      const fallbackResponse: NpcResponse = {
+        id: `${sessionId}-${Date.now().toString(36)}`,
+        text: `[Fallback] Convai response: ${trimmed}`,
+      };
+      
+      listeners.forEach((listener) => listener(fallbackResponse));
+    }
   }
 
   subscribeNpcResponses(sessionId: string, onResponse: Subscriber): () => void {
@@ -75,8 +112,8 @@ export class ConvaiNpcProvider implements AiNpcProvider {
       throw new NpcProviderError("Convai NPC provider is disabled by feature flag.");
     }
 
-    if (!this.apiKey || !this.characterId) {
-      throw new NpcProviderError("Convai NPC provider is missing required environment keys.");
+    if (!this.characterId) {
+      throw new NpcProviderError("Convai NPC provider is missing required character ID. Set NEXT_PUBLIC_CONVAI_CHARACTER_ID.");
     }
   }
 }

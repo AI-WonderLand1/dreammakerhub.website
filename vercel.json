@@ -1,14 +1,16 @@
 {
   "rewrites": [
     {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "ide.yourdomain.com"
-        }
-      ],
-      "destination": "/api/tenant-ide-proxy/:path*"
+      "source": "/workspace/:workspaceId*(/)",
+      "destination": "/api/tenant-ide-proxy?workspace=:workspaceId"
+    },
+    {
+      "source": "/workspace/:workspaceId/playcanvas/:path*",
+      "destination": "/api/tenant-ide-proxy/playcanvas/:path*?workspace=:workspaceId"
+    },
+    {
+      "source": "/workspace/:workspaceId/webgl/:path*",
+      "destination": "/api/tenant-ide-proxy/webgl/:path*?workspace=:workspaceId"
     }
   ]
 }

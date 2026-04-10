@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wonderland-web
+  namespace: wonderland
+  labels:
+    app: wonderland-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wonderland-web
+  template:
+    metadata:
+      labels:
+        app: wonderland-web
+    spec:
+      containers:
+        - name: web
+          image: wonderspace/web:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: wonderland-config
+            - secretRef:
+                name: wonderland-secrets
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      restartPolicy: Always
