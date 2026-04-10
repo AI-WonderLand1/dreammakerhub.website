@@ -1,6 +1,20 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { manifestVisualBlock } from "../../../../../../engine/core/ai/bridge";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { logger } from "@/lib/logger";
+
+// Validation schema
+const BuildRequestSchema = z.object({
+  prompt: z.string().min(1).max(10000, "Prompt too long (max 10000 chars)"),
+  type: z.enum(["website", "game", "component", "playcanvas", "wonderspace"]).default("website"),
+  save: z.boolean().default(false),
+  fileName: z.string().max(100).regex(/^[a-zA-Z0-9-_]+$/, "Invalid filename").optional(),
+});
+
+// Constants for safety
+const MAX_STREAM_DURATION_MS = 120000; // 2 minutes max
+const MAX_OUTPUT_SIZE_KB = 500; // 500KB max output
 
 export const runtime = "nodejs";
 
@@ -128,18 +142,50 @@ function getReviewerSystem(type: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { prompt, type = "website", save = false, fileName } = await req.json();
-
-  if (!prompt?.trim()) {
-    return new Response(JSON.stringify({ error: "Prompt required" }), { status: 400 });
+  // Validate input
+  let body: z.infer<typeof BuildRequestSchema>;
+  try {
+    const jsonBody = await req.json();
+    const result = BuildRequestSchema.safeParse(jsonBody);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: result.error.issues },
+        { status: 400 }
+      );
+    }
+    body = result.data;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+
+  const { prompt, type, save, fileName } = body;
+
+  // Check output size limit
+  let totalOutputSize = 0;
 
   const encoder = new TextEncoder();
   const typeLabel = getTypeLabel(type);
 
+  const startTime = Date.now();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: string, data: object) => {
+        // Check stream timeout
+        if (Date.now() - startTime > MAX_STREAM_DURATION_MS) {
+          send("error", { message: "Build timeout - took too long" });
+          controller.close();
+          return;
+        }
+
+        // Track output size
+        const dataStr = JSON.stringify(data);
+        totalOutputSize += dataStr.length;
+        if (totalOutputSize > MAX_OUTPUT_SIZE_KB * 1024) {
+          send("error", { message: "Output too large" });
+          controller.close();
+          return;
+        }
+
         controller.enqueue(encoder.encode(sse(event, data)));
       };
 
@@ -186,8 +232,10 @@ export async function POST(req: NextRequest) {
 
         // --- COMPLETE ---
         send("complete", { type, code: finalCode, plan, savedPath, timestamp: Date.now() });
-      } catch (err: any) {
-        send("error", { message: err.message ?? "Build failed" });
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Build failed";
+        logger.error("Build stream error", { error: errorMessage, type, prompt: prompt.slice(0, 100) });
+        send("error", { message: "Build failed - please try again" });
       } finally {
         controller.close();
       }

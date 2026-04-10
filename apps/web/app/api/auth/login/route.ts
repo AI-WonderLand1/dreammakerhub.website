@@ -1,33 +1,99 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/app/utils/supabase/server';
 import { logger } from '@lib/logger';
 
+// Simple in-memory rate limiter for login attempts
+// TODO: Replace with Redis for production
+const loginAttempts = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX = 5; // 5 attempts
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+// Clean up old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of loginAttempts.entries()) {
+    if (now > value.resetTime) {
+      loginAttempts.delete(key);
+    }
+  }
+}, 60 * 1000); // Clean every minute
+
+function checkRateLimit(identifier: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const attempt = loginAttempts.get(identifier);
+
+  if (!attempt || now > attempt.resetTime) {
+    // First attempt or window expired
+    loginAttempts.set(identifier, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW_MS,
+    });
+    return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
+  }
+
+  if (attempt.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  attempt.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX - attempt.count };
+}
+
+// Validation schema
+const LoginSchema = z.object({
+  email: z.string().email("Invalid email format").max(254),
+  password: z.string().min(1).max(128),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    // Rate limiting by IP + email combination
+    const clientIp = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const identifier = `login:${clientIp}`;
+    const rateLimit = checkRateLimit(identifier);
 
-    // Validation
-    if (!email || !password) {
+    if (!rateLimit.allowed) {
+      logger.warn('Login rate limit exceeded', { ip: clientIp });
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Email and password are required' 
+          error: 'Too many login attempts. Please try again in 15 minutes.' 
         },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': '0',
+          }
+        }
+      );
+    }
+
+    // Parse and validate input
+    let body: z.infer<typeof LoginSchema>;
+    try {
+      const jsonBody = await request.json();
+      const result = LoginSchema.safeParse(jsonBody);
+      if (!result.success) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Invalid input',
+            details: result.error.issues
+          },
+          { status: 400 }
+        );
+      }
+      body = result.data;
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON body' },
         { status: 400 }
       );
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid email format' 
-        },
-        { status: 400 }
-      );
-    }
+    const { email, password } = body;
 
     const supabase = createClient();
 
@@ -38,22 +104,21 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      logger.error('Login error', { error });
+      logger.error('Login error', { error: error.message, email: email.slice(0, 3) + '***' });
       
-      // User-friendly error messages
-      let errorMessage = 'Login failed';
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password';
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'Please verify your email address before logging in';
-      }
-
+      // ALWAYS return same error message (prevent user enumeration)
       return NextResponse.json(
         { 
           success: false, 
-          error: errorMessage 
+          error: 'Invalid email or password' 
         },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          }
+        }
       );
     }
 
@@ -61,20 +126,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Failed to create session' 
+          error: 'Authentication failed' 
         },
         { status: 500 }
       );
     }
 
-    // Track login analytics (optional)
+    // Clear rate limit on successful login
+    loginAttempts.delete(identifier);
+
+    // Track login analytics (optional, non-blocking)
     try {
       await supabase.from('user_analytics').insert({
         user_id: data.user.id,
         event_type: 'login',
         metadata: {
           user_agent: request.headers.get('user-agent'),
-          ip: request.headers.get('x-forwarded-for') || 'unknown'
+          ip: clientIp.slice(0, 10) + '***' // Mask IP
         },
         created_at: new Date().toISOString()
       });
@@ -99,9 +167,14 @@ export async function POST(request: NextRequest) {
         expires_at: data.session.expires_at,
         expires_in: data.session.expires_in,
       }
+    }, {
+      headers: {
+        'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+        'X-RateLimit-Remaining': String(rateLimit.remaining),
+      }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Unexpected login error', { error });
     return NextResponse.json(
       { 
