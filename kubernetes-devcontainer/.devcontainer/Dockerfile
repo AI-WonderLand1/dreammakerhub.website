@@ -43,8 +43,8 @@ USER coder
 # Set up workspace directory
 WORKDIR /home/coder/project
 
-# Copy entrypoint (if exists)
-COPY --chown=coder:coder .devcontainer/post-create.sh /tmp/
+# Copy post-start script
+COPY --chown=coder:coder ../post-start.sh /home/coder/project/post-start.sh
 
 # Configure git
 RUN git config --global init.defaultBranch main \
@@ -58,4 +58,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 USER coder
 
-CMD ["sh", "/home/coder/project/.devcontainer/post-start.sh"]
+CMD ["sh", "/home/coder/project/post-start.sh"]
