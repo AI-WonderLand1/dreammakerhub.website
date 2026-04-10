@@ -20,23 +20,13 @@ function SovereignOSShell() {
         <div className="flex h-full w-64 shrink-0 xl:w-72">
           <AgentPanel />
         </div>
-        {/* Center: Cloud Sandbox + Code View */}
-        <div
-          className={`h-full flex-1 ${
-            activePanel === 'playground' ? 'hidden xl:flex xl:flex-col' : 'flex flex-col'
-          }`}
-        >
-          <CloudSandboxPanel />
-        </div>
-        {/* Right: 3D Playground — always shown on xl, tab-controlled on smaller screens */}
-        <div
-          className={`h-full flex-col ${
-            activePanel === 'playground'
-              ? 'flex flex-1'
-              : 'hidden xl:flex xl:w-80 xl:shrink-0'
-          }`}
-        >
+        {/* Center: Live Preview — larger main panel */}
+        <div className="h-full flex-1 flex flex-col">
           <PlaygroundPanel />
+        </div>
+        {/* Right: Code view — smaller secondary panel */}
+        <div className="hidden xl:flex h-full flex-col xl:w-96 xl:shrink-0">
+          <CloudSandboxPanel />
         </div>
       </div>
     </div>
