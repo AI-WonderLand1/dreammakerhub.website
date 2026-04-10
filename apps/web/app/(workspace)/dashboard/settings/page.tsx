@@ -26,7 +26,7 @@ export default function SettingsHomePage() {
           Features
         </div>
         <div className="mt-2 text-white/55">
-          See which features exist and what’s enabled.
+          See which features exist and what's enabled.
         </div>
         <Link
           href="/dashboard/features"
@@ -36,7 +36,22 @@ export default function SettingsHomePage() {
         </Link>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 md:col-span-2">
+      <div className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-6">
+        <div className="text-xs font-black uppercase tracking-widest text-violet-300/80">
+          Coder IDE Workspaces
+        </div>
+        <div className="mt-2 text-white/55">
+          Create and manage isolated cloud development environments with code-server, PlayCanvas, and WebGL Studio.
+        </div>
+        <Link
+          href="/dashboard/settings/coder"
+          className="mt-4 inline-flex h-10 px-4 rounded-xl border border-violet-400/25 bg-violet-500/10 hover:bg-violet-500/15 transition text-sm font-bold text-violet-200 items-center"
+        >
+          Open Coder IDE →
+        </Link>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
         <div className="text-xs font-black uppercase tracking-widest text-white/70">
           Webhooks
         </div>

@@ -1,0 +1,17 @@
+{
+  "name": "my-agent",
+  "version": "1.0.0",
+  "main": "agent.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "@google/adk": "^0.3.0",
+    "@google/adk-devtools": "^0.3.0"
+  }
+}

@@ -1,20 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { PlayCanvasHostProps } from "@/components/PlayCanvasEditorHost";
 import { ensurePlayCanvasBootstrapLoaded, resetPlayCanvasBootstrapLoader } from "@/lib/playcanvasBootstrap";
 
 export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: PlayCanvasHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cleanupRef = useRef<{ destroy?: () => void } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [mountAttempt, setMountAttempt] = useState(0);
 
+  // Use refs for callbacks to avoid unstable dependencies
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
+  const onStatusRef = useRef(onStatus);
+  
   useEffect(() => {
-    let cleanup: { destroy?: () => void } | void;
+    onReadyRef.current = onReady;
+    onErrorRef.current = onError;
+    onStatusRef.current = onStatus;
+  }, [onReady, onError, onStatus]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function bootstrapAndMount() {
-      onStatus?.("bootstrapping");
+      onStatusRef.current?.("bootstrapping");
       setFailure(null);
 
       try {
@@ -23,8 +34,8 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
         if (cancelled) return;
         const bootstrapError = error instanceof Error ? error : new Error("PlayCanvas bootstrap script failed to load");
         setFailure(`${bootstrapError.message}.`);
-        onStatus?.("failed");
-        onError?.(bootstrapError);
+        onStatusRef.current?.("failed");
+        onErrorRef.current?.(bootstrapError);
         return;
       }
 
@@ -32,8 +43,8 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
       if (!container) {
         const containerError = new Error("PlayCanvas direct container not found");
         setFailure(containerError.message);
-        onStatus?.("failed");
-        onError?.(containerError);
+        onStatusRef.current?.("failed");
+        onErrorRef.current?.(containerError);
         return;
       }
 
@@ -41,27 +52,39 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
       if (!bootstrap) {
         const bootstrapApiError = new Error("PlayCanvas bootstrap finished but API is unavailable");
         setFailure(bootstrapApiError.message);
-        onStatus?.("failed");
-        onError?.(bootstrapApiError);
+        onStatusRef.current?.("failed");
+        onErrorRef.current?.(bootstrapApiError);
         return;
       }
 
-      onStatus?.("mounting");
+      onStatusRef.current?.("mounting");
 
       try {
-        cleanup = bootstrap.mount(container, { sceneId });
+        const cleanup = bootstrap.mount(container, { sceneId });
+        
+        // Store cleanup in ref so it's accessible in cleanup function
+        cleanupRef.current = cleanup || null;
+        
         if (cancelled) {
+          // If cancelled during mount, clean up immediately
           cleanup?.destroy?.();
+          cleanupRef.current = null;
           return;
         }
-        onStatus?.("ready");
-        onReady?.();
+        
+        // Check if mount returned a cleanup object with destroy method
+        if (!cleanup || typeof cleanup.destroy !== 'function') {
+          console.warn('PlayCanvas mount did not return a cleanup object with destroy method. Memory leaks may occur.');
+        }
+        
+        onStatusRef.current?.("ready");
+        onReadyRef.current?.();
       } catch (error) {
         if (cancelled) return;
         const mountError = error instanceof Error ? error : new Error("PlayCanvas direct mount failed");
         setFailure(mountError.message);
-        onStatus?.("failed");
-        onError?.(mountError);
+        onStatusRef.current?.("failed");
+        onErrorRef.current?.(mountError);
       }
     }
 
@@ -69,9 +92,11 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
 
     return () => {
       cancelled = true;
-      cleanup?.destroy?.();
+      // Use ref to access cleanup, avoiding stale closure
+      cleanupRef.current?.destroy?.();
+      cleanupRef.current = null;
     };
-  }, [mountAttempt, onError, onReady, onStatus, sceneId]);
+  }, [mountAttempt, sceneId]); // Removed callback dependencies - using refs instead
 
   return (
     <div className="relative h-full w-full">

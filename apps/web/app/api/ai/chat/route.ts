@@ -18,6 +18,11 @@ const requestSchema = z.object({
   personaId: z.string().optional(),
   temperature: z.number().min(0).max(1).optional(),
   maxTokens: z.number().int().positive().optional(),
+  outputFormat: z.enum(["text", "puck"]).optional().default("text"),
+  existingComponents: z.array(z.object({
+    type: z.string(),
+    props: z.record(z.unknown()),
+  })).optional(),
 });
 
 const PROGRAMMING_LANGUAGES = [
@@ -77,7 +82,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt, agentId, targetLanguage, personaId } = body.data;
+    const { prompt, agentId, targetLanguage, personaId, outputFormat, existingComponents } = body.data;
 
     const agent = (AGENTS as any)[agentId];
     if (!agent) {
@@ -116,6 +121,15 @@ export async function POST(req: NextRequest) {
 
     if (detectedProgLang) {
       enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
+    }
+
+    if (outputFormat === "puck") {
+      const componentsList = existingComponents?.map(c => c.type).join(", ") || "none";
+      systemInstructions.push(
+        `OUTPUT FORMAT: Generate a website layout using these Puck components: button, input, heading, typography, cardHover, splitHero, centerHero, pricingTable, featureGrid, logoCloud, testimonialCard, stepProcess, glassAccordion, tabsSystem, ctaBox, accordionFAQ, blogPreviewGrid, teamGrid, statsSection, stickyHeader, multiColumnFooter, newsletterStrip, contactSplit.`,
+        `Current page has: ${componentsList}`,
+        `Respond with the component names you would use and describe their properties.`
+      );
     }
 
     const config = getConfessionConfig(plan, isMem0Enabled());
@@ -193,6 +207,11 @@ export async function POST(req: NextRequest) {
         memoryStore,
         mem0Store,
         confessionMode: config.mode,
+        outputFormat,
+        puckData: outputFormat === "puck" ? {
+          content: existingComponents || [],
+          root: { type: "Fragment", props: {} },
+        } : null,
       }
     });
 

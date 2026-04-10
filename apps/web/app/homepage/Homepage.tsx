@@ -181,7 +181,7 @@ export default function Homepage() {
 
         {/* Hero content overlay */}
         <div className="relative z-20 flex min-h-[100svh] flex-col justify-between px-6 pb-10 pt-24 sm:px-10">
-          {/* Top: title + subtitle */}
+          {/* Top: title + subtitle + CTA */}
           <div className="max-w-2xl">
             <p className="mb-2 text-xs font-bold uppercase tracking-widest text-pink-400">
               AI Wonderland
@@ -190,30 +190,44 @@ export default function Homepage() {
               Where your imagination<br className="hidden sm:block" /> comes to life
             </h1>
             <p className="mt-4 max-w-lg text-sm text-white/70 drop-shadow sm:text-base">
-              Follow the signpost to discover platform docs, tutorials, and the builder experiences.
+              Build websites and 3D games with AI — no coding required.
             </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/hub"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition-all hover:from-violet-500 hover:to-blue-500"
+              >
+                <span>Start Building</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </Link>
+              <Link
+                href="/library"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur-sm transition-all hover:bg-white/10 hover:text-white"
+              >
+                📚 Browse Templates
+              </Link>
+            </div>
           </div>
 
-          {/* Bottom: builder action buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Bottom: Quick Links */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/hub"
+              className="inline-flex items-center gap-2 rounded-full bg-green-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/40 backdrop-blur-sm transition hover:bg-green-500"
+            >
+              🌐 Create Website
+            </Link>
+            <Link
+              href="/hub"
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 backdrop-blur-sm transition hover:bg-indigo-500"
+            >
+              🎮 Create Game
+            </Link>
             <Link
               href="/wonder-build/playcanvas"
-              className="inline-flex items-center gap-2 rounded-full bg-blue-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 backdrop-blur-sm transition hover:bg-blue-500"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Open WebGL Studio
-            </Link>
-            <Link
-              href="/wonder-build/ai-builder"
-              className="inline-flex items-center gap-2 rounded-full bg-violet-600/90 border border-violet-500/50 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 backdrop-blur-sm transition hover:bg-violet-500"
-            >
-              ✨ AI Builder
-            </Link>
-            <Link
-              href="/marketplace"
               className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-5 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
             >
-              🗂 Registry
+              📁 Import Files
             </Link>
           </div>
         </div>

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Volume2, Lock, Sparkles, BookOpen } from 'lucide-react';
-import { cn } from '../utils';
+import { cn } from '@/lib/utils';
 
 // Phonetic mapping based on the 24-sign Egyptian alphabet
 const HIEROGLYPH_PHONETIC_MAP: Record<string, string> = {

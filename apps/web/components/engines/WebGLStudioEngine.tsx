@@ -120,6 +120,7 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
               <div className="border border-cyan-500/30 rounded p-4 bg-black/50">
                 <h3 className="font-semibold text-cyan-300 mb-3">Shader Editor</h3>
                 <textarea
+                  key={selectedShader.name}
                   defaultValue={selectedShader.template}
                   className="w-full h-32 bg-black/50 border border-cyan-500/30 rounded p-3 text-xs font-mono text-white"
                   placeholder="Your WebGL fragment shader code..."
