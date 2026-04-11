@@ -5,7 +5,10 @@ import { logger } from "@lib/logger";
 const API_KEY = process.env.WONDERSPACE_API_KEY;
 
 function validateKey(key: string) {
-  if (API_KEY && key !== API_KEY) {
+  if (!API_KEY) {
+    throw new Error("WONDERSPACE_API_KEY not configured on server");
+  }
+  if (key !== API_KEY) {
     throw new Error("Invalid API key");
   }
 }

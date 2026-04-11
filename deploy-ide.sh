@@ -30,7 +30,7 @@ ACTION="${2:-all}"
 
 build() {
   echo "=== Building IDE image ==="
-  docker build -t "$IDE_IMAGE" -f Dockerfile.workspace .
+  docker build -t "$IDE_IMAGE" -f kubernetes-devcontainer/.devcontainer/Dockerfile .
   echo "=== Built: $IDE_IMAGE ==="
 }
 
@@ -52,7 +52,7 @@ apply() {
   echo "=== Deploying infrastructure ==="
   kubectl apply -f deploy/k8s/cluster-issuer.yaml
   kubectl apply -f deploy/k8s/configmap.yaml
-  kubectl apply -f deploy/k8s/secret.yaml
+  # Secrets are now managed via Vault (external-secrets)
   kubectl apply -f deploy/k8s/coder-db.yaml
   kubectl apply -f deploy/k8s/coder-deployment.yaml
 
