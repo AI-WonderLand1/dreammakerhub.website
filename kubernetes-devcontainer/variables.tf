@@ -26,7 +26,7 @@ variable "k8s_ca_cert" {
 variable "coder_url" {
   description = "Coder server URL"
   type        = string
-  default     = "https://coder.wonderland.com"
+  default     = "https://dreammakerhub.website"
 }
 
 variable "namespace" {

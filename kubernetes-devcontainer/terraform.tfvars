@@ -1,5 +1,5 @@
 # Coder Server Configuration
-coder_url = "https://coder.yourdomain.com"
+coder_url = "https://dreammakerhub.website"
 
 # Kubernetes Configuration
 use_kubeconfig = false

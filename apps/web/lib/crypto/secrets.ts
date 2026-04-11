@@ -6,12 +6,7 @@ function getKey(): Buffer {
   const raw = process.env.SECRETS_ENCRYPTION_KEY
   
   if (!raw) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('SECRETS_ENCRYPTION_KEY is required in production')
-    }
-    console.warn('WARNING: Using fallback encryption key in development. Set SECRETS_ENCRYPTION_KEY for production.')
-    // Fallback only for development - should never reach here in production
-    return crypto.createHash('sha256').update('dev-only-fallback-key-change-me').digest()
+    throw new Error('SECRETS_ENCRYPTION_KEY is required')
   }
   
   return crypto.createHash('sha256').update(raw).digest()

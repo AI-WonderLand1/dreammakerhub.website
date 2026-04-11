@@ -25,17 +25,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Install global tools
 RUN npm install -g typescript ts-node nodemon
 
-# Install PlayCanvas CLI
-RUN npm install -g @playcanvas/cli
-
 # Install Docker CLI (for docker-in-docker)
 RUN curl -fsSL https://get.docker.com -o /tmp/get-docker.sh \
     && sh /tmp/get-docker.sh \
     && rm /tmp/get-docker.sh
 
-# Create non-root user
-RUN useradd -m -s /bin/bash coder \
-    && usermod -aG docker coder
+# Create non-root user (if not exists)
+RUN (id coder &>/dev/null || useradd -m -s /bin/bash coder) \
+    && usermod -aG docker coder || true
 
 # Switch to coder user
 USER coder
