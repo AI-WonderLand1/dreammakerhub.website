@@ -20,7 +20,7 @@ echo -e "${GREEN}Workspace:${NC} $WORKSPACE_NAME"
 echo -e "${GREEN}User:${NC} $USER_ID"
 
 # Change to workspaces directory
-cd /workspaces
+cd /home/coder/project
 
 # Clone repository if provided and directory is empty
 if [ -n "$REPO_URL" ] && [ -z "$(ls -A)" ]; then
