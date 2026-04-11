@@ -16,7 +16,7 @@ provider "coder" {
 }
 module "kubeconfig" {
   source          = "registry.coder.com/modules/kubeconfig/coder"
-  kubeconfig_path = "~/.kube/config"
+ kubeconfig_path = "/home/wonderingtribe/.kube/config"
 }
 provider "kubernetes" {
   host                   = module.kubeconfig.host
