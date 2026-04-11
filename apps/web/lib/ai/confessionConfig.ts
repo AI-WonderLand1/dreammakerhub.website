@@ -20,7 +20,7 @@ export function getConfessionConfig(
   return {
     mode: isPaid ? "paid" : "free",
     enableMem0: enableMem0 ?? false,
-    extractionModel: isPaid ? "gemini-2.0-flash" : undefined,
+    extractionModel: isPaid ? "gemini-2.5-flash" : undefined,
   };
 }
 
