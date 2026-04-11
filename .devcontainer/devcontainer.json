@@ -6,6 +6,12 @@
     "cacheFrom": "ghcr.io/wonderingtribe/wonderspace/workspace:latest"
   },
   "features": {
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/oci-cli:1": {
+      "version": "latest"
+    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest",
       "moby": true
@@ -29,6 +35,7 @@
       "**/node_modules": true,
       "**/.git": true,
       "**/dist": true,
+      "**/externals": true,
       "**/.next": true
     },
     "workbench.colorTheme": "Default Dark+",
@@ -39,6 +46,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "hashicorp.terraform",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-vscode-remote.remote-containers",
@@ -56,7 +64,8 @@
       "settings": {
         "remote.containers.copyGitCredentials": true,
         "git.confirmSync": false,
-        "git.enableSmartCommit": true
+        "git.enableSmartCommit": true,
+        "terraform.languageServer.enable": true
       }
     }
   },
@@ -83,7 +92,8 @@
   "forwardPorts": [3000, 5173, 6006, 8080],
   "remoteEnv": {
     "WORKSPACE_TYPE": "${localEnv:WORKSPACE_TYPE}",
-    "AUTO_START": "${localEnv:AUTO_START:false}"
+    "AUTO_START": "${localEnv:AUTO_START:false}",
+    "OCI_CONFIG_FILE": "~/.oci/config"
   },
   "mounts": [
     "source=wonderland-vol,target=/workspaces,type=volume"
