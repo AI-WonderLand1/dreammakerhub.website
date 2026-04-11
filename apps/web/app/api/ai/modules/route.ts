@@ -16,50 +16,50 @@ type RegistryModule = {
   source?: string;
 };
 
-async function fetchOpenRouterModules(): Promise<RegistryModule[]> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+async function fetchGithubModules(): Promise<RegistryModule[]> {
+  const apiKey = process.env.GITHUB_MODELS_API_KEY;
   if (!apiKey) return [];
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/models", {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
+    // Return static list of GitHub Models
+    const models: RegistryModule[] = [
+      {
+        id: "github-gpt-4o-mini",
+        name: "GPT-4o Mini",
+        description: "Fast and efficient GPT-4o model for general tasks",
+        category: "chat",
+        source: "github",
+        private: false,
       },
-      next: { revalidate: 300 },
-    });
+      {
+        id: "github-gpt-4o",
+        name: "GPT-4o",
+        description: "High-performance GPT-4o model with enhanced capabilities",
+        category: "chat",
+        source: "github",
+        private: false,
+      },
+      {
+        id: "github-gpt-4-turbo",
+        name: "GPT-4 Turbo",
+        description: "Advanced GPT-4 model for complex reasoning",
+        category: "chat",
+        source: "github",
+        private: false,
+      },
+      {
+        id: "github-gpt-3.5-turbo",
+        name: "GPT-3.5 Turbo",
+        description: "Lightweight and efficient GPT-3.5 model",
+        category: "chat",
+        source: "github",
+        private: false,
+      },
+    ];
 
-    if (!res.ok) {
-      console.error("OpenRouter models fetch failed", await res.text());
-      return [];
-    }
-
-    const data = await res.json();
-    const models = Array.isArray(data?.data) ? data.data : [];
-
-    return models.map((model: any) => {
-      const modality = (model?.architecture?.modality || "").toString().toLowerCase();
-      const id = `openrouter-${model?.id || crypto.randomUUID()}`;
-      const name = model?.name || model?.id || "OpenRouter model";
-      const description =
-        model?.description || model?.meta?.description || `Model ${name} available via OpenRouter`;
-
-      let category: string = "chat";
-      if (modality.includes("vision") || /vision|image/.test(String(model?.id ?? ""))) {
-        category = "vision";
-      } else if (/code/.test(String(model?.id ?? ""))) {
-        category = "code";
-      }
-
-      return {
-        id,
-        name,
-        description,
-        category,
-        source: "openrouter",
-      } satisfies RegistryModule;
-    });
+    return models;
   } catch (error) {
-    console.error("OpenRouter models fetch errored", error);
+    console.error("GitHub Models fetch errored", error);
     return [];
   }
 }
@@ -69,12 +69,18 @@ export async function GET(req: NextRequest) {
   if (paidUser instanceof NextResponse) return paidUser;
 
   const registryModules = publicAiModules;
-  const openRouterModules = await fetchOpenRouterModules();
+  const googleAIModules = await fetchGoogleAIModules();
+  const githubModules = await fetchGithubModules();
   const modules: RegistryModule[] = [
     ...registryModules.map((module) => ({ ...module, source: "public-registry" })),
-    ...openRouterModules,
+    ...googleAIModules,
+    ...githubModules,
   ];
-  const source = openRouterModules.length > 0 ? "public-registry+openrouter" : "public-registry";
+  const sources = [];
+  if (googleAIModules.length > 0) sources.push("google");
+  if (githubModules.length > 0) sources.push("github");
+  sources.push("public-registry");
+  const source = sources.join("+");
 
   return NextResponse.json({ ok: true, source, modules });
 }

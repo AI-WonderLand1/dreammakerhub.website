@@ -4,86 +4,95 @@ import { env, requireEnv } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
- * OpenRouter Provider
- * Upgraded to support Vision (Images) and Video-to-Code pipelines.
+ * Google AI Provider (Gemini)
+ * Uses Google AI API directly for Gemini models.
  */
 export const openrouterProvider: AIProvider = {
-  name: "openrouter",
+  name: "google",
 
   async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY");
-    const { 
-      model = "google/gemini-2.0-flash-001", // Default to high-speed multimodal
-      system, 
-      temperature = 0.7, 
-      maxTokens = 4096 
+    const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
+    const {
+      model = "gemini-2.5-flash",
+      system,
+      temperature = 0.7,
+      maxTokens = 4096
     } = options ?? {};
 
     try {
-      // 1. Prepare Content: Support both simple strings and complex multimodal arrays
-      // This allows sending images/video frames directly to models like Gemini 2.0
-      const userContent = Array.isArray(prompt) ? prompt : [{ type: "text", text: prompt }];
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const parts: { text: string }[] = [];
+      if (system) parts.push({ text: `System Instructions: ${system}` });
+      parts.push({ text: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt) });
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://wonder-build.ai", // Required for OpenRouter rankings
-          "X-Title": "Wonder-Build Engine",
         },
         body: JSON.stringify({
-          model,
-          messages: [
-            ...(system ? [{ role: "system", content: system }] : []),
-            { role: "user", content: userContent },
-          ],
-          temperature,
-          max_tokens: maxTokens,
-          // Ensures we get structured JSON back for the LayoutTree
-          response_format: { type: "json_object" } 
+          contents: [{ parts }],
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens,
+          },
         }),
       });
 
-      const raw = await response.text();
+      const data = await response.json();
 
-      if (!response.ok) {
-        logger.error("❌ OpenRouter Stream Turbulence", { status: response.status, raw });
+      if (data.error) {
+        logger.error("❌ Google AI API Error", { error: data.error });
         return {
-          text: "The Spirit Guide encountered turbulence in the OpenRouter stream.",
+          text: "The Spirit Guide encountered an error with Google AI API.",
           error: true,
-          provider: "openrouter",
+          provider: "google",
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["Provider returned a non-OK response"],
-            limitations: [raw || "Unknown error"]
+            reasoning: ["Google AI API returned an error"],
+            limitations: [data.error.message || "Unknown error"]
           }
         };
       }
 
-      const data = JSON.parse(raw);
-      const outputText = data.choices?.[0]?.message?.content ?? "";
+      if (!data.candidates?.length) {
+        logger.error("❌ Google AI API returned no candidates", { data });
+        return {
+          text: "The Spirit Guide received no response from Google AI API.",
+          error: true,
+          provider: "google",
+          model,
+          confessions: {
+            confidence: 0,
+            reasoning: ["No candidates returned from Google AI API"],
+            limitations: ["Empty response"]
+          }
+        };
+      }
+
+      const outputText = data.candidates[0].content.parts[0].text;
 
       return {
         text: outputText,
-        provider: "openrouter",
+        provider: "google",
         model,
         confessions: {
           confidence: 0.95,
-          reasoning: ["Processed via OpenRouter unified gateway"],
-          limitations: ["Latency may vary based on provider routing"]
+          reasoning: ["Processed via Google AI API"],
+          limitations: ["May have usage limits"]
         }
       };
     } catch (error: any) {
-      logger.error("✦ Spirit Guide Connection Severed (OpenRouter)", {
+      logger.error("✦ Spirit Guide Connection Severed (Google AI)", {
         error: error?.message ?? error
       });
 
       return {
-        text: "The Spirit Guide lost connection to the OpenRouter gateway.",
+        text: "The Spirit Guide lost connection to Google AI API.",
         error: true,
-        provider: "openrouter",
+        provider: "google",
         model,
         confessions: {
           confidence: 0,
