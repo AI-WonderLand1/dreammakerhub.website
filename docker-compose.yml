@@ -4,7 +4,7 @@ services:
   ide:
     build:
       context: .
-      dockerfile: Dockerfile.workspace
+      dockerfile: kubernetes-devcontainer/.devcontainer/Dockerfile
     ports:
       - "8080:8080"
     volumes:

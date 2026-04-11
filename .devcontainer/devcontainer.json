@@ -1,0 +1,95 @@
+{
+  "name": "Wonderland Private IDE",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "cacheFrom": "ghcr.io/wonderingtribe/wonderspace/workspace:latest"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true
+    }
+  },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "zsh",
+    "terminal.integrated.fontSize": 14,
+    "editor.fontSize": 14,
+    "editor.formatOnSave": true,
+    "files.eol": "\n",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/.git": true,
+      "**/dist": true,
+      "**/.next": true
+    },
+    "workbench.colorTheme": "Default Dark+",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode-remote.remote-containers",
+        "ms-azuretools.vscode-docker",
+        "bradlc.vscode-tailwindcss",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-playwright.playwright",
+        "github.copilot",
+        "github.copilot-chat",
+        "eamodio.gitlens",
+        "pkief.material-icon-theme",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ],
+      "settings": {
+        "remote.containers.copyGitCredentials": true,
+        "git.confirmSync": false,
+        "git.enableSmartCommit": true
+      }
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "portsAttributes": {
+    "8080": {
+      "label": "IDE",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Web App",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    },
+    "6006": {
+      "label": "Storybook",
+      "onAutoForward": "notify"
+    }
+  },
+  "forwardPorts": [3000, 5173, 6006, 8080],
+  "remoteEnv": {
+    "WORKSPACE_TYPE": "${localEnv:WORKSPACE_TYPE}",
+    "AUTO_START": "${localEnv:AUTO_START:false}"
+  },
+  "mounts": [
+    "source=wonderland-vol,target=/workspaces,type=volume"
+  ],
+  "runArgs": [
+    "--name", "wonderland-workspace",
+    "--hostname", "wonderland"
+  ]
+}

@@ -31,8 +31,7 @@ ACTION="${2:-all}"
 build() {
   echo "=== Building workspace image ==="
   docker build -t "$WORKSPACE_IMAGE" \
-    -f Dockerfile.workspace \
-    --build-arg BASE_IMAGE=codercom/code-server:latest \
+    -f kubernetes-devcontainer/.devcontainer/Dockerfile \
     .
 
   echo "=== Building web app image ==="
@@ -64,7 +63,7 @@ apply() {
   kubectl apply -f deploy/k8s/cert-manager.yaml
   kubectl apply -f deploy/k8s/cluster-issuer.yaml
   kubectl apply -f deploy/k8s/configmap.yaml
-  kubectl apply -f deploy/k8s/secret.yaml
+  # Secrets are now managed via Vault (external-secrets)
 
   # Update image references
   kubectl set image deployment/wonderland-web \

@@ -6,8 +6,8 @@ metadata:
 data:
   NODE_ENV: "production"
   NEXT_TELEMETRY_DISABLED: "1"
-  NEXT_PUBLIC_URL: "https://your-domain.com"
-  NEXT_PUBLIC_WORKSPACE_DOMAIN: "ws.your-domain.com"
-  WORKSPACE_DOMAIN: "ws.your-domain.com"
-  WORKSPACE_DOCKER_IMAGE: "wonderspace/workspace:latest"
-  WORKSPACE_DOCKER_NETWORK: "wonderspace"
+  NEXT_PUBLIC_URL: "https://dreammakerhub.website"
+  NEXT_PUBLIC_WORKSPACE_DOMAIN: "dreammakerhub.website"
+  WORKSPACE_DOMAIN: "dreammakerhub.website"
+  CODER_ACCESS_URL: "https://dreammakerhub.website"
+  CODER_WILDCARD_ACCESS_URL: "*.ide.dreammakerhub.website"

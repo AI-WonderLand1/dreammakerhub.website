@@ -1,9 +1,17 @@
-import { VM } from 'vm2'
+import { getQuickJS, QuickJSContext } from 'quickjs-emscripten'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { env, requireEnv } from '@lib/env'
 
 let supabase: ReturnType<typeof createClient> | null = null
+let quickJSInstance: Awaited<ReturnType<typeof getQuickJS>> | null = null
+
+async function getQuickJSInstance() {
+  if (!quickJSInstance) {
+    quickJSInstance = await getQuickJS()
+  }
+  return quickJSInstance
+}
 
 function getSupabaseClient() {
   if (!supabase) {
@@ -20,6 +28,7 @@ export async function runExtension(extensionId: string) {
   if (process.env.EXTENSIONS_ENABLED !== "true") {
     throw new Error("Extensions disabled");
   }
+  
   const { data, error } = await getSupabaseClient()
     .from('extensions')
     .select('encrypted_code, iv, tag, manifest')
@@ -84,8 +93,43 @@ function createSandbox(permissions: string[], extensionId: string) {
             value: JSON.stringify(value)
           })
       }
+    `
+    
+    // Execute with timeout
+    const result = context.evalCode(wrappedCode, {
+      memoryLimitBytes: 128 * 1024 * 1024, // 128MB memory limit
+      shouldInterruptAfterDeadline: Date.now() + 5000, // 5 second timeout
+    })
+    
+    if (result.error) {
+      const errorMsg = context.getString(result.error)
+      result.error.dispose()
+      throw new Error(`Extension execution error: ${errorMsg}`)
     }
+    
+    // Convert result to native JS object
+    // Note: This is simplified - real implementation needs proper handle management
+    const nativeResult = context.dump(result.value)
+    result.value.dispose()
+    
+    return nativeResult
+    
+  } finally {
+    context.dispose()
   }
+}
 
-  return sandbox
+function isInternalUrl(url: string): boolean {
+  const internalPatterns = [
+    /^https?:\/\/localhost/i,
+    /^https?:\/\/127\./i,
+    /^https?:\/\/10\./i,
+    /^https?:\/\/172\.(1[6-9]|2[0-9]|3[01])\./i,
+    /^https?:\/\/192\.168\./i,
+    /^https?:\/\/0\./i,
+    /^https?:\/\/::1/i,
+    /^file:/i,
+  ]
+  
+  return internalPatterns.some(pattern => pattern.test(url))
 }
