@@ -10,9 +10,29 @@ export default function ModelExplorer() {
   useEffect(() => {
     async function loadModels() {
       try {
-        const res = await fetch("https://openrouter.ai/api/v1/models");
-        const data = await res.json();
-        setModels(data.data || []);
+        // Static list of Google AI models
+        const googleModels = [
+          {
+            id: "gemini-2.5-flash",
+            name: "Gemini 2.5 Flash",
+            description: "Fast and efficient model for general tasks",
+            context_length: 1048576,
+          },
+          {
+            id: "gemini-2.5-pro",
+            name: "Gemini 2.5 Pro",
+            description: "Advanced model with enhanced capabilities",
+            context_length: 2097152,
+          },
+          {
+            id: "gemini-2.5-pro-vision",
+            name: "Gemini 2.5 Pro Vision",
+            description: "Model with vision capabilities",
+            context_length: 2097152,
+          },
+        ];
+
+        setModels(googleModels);
       } catch (err) {
         console.error("Failed to load models", err);
       } finally {

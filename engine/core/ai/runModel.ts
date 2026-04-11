@@ -3,8 +3,10 @@ import { Providers } from "./providers";
 
 /**
  * Wonder-Build Model Runner
- * - Routes "openrouter/*" to OpenRouter
- * - Routes everything else (Gemini) to Google provider by default
+ * - Routes "github/*" to GitHub Models
+ * - Routes "groq/*" to GROQ AI
+ * - Routes "google/*" to Google AI
+ * - Routes everything else to GitHub Models provider by default
  * - Supports multimodal prompt content (arrays/objects)
  */
 export async function runModel({
@@ -24,25 +26,49 @@ export async function runModel({
 
   console.log(`🤖 Wonder-Build Engine: Routing to ${model}`);
 
-  // If your agent IDs are like "openrouter/auto" or "openrouter/google/gemini-2.0-flash-001"
-  const isOpenRouter = typeof model === "string" && model.startsWith("openrouter/");
+  // If your agent IDs are like "github/gpt-4o-mini" or "groq/llama-3.1-8b-instant" or "google/gemini-2.5-flash"
+  const isGithub = typeof model === "string" && model.startsWith("github/");
+  const isGroq = typeof model === "string" && model.startsWith("groq/");
+  const isGoogle = typeof model === "string" && model.startsWith("google/");
 
-  if (isOpenRouter) {
-    // OpenRouter expects a model name that does NOT include "openrouter/" in most setups.
-    // If your openrouter provider expects the full string, remove the replace line.
-    const openrouterModel = model.replace(/^openrouter\//, "");
+  if (isGithub) {
+    // GitHub Models expects a model name that does NOT include "github/" prefix.
+    const githubModel = model.replace(/^github\//, "");
 
-    return Providers.openrouter.generate(lastContent, {
-      model: openrouterModel,
+    return Providers.github.generate(lastContent, {
+      model: githubModel,
       system,
       temperature,
       maxTokens,
     });
   }
 
-  // Default: Google Gemini provider
-  // Your google provider ignores "model" but we pass it anyway for consistency/future use.
-  return Providers.google.generate(lastContent, {
+  if (isGroq) {
+    // GROQ expects a model name that does NOT include "groq/" prefix.
+    const groqModel = model.replace(/^groq\//, "");
+
+    return Providers.groq.generate(lastContent, {
+      model: groqModel,
+      system,
+      temperature,
+      maxTokens,
+    });
+  }
+
+  if (isGoogle) {
+    // Google AI expects a model name that does NOT include "google/" prefix.
+    const googleModel = model.replace(/^google\//, "");
+
+    return Providers.google.generate(lastContent, {
+      model: googleModel,
+      system,
+      temperature,
+      maxTokens,
+    });
+  }
+
+  // Default: GitHub Models provider for high-quality inference
+  return Providers.github.generate(lastContent, {
     model,
     system,
     temperature,
