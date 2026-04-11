@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coder-db
+  namespace: wonderland
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coder-db
+  template:
+    metadata:
+      labels:
+        app: coder-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_USER
+              value: "coder"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coder-db-url
+                  key: url
+                  # Password is extracted from the URL in the init script
+            - name: POSTGRES_DB
+              value: "coder"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          volumeMounts:
+            - name: coder-db-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: coder-db-data
+          persistentVolumeClaim:
+            claimName: coder-db-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: coder-db-pvc
+  namespace: wonderland
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coder-db
+  namespace: wonderland
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: coder-db

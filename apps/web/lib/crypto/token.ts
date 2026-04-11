@@ -14,7 +14,10 @@ export const generateToken = (): string => {
  * Uses HMAC with a secret derived from process.env for additional security.
  */
 export const hashToken = (token: string): string => {
-  const secret = process.env.TOKEN_HASH_SECRET || process.env.SECRETS_ENCRYPTION_KEY || 'fallback-secret-change-in-production'
+  const secret = process.env.TOKEN_HASH_SECRET || process.env.SECRETS_ENCRYPTION_KEY
+  if (!secret) {
+    throw new Error('TOKEN_HASH_SECRET or SECRETS_ENCRYPTION_KEY must be set in environment')
+  }
   return crypto.createHmac('sha256', secret).update(token).digest('hex')
 }
 
