@@ -7,7 +7,7 @@ variable "use_kubeconfig" {
 variable "k8s_host" {
   description = "Kubernetes API server host"
   type        = string
-  default     = ""
+  default     = "https://kubernetes.default.svc"
 }
 
 variable "k8s_token" {
