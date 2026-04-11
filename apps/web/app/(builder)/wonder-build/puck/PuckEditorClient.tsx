@@ -2,13 +2,10 @@
 
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
-import { PuckAIPanel, PuckAIButton } from "@/components/PuckAIPanel";
-import { PuckPreview } from "./PuckPreview";
-import { Sparkles, Code, Eye, Monitor, Download, ExternalLink, Clock, History } from "lucide-react";
-import { TempStorageWarning, TempStorageBadge } from "@/components/TempStorageWarning";
-import { VersionHistory, useAutoSave } from "@/components/VersionHistory";
+import { retrievePuckData } from "@/lib/ai-to-puck";
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error" | "saving" | "saved";
 
@@ -38,15 +35,7 @@ export function PuckEditorClient({
   const [data, setData] = useState<InitialData | null>(initialData);
   const [saveStatus, setSaveStatus] = useState<string>("");
   const [localProjectId, setLocalProjectId] = useState<string | undefined>(projectId);
-  const [showAI, setShowAI] = useState(false);
-  const [editorMode, setEditorMode] = useState<"visual" | "code" | "preview">("visual");
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [storageInfo, setStorageInfo] = useState<{
-    type: string;
-    hoursRemaining: number | null;
-    expiresAt: string | null;
-  } | null>(null);
-  const [showTempWarning, setShowTempWarning] = useState(false);
+  const searchParams = useSearchParams();
 
   const hasContent = (data?.content?.length ?? 0) > 0;
 
@@ -95,6 +84,18 @@ export function PuckEditorClient({
   }, [data]);
 
   useEffect(() => {
+    // Check for AI-generated data from session storage
+    const aiDataKey = searchParams.get("ai_data");
+    if (aiDataKey) {
+      const aiData = retrievePuckData(aiDataKey);
+      if (aiData) {
+        setStatus("loaded");
+        setData(aiData);
+        return;
+      }
+    }
+
+    // Otherwise, use initialnData or load project
     if (initialData?.content?.length) {
       setStatus("loaded");
       setData(initialData);
@@ -103,7 +104,7 @@ export function PuckEditorClient({
     } else {
       setStatus("empty");
     }
-  }, [initialData, projectId]);
+  }, [initialData, projectId, searchParams]);
 
   const loadProject = async (pid: string) => {
     setStatus("loading");
