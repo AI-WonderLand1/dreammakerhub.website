@@ -5,20 +5,22 @@ terraform {
       version = "~> 2.0"
     }
     kubernetes = {
-      source = "hashicorp/kubernetes"
-    }
-    envbuilder = {
-      source = "coder/envbuilder"
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.23"
     }
   }
 }
 
-provider "coder" {}
-provider "kubernetes" {
-  # Authenticate via ~/.kube/config or a Coder-specific ServiceAccount, depending on admin preferences
-  config_path = var.use_kubeconfig == true ? "~/.kube/config" : null
+provider "coder" {
+  url = var.coder_url
 }
-provider "envbuilder" {}
+
+provider "kubernetes" {
+  config_path            = var.use_kubeconfig ? "~/.kube/config" : null
+  host                   = var.use_kubeconfig ? null : var.k8s_host
+  token                  = var.use_kubeconfig ? null : var.k8s_token
+  cluster_ca_certificate = var.use_kubeconfig ? null : base64decode(var.k8s_ca_cert)
+}
 
 data "coder_provisioner" "me" {}
 data "coder_workspace" "me" {}
@@ -26,216 +28,139 @@ data "coder_workspace_owner" "me" {}
 
 variable "use_kubeconfig" {
   type        = bool
-  description = <<-EOF
-  Use host kubeconfig? (true/false)
+  description = "Use local kubeconfig? Set false when Coder runs inside OKE."
+  default     = true
+}
 
-  Set this to false if the Coder host is itself running as a Pod on the same
-  Kubernetes cluster as you are deploying workspaces to.
+variable "k8s_host" {
+  type    = string
+  default = ""
+}
 
-  Set this to true if the Coder host is running outside the Kubernetes cluster
-  for workspaces.  A valid "~/.kube/config" must be present on the Coder host.
-  EOF
-  default     = false
+variable "k8s_token" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "k8s_ca_cert" {
+  type    = string
+  default = ""
+}
+
+variable "coder_url" {
+  type        = string
+  description = "Coder server URL (e.g., https://dreammakerhub.website)"
+  default     = "https://dreammakerhub.website"
 }
 
 variable "namespace" {
   type        = string
-  default     = "default"
-  description = "The Kubernetes namespace to create workspaces in (must exist prior to creating workspaces). If the Coder host is itself running as a Pod on the same Kubernetes cluster as you are deploying workspaces to, set this to the same namespace."
+  description = "Kubernetes namespace for workspaces"
+  default     = "wonderland-workspaces"
 }
 
-variable "cache_repo" {
-  default     = ""
-  description = "Use a container registry as a cache to speed up builds."
+variable "ide_image" {
   type        = string
-}
-
-variable "insecure_cache_repo" {
-  default     = false
-  description = "Enable this option if your cache registry does not serve HTTPS."
-  type        = bool
+  description = "Pre-built IDE container image from OCIR"
+  default     = "wonderspace/ide:latest"
 }
 
 data "coder_parameter" "cpu" {
   type         = "number"
   name         = "cpu"
-  display_name = "CPU"
-  description  = "CPU limit (cores)."
+  display_name = "CPU Cores"
+  description  = "Number of CPU cores for your workspace"
   default      = "2"
-  icon         = "/emojis/1f5a5.png"
   mutable      = true
+  order        = 1
   validation {
     min = 1
-    max = 99999
+    max = 8
   }
-  order = 1
 }
 
 data "coder_parameter" "memory" {
   type         = "number"
   name         = "memory"
-  display_name = "Memory"
-  description  = "Memory limit (GiB)."
-  default      = "2"
-  icon         = "/icon/memory.svg"
+  display_name = "Memory (GiB)"
+  description  = "Memory for your workspace"
+  default      = "4"
   mutable      = true
+  order        = 2
   validation {
     min = 1
-    max = 99999
+    max = 32
   }
-  order = 2
 }
 
-data "coder_parameter" "workspaces_volume_size" {
-  name         = "workspaces_volume_size"
-  display_name = "Workspaces volume size"
-  description  = "Size of the `/workspaces` volume (GiB)."
-  default      = "10"
+data "coder_parameter" "storage" {
   type         = "number"
-  icon         = "/emojis/1f4be.png"
+  name         = "storage"
+  display_name = "Storage (GiB)"
+  description  = "Persistent disk size"
+  default      = "10"
   mutable      = false
+  order        = 3
   validation {
-    min = 1
-    max = 99999
+    min = 5
+    max = 100
   }
-  order = 3
 }
 
 data "coder_parameter" "repo" {
-  description  = "Select a repository to automatically clone and start working with a devcontainer."
-  display_name = "Repository (auto)"
-  mutable      = true
-  name         = "repo"
-  order        = 4
   type         = "string"
-}
-
-data "coder_parameter" "fallback_image" {
-  default      = "codercom/enterprise-base:ubuntu"
-  description  = "This image runs if the devcontainer fails to build."
-  display_name = "Fallback Image"
+  name         = "repo"
+  display_name = "Git Repository (optional)"
+  description  = "Repo to auto-clone on workspace start"
+  default      = "https://github.com/wonderingtribe/psychic-octo-fishstick"
   mutable      = true
-  name         = "fallback_image"
-  order        = 6
-}
-
-data "coder_parameter" "devcontainer_builder" {
-  description  = <<-EOF
-Image that will build the devcontainer.
-We highly recommend using a specific release as the `:latest` tag will change.
-Find the latest version of Envbuilder here: https://github.com/coder/envbuilder/pkgs/container/envbuilder
-EOF
-  display_name = "Devcontainer Builder"
-  mutable      = true
-  name         = "devcontainer_builder"
-  default      = "ghcr.io/coder/envbuilder:latest"
-  order        = 7
-}
-
-variable "cache_repo_secret_name" {
-  default     = ""
-  description = "Path to a docker config.json containing credentials to the provided cache repo, if required."
-  sensitive   = true
-  type        = string
-}
-
-data "kubernetes_secret_v1" "cache_repo_dockerconfig_secret" {
-  count = var.cache_repo_secret_name == "" ? 0 : 1
-  metadata {
-    name      = var.cache_repo_secret_name
-    namespace = var.namespace
-  }
+  order        = 4
 }
 
 locals {
-  deployment_name            = "coder-${lower(data.coder_workspace.me.id)}"
-  devcontainer_builder_image = data.coder_parameter.devcontainer_builder.value
-  git_author_name            = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
-  git_author_email           = data.coder_workspace_owner.me.email
-  repo_url                   = data.coder_parameter.repo.value
-  # The envbuilder provider requires a key-value map of environment variables.
-  envbuilder_env = {
-    "CODER_AGENT_TOKEN" : coder_agent.main.token,
-    # Use the docker gateway if the access URL is 127.0.0.1
-    "CODER_AGENT_URL" : replace(data.coder_workspace.me.access_url, "/localhost|127\\.0\\.0\\.1/", "host.docker.internal"),
-    # ENVBUILDER_GIT_URL and ENVBUILDER_CACHE_REPO will be overridden by the provider
-    # if the cache repo is enabled.
-    "ENVBUILDER_GIT_URL" : var.cache_repo == "" ? local.repo_url : "",
-    # Use the docker gateway if the access URL is 127.0.0.1
-    "ENVBUILDER_INIT_SCRIPT" : replace(coder_agent.main.init_script, "/localhost|127\\.0\\.0\\.1/", "host.docker.internal"),
-    "ENVBUILDER_FALLBACK_IMAGE" : data.coder_parameter.fallback_image.value,
-    "ENVBUILDER_DOCKER_CONFIG_BASE64" : base64encode(try(data.kubernetes_secret_v1.cache_repo_dockerconfig_secret[0].data[".dockerconfigjson"], "")),
-    "ENVBUILDER_PUSH_IMAGE" : var.cache_repo == "" ? "" : "true"
-    # You may need to adjust this if you get an error regarding deleting files when building the workspace.
-    # For example, when testing in KinD, it was necessary to set `/product_name` and `/product_uuid` in
-    # addition to `/var/run`.
-    # "ENVBUILDER_IGNORE_PATHS": "/product_name,/product_uuid,/var/run",
-  }
-}
-
-# Check for the presence of a prebuilt image in the cache repo
-# that we can use instead.
-resource "envbuilder_cached_image" "cached" {
-  count         = var.cache_repo == "" ? 0 : data.coder_workspace.me.start_count
-  builder_image = local.devcontainer_builder_image
-  git_url       = local.repo_url
-  cache_repo    = var.cache_repo
-  extra_env     = local.envbuilder_env
-  insecure      = var.insecure_cache_repo
+  workspace_name = "coder-${lower(data.coder_workspace.me.id)}"
+  owner_name     = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
+  owner_email    = data.coder_workspace_owner.me.email
 }
 
 resource "kubernetes_persistent_volume_claim_v1" "workspaces" {
   metadata {
-    name      = "coder-${lower(data.coder_workspace.me.id)}-workspaces"
+    name      = "${local.workspace_name}-data"
     namespace = var.namespace
     labels = {
-      "app.kubernetes.io/name"     = "coder-${lower(data.coder_workspace.me.id)}-workspaces"
-      "app.kubernetes.io/instance" = "coder-${lower(data.coder_workspace.me.id)}-workspaces"
-      "app.kubernetes.io/part-of"  = "coder"
-      //Coder-specific labels.
-      "com.coder.resource"       = "true"
-      "com.coder.workspace.id"   = data.coder_workspace.me.id
-      "com.coder.workspace.name" = data.coder_workspace.me.name
-      "com.coder.user.id"        = data.coder_workspace_owner.me.id
-      "com.coder.user.username"  = data.coder_workspace_owner.me.name
-    }
-    annotations = {
-      "com.coder.user.email" = data.coder_workspace_owner.me.email
+      "app.kubernetes.io/name"     = "coder-workspace"
+      "app.kubernetes.io/instance" = local.workspace_name
+      "com.coder.resource"         = "true"
+      "com.coder.workspace.id"     = data.coder_workspace.me.id
+      "com.coder.user.username"    = data.coder_workspace_owner.me.name
     }
   }
   wait_until_bound = false
   spec {
     access_modes = ["ReadWriteOnce"]
     resources {
-      requests = {
-        storage = "${data.coder_parameter.workspaces_volume_size.value}Gi"
-      }
+      requests = { storage = "${data.coder_parameter.storage.value}Gi" }
     }
-    # storage_class_name = "local-path" # Configure the StorageClass to use here, if required.
   }
 }
 
 resource "kubernetes_deployment_v1" "main" {
   count = data.coder_workspace.me.start_count
-  depends_on = [
-    kubernetes_persistent_volume_claim_v1.workspaces
-  ]
+
+  depends_on = [kubernetes_persistent_volume_claim_v1.workspaces]
+
   wait_for_rollout = false
+
   metadata {
-    name      = local.deployment_name
+    name      = local.workspace_name
     namespace = var.namespace
     labels = {
       "app.kubernetes.io/name"     = "coder-workspace"
-      "app.kubernetes.io/instance" = local.deployment_name
-      "app.kubernetes.io/part-of"  = "coder"
+      "app.kubernetes.io/instance" = local.workspace_name
       "com.coder.resource"         = "true"
       "com.coder.workspace.id"     = data.coder_workspace.me.id
-      "com.coder.workspace.name"   = data.coder_workspace.me.name
-      "com.coder.user.id"          = data.coder_workspace_owner.me.id
       "com.coder.user.username"    = data.coder_workspace_owner.me.name
-    }
-    annotations = {
-      "com.coder.user.email" = data.coder_workspace_owner.me.email
     }
   }
 
@@ -243,68 +168,85 @@ resource "kubernetes_deployment_v1" "main" {
     replicas = 1
     selector {
       match_labels = {
-        "app.kubernetes.io/name" = "coder-workspace"
+        "app.kubernetes.io/name"     = "coder-workspace"
+        "app.kubernetes.io/instance" = local.workspace_name
       }
     }
-    strategy {
-      type = "Recreate"
-    }
+    strategy { type = "Recreate" }
 
     template {
       metadata {
         labels = {
-          "app.kubernetes.io/name" = "coder-workspace"
+          "app.kubernetes.io/name"     = "coder-workspace"
+          "app.kubernetes.io/instance" = local.workspace_name
         }
       }
+
       spec {
-        security_context {}
-
         container {
-          name              = "dev"
-          image             = var.cache_repo == "" ? local.devcontainer_builder_image : envbuilder_cached_image.cached.0.image
-          image_pull_policy = "Always"
-          security_context {}
+          name              = "ide"
+          image             = var.ide_image
+          image_pull_policy = "IfNotPresent"
 
-          # Set the environment using cached_image.cached.0.env if the cache repo is enabled.
-          # Otherwise, use the local.envbuilder_env.
-          # You could alternatively write the environment variables to a ConfigMap or Secret
-          # and use that as `env_from`.
-          dynamic "env" {
-            for_each = nonsensitive(var.cache_repo == "" ? local.envbuilder_env : envbuilder_cached_image.cached.0.env_map)
-            content {
-              name  = env.key
-              value = env.value
-            }
+          env {
+            name  = "CODER_AGENT_TOKEN"
+            value = coder_agent.main.token
+          }
+          env {
+            name  = "PORT"
+            value = "8080"
+          }
+          env {
+            name  = "WS_DIR"
+            value = "/home/coder/project"
+          }
+          env {
+            name  = "GIT_AUTHOR_NAME"
+            value = local.owner_name
+          }
+          env {
+            name  = "GIT_AUTHOR_EMAIL"
+            value = local.owner_email
+          }
+          env {
+            name  = "GIT_COMMITTER_NAME"
+            value = local.owner_name
+          }
+          env {
+            name  = "GIT_COMMITTER_EMAIL"
+            value = local.owner_email
+          }
+
+          port {
+            container_port = 8080
+            name           = "ide"
           }
 
           resources {
             requests = {
-              "cpu"    = "250m"
-              "memory" = "512Mi"
+              cpu    = "500m"
+              memory = "1Gi"
             }
             limits = {
-              "cpu"    = "${data.coder_parameter.cpu.value}"
-              "memory" = "${data.coder_parameter.memory.value}Gi"
+              cpu    = "${data.coder_parameter.cpu.value}"
+              memory = "${data.coder_parameter.memory.value}Gi"
             }
           }
+
           volume_mount {
-            mount_path = "/workspaces"
+            mount_path = "/home/coder/project"
             name       = "workspaces"
-            read_only  = false
           }
         }
 
         volume {
           name = "workspaces"
           persistent_volume_claim {
-            claim_name = kubernetes_persistent_volume_claim_v1.workspaces.metadata.0.name
-            read_only  = false
+            claim_name = kubernetes_persistent_volume_claim_v1.workspaces.metadata[0].name
           }
         }
 
         affinity {
-          // This affinity attempts to spread out all workspace pods evenly across
-          // nodes.
           pod_anti_affinity {
             preferred_during_scheduling_ignored_during_execution {
               weight = 1
@@ -329,100 +271,90 @@ resource "kubernetes_deployment_v1" "main" {
 resource "coder_agent" "main" {
   arch           = data.coder_provisioner.me.arch
   os             = "linux"
+  dir            = "/home/coder/project"
   startup_script = <<-EOT
+    #!/bin/bash
     set -e
 
-    # Add any commands that should be executed at workspace startup (e.g install requirements, start a program, etc) here
-  EOT
-  dir            = "/workspaces"
+    # Clone repo if set and directory is empty
+    REPO="${data.coder_parameter.repo.value}"
+    if [ -n "$REPO" ] && [ ! -d /home/coder/project/.git ]; then
+      git clone "$REPO" /home/coder/project 2>/dev/null || true
+    fi
 
-  # These environment variables allow you to make Git commits right away after creating a
-  # workspace. Note that they take precedence over configuration defined in ~/.gitconfig!
-  # You can remove this block if you'd prefer to configure Git manually or using
-  # dotfiles. (see docs/dotfiles.md)
+    # Ensure project directory exists
+    mkdir -p /home/coder/project
+
+    # Set up git config
+    git config --global user.name "${local.owner_name}"
+    git config --global user.email "${local.owner_email}"
+    git config --global init.defaultBranch main
+
+    echo "Workspace ready for ${local.owner_name}!"
+  EOT
+
   env = {
-    GIT_AUTHOR_NAME     = local.git_author_name
-    GIT_AUTHOR_EMAIL    = local.git_author_email
-    GIT_COMMITTER_NAME  = local.git_author_name
-    GIT_COMMITTER_EMAIL = local.git_author_email
+    GIT_AUTHOR_NAME     = local.owner_name
+    GIT_AUTHOR_EMAIL    = local.owner_email
+    GIT_COMMITTER_NAME  = local.owner_name
+    GIT_COMMITTER_EMAIL = local.owner_email
   }
 
-  # The following metadata blocks are optional. They are used to display
-  # information about your workspace in the dashboard. You can remove them
-  # if you don't want to display any information.
-  # For basic resources, you can use the `coder stat` command.
-  # If you need more control, you can write your own script.
   metadata {
-    display_name = "CPU Usage"
-    key          = "0_cpu_usage"
+    display_name = "CPU"
+    key          = "0_cpu"
     script       = "coder stat cpu"
     interval     = 10
     timeout      = 1
   }
-
   metadata {
-    display_name = "RAM Usage"
-    key          = "1_ram_usage"
+    display_name = "Memory"
+    key          = "1_mem"
     script       = "coder stat mem"
     interval     = 10
     timeout      = 1
   }
-
   metadata {
-    display_name = "Workspaces Disk"
-    key          = "3_workspaces_disk"
-    script       = "coder stat disk --path /workspaces"
+    display_name = "Disk"
+    key          = "2_disk"
+    script       = "coder stat disk --path /home/coder/project"
     interval     = 60
     timeout      = 1
   }
-
-  metadata {
-    display_name = "CPU Usage (Host)"
-    key          = "4_cpu_usage_host"
-    script       = "coder stat cpu --host"
-    interval     = 10
-    timeout      = 1
-  }
-
-  metadata {
-    display_name = "Memory Usage (Host)"
-    key          = "5_mem_usage_host"
-    script       = "coder stat mem --host"
-    interval     = 10
-    timeout      = 1
-  }
-
-  metadata {
-    display_name = "Load Average (Host)"
-    key          = "6_load_host"
-    # get load avg scaled by number of cores
-    script   = <<EOT
-      echo "`cat /proc/loadavg | awk '{ print $1 }'` `nproc`" | awk '{ printf "%0.2f", $1/$2 }'
-    EOT
-    interval = 60
-    timeout  = 1
-  }
-
-  metadata {
-    display_name = "Swap Usage (Host)"
-    key          = "7_swap_host"
-    script       = <<EOT
-      free -b | awk '/^Swap/ { printf("%.1f/%.1f", $3/1024.0/1024.0/1024.0, $2/1024.0/1024.0/1024.0) }'
-    EOT
-    interval     = 10
-    timeout      = 1
-  }
 }
 
-# See https://registry.coder.com/modules/coder/code-server
-module "code-server" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/code-server/coder"
+module "vscode-web" {
+  count   = data.coder_workspace.me.start_count
+  source  = "registry.coder.com/modules/vscode-web/coder"
+  version = "1.0.21"
 
-  # This ensures that the latest non-breaking version of the module gets downloaded, you can also pin the module version to prevent breaking changes in production.
-  version = "~> 1.0"
-
-  agent_id = coder_agent.main.id
-  order    = 1
+  agent_id       = coder_agent.main.id
+  accept_license = true
+  folder         = "/home/coder/project"
+  extensions = [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-playwright.playwright",
+    "eamodio.gitlens"
+  ]
+  auto_install_extensions = true
+  order                   = 1
 }
 
+output "workspace_url" {
+  description = "URL to access your workspace"
+  value       = coder_agent.main.url
+}
+
+output "workspace_id" {
+  description = "Workspace ID"
+  value       = data.coder_workspace.me.id
+}
+
+output "workspace_owner" {
+  description = "Workspace owner"
+  value       = local.owner_name
+}

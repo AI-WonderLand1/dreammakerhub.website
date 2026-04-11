@@ -10,7 +10,13 @@ node_modules/
 .env.*
 .env.local
 .env*.local
+.env.production
 my-agent/.env
+
+# Editor temp files
+*.swp
+*.swo
+*~
 
 UnrealEngine_Source/
 UE5_Source/
