@@ -16,10 +16,7 @@ provider "coder" {
 }
 
 provider "kubernetes" {
-  config_path            = var.use_kubeconfig ? "~/.kube/config" : null
-  host                   = var.use_kubeconfig ? null : var.k8s_host
-  token                  = var.use_kubeconfig ? null : var.k8s_token
-  cluster_ca_certificate = var.use_kubeconfig ? null : (var.k8s_ca_cert != "" ? base64decode(var.k8s_ca_cert) : null)
+  config_path = "~/.kube/config"
 }
 
 data "coder_provisioner" "me" {}
