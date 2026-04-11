@@ -16,15 +16,10 @@ provider "coder" {
 }
 
 provider "kubernetes" {
-  # Explicitly tell it NOT to use a local config file
-  load_config_file = false
-
-  # Use the host from your variables
-  host = var.k8s_host
-
-  # Use the token we fetched from the Vault
-  token = local.vault_token
-
+  host                   = var.k8s_host
+  token                  = local.vault_token
+  cluster_ca_certificate = base64decode(var.k8s_ca_cert)
+}
   # Since it's OKE, we keep this to bypass cert issues
   insecure = true
 }
