@@ -138,7 +138,7 @@ export function TriEngineShell() {
       <nav className="z-40 flex w-12 shrink-0 flex-col items-center border-r border-white/10 bg-black py-3 gap-1">
         {/* Home */}
         <Link
-          href="/homepage"
+          href="/"
           title="Homepage"
           className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white/70 transition-colors"
         >
@@ -212,7 +212,7 @@ export function TriEngineShell() {
             <Link href="/wonder-build/playcanvas" className="hidden sm:inline-flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/40 hover:text-white/70 transition-colors">
               Full 3D
             </Link>
-            <Link href="/homepage" className="hidden sm:inline-flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/40 hover:text-white/70 transition-colors">
+            <Link href="/" className="hidden sm:inline-flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/40 hover:text-white/70 transition-colors">
               Homepage
             </Link>
           </div>
