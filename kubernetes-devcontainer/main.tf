@@ -73,7 +73,6 @@ locals {
   workspace_name = "coder-${lower(data.coder_workspace.me.id)}"
   owner_name     = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
   owner_email    = data.coder_workspace_owner.me.email
-  vault_token    = var.k8s_token
   resolved_ide_image = var.ide_image != "" ? var.ide_image : "${var.oci_registry}/ide:latest"
 }
 
