@@ -19,46 +19,12 @@ provider "kubernetes" {
   config_path            = var.use_kubeconfig ? "~/.kube/config" : null
   host                   = var.use_kubeconfig ? null : var.k8s_host
   token                  = var.use_kubeconfig ? null : var.k8s_token
-  cluster_ca_certificate = var.use_kubeconfig ? null : base64decode(var.k8s_ca_cert)
+  cluster_ca_certificate = var.use_kubeconfig ? null : (var.k8s_ca_cert != "" ? base64decode(var.k8s_ca_cert) : null)
 }
 
 data "coder_provisioner" "me" {}
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
-
-variable "use_kubeconfig" {
-  type        = bool
-  description = "Use local kubeconfig? Set false when Coder runs inside OKE."
-  default     = true
-}
-
-variable "k8s_host" {
-  type    = string
-  default = ""
-}
-
-variable "k8s_token" {
-  type      = string
-  sensitive = true
-  default   = ""
-}
-
-variable "k8s_ca_cert" {
-  type    = string
-  default = ""
-}
-
-variable "coder_url" {
-  type        = string
-  description = "Coder server URL (e.g., https://dreammakerhub.website)"
-  default     = "https://dreammakerhub.website"
-}
-
-variable "namespace" {
-  type        = string
-  description = "Kubernetes namespace for workspaces"
-  default     = "wonderland-workspaces"
-}
 
 variable "ide_image" {
   type        = string
@@ -346,7 +312,7 @@ module "vscode-web" {
 
 output "workspace_url" {
   description = "URL to access your workspace"
-  value       = coder_agent.main.url
+  value       = "${var.coder_url}/@${coder_agent.main.id}"
 }
 
 output "workspace_id" {

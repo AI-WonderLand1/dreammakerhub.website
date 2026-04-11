@@ -1,7 +1,7 @@
 const env = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "",
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || (() => { throw new Error("NEXTAUTH_SECRET is required") })(),
   NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL || "",
   NEXT_PUBLIC_WORKSPACE_DOMAIN: process.env.NEXT_PUBLIC_WORKSPACE_DOMAIN || "",
   NODE_ENV: process.env.NODE_ENV || "development",
