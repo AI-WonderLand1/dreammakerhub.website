@@ -57,7 +57,7 @@ export default function AiModulesPage() {
 
   // Training
   const [trainingFile, setTrainingFile] = useState<File | null>(null);
-  const [trainingModel, setTrainingModel] = useState("google/gemini-3-flash-preview");
+  const [trainingModel, setTrainingModel] = useState("gemini-2.5-flash");
   const [trainingStatus, setTrainingStatus] = useState<TrainingStatus>("idle");
   const [trainingLog, setTrainingLog] = useState<string[]>([]);
 
@@ -381,10 +381,11 @@ export default function AiModulesPage() {
                   onChange={(e) => setTrainingModel(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white/80 outline-none focus:border-sky-500/50"
                 >
-                  <option value="google/gemini-3-flash-preview">Gemini 3 Flash (Google)</option>
-                  <option value="google/gemini-3.1-pro-preview">Gemini 3.1 Pro (Google)</option>
-                  <option value="openai/gpt-4o-mini">GPT-4o Mini (OpenAI)</option>
-                  <option value="openai/gpt-4o">GPT-4o (OpenAI)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Google)</option>
+                  <option value="gemini-2.5-flash-8b">Gemini 2.5 Flash 8B (Google)</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Google)</option>
+                  <option value="gemini-2.5-pro-002">Gemini 2.5 Pro 002 (Google)</option>
+                  <option value="gemini-2.5-pro-vision">Gemini 2.5 Pro Vision (Google)</option>
                 </select>
               </div>
 
@@ -475,7 +476,7 @@ export default function AiModulesPage() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">BYOK Key</h3>
                 <p className="text-xs text-slate-500">
-                  Add your OpenRouter or OpenAI key to unlock training. Stored locally only.
+                  Add your Google AI API key to unlock training. Stored locally only.
                 </p>
                 <button
                   onClick={() => setShowKeyModal(true)}
