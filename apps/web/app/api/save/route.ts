@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server"
+import { getStorageManager } from "@/lib/storage/StorageManager"
 
 export async function POST(req: Request) {
   const { workspaceId, sceneId, scene } = await req.json()
 
-  const path = `temp/${workspaceId}/editor/${sceneId}.json`
-  await writeTemp(path, JSON.stringify(scene, null, 2))
+  if (!workspaceId || !sceneId || !scene) {
+    return NextResponse.json({ error: "Missing required fields: workspaceId, sceneId, scene" }, { status: 400 })
+  }
 
-  return NextResponse.json({ ok: true, path })
-}
+  const storage = getStorageManager()
+  const result = await storage.saveProject(`${workspaceId}/${sceneId}`, scene, workspaceId)
 
-// TODO: replace with real storage
-async function writeTemp(path: string, contents: string) {
-  console.log("WRITE TEMP:", path)
+  return NextResponse.json({ ok: true, path: result.url, id: result.id })
 }
