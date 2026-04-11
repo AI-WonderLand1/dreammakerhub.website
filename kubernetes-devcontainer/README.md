@@ -211,18 +211,6 @@ Common causes:
 - The `ocir-cred` secret is missing from `wonderland-workspaces`.
 - OCIR credentials are valid but missing permissions for the target repo.
 
-### `http://localhost` Kubernetes API Error
-If Terraform shows `Post "http://localhost/api/v1/...": connect: connection refused`, the template likely ran without a usable Kubernetes host/token value.
-
-Verify:
-```bash
-# Confirm template variables include a real API host (or leave empty to use in-cluster default)
-grep -n "k8s_host\\|k8s_token" terraform.tfvars
-
-# Re-upload template after Terraform edits
-coder templates create --name wonderland-ide --directory .
-```
-
 ### Permission Issues
 Ensure service account has proper RBAC:
 ```bash

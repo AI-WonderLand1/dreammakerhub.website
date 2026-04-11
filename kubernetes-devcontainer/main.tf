@@ -20,7 +20,7 @@ provider "kubernetes" {
   load_config_file = false
 
   # Use the host from your variables
-  host = local.kubernetes_host
+  host = var.k8s_host
 
   # Use the token we fetched from the Vault
   token = local.vault_token
@@ -73,12 +73,6 @@ locals {
   workspace_name = "coder-${lower(data.coder_workspace.me.id)}"
   owner_name     = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
   owner_email    = data.coder_workspace_owner.me.email
-  kubernetes_host = trimspace(var.k8s_host) != "" ? trimspace(var.k8s_host) : "https://kubernetes.default.svc"
-  vault_token = var.k8s_token != "" ? var.k8s_token : (
-    fileexists("/var/run/secrets/kubernetes.io/serviceaccount/token")
-    ? trimspace(file("/var/run/secrets/kubernetes.io/serviceaccount/token"))
-    : ""
-  )
   resolved_ide_image = var.ide_image != "" ? var.ide_image : "${var.oci_registry}/ide:latest"
 }
 
