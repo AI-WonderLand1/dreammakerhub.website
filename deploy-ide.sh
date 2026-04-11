@@ -1,67 +1,104 @@
 #!/bin/bash
 set -e
 
-# === Wonderland IDE - OCI Deploy Script ===
-# Usage: ./deploy-ide.sh [push|apply|all]
+# ============================================
+# DreamMakerHub - Full Coder + IDE Deployment
+# ============================================
+# Domain: dreammakerhub.website
+# Email: aiwonderland111@gmail.com
 #
 # Prerequisites:
-#   - OCI CLI configured
-#   - Docker installed  
+#   - OCI CLI configured (oci setup config)
+#   - Docker installed
 #   - kubectl configured for OKE cluster
-#   - OCIR (Oracle Container Registry) access
+#   - OCIR access
 #
 # Usage:
-#   OCI_REGISTRY=iad.ocir.io/your-tenancy/wonderspace ./deploy-ide.sh all
-#   ./deploy-ide.sh iad.ocir.io/your-tenancy/wonderspace apply
+#   OCI_REGISTRY=iad.ocir.io/tenancy/wonderspace ./deploy-ide.sh [build|push|apply|all]
 
 OCI_REGISTRY="${OCI_REGISTRY:-$1}"
-OCI_REGION="${OCI_REGION:-us-chicago-1}"
 IDE_IMAGE="${OCI_REGISTRY}/ide:latest"
+DOMAIN="dreammakerhub.website"
+NAMESPACE="wonderland"
 
 if [ -z "$OCI_REGISTRY" ]; then
-  echo "Usage: OCI_REGISTRY=iad.ocir.io/your-tenancy/wonderspace ./deploy-ide.sh [push|apply|all]"
-  echo "  or:  ./deploy-ide.sh iad.ocir.io/your-tenancy/wonderspace apply"
+  echo "Usage: OCI_REGISTRY=iad.ocir.io/tenancy/wonderspace ./deploy-ide.sh [build|push|apply|all]"
   exit 1
 fi
 
 ACTION="${2:-all}"
 
-# === BUILD ===
 build() {
   echo "=== Building IDE image ==="
-  docker build -t "$IDE_IMAGE" -f Dockerfile.workspace .
-  echo "=== Build complete: $IDE_IMAGE ==="
+  docker build -t "$IDE_IMAGE" -f kubernetes-devcontainer/.devcontainer/Dockerfile .
+  echo "=== Built: $IDE_IMAGE ==="
 }
 
-# === PUSH ===
 push() {
-  echo "=== Logging into OCIR ==="
-  echo "$OCI_REGISTRY" | docker login --username=oracle --password-stdin "$OCI_REGISTRY" 2>/dev/null || \
-  docker login "$OCI_REGISTRY"
-  
-  echo "=== Pushing IDE image ==="
+  echo "=== Pushing to OCIR ==="
   docker push "$IDE_IMAGE"
-  echo "=== Push complete ==="
+  echo "=== Pushed: $IDE_IMAGE ==="
 }
 
-# === DEPLOY ===
 apply() {
-  echo "=== Applying IDE to OKE ==="
-  kubectl apply -f deploy/k8s/namespace.yaml
+  echo "=== Creating namespace ==="
+  kubectl create namespace "$NAMESPACE" 2>/dev/null || true
+
+  echo "=== Installing cert-manager ==="
+  kubectl apply -f deploy/k8s/cert-manager.yaml
+  echo "Waiting for cert-manager to be ready..."
+  kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s 2>/dev/null || true
+
+  echo "=== Deploying infrastructure ==="
+  kubectl apply -f deploy/k8s/cluster-issuer.yaml
+  kubectl apply -f deploy/k8s/configmap.yaml
+  # Secrets are now managed via Vault (external-secrets)
+  kubectl apply -f deploy/k8s/coder-db.yaml
+  kubectl apply -f deploy/k8s/coder-deployment.yaml
+
+  echo "=== Waiting for Coder DB ==="
+  kubectl rollout status deployment/coder-db -n "$NAMESPACE" --timeout=120s
+
+  echo "=== Waiting for Coder server ==="
+  kubectl rollout status deployment/coder -n "$NAMESPACE" --timeout=180s
+
+  echo "=== Deploying IDE workspace ==="
   kubectl apply -f deploy/k8s/ide-deployment.yaml
-  
-  # Update image
-  kubectl set image deployment/wonderland-ide ide="$IDE_IMAGE" -n wonderland
-  
-  echo "=== Waiting for rollout ==="
-  kubectl rollout status deployment/wonderland-ide -n wonderland --timeout=300s
-  
-  echo "=== Deployed! ==="
+  kubectl set image deployment/wonderland-ide ide="$IDE_IMAGE" -n "$NAMESPACE"
+
+  echo "=== Setting up ingress ==="
+  kubectl apply -f deploy/k8s/ingress.yaml
+  kubectl apply -f deploy/k8s/workspace-ingress.yaml
+
   echo ""
-  echo "Get the endpoint:"
-  echo "  kubectl get svc wonderland-ide -n wonderland"
+  echo "============================================"
+  echo "  DreamMakerHub Deployment Summary"
+  echo "============================================"
   echo ""
-  echo "Or run: ./connect-oci.sh"
+  echo "  Domain:        https://$DOMAIN"
+  echo "  Coder:         https://$DOMAIN"
+  echo "  IDE:           Each user gets a workspace via Coder"
+  echo "  Email:         aiwonderland111@gmail.com"
+  echo ""
+  echo "  Next steps:"
+  echo "  1. Point DNS A record for $DOMAIN to the LoadBalancer IP:"
+  echo "     kubectl get svc -n ingress-nginx"
+  echo ""
+  echo "  2. Point DNS A record for *.ide.$DOMAIN to the same IP"
+  echo ""
+  echo "  3. Get Coder admin token:"
+  echo "     kubectl logs deployment/coder -n $NAMESPACE | grep -i token"
+  echo ""
+  echo "  4. Login to Coder:"
+  echo "     coder login https://$DOMAIN"
+  echo ""
+  echo "  5. Push the Coder template:"
+  echo "     coder template push -d kubernetes-devcontainer wonderspace-ide"
+  echo ""
+  echo "  6. Create your first workspace:"
+  echo "     coder create my-ide -t wonderspace-ide"
+  echo ""
+  echo "============================================"
 }
 
 case "$ACTION" in
@@ -69,5 +106,5 @@ case "$ACTION" in
   push)   push ;;
   apply)  apply ;;
   all)    build; push; apply ;;
-  *)      echo "Usage: ./deploy-ide.sh [push|apply|all]"; exit 1 ;;
+  *)      echo "Usage: ./deploy-ide.sh [build|push|apply|all]"; exit 1 ;;
 esac

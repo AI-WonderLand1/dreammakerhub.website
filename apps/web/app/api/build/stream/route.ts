@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { manifestVisualBlock } from "../../../../../../engine/core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
 
@@ -154,10 +155,20 @@ function getReviewerSystem(type: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { prompt, type = "website", save = false, fileName } = await req.json();
-
-  if (!prompt?.trim()) {
-    return new Response(JSON.stringify({ error: "Prompt required" }), { status: 400 });
+  // Validate input
+  let body: z.infer<typeof BuildRequestSchema>;
+  try {
+    const jsonBody = await req.json();
+    const result = BuildRequestSchema.safeParse(jsonBody);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: result.error.issues },
+        { status: 400 }
+      );
+    }
+    body = result.data;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   let user: AuthUser | null = null;
@@ -171,9 +182,26 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
   const typeLabel = getTypeLabel(type);
 
+  const startTime = Date.now();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: string, data: object) => {
+        // Check stream timeout
+        if (Date.now() - startTime > MAX_STREAM_DURATION_MS) {
+          send("error", { message: "Build timeout - took too long" });
+          controller.close();
+          return;
+        }
+
+        // Track output size
+        const dataStr = JSON.stringify(data);
+        totalOutputSize += dataStr.length;
+        if (totalOutputSize > MAX_OUTPUT_SIZE_KB * 1024) {
+          send("error", { message: "Output too large" });
+          controller.close();
+          return;
+        }
+
         controller.enqueue(encoder.encode(sse(event, data)));
       };
 

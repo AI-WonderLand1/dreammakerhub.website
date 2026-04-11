@@ -12,10 +12,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - orical.com
-      secretName: orical-tls
+        - "*.ide.dreammakerhub.website"
+      secretName: dreammakerhub-ide-tls
   rules:
-    - host: orical.com
+    - host: "*.ide.dreammakerhub.website"
       http:
         paths:
           - path: /

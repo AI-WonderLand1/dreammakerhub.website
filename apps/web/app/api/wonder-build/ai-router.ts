@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { runModel } from '@/engine/core/ai/runModel';
 import { buildClassificationPrompt } from '@/engine/core/ai/promptBuilder';
 
-const HF_TOKEN = process.env.Wonder_Build_2026;
+const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 
 const MODE_PROMPTS: Record<string, string> = {
