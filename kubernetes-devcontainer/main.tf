@@ -88,9 +88,11 @@ resource "kubernetes_namespace" "wonderland" {
 # 2. Create the Persistent Volume Claim
 resource "kubernetes_persistent_volume_claim_v1" "workspaces" {
   depends_on = [kubernetes_namespace.wonderland]
-    metadata {
-    # This names your storage volume after the workspace
-    name = "${data.coder_workspace.me.name}-data" 
+
+  metadata {
+    name = "${data.coder_workspace.me.name}-data"
+    namespace = var.namespace 
+
     
     labels = {
       "app.kubernetes.io/instance" = data.coder_workspace.me.name
