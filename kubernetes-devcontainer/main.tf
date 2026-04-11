@@ -88,15 +88,14 @@ resource "kubernetes_namespace" "wonderland" {
 # 2. Create the Persistent Volume Claim
 resource "kubernetes_persistent_volume_claim_v1" "workspaces" {
   depends_on = [kubernetes_namespace.wonderland]
-  metadata {
-    name      = "${local.workspace_name}-data"
-    namespace = var.namespace
+    metadata {
+    # This names your storage volume after the workspace
+    name = "${data.coder_workspace.me.name}-data" 
+    
     labels = {
-      "app.kubernetes.io/name"     = "coder-workspace"
-      "app.kubernetes.io/instance" = local.workspace_name
-      "com.coder.resource"         = "true"
-      "com.coder.workspace.id"     = data.coder_workspace.me.id
-      "com.coder.user.username"    = data.coder_workspace_owner.me.name
+      "app.kubernetes.io/instance" = data.coder_workspace.me.name
+      "app.kubernetes.io/name"     = data.coder_workspace.me.name # Fix for line 96
+      "app.kubernetes.io/part-of"  = "coder"
     }
   }
   wait_until_bound = false
