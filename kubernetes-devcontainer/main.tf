@@ -14,14 +14,15 @@ terraform {
 provider "coder" {
   url = var.coder_url
 }
-
-provider "kubernetes" {
-  host                   = var.k8s_host
-  token                  = local.vault_token
-  cluster_ca_certificate = base64decode(var.k8s_ca_cert)
+module "kubeconfig" {
+  source          = "registry.coder.com/modules/kubeconfig/coder"
+  kubeconfig_path = "~/.kube/config"
 }
-  # Since it's OKE, we keep this to bypass cert issues
-  insecure = true
+provider "kubernetes" {
+  host                   = module.kubeconfig.host
+  token                  = module.kubeconfig.token
+  cluster_ca_certificate = base64decode(module.kubeconfig.cluster_ca_certificate)
+  insecure               = true
 }
 
 data "coder_provisioner" "me" {}
