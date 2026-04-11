@@ -16,14 +16,17 @@ provider "coder" {
 }
 
 provider "kubernetes" {
-  config_path = var.use_kubeconfig ? "~/.kube/config" : null
-  host        = var.use_kubeconfig ? null : var.k8s_host
-  token       = var.use_kubeconfig ? null : var.k8s_token
-  
-  # Bypasses the "unknown authority" certificate error
-  insecure    = var.use_kubeconfig ? null : true 
+  # Explicitly tell it NOT to use a local config file
+  load_config_file = false
 
-  cluster_ca_certificate = var.use_kubeconfig ? null : (var.k8s_ca_cert != "" ? base64decode(var.k8s_ca_cert) : null)
+  # Use the host from your variables
+  host = var.k8s_host
+
+  # Use the token we fetched from the Vault
+  token = local.vault_token
+
+  # Since it's OKE, we keep this to bypass cert issues
+  insecure = true
 }
 
 data "coder_provisioner" "me" {}
@@ -34,8 +37,8 @@ data "coder_workspace_owner" "me" {}
 
 variable "ide_image" {
   type        = string
-  description = "Pre-built IDE container image from OCIR"
-  default     = "wonderspace/ide:latest"
+  description = "Pre-built IDE container image from OCIR (leave empty to use <oci_registry>/ide:latest)"
+  default     = ""
 }
 
 data "coder_parameter" "cpu" {
@@ -70,6 +73,12 @@ locals {
   workspace_name = "coder-${lower(data.coder_workspace.me.id)}"
   owner_name     = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
   owner_email    = data.coder_workspace_owner.me.email
+  vault_token = var.k8s_token != "" ? var.k8s_token : (
+    fileexists("/var/run/secrets/kubernetes.io/serviceaccount/token")
+    ? trimspace(file("/var/run/secrets/kubernetes.io/serviceaccount/token"))
+    : ""
+  )
+  resolved_ide_image = var.ide_image != "" ? var.ide_image : "${var.oci_registry}/ide:latest"
 }
 
 # --- KUBERNETES RESOURCES ---
@@ -146,9 +155,16 @@ resource "kubernetes_deployment_v1" "main" {
       }
 
       spec {
+        dynamic "image_pull_secrets" {
+          for_each = var.cache_repo_dockerconfig_secret != "" ? [var.cache_repo_dockerconfig_secret] : []
+          content {
+            name = image_pull_secrets.value
+          }
+        }
+
         container {
           name              = "ide"
-          image             = var.ide_image
+          image             = local.resolved_ide_image
           image_pull_policy = "IfNotPresent"
 
           env {

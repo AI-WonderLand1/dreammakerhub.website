@@ -84,6 +84,8 @@ Two options available:
 - Automatic dependency installation
 - Cache layers in OCIR for faster rebuilds
 
+> ⚠️ Important: the Terraform template in this directory currently deploys a prebuilt container image. It does **not** invoke Envbuilder by itself.
+
 #### Option B: Prebuilt Image
 - Build `Dockerfile.workspace` once
 - Push to OCIR
@@ -189,6 +191,25 @@ kubectl describe deployment -n wonderland-workspaces coder-<workspace-id>
 kubectl delete deployment -n wonderland-workspaces coder-<workspace-id>
 # Then recreate workspace
 ```
+
+### Image Pull / "Build" Fails Immediately
+If workspace creation fails right away, verify these first:
+
+```bash
+# Confirm the deployment is trying to use the expected image
+kubectl get deployment -n wonderland-workspaces coder-<workspace-id> -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+
+# Confirm image pull secret is attached to the pod spec
+kubectl get deployment -n wonderland-workspaces coder-<workspace-id> -o jsonpath='{.spec.template.spec.imagePullSecrets[*].name}{"\n"}'
+
+# Inspect pull failures
+kubectl describe pod -n wonderland-workspaces <pod-name> | sed -n '/Events:/,$p'
+```
+
+Common causes:
+- The image path is wrong or tag does not exist in OCIR.
+- The `ocir-cred` secret is missing from `wonderland-workspaces`.
+- OCIR credentials are valid but missing permissions for the target repo.
 
 ### Permission Issues
 Ensure service account has proper RBAC:
