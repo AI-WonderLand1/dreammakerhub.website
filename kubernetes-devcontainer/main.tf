@@ -34,8 +34,8 @@ data "coder_workspace_owner" "me" {}
 
 variable "ide_image" {
   type        = string
-  description = "Pre-built IDE container image from OCIR"
-  default     = "wonderspace/ide:latest"
+  description = "Pre-built IDE container image from OCIR (leave empty to use <oci_registry>/ide:latest)"
+  default     = ""
 }
 
 data "coder_parameter" "cpu" {
@@ -70,6 +70,7 @@ locals {
   workspace_name = "coder-${lower(data.coder_workspace.me.id)}"
   owner_name     = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
   owner_email    = data.coder_workspace_owner.me.email
+  resolved_ide_image = var.ide_image != "" ? var.ide_image : "${var.oci_registry}/ide:latest"
 }
 
 # --- KUBERNETES RESOURCES ---
@@ -146,9 +147,16 @@ resource "kubernetes_deployment_v1" "main" {
       }
 
       spec {
+        dynamic "image_pull_secrets" {
+          for_each = var.cache_repo_dockerconfig_secret != "" ? [var.cache_repo_dockerconfig_secret] : []
+          content {
+            name = image_pull_secrets.value
+          }
+        }
+
         container {
           name              = "ide"
-          image             = var.ide_image
+          image             = local.resolved_ide_image
           image_pull_policy = "IfNotPresent"
 
           env {
