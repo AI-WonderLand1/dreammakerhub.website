@@ -16,14 +16,17 @@ provider "coder" {
 }
 
 provider "kubernetes" {
-  config_path = var.use_kubeconfig ? "~/.kube/config" : null
-  host        = var.use_kubeconfig ? null : var.k8s_host
-  token       = var.use_kubeconfig ? null : var.k8s_token
-  
-  # Bypasses the "unknown authority" certificate error
-  insecure    = var.use_kubeconfig ? null : true 
+  # Explicitly tell it NOT to use a local config file
+  load_config_file = false
 
-  cluster_ca_certificate = var.use_kubeconfig ? null : (var.k8s_ca_cert != "" ? base64decode(var.k8s_ca_cert) : null)
+  # Use the host from your variables
+  host = var.k8s_host
+
+  # Use the token we fetched from the Vault
+  token = local.vault_token
+
+  # Since it's OKE, we keep this to bypass cert issues
+  insecure = true
 }
 
 data "coder_provisioner" "me" {}
