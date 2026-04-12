@@ -1,0 +1,9 @@
+workspace-image.tar
+registry/
+.git
+*.md
+*.png
+*.jpeg
+*.jpg
+*.svg
+*.gif
