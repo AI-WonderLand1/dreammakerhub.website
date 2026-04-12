@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -y \
     net-tools \
     iputils-ping \
     dnsutils \
+    ffmpeg \
+    portaudio19-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20 LTS
