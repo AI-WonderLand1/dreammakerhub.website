@@ -322,7 +322,7 @@ resource "coder_agent" "main" {
   }
 }
 
-# See https://registry.coder.com/modules/coder/code-server
+# VS Code in browser — mobile + desktop friendly, always free
 module "code-server" {
   count      = data.coder_workspace.me.start_count
   source     = "registry.coder.com/coder/code-server/coder"
@@ -332,34 +332,38 @@ module "code-server" {
   order      = 1
   offline    = true
   extensions = [
-    "hashicorp.terraform",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "ms-azuretools.vscode-docker",
-    "bradlc.vscode-tailwindcss",
-    "formulahendry.auto-rename-tag",
-    "christian-kohler.path-intellisense",
     "eamodio.gitlens",
     "pkief.material-icon-theme",
-    "ms-kubernetes-tools.vscode-kubernetes-tools"
   ]
   settings = {
-    "terminal.integrated.defaultProfile.linux" = "zsh"
-    "terminal.integrated.fontSize"             = "14"
+    "workbench.colorTheme"                     = "Default Dark+"
     "editor.fontSize"                          = "14"
     "editor.formatOnSave"                      = "true"
-    "files.eol"                                = "\n"
-    "workbench.colorTheme"                     = "Default Dark+"
     "editor.tabSize"                           = "2"
     "editor.insertSpaces"                      = "true"
     "editor.detectIndentation"                 = "false"
+    "editor.wordWrap"                          = "on"
+    "editor.minimap.enabled"                   = "false"
+    "editor.cursorBlinking"                    = "smooth"
+    "editor.cursorSmoothCaretAnimation"        = "on"
+    "editor.smoothScrolling"                   = "true"
+    "files.eol"                                = "\n"
+    "terminal.integrated.defaultProfile.linux" = "zsh"
+    "terminal.integrated.fontSize"             = "14"
+    "terminal.integrated.scrollback"           = "10000"
     "git.confirmSync"                          = "false"
     "git.enableSmartCommit"                    = "true"
-    "terraform.languageServer.enable"          = "true"
+    "git.autofetch"                            = "true"
+    "workbench.editor.wrapTabs"                = "true"
+    "workbench.sideBar.location"               = "left"
+    "window.menuBarVisibility"                 = "compact"
   }
+  additional_args = "--disable-workspace-trust"
 }
 
-# See https://registry.coder.com/modules/coder/jetbrains
+# JetBrains IDEs (free — desktop only)
 module "jetbrains" {
   count      = data.coder_workspace.me.start_count
   source     = "registry.coder.com/modules/coder/jetbrains/coder"
@@ -369,6 +373,7 @@ module "jetbrains" {
   folder     = "/workspaces"
 }
 
+# AI assistant — text + voice always free, agents/runners are paid
 module "opencode" {
   count    = data.coder_workspace.me.start_count
   source   = "registry.coder.com/coder/opencode/coder"
@@ -376,6 +381,24 @@ module "opencode" {
   agent_id = coder_agent.main.id
   workdir  = "/workspaces"
   order    = 2
+  icon     = "/icon/opencode.svg"
+  cli_app  = true
+}
+
+# Voice terminal — always free
+resource "coder_app" "voice_terminal" {
+  count        = data.coder_workspace.me.start_count
+  agent_id     = coder_agent.main.id
+  display_name = "Voice Terminal"
+  icon         = "/icon/terminal.svg"
+  slug         = "voice-terminal"
+  command      = "bash -c 'if command -v ffmpeg &>/dev/null; then exec zsh; else echo Installing voice deps... && sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg portaudio19-dev && exec zsh; fi'"
+  order        = 3
+  healthcheck {
+    url       = "http://localhost:8080/healthz"
+    interval  = 60
+    threshold = 10
+  }
 }
 
 resource "coder_metadata" "container_info" {
