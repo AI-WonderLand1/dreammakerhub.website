@@ -10,22 +10,40 @@ RUN apt-get update && apt-get install -y \
     lsb-release \
     software-properties-common \
     postgresql-14 \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -L https://coder.com/install.sh | sh
+
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
+    && apt-get update \
+    && apt-get install -y caddy \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node dependencies for billing gateway
+WORKDIR /opt/billing
+COPY Docker-image/billing/gateway.js ./
+COPY Docker-image/billing/schema.sql ./
+COPY Docker-image/billing/README.md ./
+RUN npm install pg
 
 COPY Docker-image/workspace-image.tar /opt/workspace-image.tar
 COPY Docker-image/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 COPY Docker-image/templates/ /opt/templates/
+COPY Docker-image/config/Caddyfile /etc/caddy/Caddyfile
 COPY coder.env /etc/coder.env.tpl
 
 RUN mkdir -p /var/lib/postgresql/data /var/run/postgresql \
     && chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql
 
-EXPOSE 7080
+RUN mkdir -p /root/.local/share/caddy
 
-VOLUME ["/var/lib/postgresql/data"]
+EXPOSE 7080 443 80 8888
+
+VOLUME ["/var/lib/postgresql/data", "/root/.local/share/caddy"]
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
