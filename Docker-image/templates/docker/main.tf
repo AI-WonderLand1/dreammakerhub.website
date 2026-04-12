@@ -337,6 +337,25 @@ module "jetbrains" {
   folder     = "/home/coder"
 }
 
+# VS Code Desktop (free — runs locally, connects to workspace)
+module "vscode-desktop" {
+  count    = data.coder_workspace.me.start_count
+  source   = "registry.coder.com/coder/vscode-desktop/coder"
+  version  = "~> 1.0"
+  agent_id = coder_agent.main.id
+  folder   = "/home/coder"
+}
+
+# Cursor IDE (free — AI-powered VS Code fork)
+module "cursor" {
+  count        = data.coder_workspace.me.start_count
+  source       = "registry.coder.com/coder/cursor/coder"
+  version      = "~> 1.0"
+  agent_id     = coder_agent.main.id
+  folder       = "/home/coder"
+  display_name = "Cursor Desktop"
+}
+
 # AI assistant — routes through billing gateway (your monetization layer)
 resource "coder_app" "ai-assistant" {
   count        = data.coder_workspace.me.start_count
