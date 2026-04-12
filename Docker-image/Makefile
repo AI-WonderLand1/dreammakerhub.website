@@ -23,13 +23,19 @@ build: coder-image
 	@echo ""
 	@echo "  Image: $(IMAGE_NAME):$(TAG)"
 	@echo ""
-	@echo "  To run locally:"
+	@echo "  To run locally (with monetization):"
 	@echo "    docker run -d --name wonderspace \\"
-	@echo "      -p 7080:7080 \\"
+	@echo "      -p 7080:7080 -p 8888:8888 \\"
 	@echo "      -v /var/run/docker.sock:/var/run/docker.sock \\"
 	@echo "      -v wonderspace-db:/var/lib/postgresql/data \\"
+	@echo '      -e OPENCODE_API_KEY=your_secret_key_here \\'
 	@echo '      -e CODER_ACCESS_URL=http://localhost:7080 \\'
 	@echo "      $(IMAGE_NAME):$(TAG)"
+	@echo ""
+	@echo "  Or use docker-compose:"
+	@echo "    cp .env.example .env"
+	@echo "    # Edit .env with your OPENCODE_API_KEY"
+	@echo "    docker-compose up -d"
 	@echo ""
 
 push: build
