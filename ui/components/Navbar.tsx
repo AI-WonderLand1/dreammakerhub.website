@@ -28,7 +28,7 @@ export default function Navbar() {
     {
       title: "Products",
       items: [
-        { name: "WonderSpace IDE", href: "/wonderspace", icon: "💻" },
+        // { name: "WonderSpace IDE", href: "/wonderspace", icon: "💻" }, // TODO: Re-enable when IDE is ready
         { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
         { name: "Wonder Playground", href: "/playground", icon: "🎮" },
         { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
