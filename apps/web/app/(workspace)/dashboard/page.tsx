@@ -6,6 +6,7 @@ import ProjectImportExport from "./ProjectImportExport";
 import SettingsMenu from "./components/SettingsMenu";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
+import GhostLinksSection from "./components/GhostLinksSection";
 
 type Project = {
   id: string;
@@ -243,6 +244,11 @@ export default function DashboardPage() {
               Export uses <code className="text-white/60">/api/projects/:id/export</code> and import uses <code className="text-white/60">/api/projects/import</code>.
             </div>
           </div>
+        </div>
+
+        {/* Ghost Links Section */}
+        <div className="mt-8">
+          <GhostLinksSection projects={sorted} pushToast={pushToast} />
         </div>
       </div>
     </div>
