@@ -1,6 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for PlayCanvasViewer (client-side only, heavy dependency)
+const PlayCanvasViewer = dynamic(() => import('./PlayCanvasViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-black/50">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-cyan-400">Loading 3D Engine...</p>
+      </div>
+    </div>
+  ),
+});
 
 interface PlayCanvasEngineProps {
   engineState?: any;
@@ -79,41 +93,44 @@ const SKYBOX_LIBRARY = [
 ];
 
 export default function PlayCanvasEngine({ engineState, onStateChange }: PlayCanvasEngineProps) {
-  const [activeTab, setActiveTab] = useState<'library' | 'scene' | 'physics' | 'lighting' | 'materials'>('library');
+  const [activeTab, setActiveTab] = useState<'viewport' | 'library' | 'scene' | 'physics' | 'lighting' | 'materials'>('viewport');
   const [selectedModel, setSelectedModel] = useState<ModelLibraryItem | null>(null);
+  const [playCanvasApp, setPlayCanvasApp] = useState<any>(null);
+  const [selectedEntity, setSelectedEntity] = useState<any>(null);
 
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-br from-black via-black to-black text-white overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-cyan-500/30 p-4 bg-black/50 backdrop-blur">
+      {/* Header - Bigger and more spacious */}
+      <div className="border-b border-cyan-500/30 p-6 bg-black/50 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-blue-400">🎮 PlayCanvas 3D Engine</h1>
-            <p className="text-sm text-white/60">Full 3D game development with physics, animation & lighting</p>
+            <h1 className="text-3xl font-bold text-blue-400 mb-2">🎮 PlayCanvas 3D Engine</h1>
+            <p className="text-base text-white/60">Full 3D game development with physics, animation & lighting</p>
           </div>
-          <div className="flex gap-2">
-            <button className="neon-button text-xs">Create Scene</button>
-            <button className="neon-button text-xs">Import Model</button>
-            <button className="neon-button text-xs">Publish</button>
+          <div className="flex gap-3">
+            <button className="neon-button text-sm px-5 py-2.5">Create Scene</button>
+            <button className="neon-button text-sm px-5 py-2.5">Import Model</button>
+            <button className="neon-button text-sm px-5 py-2.5">Publish</button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar Navigation */}
-        <div className="w-48 border-r border-cyan-500/30 bg-black/30 p-4 overflow-y-auto">
-          <div className="space-y-2">
-            {(['library', 'scene', 'physics', 'lighting', 'materials'] as const).map((tab) => (
+        {/* Sidebar Navigation - Wider for better readability */}
+        <div className="w-64 border-r border-cyan-500/30 bg-black/30 p-5 overflow-y-auto">
+          <div className="space-y-3">
+            {(['viewport', 'library', 'scene', 'physics', 'lighting', 'materials'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`w-full text-left px-3 py-2 rounded transition ${
+                className={`w-full text-left px-4 py-3 rounded-lg transition text-base ${
                   activeTab === tab
-                    ? 'bg-blue-500/30 text-blue-300 border-l-2 border-blue-500'
+                    ? 'bg-blue-500/30 text-blue-300 border-l-3 border-blue-500'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
                 }`}
               >
+                {tab === 'viewport' && '👁️ 3D Viewport'}
                 {tab === 'library' && '📚 Model Library'}
                 {tab === 'scene' && '🎬 Scene Setup'}
                 {tab === 'physics' && '⚛️ Physics'}
@@ -125,9 +142,35 @@ export default function PlayCanvasEngine({ engineState, onStateChange }: PlayCan
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-hidden relative">
+          {activeTab === 'viewport' && (
+            <div className="absolute inset-0">
+              <PlayCanvasViewer 
+                onSceneReady={(app) => {
+                  setPlayCanvasApp(app);
+                  onStateChange?.({ ...engineState, playCanvasApp: app });
+                }}
+                onEntitySelect={(entity) => {
+                  setSelectedEntity(entity);
+                }}
+              />
+              {/* Overlay UI for selected entity */}
+              {selectedEntity && (
+                <div className="absolute top-4 left-4 bg-black/80 border border-cyan-500/30 rounded p-3 text-sm">
+                  <p className="text-cyan-400 font-bold">Selected: {selectedEntity.name}</p>
+                  <button 
+                    onClick={() => setSelectedEntity(null)}
+                    className="text-white/60 hover:text-white mt-2"
+                  >
+                    Deselect
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          
           {activeTab === 'library' && (
-            <div className="space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
               <h2 className="text-xl font-bold text-green-400">Complete 3D Model Library</h2>
               
               <div className="grid grid-cols-2 gap-4">
@@ -162,7 +205,7 @@ export default function PlayCanvasEngine({ engineState, onStateChange }: PlayCan
           )}
 
           {activeTab === 'scene' && (
-            <div className="space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
               <h2 className="text-xl font-bold text-yellow-400">Scene Management</h2>
               
               <div className="grid grid-cols-2 gap-4">
@@ -198,7 +241,7 @@ export default function PlayCanvasEngine({ engineState, onStateChange }: PlayCan
           )}
 
           {activeTab === 'physics' && (
-            <div className="space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
               <h2 className="text-xl font-bold text-red-400">Physics Components</h2>
               
               <div className="grid grid-cols-3 gap-4">
@@ -234,7 +277,7 @@ export default function PlayCanvasEngine({ engineState, onStateChange }: PlayCan
           )}
 
           {activeTab === 'lighting' && (
-            <div className="space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
               <h2 className="text-xl font-bold text-yellow-400">Lighting System</h2>
               
               <div className="grid grid-cols-2 gap-4">
@@ -258,7 +301,7 @@ export default function PlayCanvasEngine({ engineState, onStateChange }: PlayCan
           )}
 
           {activeTab === 'materials' && (
-            <div className="space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
               <h2 className="text-xl font-bold text-purple-400">Material Library</h2>
               
               <div className="grid grid-cols-2 gap-4">
