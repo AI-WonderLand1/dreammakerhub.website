@@ -1,0 +1,2 @@
+export { WebContainerManager, type FileNode } from './WebContainerManager';
+export { TerminalEmulator, WONDERSPACE_TERMINAL_THEME } from './TerminalEmulator';
