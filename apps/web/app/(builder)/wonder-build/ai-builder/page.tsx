@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
@@ -63,8 +63,8 @@ export default function AIBuilderPage() {
   const [result, setResult] = useState<BuildResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [viewMode, setViewMode] = useState<"iframe" | "code">("iframe");
-  const previewRef = useRef<HTMLIFrameElement>(null);
+  const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const acceptToPuck = useCallback(() => {
@@ -84,6 +84,17 @@ export default function AIBuilderPage() {
       alert("Failed to prepare content for Puck editor");
     }
   }, [result?.code, router]);
+
+  useEffect(() => {
+    if (!result?.code) {
+      setPreviewBlobUrl(null);
+      return;
+    }
+    const blob = new Blob([result.code], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    setPreviewBlobUrl(url);
+    return () => { URL.revokeObjectURL(url); };
+  }, [result?.code]);
 
   const runBuild = useCallback(async () => {
     if (!prompt.trim() || running) return;
@@ -368,14 +379,14 @@ export default function AIBuilderPage() {
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setViewMode("iframe")}
+                    onClick={() => setViewMode("preview")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      viewMode === "iframe"
+                      viewMode === "preview"
                         ? "bg-white/10 text-white"
                         : "text-white/40 hover:text-white"
                     }`}
                   >
-                    👁 Preview
+                    Preview
                   </button>
                   <button
                     onClick={() => setViewMode("code")}
@@ -385,7 +396,7 @@ export default function AIBuilderPage() {
                         : "text-white/40 hover:text-white"
                     }`}
                   >
-                    📄 Code
+                    Code
                   </button>
                 </div>
                 <div className="ml-auto flex gap-2">
@@ -423,22 +434,26 @@ export default function AIBuilderPage() {
                 </div>
               </div>
 
-              {/* Content view - Full width, switchable between preview and code */}
+              {/* Content view */}
               <div className="flex-1 flex overflow-hidden gap-1 p-2">
-                {viewMode === "iframe" ? (
+                {viewMode === "preview" ? (
                   <div className="flex-1 flex flex-col overflow-hidden bg-white/[0.02] rounded-lg border border-white/10">
-                    <div className="flex-1 overflow-hidden relative bg-white">
-                      <iframe
-                        ref={previewRef}
-                        srcDoc={result.code}
-                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-presentation"
-                        className="w-full h-full border-0"
-                        title="Live Preview"
-                      />
-                      {/* Fallback message if iframe is blank */}
-                      <div className="absolute inset-0 pointer-events-none text-center flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/50">
-                        <p className="text-white/70 text-sm">If preview is blank, check the Code tab or download to test locally.</p>
-                      </div>
+                    <div className="flex-1 overflow-hidden relative flex items-center justify-center">
+                      {previewBlobUrl ? (
+                        <div className="flex flex-col items-center gap-4 p-8 text-center">
+                          <p className="text-sm text-white/40">Preview ready</p>
+                          <a
+                            href={previewBlobUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-violet-300 hover:bg-violet-500/20 transition-colors"
+                          >
+                            Open Preview in New Tab
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-white/20 text-sm">No preview available</p>
+                      )}
                     </div>
                   </div>
                 ) : (

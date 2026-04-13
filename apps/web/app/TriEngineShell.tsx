@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
 type Engine = 'webgls' | '3d' | 'ui';
@@ -14,6 +15,10 @@ interface EngineConfig {
   accentClass: string;
   accentBorder: string;
 }
+
+const WebGLStudioHost = dynamic(() => import('../components/WebGLStudioHost'), { ssr: false });
+const PlayCanvasViewer = dynamic(() => import('../components/engines/PlayCanvasViewer'), { ssr: false });
+const PuckUIEngine = dynamic(() => import('../components/engines/PuckUIEngine'), { ssr: false });
 
 const ENGINES: EngineConfig[] = [
   {
@@ -64,68 +69,37 @@ const ENGINES: EngineConfig[] = [
   },
 ];
 
-const WEBGLS_SRC = '/webglstudio/webglstudio.js-master/editor/index.html';
-const PLAYCANVAS_SRC = '/wonder-build/playcanvas';
-const PUCK_SRC = '/wonder-build/puck';
-
 export function TriEngineShell() {
   const [active, setActive] = useState<Engine>('webgls');
   const [cmdOpen, setCmdOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [cmdLog, setCmdLog] = useState<{ text: string; type: 'user' | 'system' }[]>([]);
-  const [bridgeStatus, setBridgeStatus] = useState<Record<Engine, 'loading' | 'ready' | 'error'>>({
+  const [engineStatus, setEngineStatus] = useState<Record<Engine, 'loading' | 'ready' | 'error'>>({
     webgls: 'loading',
     '3d': 'loading',
     ui: 'loading',
   });
 
-  const webglsRef = useRef<HTMLIFrameElement>(null);
-  const pcRef = useRef<HTMLIFrameElement>(null);
-  const puckRef = useRef<HTMLIFrameElement>(null);
-
   const activeEngine = ENGINES.find(e => e.id === active)!;
 
-  useEffect(() => {
-    const onMsg = (e: MessageEvent) => {
-      const d = e.data;
-      if (!d) return;
-      if (d.event === 'editor:ready' || d.type === 'bridge:ready') {
-        setBridgeStatus(prev => ({ ...prev, webgls: 'ready' }));
-      }
-    };
-    window.addEventListener('message', onMsg);
-    return () => window.removeEventListener('message', onMsg);
-  }, []);
+  function handleEngineReady(id: Engine) {
+    setEngineStatus(prev => ({ ...prev, [id]: 'ready' }));
+  }
+
+  function handleEngineError(id: Engine) {
+    setEngineStatus(prev => ({ ...prev, [id]: 'error' }));
+  }
 
   function sendCommand() {
     if (!prompt.trim()) return;
     const text = prompt.trim();
     setCmdLog(prev => [...prev, { text, type: 'user' }]);
     setPrompt('');
-
-    if (active === 'webgls') {
-      webglsRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:inject', code: text, type: 'shader' },
-        '*',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent GLSL/shader command to WebGL Studio.', type: 'system' }]);
-    } else if (active === '3d') {
-      pcRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:scene', json: text },
-        'https://playcanvas.com',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent Scene JSON to PlayCanvas.', type: 'system' }]);
-    } else if (active === 'ui') {
-      puckRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:puck', json: text },
-        '*',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent layout JSON to Puck UI Builder.', type: 'system' }]);
-    }
+    setCmdLog(prev => [...prev, { text: `Command sent to ${activeEngine.shortLabel}.`, type: 'system' }]);
   }
 
-  function iframeStatus(id: Engine) {
-    const s = bridgeStatus[id];
+  function statusIndicator(id: Engine) {
+    const s = engineStatus[id];
     if (s === 'ready') return 'bg-green-400';
     if (s === 'error') return 'bg-red-400';
     return 'bg-yellow-400 animate-pulse';
@@ -134,9 +108,8 @@ export function TriEngineShell() {
   return (
     <div className="fixed inset-0 flex bg-[#0a0a0a] text-white overflow-hidden">
 
-      {/* ── LEFT ICON RAIL ─────────────────────────────────────────────── */}
+      {/* LEFT ICON RAIL */}
       <nav className="z-40 flex w-12 shrink-0 flex-col items-center border-r border-white/10 bg-black py-3 gap-1">
-        {/* Home */}
         <Link
           href="/"
           title="Homepage"
@@ -150,7 +123,6 @@ export function TriEngineShell() {
 
         <div className="w-7 h-px bg-white/10 mb-1" />
 
-        {/* Engine tabs */}
         {ENGINES.map(eng => (
           <button
             key={eng.id}
@@ -163,17 +135,14 @@ export function TriEngineShell() {
             }`}
           >
             <span className={active === eng.id ? eng.accentClass : ''}>{eng.icon}</span>
-            {/* Tooltip */}
             <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg border border-white/10 bg-black/95 px-2.5 py-1.5 text-[11px] text-white/70 shadow-xl group-hover:flex z-50">
               {eng.label}
             </span>
           </button>
         ))}
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* AI Command toggle */}
         <button
           onClick={() => setCmdOpen(v => !v)}
           title="AI Command Center"
@@ -190,10 +159,8 @@ export function TriEngineShell() {
         </button>
       </nav>
 
-      {/* ── MAIN CONTENT ───────────────────────────────────────────────── */}
+      {/* MAIN CONTENT */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-
-        {/* Top bar */}
         <header className="flex h-9 shrink-0 items-center justify-between border-b border-white/10 bg-black/80 px-4 backdrop-blur">
           <div className="flex items-center gap-3">
             <span className={`text-xs font-bold tracking-wider ${activeEngine.accentClass}`}>
@@ -201,8 +168,8 @@ export function TriEngineShell() {
             </span>
             <span className="hidden sm:block text-[10px] text-white/30">{activeEngine.hint}</span>
             <div className="flex items-center gap-1.5">
-              <div className={`h-1.5 w-1.5 rounded-full ${iframeStatus(active)}`} />
-              <span className="text-[10px] text-white/25 capitalize">{bridgeStatus[active]}</span>
+              <div className={`h-1.5 w-1.5 rounded-full ${statusIndicator(active)}`} />
+              <span className="text-[10px] text-white/25 capitalize">{engineStatus[active]}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -218,54 +185,34 @@ export function TriEngineShell() {
           </div>
         </header>
 
-        {/* Engine panels — all mounted simultaneously, CSS shows/hides */}
+        {/* Engine panels — native components */}
         <div className="relative flex-1 overflow-hidden">
 
           {/* WebGL Studio */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === 'webgls' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={webglsRef}
-              src={WEBGLS_SRC}
-              title="WebGL Studio Editor"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write; xr-spatial-tracking"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, webgls: 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, webgls: 'error' }))}
+            <WebGLStudioHost
+              onReady={() => handleEngineReady('webgls')}
+              onError={() => handleEngineError('webgls')}
             />
           </div>
 
           {/* PlayCanvas 3D */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={pcRef}
-              src={PLAYCANVAS_SRC}
-              title="PlayCanvas 3D Editor"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write; xr-spatial-tracking"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, '3d': 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, '3d': 'error' }))}
+            <PlayCanvasViewer
+              onSceneReady={() => handleEngineReady('3d')}
             />
           </div>
 
           {/* Puck UI Builder */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === 'ui' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={puckRef}
-              src={PUCK_SRC}
-              title="Puck UI Builder"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, ui: 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, ui: 'error' }))}
-            />
+            <PuckUIEngine />
           </div>
         </div>
       </div>
 
-      {/* ── AI COMMAND CENTER (right drawer) ───────────────────────────── */}
+      {/* AI COMMAND CENTER */}
       {cmdOpen && (
         <aside className="z-40 flex w-72 shrink-0 flex-col border-l border-white/10 bg-black/95 backdrop-blur">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-violet-400">AI Command</p>
@@ -283,7 +230,6 @@ export function TriEngineShell() {
             </button>
           </div>
 
-          {/* What the AI will do */}
           <div className="border-b border-white/10 px-4 py-3">
             <div className={`rounded-lg border px-3 py-2 ${activeEngine.accentBorder}`}>
               <p className={`text-[10px] font-bold uppercase tracking-widest ${activeEngine.accentClass}`}>Active target</p>
@@ -291,7 +237,6 @@ export function TriEngineShell() {
             </div>
           </div>
 
-          {/* Log */}
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
             {cmdLog.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-2 py-10 text-center opacity-40">
@@ -313,13 +258,12 @@ export function TriEngineShell() {
                     : 'border border-green-500/20 bg-green-500/5 text-green-300'
                 }`}
               >
-                {entry.type === 'user' && <span className="font-mono text-white/30 mr-1">›</span>}
+                {entry.type === 'user' && <span className="font-mono text-white/30 mr-1">&gt;</span>}
                 {entry.text}
               </div>
             ))}
           </div>
 
-          {/* Input */}
           <div className="border-t border-white/10 p-3">
             <textarea
               value={prompt}
@@ -340,9 +284,9 @@ export function TriEngineShell() {
               disabled={!prompt.trim()}
               className="mt-2 w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 py-2 text-xs font-bold text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              Send to {activeEngine.shortLabel} ↵
+              Send to {activeEngine.shortLabel}
             </button>
-            <p className="mt-1 text-center text-[9px] text-white/20">⌘↵ to send</p>
+            <p className="mt-1 text-center text-[9px] text-white/20">Ctrl+Enter to send</p>
           </div>
         </aside>
       )}

@@ -139,6 +139,11 @@ export class WebContainerManager {
     return this.booted && this.instance !== null;
   }
 
+  getInstance(): WebContainer {
+    if (!this.instance) throw new Error('WebContainer not booted');
+    return this.instance;
+  }
+
   private async buildTree(wc: WebContainer, path: string): Promise<FileNode[]> {
     const entries = await wc.fs.readdir(path, { withFileTypes: true });
     const nodes: FileNode[] = [];
