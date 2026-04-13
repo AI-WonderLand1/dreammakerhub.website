@@ -20,7 +20,7 @@
     "typescript-eslint": "^8.57.2"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.41",
+    "@ai-sdk/openai": "^3.0.52",
     "@babel/runtime": "^7.28.6",
     "@base-ui/react": "^1.2.0",
     "@google/generative-ai": "^0.24.1",
