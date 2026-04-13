@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 
-// Dynamic import for PlayCanvas
+// PlayCanvas loaded from CDN
 let pc: any = null;
 
 export default function EditorPage() {
@@ -12,6 +13,7 @@ export default function EditorPage() {
   const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<any>(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
   
   // Get URL params
   const project = searchParams.get('project') || 'untitled';
@@ -20,21 +22,24 @@ export default function EditorPage() {
   
   // State
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('viewport');
   const [showAI, setShowAI] = useState(true);
   const [showAssets, setShowAssets] = useState(true);
-  const [selectedEntity, setSelectedEntity] = useState<any>(null);
   const [sceneObjects, setSceneObjects] = useState<any[]>([]);
 
-  // Initialize PlayCanvas
+  // Initialize PlayCanvas after script loads
   useEffect(() => {
+    if (!scriptLoaded || !canvasRef.current) return;
+
     let mounted = true;
 
-    const initPlayCanvas = async () => {
+    const initPlayCanvas = () => {
       try {
+        // Get pc from window (loaded by CDN)
+        pc = (window as any).pc;
         if (!pc) {
-          const playcanvas = await import('playcanvas');
-          pc = playcanvas;
+          console.error('PlayCanvas not loaded');
+          setIsLoading(false);
+          return;
         }
 
         if (!mounted || !canvasRef.current) return;
@@ -51,19 +56,19 @@ export default function EditorPage() {
 
         // Resize handler
         const resize = () => {
-          if (canvasRef.current) {
-            app.resizeCanvas(canvasRef.current.width, canvasRef.current.height);
-          }
+          app.resizeCanvas();
         };
         window.addEventListener('resize', resize);
+        resize(); // Initial resize
 
         // Create scene
-        createDemoScene(app);
+        const cleanupScene = createDemoScene(app);
 
         setIsLoading(false);
 
         return () => {
           window.removeEventListener('resize', resize);
+          if (cleanupScene) cleanupScene();
         };
       } catch (err) {
         console.error('Failed to init PlayCanvas:', err);
@@ -80,9 +85,9 @@ export default function EditorPage() {
         appRef.current = null;
       }
     };
-  }, []);
+  }, [scriptLoaded]);
 
-  const createDemoScene = (app: any) => {
+  const createDemoScene = (app: any): (() => void) | void => {
     // Camera
     const camera = new pc.Entity('Camera');
     camera.addComponent('camera', {
@@ -122,12 +127,18 @@ export default function EditorPage() {
     app.root.addChild(ground);
 
     // Animation
-    app.on('update', (dt: number) => {
+    const updateHandler = (dt: number) => {
       cube.rotate(10 * dt, 20 * dt, 0);
-    });
+    };
+    app.on('update', updateHandler);
 
     // Track objects
     setSceneObjects([cube, ground, camera, light]);
+    
+    // Return cleanup function
+    return () => {
+      app.off('update', updateHandler);
+    };
   };
 
   return (
@@ -224,6 +235,8 @@ export default function EditorPage() {
           
           <canvas 
             ref={canvasRef} 
+            width={800}
+            height={600}
             className="w-full h-full block cursor-move"
             style={{ touchAction: 'none' }}
           />
@@ -292,6 +305,13 @@ export default function EditorPage() {
           </aside>
         )}
       </div>
+
+      {/* Load PlayCanvas from CDN */}
+      <Script
+        src="https://code.playcanvas.com/playcanvas-1.66.0.min.js"
+        strategy="afterInteractive"
+        onLoad={() => setScriptLoaded(true)}
+      />
     </div>
   );
 }
