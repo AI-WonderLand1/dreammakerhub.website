@@ -9,7 +9,7 @@
     "@puckeditor/core": "^0.21.2"
   },
   "scripts": {
-    "dev": "npm run dev --workspaces",
+    "dev": "npm run dev --workspace=ai-wonder-web",
     "build": "npm run build --workspaces",
     "test": "vitest run",
     "test:watch": "vitest",
