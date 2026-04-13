@@ -1,204 +1,174 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-interface Repo {
+interface Project {
   id: string;
   name: string;
+  owner: string;
   description: string;
   isPrivate: boolean;
   lastUpdated: string;
-  language: string;
+  commits: number;
 }
 
-interface RepoContent {
+interface FileItem {
   name: string;
   type: 'file' | 'folder';
   message: string;
   time: string;
 }
 
-export default function GitHubStyleDashboard() {
-  const [repos, setRepos] = useState<Repo[]>([
-    { 
-      id: '1', 
-      name: 'awesome-project', 
-      description: 'My awesome project description',
-      isPrivate: false,
-      lastUpdated: '2 hours ago',
-      language: 'TypeScript'
-    },
+export default function WonderSpaceWorkspace() {
+  const router = useRouter();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
+  
+  const [project] = useState<Project>({
+    id: '1',
+    name: 'my-awesome-project',
+    owner: 'wonderingtribe',
+    description: '',
+    isPrivate: true,
+    lastUpdated: '28 minutes ago',
+    commits: 236
+  });
+
+  const [files] = useState<FileItem[]>([
+    { name: 'src', type: 'folder', message: 'Initial setup', time: '12 hours ago' },
+    { name: 'assets', type: 'folder', message: 'Add assets', time: '1 day ago' },
+    { name: 'config', type: 'folder', message: 'Update config', time: '2 days ago' },
+    { name: 'scene.json', type: 'file', message: 'Update scene', time: '3 hours ago' },
+    { name: 'README.md', type: 'file', message: 'Update docs', time: '5 days ago' },
   ]);
 
-  const [activeRepo, setActiveRepo] = useState<Repo | null>(null);
-  const [activeTab, setActiveTab] = useState<'code' | 'issues' | 'pulls' | 'actions' | 'projects' | 'wiki' | 'security' | 'insights' | 'settings'>('code');
-  const [repoContents, setRepoContents] = useState<RepoContent[]>([
-    { name: 'src', type: 'folder', message: 'Initial commit', time: '2 days ago' },
-    { name: 'README.md', type: 'file', message: 'Add documentation', time: '1 day ago' },
-  ]);
+  const [activeTab, setActiveTab] = useState('code');
 
-  const createRepo = () => {
-    const name = prompt('Repository name:');
-    if (name) {
-      const newRepo: Repo = {
-        id: Date.now().toString(),
-        name,
-        description: '',
-        isPrivate: false,
-        lastUpdated: 'Just now',
-        language: 'Unknown',
-      };
-      setRepos([newRepo, ...repos]);
-    }
+  const openFile = (fileName: string) => {
+    router.push(`/editor?project=${project.name}&file=${fileName}`);
   };
 
-  const addFile = () => {
-    const name = prompt('File name:');
-    if (name) {
-      setRepoContents([...repoContents, {
-        name,
-        type: 'file',
-        message: 'Create new file',
-        time: 'Just now',
-      }]);
-    }
-  };
+  return (
+    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9]">
+      
+      {/* ===== BROWSER SHELL ===== */}
+      {/* Browser Tabs */}
+      <div className="bg-[#161b22] border-b border-[#30363d] px-2 pt-2 flex items-end gap-1">
+        <div className="px-4 py-2 bg-[#0d1117] rounded-t-lg text-sm flex items-center gap-2 min-w-[150px]">
+          <span>⚡</span>
+          <span className="truncate">{project.name}</span>
+          <span className="ml-auto text-gray-500">×</span>
+        </div>
+        <div className="px-4 py-2 text-gray-500 text-sm hover:bg-[#21262d] rounded-t-lg cursor-pointer">
+          Wonder IDE
+        </div>
+        <div className="px-4 py-2 text-gray-500 text-sm hover:bg-[#21262d] rounded-t-lg cursor-pointer">
+          AI Playground
+        </div>
+        <div className="px-4 py-2 text-gray-500 text-sm hover:bg-[#21262d] rounded-t-lg cursor-pointer ml-auto">
+          +
+        </div>
+      </div>
 
-  const addFolder = () => {
-    const name = prompt('Folder name:');
-    if (name) {
-      setRepoContents([...repoContents, {
-        name,
-        type: 'folder',
-        message: 'Create new folder',
-        time: 'Just now',
-      }]);
-    }
-  };
+      {/* Address Bar */}
+      <div className="bg-[#161b22] px-4 py-2 flex items-center gap-3 border-b border-[#30363d]">
+        <div className="flex gap-2 text-gray-500">
+          <span>←</span>
+          <span>→</span>
+          <span>↻</span>
+        </div>
+        <div className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-full px-4 py-1.5 text-sm text-center">
+          wonderspace.dev/{project.owner}/{project.name}
+        </div>
+        <span>👤</span>
+      </div>
 
-  // Repo List View
-  if (!activeRepo) {
-    return (
-      <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9]">
-        {/* Header */}
-        <header className="bg-[#161b22] border-b border-[#30363d] px-4 py-3">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button className="text-xl">☰</button>
-              <span className="text-xl">🐙</span>
-            </div>
+      {/* ===== GLOBAL HEADER ===== */}
+      <header className="bg-[#161b22] px-4 py-3 border-b border-[#30363d]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* YOUR LOGO */}
+            <span className="text-2xl">🌟</span>
+            <span className="font-bold text-white">WonderSpace</span>
             <input 
               type="text" 
               placeholder="Type / to search"
               className="bg-[#0d1117] border border-[#30363d] rounded-md px-3 py-1.5 text-sm w-64"
             />
-            <div className="flex items-center gap-3">
-              <span>+</span>
-              <span>👤</span>
-            </div>
           </div>
-        </header>
-
-        {/* Main */}
-        <main className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold text-white">Top repositories</h1>
-            <button 
-              onClick={createRepo}
-              className="bg-[#238636] hover:bg-[#2ea043] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
-            >
-              + New
-            </button>
-          </div>
-
-          {/* Repo List */}
-          <div className="border border-[#30363d] rounded-md overflow-hidden">
-            {repos.map((repo, index) => (
-              <div 
-                key={repo.id}
-                onClick={() => setActiveRepo(repo)}
-                className={`p-4 hover:bg-[#161b22] cursor-pointer flex items-center justify-between ${
-                  index !== repos.length - 1 ? 'border-b border-[#30363d]' : ''
-                }`}
+          <div className="flex items-center gap-4 text-gray-400">
+            <span className="cursor-pointer hover:text-white">➕</span>
+            <span className="cursor-pointer hover:text-white">🔔</span>
+            <span className="cursor-pointer hover:text-white">🔀</span>
+            
+            {/* User Avatar */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-[#8b949e]">📁</span>
-                  <div>
-                    <span className="text-[#58a6ff] font-semibold hover:underline">{repo.name}</span>
-                    {repo.isPrivate && (
-                      <span className="ml-2 text-xs border border-[#30363d] rounded-full px-2 py-0.5 text-[#8b949e]">
-                        Private
-                      </span>
-                    )}
-                    <p className="text-[#8b949e] text-sm mt-0.5">{repo.description || 'No description'}</p>
+                W
+              </button>
+              
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-2 bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl py-2 w-64 z-50">
+                  <div className="px-4 py-3 border-b border-[#30363d]">
+                    <p className="text-sm text-gray-400">Signed in as</p>
+                    <p className="font-semibold text-white">{project.owner}</p>
+                  </div>
+                  
+                  <div className="py-1">
+                    <button className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm">👤 Profile</button>
+                    <button className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm">📁 Projects</button>
+                    <button className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm">🏢 Organizations</button>
+                    <button className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm">🎨 Appearance</button>
+                  </div>
+                  
+                  <hr className="border-[#30363d]" />
+                  
+                  <div className="py-1">
+                    <button 
+                      onClick={() => {setShowBilling(true); setShowUserMenu(false);}}
+                      className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm"
+                    >
+                      💳 Billing & Plans
+                    </button>
+                    <button className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm">⚙️ Settings</button>
+                  </div>
+                  
+                  <hr className="border-[#30363d]" />
+                  
+                  <div className="py-1">
+                    <button className="w-full text-left px-4 py-2 hover:bg-[#21262d] text-sm">🚪 Sign out</button>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-[#8b949e]">
-                  <span className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full bg-[#f1e05a]"></span>
-                    {repo.language}
-                  </span>
-                  <span>Updated {repo.lastUpdated}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {repos.length === 0 && (
-            <div className="text-center py-20 text-[#8b949e]">
-              <p className="text-4xl mb-4">📭</p>
-              <p>No repositories yet</p>
-              <button 
-                onClick={createRepo}
-                className="mt-4 text-[#58a6ff] hover:underline"
-              >
-                Create a repository
-              </button>
+              )}
             </div>
-          )}
-        </main>
-      </div>
-    );
-  }
-
-  // Repo Detail View
-  return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9]">
-      {/* Header */}
-      <header className="bg-[#161b22] border-b border-[#30363d] px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setActiveRepo(null)} className="text-[#8b949e] hover:text-white">
-              ←
-            </button>
-            <span className="text-xl">🐙</span>
-            <span className="text-[#58a6ff] font-semibold">{activeRepo.name}</span>
-            {activeRepo.isPrivate && (
-              <span className="text-xs border border-[#30363d] rounded-full px-2 py-0.5 text-[#8b949e]">
-                Private
-              </span>
-            )}
-          </div>
-          <input 
-            type="text" 
-            placeholder="Type / to search"
-            className="bg-[#0d1117] border border-[#30363d] rounded-md px-3 py-1.5 text-sm w-64"
-          />
-          <div className="flex items-center gap-3">
-            <span>+</span>
-            <span>👤</span>
           </div>
         </div>
       </header>
 
-      {/* Repo Nav */}
-      <nav className="border-b border-[#30363d] bg-[#0d1117]">
-        <div className="max-w-7xl mx-auto px-4">
+      {/* ===== PROJECT HEADER ===== */}
+      <div className="border-b border-[#30363d] bg-[#0d1117]">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Breadcrumbs */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-gray-400">📁</span>
+            <span className="text-[#58a6ff] hover:underline cursor-pointer">{project.owner}</span>
+            <span className="text-gray-500">/</span>
+            <span className="text-[#58a6ff] font-semibold text-xl hover:underline cursor-pointer">{project.name}</span>
+            <span className="ml-2 text-xs border border-[#30363d] rounded-full px-2 py-0.5 text-gray-500">
+              {project.isPrivate ? 'Private' : 'Public'}
+            </span>
+          </div>
+
+          {/* Navigation Tabs */}
           <div className="flex gap-1">
             {[
               { id: 'code', label: 'Code', icon: '📁' },
-              { id: 'issues', label: 'Issues', icon: '⚠️', count: 0 },
-              { id: 'pulls', label: 'Pull requests', icon: '🔀', count: 0 },
+              { id: 'issues', label: 'Issues', icon: '⚠️', count: 7 },
+              { id: 'pulls', label: 'Merge Requests', icon: '🔀', count: 0 },
               { id: 'actions', label: 'Actions', icon: '▶️' },
               { id: 'projects', label: 'Projects', icon: '📊', count: 0 },
               { id: 'wiki', label: 'Wiki', icon: '📖' },
@@ -208,8 +178,8 @@ export default function GitHubStyleDashboard() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
                   activeTab === tab.id
                     ? 'border-[#f78166] text-[#c9d1d9]'
                     : 'border-transparent text-[#8b949e] hover:text-[#c9d1d9]'
@@ -224,65 +194,73 @@ export default function GitHubStyleDashboard() {
             ))}
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'code' && (
-          <>
-            {/* Branch & Actions */}
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
+        <div className="flex gap-6">
+          {/* Left: File Browser */}
+          <div className="flex-1">
+            
+            {/* Control Bar */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <button className="px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-md text-sm flex items-center gap-2">
-                  🌿 Main ▼
+                  🌿 Main <span className="text-gray-500">▼</span>
                 </button>
-                <span className="text-[#8b949e] text-sm">2 branches</span>
-                <span className="text-[#8b949e] text-sm">0 tags</span>
+                <span className="text-sm text-gray-500">2 branches</span>
+                <span className="text-sm text-gray-500">0 tags</span>
               </div>
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={addFile}
-                  className="px-3 py-1.5 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md text-sm font-medium"
-                >
-                  + Add file
+                <input 
+                  type="text" 
+                  placeholder="Go to file"
+                  className="bg-[#0d1117] border border-[#30363d] rounded-md px-3 py-1.5 text-sm w-40"
+                />
+                <button className="px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-md text-sm">
+                  + Add file ▼
                 </button>
-                <button 
-                  onClick={addFolder}
-                  className="px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-md text-sm"
-                >
-                  + Add folder
-                </button>
-                <button className="px-3 py-1.5 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md text-sm font-medium">
-                  Code ▼
+                <button className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium text-white">
+                  ↓ Download
                 </button>
               </div>
             </div>
 
-            {/* File Browser */}
-            <div className="border border-[#30363d] rounded-md overflow-hidden">
-              {/* Header */}
-              <div className="bg-[#161b22] px-4 py-3 border-b border-[#30363d] flex items-center gap-2">
-                <span className="font-semibold">📁 {activeRepo.name}</span>
-                <span className="text-[#8b949e] text-sm">Public</span>
+            {/* Commit Ribbon */}
+            <div className="bg-[#161b22] px-4 py-2 border border-[#30363d] rounded-t-md flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-gray-400">👤</span>
+                <span className="font-semibold">{project.owner}</span>
+                <span className="text-gray-500">Update project files</span>
               </div>
+              <div className="flex items-center gap-3 text-sm text-gray-500">
+                <span className="font-mono">176c36e</span>
+                <span>•</span>
+                <span>{project.commits} commits</span>
+              </div>
+            </div>
 
-              {/* Files */}
-              {repoContents.map((item, index) => (
+            {/* File List */}
+            <div className="border border-t-0 border-[#30363d] rounded-b-md">
+              {files.map((file, index) => (
                 <div 
-                  key={item.name}
-                  className={`px-4 py-3 hover:bg-[#161b22] flex items-center justify-between ${
-                    index !== repoContents.length - 1 ? 'border-b border-[#21262d]' : ''
+                  key={file.name}
+                  onClick={() => file.type === 'file' ? openFile(file.name) : null}
+                  className={`px-4 py-3 hover:bg-[#161b22] flex items-center justify-between cursor-pointer ${
+                    index !== files.length - 1 ? 'border-b border-[#21262d]' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    <span className="text-[#8b949e]">{item.type === 'folder' ? '📁' : '📄'}</span>
-                    <span className="text-[#58a6ff] hover:underline cursor-pointer">{item.name}</span>
+                    <span className="text-gray-400">{file.type === 'folder' ? '📁' : '📄'}</span>
+                    <span className={file.type === 'file' ? 'text-[#58a6ff] hover:underline' : 'text-white'}>
+                      {file.name}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-[#8b949e] flex-1">
-                    <span className="truncate">{item.message}</span>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 flex-1">
+                    <span className="truncate">{file.message}</span>
                   </div>
-                  <div className="w-32 text-right text-sm text-[#8b949e]">
-                    {item.time}
+                  <div className="w-32 text-right text-sm text-gray-500">
+                    {file.time}
                   </div>
                 </div>
               ))}
@@ -296,23 +274,120 @@ export default function GitHubStyleDashboard() {
               </div>
               <div className="p-6">
                 <h1 className="text-3xl font-bold text-white mb-4 pb-2 border-b border-[#30363d]">
-                  {activeRepo.name}
+                  {project.name}
                 </h1>
-                <p className="text-[#8b949e]">
-                  {activeRepo.description || 'No description, website, or topics provided.'}
+                <p className="text-gray-300">
+                  {project.description || 'No description provided.'}
                 </p>
               </div>
             </div>
-          </>
-        )}
-
-        {activeTab !== 'code' && (
-          <div className="text-center py-20 text-[#8b949e]">
-            <p className="text-4xl mb-4">🚧</p>
-            <p>{activeTab} section coming soon</p>
           </div>
-        )}
+
+          {/* Right Sidebar */}
+          <div className="w-80 space-y-4">
+            {/* About */}
+            <div className="border-b border-[#30363d] pb-4">
+              <h3 className="font-semibold text-white mb-2">About</h3>
+              <p className="text-gray-400 text-sm">{project.description || 'No description, website, or topics provided.'}</p>
+              <div className="mt-3 space-y-1 text-sm">
+                <p className="text-gray-400">📄 Readme</p>
+                <p className="text-gray-400">📝 License</p>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="border-b border-[#30363d] pb-4">
+              <div className="flex gap-4 text-sm">
+                <span className="flex items-center gap-1">
+                  <span className="text-yellow-400">⭐</span> 0 stars
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-blue-400">👁️</span> 0 watching
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-green-400">🍴</span> 0 forks
+                </span>
+              </div>
+            </div>
+
+            {/* Releases */}
+            <div className="border-b border-[#30363d] pb-4">
+              <h3 className="font-semibold text-white mb-2">Releases</h3>
+              <p className="text-gray-400 text-sm">No releases published</p>
+              <button className="text-[#58a6ff] text-sm hover:underline mt-1">
+                Create a new release
+              </button>
+            </div>
+
+            {/* Deployments */}
+            <div className="border-b border-[#30363d] pb-4">
+              <h3 className="font-semibold text-white mb-2">Deployments</h3>
+              <p className="text-gray-400 text-sm">3 deployments</p>
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-green-400">● Preview – dev</p>
+                <p className="text-xs text-green-400">● Production – live</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
+
+      {/* ===== BOTTOM TASKBAR ===== */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#161b22]/95 backdrop-blur border-t border-[#30363d] px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-400">Workspace 1</span>
+          <div className="flex gap-3 text-xl">
+            <span>📅</span>
+            <span>🌐</span>
+            <span>📧</span>
+            <span>📁</span>
+            <span>💬</span>
+            <span>🤖</span>
+            <span>⚙️</span>
+            <span>💻</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-gray-400">
+          <span>🔔</span>
+          <span>Apr 13</span>
+          <span>4:20 PM</span>
+        </div>
+      </div>
+
+      {/* Billing Modal */}
+      {showBilling && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-6 w-96">
+            <h2 className="text-xl font-bold text-white mb-4">Billing & Plans</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-400">Current Plan</p>
+                <p className="text-lg font-semibold">Pro</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Payment Methods</p>
+                <div className="flex items-center justify-between">
+                  <p>💳 ****4242</p>
+                  <button className="text-red-400 text-sm hover:underline">Remove</button>
+                </div>
+                <button className="text-blue-400 text-sm hover:underline mt-2">+ Add payment method</button>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Current Balance</p>
+                <p className="text-lg">$0.00</p>
+              </div>
+            </div>
+            <div className="mt-6 space-y-2">
+              <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">
+                Upgrade to Enterprise
+              </button>
+              <button onClick={() => setShowBilling(false)} className="w-full py-2 border border-[#30363d] hover:bg-[#21262d] rounded">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
