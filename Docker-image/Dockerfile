@@ -22,12 +22,6 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --de
     && apt-get install -y caddy \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node dependencies for billing gateway
-WORKDIR /opt/billing
-COPY Docker-image/billing/gateway.js ./
-COPY Docker-image/billing/schema.sql ./
-COPY Docker-image/billing/README.md ./
-RUN npm install pg
 
 COPY Docker-image/workspace-image.tar /opt/workspace-image.tar
 COPY Docker-image/entrypoint.sh /usr/local/bin/entrypoint.sh
