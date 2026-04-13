@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { WebContainerManager, TerminalEmulator, WebContainerPersistence, type FileNode } from '../../../packages/ide-engine/src';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import '@xterm/xterm/css/xterm.css';
+
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
 const wcManager = new WebContainerManager();
 
@@ -14,6 +17,13 @@ interface AgentAction {
   label: string;
   cost: number;
   unit: string;
+}
+
+interface CodeAnnotation {
+  line: number;
+  text: string;
+  docUrl?: string;
+  type: 'why' | 'warning' | 'info';
 }
 
 const AGENT_ACTIONS: AgentAction[] = [
@@ -25,12 +35,26 @@ const AGENT_ACTIONS: AgentAction[] = [
   { id: 'deploy', label: 'Deploy Runner', cost: 0.10, unit: 'per deploy' },
 ];
 
+function getLanguageFromPath(path: string): string {
+  if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript';
+  if (path.endsWith('.js') || path.endsWith('.jsx')) return 'javascript';
+  if (path.endsWith('.json')) return 'json';
+  if (path.endsWith('.html')) return 'html';
+  if (path.endsWith('.css')) return 'css';
+  if (path.endsWith('.md')) return 'markdown';
+  if (path.endsWith('.py')) return 'python';
+  return 'plaintext';
+}
+
 export default function WonderSpaceIDE() {
   const { user } = useAuth();
   const terminalRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
   const termEmulator = useRef<TerminalEmulator | null>(null);
   const persistence = useRef<WebContainerPersistence | null>(null);
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+  const decorationsRef = useRef<string[]>([]);
 
   const [booted, setBooted] = useState(false);
   const [booting, setBooting] = useState(false);
@@ -45,6 +69,10 @@ export default function WonderSpaceIDE() {
   const [showCredits, setShowCredits] = useState(false);
   const [credits, setCredits] = useState(25.0);
   const [usageHistory, setUsageHistory] = useState<{ action: string; cost: number; time: string }[]>([]);
+
+  const [annotations, setAnnotations] = useState<CodeAnnotation[]>([]);
+  const [showAnnotations, setShowAnnotations] = useState(false);
+  const [explainingCode, setExplainingCode] = useState(false);
 
   const deductCredits = useCallback((action: string, cost: number) => {
     if (credits < cost) {
@@ -68,6 +96,7 @@ export default function WonderSpaceIDE() {
       const content = await wcManager.readFile(filePath);
       setActiveFile(filePath);
       setFileContent(content);
+      setAnnotations([]);
     } catch (err) {
       console.error('Failed to read file:', err);
     }
@@ -91,7 +120,6 @@ export default function WonderSpaceIDE() {
     try {
       await wcManager.writeFile(activeFile, fileContent);
       await refreshFileTree();
-      // Auto-save to cloud
       if (persistence.current) {
         persistence.current.scheduleSave(wcManager.getInstance());
       }
@@ -99,6 +127,93 @@ export default function WonderSpaceIDE() {
       console.error('Failed to save file:', err);
     }
   }, [activeFile, fileContent, refreshFileTree]);
+
+  const handleEditorDidMount = useCallback((editor: any, monaco: any) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+
+    monaco.editor.defineTheme('wonderland-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '6A9955' },
+        { token: 'keyword', foreground: '569CD6' },
+        { token: 'string', foreground: 'CE9178' },
+        { token: 'number', foreground: 'B5CEA8' },
+      ],
+      colors: {
+        'editor.background': '#0d1117',
+        'editor.foreground': '#c9d1d9',
+        'editor.lineHighlightBackground': '#161b22',
+        'editor.selectionBackground': '#264f78',
+      }
+    });
+
+    monaco.editor.setTheme('wonderland-dark');
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      saveFile();
+    });
+  }, [saveFile]);
+
+  // Apply Why Highlighter decorations
+  useEffect(() => {
+    if (!editorRef.current || !monacoRef.current) return;
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+
+    const decorations = annotations.map((ann) => ({
+      range: new monaco.Range(ann.line, 1, ann.line, 1),
+      options: {
+        isWholeLine: true,
+        className: ann.type === 'why' ? 'why-highlight-line' : ann.type === 'warning' ? 'warning-highlight-line' : 'info-highlight-line',
+        glyphMarginClassName: ann.type === 'why' ? 'why-glyph' : ann.type === 'warning' ? 'warning-glyph' : 'info-glyph',
+        hoverMessage: { value: `**${ann.type.toUpperCase()}**: ${ann.text}${ann.docUrl ? `\n\n[Docs](${ann.docUrl})` : ''}` },
+      },
+    }));
+
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, decorations);
+  }, [annotations]);
+
+  const handleExplainCode = useCallback(async () => {
+    if (!fileContent.trim() || !deductCredits('Explain Code', 0.02)) return;
+    setExplainingCode(true);
+
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent: 'builder',
+          command: `Explain each significant line of this code. Return a JSON array of objects with "line" (1-indexed line number), "text" (brief explanation of why this line exists), and optional "docUrl" (relevant documentation URL). Code:\n\n${fileContent.slice(0, 4000)}`,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        try {
+          const parsed = JSON.parse(data.answer);
+          if (Array.isArray(parsed)) {
+            setAnnotations(parsed.map((a: any) => ({
+              line: a.line,
+              text: a.text,
+              docUrl: a.docUrl,
+              type: 'why' as const,
+            })));
+            setShowAnnotations(true);
+          }
+        } catch {
+          // If not JSON, show the explanation as a single annotation on line 1
+          setAnnotations([{ line: 1, text: data.answer, type: 'why' }]);
+          setShowAnnotations(true);
+        }
+      }
+    } catch (err) {
+      console.error('Explain failed:', err);
+    } finally {
+      setExplainingCode(false);
+    }
+  }, [fileContent, deductCredits]);
 
   useEffect(() => {
     if (terminalRef.current && !termEmulator.current) {
@@ -112,12 +227,10 @@ export default function WonderSpaceIDE() {
     wcManager
       .boot()
       .then(async (wc) => {
-        // Set up persistence if user is logged in
         const supabase = createClient();
         if (supabase && user?.id) {
           persistence.current = new WebContainerPersistence(supabase, user.id);
 
-          // Try to load from cloud
           const snapshot = await persistence.current.loadSnapshot();
           if (snapshot && Object.keys(snapshot.files).length > 0) {
             const tree = persistence.current.snapshotToTree(snapshot);
@@ -227,6 +340,15 @@ export default function WonderSpaceIDE() {
 
   return (
     <div className="h-screen flex flex-col bg-[#0d1117] text-[#c9d1d9] overflow-hidden">
+      <style jsx global>{`
+        .why-highlight-line { background: rgba(139, 92, 246, 0.08) !important; border-left: 3px solid #8b5cf6; }
+        .warning-highlight-line { background: rgba(245, 158, 11, 0.08) !important; border-left: 3px solid #f59e0b; }
+        .info-highlight-line { background: rgba(59, 130, 246, 0.08) !important; border-left: 3px solid #3b82f6; }
+        .why-glyph::before { content: '💡'; font-size: 12px; }
+        .warning-glyph::before { content: '⚠️'; font-size: 12px; }
+        .info-glyph::before { content: 'ℹ️'; font-size: 12px; }
+      `}</style>
+
       {/* Header */}
       <header className="h-12 border-b border-[#30363d] bg-[#161b22] flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
@@ -254,7 +376,6 @@ export default function WonderSpaceIDE() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Save status */}
           {saveStatus === 'saving' && (
             <span className="text-xs text-yellow-400 animate-pulse">Saving...</span>
           )}
@@ -265,7 +386,6 @@ export default function WonderSpaceIDE() {
             <span className="text-xs text-red-400">Save failed</span>
           )}
 
-          {/* Credits Badge */}
           <button
             onClick={() => setShowCredits(!showCredits)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-xs font-medium transition"
@@ -295,6 +415,14 @@ export default function WonderSpaceIDE() {
             title="Force save all files to cloud"
           >
             ☁️ Sync
+          </button>
+          <button
+            onClick={handleExplainCode}
+            disabled={!booted || !activeFile || explainingCode}
+            className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded text-xs font-medium text-purple-300 transition disabled:opacity-50"
+            title="AI explains each line of the current file"
+          >
+            {explainingCode ? '⏳ Explaining...' : '💡 Why?'}
           </button>
           <button
             onClick={handleInstallAndRun}
@@ -347,18 +475,24 @@ export default function WonderSpaceIDE() {
           {/* Code Editor */}
           <div className="flex-1 relative overflow-hidden">
             {activeFile ? (
-              <textarea
+              <MonacoEditor
+                height="100%"
+                language={getLanguageFromPath(activeFile)}
                 value={fileContent}
-                onChange={(e) => setFileContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                    e.preventDefault();
-                    saveFile();
-                  }
+                onChange={(value) => setFileContent(value || '')}
+                onMount={handleEditorDidMount}
+                theme="vs-dark"
+                options={{
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  wordWrap: 'on',
+                  glyphMargin: true,
+                  lineNumbers: 'on',
+                  renderLineHighlight: 'all',
                 }}
-                className="w-full h-full bg-[#0d1117] text-[#c9d1d9] p-4 font-mono text-sm resize-none focus:outline-none border-none"
-                style={{ tabSize: 2 }}
-                spellCheck={false}
+                loading={<div className="flex items-center justify-center h-full text-gray-400">Loading editor...</div>}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-600 text-sm">
@@ -381,55 +515,89 @@ export default function WonderSpaceIDE() {
           </div>
         </div>
 
-        {/* Preview + Agents */}
-        {(previewUrl || true) && (
-          <aside className="w-80 border-l border-[#30363d] bg-[#161b22] flex flex-col shrink-0">
-            {/* AI Agents Panel */}
+        {/* Right sidebar */}
+        <aside className="w-80 border-l border-[#30363d] bg-[#161b22] flex flex-col shrink-0">
+          {/* Why Highlighter Panel */}
+          {showAnnotations && annotations.length > 0 && (
             <div className="border-b border-[#30363d]">
               <div className="p-3 border-b border-[#30363d] flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">AI Agents</span>
-                <span className="text-xs text-yellow-400">✦ Pay per use</span>
+                <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Why? Explanations</span>
+                <button
+                  onClick={() => setShowAnnotations(false)}
+                  className="text-gray-500 hover:text-white text-xs"
+                >
+                  ×
+                </button>
               </div>
-              <div className="p-2 space-y-1">
-                {AGENT_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    onClick={() => handleAgentAction(action)}
-                    disabled={credits < action.cost}
-                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-[#21262d] rounded text-xs transition disabled:opacity-40"
+              <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                {annotations.map((ann, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2"
                   >
-                    <span className="text-gray-300">{action.label}</span>
-                    <span className="text-yellow-400">${action.cost} <span className="text-gray-600">{action.unit}</span></span>
-                  </button>
+                    <p className="text-[10px] text-purple-300 font-mono">Line {ann.line}</p>
+                    <p className="text-xs text-white/60 mt-0.5">{ann.text}</p>
+                    {ann.docUrl && (
+                      <a
+                        href={ann.docUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-purple-400 hover:text-purple-300 mt-1 inline-block"
+                      >
+                        View docs →
+                      </a>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Preview */}
-            {previewUrl && (
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="h-8 border-b border-[#30363d] flex items-center px-3 shrink-0">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Preview</span>
-                  <button
-                    onClick={() => {
-                      if (previewRef.current) previewRef.current.src = previewUrl;
-                    }}
-                    className="ml-auto text-gray-500 hover:text-white text-xs"
-                  >
-                    ↻
-                  </button>
-                </div>
-                <iframe
-                  ref={previewRef}
-                  src={previewUrl}
-                  className="flex-1 w-full bg-white"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                  title="Preview"
-                />
+          {/* AI Agents Panel */}
+          <div className="border-b border-[#30363d]">
+            <div className="p-3 border-b border-[#30363d] flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">AI Agents</span>
+              <span className="text-xs text-yellow-400">✦ Pay per use</span>
+            </div>
+            <div className="p-2 space-y-1">
+              {AGENT_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  onClick={() => handleAgentAction(action)}
+                  disabled={credits < action.cost}
+                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-[#21262d] rounded text-xs transition disabled:opacity-40"
+                >
+                  <span className="text-gray-300">{action.label}</span>
+                  <span className="text-yellow-400">${action.cost} <span className="text-gray-600">{action.unit}</span></span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview */}
+          {previewUrl && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="h-8 border-b border-[#30363d] flex items-center px-3 shrink-0">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Preview</span>
+                <button
+                  onClick={() => {
+                    if (previewRef.current) previewRef.current.src = previewUrl;
+                  }}
+                  className="ml-auto text-gray-500 hover:text-white text-xs"
+                >
+                  ↻
+                </button>
               </div>
-            )}
-          </aside>
-        )}
+              <iframe
+                ref={previewRef}
+                src={previewUrl}
+                className="flex-1 w-full bg-white"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                title="Preview"
+              />
+            </div>
+          )}
+        </aside>
       </div>
 
       {/* Credits Panel */}
