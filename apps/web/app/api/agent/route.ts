@@ -3,7 +3,6 @@ import { z } from "zod";
 import { runModel } from "../../../../../engine/core/ai/runModel";
 import { manifestVisualBlock } from "../../../../../engine/core/ai/bridge";
 import { logger } from "@/lib/logger";
-import { runExtension } from "../../../../../engine/core/runners/vm2Runner";
 
 // Validation schema for agent requests
 const AgentRequestSchema = z.object({
