@@ -32,6 +32,9 @@ export class TerminalEmulator {
   private container: HTMLDivElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private shellProcess: WebContainerProcess | null = null;
+  private shellInputWriter: WritableStreamDefaultWriter<string> | null = null;
+  private outputPipePromise: Promise<void> | null = null;
+  private terminalDataListener: { dispose: () => void } | null = null;
 
   create(container: HTMLDivElement): void {
     this.container = container;
@@ -61,20 +64,40 @@ export class TerminalEmulator {
   async attachShell(spawnProcess: () => Promise<WebContainerProcess>): Promise<void> {
     if (!this.terminal) throw new Error('Terminal not created');
 
+    await this.detachShell();
     this.shellProcess = await spawnProcess();
 
-    this.shellProcess.output.pipeTo(
+    this.outputPipePromise = this.shellProcess.output.pipeTo(
       new WritableStream({
         write: (data) => {
           this.terminal?.write(data);
         },
       })
-    );
-
-    const writer = this.shellProcess.input.getWriter();
-    this.terminal.onData((data) => {
-      writer.write(data);
+    ).catch(() => {
+      // Process streams can reject during teardown/restart; safe to ignore.
     });
+
+    this.shellInputWriter = this.shellProcess.input.getWriter();
+    this.terminalDataListener = this.terminal.onData((data) => {
+      void this.shellInputWriter?.write(data);
+    });
+  }
+
+  private async detachShell(): Promise<void> {
+    this.terminalDataListener?.dispose();
+    this.terminalDataListener = null;
+
+    if (this.shellInputWriter) {
+      this.shellInputWriter.releaseLock();
+      this.shellInputWriter = null;
+    }
+
+    if (this.outputPipePromise) {
+      await this.outputPipePromise;
+      this.outputPipePromise = null;
+    }
+
+    this.shellProcess = null;
   }
 
   fit(): void {
@@ -94,12 +117,12 @@ export class TerminalEmulator {
     this.terminal?.focus();
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
+    await this.detachShell();
     this.resizeObserver?.disconnect();
     this.terminal?.dispose();
     this.terminal = null;
     this.fitAddon = null;
     this.container = null;
-    this.shellProcess = null;
   }
 }
