@@ -1,10 +1,10 @@
 /**
  * Custom Runner Factory
  * Generates specialized code for each engine type
- * PlayCanvas 3D, WebGL Shaders, Puck UI, Coder IDE
+ * PlayCanvas 3D, WebGL Shaders, Puck UI
  */
 
-export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder' | 'theia';
+export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia';
 
 export interface RunnerContext {
   projectId: string;
