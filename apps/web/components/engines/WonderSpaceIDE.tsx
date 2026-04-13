@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { WebContainerManager, TerminalEmulator, type FileNode } from '../../../packages/ide-engine/src';
+import { WebContainerManager, TerminalEmulator, WebContainerPersistence, type FileNode } from '../../../packages/ide-engine/src';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/supabase/auth-context';
 import '@xterm/xterm/css/xterm.css';
 
 const wcManager = new WebContainerManager();
@@ -24,9 +26,11 @@ const AGENT_ACTIONS: AgentAction[] = [
 ];
 
 export default function WonderSpaceIDE() {
+  const { user } = useAuth();
   const terminalRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
   const termEmulator = useRef<TerminalEmulator | null>(null);
+  const persistence = useRef<WebContainerPersistence | null>(null);
 
   const [booted, setBooted] = useState(false);
   const [booting, setBooting] = useState(false);
@@ -35,6 +39,8 @@ export default function WonderSpaceIDE() {
   const [fileContent, setFileContent] = useState<string>('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [running, setRunning] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [loadedFromCloud, setLoadedFromCloud] = useState(false);
 
   const [showCredits, setShowCredits] = useState(false);
   const [credits, setCredits] = useState(25.0);
@@ -67,11 +73,28 @@ export default function WonderSpaceIDE() {
     }
   }, []);
 
+  const saveToCloud = useCallback(async () => {
+    if (!persistence.current || !wcManager.isReady()) return;
+    setSaveStatus('saving');
+    try {
+      await persistence.current.saveSnapshot(wcManager.getInstance());
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  }, []);
+
   const saveFile = useCallback(async () => {
     if (!wcManager.isReady() || !activeFile) return;
     try {
       await wcManager.writeFile(activeFile, fileContent);
       await refreshFileTree();
+      // Auto-save to cloud
+      if (persistence.current) {
+        persistence.current.scheduleSave(wcManager.getInstance());
+      }
     } catch (err) {
       console.error('Failed to save file:', err);
     }
@@ -88,8 +111,24 @@ export default function WonderSpaceIDE() {
 
     wcManager
       .boot()
-      .then(async () => {
-        await wcManager.mountProject();
+      .then(async (wc) => {
+        // Set up persistence if user is logged in
+        const supabase = createClient();
+        if (supabase && user?.id) {
+          persistence.current = new WebContainerPersistence(supabase, user.id);
+
+          // Try to load from cloud
+          const snapshot = await persistence.current.loadSnapshot();
+          if (snapshot && Object.keys(snapshot.files).length > 0) {
+            const tree = persistence.current.snapshotToTree(snapshot);
+            await wcManager.mountProject(tree);
+            setLoadedFromCloud(true);
+          } else {
+            await wcManager.mountProject();
+          }
+        } else {
+          await wcManager.mountProject();
+        }
 
         wcManager.onServerReady((_port, url) => {
           setPreviewUrl(url);
@@ -115,8 +154,10 @@ export default function WonderSpaceIDE() {
     return () => {
       termEmulator.current?.dispose();
       termEmulator.current = null;
+      persistence.current?.destroy();
+      persistence.current = null;
     };
-  }, [booted, booting, refreshFileTree, openFile]);
+  }, [booted, booting, refreshFileTree, openFile, user?.id]);
 
   const handleInstallAndRun = useCallback(async () => {
     if (!wcManager.isReady()) return;
@@ -205,9 +246,25 @@ export default function WonderSpaceIDE() {
               BOOTING...
             </span>
           )}
+          {loadedFromCloud && (
+            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+              Loaded from cloud
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Save status */}
+          {saveStatus === 'saving' && (
+            <span className="text-xs text-yellow-400 animate-pulse">Saving...</span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="text-xs text-green-400">Saved to cloud</span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="text-xs text-red-400">Save failed</span>
+          )}
+
           {/* Credits Badge */}
           <button
             onClick={() => setShowCredits(!showCredits)}
@@ -230,6 +287,14 @@ export default function WonderSpaceIDE() {
             className="px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-xs font-medium transition disabled:opacity-50"
           >
             💾 Save
+          </button>
+          <button
+            onClick={saveToCloud}
+            disabled={!booted || !user}
+            className="px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-xs font-medium transition disabled:opacity-50"
+            title="Force save all files to cloud"
+          >
+            ☁️ Sync
           </button>
           <button
             onClick={handleInstallAndRun}
