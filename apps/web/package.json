@@ -48,7 +48,7 @@
     "framer": "^2.4.1",
     "groq-sdk": "^1.1.2",
     "jszip": "^3.10.1",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^1.8.0",
     "motion": "^12.25.0",
     "next": "^16.2.3",
     "postcss": "^8.4.31",
