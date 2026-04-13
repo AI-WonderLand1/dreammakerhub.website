@@ -55,7 +55,8 @@ interface SovereignOSState {
   editorCode: string;
   setEditorCode: (code: string) => void;
 
-  editorIframeRef: React.RefObject<HTMLIFrameElement | null>;
+  onCodePush: ((code: string, type: BuildType) => void) | null;
+  setOnCodePush: (handler: ((code: string, type: BuildType) => void) | null) => void;
 
   confessions: ConfessionEntry[];
   clearConfessions: () => void;
@@ -97,7 +98,7 @@ export function SovereignOSProvider({ children }: { children: ReactNode }) {
   }, [confessions]);
 
   const abortRef = useRef<AbortController | null>(null);
-  const editorIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [onCodePush, setOnCodePush] = useState<((code: string, type: BuildType) => void) | null>(null);
 
   const togglePlayground = useCallback(() => setPlaygroundPlaying((v) => !v), []);
 
@@ -107,13 +108,8 @@ export function SovereignOSProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const pushCodeToEditor = useCallback((code: string, type: BuildType) => {
-    const iframe = editorIframeRef.current;
-    if (!iframe?.contentWindow) return;
-    iframe.contentWindow.postMessage(
-      { command: 'wonder:inject', code, type },
-      '*',
-    );
-  }, []);
+    onCodePush?.(code, type);
+  }, [onCodePush]);
 
   const runBuild = useCallback(async () => {
     if (!prompt.trim() || running) return;
@@ -237,7 +233,7 @@ export function SovereignOSProvider({ children }: { children: ReactNode }) {
         agents, agentLog,
         result, error, running,
         editorCode, setEditorCode,
-        editorIframeRef,
+        onCodePush, setOnCodePush,
         confessions, clearConfessions,
         runBuild, stopBuild,
       }}
