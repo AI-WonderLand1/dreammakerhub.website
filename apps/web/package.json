@@ -25,7 +25,7 @@
     "@base-ui/react": "^1.2.0",
     "@google/generative-ai": "^0.24.1",
     "@monaco-editor/react": "^4.7.0",
-    "@octokit/rest": "^21.1.1",
+    "@octokit/rest": "^22.0.1",
     "@puckeditor/cloud-client": "^0.6.0",
     "@puckeditor/core": "^0.21.2",
     "@react-three/drei": "^10.7.7",
