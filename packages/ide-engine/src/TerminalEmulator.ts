@@ -61,7 +61,10 @@ export class TerminalEmulator {
     this.resizeObserver.observe(container);
   }
 
-  async attachShell(spawnProcess: () => Promise<WebContainerProcess>): Promise<void> {
+  async attachShell(
+    spawnProcess: () => Promise<WebContainerProcess>,
+    onOutput?: (data: string) => void,
+  ): Promise<void> {
     if (!this.terminal) throw new Error('Terminal not created');
 
     await this.detachShell();
@@ -71,6 +74,7 @@ export class TerminalEmulator {
       new WritableStream({
         write: (data) => {
           this.terminal?.write(data);
+          onOutput?.(data);
         },
       })
     ).catch(() => {
