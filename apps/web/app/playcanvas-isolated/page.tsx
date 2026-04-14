@@ -43,7 +43,10 @@ export default function PlayCanvasIsolatedPage() {
 
   const handleError = (error: Error) => {
     console.error('[PlayCanvas] Error:', error);
-    setError(error.message);
+    // Only set error if it's not a WebContainer availability issue
+    if (!error.message.includes('WebContainer') && !error.message.includes('SharedArrayBuffer')) {
+      setError(error.message);
+    }
   };
 
   if (isLoading) {
@@ -125,14 +128,34 @@ export default function PlayCanvasIsolatedPage() {
 
         {/* Isolated PlayCanvas Editor */}
         <div className="h-[600px] border border-gray-800 rounded-lg overflow-hidden">
-          <IsolatedPlayCanvas
-            userId={userId}
-            sceneId={sceneId}
-            onReady={handleReady}
-            onError={handleError}
-            onStatusChange={handleStatusChange}
-            className="h-full"
-          />
+          {error ? (
+            <div className="h-full flex items-center justify-center bg-gray-900">
+              <div className="text-center p-8">
+                <p className="text-red-400 mb-4">{error}</p>
+                <p className="text-gray-400 text-sm mb-4">
+                  Demo mode: WebContainer might not be available in this environment.
+                </p>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    // In a real environment, this would re-initialize the component
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : (
+            <IsolatedPlayCanvas
+              userId={userId}
+              sceneId={sceneId}
+              onReady={handleReady}
+              onError={handleError}
+              onStatusChange={handleStatusChange}
+              className="h-full"
+            />
+          )}
         </div>
 
         {/* Info section */}
