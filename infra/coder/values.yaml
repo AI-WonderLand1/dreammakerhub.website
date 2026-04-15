@@ -16,12 +16,7 @@ ingress:
   enable: false
 
 provisioner:
-  tags:
-    - "workload:workspace"
   fsGroup: 1000
 
 postgres:
   enable: true
-
-workspaceProvider:
-  enable: false

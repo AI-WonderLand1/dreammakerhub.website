@@ -1,37 +1,6 @@
-# AI Wonderland
+# WonderSpace
 
-AI Wonderland is a monorepo for building and running AI-powered web experiences with isolated cloud development environments.
-
-## Basic Info
-
-- **Main app:** `apps/web` (Next.js)
-- **Language:** TypeScript
-- **Architecture:** Monorepo with apps, packages, engine, UI, and infra modules
-- **Core integrations:** Supabase, Vercel, Coder (OCI Kubernetes), PlayCanvas/WebGLStudio
-- **Key Feature:** Isolated cloud development environments for each user with persistent storage and dedicated resources
-
-## Infrastructure
-
-### OCI Kubernetes (OKE)
-- **Region:** US-Chicago-1
-- **Cluster:** `cluster1` (public endpoint: 64.181.195.19:6443)
-- **Node Pool:** E5.Flex, 1 node at 10.0.10.213
-- **Namespace:** `coder`
-
-### Coder (Cloud IDE)
-- **Access URL:** coder.dreammakerhub.website
-- **Template:** `infra/coder/template/main.tf`
-- **Workspace clones:** psychic-octo-fishstick repo automatically
-
-## Repository Structure
-
-- `apps/` — application entrypoints (including the web app)
-- `packages/` — reusable packages and bridges
-- `engine/` — core runtime modules
-- `ui/` — shared UI components
-- `infra/` — infrastructure-related code/config
-  - `coder/template/` — Coder workspace template
-- `docs/` — generated and authored documentation
+AI-powered creative platform for building web experiences, 3D worlds, and interactive apps.
 
 ## Quick Start
 
@@ -40,9 +9,52 @@ npm install
 npm run dev
 ```
 
+Open [http://localhost:3000](http://localhost:3000).
+
+## Tech Stack
+
+- **Framework:** Next.js (TypeScript)
+- **Auth:** Supabase Auth
+- **3D Engines:** PlayCanvas, WebGL Studio
+- **Visual Editor:** Puck (drag-and-drop page builder)
+- **AI:** OpenRouter, Groq, GitHub Models
+- **Infrastructure:** OCI Kubernetes (OKE), Coder (cloud IDE)
+- **Deployment:** Vercel
+
+## Project Structure
+
+```
+apps/web/          → Next.js app (pages, API routes, components)
+engine/core/      → AI orchestration, IDE runtime, PlayCanvas bridge
+packages/         → Shared packages (ide-engine, playcanvas-ext, puck-editor, etc.)
+ui/components/    → Reusable UI components (ChatBox, SpiritGuide, etc.)
+lib/              → Shared utilities (env, logger, auth, crypto)
+runners/          → Background workers (aiWorker, authWorker, registry)
+scripts/          → Shell scripts (build, smoke test, deploy)
+infra/coder/      → Coder workspace template + Helm values
+config/           → AI system prompts, constitution
+```
+
 ## Environment Variables
 
-See `.env.example` for full configuration including:
+See `.env.example` for all configuration including:
+- Supabase URL and keys
+- OpenRouter / Groq / GitHub API keys
 - `CODER_ACCESS_URL` — Coder instance URL
-- `CODER_WILDCARD_ACCESS_URL` — Wildcard for workspace apps
-- Supabase, Vercel, and AI provider keys
+- `CODER_WILDCARD_ACCESS_URL` — Workspace app URLs
+
+## Infrastructure
+
+| Resource | Details |
+|----------|---------|
+| OKE Cluster | `cluster1` in us-chicago-1 |
+| Node Pool | E5.Flex, 1 node at 10.0.10.213 |
+| Coder | v2.32.0, template at `infra/coder/template/main.tf` |
+
+## Full Documentation
+
+See [DOCS.md](./DOCS.md) for architecture, integration guides, deployment, security, and troubleshooting.
+
+## Contributing
+
+See [DOCS.md → Contributing](./DOCS.md#contributing) for setup and code style rules.
