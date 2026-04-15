@@ -1,0 +1,27 @@
+coder:
+  env:
+    - name: CODER_ACCESS_URL
+      value: "https://coder.dreammakerhub.website"
+    - name: CODER_WILDCARD_ACCESS_URL
+      value: "*.coder.dreammakerhub.website"
+    - name: CODER_DERP_FORCE_WEBSOCKETS
+      value: "true"
+
+service:
+  type: LoadBalancer
+  annotations:
+    oci.oraclecloud.com/load-balancer-internal: "false"
+
+ingress:
+  enable: false
+
+provisioner:
+  tags:
+    - "workload:workspace"
+  fsGroup: 1000
+
+postgres:
+  enable: true
+
+workspaceProvider:
+  enable: false
