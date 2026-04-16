@@ -39,7 +39,7 @@
     "@theatre/studio": "^0.7.2",
     "@tiptap/extension-superscript": "^3.20.3",
     "@types/three": "^0.183.1",
-    "ai": "^6.0.158",
+    "ai": "^6.0.164",
     "autoprefixer": "^10.4.23",
     "axios": "^1.15.0",
     "class-variance-authority": "^0.7.1",
