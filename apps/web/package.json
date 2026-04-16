@@ -71,6 +71,6 @@
     "lightningcss-android-arm64": "npm:lightningcss@1.31.1"
   },
   "optionalDependencies": {
-    "@next/swc-linux-x64-gnu": "^16.1.6"
+    "@next/swc-linux-x64-gnu": "^16.2.4"
   }
 }
