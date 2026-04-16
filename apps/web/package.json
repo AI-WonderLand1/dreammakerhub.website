@@ -45,7 +45,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "colyseus.js": "^0.16.22",
-    "framer": "^2.4.1",
+    "framer": "^3.0.4",
     "groq-sdk": "^1.1.2",
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
