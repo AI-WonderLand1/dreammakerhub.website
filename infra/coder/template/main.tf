@@ -20,7 +20,7 @@ provider "kubernetes" {
 variable "namespace" {
   type        = string
   description = "The Kubernetes namespace to create workspaces in"
-  default     = "coder"
+  default     = "coder" # Keep this as "coder" - Coder service account has permissions here
 }
 
 data "coder_workspace" "me" {}
