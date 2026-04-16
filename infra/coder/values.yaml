@@ -1,19 +1,26 @@
 coder:
   env:
     - name: CODER_ACCESS_URL
-      value: "http://147.224.185.75"
+      value: "https://coder.dreammakerhub.website"
     - name: CODER_WILDCARD_ACCESS_URL
       value: "*.coder.dreammakerhub.website"
     - name: CODER_DERP_FORCE_WEBSOCKETS
       value: "true"
 
-service:
-  type: LoadBalancer
-  annotations:
-    oci.oraclecloud.com/load-balancer-internal: "false"
+  # Mount TLS certificates into the pod
+  tls:
+    secretNames:
+      - coder-tls-secret
 
-ingress:
-  enable: false
+  service:
+    type: LoadBalancer
+    annotations:
+      oci.oraclecloud.com/load-balancer-internal: "false"
+      # Add these annotations for SSL at LoadBalancer level
+      oci.oraclecloud.com/load-balancer-policy: "ROUND_ROBIN"
+
+  ingress:
+    enable: false
 
 provisioner:
   fsGroup: 1000
