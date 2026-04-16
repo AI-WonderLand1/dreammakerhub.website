@@ -26,30 +26,59 @@ variable "namespace" {
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
+resource "coder_template_version" "this" {
+  template_id = var.template_id
+  icon        = file("${path.module}/icon.png")
+  git {
+    repo   = "https://github.com/AI-WonderLand1/psychic-octo-fishstick.git"
+    branch = "main"
+    path   = "infra/coder/template"
+  }
+}
+
+resource "coder_access_url" "current" {}
+
+locals {
+  default_ttl = "4h"
+  max_ttl     = "12h"
+}
+
 data "coder_parameter" "cpu" {
   name         = "cpu"
   display_name = "CPU"
-  description  = "CPU cores"
-  default      = "2"
+  description  = "CPU cores (max 4)"
+  default      = "1"
   icon         = "/icon/memory.svg"
   mutable      = true
+  validation {
+    min = 1
+    max = 4
+  }
+  option {
+    name  = "1 Core"
+    value = "1"
+  }
   option {
     name  = "2 Cores"
     value = "2"
-  }
-  option {
-    name  = "4 Cores"
-    value = "4"
   }
 }
 
 data "coder_parameter" "memory" {
   name         = "memory"
   display_name = "Memory"
-  description  = "Memory in GB"
-  default      = "4"
+  description  = "Memory in GB (max 8)"
+  default      = "2"
   icon         = "/icon/memory.svg"
   mutable      = true
+  validation {
+    min = 1
+    max = 8
+  }
+  option {
+    name  = "1 GB"
+    value = "1"
+  }
   option {
     name  = "2 GB"
     value = "2"
@@ -57,10 +86,6 @@ data "coder_parameter" "memory" {
   option {
     name  = "4 GB"
     value = "4"
-  }
-  option {
-    name  = "8 GB"
-    value = "8"
   }
 }
 
@@ -77,6 +102,27 @@ data "coder_parameter" "home_disk_size" {
   }
 }
 
+resource "coder_workspace" "this" {
+  count                    = data.coder_workspace.me.start_count
+  name                     = data.coder_workspace.me.name
+  template_id              = var.template_id
+  autostart                = true
+  autostop                 = var.autostop
+  default_ttl              = local.default_ttl
+  max_ttl                  = local.max_ttl
+  force_auto_update        = false
+  use_latest_repo_version  = false
+  priority                 = 0
+  deletion_burst_limit     = 0
+  deletion_frequency_limit = "10m"
+}
+
+variable "autostop" {
+  description = "Autostop after inactivity (hours)"
+  default     = 4
+  type        = number
+}
+
 resource "coder_agent" "main" {
   os             = "linux"
   arch           = "amd64"
@@ -85,9 +131,6 @@ resource "coder_agent" "main" {
 
     # Install code-server
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
-
-    # Clone WonderSpace repo
-    git clone https://github.com/wonderingtribe/psychic-octo-fishstick.git ~/wonderspace 2>/dev/null || true
 
     # Install dependencies
     cd ~/wonderspace
