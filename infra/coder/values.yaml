@@ -6,8 +6,9 @@ coder:
       value: "*.coder.dreammakerhub.website"
     - name: CODER_DERP_FORCE_WEBSOCKETS
       value: "true"
+    - name: CODER_SESSION_HOST_PREFIX_COOKIES
+      value: "true"
 
-  # Mount TLS certificates into the pod
   tls:
     secretNames:
       - coder-tls-secret
