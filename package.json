@@ -21,7 +21,7 @@
     "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run"
   },
   "devDependencies": {
-    "@next/swc-linux-x64-gnu": "^16.1.6",
+    "@next/swc-linux-x64-gnu": "^16.2.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "jsdom": "^29.0.2",
