@@ -1,7 +1,7 @@
 coder:
   env:
     - name: CODER_ACCESS_URL
-      value: "https://coder.dreammakerhub.website"
+      value: "http://147.224.185.75"
     - name: CODER_WILDCARD_ACCESS_URL
       value: "*.coder.dreammakerhub.website"
     - name: CODER_DERP_FORCE_WEBSOCKETS
