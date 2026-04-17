@@ -1,6 +1,10 @@
 import net from 'node:net';
 import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import { selectDevPort } from './dev-port.mjs';
+
+const require = createRequire(import.meta.url);
 
 function isPortAvailable(port) {
   return new Promise((resolve) => {
@@ -25,8 +29,8 @@ if (source === 'auto-fallback') {
   console.log(`[ai-wonder-web] Port 9002 is in use, starting on available port ${port}.`);
 }
 
-const nextBin = process.platform === 'win32' ? 'next.cmd' : 'next';
-const child = spawn(nextBin, ['dev', '-p', String(port), '-H', '0.0.0.0'], {
+const nextBin = require.resolve('next/dist/bin/next');
+const child = spawn(process.execPath, [nextBin, 'dev', '-p', String(port), '-H', '0.0.0.0'], {
   stdio: 'inherit',
   env: {
     ...process.env,

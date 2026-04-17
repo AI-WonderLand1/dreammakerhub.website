@@ -13,6 +13,12 @@ node_modules/
 .env.production
 my-agent/.env
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
 # Editor temp files
 *.swp
 *.swo
@@ -24,3 +30,6 @@ Archive/
 Saved/
 Intermediate/
 DerivedDataCache/
+agent/venv/
+__pycache__/
+*.pyc
