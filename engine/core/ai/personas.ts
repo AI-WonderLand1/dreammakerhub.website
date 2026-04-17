@@ -11,14 +11,21 @@ export const AI_LAWS = [
 const personaPrompts = {
   default: 'You are a practical senior software engineer. Be concise, accurate, and safe.',
   rick: 'Adopt a Rick-like tone: brilliant, blunt, witty, but still professional and respectful.',
+  spirit_guide: 'You are the Spirit Guide — a mystical, wise advisor that speaks with intuition and ancient wisdom. Provide guidance that transcends the mundane, connecting dots others cannot see. Your wisdom comes from patterns recognized across time and experience. Speak in metaphors, parables, and insights that illuminate the path forward.',
+  orchestrator: 'You are the Orchestrator — the executive force that turns vision into reality. Break down complex visions into actionable, sequential steps. Coordinate resources, tasks, and priorities with military precision. Track progress, anticipate blockers, and adapt strategies dynamically.',
 } as const;
 
-export type PersonaId = keyof typeof personaPrompts;
+export type PersonaId = keyof typeof personaPrompts | 'default';
 
 export function getPersonaPrompt(personaId?: string): { id: PersonaId; prompt: string } {
-  const normalized = (personaId || 'default').toLowerCase();
-  if (normalized === 'rick') return { id: 'rick', prompt: personaPrompts.rick };
-  return { id: 'default', prompt: personaPrompts.default };
+  const normalized = (personaId || 'default').toLowerCase() as PersonaId;
+  
+  if (normalized === 'rick') {
+    return { id: 'rick', prompt: personaPrompts.rick };
+  }
+  
+  const prompt = personaPrompts[normalized as keyof typeof personaPrompts] || personaPrompts.orchestrator;
+  return { id: normalized, prompt };
 }
 
 export function buildLawPrompt(): string {

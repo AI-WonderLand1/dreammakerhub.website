@@ -22,11 +22,13 @@ export default function PagesDropdown() {
                 Wonder‑Build
               </Link>
             </li>
+            {/* TODO: Re-enable when IDE is ready
             <li>
               <Link href="/wonderspace" className="block px-4 py-2 hover:bg-gray-100">
                 WonderSpace
               </Link>
             </li>
+            */}
             <li>
               <Link href="/marketplace" className="block px-4 py-2 hover:bg-gray-100">
                 Marketplace

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
 
 type BuildType = "website" | "game" | "component";
 type AgentStage = "architect" | "builder" | "reviewer";
@@ -62,10 +63,38 @@ export default function AIBuilderPage() {
   const [result, setResult] = useState<BuildResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<"preview" | "code">("preview");
-  const previewRef = useRef<HTMLIFrameElement>(null);
+  const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const acceptToPuck = useCallback(() => {
+    if (!result?.code) return;
+
+    try {
+      // Convert HTML to Puck blocks
+      const puckData = htmlToPuckBlocks(result.code);
+      
+      // Store the data in session storage
+      const dataKey = storePuckData(puckData);
+      
+      // Navigate to Puck editor with the data key
+      router.push(`/wonder-build/puck?ai_data=${dataKey}`);
+    } catch (err) {
+      console.error("[AI Builder] Failed to accept to Puck:", err);
+      alert("Failed to prepare content for Puck editor");
+    }
+  }, [result?.code, router]);
+
+  useEffect(() => {
+    if (!result?.code) {
+      setPreviewBlobUrl(null);
+      return;
+    }
+    const blob = new Blob([result.code], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    setPreviewBlobUrl(url);
+    return () => { URL.revokeObjectURL(url); };
+  }, [result?.code]);
 
   const runBuild = useCallback(async () => {
     if (!prompt.trim() || running) return;
@@ -196,9 +225,10 @@ export default function AIBuilderPage() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT PANEL — Controls + Agent Log */}
-        <div className="w-[380px] min-w-[320px] border-r border-white/10 flex flex-col overflow-y-auto">
-          <div className="p-6 flex flex-col gap-6">
+        {/* LEFT PANEL — Controls + Agent Log (Scrollable) */}
+        <div className="w-[380px] min-w-[320px] border-r border-white/10 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 flex flex-col gap-6">
             {/* Type selector */}
             <div>
               <label className="text-xs text-white/50 uppercase tracking-widest mb-3 block">
@@ -337,41 +367,50 @@ export default function AIBuilderPage() {
               )}
             </div>
           )}
+            </div>
+          </div>
         </div>
 
-        {/* RIGHT PANEL — Preview + Code */}
+        {/* RIGHT PANELS — Preview (bigger, middle) + Code (smaller, right) */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {result ? (
             <>
-              {/* Tabs + actions */}
-              <div className="flex items-center gap-1 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+              {/* Action buttons header */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
                 <div className="flex gap-1">
-                  {(["preview", "code"] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        tab === t
-                          ? "bg-white/10 text-white"
-                          : "text-white/40 hover:text-white"
-                      }`}
-                    >
-                      {t === "preview" ? "👁 Preview" : "📄 Code"}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => setViewMode("preview")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      viewMode === "preview"
+                        ? "bg-white/10 text-white"
+                        : "text-white/40 hover:text-white"
+                    }`}
+                  >
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => setViewMode("code")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      viewMode === "code"
+                        ? "bg-white/10 text-white"
+                        : "text-white/40 hover:text-white"
+                    }`}
+                  >
+                    Code
+                  </button>
                 </div>
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={copyCode}
                     className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
-                    Copy
+                    📋 Copy
                   </button>
                   <button
                     onClick={downloadFile}
                     className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
-                    Download
+                    ⬇ Download
                   </button>
                   <button
                     onClick={acceptProject}
@@ -384,26 +423,46 @@ export default function AIBuilderPage() {
                     onClick={() => { setResult(null); setAgents({}); setError(null); }}
                     className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
                   >
-                    Build again
+                    🔄 Build again
+                  </button>
+                  <button
+                    onClick={acceptToPuck}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-lg shadow-emerald-600/50 flex items-center gap-2"
+                  >
+                    ✨ Accept & Continue
                   </button>
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 overflow-hidden">
-                {tab === "preview" ? (
-                  <iframe
-                    ref={previewRef}
-                    srcDoc={result.code}
-                    sandbox="allow-scripts allow-same-origin"
-                    className="w-full h-full border-0 bg-white"
-                    title="Live Preview"
-                  />
+              {/* Content view */}
+              <div className="flex-1 flex overflow-hidden gap-1 p-2">
+                {viewMode === "preview" ? (
+                  <div className="flex-1 flex flex-col overflow-hidden bg-white/[0.02] rounded-lg border border-white/10">
+                    <div className="flex-1 overflow-hidden relative flex items-center justify-center">
+                      {previewBlobUrl ? (
+                        <div className="flex flex-col items-center gap-4 p-8 text-center">
+                          <p className="text-sm text-white/40">Preview ready</p>
+                          <a
+                            href={previewBlobUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-violet-300 hover:bg-violet-500/20 transition-colors"
+                          >
+                            Open Preview in New Tab
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-white/20 text-sm">No preview available</p>
+                      )}
+                    </div>
+                  </div>
                 ) : (
-                  <div className="h-full overflow-auto bg-[#0d0d16] p-6">
-                    <pre className="text-xs text-white/70 font-mono leading-relaxed whitespace-pre-wrap break-words">
-                      {result.code}
-                    </pre>
+                  <div className="flex-1 flex flex-col overflow-hidden bg-[#0d0d16] rounded-lg border border-white/10">
+                    <div className="flex-1 overflow-auto">
+                      <pre className="text-[10px] text-white/60 font-mono leading-relaxed whitespace-pre-wrap break-words p-4">
+                        {result.code}
+                      </pre>
+                    </div>
                   </div>
                 )}
               </div>

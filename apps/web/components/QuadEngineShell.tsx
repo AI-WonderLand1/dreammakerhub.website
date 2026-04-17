@@ -2,7 +2,7 @@
 
 /**
  * QuadEngineShell - Main Component for AI-WONDERLAND
- * Manages 4 engines: PlayCanvas (3D), WebGL Studio (Shaders), Puck (UI), Coder IDE (Code)
+ * Manages 3 engines: PlayCanvas (3D), WebGL Studio (Shaders), Puck (UI)
  * Uses next/dynamic with ssr: false for optimal performance
  */
 
@@ -28,12 +28,7 @@ const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), {
   loading: () => <EngineLoader engine="Puck" />,
 });
 
-const CoderIDEEngine = dynamic(() => import('./engines/CoderIDEEngine'), {
-  ssr: false,
-  loading: () => <EngineLoader engine="Coder IDE" />,
-});
-
-type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder';
+type EngineType = 'playcanvas' | 'webgl' | 'puck';
 
 interface EngineConfig {
   id: EngineType;
@@ -65,13 +60,6 @@ const ENGINES: EngineConfig[] = [
     icon: '📐',
     component: PuckUIEngine,
   },
-  {
-    id: 'coder',
-    label: 'Coder IDE',
-    color: '#ff0055',
-    icon: '💻',
-    component: CoderIDEEngine,
-  },
 ];
 
 function EngineLoader({ engine }: { engine: string }) {
@@ -93,7 +81,6 @@ export function QuadEngineShell() {
     playcanvas: null,
     webgl: null,
     puck: null,
-    coder: null,
   });
 
   const currentEngine = ENGINES.find((e) => e.id === activeEngine)!;

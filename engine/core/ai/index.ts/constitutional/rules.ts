@@ -17,7 +17,7 @@ export const CONSTITUTIONAL_RULES: ConstitutionalRule[] = [
   },
   {
     id: 'no-openrouter-secrets',
-    description: 'Output appears to contain an OpenRouter API key.',
+    description: 'Output appears to contain an API key.',
     pattern: /\bsk-or-v1-[A-Za-z0-9\-_]{20,}\b/g,
   },
   {

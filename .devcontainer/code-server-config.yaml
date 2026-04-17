@@ -1,6 +1,0 @@
-bind-addr: 0.0.0.0:8080
-auth: none
-cert: false
-user-data-dir: /home/coder
-disable-telemetry: true
-disable-update-check: true
