@@ -21,8 +21,6 @@ const DEFAULT_CONFIG: SyncGuardConfig = {
 class SyncGuard {
   private config: SyncGuardConfig;
   private intervalId: ReturnType<typeof setInterval> | null = null;
-  private pendingThoughts: ThoughtEntry[] = [];
-  private pendingChanges: PendingChange[] = [];
   private isSyncing = false;
 
   constructor(config: Partial<SyncGuardConfig> = {}) {
@@ -56,8 +54,9 @@ class SyncGuard {
     // Save locally first (instant)
     await localMemory.saveThought(content, persona);
 
-    // Check if we should trigger immediate sync
-    if (this.pendingThoughts.length >= this.config.batchSize) {
+    // Check if we should trigger immediate sync using unsynced local count
+    const pending = await this.getPendingCount();
+    if (pending.thoughts >= this.config.batchSize) {
       this.syncThoughts();
     }
   }
@@ -68,7 +67,8 @@ class SyncGuard {
 
     await localMemory.savePendingChange(type, path, content);
 
-    if (this.pendingChanges.length >= this.config.batchSize) {
+    const pending = await this.getPendingCount();
+    if (pending.changes >= this.config.batchSize) {
       this.syncChanges();
     }
   }
