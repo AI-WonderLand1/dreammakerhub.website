@@ -21,53 +21,39 @@ export async function POST(req: Request) {
       Use Tailwind CSS for styling. Do not explain the code.
     `;
 
-    // Map user selection to OpenRouter model strings
+    // Map user selection to GitHub Models
     const modelMap: Record<string, string> = {
-      'fast': 'google/gemini-2.0-flash-001',
-      'pro': 'anthropic/claude-3.5-sonnet',
-      'creative': 'openai/gpt-4o',
-      'vision': 'google/gemini-2.0-pro-exp-02-05:free' // Great for Image-to-Code
+      'fast': 'gpt-4o-mini',
+      'pro': 'gpt-4o',
+      'creative': 'gpt-4o',
+      'vision': 'gpt-4o' // GitHub Models doesn't have native vision, use best model
     };
 
     const selectedModel = modelMap[modelId] || modelMap['fast'];
 
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { 
-        role: "user", 
-        content: image 
-          ? [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: image } }
-            ]
-          : prompt 
-      }
-    ];
-
-    const apiKey = process.env.OPENROUTER_API_KEY
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "OPENROUTER_API_KEY is not configured" },
-        { status: 503 }
-      )
-    }
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": process.env.NEXT_PUBLIC_URL || "https://dreammakerhub.website",
+        "Authorization": `Bearer ${process.env.GITHUB_MODELS_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: selectedModel,
-        messages,
-        response_format: { type: "json_object" }
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" },
       }),
     });
 
     const data = await response.json();
-    
+
+    if (data.error) {
+      throw new Error(`GitHub Models API Error: ${data.error.message}`);
+    }
+
     // Parse the AI's content string back into JSON for the Engine
     const aiContent = JSON.parse(data.choices[0].message.content);
 

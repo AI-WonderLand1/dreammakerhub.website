@@ -1,10 +1,10 @@
 /**
  * Custom Runner Factory
  * Generates specialized code for each engine type
- * PlayCanvas 3D, WebGL Shaders, Puck UI, Coder IDE
+ * PlayCanvas 3D, WebGL Shaders, Puck UI
  */
 
-export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder' | 'theia';
+export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia';
 
 export interface RunnerContext {
   projectId: string;
@@ -263,100 +263,6 @@ export default function Editor() {
   };
 }
 
-// Coder IDE Bridge Runner
-export function createCoderIDEBridge(context: RunnerContext): RunnerResult {
-  const { projectName } = context;
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  const code = `
-import { injectable } from 'inversify';
-import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
-import * as rpc from 'vscode-jsonrpc/node';
-
-/**
- * Coder IDE Bridge for ${projectName}
- * Connect to Coder IDE for code editing and execution
- */
-
-@injectable()
-export class CoderIDEBridge {
-  private client: LanguageClient;
-  private serverProcess: any;
-
-  async initialize(): Promise<void> {
-    // Server options for Coder IDE language server
-    const serverOptions: ServerOptions = {
-      run: { command: 'node', args: ['./server/index.js'] },
-      debug: { command: 'node', args: ['--nolazy', '--inspect=6009', './server/index.js'] },
-    };
-
-    // Client options
-    const clientOptions: LanguageClientOptions = {
-      documentSelector: [
-        { scheme: 'file', language: 'typescript' },
-        { scheme: 'file', language: 'javascript' },
-      ],
-    };
-
-    this.client = new LanguageClient(
-      'coder-ide-bridge',
-      'Coder IDE Bridge - ${projectName}',
-      serverOptions,
-      clientOptions
-    );
-
-    await this.client.start();
-  }
-
-  // Open file in Coder IDE
-  async openFile(filePath: string): Promise<void> {
-    const request = new rpc.RequestType('textDocument/open');
-    await this.client.sendRequest(request, { uri: filePath });
-  }
-
-  // Execute code in Coder IDE terminal
-  async executeCommand(command: string): Promise<string> {
-    const request = new rpc.RequestType('workspace/executeCommand');
-    return this.client.sendRequest(request, {
-      command: 'terminal.run',
-      args: [command],
-    });
-  }
-
-  // Get diagnostics (errors/warnings)
-  async getDiagnostics(): Promise<any[]> {
-    const request = new rpc.RequestType('textDocument/publishDiagnostics');
-    return this.client.sendRequest(request, {});
-  }
-
-  // Format document
-  async formatDocument(filePath: string): Promise<void> {
-    const request = new rpc.RequestType('textDocument/formatting');
-    await this.client.sendRequest(request, { textDocument: { uri: filePath } });
-  }
-}
-
-// Export singleton
-export const coderIDEBridge = new CoderIDEBridge();
-`;
-
-  warnings.push('Ensure Coder IDE server is running before initializing');
-  warnings.push('Configure LSP settings in Coder workspace preferences');
-
-  return {
-    code,
-    language: 'typescript',
-    imports: [
-      "import { injectable } from 'inversify';",
-      "import { LanguageClient } from 'vscode-languageclient/node';",
-      "import CoderIDEEngine from '@/components/engines/CoderIDEEngine';",
-    ],
-    errors,
-    warnings,
-  };
-}
-
 // Main Runner Factory
 export function runnerFactory(context: RunnerContext): RunnerResult {
   switch (context.engineType) {
@@ -366,10 +272,6 @@ export function runnerFactory(context: RunnerContext): RunnerResult {
       return createWebGLShader(context);
     case 'puck':
       return createPuckUILayout(context);
-    case 'coder':
-      return createCoderIDEBridge(context);
-    case 'theia':
-      return createCoderIDEBridge(context);
     default:
       return {
         code: '',

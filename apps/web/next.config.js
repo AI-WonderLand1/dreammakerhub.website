@@ -1,13 +1,14 @@
 /** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV === 'development';
+const proxyBasePath = '/cc-QMRU-C7DE2BA6/proxy/5000';
 const nextConfig = {
   reactStrictMode: true,
 
-  // Production build: standalone output for Docker containers
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
-
-  // Local development
-  basePath: "",
-  assetPrefix: "",
+  // Azure proxy configuration (only active outside local development)
+  ...(isDev ? {} : {
+    basePath: proxyBasePath,
+    assetPrefix: proxyBasePath,
+  }),
 
   allowedDevOrigins: ["*.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.worf.replit.dev", "*.repl.co"],
 

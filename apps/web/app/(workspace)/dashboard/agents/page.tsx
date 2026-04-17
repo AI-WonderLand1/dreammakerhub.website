@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
+import DashboardAI from "@/components/ai/DashboardAI";
 
 type Option = {
   id: string;
@@ -132,49 +133,60 @@ export default function AgentsPage() {
         </div>
       </div>
 
-      {err ? (
-        <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm text-red-100">
-          <p>{err}</p>
-          <button
-            type="button"
-            onClick={loadCatalog}
-            className="mt-2 rounded-md border border-red-300/40 bg-red-500/20 px-3 py-1 text-xs font-semibold"
-          >
-            Retry
-          </button>
-        </div>
-      ) : null}
+      {/* Dashboard AI Assistant */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-4">
+          {err ? (
+            <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm text-red-100">
+              <p>{err}</p>
+              <button
+                type="button"
+                onClick={loadCatalog}
+                className="mt-2 rounded-md border border-red-300/40 bg-red-500/20 px-3 py-1 text-xs font-semibold"
+              >
+                Retry
+              </button>
+            </div>
+          ) : null}
 
-      {loading ? (
-        <SkeletonGrid cards={4} />
-      ) : isEmpty ? (
-        <EmptyState
-          title="No options available"
-          description="We could not find AI, agent, runner, or worker options. Reload or open AI modules directly."
-          cta={
-            <button
-              type="button"
-              onClick={loadCatalog}
-              className="inline-flex h-10 items-center rounded-lg border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90"
-            >
-              Reload Catalog
-            </button>
-          }
-        />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {sections.map((section) => (
-            <section key={section.key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="mb-3 text-xs font-black uppercase tracking-wider text-white/60">{section.title}</div>
-              <div className="space-y-3">
-                {section.data.map((item) => (
-                  <OptionCard key={item.id} option={item} />
-                ))}
-              </div>
-            </section>
-          ))}
+          {loading ? (
+            <SkeletonGrid cards={4} />
+          ) : isEmpty ? (
+            <EmptyState
+              title="No options available"
+              description="We could not find AI, agent, runner, or worker options. Reload or open AI modules directly."
+              cta={
+                <button
+                  type="button"
+                  onClick={loadCatalog}
+                  className="inline-flex h-10 items-center rounded-lg border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90"
+                >
+                  Reload Catalog
+                </button>
+              }
+            />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {sections.map((section) => (
+                <section key={section.key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="mb-3 text-xs font-black uppercase tracking-wider text-white/60">{section.title}</div>
+                  <div className="space-y-3">
+                    {section.data.map((item) => (
+                      <OptionCard key={item.id} option={item} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Dashboard AI Sidebar */}
+        <div className="lg:col-span-1">
+          <DashboardAI className="h-fit sticky top-6" />
+        </div>
+      </div>
     </div>
   );
 }
