@@ -13,6 +13,7 @@
 - [x] **Coder workspace template** — `infra/coder/template/main.tf`
 - [x] **Coder systemd service** — `/etc/systemd/system/coder.service`
 - [x] **Kubeconfig for Coder** — `/home/coder/.kube/config`
+- [x] **Coder template working** — Users can create workspaces
 
 ### DNS
 - [x] **coder.dreammakerhub.website** — Points to OCI Load Balancer (direct, no Cloudflare tunnel)
@@ -27,14 +28,10 @@
 
 ## In Progress
 
-### Coder Template Push
-- [ ] **Bug: "Detecting persistent resources" timeout** — Coder v2 provisioner runs terraform in empty directory
-  - Workaround: Use Coder web UI to create template manually, or fix provisioner configuration
-
-### OCI Direct Access
-- [ ] **Move Coder off localhost:3000** — Expose Coder via OCI Load Balancer
-- [ ] **Configure wildcard DNS** — `*.coder.dreammakerhub.website` → OCI LB
-- [ ] **Remove Cloudflare tunnel** — No longer needed, use OCI directly
+### Coder Integration
+- [ ] **Add "Create Private IDE" link to site** — Button/page linking to coder.dreammakerhub.website
+- [ ] **Private projects per user** — Ensure workspaces are isolated per-user
+- [ ] **Custom workspace template** — Template with private storage/Docker/extensions
 
 ---
 
@@ -45,6 +42,26 @@
 - [ ] **Phase 6**: Temp storage + 24hr warning modal
 - [ ] **Phase 7**: BYOC integration (existing `lib/crypto/byoc.ts` + `StorageManager.ts`)
 - [ ] **Phase 8**: Deploy & preview URLs
+
+---
+
+## TODO — AI & Persona (from Simple-Rick-Ai-1)
+
+- [ ] **Persona System** — Add Rick Sanchez persona with AI Constitution rules
+  - [ ] Create `packages/engine-core/src/personas.ts` with persona prompts
+  - [ ] Add constitutional rules (no secrets, transparency requirements)
+  - [ ] Integrate into AI chat pipeline
+
+- [ ] **Confessions System** — Track AI uncertainty, corrections, limitations
+  - [ ] Import `confessions.ts` and `types.ts` from Simple-Rick-Ai-1
+  - [ ] Create types: `ConfessionType`, `ImpactLevel`, `ConstitutionalRules`
+  - [ ] Build factories: `createUncertaintyConfession`, `createCorrectionConfession`, etc.
+  - [ ] Wire into AI pipeline to log confessions per request
+
+- [ ] **AI Provider Integration** — Gemini + neutrality monitoring
+  - [ ] Import `geminiService.ts` wrapper
+  - [ ] Add neutrality monitor (pre-check prompts for bias)
+  - [ ] Support multiple providers (GitHub, OpenRouter, Groq)
 
 ## Key Files Reference
 
