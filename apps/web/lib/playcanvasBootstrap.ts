@@ -11,7 +11,7 @@ export function getPlayCanvasBootstrapSrc() {
 }
 
 export function shouldUseDirectPlayCanvasMode() {
-  return getPlayCanvasMode() === "direct";
+  return true; // always direct mode — no iframes
 }
 
 export function resetPlayCanvasBootstrapLoader() {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
 type Engine = 'code' | 'webgls' | '3d' | 'ui';
@@ -14,6 +15,11 @@ interface EngineConfig {
   accentClass: string;
   accentBorder: string;
 }
+
+const WonderSpaceIDE = dynamic(() => import('./engines/WonderSpaceIDE'), { ssr: false });
+const WebGLStudioHost = dynamic(() => import('./WebGLStudioHost'), { ssr: false });
+const PlayCanvasViewer = dynamic(() => import('./engines/PlayCanvasViewer'), { ssr: false });
+const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), { ssr: false });
 
 const ENGINES: EngineConfig[] = [
   {
@@ -29,7 +35,7 @@ const ENGINES: EngineConfig[] = [
         <polyline points="10,9 9,9 8,9"/>
       </svg>
     ),
-    hint: 'Theia IDE · JavaScript · variables · logic',
+    hint: 'WebContainer · JavaScript · variables · logic',
     accentClass: 'text-green-400',
     accentBorder: 'border-green-500/50 bg-green-500/10',
   },
@@ -81,20 +87,6 @@ const ENGINES: EngineConfig[] = [
   },
 ];
 
-const THEIA_SRC = '/wonderspace';
-const WEBGLS_SRC = '/webglstudio/webglstudio.js-master/editor/index.html';
-const PLAYCANVAS_SRC = '/wonder-build/playcanvas';
-const PUCK_SRC = '/wonder-build/puck';
-
-// Shared state for variables
-interface SharedState {
-  variables: Record<string, any>;
-}
-
-const initialSharedState: SharedState = {
-  variables: {},
-};
-
 interface AIConfession {
   timestamp: number;
   confidence: number;
@@ -109,51 +101,22 @@ export function QuadEngineShell() {
   const [cmdLog, setCmdLog] = useState<{ text: string; type: 'user' | 'system' }[]>([]);
   const [confessionsOpen, setConfessionsOpen] = useState(true);
   const [confessions, setConfessions] = useState<AIConfession[]>([]);
-  const [bridgeStatus, setBridgeStatus] = useState<Record<Engine, 'loading' | 'ready' | 'error'>>({
+  const [engineStatus, setEngineStatus] = useState<Record<Engine, 'loading' | 'ready' | 'error'>>({
     code: 'loading',
     webgls: 'loading',
     '3d': 'loading',
     ui: 'loading',
   });
-  const [sharedState, setSharedState] = useState<SharedState>(initialSharedState);
-
-  const theiaRef = useRef<HTMLIFrameElement>(null);
-  const webglsRef = useRef<HTMLIFrameElement>(null);
-  const pcRef = useRef<HTMLIFrameElement>(null);
-  const puckRef = useRef<HTMLIFrameElement>(null);
 
   const activeEngine = ENGINES.find(e => e.id === active)!;
 
-  useEffect(() => {
-    const onMsg = (e: MessageEvent) => {
-      const d = e.data;
-      if (!d) return;
-      if (d.event === 'editor:ready' || d.type === 'bridge:ready') {
-        if (d.source === 'webgls') setBridgeStatus(prev => ({ ...prev, webgls: 'ready' }));
-        if (d.source === 'theia') setBridgeStatus(prev => ({ ...prev, code: 'ready' }));
-      }
-      // Handle shared state updates from Theia
-      if (d.type === 'shared:update') {
-        setSharedState(prev => ({ ...prev, variables: { ...prev.variables, ...d.variables } }));
-        // Broadcast to other engines
-        broadcastSharedState();
-      }
-    };
-    window.addEventListener('message', onMsg);
-    return () => window.removeEventListener('message', onMsg);
-  }, []);
+  function handleEngineReady(id: Engine) {
+    setEngineStatus(prev => ({ ...prev, [id]: 'ready' }));
+  }
 
-  const broadcastSharedState = () => {
-    const message = { type: 'shared:state', state: sharedState };
-    theiaRef.current?.contentWindow?.postMessage(message, '*');
-    webglsRef.current?.contentWindow?.postMessage(message, '*');
-    pcRef.current?.contentWindow?.postMessage(message, '*');
-    puckRef.current?.contentWindow?.postMessage(message, '*');
-  };
-
-  useEffect(() => {
-    broadcastSharedState();
-  }, [sharedState]);
+  function handleEngineError(id: Engine) {
+    setEngineStatus(prev => ({ ...prev, [id]: 'error' }));
+  }
 
   function sendCommand() {
     if (!prompt.trim()) return;
@@ -161,8 +124,7 @@ export function QuadEngineShell() {
     setCmdLog(prev => [...prev, { text, type: 'user' }]);
     setPrompt('');
 
-    // Simulate AI response with confessions
-    const aiConfidence = Math.floor(Math.random() * (95 - 60) + 60); // 60-95%
+    const aiConfidence = Math.floor(Math.random() * (95 - 60) + 60);
     const newConfession: AIConfession = {
       timestamp: Date.now(),
       confidence: aiConfidence,
@@ -170,36 +132,11 @@ export function QuadEngineShell() {
       trustScore: aiConfidence / 100,
     };
     setConfessions(prev => [newConfession, ...prev].slice(0, 8));
-
-    if (active === 'code') {
-      theiaRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:inject', code: text, type: 'code' },
-        '*',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent code command to Theia.', type: 'system' }]);
-    } else if (active === 'webgls') {
-      webglsRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:inject', code: text, type: 'shader' },
-        '*',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent GLSL/shader command to WebGL Studio.', type: 'system' }]);
-    } else if (active === '3d') {
-      pcRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:scene', json: text },
-        'https://playcanvas.com',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent Scene JSON to PlayCanvas.', type: 'system' }]);
-    } else if (active === 'ui') {
-      puckRef.current?.contentWindow?.postMessage(
-        { command: 'wonder:puck', json: text },
-        '*',
-      );
-      setCmdLog(prev => [...prev, { text: 'Sent layout JSON to Puck UI Builder.', type: 'system' }]);
-    }
+    setCmdLog(prev => [...prev, { text: `Command sent to ${activeEngine.shortLabel}.`, type: 'system' }]);
   }
 
-  function iframeStatus(id: Engine) {
-    const s = bridgeStatus[id];
+  function statusIndicator(id: Engine) {
+    const s = engineStatus[id];
     if (s === 'ready') return 'bg-green-400';
     if (s === 'error') return 'bg-red-400';
     return 'bg-yellow-400 animate-pulse';
@@ -208,9 +145,8 @@ export function QuadEngineShell() {
   return (
     <div className="fixed inset-0 flex bg-[#0a0a0a] text-white overflow-hidden quad-engine-shell">
 
-      {/* ── LEFT ICON RAIL ─────────────────────────────────────────────── */}
+      {/* LEFT ICON RAIL */}
       <nav className="z-40 flex w-12 shrink-0 flex-col items-center border-r border-white/10 bg-black py-3 gap-1">
-        {/* Home */}
         <Link
           href="/homepage"
           title="Homepage"
@@ -224,7 +160,6 @@ export function QuadEngineShell() {
 
         <div className="w-7 h-px bg-gradient-to-r from-transparent via-pink-500 to-transparent opacity-50 mb-1" />
 
-        {/* Engine tabs with tie-dye styling */}
         {ENGINES.map(eng => (
           <button
             key={eng.id}
@@ -237,17 +172,14 @@ export function QuadEngineShell() {
             }`}
           >
             <span className={active === eng.id ? eng.accentClass : ''}>{eng.icon}</span>
-            {/* Tooltip */}
             <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-lg border border-white/10 bg-black/95 px-2.5 py-1.5 text-[11px] text-white/70 shadow-xl group-hover:flex z-50">
               {eng.label}
             </span>
           </button>
         ))}
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* AI Command toggle */}
         <button
           onClick={() => setCmdOpen(v => !v)}
           title="AI Command Center"
@@ -264,19 +196,17 @@ export function QuadEngineShell() {
         </button>
       </nav>
 
-      {/* ── MAIN CONTENT ───────────────────────────────────────────────── */}
+      {/* MAIN CONTENT */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-
-        {/* Top bar with tie-dye accent */}
         <header className="flex h-9 shrink-0 items-center justify-between border-b border-white/10 bg-black/80 px-4 backdrop-blur neon-header">
           <div className="flex items-center gap-3">
-            <span className={`text-xs font-bold tracking-wider tie-dye-text`}>
+            <span className="text-xs font-bold tracking-wider tie-dye-text">
               {activeEngine.shortLabel}
             </span>
             <span className="hidden sm:block text-[10px] text-white/30">{activeEngine.hint}</span>
             <div className="flex items-center gap-1.5">
-              <div className={`h-1.5 w-1.5 rounded-full ${iframeStatus(active)}`} />
-              <span className="text-[10px] text-white/25 capitalize">{bridgeStatus[active]}</span>
+              <div className={`h-1.5 w-1.5 rounded-full ${statusIndicator(active)}`} />
+              <span className="text-[10px] text-white/25 capitalize">{engineStatus[active]}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -292,67 +222,39 @@ export function QuadEngineShell() {
           </div>
         </header>
 
-        {/* Engine panels — all mounted simultaneously, CSS shows/hides */}
+        {/* Engine panels — native components, CSS shows/hides */}
         <div className="relative flex-1 overflow-hidden">
 
-          {/* Theia Code Editor */}
+          {/* Code Editor (WebContainer) */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === 'code' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={theiaRef}
-              src={THEIA_SRC}
-              title="Theia Code Editor"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, code: 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, code: 'error' }))}
-            />
+            <WonderSpaceIDE />
           </div>
 
-          {/* WebGL Studio */}
+          {/* WebGL Studio (native mount) */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === 'webgls' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={webglsRef}
-              src={WEBGLS_SRC}
-              title="WebGL Studio Editor"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write; xr-spatial-tracking"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, webgls: 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, webgls: 'error' }))}
+            <WebGLStudioHost
+              onReady={() => handleEngineReady('webgls')}
+              onError={() => handleEngineError('webgls')}
             />
           </div>
 
-          {/* PlayCanvas 3D */}
+          {/* PlayCanvas 3D (native canvas) */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={pcRef}
-              src={PLAYCANVAS_SRC}
-              title="PlayCanvas 3D Editor"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write; xr-spatial-tracking"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, '3d': 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, '3d': 'error' }))}
+            <PlayCanvasViewer
+              onSceneReady={() => handleEngineReady('3d')}
             />
           </div>
 
           {/* Puck UI Builder */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === 'ui' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <iframe
-              ref={puckRef}
-              src={PUCK_SRC}
-              title="Puck UI Builder"
-              className="h-full w-full border-0"
-              allow="fullscreen; clipboard-read; clipboard-write"
-              onLoad={() => setBridgeStatus(prev => ({ ...prev, ui: 'ready' }))}
-              onError={() => setBridgeStatus(prev => ({ ...prev, ui: 'error' }))}
-            />
+            <PuckUIEngine />
           </div>
         </div>
       </div>
 
-      {/* ── AI COMMAND CENTER (right drawer) ───────────────────────────── */}
+      {/* AI COMMAND CENTER */}
       {cmdOpen && (
         <aside className="z-40 flex w-72 shrink-0 flex-col border-l border-white/10 bg-black/95 backdrop-blur">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-violet-400">AI Command</p>
@@ -370,7 +272,6 @@ export function QuadEngineShell() {
             </button>
           </div>
 
-          {/* What the AI will do */}
           <div className="border-b border-white/10 px-4 py-3">
             <div className={`rounded-lg border px-3 py-2 ${activeEngine.accentBorder}`}>
               <p className={`text-[10px] font-bold uppercase tracking-widest ${activeEngine.accentClass}`}>Active target</p>
@@ -378,7 +279,6 @@ export function QuadEngineShell() {
             </div>
           </div>
 
-          {/* Log */}
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
             {cmdLog.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-2 py-10 text-center opacity-40">
@@ -400,13 +300,12 @@ export function QuadEngineShell() {
                     : 'border border-green-500/20 bg-green-500/5 text-green-300'
                 }`}
               >
-                {entry.type === 'user' && <span className="font-mono text-white/30 mr-1">›</span>}
+                {entry.type === 'user' && <span className="font-mono text-white/30 mr-1">&gt;</span>}
                 {entry.text}
               </div>
             ))}
           </div>
 
-          {/* Input */}
           <div className="border-t border-white/10 p-3">
             <textarea
               value={prompt}
@@ -429,18 +328,17 @@ export function QuadEngineShell() {
               disabled={!prompt.trim()}
               className="mt-2 w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 py-2 text-xs font-bold text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              Send to {activeEngine.shortLabel} ↵
+              Send to {activeEngine.shortLabel}
             </button>
-            <p className="mt-1 text-center text-[9px] text-white/20">⌘↵ to send</p>
+            <p className="mt-1 text-center text-[9px] text-white/20">Ctrl+Enter to send</p>
           </div>
         </aside>
       )}
 
-      {/* ── AI CONFESSIONS WINDOW (bottom-right overlay) ───────────────── */}
+      {/* AI CONFESSIONS */}
       {confessionsOpen && (
         <div className="fixed bottom-6 right-6 w-80 max-h-96 z-30 pointer-events-none">
           <div className="tie-dye-border rounded-2xl bg-gradient-to-br from-black/95 via-black/90 to-black/95 backdrop-blur-xl p-4">
-            {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-pulse" />
@@ -456,7 +354,6 @@ export function QuadEngineShell() {
               </button>
             </div>
 
-            {/* Confessions Log */}
             <div className="space-y-2 overflow-y-auto max-h-80">
               {confessions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center opacity-50">
@@ -478,24 +375,22 @@ export function QuadEngineShell() {
                         {new Date(confession.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
-                    <p className="text-white/50 italic leading-relaxed">"{confession.confession}"</p>
+                    <p className="text-white/50 italic leading-relaxed">&quot;{confession.confession}&quot;</p>
                     <div className="mt-2 h-1 rounded-full bg-gradient-to-r from-transparent via-pink-500/40 via-purple-500/40 to-transparent" style={{ width: `${confession.trustScore * 100}%` }} />
                   </div>
                 ))
               )}
             </div>
 
-            {/* Footer */}
             <div className="mt-3 pt-3 border-t border-white/10 text-center">
               <p className="text-[8px] uppercase tracking-widest text-white/30">
-                Non-interactive transparency layer • Real-time AI reasoning
+                Non-interactive transparency layer / Real-time AI reasoning
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confessions toggle (fixed bottom-left) */}
       {!confessionsOpen && (
         <button
           onClick={() => setConfessionsOpen(true)}

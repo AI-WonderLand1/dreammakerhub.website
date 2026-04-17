@@ -1,0 +1,106 @@
+from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, List, Any
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from personas import SpiritGuide, Orchestrator
+from core.api_keys import APIKeyManager
+
+app = FastAPI(
+    title="Wonderland Agent API",
+    description="Dual-Persona AI: Spirit Guide + Orchestrator",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+api_key_manager = APIKeyManager()
+spirit_guide = SpiritGuide(api_key=os.environ.get("GEMINI_API_KEY"))
+orchestrator = Orchestrator(api_key=os.environ.get("GEMINI_API_KEY"))
+
+def get_api_key(x_api_key: str = Header(None)):
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="API key required")
+    result = api_key_manager.validate_key(x_api_key)
+    if not result:
+        raise HTTPException(status_code=401, detail="Invalid or expired API key")
+    return result
+
+class SpiritGuideRequest(BaseModel):
+    question: str
+    user_id: Optional[str] = "seeker"
+
+class OrchestratorRequest(BaseModel):
+    goal: str
+    user_id: Optional[str] = "worker"
+
+class RepoAnalyzeRequest(BaseModel):
+    repo_path: str
+
+class APIKeyCreateRequest(BaseModel):
+    owner: str
+    expires_days: Optional[int] = None
+    rate_limit: Optional[int] = 100
+    permissions: Optional[List[str]] = None
+
+@app.get("/")
+async def root():
+    return {
+        "name": "Wonderland Agent",
+        "personas": ["spirit_guide", "orchestrator"],
+        "status": "online"
+    }
+
+@app.post("/api/spirit-guide/consult")
+async def consult_spirit_guide(request: SpiritGuideRequest, api_info: dict = Depends(get_api_key)):
+    answer = spirit_guide.consult(request.question, request.user_id or "seeker")
+    return {"persona": "spirit_guide", "answer": answer}
+
+@app.post("/api/orchestrator/execute")
+async def orchestrator_execute(request: OrchestratorRequest, api_info: dict = Depends(get_api_key)):
+    answer = orchestrator.execute(request.goal, request.user_id or "worker")
+    return {"persona": "orchestrator", "answer": answer}
+
+@app.post("/api/orchestrator/analyze")
+async def analyze_repo(request: RepoAnalyzeRequest, api_info: dict = Depends(get_api_key)):
+    try:
+        summary = orchestrator.analyze_and_plan(request.repo_path)
+        return {"success": True, "summary": summary}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.get("/api/orchestrator/status")
+async def get_status(user_id: str = "worker", api_info: dict = Depends(get_api_key)):
+    status = orchestrator.get_status(user_id)
+    return {"persona": "orchestrator", "status": status}
+
+@app.post("/api/keys/create")
+async def create_api_key(request: APIKeyCreateRequest):
+    key = api_key_manager.create_key(
+        owner=request.owner,
+        expires_days=request.expires_days,
+        rate_limit=request.rate_limit,
+        permissions=request.permissions
+    )
+    return {"success": True, "api_key": key}
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "spirit_guide": spirit_guide.client is not None,
+        "orchestrator": orchestrator.client is not None
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

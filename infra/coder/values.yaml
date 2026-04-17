@@ -1,0 +1,30 @@
+coder:
+  env:
+    - name: CODER_ACCESS_URL
+      value: "https://coder.dreammakerhub.website"
+    - name: CODER_WILDCARD_ACCESS_URL
+      value: "*.coder.dreammakerhub.website"
+    - name: CODER_DERP_FORCE_WEBSOCKETS
+      value: "true"
+    - name: CODER_SESSION_HOST_PREFIX_COOKIES
+      value: "true"
+
+  tls:
+    secretNames:
+      - coder-tls-secret
+
+  service:
+    type: LoadBalancer
+    annotations:
+      oci.oraclecloud.com/load-balancer-internal: "false"
+      # Add these annotations for SSL at LoadBalancer level
+      oci.oraclecloud.com/load-balancer-policy: "ROUND_ROBIN"
+
+  ingress:
+    enable: false
+
+provisioner:
+  fsGroup: 1000
+
+postgres:
+  enable: true
