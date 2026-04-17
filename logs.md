@@ -181,3 +181,27 @@ console.log(`${pending.thoughts} thoughts, ${pending.changes} changes pending sy
 - `agent/route.ts` - userPrompt property issue
 
 These were pre-existing issues, not from the merge.
+
+
+## Repo Review Report (2026-04-17)
+
+### Scope
+- Reviewed `TODO.md` and previous merge notes.
+- Verified presence of key files/endpoints referenced by TODO and merge notes.
+
+### Findings
+1. **Coder link task appears already implemented in code**
+   - `apps/web/app/ide/page.tsx` includes a Coder card and direct links to `https://coder.dreammakerhub.website`.
+2. **Persona core is already present**
+   - `engine/core/ai/personas.ts` contains `rick`, `spirit_guide`, and `orchestrator` prompts plus AI laws.
+   - `/agent-playground` UI and `/api/agent/playground` route are present.
+3. **Open work remains**
+   - TODO still lists unresolved items for workspace isolation, custom template hardening, confessions system, git panel, temp storage warning, and deploy/preview URLs.
+4. **Known issues from merge notes remain listed as pre-existing**
+   - `SpiritGuide.tsx` missing module, `orchestrator.ts` arg mismatch, `agent/route.ts` userPrompt issue.
+
+### Suggested Next Actions
+1. Update TODO statuses to mark completed items already in code.
+2. Prioritize fixing merge-note known issues before net-new features.
+3. Implement Confessions System skeleton (types + one pipeline integration).
+4. Continue Coder isolation/template hardening work.
