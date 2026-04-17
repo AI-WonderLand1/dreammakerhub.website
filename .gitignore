@@ -30,3 +30,6 @@ Archive/
 Saved/
 Intermediate/
 DerivedDataCache/
+agent/venv/
+__pycache__/
+*.pyc
