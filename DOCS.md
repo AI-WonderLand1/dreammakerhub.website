@@ -149,7 +149,7 @@ Full lifecycle from local dev to production:
 
 ### Phase 5: Deployment
 - Build: `npm run build`
-- Deploy to Vercel: `vercel deploy`
+- Deploy to your Oracle host (no Vercel): see `docs/guides/oracle-no-vercel-deployment.md`
 - Verify smoke tests: `scripts/smoke.sh`
 
 ### Phase 6: Monitoring
@@ -282,11 +282,9 @@ scripts/release-gates-check.sh  # Release gate validation
 4. No hardcoded secrets in code
 5. Environment variables documented in `.env.example`
 
-### Deploy to Vercel
+### Deploy to Oracle (No Vercel)
 
-```bash
-vercel deploy --prod
-```
+Follow: `docs/guides/oracle-no-vercel-deployment.md`
 
 ### OCI Kubernetes (OKE) — Coder Workspaces
 

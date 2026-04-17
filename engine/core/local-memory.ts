@@ -155,7 +155,6 @@ class LocalMemoryService {
       const store = tx.objectStore(STORE_CHANGES);
       const index = store.index("synced");
       const request = index.getAll(IDBKeyRange.only(false));
-      const results: PendingChange[] = [];
 
       request.onsuccess = () => {
         resolve(request.result);
