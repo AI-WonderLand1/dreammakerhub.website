@@ -17,7 +17,7 @@ provider "coder" {
 
 provider "kubernetes" {
   config_path = "~/.kube/config"
-  insecure    = true
+  insecure    = false
 }
 
 data "coder_provisioner" "me" {}
