@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "swarm:unreal": "node scripts/swarm/run-unreal-stack.mjs",
     "registry:sync": "node scripts/registry/sync-assets.mjs",
-    "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run"
+    "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run",
+    "lint": "eslint . --ext .js,.ts,.tsx --fix",
+    "clean:ghosts": "npx ts-prune && npm run lint"
   },
   "devDependencies": {
     "@next/swc-linux-x64-gnu": "^16.1.6",
