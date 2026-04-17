@@ -94,10 +94,84 @@ AGENT_API_KEY=  # Optional, for auth
 
 ---
 
-## Disk Space Status
-- Before: 69% full (6.3G free)
-- After: 69% full
-- No significant change
+## BUILD LOG - Thin TS / Heavy Python Architecture
+
+### Date: 2026-04-16 (Continued)
+
+### Philosophy
+- TypeScript = Nervous System (UI, IndexedDB, orchestration)
+- Python = Deep Brain (Memory, Analysis, Personas)
+
+### Files Created
+
+#### 1. engine/core/alice-proxy.ts
+- **Purpose**: TypeScript wrapper for Python FastAPI
+- **Role**: "Remote Brain" interface
+- **Methods**:
+  - `consult(question)` → Spirit Guide
+  - `execute(goal)` → Orchestrator
+  - `analyzeRepo(path)` → Repo analysis
+  - `storeMemory()` / `recallMemory()` → Memory ops
+  - `isOnline()` → Health check
+- **Usage**: Import and call like local functions
+
+#### 2. engine/core/local-memory.ts
+- **Purpose**: IndexedDB service for short-term session state
+- **Role**: "Short-term Memory" (instant, browser-local)
+- **Stores**:
+  - `thoughts` - AI conversation context
+  - `pendingChanges` - Code edits, configs
+  - `syncQueue` - Items pending Python sync
+- **Methods**:
+  - `saveThought()`, `getThoughts()`
+  - `savePendingChange()`, `getUnsyncedChanges()`
+  - `markSynced()`, `cleanup()`
+
+#### 3. engine/core/syncGuard.ts
+- **Purpose**: Batches memory writes to Python
+- **Role**: "Shadow Sync" (IndexedDB → Python)
+- **Config**:
+  - `batchSize: 5` - Sync after 5 items
+  - `syncIntervalMs: 30000` - Or every 30 seconds
+- **Methods**:
+  - `start()`, `stop()`
+  - `queueThought()`, `queueChange()`
+  - `forceSync()`, `getPendingCount()`
+
+### Data Flow
+```
+Browser Action
+     ↓
+IndexedDB (instant save) ← localMemory
+     ↓
+SyncGuard (batches)
+     ↓
+Python Memory Bank (persistent)
+```
+
+### Usage Example
+```typescript
+import { alice } from '@/core/alice-proxy';
+import { syncGuard } from '@/core/syncGuard';
+import { localMemory } from '@/core/local-memory';
+
+// Start sync guard on app init
+await syncGuard.start();
+
+// User chats with Spirit Guide
+const wisdom = await alice.consult("What path should I take?");
+// Also save locally for instant recall
+await syncGuard.queueThought("User asked about paths", "spirit_guide");
+
+// Check pending syncs
+const pending = await syncGuard.getPendingCount();
+console.log(`${pending.thoughts} thoughts, ${pending.changes} changes pending sync`);
+```
+
+### Disk Space
+- Before: 69% (6.3G free)
+- After: 70% (6.1G free)
+- Change: +1% used (small footprint, TS files only)
 
 ---
 
