@@ -19,7 +19,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Visual Editor:** Puck (drag-and-drop page builder)
 - **AI:** OpenRouter, Groq, GitHub Models
 - **Infrastructure:** OCI Kubernetes (OKE), Coder (cloud IDE)
-- **Deployment:** Vercel
+- **Deployment:** Self-hosted (Oracle Cloud VM / OKE)
 
 ## Project Structure
 
@@ -54,6 +54,11 @@ See `.env.example` for all configuration including:
 ## Full Documentation
 
 See [DOCS.md](./DOCS.md) for architecture, integration guides, deployment, security, and troubleshooting.
+## Deployment (No Vercel)
+
+If you are hosting on Oracle and using Supabase, use:
+- [docs/guides/oracle-no-vercel-deployment.md](./docs/guides/oracle-no-vercel-deployment.md)
+
 
 ## Contributing
 
