@@ -31,10 +31,60 @@ function getRateLimitMax(path: string): number {
   return RATE_LIMIT_MAX.default;
 }
 
-export function middleware(req: NextRequest) {
+function normalizeHost(raw: string | null): string {
+  if (!raw) return "";
+  const value = raw.trim().toLowerCase();
+  return value.includes(":") ? value.split(":")[0] : value;
+}
+
+function isLocalHost(host: string): boolean {
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+async function resolveCustomDomain(req: NextRequest) {
+  const host = normalizeHost(req.headers.get("host"));
+  if (!host || isLocalHost(host)) {
+    return null;
+  }
+
+  const lookupUrl = req.nextUrl.clone();
+  lookupUrl.pathname = "/api/domains/resolve";
+  lookupUrl.search = "";
+  lookupUrl.searchParams.set("host", host);
+  lookupUrl.searchParams.set("path", req.nextUrl.pathname);
+
+  if (req.nextUrl.search) {
+    lookupUrl.searchParams.set("query", req.nextUrl.search);
+  }
+
+  const response = await fetch(lookupUrl, {
+    headers: {
+      cookie: req.headers.get("cookie") ?? "",
+    },
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    return null;
+  }
+
+  const data = await response.json().catch(() => null);
+  if (!data?.ok || typeof data.path !== "string") {
+    return null;
+  }
+
+  const rewriteUrl = req.nextUrl.clone();
+  rewriteUrl.pathname = data.path;
+  return rewriteUrl;
+}
+
+export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   if (!path.startsWith("/api/")) {
+    const rewriteUrl = await resolveCustomDomain(req);
+    if (rewriteUrl) {
+      return NextResponse.rewrite(rewriteUrl);
+    }
     return NextResponse.next();
   }
 
@@ -61,5 +111,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/:path*",
+  matcher: "/:path*",
 };
