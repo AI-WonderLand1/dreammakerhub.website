@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { WebContainerManager, TerminalEmulator, type FileNode } from "../../../../packages/ide-engine/src";
+import { WebContainerManager, TerminalEmulator, type FileNode } from "@wonderspace/ide-engine";
 import "@xterm/xterm/css/xterm.css";
 
 const wcManager = new WebContainerManager();
