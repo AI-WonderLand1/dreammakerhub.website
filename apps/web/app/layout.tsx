@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./(builder)/wonder-build/wonder-build.css";
 
+import { Suspense } from "react";
 import { AuthProvider } from "@lib/supabase/auth-context";
 import { BuilderProvider } from "@/app/(builder)/wonder-build/context/BuilderContext";
 import { AccessibilityProvider } from "@/lib/accessibility-context";
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <BuilderNavDropdown />
                 </div>
               </div>
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>}>
               {children}
+            </Suspense>
               <UniversalAIAssistant 
                 position="bottom-right"
                 theme="dark"
