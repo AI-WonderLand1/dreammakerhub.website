@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { WebContainerManager, TerminalEmulator, WebContainerPersistence, type FileNode } from '../../../packages/ide-engine/src';
+import { WebContainerManager, TerminalEmulator, WebContainerPersistence, type FileNode } from '@wonderspace/ide-engine';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import '@xterm/xterm/css/xterm.css';

@@ -1,14 +1,19 @@
 /** @type {import('next').NextConfig} */
 const isDev = process.env.NODE_ENV === 'development';
-const proxyBasePath = '/cc-QMRU-C7DE2BA6/proxy/5000';
+const proxyBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
+const normalizedProxyBasePath =
+  proxyBasePath && proxyBasePath !== '/' ? proxyBasePath.replace(/\/+$/, '') : '';
+
 const nextConfig = {
   reactStrictMode: true,
 
-  // Azure proxy configuration (only active outside local development)
-  ...(isDev ? {} : {
-    basePath: proxyBasePath,
-    assetPrefix: proxyBasePath,
-  }),
+  // Only enable a non-root base path when the deployment explicitly requires it.
+  ...(!isDev && normalizedProxyBasePath
+    ? {
+        basePath: normalizedProxyBasePath,
+        assetPrefix: normalizedProxyBasePath,
+      }
+    : {}),
 
   allowedDevOrigins: ["*.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.worf.replit.dev", "*.repl.co"],
 
@@ -22,10 +27,6 @@ const nextConfig = {
 
   images: {
     unoptimized: true,
-  },
-
-  eslint: {
-    ignoreDuringBuilds: false,
   },
 
   typescript: {
