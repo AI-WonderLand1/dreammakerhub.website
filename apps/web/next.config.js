@@ -21,8 +21,8 @@ const nextConfig = {
     externalDir: true,
   },
 
-  // turbopack disabled — webpack used for production builds to avoid parser issues
-  // turbopack: {},
+  // Use webpack for production builds
+  turbopack: {},
 
   transpilePackages: ["@react-three/fiber", "@react-three/drei", "three", "@wonderspace/ide-engine"],
 
@@ -34,11 +34,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  // WebGL & Heavy Module Configuration
+  // Headers for WebGL & Cross-Origin & Security
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Client-side chunking strategy for better performance
