@@ -25,7 +25,7 @@ const { port, source } = await selectDevPort({
 });
 
 if (source === 'auto-fallback') {
-  // eslint-disable-next-line no-console
+   
   console.log(`[ai-wonder-web] Port 9002 is in use, starting on available port ${port}.`);
 }
 

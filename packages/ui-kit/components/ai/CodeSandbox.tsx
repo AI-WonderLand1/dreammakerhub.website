@@ -8,6 +8,6 @@ export const CodeSandbox: React.FC = () => (
       <span>Code</span>
       <Button variant="secondary" size="sm">Run</Button>
     </div>
-    <pre className="overflow-x-auto"><code>// AI generated code here...</code></pre>
+    <pre className="overflow-x-auto"><code>{'// AI generated code here...'}</code></pre>
   </div>
 );
