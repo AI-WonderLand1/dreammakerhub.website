@@ -1,9 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useEffect, useRef, useState, useCallback } from "react";
-import dynamic from "next/dynamic";
+import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { WebContainerManager, TerminalEmulator, type FileNode } from "@wonderspace/ide-engine";
 import "@xterm/xterm/css/xterm.css";
