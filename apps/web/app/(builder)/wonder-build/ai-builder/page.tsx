@@ -226,7 +226,7 @@ export default function AIBuilderPage() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT PANEL — Controls + Agent Log (Scrollable) */}
+        {/* LEFT PANEL: Controls + Agent Log */}
         <div className="w-[380px] min-w-[320px] border-r border-white/10 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 flex flex-col gap-6">
@@ -372,7 +372,7 @@ export default function AIBuilderPage() {
           </div>
         </div>
 
-        {/* RIGHT PANELS — Preview (bigger, middle) + Code (smaller, right) */}
+        {/* RIGHT PANELS: Preview + Code */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {result ? (
             <>
@@ -482,7 +482,7 @@ export default function AIBuilderPage() {
                   </div>
                   <div>
                     <p className="text-white/80 font-semibold">Agents are building…</p>
-                    <p className="text-white/30 text-sm mt-1">This takes about 20–40 seconds</p>
+                    <p className="text-white/30 text-sm mt-1">This takes about 20-40 seconds</p>
                   </div>
                 </div>
               ) : (
@@ -492,7 +492,7 @@ export default function AIBuilderPage() {
                     AI Wonder Build
                   </h2>
                   <p className="text-white/40 text-sm leading-relaxed mb-6">
-                    Describe what you want to build. Three AI agents will collaborate — an Architect to plan, a Builder to code, and a Reviewer to polish — then your creation appears live.
+                    Describe what you want to build. Three AI agents will collaborate -- an Architect to plan, a Builder to code, and a Reviewer to polish -- then your creation appears live.
                   </p>
                   <div className="grid grid-cols-3 gap-3">
                     {TYPE_OPTIONS.map((opt) => (
