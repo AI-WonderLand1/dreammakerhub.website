@@ -1,4 +1,9 @@
-import Dockerode from 'dockerode';
+let Dockerode: any = null;
+try {
+  Dockerode = require('dockerode');
+} catch {
+  // dockerode not installed - workspace provisioning will run in mock mode
+}
 
 export type WorkspaceType = 'ide' | 'playcanvas' | 'full';
 
@@ -32,21 +37,22 @@ const WORKSPACE_IMAGE = process.env.WORKSPACE_DOCKER_IMAGE || 'wonderspace/works
 const WORKSPACE_NETWORK = process.env.WORKSPACE_DOCKER_NETWORK || 'wonderspace';
 const WORKSPACE_DOMAIN = process.env.WORKSPACE_DOMAIN || 'localhost';
 
-let dockerInstance: Dockerode | null = null;
+let dockerInstance: any = null;
 
-function getDocker(): Dockerode {
+function getDocker(): any {
+  if (!Dockerode) return null;
   if (!dockerInstance) {
     dockerInstance = new Dockerode({
       socketPath: process.env.DOCKER_SOCKET || '/var/run/docker.sock',
-      host: process.env.DOCKER_HOST || undefined as any,
-      port: process.env.DOCKER_PORT ? parseInt(process.env.DOCKER_PORT) : undefined as any,
+      host: process.env.DOCKER_HOST || undefined,
+      port: process.env.DOCKER_PORT ? parseInt(process.env.DOCKER_PORT) : undefined,
     });
   }
   return dockerInstance;
 }
 
 function isDockerAvailable(): boolean {
-  return !!(process.env.DOCKER_HOST || process.env.DOCKER_SOCKET);
+  return !!(Dockerode && (process.env.DOCKER_HOST || process.env.DOCKER_SOCKET));
 }
 
 export function getWorkspaceUrls(workspaceId: string): { ide: string; playcanvas: string; webglStudio: string } {
@@ -162,7 +168,7 @@ export async function provisionWorkspace(config: WorkspaceConfig): Promise<Works
   }
 }
 
-async function ensureNetwork(docker: Dockerode): Promise<void> {
+async function ensureNetwork(docker: any): Promise<void> {
   try {
     await docker.getNetwork(WORKSPACE_NETWORK).inspect();
   } catch {
@@ -176,9 +182,7 @@ async function ensureNetwork(docker: Dockerode): Promise<void> {
 
 export async function stopWorkspace(workspaceId: string): Promise<boolean> {
   if (!isDockerAvailable()) return true;
-
   const docker = getDocker();
-
   try {
     const container = docker.getContainer(`ws-${workspaceId}`);
     await container.stop();
@@ -191,9 +195,7 @@ export async function stopWorkspace(workspaceId: string): Promise<boolean> {
 
 export async function startWorkspace(workspaceId: string): Promise<boolean> {
   if (!isDockerAvailable()) return true;
-
   const docker = getDocker();
-
   try {
     const container = docker.getContainer(`ws-${workspaceId}`);
     await container.start();
@@ -206,9 +208,7 @@ export async function startWorkspace(workspaceId: string): Promise<boolean> {
 
 export async function terminateWorkspace(workspaceId: string): Promise<boolean> {
   if (!isDockerAvailable()) return true;
-
   const docker = getDocker();
-
   try {
     const container = docker.getContainer(`ws-${workspaceId}`);
     await container.stop();
@@ -270,7 +270,6 @@ export async function getWorkspaceStatus(workspaceId: string): Promise<Workspace
 
 export async function listUserWorkspaces(userId: string): Promise<WorkspaceInfo[]> {
   if (!isDockerAvailable()) return [];
-
   const docker = getDocker();
 
   try {
@@ -281,7 +280,7 @@ export async function listUserWorkspaces(userId: string): Promise<WorkspaceInfo[
       },
     });
 
-    return containers.map((c) => {
+    return containers.map((c: any) => {
       const workspaceId = c.Labels?.['wonderspace.workspace.id'] || '';
       const urls = getWorkspaceUrls(workspaceId);
       return {

@@ -29,3 +29,8 @@ export const AVAILABLE_3D_ASSETS = [
 export const getAiAssetContext = () => {
   return JSON.stringify(AVAILABLE_3D_ASSETS);
 };
+
+export async function uploadAiAssetEntry(entry: { id: string; name: string; path: string; tags: string[]; description: string }) {
+  AVAILABLE_3D_ASSETS.push(entry);
+  return { success: true, entry };
+}

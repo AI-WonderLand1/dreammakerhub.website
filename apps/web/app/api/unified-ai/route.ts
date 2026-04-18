@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
-import { getSmokeUserIdFromRequest } from '@lib/smokeAuth';
+import { createClient } from '@/app/utils/supabase/server';
+import { getSmokeUserIdFromRequest } from '@/lib/smokeAuth';
 
 // Validation schema
 const UnifiedAIRequestSchema = z.object({
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     // Validate authentication
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     const smokeUserId = getSmokeUserIdFromRequest(req);
 
