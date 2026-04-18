@@ -93,7 +93,7 @@ function createSandbox(permissions: string[], extensionId: string) {
             value: JSON.stringify(value)
           })
       }
-    `
+    }
     
     // Execute with timeout
     const result = context.evalCode(wrappedCode, {
