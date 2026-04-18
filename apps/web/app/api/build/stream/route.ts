@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { manifestVisualBlock } from "../../../../../../engine/core/ai/bridge";
+import { manifestVisualBlock } from "@core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
+
+const BuildRequestSchema = z.object({
+  prompt: z.string().min(1),
+  type: z.enum(["website", "game", "component", "playcanvas", "wonderspace"]).default("website"),
+  save: z.boolean().default(false),
+  fileName: z.string().optional(),
+});
+
+const MAX_STREAM_DURATION_MS = 120_000;
+const MAX_OUTPUT_SIZE_KB = 512;
 
 const WEBSITE_SYSTEM = `You are an elite frontend engineer. Build a COMPLETE, visually stunning single-page website.
 Rules:
@@ -180,28 +190,16 @@ export async function POST(req: NextRequest) {
 
   const isPaid = user?.isPaid ?? false;
   const encoder = new TextEncoder();
+  const { prompt, type, save, fileName } = body;
   const typeLabel = getTypeLabel(type);
+  let totalOutputSize = 0;
 
   const startTime = Date.now();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: string, data: object) => {
-        // Check stream timeout
-        if (Date.now() - startTime > MAX_STREAM_DURATION_MS) {
-          send("error", { message: "Build timeout - took too long" });
-          controller.close();
-          return;
-        }
-
-        // Track output size
         const dataStr = JSON.stringify(data);
         totalOutputSize += dataStr.length;
-        if (totalOutputSize > MAX_OUTPUT_SIZE_KB * 1024) {
-          send("error", { message: "Output too large" });
-          controller.close();
-          return;
-        }
-
         controller.enqueue(encoder.encode(sse(event, data)));
       };
 

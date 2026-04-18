@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { runModel } from '@/engine/core/ai/runModel';
-import { buildClassificationPrompt } from '@/engine/core/ai/promptBuilder';
+import { runModel } from '@core/ai/runModel';
+import { buildClassificationPrompt } from '@core/ai/promptBuilder';
 
 const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
   if (mode === 'classify') {
     const classificationPrompt = buildClassificationPrompt(prompt);
-    const result = await runModel({ prompt: classificationPrompt });
+    const result = await runModel({ model: 'github/gpt-4o-mini', messages: [{ role: 'user', content: classificationPrompt }] });
     
     // Rick: We're parsing the AI's garbage output. Better be JSON or I'm out.
     try {
