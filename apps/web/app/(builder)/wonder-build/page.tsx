@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { SovereignOSProvider, useSovereignOS } from './context/SovereignOSContext';
 import { SovereignNavBar } from './components/SovereignNavBar';
 import { AgentPanel } from './components/AgentPanel';
@@ -35,8 +36,10 @@ function SovereignOSShell() {
 
 export default function WonderBuildPage() {
   return (
-    <SovereignOSProvider>
-      <SovereignOSShell />
-    </SovereignOSProvider>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-white">Loading Wonder Build...</div>}>
+      <SovereignOSProvider>
+        <SovereignOSShell />
+      </SovereignOSProvider>
+    </Suspense>
   );
 }
