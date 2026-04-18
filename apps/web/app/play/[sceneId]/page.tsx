@@ -147,14 +147,15 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
       scene.objects.forEach((obj: any) => {
         const entity = new pc.Entity(obj.name || "object")
         
-        let primitiveType = pc.PRIMITIVE_TRIANGLES
+        let primitiveType: string = "box"
         switch (obj.type) {
-          case "box": primitiveType = pc.PRIMITIVE_BOX; break
-          case "sphere": primitiveType = pc.PRIMITIVE_SPHERE; break
-          case "cylinder": primitiveType = pc.PRIMITIVE_CYLINDER; break
-          case "plane": primitiveType = pc.PRIMITIVE_PLANE; break
-          case "capsule": primitiveType = pc.PRIMITIVE_CAPSULE; break
-          case "cone": primitiveType = pc.PRIMITIVE_CONE; break
+          case "box": primitiveType = "box"; break
+          case "sphere": primitiveType = "sphere"; break
+          case "cylinder": primitiveType = "cylinder"; break
+          case "plane": primitiveType = "plane"; break
+          case "capsule": primitiveType = "capsule"; break
+          case "cone": primitiveType = "cone"; break
+          case "torus": primitiveType = "torus"; break
         }
         
         entity.addComponent("render", { type: primitiveType })
