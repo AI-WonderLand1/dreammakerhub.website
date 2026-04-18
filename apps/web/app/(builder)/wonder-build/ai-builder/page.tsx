@@ -65,6 +65,7 @@ export default function AIBuilderPage() {
   const [running, setRunning] = useState(false);
   const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const acceptToPuck = useCallback(() => {
