@@ -19,21 +19,26 @@
     "swarm:unreal": "node scripts/swarm/run-unreal-stack.mjs",
     "registry:sync": "node scripts/registry/sync-assets.mjs",
     "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run",
-    "lint": "eslint . --ext .js,.ts,.tsx --fix",
+    "lint": "eslint engine/ packages/ runners/ --ext .js,.ts,.tsx --fix",
     "clean:ghosts": "npx ts-prune && npm run lint"
   },
   "devDependencies": {
     "@next/swc-linux-x64-gnu": "^16.2.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "eslint": "^8.57.1",
     "jsdom": "^29.0.2",
     "lodash-es": "^4.18.1",
+    "typescript-eslint": "^8.58.2",
     "undici": "^8.1.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.3"
   },
   "dependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@tiptap/extension-superscript": "^3.20.4",
-    "axios": "^1.15.0"
-  }
+    "axios": "^1.15.0",
+    "eslint-config-next": "^14.2.25"
+  },
+  "type": "module"
 }
