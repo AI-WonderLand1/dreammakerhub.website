@@ -1,0 +1,11 @@
+name: CodeQL Config
+
+# Scope CodeQL analysis to maintained source code.
+# Excludes generated and vendored third-party bundles that produce noisy alerts.
+paths-ignore:
+  - docs/api/**
+  - docs/assets/**
+  - apps/web/public/webglstudio/**
+  - apps/web/public/Wonder-build/**
+  - apps/web/public/playcanvas/**
+  - wonderplay/**
