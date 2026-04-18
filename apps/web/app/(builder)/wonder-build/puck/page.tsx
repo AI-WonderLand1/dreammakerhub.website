@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { PageHeader } from "@/app/components/layout/PageHeader";
@@ -31,7 +32,9 @@ export default async function WonderBuildPuckPage() {
       />
       <Topbar />
       <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-        <PuckEditorClient initialData={initialData} />
+        <Suspense fallback={<div className="text-white/50 text-center py-8">Loading Puck editor...</div>}>
+          <PuckEditorClient initialData={initialData} />
+        </Suspense>
       </div>
     </div>
   );
