@@ -1,23 +1,15 @@
-import { emitProcessStep } from './index.ts/runtime/statusStream';
-
-/**
- * Orchestrator: The brain that actually works, unlike yours. *burp*
- * This module now strictly handles agent-based runner delegation.
- */
 export class Orchestrator {
   async generateAndSaveProject(input: any) {
-    emitProcessStep('INITIALIZING_AGENT_SWARM', 'Rick-grade agents are waking up.');
-    
-    // What: Routing build tasks directly to runners instead of Unreal fallbacks.
-    // How: Using the build/stream pipeline to trigger remote agent-runners.
-    // Why: Because Unreal was a bloated mistake that even a Jerry would find slow.
-    const runnerResponse = await fetch('/api/build/stream', {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+    const runnerResponse = await fetch(`${baseUrl}/api/build/stream`, {
       method: 'POST',
-      body: JSON.stringify({ 
-        type: 'AGENT_BUILD', 
-        payload: input, 
-        agentId: 'WonderBuild-Prime' 
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'AGENT_BUILD',
+        payload: input,
+        agentId: 'WonderBuild-Prime',
+      }),
     });
 
     if (!runnerResponse.ok) {
@@ -26,4 +18,9 @@ export class Orchestrator {
 
     return runnerResponse.json();
   }
+}
+
+export async function generateAndSaveProject(input: any) {
+  const orchestrator = new Orchestrator();
+  return orchestrator.generateAndSaveProject(input);
 }

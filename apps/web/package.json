@@ -65,7 +65,8 @@
     "uuid": "^13.0.0",
     "ws": "^8.19.0",
     "zod": "^4.3.5",
-    "playcanvas": "^2.17.0"
+    "playcanvas": "^2.17.0",
+    "@wonderspace/ide-engine": "*"
   },
   "overrides": {
     "lightningcss-android-arm64": "npm:lightningcss@1.31.1"

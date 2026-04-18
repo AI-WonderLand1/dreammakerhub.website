@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callOpenRouter } from "../build/stream/route";
 
 export const runtime = "nodejs";
 
@@ -24,6 +23,41 @@ Guidelines:
 - When users want to connect their own storage, guide them to /settings/cloud-storage
 - Keep responses concise but informative`;
 
+async function callGithubAI(system: string, userPrompt: string): Promise<string> {
+  const apiKey = process.env.GITHUB_MODELS_API_KEY;
+  if (!apiKey) {
+    return "I'm here to help! Please describe what you'd like to build or ask any questions about the Wonderland platform.";
+  }
+
+  try {
+    const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024,
+      }),
+    });
+
+    if (!res.ok) {
+      return "I'm having trouble connecting right now. Please try again in a moment.";
+    }
+
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
+  } catch {
+    return "I'm having trouble connecting right now. Please try again in a moment.";
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { message, history } = await req.json();
@@ -35,25 +69,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build conversation history
     const conversationHistory = history?.slice(-10).map((msg: any) => ({
       role: msg.role === "user" ? "user" : "assistant",
       content: msg.content
     })) || [];
 
-    // Check if user wants to create a 3D scene
     const createKeywords = ["create", "make", "build", "generate", "design", "3d", "scene", "game", "world"];
     const isCreateRequest = createKeywords.some(kw => message.toLowerCase().includes(kw));
 
-    // Build the full prompt
     const fullPrompt = conversationHistory.length > 0
       ? `Previous conversation:\n${conversationHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\nUser: ${message}`
       : message;
 
-    const response = await callOpenRouter(
-      SPIRIT_GUIDE_SYSTEM,
-      fullPrompt
-    );
+    const response = await callGithubAI(SPIRIT_GUIDE_SYSTEM, fullPrompt);
 
     return NextResponse.json({
       response: response.trim(),
