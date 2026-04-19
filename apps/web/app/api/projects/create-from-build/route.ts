@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 import { convertHtmlToPuck } from "@/lib/html-to-puck";
+import { CoderIntegration } from "@/lib/coder/integration";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,15 @@ export async function POST(req: NextRequest) {
     const projectId = `wb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const projectName = name || (prompt ? prompt.slice(0, 50) : `AI Build ${new Date().toLocaleDateString()}`);
 
+    // Provision private Coder workspace for this user
+    const coder = new CoderIntegration();
+    const { ideUrl } = await coder.provisionIDEForProject(
+      user.id,
+      projectName,
+      code
+    );
+
+    // Also save to Puck for fallback
     let content;
     
     if (type === "website" || type === "component") {
@@ -59,6 +69,7 @@ export async function POST(req: NextRequest) {
           prompt: prompt?.slice(0, 500),
           generatedAt: new Date().toISOString(),
           rawHtml: code.slice(0, 50000),
+          coderWorkspaceUrl: ideUrl,
         },
         storage_type: "temp",
         temp_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -73,23 +84,27 @@ export async function POST(req: NextRequest) {
       
       return NextResponse.json({
         projectId,
-        url: `/wonder-build/puck?project=${projectId}`,
+        url: ideUrl, // Redirect to Coder workspace
         content,
-        message: "Project created (local storage fallback)",
+        message: "Project created with private IDE workspace",
       });
     }
 
     return NextResponse.json({
       ok: true,
       projectId,
-      url: `/wonder-build/puck?project=${projectId}`,
+      url: ideUrl, // Redirect to Coder workspace
       content,
+      message: "Your private IDE workspace is ready!",
     });
   } catch (error) {
     console.error("[CreateFromBuild] Error:", error);
-    return NextResponse.json(
-      { error: String(error) },
-      { status: 500 }
-    );
+    
+    // Fallback to Puck editor if Coder fails
+    return NextResponse.json({
+      projectId: `wb-${Date.now().toString(36)}`,
+      url: `/wonder-build/puck?project=fallback`,
+      message: "Using fallback editor (Coder workspace creation failed)",
+    });
   }
 }
