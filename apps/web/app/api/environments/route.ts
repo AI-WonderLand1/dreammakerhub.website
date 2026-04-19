@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabase-service'
 import { provisionWorkspace, terminateWorkspace, getWorkspaceStatus, listUserWorkspaces, getWorkspaceUrls } from '@/lib/workspace'
 import type { WorkspaceType } from '@/lib/workspace'
 
+// Mark this route as dynamic to prevent static generation during build
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // Validation schemas
 const CreateEnvironmentSchema = z.object({
   projectId: z.string().max(100).optional(),

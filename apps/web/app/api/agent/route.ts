@@ -4,6 +4,9 @@ import { runModel } from "../../../../../engine/core/ai/runModel";
 import { manifestVisualBlock } from "../../../../../engine/core/ai/bridge";
 import { logger } from "@/lib/logger";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Validation schema for agent requests
 const AgentRequestSchema = z.object({
   agent: z.enum(["builder", "designer", "debugger"]).default("builder"),

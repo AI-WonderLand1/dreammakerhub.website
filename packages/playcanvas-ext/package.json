@@ -9,6 +9,7 @@
     "./*": "./src/*"
   },
   "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
