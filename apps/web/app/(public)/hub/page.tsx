@@ -179,7 +179,8 @@ export default function HubPage() {
           >
             <div className="text-5xl">🎮</div>
             <h3 className="text-lg font-semibold text-white">Blank Game Scene</h3>
-            <p className="text-white/40 text-sm">Start fresh in PlayCanvas</p>
+            <p className="text-white/40 text-sm">Start in PlayCanvas Bridge</p>
+            <p className="text-xs text-white/20">(Embedded editor)</p>
           </button>
         </div>
       </div>
