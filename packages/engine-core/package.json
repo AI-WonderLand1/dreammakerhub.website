@@ -9,7 +9,9 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "build": "echo \"TypeScript package - no build needed\"",
+    "typecheck": "tsc --noEmit",
+    "build": "echo 'TypeScript package - no build needed'"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

@@ -64,8 +64,8 @@ function PlayCanvasInner() {
       <ToastStack toasts={toasts} />
       <PageHeader
         lead={<Breadcrumbs items={[{ href: "/wonder-build", label: "Wonder Build" }, { label: "WonderPlay" }]} />}
-        title="WonderPlay Bridge"
-        subtitle="Open and validate your PlayCanvas scene in a dedicated builder route with graceful loading and failure states."
+        title="PlayCanvas Bridge"
+        subtitle="Embedded PlayCanvas editor. Use the button below to open PlayCanvas Studio in a new tab if embedding doesn't work."
         action={null}
       />
 
