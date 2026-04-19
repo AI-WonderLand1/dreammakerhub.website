@@ -1,7 +1,7 @@
-import { getQuickJS, QuickJSContext } from 'quickjs-emscripten'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { env, requireEnv } from '@lib/env'
+import { VM } from 'vm2'
 
 let supabase: ReturnType<typeof createClient> | null = null
 let quickJSInstance: Awaited<ReturnType<typeof getQuickJS>> | null = null
@@ -94,29 +94,9 @@ function createSandbox(permissions: string[], extensionId: string) {
           })
       }
     }
-    
-    // Execute with timeout
-    const result = context.evalCode(wrappedCode, {
-      memoryLimitBytes: 128 * 1024 * 1024, // 128MB memory limit
-      shouldInterruptAfterDeadline: Date.now() + 5000, // 5 second timeout
-    })
-    
-    if (result.error) {
-      const errorMsg = context.getString(result.error)
-      result.error.dispose()
-      throw new Error(`Extension execution error: ${errorMsg}`)
-    }
-    
-    // Convert result to native JS object
-    // Note: This is simplified - real implementation needs proper handle management
-    const nativeResult = context.dump(result.value)
-    result.value.dispose()
-    
-    return nativeResult
-    
-  } finally {
-    context.dispose()
   }
+  
+  return sandbox
 }
 
 function isInternalUrl(url: string): boolean {

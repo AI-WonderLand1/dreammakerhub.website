@@ -52,6 +52,44 @@ export async function GET() {
       console.log("3d-assets bucket not available");
     }
     
+    // Try to load local template files
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const templatesDir = '/home/dreammakerhub/htdocs/dreammakerhub.website/psychic-octo-fishstick/templates/3d';
+      console.log('Looking for templates in:', templatesDir);
+      
+      if (!fs.existsSync(templatesDir)) {
+        console.log('Templates directory does not exist');
+        throw new Error('Templates directory not found');
+      }
+      
+      const templateFiles = fs.readdirSync(templatesDir).filter(file => file.endsWith('.json'));
+      console.log('Found template files:', templateFiles);
+      
+      const localTemplates = templateFiles.map(file => {
+        const filePath = path.join(templatesDir, file);
+        const sceneData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        
+        return {
+          id: file.replace('.json', ''),
+          name: sceneData.name || file.replace('.json', '').replace(/_/g, ' '),
+          description: sceneData.description || "3D Scene Template",
+          category: sceneData.category || "custom",
+          thumbnail: null,
+          sceneData: sceneData // Include the actual scene data
+        };
+      });
+      
+      if (localTemplates.length > 0) {
+        console.log('Returning local templates:', localTemplates.length);
+        return NextResponse.json({ templates: localTemplates });
+      }
+    } catch (error) {
+      console.log("Local templates not available:", error.message);
+    }
+    
     // Fallback to hardcoded templates
     const defaultTemplates = [
       {

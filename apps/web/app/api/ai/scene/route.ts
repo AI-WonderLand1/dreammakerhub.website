@@ -34,12 +34,14 @@ export async function POST(req: NextRequest) {
   }
 
   const stored = await uploadAiAssetEntry({
+    id: scene.id,
+    name: scene.metadata.name,
+    description: `AI-generated scene: ${prompt}`,
+    tags: ['ai-generated', '3d-scene'],
     userId: paidUser.userId,
-    workspaceId,
-    kind: 'scene',
-    filename: `${scene.id}.json`,
-    contentType: 'application/json',
+    sceneData: scene,
     body: JSON.stringify(scene),
+    contentType: 'application/json',
   })
 
   return NextResponse.json({ ok: true, scene, storage: stored })
