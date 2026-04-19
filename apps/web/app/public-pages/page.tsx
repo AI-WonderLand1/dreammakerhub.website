@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 export default function PagesHub() {
+  // This page serves as the bridge between homepage and PlayCanvas
+  // It's intentionally kept out of public navigation but accessible via direct URL
   const pages = [
     {
       name: "Wonder‑Build",

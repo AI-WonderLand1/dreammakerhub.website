@@ -15,5 +15,5 @@ export { default as PuckUIEngine } from './engines/PuckUIEngine';
 export { default as TheiaIDEEngine } from './engines/TheiaIDEEngine';
 
 // Accessibility exports
-export { AccessibilityOracle } from './AccessibilityOracle';
+export { SpiritGuide } from './SpiritGuide';
 export { VisualTranscript } from './VisualTranscript';
