@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 const BuildRequestSchema = z.object({
   prompt: z.string().min(1),
-  type: z.enum(["website", "game", "component", "playcanvas", "wonderspace"]).default("website"),
+  type: z.enum(["website", "game", "component", "playcanvas", "wonderspace", "3d-assets"]).default("website"),
   save: z.boolean().default(false),
   fileName: z.string().optional(),
 });
@@ -71,6 +71,20 @@ Rules:
 - Add JSDoc comments for all exported functions and components
 - Follow the existing WonderSpace coding conventions
 - Output ONLY the code — no markdown fences, no explanation`;
+
+const ASSETS3D_SYSTEM = `You are an expert web developer specializing in 3D integration. Build websites that embed 3D assets using Three.js.
+Rules:
+- Output a FULL standalone HTML file with embedded CSS and JavaScript
+- Use Three.js via CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+- Include interactive 3D elements: rotating models, animated objects, camera controls
+- Use realistic 3D assets from the WonderSpace library (cubes, spheres, basic shapes)
+- Add smooth animations and user interactions
+- Make the 3D integration seamless and performant
+- Output ONLY the complete HTML — no markdown fences, no explanation
+
+Start your output with <!DOCTYPE html>`;
+
+
 
 const FREE_MODELS = [
   "openai/gpt-oss-120b:free",
@@ -137,6 +151,7 @@ function getSystemPrompt(type: string): string {
     case "component":  return COMPONENT_SYSTEM;
     case "playcanvas": return PLAYCANVAS_SYSTEM;
     case "wonderspace": return WONDERSPACE_SYSTEM;
+    case "3d-assets":  return ASSETS3D_SYSTEM;
     default:           return WEBSITE_SYSTEM;
   }
 }
@@ -147,6 +162,7 @@ function getTypeLabel(type: string): string {
     case "component":  return "UI component";
     case "playcanvas": return "PlayCanvas script";
     case "wonderspace": return "WonderSpace module";
+    case "3d-assets":  return "website with 3D assets";
     default:           return "website";
   }
 }
@@ -159,6 +175,8 @@ function getReviewerSystem(type: string): string {
       return "You are a PlayCanvas expert. Review this pc.Script. Fix any bugs, ensure proper API usage, improve performance. Return ONLY the corrected JavaScript code.";
     case "wonderspace":
       return "You are a senior TypeScript/React engineer. Review this code. Fix type errors, improve patterns, ensure it works. Return ONLY the corrected code.";
+    case "3d-assets":
+      return "You are a senior web developer specializing in 3D integration. Review this website with 3D assets. Fix Three.js integration, improve performance, ensure smooth animations. Return ONLY the complete improved HTML starting with <!DOCTYPE html>.";
     default:
       return "You are a senior frontend engineer. Review this HTML file. Fix issues, enhance visual quality, ensure all interactions work. Return ONLY the complete improved HTML starting with <!DOCTYPE html>.";
   }
@@ -204,10 +222,10 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const tierLabel = isPaid ? "Pro" : "Free";
+        const tierLabel = isPaid ? "Premium" : "Free";
 
         // --- STAGE 1: ARCHITECT ---
-        send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel})` });
+        send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel} Tier)` });
 
         const plan = await callGithubAI(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
@@ -218,7 +236,7 @@ export async function POST(req: NextRequest) {
         send("agent", { stage: "architect", status: "done", label: "Architect Agent", message: plan.slice(0, 300) });
 
         // --- STAGE 2: BUILDER ---
-        send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel})` });
+        send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel} Tier)` });
 
         const rawCode = await callGithubAI(
           getSystemPrompt(type),
@@ -241,10 +259,12 @@ export async function POST(req: NextRequest) {
         let savedPath: string | undefined;
         if (save) {
           send("agent", { stage: "runner", status: "running", label: "Runner Agent", message: "Saving to blocks directory…" });
+          
           const ext = type === "playcanvas" ? "js" : type === "wonderspace" ? "tsx" : "html";
           const safeName = (fileName ?? `${type}-${Date.now()}`).replace(/[^a-z0-9-_]/gi, "-");
           const result = manifestVisualBlock(`${safeName}.${ext}`, finalCode, `AI-generated ${typeLabel} — prompt: "${prompt.slice(0, 80)}"`);
           savedPath = result.path;
+          
           send("agent", { stage: "runner", status: "done", label: "Runner Agent", message: `Saved to blocks/ ✓` });
         }
 

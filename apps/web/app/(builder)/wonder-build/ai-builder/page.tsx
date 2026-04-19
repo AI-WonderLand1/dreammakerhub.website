@@ -4,8 +4,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
+import { AssetLibrary } from "@/components/ai/AssetLibrary";
 
-type BuildType = "website" | "game" | "component";
+type BuildType = "website" | "game" | "component" | "3d-assets";
 type AgentStage = "architect" | "builder" | "reviewer";
 type AgentStatus = "idle" | "running" | "done" | "error";
 
@@ -23,10 +24,11 @@ interface BuildResult {
   timestamp: number;
 }
 
-const TYPE_OPTIONS: { value: BuildType; label: string; icon: string; desc: string }[] = [
+const TYPE_OPTIONS: { value: BuildType; label: string; icon: string; desc: string; pricing?: string }[] = [
   { value: "website", icon: "🌐", label: "Website", desc: "Landing pages, portfolios, dashboards" },
   { value: "game", icon: "🎮", label: "Game", desc: "Playable HTML5 Canvas games" },
   { value: "component", icon: "🧩", label: "Component", desc: "Interactive React UI components" },
+  { value: "3d-assets", icon: "🎨", label: "3D Assets", desc: "Websites with embedded 3D models and assets" },
 ];
 
 const STAGE_ORDER: AgentStage[] = ["architect", "builder", "reviewer"];
@@ -53,6 +55,11 @@ const EXAMPLES: Record<BuildType, string[]> = {
     "A sleek multi-step form wizard with progress indicator",
     "A music player UI with album art, waveform, and controls",
   ],
+  "3d-assets": [
+    "A product showcase with rotating 3D model viewer",
+    "An architectural portfolio with interactive building models",
+    "A tech company homepage with animated 3D elements",
+  ],
 };
 
 export default function AIBuilderPage() {
@@ -66,7 +73,14 @@ export default function AIBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [droppedAssets, setDroppedAssets] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+
+  const handleAssetDrop = useCallback((asset: any) => {
+    setDroppedAssets(prev => [...prev, asset.id]);
+    // Add the asset to the current prompt
+    setPrompt(prev => `${prev} Include ${asset.name} ${asset.type}`);
+  }, []);
 
   const acceptToPuck = useCallback(() => {
     if (!result?.code) return;
@@ -99,11 +113,17 @@ export default function AIBuilderPage() {
     setError(null);
     abortRef.current = new AbortController();
 
+    // Build enhanced prompt with dropped assets
+    let enhancedPrompt = prompt;
+    if (droppedAssets.length > 0) {
+      enhancedPrompt += ` (Includes 3D assets: ${droppedAssets.join(", ")})`;
+    }
+
     try {
       const res = await fetch("/api/build/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, type: buildType }),
+        body: JSON.stringify({ prompt: enhancedPrompt, type: buildType }),
         signal: abortRef.current.signal,
       });
 
@@ -168,7 +188,10 @@ export default function AIBuilderPage() {
       });
       const data = await res.json();
       if (data.url) { router.push(data.url); }
-      else { alert("Project saved! Redirecting to editor..."); router.push(`/wonder-build/puck?project=${data.projectId}`); }
+      else {
+        alert("Project saved! Redirecting to editor...");
+        router.push(`/wonder-build/puck?project=${data.projectId}`);
+      }
     } catch (err) {
       console.error("Failed to save project:", err);
       alert("Failed to save project. Please try again.");
@@ -189,10 +212,10 @@ export default function AIBuilderPage() {
         <span className="text-sm font-semibold tracking-wide">
           <span className="text-violet-400">AI</span> Builder
         </span>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs text-white/50">Gemini 2.0 Flash</span>
-        </div>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-xs text-white/50">Gemini 2.0 Flash</span>
+              </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -203,26 +226,51 @@ export default function AIBuilderPage() {
                 <label className="text-xs text-white/50 uppercase tracking-widest mb-3 block">What are you building?</label>
                 <div className="grid grid-cols-3 gap-2">
                   {TYPE_OPTIONS.map((opt) => (
-                    <button key={opt.value} onClick={() => { setBuildType(opt.value); setResult(null); setAgents({}); setError(null); }} className={"flex flex-col items-center gap-1 p-3 rounded-xl border transition-all text-center " + (buildType === opt.value ? "border-violet-500 bg-violet-500/10 text-white" : "border-white/10 bg-white/5 text-white/50 hover:border-white/30 hover:text-white")}>
+                    <button key={opt.value} onClick={() => { setBuildType(opt.value); setResult(null); setAgents({}); setError(null); }} className={"flex flex-col items-center gap-1 p-3 rounded-xl border transition-all text-center relative " + (buildType === opt.value ? "border-violet-500 bg-violet-500/10 text-white" : "border-white/10 bg-white/5 text-white/50 hover:border-white/30 hover:text-white")}>
                       <span className="text-xl">{opt.icon}</span>
                       <span className="text-xs font-medium">{opt.label}</span>
+                      {opt.pricing && (
+                        <span className="absolute -top-1 -right-1 text-[8px] bg-yellow-500/20 text-yellow-300 px-1 py-0.5 rounded-full border border-yellow-500/30">
+                          {opt.pricing}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
                 <p className="text-xs text-white/30 mt-2">{TYPE_OPTIONS.find((o) => o.value === buildType)?.desc}</p>
               </div>
 
-              <div>
-                <label className="text-xs text-white/50 uppercase tracking-widest mb-3 block">Describe what you want</label>
-                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runBuild(); }} placeholder={"Describe your " + buildType + "..."} rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-violet-500 transition-colors" />
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {EXAMPLES[buildType].slice(0, 2).map((ex) => (
-                    <button key={ex} onClick={() => setPrompt(ex)} className="text-[10px] text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2 py-1 transition-colors text-left">
-                      {ex.length > 50 ? ex.slice(0, 48) + "..." : ex}
-                    </button>
-                  ))}
-                </div>
-              </div>
+               <div>
+                 <label className="text-xs text-white/50 uppercase tracking-widest mb-3 block">Describe what you want</label>
+                 <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runBuild(); }} placeholder={"Describe your " + buildType + "..."} rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-violet-500 transition-colors" />
+                 <div className="mt-2 flex flex-wrap gap-1">
+                   {EXAMPLES[buildType].slice(0, 2).map((ex) => (
+                     <button key={ex} onClick={() => setPrompt(ex)} className="text-[10px] text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2 py-1 transition-colors text-left">
+                       {ex.length > 50 ? ex.slice(0, 48) + "..." : ex}
+                     </button>
+                   ))}
+                 </div>
+                 
+                 {buildType === "3d-assets" && (
+                   <div className="mt-4">
+                     <AssetLibrary onAssetDrop={handleAssetDrop} />
+                     
+                     {droppedAssets.length > 0 && (
+                       <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                         <p className="text-xs text-green-300">
+                           <span className="font-semibold">Assets added:</span> {droppedAssets.join(", ")}
+                         </p>
+                         <button 
+                           onClick={() => setDroppedAssets([])}
+                           className="text-xs text-green-300/70 hover:text-green-300 mt-1"
+                         >
+                           Clear all
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 </div>
 
               {!isBuilding ? (
                 <button onClick={runBuild} disabled={!prompt.trim()} className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-violet-900/30">

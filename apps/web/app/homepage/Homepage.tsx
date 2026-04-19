@@ -10,6 +10,30 @@ import signMap from "./homepage-sign-map.json";
 import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-cards";
 import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";
 import InteractiveSignpost from "./InteractiveSignpost";
+import AIChat from "./AIChat";
+
+// Spirit Guide helper function
+const openSpiritGuide = () => {
+  // Method 1: Look for UniversalAIAssistant button by aria-label
+  const assistantButton = document.querySelector('button[aria-label="Open AI Assistant"]');
+  if (assistantButton) {
+    (assistantButton as HTMLElement).click();
+    return;
+  }
+  
+  // Method 2: Look for any AI assistant button
+  const aiButtons = document.querySelectorAll('button');
+  for (const button of aiButtons) {
+    const label = button.getAttribute('aria-label') || button.textContent || '';
+    if (label.toLowerCase().includes('ai') || label.toLowerCase().includes('assistant') || label.includes('🔮')) {
+      (button as HTMLElement).click();
+      return;
+    }
+  }
+  
+  // Method 3: Fallback - redirect to AI builder
+  window.location.href = '/wonder-build/ai-builder';
+};
 
 const PLANS = [
   {
@@ -119,6 +143,12 @@ export default function Homepage() {
 
           {/* Auth actions */}
           <div className="flex items-center gap-2">
+            {/* Spirit Guide Indicator */}
+            <div className="hidden sm:flex items-center gap-1 text-xs text-purple-300/60">
+              <span className="text-sm">🔮</span>
+              <span>AI Guide</span>
+            </div>
+            
             {authLoading ? (
               <div className="h-7 w-20 animate-pulse rounded-full bg-white/10" />
             ) : isAuthenticated ? (
@@ -192,43 +222,72 @@ export default function Homepage() {
             <p className="mt-4 max-w-lg text-sm text-white/70 drop-shadow sm:text-base">
               Build websites and 3D games with AI — no coding required.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/hub"
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition-all hover:from-violet-500 hover:to-blue-500"
-              >
-                <span>Start Building</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              </Link>
-              <Link
-                href="/library"
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-6 py-3 text-sm font-semibold text-white/80 backdrop-blur-sm transition-all hover:bg-white/10 hover:text-white"
-              >
-                📚 Browse Templates
-              </Link>
+            <div className="mt-6">
+              <AIChat compact={true} />
+            </div>
+            
+            {/* Spirit Guide Availability */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-purple-300/80">
+              <span className="text-lg">🔮</span>
+              <span>Spirit Guide AI assistant available</span>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Bottom: Quick Links */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/hub"
-              className="inline-flex items-center gap-2 rounded-full bg-green-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/40 backdrop-blur-sm transition hover:bg-green-500"
-            >
-              🌐 Create Website
-            </Link>
-            <Link
-              href="/hub"
-              className="inline-flex items-center gap-2 rounded-full bg-indigo-600/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 backdrop-blur-sm transition hover:bg-indigo-500"
-            >
-              🎮 Create Game
-            </Link>
-            <Link
-              href="/wonder-build/playcanvas"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-5 py-2.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
-            >
-              📁 Import Files
-            </Link>
+      {/* ─── IMMEDIATE ACTION CTA ────────────────────────────────────────────── */}
+      <section className="relative mx-auto -mt-16 w-full max-w-4xl px-6">
+        <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/30 rounded-2xl p-8 backdrop-blur-lg shadow-2xl shadow-purple-900/20">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">🚀 Ready to Create?</h2>
+            <p className="text-white/70 mb-6 max-w-md mx-auto">
+              Start building your 3D world in seconds. No experience needed.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/wonder-build/playcanvas?sceneId=template_futuristic_city"
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform shadow-lg shadow-purple-900/30 group relative"
+              >
+                🏙️ Start with Futuristic City
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
+                  Pre-built futuristic city scene with neon lights and skyscrapers
+                </div>
+              </Link>
+              
+              <Link
+                href="/wonder-build/playcanvas"
+                className="px-6 py-3 border border-white/20 bg-white/5 rounded-lg text-white font-semibold hover:bg-white/10 transition group relative"
+              >
+                🎨 Start from Scratch
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-white/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
+                  Blank canvas - build anything you imagine from the ground up
+                </div>
+              </Link>
+              
+              <Link
+                href="/wonder-build/ai-builder"
+                className="px-6 py-3 border border-green-500/30 bg-green-500/10 rounded-lg text-white font-semibold hover:bg-green-500/20 transition group relative"
+              >
+                🤖 AI Builder
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-green-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
+                  Describe what you want - AI builds it automatically
+                </div>
+              </Link>
+              
+              {/* Spirit Guide Button */}
+              <button className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative"
+                onClick={openSpiritGuide}
+              >
+                🔮 Spirit Guide
+                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56">
+                  <strong>AI Assistant</strong><br/>
+                  Ask me anything! I can help you create scenes, fix issues, or explain features.
+                </div>
+              </button>
+            </div>
+            <p className="text-white/40 text-sm mt-4">
+              💡 Hover over buttons to see what they do
+            </p>
           </div>
         </div>
       </section>
@@ -306,6 +365,36 @@ export default function Homepage() {
           </div>
         </div>
       </section>
+
+      {/* ─── CODER WORKSPACES (Premium Feature) ───────────────────────────────── */}
+      {isAuthenticated && (
+        <section className="relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/60 to-black px-6 py-10 sm:px-8">
+          <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 -translate-y-1/4 translate-x-1/4 rounded-full bg-emerald-600/20 blur-[80px]" />
+          <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-emerald-400">Premium Feature</p>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Cloud Development Workspace</h2>
+              <p className="mt-1 max-w-xl text-sm text-gray-400">
+                Get your own cloud development environment with VS Code, pre-configured for AI Wonderland projects.
+                Available for Pro and Elite subscribers.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["VS Code in Browser", "Pre-configured AI Wonderland", "Git Integration", "Terminal Access"].map((tag) => (
+                  <span key={tag} className="rounded-full bg-emerald-900/40 border border-emerald-500/20 px-3 py-0.5 text-xs text-emerald-300">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <Link
+              href="/coder-workspace"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500"
+            >
+              💻 Open Workspace
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* ─── REGISTRY / MARKETPLACE ─────────────────────────────────────────── */}
       <section id="features" className="relative mx-auto mt-10 w-full max-w-6xl px-6 sm:px-8">
@@ -396,6 +485,13 @@ export default function Homepage() {
                       {b}
                     </li>
                   ))}
+                  {/* Add Coder workspace for Pro/Elite tiers */}
+                  {(plan.id === "pro" || plan.id === "elite") && (
+                    <li className="flex items-start gap-2 text-xs text-gray-300">
+                      <span className="mt-0.5 shrink-0 text-green-400">✓</span>
+                      Cloud Development Workspace
+                    </li>
+                  )}
                 </ul>
                 <Link
                   href={plan.href}

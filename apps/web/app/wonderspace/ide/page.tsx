@@ -70,7 +70,7 @@ export default function WonderSpaceIdeLaunchPage() {
           <h1 className="mt-2 text-3xl font-semibold">Create your cloud workspace</h1>
           <p className="mt-3 max-w-3xl text-sm text-white/70">
             This launch flow mirrors a GitHub Codespaces style onboarding: create a named workspace, select runtime profile,
-            and jump straight into Coder IDE.
+            and jump straight into WonderSpace IDE.
           </p>
         </div>
 
@@ -155,7 +155,7 @@ export default function WonderSpaceIdeLaunchPage() {
               </div>
             </dl>
             <p className="mt-4 text-xs text-white/60">
-              Minor differences from GitHub Codespaces: this uses your WonderSpace naming, your image tags, and your BYOC runtime routing.
+              Minor differences from GitHub Codespaces: this uses your WonderSpace naming, your image tags, and stays within WonderSpace IDE.
             </p>
           </aside>
         </div>
