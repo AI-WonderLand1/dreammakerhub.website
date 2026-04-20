@@ -1,17 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
-import { PageHeader } from "@/app/components/layout/PageHeader";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
 import NpcPanel from "@/components/NpcPanel";
 import PlayCanvasEditorHost from "@/components/PlayCanvasEditorHost";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { buildPlayCanvasEditorUrl, getPlayCanvasMode } from "@/lib/playcanvas";
+
+type SceneTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  thumbnail?: string;
+};
 
 function makeToastId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -25,6 +32,8 @@ function PlayCanvasInner() {
   const [bridgeLoading, setBridgeLoading] = useState(Boolean(sceneId));
   const [bridgeFailed, setBridgeFailed] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [templates, setTemplates] = useState<SceneTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(!sceneId);
   const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
 
   useEffect(() => {
@@ -32,8 +41,20 @@ function PlayCanvasInner() {
     setBridgeFailed(false);
   }, [sceneId]);
 
-  const playCanvasMode = getPlayCanvasMode();
-  const editorUrl = useMemo(() => buildPlayCanvasEditorUrl(sceneId), [sceneId]);
+  useEffect(() => {
+    if (!sceneId) {
+      setLoadingTemplates(true);
+      fetch("/api/scenes/templates")
+        .then(res => res.json())
+        .then(data => {
+          setTemplates(data.templates || []);
+          setLoadingTemplates(false);
+        })
+        .catch(() => {
+          setLoadingTemplates(false);
+        });
+    }
+  }, [sceneId]);
 
   const pushToast = useCallback((message: string, tone: ToastItem["tone"]) => {
     const id = makeToastId();
@@ -62,25 +83,68 @@ function PlayCanvasInner() {
   return (
     <div className="space-y-4 text-white">
       <ToastStack toasts={toasts} />
-      <PageHeader
-        lead={<Breadcrumbs items={[{ href: "/wonder-build", label: "Wonder Build" }, { label: "WonderPlay" }]} />}
-        title="PlayCanvas Bridge"
-        subtitle="Embedded PlayCanvas editor. Use the button below to open PlayCanvas Studio in a new tab if embedding doesn't work."
-        action={null}
-      />
 
-      <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80">
-        <span className="font-semibold">PlayCanvas mode:</span>
-        <span className="rounded-full bg-black/40 px-2 py-0.5 uppercase tracking-wide">{playCanvasMode}</span>
-        {playCanvasMode === "direct" ? <span className="text-cyan-300">NEXT_PUBLIC_PLAYCANVAS_MODE=direct</span> : null}
-      </div>
+      {!sceneId && (
+        <div className="mb-4">
+          <Link href="/wonder-build/playcanvas" className="text-sm text-white/70 hover:text-white">
+            ← Back to Gallery
+          </Link>
+        </div>
+      )}
 
       {!sceneId ? (
-        <EmptyState
-          title="Add a PlayCanvas scene ID"
-          description="Use ?sceneId=<your-scene-id> on this URL to load WonderPlay in the embedded bridge."
-          cta={null}
-        />
+        <div className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white">Choose a Scene Template</h2>
+            <p className="mt-2 text-white/60">Select a template to launch the WebGL editor</p>
+          </div>
+
+          {loadingTemplates ? (
+            <SkeletonGrid cards={6} />
+          ) : templates.length === 0 ? (
+            <EmptyState
+              title="No templates available"
+              description="Create a new scene from scratch"
+              cta={
+                <Link
+                  href="/wonder-build/playcanvas?sceneId=blank_canvas"
+                  className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+                >
+                  Start Blank
+                </Link>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {templates.map((template) => (
+                <Link
+                  key={template.id}
+                  href={`/wonder-build/playcanvas?sceneId=${template.id}`}
+                  className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 transition hover:border-purple-500/50 hover:bg-white/10"
+                >
+                  {template.thumbnail ? (
+                    <Image
+                      src={template.thumbnail}
+                      alt={template.name}
+                      width={300}
+                      height={200}
+                      className="aspect-video w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-video w-full bg-gradient-to-br from-purple-900/30 to-blue-900/30" />
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-semibold text-white group-hover:text-purple-300">{template.name}</h3>
+                    <p className="mt-1 text-xs text-white/60 line-clamp-2">{template.description}</p>
+                    <span className="mt-2 inline-block rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70">
+                      {template.category}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       ) : (
         <div className="relative min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black/40">
           {bridgeFailed ? (
