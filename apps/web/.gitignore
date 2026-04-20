@@ -1,1 +1,37 @@
 .vercel
+node_modules/
+.next/
+.pnpm-store/
+*.pack
+.vercel
+.nx/
+
+# Environment files - NEVER commit secrets
+.env
+.env.*
+.env.local
+.env*.local
+.env.production
+my-agent/.env
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Editor temp files
+*.swp
+*.swo
+*~
+
+UnrealEngine_Source/
+UE5_Source/
+Archive/
+Saved/
+Intermediate/
+DerivedDataCache/
+agent/venv/
+__pycache__/
+*.pyc
+.aider*
