@@ -77,8 +77,7 @@ export async function GET() {
           name: sceneData.name || file.replace('.json', '').replace(/_/g, ' '),
           description: sceneData.description || "3D Scene Template",
           category: sceneData.category || "custom",
-          thumbnail: null,
-          sceneData: sceneData // Include the actual scene data
+          thumbnail: null
         };
       });
       
