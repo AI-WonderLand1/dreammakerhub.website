@@ -24,6 +24,15 @@ const DEFAULT_PLAYCANVAS_PROJECT: FileSystemTree = {
       ),
     },
   },
+  '.ssh': {
+    directory: {
+      'authorized_keys': {
+        file: {
+          contents: '# Auto-generated authorized_keys\n# DreamMakerHub SSH keys injected here',
+        },
+      },
+    },
+  },
   'server.js': {
     file: {
       contents: `import express from 'express';
@@ -37,14 +46,26 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
-// PlayCanvas editor routes
+// PlayCanvas UI container (WebGL Studio)
+app.get('/playcanvas/editor-ui', (req, res) => {
+  const editorHtml = readFileSync('./editor-ui/index.html', 'utf-8');
+  res.send(editorHtml);
+});
+
+// PlayCanvas Engine container (separate, can restart independently)
+app.get('/playcanvas/engine', (req, res) => {
+  const engineHtml = readFileSync('./editor-engine/index.html', 'utf-8');
+  res.send(engineHtml);
+});
+
+// Legacy route for backward compatibility
 app.get('/playcanvas/editor', (req, res) => {
-  const editorHtml = readFileSync('./editor/index.html', 'utf-8');
+  const editorHtml = readFileSync('./editor-ui/index.html', 'utf-8');
   res.send(editorHtml);
 });
 
 app.get('/playcanvas/api/scenes/:sceneId', (req, res) => {
-  const scenePath = join('./scenes', \`\${req.params.sceneId}.json\`);
+  const scenePath = join('./scenes', req.params.sceneId + '.json');
   if (existsSync(scenePath)) {
     const sceneData = readFileSync(scenePath, 'utf-8');
     res.json(JSON.parse(sceneData));
@@ -54,10 +75,69 @@ app.get('/playcanvas/api/scenes/:sceneId', (req, res) => {
 });
 
 app.post('/playcanvas/api/scenes/:sceneId', (req, res) => {
-  const scenePath = join('./scenes', \`\${req.params.sceneId}.json\`);
+  const scenePath = join('./scenes', req.params.sceneId + '.json');
   mkdirSync('./scenes', { recursive: true });
   writeFileSync(scenePath, JSON.stringify(req.body, null, 2));
   res.json({ success: true });
+});
+
+// Inject SSH public key into authorized_keys (runtime)
+app.post('/playcanvas/api/ssh/inject', (req, res) => {
+  const { publicKey, userId } = req.body;
+  if (!publicKey || !userId) {
+    res.status(400).json({ error: 'Missing publicKey or userId' });
+    return;
+  }
+  const sshDir = join('.ssh');
+  const authKeysFile = join(sshDir, 'authorized_keys');
+  mkdirSync(sshDir, { recursive: true });
+  
+  const existingKeys = existsSync(authKeysFile) ? readFileSync(authKeysFile, 'utf-8') : '';
+  const timestamp = new Date().toISOString();
+  const keyComment = '# ' + userId + ' @ ' + timestamp + '\n';
+  const newKeyBlock = keyComment + publicKey + '\n';
+  
+  // Check if key already exists (avoid duplicates)
+  if (existingKeys.includes(publicKey.substring(0, 20))) {
+    res.json({ success: true, message: 'Key already exists' });
+    return;
+  }
+  
+  writeFileSync(authKeysFile, existingKeys + newKeyBlock);
+  res.json({ success: true, message: 'SSH key injected' });
+});
+
+// Get desired state from Supabase (placeholder - would connect to Supabase in production)
+app.get('/playcanvas/api/state/:sceneId', (req, res) => {
+  const scenePath = join('./scenes', req.params.sceneId + '.json');
+  if (existsSync(scenePath)) {
+    const sceneData = JSON.parse(readFileSync(scenePath, 'utf-8'));
+    res.json({ state: sceneData, source: 'local' });
+  } else {
+    // Return default desired state
+    res.json({ 
+      state: {
+        name: req.params.sceneId,
+        objects: [],
+        settings: { ambientLight: 0.2 }
+      },
+      source: 'default'
+    });
+  }
+});
+
+// Sync local state with desired state (reconciliation)
+app.post('/playcanvas/api/sync/:sceneId', (req, res) => {
+  const scenePath = join('./scenes', req.params.sceneId + '.json');
+  const localState = existsSync(scenePath) ? JSON.parse(readFileSync(scenePath, 'utf-8')) : {};
+  const desiredState = req.body;
+  
+  // Simple reconciliation: merge desired into local
+  const reconciled = { ...localState, ...desiredState, lastSync: new Date().toISOString() };
+  
+  mkdirSync('./scenes', { recursive: true });
+  writeFileSync(scenePath, JSON.stringify(reconciled, null, 2));
+  res.json({ success: true, reconciled });
 });
 
 // Serve main page
@@ -89,33 +169,276 @@ app.listen(PORT, '0.0.0.0', () => {
 `,
     },
   },
-  'editor': {
+  'editor-ui': {
     directory: {
       'index.html': {
         file: {
           contents: `<!DOCTYPE html>
 <html>
 <head>
-  <title>PlayCanvas Editor</title>
+  <title>DreamMakerHub Studio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0d14; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
+    #studio { width: 100vw; height: 100vh; display: flex; }
+    
+    /* Toolbar */
+    .toolbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 48px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #12121f 100%);
+      border-bottom: 1px solid #2a2a4a; display: flex; align-items: center;
+      padding: 0 16px; gap: 8px; z-index: 100;
+    }
+    .toolbar-btn {
+      padding: 6px 12px; background: #252540; border: 1px solid #3a3a5a;
+      border-radius: 4px; color: #00d9ff; font-size: 12px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toolbar-btn:hover { background: #2a2a50; border-color: #00d9ff; }
+    .toolbar-btn.active { background: #00d9ff; color: #0d0d14; }
+    
+    /* Viewport */
+    .viewport {
+      position: fixed; top: 48px; left: 0; right: 280px; bottom: 0;
+      background: #0a0a10;
+    }
+    .viewport canvas { width: 100%; height: 100%; display: block; }
+    
+    /* Sidebar */
+    .sidebar {
+      position: fixed; top: 48px; right: 0; width: 280px; bottom: 0;
+      background: #12121f; border-left: 1px solid #2a2a4a;
+      padding: 16px; overflow-y: auto;
+    }
+    .sidebar h3 { color: #00d9ff; font-size: 11px; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+    .prop-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .prop-input { flex: 1; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 4px; padding: 6px; color: #fff; font-size: 12px; }
+    
+    /* Status bar */
+    .status {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 24px;
+      background: #0a0a10; border-top: 1px solid #2a2a4a;
+      display: flex; align-items: center; padding: 0 12px; gap: 16px; font-size: 11px; color: #666;
+    }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #00ff88;
+    }
+    .status-dot.error { background: #ff4444; }
+    .status-dot.loading { background: #ffaa00; animation: pulse 1s infinite; }
+    
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    
+    /* Loading */
+    .loading-overlay {
+      position: fixed; inset: 0; background: #0d0d14;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px; z-index: 9999;
+    }
+    .loading-overlay.hidden { display: none; }
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid #2a2a4a;
+      border-top-color: #00d9ff; border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-  <div id="playcanvas-container"></div>
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div style="color: #00d9ff; font-size: 14px;">Starting DreamMakerHub Studio...</div>
+  </div>
+  
+  <div class="toolbar">
+    <span style="color: #00d9ff; font-weight: bold; margin-right: 16px;">DreamMakerHub</span>
+    <button class="toolbar-btn active" data-panel="scene">Scene</button>
+    <button class="toolbar-btn" data-panel="objects">Objects</button>
+    <button class="toolbar-btn" data-panel="properties">Properties</button>
+    <button class="toolbar-btn" onclick="window.restartEngine()">↻ Restart Engine</button>
+  </div>
+  
+  <div class="viewport">
+    <canvas id="engine-canvas"></canvas>
+  </div>
+  
+  <div class="sidebar">
+    <h3>Transform</h3>
+    <div class="prop-row">
+      <input class="prop-input" id="pos-x" placeholder="X" value="0">
+      <input class="prop-input" id="pos-y" placeholder="Y" value="0">
+      <input class="prop-input" id="pos-z" placeholder="Z" value="0">
+    </div>
+    <h3 style="margin-top: 16px;">Objects</h3>
+    <div id="object-list"></div>
+  </div>
+  
+  <div class="status">
+    <div class="status-dot" id="engine-status"></div>
+    <span id="engine-status-text">Initializing...</span>
+    <span style="margin-left: auto;">Engine: <span id="engine-health">--</span></span>
+  </div>
+  
+  <script>
+    // Pod Architecture: UI Container + Engine Container
+    const ENGINE_URL = '/playcanvas/engine';
+    let engineIframe = null;
+    let healthCheckInterval = null;
+    let engineAlive = false;
+    
+    // Create engine iframe (separate container)
+    function createEngineContainer() {
+      const viewport = document.querySelector('.viewport');
+      engineIframe = document.createElement('iframe');
+      engineIframe.src = ENGINE_URL;
+      engineIframe.style.cssText = 'width:100%;height:100%;border:none;background:transparent;';
+      engineIframe.id = 'engine-iframe';
+      viewport.appendChild(engineIframe);
+    }
+    
+    // Liveness probe - ping engine every 2s
+    function startHealthCheck() {
+      healthCheckInterval = setInterval(() => {
+        if (!engineIframe?.contentWindow) {
+          markEngineDead();
+          return;
+        }
+        try {
+          engineIframe.contentWindow.postMessage({ type: 'PING' }, '*');
+        } catch (e) {
+          markEngineDead();
+        }
+      }, 2000);
+    }
+    
+    function markEngineDead() {
+      if (engineAlive) {
+        console.log('[Pod] Engine died - marking dead');
+        engineAlive = false;
+        document.getElementById('engine-status').className = 'status-dot error';
+        document.getElementById('engine-status-text').textContent = 'Engine dead - restarting...';
+        document.getElementById('engine-health').textContent = 'DEAD';
+      }
+    }
+    
+    function markEngineAlive() {
+      if (!engineAlive) {
+        console.log('[Pod] Engine alive');
+        engineAlive = true;
+        document.getElementById('engine-status').className = 'status-dot';
+        document.getElementById('engine-status-text').textContent = 'Engine running';
+        document.getElementById('engine-health').textContent = 'OK';
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+    
+    // Restart engine only (not whole app)
+    window.restartEngine = function() {
+      console.log('[Pod] Restarting engine container...');
+      if (engineIframe) {
+        engineIframe.remove();
+      }
+      document.getElementById('loading').classList.remove('hidden');
+      createEngineContainer();
+      markEngineDead();
+    };
+    
+    // Handle messages from engine
+    window.addEventListener('message', (e) => {
+      if (e.data.type === 'PONG') {
+        markEngineAlive();
+      }
+      if (e.data.type === 'ENGINE_READY') {
+        markEngineAlive();
+      }
+      if (e.data.objects) {
+        document.getElementById('object-list').innerHTML = 
+          e.data.objects.map(o => '<div class="prop-row"><span style="color:#888">'+o.name+'</span></div>').join('');
+      }
+    });
+    
+    // Init
+    createEngineContainer();
+    startHealthCheck();
+  </script>
 </body>
 </html>`,
         },
       },
-      'editor.js': {
+    },
+  },
+  'editor-engine': {
+    directory: {
+      'index.html': {
         file: {
-          contents: `// PlayCanvas Editor stub - would be populated with actual editor code
-export const app = {
-  start: (selector) => {
-    console.log('Starting PlayCanvas editor in:', selector);
-    const container = document.querySelector(selector);
-    if (container) {
-      container.innerHTML = '<div style="padding: 20px; color: #00ff00;">PlayCanvas Editor Isolated Instance</div>';
+          contents: `<!DOCTYPE html>
+<html>
+<head>
+  <title>PlayCanvas Engine</title>
+  <script src="https://code.playcanvas.com/playcanvas-stable.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { background: #0a0a10; overflow: hidden; }
+    canvas { width: 100%; height: 100vh; display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="engine-canvas"></canvas>
+  <script>
+    // Engine Container - runs PlayCanvas
+    const canvas = document.getElementById('engine-canvas');
+    const app = new pc.Application(canvas, {
+      mouse: new pc.Mouse(canvas),
+      touch: new pc.TouchDevice(canvas)
+    });
+    app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+    app.setCanvasResolution(pc.RESOLUTION_AUTO);
+    
+    // Default scene: grid floor + camera + light
+    const camera = new pc.Entity('Camera');
+    camera.addComponent('camera', { clearColor: new pc.Color(0.04, 0.04, 0.06) });
+    camera.setPosition(0, 8, 15);
+    camera.lookAt(0, 0, 0);
+    app.root.addChild(camera);
+    
+    const light = new pc.Entity('Sun');
+    light.addComponent('light', { 
+      type: 'directional', 
+      color: new pc.Color(1, 0.95, 0.8),
+      intensity: 1.2 
+    });
+    light.setEulerAngles(45, 135, 0);
+    app.root.addChild(light);
+    
+    const floor = new pc.Entity('Floor');
+    floor.addComponent('render', { type: 'plane' });
+    floor.setLocalScale(50, 1, 50);
+    const floorMat = new pc.StandardMaterial();
+    floorMat.diffuse = new pc.Color(0.1, 0.1, 0.15);
+    floorMat.update();
+    floor.render.material = floorMat;
+    app.root.addChild(floor);
+    
+    app.start();
+    
+    // Export for UI container
+    window.PlayCanvasEngine = app;
+    
+    // Health check response
+    window.addEventListener('message', (e) => {
+      if (e.data.type === 'PING') {
+        e.source.postMessage({ type: 'PONG' }, '*');
+      }
+    });
+    
+    // Report ready
+    if (window.parent) {
+      window.parent.postMessage({ type: 'ENGINE_READY', objects: [{name:'Camera'},{name:'Sun'},{name:'Floor'}] }, '*');
     }
-  }
-};`,
+    
+    console.log('[Engine] PlayCanvas started');
+  </script>
+</body>
+</html>`,
         },
       },
     },

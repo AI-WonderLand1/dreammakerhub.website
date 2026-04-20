@@ -20,6 +20,8 @@ export {
 // Utilities
 export { getCurrentUserSession, requireUserSession, validateUserSession } from './utils/auth';
 export { hashForIsolation, generateContainerId, createUserPath } from './utils/hashing';
+export { generateSSHKeyPair, getOrCreateSSHKey, validateSSHKey, isKeyExpired, revokeSSHKey, getUserSSHKey } from './utils/ssh-keys';
+export type { SSHKeyPair } from './utils/ssh-keys';
 
 // Types
 export type { 

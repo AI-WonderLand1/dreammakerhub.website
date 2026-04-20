@@ -33,3 +33,4 @@ DerivedDataCache/
 agent/venv/
 __pycache__/
 *.pyc
+.aider*

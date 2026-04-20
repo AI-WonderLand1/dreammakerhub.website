@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { PlayCanvasClient } from './PlayCanvasClient';
 import { PlayCanvasContainerManager } from '../webcontainer/PlayCanvasContainer';
 import { registerPlayCanvasServiceWorker, registerContainer } from '../service-worker/playcanvas-sw';
+import { getOrCreateSSHKey, validateSSHKey } from '../utils/ssh-keys';
 import type { UserSession } from '../types/isolation';
 
 export interface IsolatedPlayCanvasProps {
@@ -53,10 +54,22 @@ export function IsolatedPlayCanvas({
         updateStatus('Initializing container manager...');
         const containerManager = new PlayCanvasContainerManager();
 
+        // Generate SSH key for secure access
+        updateStatus('Generating SSH key...');
+        const sshKey = getOrCreateSSHKey(userId);
+        
+        if (!validateSSHKey(sshKey)) {
+          throw new Error('SSH key validation failed');
+        }
+        
+        updateStatus(`SSH key ready: ${sshKey.fingerprint.substring(0, 8)}...`);
+        
+        // Pass SSH key to container for secure communication
         updateStatus('Creating PlayCanvas client...');
         const client = new PlayCanvasClient({
           userId,
           sceneId,
+          sshKey,
           containerManager,
           onReady: () => {
             if (!isCancelled) {
@@ -228,12 +241,12 @@ export function IsolatedPlayCanvas({
         )}
       </div>
 
-      {/* Info bar */}
+      {/* Info bar with SSH key fingerprint */}
       <div className="px-4 py-2 bg-gray-900 border-t border-gray-700 text-xs text-gray-500">
         <div className="flex justify-between">
           <span>User: {userId.substring(0, 8)}...</span>
           <span>Scene: {sceneId || 'None'}</span>
-          <span>Isolated: ✓</span>
+          <span className="text-green-400">SSH: Secured</span>
         </div>
       </div>
     </div>
