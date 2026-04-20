@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect fill="#0a0a10" width="400" height="300"/>
+  <rect fill="#1a1a2e" x="0" y="0" width="400" height="48"/>
+  <text fill="#00d9ff" x="20" y="30" font-family="system-ui" font-size="14" font-weight="bold">WonderSpace IDE</text>
+  <rect fill="#252540" x="20" y="60" width="60" height="220" rx="4"/>
+  <text fill="#666" x="30" y="80" font-family="system-ui" font-size="9">EXPLORER</text>
+  <rect fill="#12121f" x="90" y="60" width="200" height="160" rx="4"/>
+  <rect fill="#0a0a10" x="100" y="70" width="180" height="30" rx="4"/>
+  <rect fill="#252540" x="300" y="60" width="100" height="220" rx="4"/>
+  <text fill="#666" x="310" y="80" font-family="system-ui" font-size="9">TERMINAL</text>
+</svg>

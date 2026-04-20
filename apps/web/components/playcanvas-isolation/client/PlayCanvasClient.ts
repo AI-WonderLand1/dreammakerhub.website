@@ -2,11 +2,13 @@ import { WebContainer, type FileSystemTree } from '@webcontainer/api';
 import type { UserSession, UserIsolation } from '../types/isolation';
 import { PlayCanvasContainerManager } from '../webcontainer/PlayCanvasContainer';
 import { hashForIsolation } from '../utils/hashing';
+import type { SSHKeyPair } from '../utils/ssh-keys';
 
 export interface PlayCanvasClientConfig {
   userId: string;
   sceneId?: string;
   containerManager?: PlayCanvasContainerManager;
+  sshKey?: SSHKeyPair;
   onReady?: () => void;
   onError?: (error: Error) => void;
   onStatus?: (status: string) => void;
@@ -16,6 +18,7 @@ export class PlayCanvasClient {
   private containerManager: PlayCanvasContainerManager;
   private userId: string;
   private sceneId?: string;
+  private sshKey?: SSHKeyPair;
   private container: WebContainer | null = null;
   private serverUrl: string = '';
   private isInitialized = false;
@@ -28,6 +31,7 @@ export class PlayCanvasClient {
   constructor(config: PlayCanvasClientConfig) {
     this.userId = config.userId;
     this.sceneId = config.sceneId;
+    this.sshKey = config.sshKey;
     this.containerManager = config.containerManager || new PlayCanvasContainerManager();
     this.onReady = config.onReady;
     this.onError = config.onError;
@@ -67,6 +71,24 @@ export class PlayCanvasClient {
             resolve();
           });
         });
+      }
+
+      // Inject SSH public key into WebContainer
+      if (this.sshKey?.publicKey) {
+        this.updateStatus('Injecting SSH key...');
+        try {
+          await fetch(`${this.serverUrl}/playcanvas/api/ssh/inject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              publicKey: this.sshKey.publicKey,
+              userId: this.userId,
+            }),
+          });
+          this.updateStatus('SSH key injected');
+        } catch (sshError) {
+          console.warn('[SSH] Key injection failed:', sshError);
+        }
       }
 
       this.isInitialized = true;
@@ -143,15 +165,15 @@ export class PlayCanvasClient {
   }
 
   createEditorContainer(containerElement: HTMLElement): HTMLIFrameElement {
-    // Create iframe for PlayCanvas editor
+    // Create iframe for WebGL Studio UI (the "Pod" - contains UI + Engine containers)
     const iframe = document.createElement('iframe');
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
     iframe.style.background = 'transparent';
     
-    // Set iframe source to container server
-    iframe.src = `${this.serverUrl}/playcanvas/editor`;
+    // Set iframe source to Pod container (UI container loads engine in separate iframe internally)
+    iframe.src = `${this.serverUrl}/playcanvas/editor-ui`;
     
     // Listen for messages from iframe
     window.addEventListener('message', this.handleIframeMessage.bind(this));

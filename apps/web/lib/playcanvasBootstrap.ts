@@ -1,7 +1,7 @@
 import { getPlayCanvasMode } from "@/lib/playcanvas";
 
 const PLAYCANVAS_BOOTSTRAP_SCRIPT_ID = "playcanvas-direct-bootstrap";
-const DEFAULT_PLAYCANVAS_BOOTSTRAP_SRC = "/playcanvas/direct-bootstrap.js";
+const DEFAULT_PLAYCANVAS_BOOTSTRAP_SRC = "/webglstudio/direct-bootstrap.js";
 
 let bootstrapPromise: Promise<void> | null = null;
 
