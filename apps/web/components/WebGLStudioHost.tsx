@@ -12,8 +12,14 @@ const STYLES = [
 
 const SCRIPTS = [
   `${BASE}/js/extra/jscolor/jscolor.js`,
+  `${BASE}/js/extra/gl-matrix-min.js`,
+  `${BASE}/js/extra/litegl.js`,     // MUST load before litegui.js (defines LEvent)
+  `${BASE}/js/extra/litegraph.js`,   // MUST load before litescene.js
   `${BASE}/js/extra/canvas-to-blob.js`,
+  `${BASE}/js/extra/pako.js`,
+  `${BASE}/js/extra/litescene.js`,
   `${BASE}/js/extra/litegui.js`,
+  `${BASE}/js/extra/jszip.js`,
   `${BASE}/js/utils/utils.js`,
   `${BASE}/js/core.js`,
 ];

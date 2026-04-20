@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect fill="#0a0a10" width="400" height="300"/>
+  <rect fill="#1a1a2e" x="0" y="0" width="400" height="48"/>
+  <text fill="#00d9ff" x="20" y="30" font-family="system-ui" font-size="14" font-weight="bold">PlayCanvas 3D Studio</text>
+  <rect fill="#252540" x="20" y="60" width="80" height="30" rx="4"/>
+  <text fill="#00d9ff" x="30" y="80" font-family="system-ui" font-size="10">Scene</text>
+  <rect fill="#252540" x="110" y="60" width="80" height="30" rx="4"/>
+  <text fill="#666" x="120" y="80" font-family="system-ui" font-size="10">Objects</text>
+  <rect fill="#252540" x="200" y="60" width="80" height="30" rx="4"/>
+  <text fill="#666" x="210" y="80" font-family="system-ui" font-size="10">Assets</text>
+  <rect fill="#0a0a10" x="0" y="100" width="320" height="200"/>
+  <line stroke="#2a2a4a" x1="0" y1="150" x2="320" y2="150"/>
+  <line stroke="#2a2a4a" x1="160" y1="100" x2="160" y2="300"/>
+  <rect fill="#12121f" x="320" y="100" width="80" height="200"/>
+  <text fill="#666" x="330" y="130" font-family="system-ui" font-size="9">PROPERTIES</text>
+</svg>
