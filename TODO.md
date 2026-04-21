@@ -71,3 +71,45 @@
 | `/etc/systemd/system/coder.service` | Coder systemd service config |
 | `~/.kube/config` | Kubernetes config for OKE cluster |
 | `apps/web/lib/workspace/provisioner.ts` | Workspace provisioning logic |
+
+---
+
+## 3D Editor (PlayCanvas)
+
+### Completed
+
+- [x] **Auto-save hook** — 30s interval with `lib/scene/auto-save.ts`
+- [x] **GLB/GLTF model loading** — Added to `lib/scene/loader.ts`
+- [x] **External asset library connector** — `lib/ai/assetLibrary.ts` (PlayCanvas, Sketchfab, Poly Haven)
+- [x] **AssetPicker UI** — Component for searching external assets (`components/engines/AssetPicker.tsx`)
+- [x] **UserAssetLibrary UI** — Component for user's downloaded assets (`components/engines/UserAssetLibrary.tsx`)
+- [x] **API routes** — `/api/assets/search` and `/api/assets/user`
+- [x] **Container cleanup race fix** — Added ready signal + heartbeat to prevent premature pod deletion
+- [x] **Cron cleanup endpoint** — `/api/playcanvas-isolation?action=cron_cleanup`
+- [x] **CSP expansion** — Added vercel/cloudflare to frame-src and connect-src for iframe support
+- [x] **Turbopack disabled** — Removed from next.config.js
+
+### In Progress
+
+- [ ] End-to-end test external asset search
+- [ ] End-to-end test user download flow
+
+### Pending
+
+- [ ] Set up cron job on Hostinger: `*/15 * * * * curl -s https://dreammakerhub.website/api/playcanvas-isolation -X POST -d '{"action":"cron_cleanup"}'`
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `apps/web/lib/scene/auto-save.ts` | Auto-save hook + cleanSceneData |
+| `apps/web/lib/scene/loader.ts` | Scene loader with GLB support |
+| `apps/web/lib/ai/assetLibrary.ts` | External asset search connector |
+| `apps/web/components/engines/AssetPicker.tsx` | External asset search UI |
+| `apps/web/components/engines/UserAssetLibrary.tsx` | User downloads UI |
+| `apps/web/app/api/assets/search/route.ts` | Asset search API |
+| `apps/web/app/api/assets/user/route.ts` | User downloads API |
+| `apps/web/app/library/page.tsx` | Library page with tabs |
+| `apps/web/app/api/playcanvas-isolation/route.ts` | Container lifecycle + cron cleanup |
+| `public/assets/` | Local asset folders |
+| `templates/3d/` | Scene templates |
