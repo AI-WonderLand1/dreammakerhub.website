@@ -20,6 +20,24 @@ export interface IsolatedPlayCanvasProps {
 
 const USE_LOCAL_FALLBACK = process.env.NEXT_PUBLIC_USE_LOCAL_PLAYCANVAS === 'true';
 
+let containerReadyFlag = false;
+
+async function signalContainerReady(userId: string) {
+  if (containerReadyFlag) return;
+  containerReadyFlag = true;
+  
+  try {
+    await fetch('/api/playcanvas-isolation/ready', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, ready: true }),
+    });
+    console.log('[IsolatedPlayCanvas] Sent ready signal to server');
+  } catch (err) {
+    console.error('Failed to signal ready:', err);
+  }
+}
+
 export function IsolatedPlayCanvas({
   userId,
   sceneId,
@@ -77,6 +95,9 @@ export function IsolatedPlayCanvas({
           onReady: () => {
             if (!isCancelled) {
               updateStatus('Client ready, loading editor...');
+              
+              // Signal that container is ready - prevents cleanup
+              signalContainerReady(userId);
               
               // Register container with service worker
               if (clientRef.current) {

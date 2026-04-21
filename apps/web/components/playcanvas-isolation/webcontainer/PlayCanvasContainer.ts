@@ -591,6 +591,11 @@ export class PlayCanvasContainerManager {
 
     const entriesArray = Array.from(this.instances.entries());
     for (const [containerId, instance] of entriesArray) {
+      // Don't cleanup if still marked active (user is editing)
+      if (instance.isActive) {
+        instance.lastUsed = Date.now(); // Keep alive while user is active
+        continue;
+      }
       if (now - instance.lastUsed > this.instanceTimeoutMs) {
         toDestroy.push(containerId);
       }
