@@ -618,6 +618,30 @@ export class PlayCanvasContainerManager {
     return Array.from(this.instances.values()).filter(instance => instance.isActive);
   }
 
+  cleanupStuckContainers(timeoutMs: number = 15 * 60 * 1000): number {
+    const now = Date.now();
+    let cleaned = 0;
+    const stuckIds: string[] = [];
+
+    for (const [containerId, instance] of this.instances.entries()) {
+      // Check if still trying to boot after timeout
+      if (!instance.serverUrl && now - instance.createdAt > timeoutMs) {
+        stuckIds.push(containerId);
+      }
+    }
+
+    for (const id of stuckIds) {
+      this.destroyContainer(id);
+      cleaned++;
+    }
+
+    if (cleaned > 0) {
+      console.log(`[PlayCanvasContainer] Cron cleanup: removed ${cleaned} stuck containers`);
+    }
+
+    return cleaned;
+  }
+
   async shutdown(): Promise<void> {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
