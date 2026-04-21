@@ -181,7 +181,7 @@ export async function searchExternalAssets(request: AssetFetchRequest): Promise<
   const results: ExternalAsset[] = [];
 
   const sources = source === "all"
-    ? ["playcanvas", "free3d"] as const
+    ? ["playcanvas", "free3d", "sketchfab", "poly-haven"] as const
     : source === "local"
     ? ["free3d"] as const
     : [source] as const;
