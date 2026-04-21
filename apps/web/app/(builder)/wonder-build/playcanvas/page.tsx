@@ -11,6 +11,8 @@ import NpcPanel from "@/components/NpcPanel";
 import PlayCanvasEditorHost from "@/components/PlayCanvasEditorHost";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { buildPlayCanvasEditorUrl, getPlayCanvasMode } from "@/lib/playcanvas";
+import { useAutoSave, cleanSceneData } from "@/lib/scene/auto-save";
+import { useAuth } from "@/lib/supabase/auth-context";
 
 type SceneTemplate = {
   id: string;
@@ -29,12 +31,20 @@ const BRIDGE_READY_TIMEOUT_MS = 10_000;
 function PlayCanvasInner() {
   const params = useSearchParams();
   const sceneId = params.get("sceneId")?.trim() ?? "";
+  const { user } = useAuth();
   const [bridgeLoading, setBridgeLoading] = useState(Boolean(sceneId));
   const [bridgeFailed, setBridgeFailed] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [templates, setTemplates] = useState<SceneTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(!sceneId);
+  const [sceneData, setSceneData] = useState<any>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
+
+  const { saveNow } = useAutoSave(sceneId, sceneData, user?.id, {
+    intervalMs: 30000,
+    enabled: !!sceneId && !!sceneData,
+  });
 
   useEffect(() => {
     setBridgeLoading(Boolean(sceneId));
@@ -79,6 +89,34 @@ function PlayCanvasInner() {
       window.clearTimeout(timeoutId);
     };
   }, [bridgeFailed, bridgeLoading, pushToast, sceneId]);
+
+  useEffect(() => {
+    if (!sceneId || isCleaningUp) return;
+
+    async function loadAndCleanScene() {
+      try {
+        const res = await fetch(`/api/scenes/${sceneId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const cleaned = cleanSceneData(data);
+          setSceneData(cleaned);
+          pushToast("Scene loaded and cleaned", "success");
+        }
+      } catch (err) {
+        console.error("Failed to load scene:", err);
+      }
+    }
+
+    loadAndCleanScene();
+  }, [sceneId, isCleaningUp, pushToast]);
+
+  const handlePublish = useCallback(async () => {
+    if (!sceneId) return;
+    pushToast("Publishing...", "success");
+    await saveNow();
+    pushToast("Published!", "success");
+    window.location.href = `/play/${sceneId}`;
+  }, [sceneId, saveNow, pushToast]);
 
   return (
     <div className="space-y-4 text-white">
@@ -191,11 +229,24 @@ function PlayCanvasInner() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/dashboard/editor-playcanvas" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
-          Open Dashboard Bridge
+        <Link href="/dashboard/projects" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
+          ← Dashboard
         </Link>
-        <Link href="/wonder-build/playcanvas" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
-          Open PlayCanvas Studio
+        <Link href="/library" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
+          📚 Library
+        </Link>
+        <Link href="/game-builder/create" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
+          🎨 Create New
+        </Link>
+        <button 
+          onClick={handlePublish}
+          disabled={!sceneId}
+          className="rounded-md border border-green-500/50 bg-green-600/20 px-3 py-2 text-green-400 hover:bg-green-600/30 disabled:opacity-50"
+        >
+          🚀 Publish
+        </button>
+        <Link href="/dashboard/editor-playcanvas" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
+          Dashboard Bridge
         </Link>
       </div>
 
