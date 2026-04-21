@@ -30,7 +30,7 @@
 
 ### Coder Integration
 - [ ] **Add "Create Private IDE" link to site** — Button/page linking to coder.dreammakerhub.website
-- [ ] **Private projects per user** — Ensure workspaces are isolated per-user
+- [x] **Private projects per user** — Ensure workspaces are isolated per-user (added RLS policies in supabase/migrations/006_add_rls_puck_projects.sql)
 - [ ] **Custom workspace template** — Template with private storage/Docker/extensions
 
 ---
@@ -97,6 +97,12 @@
 ### Pending
 
 - [ ] Set up cron job on Hostinger: `*/15 * * * * curl -s https://dreammakerhub.website/api/playcanvas-isolation -X POST -d '{"action":"cron_cleanup"}'`
+
+### Realtime Optimization
+
+- [ ] Enable RLS on scenes table + Service Role policy
+- [ ] Add useEffect latency logging to WebGL editor
+- [ ] Disable ack in Supabase Realtime broadcast config
 
 ### Key Files
 
