@@ -107,8 +107,8 @@ const nextConfig = {
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai",
-            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+            "connect-src 'self' https://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.vercel.app https://*.cloudflare.com",
+            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app blob: data:",
             "worker-src 'self' blob:",
           ].join('; ')
         },
