@@ -149,6 +149,22 @@ export async function POST(request: Request) {
         await manager.destroyContainer(`pc-container-${userSession.hashedId}`);
         return NextResponse.json({ success: true });
 
+      case 'cron_cleanup':
+        // Called by cron job to cleanup stuck containers
+        const stuck = manager.cleanupStuckContainers(15 * 60 * 1000); // 15 min timeout
+        return NextResponse.json({ 
+          success: true, 
+          cleaned: stuck,
+          message: `Cleaned up ${stuck} stuck containers` 
+        });
+
+      case 'ping':
+        // Keep-alive ping from active user
+        const pingInstance = await manager.getContainer(userSession.userId);
+        pingInstance.lastUsed = Date.now();
+        pingInstance.isActive = true;
+        return NextResponse.json({ success: true });
+
       default:
         return NextResponse.json(
           { error: 'Invalid action. Use: create_scene, mount_files, destroy_container' },
