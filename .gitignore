@@ -36,3 +36,18 @@ __pycache__/
 .aider*
 
 /lib/generated/prisma
+# --- PRISMA & DATABASE ---
+# Don't ignore the schema, but ignore SQLite files if you use them locally
+*.db
+*.db-journal
+# --- LOGS & DEBUGGING ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.eslintcache
+logs
+*.log
+# --- OS FILES ---
+.DS_Store
+Thumbs.db

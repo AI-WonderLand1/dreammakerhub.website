@@ -58,9 +58,9 @@ function detectHumanLanguage(prompt: string): string {
 }
 
 const AGENTS = {
-  "builder-default": { id: "gpt-4o-mini", provider: "github" },
-  "github-fast": { id: "gpt-4o-mini", provider: "github" },
-  "github-powerful": { id: "gpt-4o", provider: "github" },
+  "builder-default": { id: "opencode/big-pickle", provider: "opencode" },
+  "github-fast": { id: "opencode/big-pickle", provider: "opencode" },
+  "github-powerful": { id: "opencode/big-pickle", provider: "opencode" },
   "google-vision": { id: "gemini-2.5-pro-vision", provider: "google" },
   "openrouter-general": { id: "openrouter/auto", provider: "openrouter" },
 };
