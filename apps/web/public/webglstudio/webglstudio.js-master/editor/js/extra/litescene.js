@@ -1739,7 +1739,7 @@ var LS = {
 	{
 		if(obj.setProperty)
 			return obj.setProperty(name, value);
-		obj[ name ] = value; //clone¿?
+		obj[ name ] = value; //cloneï¿½?
 		if(obj.onPropertyChanged)
 			obj.onPropertyChanged( name, value );
 	},
@@ -3154,6 +3154,7 @@ var Input = {
 };
 
 
+if (!Object.getOwnPropertyDescriptor(MouseEvent.prototype, "getRay")) {
 Object.defineProperty( MouseEvent.prototype, "getRay", { value: function(){
 		//get camera under position
 		var camera = LS.Renderer.getCameraAtPosition( this.mousex, this.mousey, LS.Renderer._visible_cameras );
@@ -3164,6 +3165,7 @@ Object.defineProperty( MouseEvent.prototype, "getRay", { value: function(){
 	},
 	enumerable: false 
 });
+}
 
 LS.Input = Input;
 ///@FILE:../src/gui.js
@@ -12300,7 +12302,7 @@ CompositePattern.prototype.removeChild = function(node, param1, param2)
 		return false; //not his son
 	var pos = this._children.indexOf(node);
 	if(pos == -1)
-		return false; //not his son ¿?
+		return false; //not his son ï¿½?
 	this._children.splice(pos,1);
 
 	if(this._onChildRemoved)
@@ -38368,7 +38370,7 @@ Light.prototype.computeFar = function()
 
 	if( this.type == Light.OMNI )
 	{
-		//Math.SQRT2 because in a 45º triangle the hypotenuse is sqrt(1+1) * side
+		//Math.SQRT2 because in a 45ï¿½ triangle the hypotenuse is sqrt(1+1) * side
 		if( this.attenuation_type == this.RANGE_ATTENUATION  && (this.att_end * Math.SQRT2) < closest_far)
 			closest_far = this.att_end / Math.SQRT2;
 		//TODO, if no range_attenuation but linear_attenuation also check intensity to reduce the far
@@ -38709,7 +38711,7 @@ Light.prototype.getTransformMatrix = function( element, mat )
 * apply a transformation to a given light property, this is done in a function to allow more complex gizmos
 * @method applyTransformMatrix
 * @param {mat4} matrix transformation in matrix form
-* @param {vec3} center ¿?
+* @param {vec3} center ï¿½?
 * @param {string} property_name "target" or "position"
 * @return {mat4} mat4
 */
