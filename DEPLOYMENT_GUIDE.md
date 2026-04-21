@@ -20,7 +20,7 @@ The 502 Bad Gateway error typically indicates:
 
 ```bash
 # REQUIRED - From your Supabase Dashboard
-NEXT_PUBLIC_SUPABASE_URL=https://wwuvfvdylnxiegnowbur.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://hhdduixckgllodixrejp.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dXZmdmR5bG54aWVnbm93YnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NjIwMjEsImV4cCI6MjA4NDAzODAyMX0.QhF4PFCXGJcxaeQY4fODjzngLlNL7h8fZTlUY6b8tlE
 SUPABASE_SERVICE_ROLE_KEY=your-actual-service-role-key-here  # GET THIS FROM SUPABASE
 
@@ -156,7 +156,7 @@ cat ~/.pm2/logs/dreammakerhub-error.log
 ### 3. Verify Supabase Connection
 ```bash
 # Test Supabase connection (temporarily add to a route)
-curl https://wwuvfvdylnxiegnowbur.supabase.co/rest/v1/
+curl https://hhdduixckgllodixrejp.supabase.co/rest/v1/
 ```
 
 ### 4. Memory Issues

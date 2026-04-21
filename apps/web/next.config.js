@@ -21,8 +21,7 @@ const nextConfig = {
     externalDir: true,
   },
 
-  // Use webpack for production builds (Turbopack optional for dev)
-  // turbopack: {}, // Disabled - can cause issues with some packages
+  turbopack: {}, // Required when webpack config exists
 
   transpilePackages: ["@react-three/fiber", "@react-three/drei", "three", "@wonderspace/ide-engine"],
 
