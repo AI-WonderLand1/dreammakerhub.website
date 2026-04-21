@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q") || "3d model";
-    const source = searchParams.get("source") as "playcanvas" | "sketchfab" | "poly-haven" | "all" || "all";
+    const source = searchParams.get("source") as "playcanvas" | "sketchfab" | "poly-haven" | "free3d" | "all" || "all";
     const limit = parseInt(searchParams.get("limit") || "10", 10);
 
     const assets = await searchExternalAssets({ query, source, limit });
