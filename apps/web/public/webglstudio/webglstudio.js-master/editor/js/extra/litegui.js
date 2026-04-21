@@ -1302,6 +1302,7 @@ var LiteGUI = {
 };
 
 //low quality templating system
+if (!Object.getOwnPropertyDescriptor(String.prototype, "template")) {
 Object.defineProperty( String.prototype, "template", {
 	value: function( data, eval_code )
 	{
@@ -1315,6 +1316,7 @@ Object.defineProperty( String.prototype, "template", {
 	},
 	enumerable: false
 });
+}
 
 
 function purgeElement(d, skip) {
@@ -3127,7 +3129,7 @@ LiteGUI.Console = Console;
 		var dynamic_section = null;
 		if(editable)
 		{
-			splitinfo = " - " + (Area.splitbar_size + 2) +"px"; //2 px margin ¿?
+			splitinfo = " - " + (Area.splitbar_size + 2) +"px"; //2 px margin ï¿½?
 			splitbar = document.createElement("div");
 			splitbar.className = "litesplitbar " + direction;
 			if(direction == "vertical")
