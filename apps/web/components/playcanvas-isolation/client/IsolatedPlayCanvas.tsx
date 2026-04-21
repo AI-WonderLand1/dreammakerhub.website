@@ -99,6 +99,15 @@ export function IsolatedPlayCanvas({
               // Signal that container is ready - prevents cleanup
               signalContainerReady(userId);
               
+              // Start heartbeat to keep container alive while user is editing
+              setInterval(() => {
+                fetch('/api/playcanvas-isolation', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'ping' }),
+                }).catch(() => {});
+              }, 60000); // Ping every minute
+              
               // Register container with service worker
               if (clientRef.current) {
                 const instance = containerManager.getContainer(userId);
