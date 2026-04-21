@@ -15,7 +15,10 @@ export interface IsolatedPlayCanvasProps {
   onReady?: () => void;
   onError?: (error: Error) => void;
   onStatusChange?: (status: string) => void;
+  fallbackUrl?: string;
 }
+
+const USE_LOCAL_FALLBACK = process.env.NEXT_PUBLIC_USE_LOCAL_PLAYCANVAS === 'true';
 
 export function IsolatedPlayCanvas({
   userId,
