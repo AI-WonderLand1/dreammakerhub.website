@@ -463,9 +463,14 @@ export class PlayCanvasContainerManager {
   constructor(
     private maxInstances: number = 10,
     private instanceTimeoutMs: number = 30 * 60 * 1000, // 30 minutes
-    private cleanupIntervalMs: number = 5 * 60 * 1000 // 5 minutes
+    private cleanupIntervalMs: number = 5 * 60 * 1000, // 5 minutes
+    private userConfirmClose: boolean = true // Don't delete until user explicitly closes
   ) {
-    this.startCleanupInterval();
+    if (userConfirmClose) {
+      // Don't auto-cleanup - wait for explicit destroy call
+    } else {
+      this.startCleanupInterval();
+    }
   }
 
   private generateContainerId(userId: string): string {
