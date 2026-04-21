@@ -101,7 +101,7 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
         </div>
         
         <div className="flex gap-2">
-          {['all', 'playcanvas', 'free3d'].map((source) => (
+          {['all', 'playcanvas', 'free3d', 'sketchfab', 'poly-haven'].map((source) => (
             <button
               key={source}
               onClick={() => setSelectedSource(source)}
