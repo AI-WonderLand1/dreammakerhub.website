@@ -23,86 +23,68 @@ export interface AssetFetchRequest {
   limit?: number;
 }
 
-const PLAYCANVAS_API = process.env.PLAYCANVAS_API_URL || "https://api.playcanvas.com";
-const PLAYCANVAS_STORE_URL = "https://store.playcanvas.com";
 const SKETCHFAB_API = "https://api.sketchfab.com/v3";
 
-async function fetchPlayCanvasAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
+async function fetchOpenSource3DAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
   const assets: ExternalAsset[] = [];
 
   try {
-    const searchUrl = `${PLAYCANVAS_STORE_URL}/api/explore/search?q=${encodeURIComponent(query)}&type=models&limit=${limit}`;
-    const res = await fetch(searchUrl);
-    const data = await res.json();
+    const projectsRes = await fetch("https://raw.githubusercontent.com/ToxSam/open-source-3d-assets/main/data/projects.json");
+    const projectsData = await projectsRes.json();
 
-    if (data.results) {
-      for (const item of data.results) {
-        const thumb = item.thumbnails?.images?.[0]?.url || item.thumbnail?.url || "";
-        assets.push({
-          id: `pc_${item.id}`,
-          name: item.name || item.title,
-          source: "playcanvas",
-          url: item.url || `${PLAYCANVAS_STORE_URL}/model/${item.id}`,
-          thumbnailUrl: thumb,
-          downloadUrl: item.download?.url || item.gltfUrl || "",
-          format: "glb",
-          category: item.category || "model",
-          tags: item.tags || [],
-          author: item.author?.name,
-          license: item.license || "CC-BY"
-        });
-      }
+    const filtered = projectsData
+      .filter((p: any) => p.name.toLowerCase().includes(query.toLowerCase()) || p.tags?.some((t: string) => t.toLowerCase().includes(query.toLowerCase())))
+      .slice(0, limit);
+
+    for (const project of filtered) {
+      assets.push({
+        id: `ossa_${project.slug}`,
+        name: project.name,
+        source: "local",
+        url: project.download || project.repo,
+        thumbnailUrl: project.preview || "",
+        downloadUrl: project.download || "",
+        format: "glb",
+        category: project.category || "model",
+        tags: project.tags || [],
+        author: project.author || "Open Source",
+        license: project.license || "CC0"
+      });
     }
   } catch (err) {
-    console.error("PlayCanvas fetch error:", err);
+    console.error("Open Source 3D Assets fetch error:", err);
   }
 
   return assets;
 }
 
-async function fetchFree3DAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
+async function fetchPolyHavenAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
   const assets: ExternalAsset[] = [];
 
   try {
-    const searchUrl = `https://market.pmfiles.com/pluginapi/free-3d-models?query=${encodeURIComponent(query)}&limit=${limit}`;
-    const res = await fetch(searchUrl);
+    const res = await fetch(`https://3dmodelhaven.com/files/models?search=${encodeURIComponent(query)}&limit=${limit}`);
     const data = await res.json();
 
-    if (data.models) {
-      for (const item of data.models) {
+    if (data) {
+      const items = Array.isArray(data) ? data : data.files || [];
+      for (const item of items) {
         assets.push({
-          id: `free3d_${item.id}`,
-          name: item.name,
-          source: "local",
-          url: item.url,
-          thumbnailUrl: item.thumbnail || "",
+          id: `ph_${item.id || item.model_id}`,
+          name: item.model_name || item.name,
+          source: "poly-haven",
+          url: `https://3dmodelhaven.com/mod/${item.model_id || item.id}`,
+          thumbnailUrl: item.preview_url || item.thumbnail || `https://3dmodelhaven.com/tex/thumbs/${item.model_id || item.id}_100_100.jpg`,
           downloadUrl: item.download || "",
           format: "glb",
           category: item.category || "model",
           tags: item.tags || [],
           author: item.author,
-          license: "CC-BY"
+          license: "CC0"
         });
       }
     }
   } catch (err) {
-    console.error("Free3D fetch error:", err);
-  }
-
-  if (assets.length === 0) {
-    assets.push({
-      id: "placeholder_car",
-      name: "Sample Car",
-      source: "local",
-      url: "#",
-      thumbnailUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400",
-      downloadUrl: "",
-      format: "glb",
-      category: "vehicle",
-      tags: ["car", "sample"],
-      author: "WonderLand",
-      license: "CC-BY"
-    });
+    console.error("Poly Haven fetch error:", err);
   }
 
   return assets;
@@ -113,11 +95,7 @@ async function fetchSketchfabAssets(query: string, limit = 10): Promise<External
 
   try {
     const searchUrl = `${SKETCHFAB_API}/search/models?q=${encodeURIComponent(query)}&downloadable=true&animated=false&limit=${limit}`;
-    const res = await fetch(searchUrl, {
-      headers: {
-        "Authorization": `Token ${process.env.SKETCHFAB_TOKEN || ""}`
-      }
-    });
+    const res = await fetch(searchUrl);
     const data = await res.json();
 
     if (data.results) {
@@ -128,7 +106,7 @@ async function fetchSketchfabAssets(query: string, limit = 10): Promise<External
           name: item.name,
           source: "sketchfab",
           url: `https://sketchfab.com/models/${item.uid}`,
-          thumbnailUrl: thumb?.url || "",
+          thumbnailUrl: thumb?.url || `https://media.sketchfab.com/models/${item.uid}/thumbnails/${item.uid}/c4b430e12dd64be0b6918964b19e9623/b256a6803b2f4e339a2dd56d74236500.jpeg`,
           downloadUrl: item.download?.url || "",
           format: "glb",
           category: item.categories?.[0]?.name || "model",
@@ -145,53 +123,18 @@ async function fetchSketchfabAssets(query: string, limit = 10): Promise<External
   return assets;
 }
 
-async function fetchPolyHavenAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
-  const assets: ExternalAsset[] = [];
-
-  try {
-    const res = await fetch(`https://polyhaven.com/api/assets?search=${encodeURIComponent(query)}&tglb=1&limit=${limit}`);
-    const data = await res.json();
-
-    if (data) {
-      for (const [id, item] of Object.entries(data as Record<string, any>)) {
-        assets.push({
-          id: `ph_${id}`,
-          name: item.title || id,
-          source: "poly-haven",
-          url: `https://polyhaven.com/a/${id}`,
-          thumbnailUrl: item.images?.[0] || "",
-          downloadUrl: item.formats?.glb?.self || "",
-          format: "glb",
-          category: item.category || "model",
-          tags: item.tags || [],
-          author: item.authors?.[0]?.name,
-          license: "CC-BY"
-        });
-      }
-    }
-  } catch (err) {
-    console.error("Poly Haven fetch error:", err);
-  }
-
-  return assets;
-}
-
 export async function searchExternalAssets(request: AssetFetchRequest): Promise<ExternalAsset[]> {
   const { query = "3d model", source = "all", limit = 10 } = request;
   const results: ExternalAsset[] = [];
 
   const sources = source === "all"
-    ? ["playcanvas", "free3d", "sketchfab", "poly-haven"] as const
-    : source === "local"
-    ? ["free3d"] as const
+    ? ["open-source", "sketchfab", "poly-haven"] as const
     : [source] as const;
 
   const promises = sources.map(s => {
     switch (s) {
-      case "playcanvas":
-        return fetchPlayCanvasAssets(query, limit);
-      case "free3d":
-        return fetchFree3DAssets(query, limit);
+      case "open-source":
+        return fetchOpenSource3DAssets(query, limit);
       case "sketchfab":
         return fetchSketchfabAssets(query, limit);
       case "poly-haven":
