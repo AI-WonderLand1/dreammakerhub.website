@@ -1,0 +1,33 @@
+name: Weekly Asset Sync
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Every Sunday at 2 AM UTC
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/sync-assets.ts'
+
+jobs:
+  sync-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run asset sync
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+        run: npx tsx scripts/sync-assets.ts
+        
+      - name: Report sync results
+        run: echo "Asset sync completed successfully"
