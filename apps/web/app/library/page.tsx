@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { AssetPicker } from "@/components/engines/AssetPicker";
 
 interface Scene {
   id: string;
@@ -44,6 +45,8 @@ export default function LibraryPage() {
           filteredScenes = data.templates.filter((scene: any) => 
             scene.user_id && scene.user_id !== "system"
           );
+        } else if (filter === "external") {
+          filteredScenes = [];
         }
         
         setScenes(filteredScenes);
@@ -136,7 +139,23 @@ export default function LibraryPage() {
           >
             👤 User Created
           </button>
+          <button
+            onClick={() => setFilter("external")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filter === "external" 
+                ? "bg-green-500/20 text-green-300" 
+                : "bg-white/5 text-white/60 hover:text-white"
+            }`}
+          >
+            🌐 External Libs
+          </button>
         </div>
+
+        {filter === "external" && (
+          <div className="mb-6">
+            <AssetPicker />
+          </div>
+        )}
 
         {/* Scene Grid */}
         {loading ? (
