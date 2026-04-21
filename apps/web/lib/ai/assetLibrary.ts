@@ -127,29 +127,53 @@ export async function searchExternalAssets(request: AssetFetchRequest): Promise<
   const { query = "3d model", source = "all", limit = 10 } = request;
   const results: ExternalAsset[] = [];
 
-  const sources = source === "all"
-    ? ["open-source", "sketchfab", "poly-haven"] as const
-    : [source] as const;
+  const { data: dbAssets } = await supabase
+    .from("assets")
+    .select("*")
+    .or(`name.ilike.%${query}%,tags.cs.{${query}}`)
+    .limit(limit * 2);
 
-  const promises = sources.map(s => {
-    switch (s) {
-      case "open-source":
-        return fetchOpenSource3DAssets(query, limit);
-      case "sketchfab":
-        return fetchSketchfabAssets(query, limit);
-      case "poly-haven":
-        return fetchPolyHavenAssets(query, limit);
-      default:
-        return Promise.resolve([]);
-    }
-  });
-
-  const resultsArr = await Promise.all(promises);
-  for (const r of resultsArr) {
-    results.push(...r);
+  if (dbAssets && dbAssets.length > 0) {
+    results.push(...dbAssets.map(row => ({
+      id: row.id,
+      name: row.name,
+      source: row.source as ExternalAsset["source"],
+      url: row.url || "",
+      thumbnailUrl: row.thumbnail_url || "",
+      downloadUrl: row.download_url || "",
+      format: (row.format as ExternalAsset["format"]) || "glb",
+      category: row.category || "model",
+      tags: row.tags || [],
+      author: row.author,
+      license: row.license
+    })))
   }
 
-  return results;
+  if (results.length < limit) {
+    const sources = source === "all"
+      ? ["open-source", "sketchfab", "poly-haven"] as const
+      : [source] as const;
+
+    const promises = sources.map(s => {
+      switch (s) {
+        case "open-source":
+          return fetchOpenSource3DAssets(query, limit);
+        case "sketchfab":
+          return fetchSketchfabAssets(query, limit);
+        case "poly-haven":
+          return fetchPolyHavenAssets(query, limit);
+        default:
+          return Promise.resolve([]);
+      }
+    });
+
+    const resultsArr = await Promise.all(promises);
+    for (const r of resultsArr) {
+      results.push(...r);
+    }
+  }
+
+  return results.slice(0, limit);
 }
 
 export async function downloadAssetToStorage(asset: ExternalAsset, userId?: string): Promise<{ success: boolean; localUrl?: string; error?: string }> {
