@@ -35,8 +35,22 @@ function loadStyle(href: string): Promise<void> {
   });
 }
 
+const loadedScripts = new Set<string>();
+
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (loadedScripts.has(src)) {
+      resolve();
+      return;
+    }
+    
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      resolve();
+      return;
+    }
+    
+    loadedScripts.add(src);
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = src;
