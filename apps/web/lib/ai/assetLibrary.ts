@@ -196,6 +196,12 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       });
     }
 
+    await supabase.from("asset_metadata").insert({
+      glb_url: publicUrl,
+      format: asset.format,
+      version: 1
+    });
+
     return { success: true, localUrl: publicUrl };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : "Download failed" };
