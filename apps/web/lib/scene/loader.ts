@@ -2,6 +2,32 @@ import * as pc from "playcanvas"
 import { SceneFile } from "./schema"
 import { loadSceneFromSupabase } from "./supabase-store"
 
+async function loadGlbModel(app: pc.Application, meshUrl: string): Promise<pc.Entity | null> {
+  return new Promise((resolve) => {
+    if (!meshUrl) {
+      resolve(null);
+      return;
+    }
+
+    const assets = app.assets;
+    const url = meshUrl.startsWith('/') ? meshUrl : `/${meshUrl}`;
+
+    assets.loadFromUrl({
+      url: url,
+      type: 'container',
+    }, (err: Error | null, asset: pc.Asset) => {
+      if (err) {
+        console.error('Failed to load GLB:', err);
+        resolve(null);
+        return;
+      }
+
+      const entity = asset.resource as pc.Entity;
+      resolve(entity);
+    });
+  });
+}
+
 export async function loadScene(app: pc.Application, sceneOrId: SceneFile | string) {
   // If it's a string, it's a sceneId - load from Supabase
   let scene: any = sceneOrId;
@@ -36,35 +62,45 @@ export async function loadScene(app: pc.Application, sceneOrId: SceneFile | stri
 
   // Create objects
   if (scene.objects) {
-    scene.objects.forEach((obj: any) => {
-      const entity = new pc.Entity(obj.name || "object");
-      
-      // Add render component based on type
-      let primitiveType = pc.PRIMITIVE_TRIANGLES;
-      switch (obj.type) {
-        case "box":
-          primitiveType = pc.PRIMITIVE_BOX;
-          break;
-        case "sphere":
-          primitiveType = pc.PRIMITIVE_SPHERE;
-          break;
-        case "cylinder":
-          primitiveType = pc.PRIMITIVE_CYLINDER;
-          break;
-        case "plane":
-          primitiveType = pc.PRIMITIVE_PLANE;
-          break;
-        case "capsule":
-          primitiveType = pc.PRIMITIVE_CAPSULE;
-          break;
-        case "cone":
-          primitiveType = pc.PRIMITIVE_CONE;
-          break;
-      }
-      
-      entity.addComponent("render", {
-        type: primitiveType
-      });
+    for (const obj of scene.objects) {
+      let entity: pc.Entity;
+
+      if (obj.meshUrl && (obj.meshUrl.endsWith('.glb') || obj.meshUrl.endsWith('.gltf'))) {
+        const loaded = await loadGlbModel(app, obj.meshUrl);
+        if (!loaded) {
+          console.warn('Failed to load GLB:', obj.meshUrl);
+          continue;
+        }
+        entity = loaded;
+      } else {
+        entity = new pc.Entity(obj.name || "object");
+        
+        let primitiveType = pc.PRIMITIVE_TRIANGLES;
+        switch (obj.type) {
+          case "box":
+            primitiveType = pc.PRIMITIVE_BOX;
+            break;
+          case "sphere":
+            primitiveType = pc.PRIMITIVE_SPHERE;
+            break;
+          case "cylinder":
+            primitiveType = pc.PRIMITIVE_CYLINDER;
+            break;
+          case "plane":
+            primitiveType = pc.PRIMITIVE_PLANE;
+            break;
+          case "capsule":
+            primitiveType = pc.PRIMITIVE_CAPSULE;
+            break;
+          case "cone":
+            primitiveType = pc.PRIMITIVE_CONE;
+            break;
+        }
+        
+        entity.addComponent("render", {
+            type: primitiveType
+          });
+        }
       
       // Apply position, rotation, scale
       if (obj.position) {
@@ -77,15 +113,16 @@ export async function loadScene(app: pc.Application, sceneOrId: SceneFile | stri
         entity.setLocalScale(obj.scale[0], obj.scale[1], obj.scale[2]);
       }
       
-      // Apply material
-      if (obj.material) {
+      // Apply material (only for primitives, not GLB models)
+      if (obj.material && obj.type && !obj.meshUrl) {
         const mat = createMaterial(obj.material);
-        const render = entity.render as pc.RenderComponent;
-        render.material = mat;
+        if (entity.render) {
+          (entity.render as pc.RenderComponent).material = mat;
+        }
       }
       
       app.root.addChild(entity);
-    });
+    }
   }
 
   // Create lights
