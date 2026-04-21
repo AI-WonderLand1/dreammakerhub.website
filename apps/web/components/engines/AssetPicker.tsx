@@ -76,7 +76,8 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
     playcanvas: '🎮',
     sketchfab: '📦',
     'poly-haven': '🏔️',
-    local: '💾'
+    local: '💾',
+    free3d: '📁'
   };
 
   return (
@@ -100,7 +101,7 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
         </div>
         
         <div className="flex gap-2">
-          {['all', 'playcanvas', 'sketchfab', 'poly-haven'].map((source) => (
+          {['all', 'playcanvas', 'free3d'].map((source) => (
             <button
               key={source}
               onClick={() => setSelectedSource(source)}
