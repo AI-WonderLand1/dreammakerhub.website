@@ -92,6 +92,13 @@ export async function GET() {
     // Fallback to hardcoded templates
     const defaultTemplates = [
       {
+        id: "basic-environment",
+        name: "Basic Environment",
+        description: "A simple 3D environment with ground plane and ambient lighting to get started.",
+        category: "starter",
+        thumbnail: null
+      },
+      {
         id: "blank_canvas",
         name: "Blank Canvas",
         description: "Start from scratch with an empty 3D scene. Import your own models or build manually.",
