@@ -36,6 +36,7 @@ function loadStyle(href: string): Promise<void> {
 }
 
 const loadedScripts = new Set<string>();
+const initializedGlobals = new Set<string>();
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -60,6 +61,15 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
+function sanitizeGlobals() {
+  const dangerous = ['getRay', 'template', 'Core', 'GL', 'Graph'];
+  dangerous.forEach(prop => {
+    if (!(window as any)[prop + '_initialized']) {
+      (window as any)[prop + '_initialized'] = true;
+    }
+  });
+}
+
 interface WebGLStudioHostProps {
   onReady?: () => void;
   onError?: (err: Error) => void;
@@ -74,18 +84,20 @@ export default function WebGLStudioHost({ onReady, onError }: WebGLStudioHostPro
     let cancelled = false;
 
     async function mount() {
-      try {
-        // Load styles
-        for (const href of STYLES) {
-          if (cancelled) return;
-          await loadStyle(href);
-        }
+    try {
+      sanitizeGlobals();
+      
+      // Load styles
+      for (const href of STYLES) {
+        if (cancelled) return;
+        await loadStyle(href);
+      }
 
-        // Load scripts in order
-        for (const src of SCRIPTS) {
-          if (cancelled) return;
-          await loadScript(src);
-        }
+      // Load scripts in order
+      for (const src of SCRIPTS) {
+        if (cancelled) return;
+        await loadScript(src);
+      }
 
         if (cancelled) return;
 

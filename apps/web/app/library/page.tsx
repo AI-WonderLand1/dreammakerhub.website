@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { AssetPicker } from "@/components/engines/AssetPicker";
+import { UserAssetLibrary } from "@/components/engines/UserAssetLibrary";
 
 interface Scene {
   id: string;
@@ -45,7 +46,7 @@ export default function LibraryPage() {
           filteredScenes = data.templates.filter((scene: any) => 
             scene.user_id && scene.user_id !== "system"
           );
-        } else if (filter === "external") {
+        } else if (filter === "external" || filter === "my-downloads") {
           filteredScenes = [];
         }
         
@@ -149,11 +150,27 @@ export default function LibraryPage() {
           >
             🌐 External Libs
           </button>
+          <button
+            onClick={() => setFilter("my-downloads")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filter === "my-downloads" 
+                ? "bg-purple-500/20 text-purple-300" 
+                : "bg-white/5 text-white/60 hover:text-white"
+            }`}
+          >
+            📥 My Downloads
+          </button>
         </div>
 
         {filter === "external" && (
           <div className="mb-6">
             <AssetPicker />
+          </div>
+        )}
+
+        {filter === "my-downloads" && (
+          <div className="mb-6">
+            <UserAssetLibrary />
           </div>
         )}
 
