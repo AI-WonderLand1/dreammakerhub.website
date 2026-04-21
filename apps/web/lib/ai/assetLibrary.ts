@@ -37,12 +37,13 @@ async function fetchPlayCanvasAssets(query: string, limit = 10): Promise<Externa
 
     if (data.results) {
       for (const item of data.results) {
+        const thumb = item.thumbnails?.images?.[0]?.url || item.thumbnail?.url || "";
         assets.push({
           id: `pc_${item.id}`,
           name: item.name || item.title,
           source: "playcanvas",
           url: item.url || `${PLAYCANVAS_STORE_URL}/model/${item.id}`,
-          thumbnailUrl: item.thumbnails?.images?.[0]?.url || item.thumbnail?.url || "",
+          thumbnailUrl: thumb,
           downloadUrl: item.download?.url || item.gltfUrl || "",
           format: "glb",
           category: item.category || "model",
@@ -54,6 +55,54 @@ async function fetchPlayCanvasAssets(query: string, limit = 10): Promise<Externa
     }
   } catch (err) {
     console.error("PlayCanvas fetch error:", err);
+  }
+
+  return assets;
+}
+
+async function fetchFree3DAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
+  const assets: ExternalAsset[] = [];
+
+  try {
+    const searchUrl = `https://market.pmfiles.com/pluginapi/free-3d-models?query=${encodeURIComponent(query)}&limit=${limit}`;
+    const res = await fetch(searchUrl);
+    const data = await res.json();
+
+    if (data.models) {
+      for (const item of data.models) {
+        assets.push({
+          id: `free3d_${item.id}`,
+          name: item.name,
+          source: "local",
+          url: item.url,
+          thumbnailUrl: item.thumbnail || "",
+          downloadUrl: item.download || "",
+          format: "glb",
+          category: item.category || "model",
+          tags: item.tags || [],
+          author: item.author,
+          license: "CC-BY"
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Free3D fetch error:", err);
+  }
+
+  if (assets.length === 0) {
+    assets.push({
+      id: "placeholder_car",
+      name: "Sample Car",
+      source: "local",
+      url: "#",
+      thumbnailUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400",
+      downloadUrl: "",
+      format: "glb",
+      category: "vehicle",
+      tags: ["car", "sample"],
+      author: "WonderLand",
+      license: "CC-BY"
+    });
   }
 
   return assets;
@@ -132,13 +181,17 @@ export async function searchExternalAssets(request: AssetFetchRequest): Promise<
   const results: ExternalAsset[] = [];
 
   const sources = source === "all"
-    ? ["playcanvas", "sketchfab", "poly-haven"] as const
+    ? ["playcanvas", "free3d"] as const
+    : source === "local"
+    ? ["free3d"] as const
     : [source] as const;
 
   const promises = sources.map(s => {
     switch (s) {
       case "playcanvas":
         return fetchPlayCanvasAssets(query, limit);
+      case "free3d":
+        return fetchFree3DAssets(query, limit);
       case "sketchfab":
         return fetchSketchfabAssets(query, limit);
       case "poly-haven":
@@ -153,7 +206,7 @@ export async function searchExternalAssets(request: AssetFetchRequest): Promise<
     results.push(...r);
   }
 
-  return results.slice(0, limit * sources.length);
+  return results;
 }
 
 export async function downloadAssetToStorage(asset: ExternalAsset, userId?: string): Promise<{ success: boolean; localUrl?: string; error?: string }> {
