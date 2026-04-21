@@ -98,13 +98,13 @@ const PAID_MODELS = [
   "llama-3.1-70b-versatile",
 ] as const;
 
-async function callGithubAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
-  const apiKey = process.env.GITHUB_MODELS_API_KEY;
-  if (!apiKey) throw new Error("GITHUB_MODELS_API_KEY is not configured.");
+async function callOpenCodeAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
+  const apiKey = process.env.OPENCODE_API_KEY;
+  if (!apiKey) throw new Error("OPENCODE_API_KEY is not configured.");
 
-  const model = isPaid ? "gpt-4o" : "gpt-4o-mini";
+  const model = "opencode/big-pickle";
 
-  const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
+  const res = await fetch("https://opencode.ai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel} Tier)` });
 
-        const plan = await callGithubAI(
+        const plan = await callOpenCodeAI(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
           `Plan a ${typeLabel} based on: "${prompt}"`,
           isPaid
@@ -238,7 +238,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel} Tier)` });
 
-        const rawCode = await callGithubAI(
+        const rawCode = await callOpenCodeAI(
           getSystemPrompt(type),
           `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
           isPaid
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callGithubAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
+        const reviewed = await callOpenCodeAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });
