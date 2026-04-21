@@ -87,6 +87,14 @@ export async function POST(request: Request) {
     const manager = getContainerManager();
 
     switch (action) {
+      case 'ready':
+        // Mark container as ready - prevents cleanup
+        const readyInstance = await manager.getContainer(userSession.userId);
+        readyInstance.isActive = true;
+        readyInstance.lastUsed = Date.now();
+        console.log(`[API] Container marked ready for user ${userSession.userId.substring(0, 8)}`);
+        return NextResponse.json({ success: true, containerId: readyInstance.id });
+
       case 'create_scene':
         if (!sceneId) {
           return NextResponse.json(
