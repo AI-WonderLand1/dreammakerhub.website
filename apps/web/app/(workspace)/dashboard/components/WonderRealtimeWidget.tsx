@@ -58,7 +58,10 @@ export default function WonderRealtimeWidget(props: {
     const room = projectId ? `wonder:dash:${projectId}` : "wonder:dash:global";
 
     const channel = supabase.channel(room, {
-      config: { presence: { key: me.userId } },
+      config: {
+        presence: { key: me.userId },
+        broadcast: { self: false, ack: false },
+      },
     });
 
     // Broadcast activity events (fast)

@@ -34,3 +34,5 @@ agent/venv/
 __pycache__/
 *.pyc
 .aider*
+
+/lib/generated/prisma
