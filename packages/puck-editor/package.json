@@ -1,5 +1,18 @@
 {
   "name": "@wonder/puck-editor",
   "version": "1.0.0",
-  "main": "index.ts"
+  "description": "Puck visual editor blocks and components",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*"
+  },
+  "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
