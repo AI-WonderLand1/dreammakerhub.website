@@ -264,7 +264,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           `;
 
         case "featureGrid":
-          const features = (props.features || "Fast,Secure,Scalable").split(",");
+          const features = ((props.features as string) || "Fast,Secure,Scalable").split(",");
           return `
             <section class="section-padding-lg">
               <div class="text-center mb-8" style="animation: slideUp 0.6s ease forwards;">
@@ -286,7 +286,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           `;
 
         case "pricingTable":
-          const plans = (props.plans || "Starter,Pro,Enterprise").split(",");
+          const plans = ((props.plans as string) || "Starter,Pro,Enterprise").split(",");
           const price = props.price || "$9/mo";
           return `
             <section class="section-padding-lg">
@@ -321,7 +321,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           `;
 
         case "statsSection":
-          const stats = (props.stats || "Users:10K,Projects:500,Countries:50").split(";");
+          const stats = ((props.stats as string) || "Users:10K,Projects:500,Countries:50").split(";");
           return `
             <section class="section-padding-lg">
               <div class="glass section-padding" style="border-radius: 24px;">
@@ -370,7 +370,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           `;
 
         case "logoCloud":
-          const companies = (props.companies || "Google,Meta,Microsoft,Amazon,Apple,Nvidia").split(",");
+          const companies = ((props.companies as string) || "Google,Meta,Microsoft,Amazon,Apple,Nvidia").split(",");
           return `
             <section class="section-padding">
               <p class="text-center text-white/60 text-sm mb-6">Trusted by industry leaders</p>
@@ -383,7 +383,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           `;
 
         case "multiColumnFooter":
-          const columns = (props.columns || "Product,Company,Support,Legal").split(",");
+          const columns = ((props.columns as string) || "Product,Company,Support,Legal").split(",");
           return `
             <footer class="section-padding-lg" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 64px;">
               <div class="grid grid-4" style="gap: 32px;">
@@ -447,7 +447,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           `;
 
         case "tabsSystem":
-          const tabs = (props.tabs || "Features,Pricing,About").split(",");
+          const tabs = ((props.tabs as string) || "Features,Pricing,About").split(",");
           return `
             <section class="section-padding">
               <div class="glass" style="border-radius: 16px; overflow: hidden;">
