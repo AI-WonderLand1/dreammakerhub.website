@@ -22,7 +22,7 @@ export const MasterBlock = ({
   triggerEvent,
   children,
 }: MasterBlockProps) => {
-  const Icon = (Icons as Record<string, React.ElementType>)[iconName] || Icons.Sparkles;
+  const Icon = (Icons as unknown as Record<string, React.ElementType>)[iconName] || Icons.Sparkles;
 
   const variants = {
     glass: 'border border-white/20 bg-white/10 backdrop-blur-md shadow-xl',
