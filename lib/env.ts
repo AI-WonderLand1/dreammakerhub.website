@@ -8,7 +8,10 @@ export const env = createEnv({
   server: {
     NEXTAUTH_SECRET: z.string().min(32),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    // Add your Supabase Service Role Key here later if needed
+    OPENCODE_API_KEY: z.string().optional(),
+    AI_PROVIDER: z.string().default("opencode"),
+    GEMINI_API_KEY: z.string().optional(),
+    GOOGLE_API_KEY: z.string().optional(),
   },
 
   /*
@@ -33,6 +36,10 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
     NEXT_PUBLIC_WORKSPACE_DOMAIN: process.env.NEXT_PUBLIC_WORKSPACE_DOMAIN,
+    OPENCODE_API_KEY: process.env.OPENCODE_API_KEY,
+    AI_PROVIDER: process.env.AI_PROVIDER,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     // Add these so you can use them in your Webhooks/Agents:
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
