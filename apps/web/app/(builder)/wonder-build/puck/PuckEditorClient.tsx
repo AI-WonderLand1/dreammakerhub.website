@@ -3,15 +3,173 @@
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { Eye, Monitor, Code, Clock, Download, Sparkles } from "lucide-react";
 import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
 import { retrievePuckData } from "@/lib/ai-to-puck";
+import { useAutoSave } from "@/components/VersionHistory";
+import { TempStorageWarning } from "@/components/TempStorageWarning";
+import { PuckAIPanel } from "@/components/PuckAIPanel";
+import { VersionHistory } from "@/components/VersionHistory";
+import { PuckPreview } from "./PuckPreview";
+
+// Export generation functions
+function generateHTMLExport(data: InitialData): string {
+  const content = data.content || [];
+  const htmlContent = content.map(item => {
+    if (item.type === 'Heading') {
+      return `<h1>${item.props?.content || 'Heading'}</h1>`;
+    }
+    if (item.type === 'Paragraph') {
+      return `<p>${item.props?.content || 'Paragraph'}</p>`;
+    }
+    return `<div>${item.type}</div>`;
+  }).join('\n');
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Puck Export</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  ${htmlContent}
+</body>
+</html>`;
+}
+
+function generateReactExport(data: InitialData): string {
+  const content = data.content || [];
+  const reactComponents = content.map(item => {
+    if (item.type === 'Heading') {
+      return `  <h1>${item.props?.content || 'Heading'}</h1>`;
+    }
+    if (item.type === 'Paragraph') {
+      return `  <p>${item.props?.content || 'Paragraph'}</p>`;
+    }
+    return `  <div>${item.type}</div>`;
+  }).join('\n');
+  
+  return `import React from 'react';
+
+export default function App() {
+  return (
+    <div>
+${reactComponents}
+    </div>
+  );
+}`;
+}
+
+// PuckAIButton component
+interface PuckAIButtonProps {
+  onClick: () => void;
+}
+
+function PuckAIButton({ onClick }: PuckAIButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all shadow-lg"
+    >
+      <span className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center">
+        <span className="w-2 h-2 bg-white rounded-full"></span>
+      </span>
+      AI Assistant
+    </button>
+  );
+}
+
+// TempStorageBadge component
+interface TempStorageBadgeProps {
+  hoursRemaining?: number;
+}
+
+function TempStorageBadge({ hoursRemaining = 24 }: TempStorageBadgeProps) {
+  return (
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full text-xs font-medium text-amber-300">
+      <Clock className="w-3 h-3" />
+      <span>{hoursRemaining}h left</span>
+    </div>
+  );
+}
+
+// ExportModal component
+interface ExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onExport: (format: "html" | "json" | "react") => void;
+}
+
+function ExportModal({ isOpen, onClose, onExport }: ExportModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="bg-[#0a0a10] border border-white/20 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white">Export Project</h3>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <span className="w-5 h-5 text-white/40">×</span>
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => onExport("html")}
+              className="w-full flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <span className="text-blue-400 font-bold">HTML</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-white">HTML Export</p>
+                <p className="text-xs text-white/60">Static HTML file</p>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => onExport("react")}
+              className="w-full flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                <span className="text-cyan-400 font-bold">JSX</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-white">React Export</p>
+                <p className="text-xs text-white/60">React component</p>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => onExport("json")}
+              className="w-full flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <span className="text-green-400 font-bold">JSON</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-white">JSON Export</p>
+                <p className="text-xs text-white/60">Project data</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error" | "saving" | "saved";
 
 type InitialData = {
   content: Array<{ type: string; props: Record<string, unknown> }>;
-  root?: { type: string; props: Record<string, unknown> };
+  root: { type: string; props: Record<string, unknown> };
 };
 
 interface PuckEditorClientProps {
@@ -35,6 +193,11 @@ export function PuckEditorClient({
   const [data, setData] = useState<InitialData | null>(initialData);
   const [saveStatus, setSaveStatus] = useState<string>("");
   const [localProjectId, setLocalProjectId] = useState<string | undefined>(projectId);
+  const [showAI, setShowAI] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showTempWarning, setShowTempWarning] = useState(false);
+  const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
+  const [storageInfo, setStorageInfo] = useState<{type: string; hoursRemaining?: number; expiresAt?: string}>({type: "platform"});
   const searchParams = useSearchParams();
 
   const hasContent = (data?.content?.length ?? 0) > 0;
@@ -90,7 +253,10 @@ export function PuckEditorClient({
       const aiData = retrievePuckData(aiDataKey);
       if (aiData) {
         setStatus("loaded");
-        setData(aiData);
+        setData({
+          content: aiData.content,
+          root: aiData.root || { type: "Fragment", props: {} }
+        });
         return;
       }
     }
@@ -201,7 +367,7 @@ export function PuckEditorClient({
       
       const json = await res.json();
       if (json.ok) {
-        setStorageInfo({ type: "platform", hoursRemaining: null, expiresAt: null });
+        setStorageInfo({ type: "platform", hoursRemaining: undefined, expiresAt: undefined });
         setShowTempWarning(false);
         setSaveStatus("Saved to platform!");
       }
@@ -329,7 +495,7 @@ export function PuckEditorClient({
               <button
                 type="button"
                 onClick={() => {
-                  setData({ content: [] });
+                  setData({ content: [], root: { type: "Fragment", props: {} } });
                   setStatus("loaded");
                 }}
                 className="rounded-md border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
@@ -355,10 +521,9 @@ export function PuckEditorClient({
               data={data ?? { content: [] }}
               onPublish={handlePublish}
               onChange={handleDataChange}
-              iframe={{
-                enabled: false,
-                permissions: {},
-              }}
+               iframe={{
+                 enabled: false,
+               }}
             >
               <LayoutWrapper />
             </Puck>
@@ -458,69 +623,4 @@ export function PuckEditorClient({
       )}
     </div>
   );
-}
-
-function generateHTMLExport(data: InitialData): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Project</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white">
-  <!-- Your content here -->
-  ${data.content?.map(block => renderBlockHTML(block)).join('\n') || '<div class="p-8 text-center">No content</div>'}
-</body>
-</html>`;
-}
-
-function renderBlockHTML(block: any): string {
-  const props = block.props || {};
-  switch (block.type) {
-    case "heading":
-      return `<h1 class="text-3xl font-bold mb-4">${props.content || 'Heading'}</h1>`;
-    case "centerHero":
-      return `
-<div class="text-center p-16 bg-gray-800 rounded-xl">
-  <h1 class="text-5xl font-bold mb-4">${props.title || 'Welcome'}</h1>
-  <p class="text-xl text-gray-300 mb-8">${props.subtitle || 'Start building'}</p>
-  <button class="bg-purple-600 px-6 py-3 rounded-lg">${props.ctaText || 'Get Started'}</button>
-</div>`;
-    case "button":
-      return `<button class="bg-purple-600 px-4 py-2 rounded-lg text-white">${props.content || 'Click me'}</button>`;
-    default:
-      return `<div class="p-4 bg-gray-800 rounded-lg"><p class="text-gray-400">${block.type} component</p></div>`;
-  }
-}
-
-function generateReactExport(data: InitialData): string {
-  return `import React from 'react';
-
-export default function App() {
-  return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      ${data.content?.map(block => renderBlockJSX(block)).join('\n      ') || '<div className="p-8">No content</div>'}
-    </div>
-  );
-}
-
-${data.content?.map(block => renderComponentJSX(block)).join('\n\n') || ''}`;
-}
-
-function renderBlockJSX(block: any): string {
-  const props = block.props || {};
-  switch (block.type) {
-    case "heading":
-      return `<h1 className="text-3xl font-bold mb-4">${props.content || 'Heading'}</h1>`;
-    case "button":
-      return `<button className="bg-purple-600 px-4 py-2 rounded-lg">{props.content || 'Click me'}</button>`;
-    default:
-      return `<!-- ${block.type} -->`;
-  }
-}
-
-function renderComponentJSX(block: any): string {
-  return `// ${block.type} component`;
 }
