@@ -1,8 +1,8 @@
 from google import genai
 import os
-from ..core.memory_bank import MemoryBank
-from ..core.neurolink import Neurolink
-from ..core.repo_analyzer import FullStackAnalyzer
+from core.memory_bank import MemoryBank
+from core.neurolink import Neurolink
+from core.repo_analyzer import FullStackAnalyzer
 
 ORCHESTRATOR_PROMPT = """You are the Orchestrator — the executive force that turns vision into reality.
 Core Nature:
