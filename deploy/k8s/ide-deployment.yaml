@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coder
+  labels:
+    app.kubernetes.io/name: coder
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: coder-env
+  namespace: coder
+type: Opaque
+stringData:
+  CODER_URL: "https://ide.dreammakerhub.website"
+  CODER_SESSION_TOKEN: "9YHRoQSF03-nss4CnTlrdfeoHvfwEgOnI"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coder-ide
+  namespace: coder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coder-ide
+  template:
+    metadata:
+      labels:
+        app: coder-ide
+    spec:
+      containers:
+      - name: ide
+        image: iad.ocir.io/axgejcaos4uw/wonderspace/ide:latest
+        ports:
+        - containerPort: 13337
+          name: code-server
+        - containerPort: 3000
+          name: web
+        env:
+        - name: CODER_URL
+          valueFrom:
+            secretKeyRef:
+              name: coder-env
+              key: CODER_URL
+        - name: CODER_SESSION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: coder-env
+              key: CODER_SESSION_TOKEN
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2
+            memory: 4Gi
+        volumeMounts:
+        - name: workspace
+          mountPath: /home/coder
+      volumes:
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: coder-workspace-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: coder-workspace-pvc
+  namespace: coder
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coder-ide
+  namespace: coder
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 13337
+    protocol: TCP
+  selector:
+    app: coder-ide

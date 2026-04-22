@@ -30,6 +30,7 @@ export async function runModel({
   const isGithub = typeof model === "string" && model.startsWith("github/");
   const isGroq = typeof model === "string" && model.startsWith("groq/");
   const isGoogle = typeof model === "string" && model.startsWith("google/");
+  const isOpencode = typeof model === "string" && model.startsWith("opencode/");
 
   if (isGithub) {
     // GitHub Models expects a model name that does NOT include "github/" prefix.
@@ -67,8 +68,20 @@ export async function runModel({
     });
   }
 
-  // Default: GitHub Models provider for high-quality inference
-  return Providers.github.generate(lastContent, {
+  if (isOpencode) {
+    // OpenCode provider - use as default when no prefix specified
+    const opencodeModel = model.replace(/^opencode\//, "");
+
+    return Providers.opencode.generate(lastContent, {
+      model: opencodeModel || "opencode/big-pickle",
+      system,
+      temperature,
+      maxTokens,
+    });
+  }
+
+  // Default: OpenCode provider for high-quality inference
+  return Providers.opencode.generate(lastContent, {
     model,
     system,
     temperature,
