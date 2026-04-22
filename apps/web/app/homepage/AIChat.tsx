@@ -63,12 +63,51 @@ const DROPDOWN_OPTIONS = [
   { label: "🎮 Create Game", href: "/wonder-build/playcanvas", color: "text-purple-400" },
 ];
 
+type AIModel = "spirit" | "pro" | "ultra" | "reasoning";
+
+const MODEL_INFO = {
+  spirit: { 
+    name: "Spirit AI", 
+    icon: "🔮", 
+    color: "text-violet-400",
+    isFree: true,
+    description: "Free - Great for general questions",
+    modelId: "opencode/big-pickle"
+  },
+  pro: { 
+    name: "Pro AI", 
+    icon: "✨", 
+    color: "text-yellow-400",
+    isFree: false,
+    description: "Premium - Better reasoning & creativity",
+    modelId: "opencode/big-pickle"
+  },
+  ultra: { 
+    name: "Ultra AI", 
+    icon: "🚀", 
+    color: "text-orange-400",
+    isFree: false,
+    description: "Ultra - Maximum power & context",
+    modelId: "opencode/big-pickle"
+  },
+  reasoning: { 
+    name: "Deep Think", 
+    icon: "🧠", 
+    color: "text-cyan-400",
+    isFree: false,
+    description: "Reasoning - Step-by-step analysis",
+    modelId: "opencode/big-pickle"
+  },
+};
+
 interface AIChatProps {
   compact?: boolean;
 }
 
 export default function AIChat({ compact = false }: AIChatProps) {
   const [selectedPersona, setSelectedPersona] = useState<Persona>("spirit_guide");
+  const [selectedModel, setSelectedModel] = useState<AIModel>("spirit");
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     { 
@@ -169,7 +208,8 @@ export default function AIChat({ compact = false }: AIChatProps) {
       
       requestBody = { 
         message: enhancedMessage,
-        context: "homepage"
+        context: "homepage",
+        model: MODEL_INFO[selectedModel].modelId
       };
 
       const response = await fetch(apiEndpoint, {
@@ -389,11 +429,52 @@ export default function AIChat({ compact = false }: AIChatProps) {
       {/* Input Area with Dropdown and Upload */}
       <div className="relative">
         <div className="flex gap-2">
+          {/* Model Selector Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowModelDropdown(!showModelDropdown)}
+              className="flex items-center gap-2 rounded-l-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
+            >
+              <span>{MODEL_INFO[selectedModel].icon}</span>
+              <span className={MODEL_INFO[selectedModel].color}>{MODEL_INFO[selectedModel].name}</span>
+              <ChevronDown size={16} />
+            </button>
+            
+            {showModelDropdown && (
+              <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-white/20 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-50">
+                {Object.entries(MODEL_INFO).map(([key, model]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (key !== "spirit" && selectedModel === "spirit") {
+                        // Premium model clicked - redirect to subscription
+                        window.location.href = '/subscription?model=' + key;
+                      } else {
+                        setSelectedModel(key as AIModel);
+                      }
+                      setShowModelDropdown(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/10 transition border-b border-white/10"
+                  >
+                    <span className="text-lg">{model.icon}</span>
+                    <div className="flex-1">
+                      <span className={`text-sm font-medium ${model.color} block`}>{model.name}</span>
+                      <span className="text-xs text-white/50">{model.description}</span>
+                    </div>
+                    {key !== "spirit" && (
+                      <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">PRO</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Dropdown Button */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 rounded-l-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
+              className="flex items-center gap-2 border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
             >
               <ChevronDown size={16} />
               <span>Options</span>

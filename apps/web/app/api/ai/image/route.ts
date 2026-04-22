@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+const AI_PROVIDER = process.env.AI_PROVIDER || "opencode"
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
 export async function POST(req: Request) {
@@ -9,12 +10,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
   }
 
+  // Image generation not yet supported via OpenCode - coming soon
+  if (!OPENCODE_API_KEY) {
+    return NextResponse.json(
+      { error: "Image generation is not yet available. Please use a different method." },
+      { status: 501 }
+    )
+  }
+
   const image = await generateImage(prompt)
 
   if (!image) {
     return NextResponse.json(
-      { error: "Image generation failed. Ensure GEMINI_API_KEY is configured." },
-      { status: 502 }
+      { error: "Image generation not yet available via OpenCode." },
+      { status: 501 }
     )
   }
 
@@ -29,7 +38,7 @@ export async function POST(req: Request) {
 }
 
 async function generateImage(prompt: string): Promise<Buffer | null> {
-  if (!GEMINI_API_KEY) {
+  if (AI_PROVIDER === "google" && !GEMINI_API_KEY) {
     console.error("GEMINI_API_KEY not configured for image generation")
     return null
   }

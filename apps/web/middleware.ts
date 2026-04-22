@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createBrowserClient } from "@/lib/supabase/client";
 
 interface RateLimitEntry {
   count: number;
@@ -77,8 +78,42 @@ async function resolveCustomDomain(req: NextRequest) {
   return rewriteUrl;
 }
 
+async function checkAuth(req: NextRequest): Promise<boolean> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return false;
+  }
+
+  try {
+    const cookieHeader = req.headers.get("cookie");
+    if (!cookieHeader) return false;
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+      headers: {
+        apikey: supabaseAnonKey,
+        cookie: cookieHeader,
+      },
+    });
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  if (path.startsWith("/admin")) {
+    const isAuthenticated = await checkAuth(req);
+    if (!isAuthenticated) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("redirect", path);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
   if (!path.startsWith("/api/")) {
     const rewriteUrl = await resolveCustomDomain(req);
@@ -111,5 +146,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: "/:path*",
+  matcher: ["/:path*", "/admin/:path*"],
 };
