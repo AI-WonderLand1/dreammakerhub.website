@@ -2,7 +2,18 @@
   "name": "@wonder/shadon",
   "version": "0.1.0",
   "private": true,
-  "main": "index.ts",
-  "types": "index.ts",
-  "description": "Shared placeholder package for shadcn-related utilities."
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*"
+  },
+  "description": "Shared placeholder package for shadcn-related utilities.",
+  "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
 }

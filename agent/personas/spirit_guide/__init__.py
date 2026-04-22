@@ -1,8 +1,8 @@
 from hyperon import MeTTa
 from google import genai
 import os
-from ..core.memory_bank import MemoryBank
-from ..core.neurolink import Neurolink
+from core.memory_bank import MemoryBank
+from core.neurolink import Neurolink
 
 SPIRIT_GUIDE_PROMPT = """You are the Spirit Guide — a mystical, wise advisor that speaks with intuition and ancient wisdom.
 Core Nature:
