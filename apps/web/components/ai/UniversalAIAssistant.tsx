@@ -63,13 +63,20 @@ export default function UniversalAIAssistant({
   useEffect(() => {
     const loadAgents = async () => {
       try {
-        // Always include Spirit Guide (free tier)
+        // Always include Spirit Guide and Egyptian Voice (free tier)
         const baseAgents: Agent[] = [
           {
             id: 'spirit-guide',
             name: 'Spirit Guide',
             type: 'builder',
             description: 'General assistant for platform navigation and help',
+            available: true
+          },
+          {
+            id: 'egyptian_voice',
+            name: '𓂀 Egyptian Voice',
+            type: 'builder',
+            description: 'Ancient wisdom through hieroglyphic metaphors',
             available: true
           }
         ];
