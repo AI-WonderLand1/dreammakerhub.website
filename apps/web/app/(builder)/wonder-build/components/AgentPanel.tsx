@@ -75,12 +75,18 @@ export function AgentPanel() {
   const latestConfession = confessions[confessions.length - 1];
 
   return (
-    <aside className="relative flex h-full flex-col overflow-hidden border-r border-white/10 bg-black/60">
+    <aside className="relative flex h-full flex-col overflow-hidden border-r border-white/10 bg-[#0b0b0d]">
 
       {/* Header */}
       <div className="shrink-0 border-b border-white/10 px-4 py-3">
         <p className="text-[11px] font-bold uppercase tracking-widest text-violet-400">AI Builder</p>
         <p className="mt-0.5 text-[10px] text-white/30">Describe → Agents build → Code streams into editor</p>
+        <div className="mt-2 flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-2 py-1.5">
+          <span className="truncate text-[10px] text-white/40">Updating apps/web/src/pages/HomePage.jsx</span>
+          <span className={`ml-2 shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${running ? 'bg-violet-500/20 text-violet-200' : 'bg-white/10 text-white/50'}`}>
+            {running ? 'Working' : 'Idle'}
+          </span>
+        </div>
       </div>
 
       {/* Build type selector */}
@@ -396,6 +402,27 @@ export function AgentPanel() {
               )}
               <div ref={logBottomRef} />
             </div>
+          )}
+        </div>
+      </div>
+      <div className="shrink-0 border-t border-white/10 p-3">
+        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 p-2">
+          <button type="button" className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 hover:bg-white/10" title="Attach image">
+            🖼️
+          </button>
+          <button type="button" className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 hover:bg-white/10" title="Voice input">
+            🎤
+          </button>
+          <span className="min-w-0 flex-1 truncate text-[11px] text-white/40">Ask for changes…</span>
+          {running && (
+            <button
+              type="button"
+              onClick={stopBuild}
+              className="rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] font-semibold text-red-300 hover:bg-red-500/20"
+              title="Stop"
+            >
+              ⏹
+            </button>
           )}
         </div>
       </div>
