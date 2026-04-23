@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { optimizeAsset } from "@wonder/perf-assets";
 
 const supabase = createClient();
 
@@ -188,11 +189,15 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
     }
 
     const buffer = await response.arrayBuffer();
+    const optimizeStart = performance.now();
+    const optimizedBuffer = await optimizeAsset(buffer);
+    console.debug(`[perf] Asset optimized in ${(performance.now() - optimizeStart).toFixed(0)}ms`);
+    
     const fileName = `${asset.id}.${asset.format}`;
     
     const { data, error } = await supabase.storage
       .from("3d-assets")
-      .upload(`meshes/${fileName}`, buffer, {
+      .upload(`meshes/${fileName}`, optimizedBuffer, {
         contentType: `model/${asset.format}`,
         upsert: true
       });
