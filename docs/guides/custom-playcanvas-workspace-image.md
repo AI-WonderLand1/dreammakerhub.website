@@ -51,8 +51,59 @@ COPY . .
 RUN useradd -m -u 10001 wonder && chown -R wonder:wonder /workspace
 USER wonder
 
+# build tag
+docker build -f workspace-runtime.Dockerfile -t ghcr.io/<org>/wonderspace-runtime:<tag> .
+
 # Expected ports for IDE + PlayCanvas + WebGL Studio
 EXPOSE 3000 3001 3002
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["bash", "-lc", "./scripts/workspace-runtime/start-all.sh"]
+
+Use immutable tags (git-sha), not only latest.
+
+3) Wire runtime creation (replace mock provisioning)
+Replace mockWorkspace() behavior in provisionWorkspace() with a real provisioner adapter that:
+
+Receives workspaceId, userId, resource profile.
+
+Creates one container/pod named from workspaceId.
+
+Attaches per-workspace persistent volume.
+
+Returns URLs already expected by getWorkspaceUrls() contract.
+
+4) Enforce user isolation boundaries
+Minimum controls for user A vs user B:
+
+Never accept browser-provided ownership as truth; validate server-side identity for every workspace action.
+
+Volume per workspace (pvc-{workspaceId} or equivalent).
+
+Network isolation policy per namespace/workspace label.
+
+No shared SSH authorized_keys files between workspaces.
+
+Idle timeout cleanup and explicit revocation path.
+
+5) Route traffic
+Prefer WORKSPACE_DOMAIN mode in production so the existing proxy redirects by subdomain (pc-, ws-, etc.).
+
+Set:
+
+WORKSPACE_DOMAIN=ide.yourdomain.com
+
+wildcard DNS + wildcard TLS cert
+
+6) Operational checklist
+Health endpoints for all 3 services (/healthz).
+
+Resource requests/limits per plan tier.
+
+Container/pod TTL after inactivity.
+
+Audit logs for: userId, workspaceId, image tag, SSH fingerprint.
+
+Notes on uncertainty
+This guide intentionally aligns to the runtime assumptions in current app code. It does not assume your final orchestrator (Docker API vs Kubernetes controller); either can work if it honors the URL/port contract above.
+
