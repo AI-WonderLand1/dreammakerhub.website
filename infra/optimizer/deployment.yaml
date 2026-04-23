@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: optimizer
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: optimizer
+  template:
+    metadata:
+      labels:
+        app: optimizer
+    spec:
+      containers:
+        - name: optimizer
+          image: ord.ocir.io/axgejcaos4uw/ai-wonderland/optimizer:latest
+          ports:
+            - containerPort: 3090
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      imagePullSecrets:
+        - name: oci-registry-secret

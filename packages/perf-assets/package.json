@@ -1,0 +1,21 @@
+{
+  "name": "@wonder/perf-assets",
+  "version": "1.0.0",
+  "description": "Performance profiling and asset optimization for 3D scenes",
+  "main": "./src/lib/index.ts",
+  "types": "./src/lib/index.ts",
+  "exports": {
+    ".": "./src/lib/index.ts",
+    "./*": "./src/lib/*"
+  },
+  "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "playcanvas": "^2.17.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

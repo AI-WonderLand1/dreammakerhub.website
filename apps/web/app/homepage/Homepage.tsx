@@ -128,7 +128,7 @@ export default function Homepage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-black text-white">
+    <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
 
       {/* ─── TRANSPARENT STICKY NAVBAR ─────────────────────────────────────── */}
       <nav
