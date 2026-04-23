@@ -1,6 +1,7 @@
 import * as pc from "playcanvas"
 import { SceneFile } from "./schema"
 import { loadSceneFromSupabase } from "./supabase-store"
+import { startProfiling, stopProfiling } from "@wonder/perf-assets"
 
 async function loadGlbModel(app: pc.Application, meshUrl: string): Promise<pc.Entity | null> {
   return new Promise((resolve) => {
@@ -29,6 +30,19 @@ async function loadGlbModel(app: pc.Application, meshUrl: string): Promise<pc.En
 }
 
 export async function loadScene(app: pc.Application, sceneOrId: SceneFile | string) {
+  const loadStart = performance.now();
+  startProfiling(app);
+  
+  try {
+    await loadSceneImpl(app, sceneOrId);
+  } finally {
+    stopProfiling(app);
+    const loadTime = performance.now() - loadStart;
+    console.debug(`[perf] Scene loaded in ${loadTime.toFixed(0)}ms`);
+  }
+}
+
+async function loadSceneImpl(app: pc.Application, sceneOrId: SceneFile | string) {
   // If it's a string, it's a sceneId - load from Supabase
   let scene: any = sceneOrId;
   
