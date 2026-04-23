@@ -99,6 +99,44 @@ const REGISTRY_ITEMS = [
   { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "AI" },
 ];
 
+const FEATURE_OVERLAP_ROWS = [
+  {
+    platform: "Seele AI",
+    websiteBuilder: "✅",
+    gameEngine: "✅ (Native 3D)",
+    aiPlayground: "✅ (Asset & Agent Gen)",
+    browserIde: "✅",
+  },
+  {
+    platform: "Rosebud AI",
+    websiteBuilder: "⚠️ (Interactive)",
+    gameEngine: "✅",
+    aiPlayground: "⚠️ (Asset Gen)",
+    browserIde: "✅",
+  },
+  {
+    platform: "GDevelop",
+    websiteBuilder: "⚠️ (Game focus)",
+    gameEngine: "✅ (Open Source)",
+    aiPlayground: "✅ (AI Agent)",
+    browserIde: "✅",
+  },
+  {
+    platform: "CreatiCode",
+    websiteBuilder: "❌",
+    gameEngine: "✅",
+    aiPlayground: "✅ (Training focus)",
+    browserIde: "✅",
+  },
+  {
+    platform: "Replit",
+    websiteBuilder: "✅",
+    gameEngine: "⚠️ (Requires libraries)",
+    aiPlayground: "✅ (AI Agent)",
+    browserIde: "✅",
+  },
+];
+
 
 const NAV_LINKS = [
   { label: "Features", href: "/#features" },
@@ -626,6 +664,38 @@ export default function Homepage() {
                 <td className="py-3 px-4 text-center text-white">Dedicated</td>
                 <td className="py-3 px-4 text-center text-white">SLA + Manager</td>
               </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ─── PLATFORM FEATURE OVERLAP ─────────────────────────────────────── */}
+      <section className="relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-black px-6 py-10 sm:px-8">
+        <div className="text-center mb-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-2">Comparison Table</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-white">Feature Overlap</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left py-3 px-4 text-gray-400 font-semibold">Platform</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-semibold">Website Builder</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-semibold">3D Game Engine</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-semibold">AI Playground/Training</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-semibold">Browser-Based IDE</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {FEATURE_OVERLAP_ROWS.map((row) => (
+                <tr key={row.platform}>
+                  <td className="py-3 px-4 text-white font-medium">{row.platform}</td>
+                  <td className="py-3 px-4 text-gray-300">{row.websiteBuilder}</td>
+                  <td className="py-3 px-4 text-gray-300">{row.gameEngine}</td>
+                  <td className="py-3 px-4 text-gray-300">{row.aiPlayground}</td>
+                  <td className="py-3 px-4 text-gray-300">{row.browserIde}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
