@@ -16,6 +16,8 @@
     "@tootallnate/once": ">=2.0.1"
   },
   "overrides": {
-    "tar": ">=6.2.1"
+    "tar": ">=7.5.11",
+    "uuid": ">=14.0.0",
+    "fast-xml-parser": ">=5.7.0"
   }
 }
