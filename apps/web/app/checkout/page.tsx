@@ -77,7 +77,11 @@ function CheckoutContent() {
         throw new Error(data?.error || "Subscription failed");
       }
 
-      router.push(redirectTo);
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        router.push(redirectTo);
+      }
     } catch (err) {
       console.error(err);
       alert("Checkout failed. Please try again.");
