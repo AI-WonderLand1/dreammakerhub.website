@@ -36,7 +36,7 @@ const EXAMPLES: Record<BuildMode, string> = {
 };
 
 const CLOUD_HEALTH_CHECK = [
-  { item: "Storage Space", status: "🟢 500GB OK", requirement: "Required for PlayCanvas/WebGPU assets" },
+  { item: "Storage Space", status: "🟢 500GB OK", requirement: "Required for Wonderplay/WebGPU assets" },
   { item: "GPU Driver", status: "🟢 NVIDIA 535+", requirement: "Required for Pixel Streaming" },
   { item: "Container Engine", status: "🟢 Docker / Podman", requirement: "Required for Manifestation" },
 ];
@@ -275,9 +275,9 @@ export default function WonderSpacePage() {
               </ul>
             </div>
             {[
-              { href: "/wonder-build/ai-builder",       label: "AI Builder" },
-              { href: "/wonder-build/puck",              label: "Puck Layout Studio" },
-              { href: "/wonder-build/playcanvas",            label: "3D Studio (PlayCanvas)" },
+              { href: "/wonder-build/ai-builder",       label: "Wonderbuild AI" },
+              { href: "/wonder-build/puck",              label: "Wonderbuild UI" },
+              { href: "/wonder-build/playcanvas",            label: "Wonderplay 3D" },
               { href: "/dashboard/editor-playcanvas",    label: "PlayCanvas Bridge" },
               { href: "/dashboard/agents",               label: "Agent Dashboard" },
             ].map((l) => (

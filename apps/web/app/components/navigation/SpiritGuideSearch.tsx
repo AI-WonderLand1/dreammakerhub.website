@@ -31,35 +31,36 @@ const DESTINATIONS: Destination[] = [
     ] 
   },
   { 
-    label: "Wonder Build", 
+    label: "Wonderbuild", 
     href: "/wonder-build", 
-    hints: ["builder", "ai builder"], 
+    hints: ["builder", "ai builder", "wonderbuild"], 
     aliases: [
       "build", "builder", "ai build", "wonder", "create", "design", "make",
       "create new", "new project", "start building", "generative", "ai generate",
-      "wonderbuild", "wonder build", "ai-builder", "ai builder"
+      "wonderbuild", "wonder build", "ai-builder", "ai builder", "website builder",
+      "ui builder", "web builder", "page builder", "visual builder"
     ] 
   },
   { 
-    label: "PlayCanvas", 
+    label: "Wonderplay", 
     href: "/wonder-build/playcanvas", 
-    hints: ["3d", "scene", "engine"], 
+    hints: ["3d", "scene", "engine", "wonderplay"], 
     aliases: [
       "3d", "3d editor", "3d builder", "threejs", "playcanvas editor", "scene", "webgl",
       "3d engine", "3d graphics", "three.js", "webgpu", "game engine", "game dev",
       "play canvas", "playcanvas 3d", "render", "3d model", "blender alternative",
-      "scene editor", "world builder", "3d world"
+      "scene editor", "world builder", "3d world", "game maker", "create game"
     ] 
   },
   { 
-    label: "Puck Builder", 
+    label: "Wonderbuild UI", 
     href: "/wonder-build/puck", 
-    hints: ["ui", "design", "blocks"], 
+    hints: ["ui", "design", "blocks", "wonderbuild"], 
     aliases: [
       "puck", "ui builder", "blocks", "drag drop", "drag and drop", "web builder", "page builder",
       "visual builder", "no code", "nocode", "low code", "website builder", "website creator",
       "landing page", "website editor", "webpage builder", "layout", "components",
-      "drag-and-drop", "blocks editor", "puck editor", "ui design"
+      "drag-and-drop", "blocks editor", "puck editor", "ui design", "wonderbuild"
     ] 
   },
   { 
@@ -122,13 +123,13 @@ const DESTINATIONS: Destination[] = [
     ] 
   },
   { 
-    label: "Coder IDE", 
+    label: "WonderSpace IDE", 
     href: "/wonderspace/ide", 
     hints: ["ide", "code", "coder"], 
     aliases: [
       "ide", "code editor", "vs code", "terminal", "ssh", "cloud ide",
       "coding", "program", "development", "dev", "dev environment",
-      "code server", "remote dev", "web terminal", "bash", "shell"
+      "code server", "remote dev", "web terminal", "bash", "shell", "wonderspace"
     ] 
   },
   { 

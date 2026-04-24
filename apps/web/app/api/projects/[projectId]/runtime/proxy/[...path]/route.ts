@@ -165,28 +165,12 @@ async function handleWebSocket(req: NextRequest, projectId: string, userId: stri
       return NextResponse.json({ error: "Runtime not found" }, { status: 404 });
     }
 
-    const { parse } = require('url');
-    const { proxy } = require('http-proxy');
-    
-    const targetUrl = new URL(runtimeUrl);
-    const proxyServer = proxy.createServer({
-      target: `${targetUrl.protocol}//${targetUrl.host}`,
-      ws: true,
-      changeOrigin: true
-    });
-
-    return new Promise((resolve) => {
-      const res = new NextResponse(null, { status: 200 });
-      
-      proxyServer.on('error', (err: any) => {
-        console.error("WebSocket proxy error:", err);
-        resolve(NextResponse.json({ error: "WebSocket failed" }, { status: 502 }));
-      });
-
-      const reqStream = req.body;
-      
-      resolve(NextResponse.json({ error: "WebSocket upgrade not implemented in Next.js" }, { status: 501 }));
-    });
+    return NextResponse.json({ 
+      error: "WebSocket requires direct connection",
+      instructions: "Connect directly to runtime at: " + runtimeUrl,
+      runtimeUrl: runtimeUrl,
+      hint: "WebSocket connections should be made directly to the runtime service, not through the API gateway"
+    }, { status: 400 });
   } catch (error: any) {
     console.error("WebSocket error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
