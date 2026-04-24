@@ -32,6 +32,10 @@ function SubscriptionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
+  
+  const success = searchParams.get("success");
+  const canceled = searchParams.get("canceled");
+  const [dismissBanner, setDismissBanner] = useState(false);
 
   const { user, session, loading: authLoading } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -146,6 +150,32 @@ function SubscriptionContent() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
       <div className="max-w-5xl w-full">
+        {(success === "true" && !dismissBanner) && (
+          <div className="mb-6 p-4 rounded-xl bg-green-900/30 border border-green-500/50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-green-400 text-xl">✓</span>
+              <div>
+                <p className="text-green-200 font-semibold">Subscription activated!</p>
+                <p className="text-green-200/70 text-sm">Welcome to The Architect plan.</p>
+              </div>
+            </div>
+            <button onClick={() => setDismissBanner(true)} className="text-green-400 hover:text-green-300">✕</button>
+          </div>
+        )}
+        
+        {canceled === "true" && !dismissBanner && (
+          <div className="mb-6 p-4 rounded-xl bg-yellow-900/30 border border-yellow-500/50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-yellow-400 text-xl">!</span>
+              <div>
+                <p className="text-yellow-200 font-semibold">Checkout canceled</p>
+                <p className="text-yellow-200/70 text-sm">No worries, you can upgrade anytime.</p>
+              </div>
+            </div>
+            <button onClick={() => setDismissBanner(true)} className="text-yellow-400 hover:text-yellow-300">✕</button>
+          </div>
+        )}
+        
         <div className="text-center mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-2">Pricing</p>
           <h1 className="text-3xl font-bold text-white mb-3">Choose your path</h1>
