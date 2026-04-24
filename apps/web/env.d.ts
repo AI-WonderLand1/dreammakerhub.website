@@ -15,6 +15,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_WORKSPACE_DOMAIN?: string;
     NEXT_PUBLIC_ENABLE_CONVAI_NPC?: string;
     NEXT_PUBLIC_CONVAI_CHARACTER_ID?: string;
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?: string;
     
     NODE_ENV?: string;
 
@@ -55,6 +56,8 @@ declare namespace NodeJS {
     // OPTIONAL (disabled infra)
     UPSTASH_REDIS_REST_URL?: string;
     UPSTASH_REDIS_REST_TOKEN?: string;
+    // Stripe
     STRIPE_SECRET_KEY?: string;
+    STRIPE_WEBHOOK_SECRET?: string;
   }
 }
