@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wonderplay
+  namespace: WonderPlay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wonderplay
+  template:
+    metadata:
+      labels:
+        app: wonderplay
+    spec:
+      containers:
+        - name: wonderplay
+          image: ord.ocir.io/axgejcaos4uw/ai-wonderland/wonderplay:latest
+          ports:
+            - containerPort: 3000
+              name: ide
+            - containerPort: 3001
+              name: playcanvas
+            - containerPort: 3002
+              name: webgl-studio
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      imagePullSecrets:
+        - name: oci-registry-secret

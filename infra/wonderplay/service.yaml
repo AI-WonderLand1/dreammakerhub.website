@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wonderplay-service
+  namespace: WonderPlay
+spec:
+  selector:
+    app: wonderplay
+  ports:
+    - name: ide
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+    - name: playcanvas
+      protocol: TCP
+      port: 3001
+      targetPort: 3001
+    - name: webgl-studio
+      protocol: TCP
+      port: 3002
+      targetPort: 3002
+  type: ClusterIP
