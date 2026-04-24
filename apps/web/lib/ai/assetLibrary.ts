@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { optimizeAsset } from "@wonder/perf-assets";
+// TODO: Create @wonder/perf-assets package for asset optimization
+// import { optimizeAsset } from "@wonder/perf-assets";
 
 const supabase = createClient();
 
@@ -190,7 +191,8 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
 
     const buffer = await response.arrayBuffer();
     const optimizeStart = performance.now();
-    const optimizedBuffer = await optimizeAsset(buffer);
+    // TODO: Implement optimizeAsset in @wonder/perf-assets package
+    const optimizedBuffer = new Uint8Array(buffer); // optimizeAsset(buffer);
     console.debug(`[perf] Asset optimized in ${(performance.now() - optimizeStart).toFixed(0)}ms`);
     
     const fileName = `${asset.id}.${asset.format}`;
