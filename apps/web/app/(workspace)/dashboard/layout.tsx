@@ -73,18 +73,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { href: "/dashboard", label: "Actions", icon: LayoutDashboard },
     { href: "/dashboard/projects", label: "Projects", icon: Folder },
     { href: "/agent-playground", label: "AI Playground", icon: Pencil },
-    { href: "/dashboard/agents", label: "Agents", icon: Code2 },
+    { href: "/dashboard/agents", label: "Agents", icon: Bot },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
     { href: "/wonder-build/playcanvas", label: "Wonderplay", icon: Play },
-    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   const managementItems: MenuItem[] = [
     {
       label: "Management",
       items: [
-        { href: "/dashboard/usage", label: "Usage", icon: BarChart3 },
+        { href: "/dashboard/usage", label: "Usage & Billing", icon: BarChart3 },
         { href: "/dashboard/collaboration", label: "Teams", icon: Users },
+        { href: "/dashboard/settings/byoc", label: "Storage", icon: Database },
+        { href: "/settings/security", label: "Security", icon: Shield },
         { href: "/support", label: "Feedback", icon: MessageCircle },
       ]
     }
