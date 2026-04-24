@@ -90,7 +90,8 @@ export async function listPublicScenes(limit = 20): Promise<any[]> {
   try {
     const { data, error } = await supabase
       .from("scenes")
-      .select("id, name, data, created_at, updated_at")
+      .select("id, name, data, created_at, updated_at, is_public")
+      .eq("is_public", true)
       .order("updated_at", { ascending: false })
       .limit(limit);
 
