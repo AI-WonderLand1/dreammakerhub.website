@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: Optimizer
+  labels:
+    app.kubernetes.io/name: Optimizer
+    app.kubernetes.io/managed-by: kubectl
