@@ -20,7 +20,7 @@ export async function GET() {
       return NextResponse.json({ templates });
     }
     
-    // Also try to get from 3d-assets bucket
+    // Also try to get from 3d-assets bucket (3D module subfolder)
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
@@ -28,20 +28,52 @@ export async function GET() {
       if (supabase) {
         const { data: files } = await supabase.storage
           .from("3d-assets")
-          .list("", { limit: 50 });
+          .list("3D module", { limit: 50 });
         
         if (files && files.length > 0) {
-          const bucketTemplates = files
-            .filter(f => f.name.endsWith(".json"))
-            .slice(0, 8)
-            .map(f => ({
-              id: `asset_${f.name.replace(".json", "")}`,
-              name: f.name.replace(".json", "").replace(/_/g, " "),
-              description: "Pre-made scene from library",
-              category: "custom",
-              thumbnail: null,
-              isAsset: true
-            }));
+          const bucketTemplates = await Promise.all(
+            files
+              .filter(f => f.name.endsWith(".glb"))
+              .slice(0, 20)
+              .map(async (f) => {
+                const { data: { publicUrl } } = supabase.storage
+                  .from("3d-assets")
+                  .getPublicUrl(`3D module/${f.name}`);
+                
+                const thumbName = f.name.replace(".glb", ".png");
+                let thumbnailUrl = null;
+                
+                // Check if PNG thumbnail exists in bucket
+                const { data: thumbData } = supabase.storage
+                  .from("3d-assets")
+                  .getPublicUrl(`3D module/${thumbName}`);
+                
+                // Try to verify thumbnail exists
+                try {
+                  const checkRes = await fetch(thumbData.publicUrl, { method: "HEAD" });
+                  if (checkRes.ok) {
+                    thumbnailUrl = thumbData.publicUrl;
+                  }
+                } catch {
+                  // Thumbnail doesn't exist - will use placeholder
+                }
+                
+                // Generate placeholder color from filename
+                const filenameHash = f.name.split("").reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
+                const hue = Math.abs(filenameHash) % 360;
+                const placeholderColor = `hsl(${hue}, 60%, 50%)`;
+                
+                return {
+                  id: f.name.replace(".glb", ""),
+                  name: f.name.replace(".glb", "").replace(/_/g, " ").replace(/-/g, " "),
+                  description: "3D asset from library",
+                  category: "custom",
+                  thumbnail: thumbnailUrl || null,
+                  placeholderColor: thumbnailUrl ? null : placeholderColor,
+                  glbUrl: publicUrl
+                };
+              })
+          );
           
           if (bucketTemplates.length > 0) {
             return NextResponse.json({ templates: bucketTemplates });
@@ -49,7 +81,7 @@ export async function GET() {
         }
       }
     } catch (e) {
-      console.log("3d-assets bucket not available");
+      console.log("3d-assets bucket error:", e);
     }
     
     // Try to load local template files
