@@ -18,7 +18,7 @@ export default function SettingsHome() {
           href="/dashboard/settings/coder"
           className="inline-flex items-center rounded-lg border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-200 hover:bg-violet-500/15"
         >
-          Coder IDE Workspaces
+          WonderSpace Workspaces
         </Link>
       </div>
     </section>

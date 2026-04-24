@@ -239,19 +239,26 @@ export default function DashboardRepoView() {
             )}
 
             <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
-              <div className="text-[11px] text-white/40">Next: load real projects from Supabase instead of placeholders.</div>
+              <div className="text-[11px] text-white/40">Projects loaded from Supabase.</div>
               <div className="flex items-center gap-2">
-                <SmallBtn onClick={() => toast("Import later")}>Import</SmallBtn>
-                <SmallBtn onClick={() => toast("Templates later")}>Templates</SmallBtn>
+                <SmallBtn onClick={() => router.push('/projects/import')}>Import</SmallBtn>
+                <SmallBtn onClick={() => router.push('/library')}>Templates</SmallBtn>
               </div>
             </div>
           </div>
         )}
 
-        {tab === "settings" && (
+{tab === "settings" && (
           <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-5">
             <div className="text-lg font-black mb-2">Settings</div>
-            <div className="text-sm text-white/60">This page should show user settings + project settings. We’ll wire real pages next.</div>
+            <Link href="/dashboard/settings" className="text-sm text-blue-400 hover:underline">Go to Settings →</Link>
+          </div>
+        )}
+
+        {tab === "profile" && (
+          <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="text-lg font-black mb-2">Profile</div>
+            <Link href="/settings/account" className="text-sm text-blue-400 hover:underline">Go to Account →</Link>
           </div>
         )}
 
