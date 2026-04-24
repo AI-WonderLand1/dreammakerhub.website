@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, useCallback, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@lib/supabase/auth-context";
+import { createClient } from "@/lib/supabase/client";
 import { 
   LayoutDashboard, 
+  Folder,
   Pencil, 
   Code2, 
   Play, 
@@ -16,7 +18,15 @@ import {
   HelpCircle,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  Check,
+  BarChart3,
+  Search,
+  Mic,
+  MicOff,
+  MessageCircle,
+  Bug,
+  Bot
 } from "lucide-react";
 
 type SidebarItem = {
@@ -30,19 +40,41 @@ type MenuItem = {
   items: { href: string; label: string; icon: React.ElementType }[];
 };
 
+type Project = {
+  id: string;
+  name: string;
+  type: string;
+};
+
+const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
+  wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
+  wonderbuild_ui: { editor: "/wonder-build/puck", label: "Wonderbuild UI" },
+  game: { editor: "/wonder-build/playcanvas", label: "Wonderplay" },
+  "3d_scene": { editor: "/wonder-build/playcanvas", label: "Wonderplay" },
+  web_app: { editor: "/wonder-build/ai-builder", label: "AI Builder" },
+  workspace: { editor: "/wonderspace/ide", label: "IDE" },
+};
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [announce, setAnnounce] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(["management"]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
   const mainItems: SidebarItem[] = [
     { href: "/dashboard", label: "Actions", icon: LayoutDashboard },
+    { href: "/dashboard/projects", label: "Projects", icon: Folder },
+    { href: "/agent-playground", label: "AI Playground", icon: Pencil },
+    { href: "/dashboard/agents", label: "Agents", icon: Code2 },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
-    { href: "/wonderspace/ide", label: "WonderSpace IDE", icon: Code2 },
     { href: "/wonder-build/playcanvas", label: "Wonderplay", icon: Play },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
@@ -51,10 +83,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     {
       label: "Management",
       items: [
+        { href: "/dashboard/usage", label: "Usage", icon: BarChart3 },
         { href: "/dashboard/collaboration", label: "Teams", icon: Users },
-        { href: "/settings/billing", label: "Billing", icon: CreditCard },
-        { href: "/settings/organization", label: "Enterprise", icon: Building2 },
-        { href: "/support", label: "Support", icon: HelpCircle },
+        { href: "/support", label: "Feedback", icon: MessageCircle },
       ]
     }
   ];
@@ -67,6 +98,47 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
     setAnnounce("Dashboard loaded.");
   }, [loading, pathname, router, user]);
+
+  // Load projects and set current project
+  useEffect(() => {
+    const loadProjects = async () => {
+      const supabase = createClient();
+      if (!supabase || !user) {
+        setLoadingProjects(false);
+        return;
+      }
+
+      try {
+        const { data } = await supabase
+          .from("projects")
+          .select("id, name, type")
+          .eq("owner_id", user.id)
+          .eq("status", "active")
+          .order("updated_at", { ascending: false })
+          .limit(20);
+
+        if (data) {
+          setProjects(data);
+          const projectId = searchParams.get("projectId");
+          const current = data.find(p => p.id === projectId) || data[0];
+          if (current) setCurrentProject(current);
+        }
+      } catch (err) {
+        console.error("Failed to load projects:", err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    loadProjects();
+  }, [user, searchParams]);
+
+  const handleSwitchProject = (project: Project) => {
+    setCurrentProject(project);
+    setProjectMenuOpen(false);
+    const typeInfo = PROJECT_TYPE_INFO[project.type] || PROJECT_TYPE_INFO["wonderbuild"];
+    router.push(`${typeInfo.editor}?projectId=${project.id}`);
+  };
 
   const toggleMenu = (label: string) => {
     setExpandedMenus(prev => 
@@ -99,9 +171,48 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside className={`fixed left-0 top-0 h-full w-64 bg-[#0d1117] border-r border-white/10 z-50 transform transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-64'} lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : ''}`}>
-        <div className="flex items-center px-4 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <Link href="/dashboard" className="font-bold text-lg">WonderSpace</Link>
+          
+          {/* Project Switcher */}
+          <button
+            onClick={() => setProjectMenuOpen(!projectMenuOpen)}
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-white/70 hover:text-white hover:bg-white/10"
+          >
+            {currentProject?.name || "Select"}
+            <ChevronDown size={12} className={`transform transition-transform ${projectMenuOpen ? "rotate-180" : ""}`} />
+          </button>
         </div>
+
+        {/* Project Switcher Dropdown */}
+        {projectMenuOpen && (
+          <div className="px-2 py-2 border-b border-white/10">
+            <div className="text-xs text-white/40 px-2 py-1">Switch Project</div>
+            {loadingProjects ? (
+              <div className="px-2 py-2 text-xs text-white/40">Loading...</div>
+            ) : projects.length === 0 ? (
+              <Link href="/dashboard/projects" className="block px-2 py-2 text-xs text-blue-400">Create a project</Link>
+            ) : (
+              projects.slice(0, 10).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleSwitchProject(p)}
+                  className={`flex items-center justify-between w-full px-2 py-2 rounded text-xs text-left ${
+                    currentProject?.id === p.id 
+                      ? "bg-white/10 text-white" 
+                      : "text-white/70 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>{p.name}</span>
+                  {currentProject?.id === p.id && <Check size={12} />}
+                </button>
+              ))
+            )}
+            <Link href="/dashboard/projects" className="block px-2 py-2 text-xs text-white/40 hover:text-white">
+              View all projects →
+            </Link>
+          </div>
+        )}
 
         <nav className="p-2">
           {/* Main items */}
@@ -155,6 +266,26 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <main className={`lg:ml-64 min-h-screen ${mobileMenuOpen ? 'ml-0' : ''}`}>
+        {/* Top bar with search */}
+        <div className="sticky top-0 z-30 border-b border-white/10 bg-[#0d1117]/95 backdrop-blur">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex-1 max-w-md">
+              <div className="relative flex items-center gap-2">
+                <Search className="absolute left-3 text-white/40" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Search projects..." 
+                  className="w-full h-9 pl-9 pr-20 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 text-sm focus:outline-none focus:border-white/30"
+                />
+                <VoiceSearchButton />
+              </div>
+            </div>
+            <Link href="/subscription" className="hidden sm:block ml-4 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600">
+              Upgrade
+            </Link>
+          </div>
+        </div>
+        
         <div className="p-6">
           {children}
         </div>
@@ -168,5 +299,57 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
     </div>
+  );
+}
+
+function VoiceSearchButton() {
+  const [isListening, setIsListening] = useState(false);
+  const router = useRouter();
+
+  const startListening = useCallback(() => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Voice search requires Chrome or Edge.");
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+      }
+      if (final) {
+        const lower = final.toLowerCase();
+        if (lower.includes("wonderbuild")) router.push("/wonder-build");
+        else if (lower.includes("wonderplay") || lower.includes("playcanvas")) router.push("/wonder-build/playcanvas");
+        else if (lower.includes("project")) router.push("/dashboard/projects");
+        else if (lower.includes("ide") || lower.includes("code")) router.push("/wonderspace/ide");
+        else if (lower.includes("setting")) router.push("/settings");
+        else if (lower.includes("usage") || lower.includes("token")) router.push("/dashboard/usage");
+        else alert(`Voice command "${final}" not recognized. Try "wonderbuild", "wonderplay", "projects", or "settings".`);
+      }
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+  }, [router]);
+
+  return (
+    <button
+      type="button"
+      onClick={isListening ? () => {} : startListening}
+      className={`absolute right-1.5 h-7 w-7 rounded-full flex items-center justify-center transition-all ${
+        isListening ? "bg-red-500 animate-pulse" : "bg-white/10 hover:bg-white/20"
+      }`}
+      title={isListening ? "Listening..." : "Voice search"}
+    >
+      {isListening ? <MicOff size={14} className="text-white" /> : <Mic size={14} className="text-white/70" />}
+    </button>
   );
 }
