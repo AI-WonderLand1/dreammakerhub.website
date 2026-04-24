@@ -47,7 +47,7 @@ function SubscriptionContent() {
         name: "The Nomad",
         price: "$0/forever",
         desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-        bullets: ["1 active project", "Basic Puck UI builder", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
+        bullets: ["1 active project", "Wonderbuild UI editor", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
         cta: "Start Wandering, It's Free",
         mode: "free",
         icon: "🌿",
@@ -58,7 +58,7 @@ function SubscriptionContent() {
         name: "The Architect",
         price: "$35/mo",
         desc: "For builders who are serious about shipping. Full creative power, one subscription.",
-        bullets: ["5 active projects", "Unlimited AI chats", "Full 3D engine (PlayCanvas + WebGL Studio)", "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment", "Custom domain included", "Accessibility tools for all creators", "Priority email support"],
+        bullets: ["5 active projects", "Unlimited AI chats", "Wonderplay 3D Engine (WebGL + glTF)", "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment", "Custom domain included", "Accessibility tools for all creators", "Priority email support"],
         cta: "Become an Architect",
         mode: "paid",
         icon: "⭐",
@@ -301,14 +301,14 @@ function SubscriptionContent() {
                   <td className="py-3 px-4 text-center text-white">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-gray-300">Puck UI Builder</td>
+                  <td className="py-3 px-4 text-gray-300">Wonderbuild UI Editor</td>
                   <td className="py-3 px-4 text-center text-gray-400">Basic</td>
                   <td className="py-3 px-4 text-center text-green-400">✓</td>
                   <td className="py-3 px-4 text-center text-green-400">✓</td>
                   <td className="py-3 px-4 text-center text-green-400">✓</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 text-gray-300">3D Engine (PlayCanvas)</td>
+                  <td className="py-3 px-4 text-gray-300">Wonderplay 3D Engine</td>
                   <td className="py-3 px-4 text-center text-gray-500">—</td>
                   <td className="py-3 px-4 text-center text-green-400">✓</td>
                   <td className="py-3 px-4 text-center text-green-400">✓</td>

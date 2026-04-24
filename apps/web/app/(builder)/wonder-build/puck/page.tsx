@@ -19,7 +19,7 @@ export default async function WonderBuildPuckPage() {
     <div className="space-y-4 text-white">
       <PageHeader
         lead={<Breadcrumbs items={[{ href: "/wonder-build", label: "Wonder Build" }, { label: "Puck" }]} />}
-        title="Puck Layout Studio"
+        title="Wonderbuild UI"
         subtitle="Create and iterate on reusable page sections with real-time block previews."
         action={
           <Link

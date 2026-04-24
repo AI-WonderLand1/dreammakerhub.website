@@ -252,7 +252,7 @@ function PlayCanvasInner() {
 
       <div>
         <Link href="/wonder-build/puck" className="text-sm text-white/70 hover:text-white">
-          ← Back to Puck Layout Studio
+          ← Back to Wonderbuild UI
         </Link>
       </div>
     </div>
