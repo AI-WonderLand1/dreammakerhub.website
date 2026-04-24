@@ -33,8 +33,14 @@ export async function signUpUser(email: string, password: string, fullName: stri
         email,
         full_name: fullName,
         subscription_plan: 'free',
-        storage_limit: 100, // 100 MB for free tier
-        projects_limit: 5,
+        storage_limit: 104857600, // 100 MB
+        projects_limit: 1,
+        workspaces_limit: 0,
+        ide_sessions_limit: 0,
+        compute_credits_monthly: 10000,
+        ai_tokens_monthly: 5000,
+        runtime_hours_monthly: 0,
+        api_calls_monthly: 100,
         created_at: new Date().toISOString(),
       });
 
