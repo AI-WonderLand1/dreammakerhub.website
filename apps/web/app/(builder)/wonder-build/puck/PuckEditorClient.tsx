@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Eye, Monitor, Code, Clock, Download, Sparkles } from "lucide-react";
 import "@puckeditor/core/puck.css";
+import "@/styles/puck-dark-fix.css";
 import { config } from "./puck.config";
 import { retrievePuckData } from "@/lib/ai-to-puck";
 import { useAutoSave } from "@/components/VersionHistory";
