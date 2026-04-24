@@ -38,7 +38,7 @@ export default function SettingsHomePage() {
 
       <div className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-6">
         <div className="text-xs font-black uppercase tracking-widest text-violet-300/80">
-          Coder IDE Workspaces
+          WonderSpace Workspaces
         </div>
         <div className="mt-2 text-white/55">
           Create and manage isolated cloud development environments with code-server, PlayCanvas, and WebGL Studio.
@@ -47,7 +47,7 @@ export default function SettingsHomePage() {
           href="/dashboard/settings/coder"
           className="mt-4 inline-flex h-10 px-4 rounded-xl border border-violet-400/25 bg-violet-500/10 hover:bg-violet-500/15 transition text-sm font-bold text-violet-200 items-center"
         >
-          Open Coder IDE →
+          Open WonderSpace IDE →
         </Link>
       </div>
 

@@ -43,7 +43,7 @@ const PLANS = [
     price: "$0",
     period: "/forever",
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-    bullets: ["1 active project", "Basic Puck UI builder", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
+    bullets: ["1 active project", "Wonderbuild UI editor", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
     cta: "Start Wandering, It's Free",
     href: "/public-pages/auth",
     highlight: false,
@@ -56,7 +56,7 @@ const PLANS = [
     price: "$35",
     period: "/mo",
     desc: "For builders who are serious about shipping. Full creative power, one subscription.",
-    bullets: ["5 active projects", "Unlimited AI chats", "Full 3D engine (PlayCanvas + WebGL Studio)", "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment", "Custom domain included", "Accessibility tools for all creators", "Priority email support"],
+    bullets: ["5 active projects", "Unlimited AI chats", "Wonderplay 3D Engine (WebGL + glTF)", "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment", "Custom domain included", "Accessibility tools for all creators", "Priority email support"],
     cta: "Become an Architect",
     href: "/subscription",
     highlight: true,
@@ -150,7 +150,7 @@ export default function Homepage() {
   const isAuthenticated = Boolean(user);
   const router = useRouter();
   const destinationNames = signMap.map((link) => link.label).join(", ");
-  const iframeLabel = `PlayCanvas Landing Page destinations: ${destinationNames}`;
+  const iframeLabel = `Wonderplay Landing Page destinations: ${destinationNames}`;
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -351,10 +351,10 @@ export default function Homepage() {
         <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 -translate-y-1/4 translate-x-1/4 rounded-full bg-blue-600/20 blur-[80px]" />
         <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-blue-400">PlayCanvas + WebGPU Studio</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">WebGL Studio Editor</h2>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-blue-400">Wonderplay 3D Engine</p>
+            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Wonderplay 3D Editor</h2>
             <p className="mt-1 max-w-xl text-sm text-gray-400">
-              Build and render real-time 3D worlds with PlayCanvas. Launch the full editor to start creating immersive scenes.
+              Build and render real-time 3D worlds with Wonderplay. Launch the full editor to start creating immersive scenes.
             </p>
           </div>
           <Link
@@ -372,8 +372,8 @@ export default function Homepage() {
         <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 -translate-y-1/4 translate-x-1/4 rounded-full bg-violet-600/20 blur-[80px]" />
         <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-violet-400">AI Wonder Build</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">AI Builder — Websites &amp; Games</h2>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-violet-400">Wonderbuild AI</p>
+            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Wonderbuild — Websites &amp; Games</h2>
             <p className="mt-1 max-w-xl text-sm text-gray-400">
               Describe what you want. Three AI agents collaborate — Architect, Builder, and Reviewer — to generate complete, working websites and playable games in under a minute.
             </p>
@@ -595,14 +595,14 @@ export default function Homepage() {
                 <td className="py-3 px-4 text-center text-white">Unlimited</td>
               </tr>
               <tr>
-                <td className="py-3 px-4 text-gray-300">Puck UI Builder</td>
+                <td className="py-3 px-4 text-gray-300">Wonderbuild UI Editor</td>
                 <td className="py-3 px-4 text-center text-gray-400">Basic</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
               </tr>
               <tr>
-                <td className="py-3 px-4 text-gray-300">3D Engine (PlayCanvas)</td>
+                <td className="py-3 px-4 text-gray-300">Wonderplay 3D Engine</td>
                 <td className="py-3 px-4 text-center text-gray-500">—</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
@@ -706,7 +706,7 @@ export default function Homepage() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[100px]" />
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <h2 className="mb-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            Powerful <span className="text-blue-500">PlayCanvas</span> Integration
+            Powerful <span className="text-blue-500">Wonderplay</span> 3D Integration
           </h2>
           <p className="mx-auto mb-6 max-w-xl text-sm text-gray-400">
             Seamless real-time 3D editing and high-performance gameplay directly in the browser.

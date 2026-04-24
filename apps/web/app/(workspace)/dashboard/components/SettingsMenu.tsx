@@ -76,7 +76,7 @@ export default function SettingsMenu() {
             className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
             onClick={() => setOpen(false)}
           >
-            Coder IDE Workspaces
+            WonderSpace Workspaces
           </Link>
 
           <Link
