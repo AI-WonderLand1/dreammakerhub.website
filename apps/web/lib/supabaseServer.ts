@@ -17,3 +17,5 @@ export const supabaseServer = new Proxy({} as SupabaseClient, {
     return (getInstance() as any)[prop];
   },
 });
+
+export const supabaseAdmin = getInstance();
