@@ -66,14 +66,14 @@ export async function POST(request: NextRequest) {
       recurring: { interval: planConfig.interval },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://dreammakerhub.website";
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: price.id, quantity: 1 }],
       customer_email: userEmail || undefined,
       metadata: { userId, plan },
-      success_url: `${baseUrl}/subscription?success=true&plan=${plan}`,
+      success_url: `${baseUrl}/subscription?success=true&plan=${plan}&redirectTo=${encodeURIComponent(redirectTo)}`,
       cancel_url: `${baseUrl}/subscription?canceled=true`,
     });
 
