@@ -1,0 +1,39 @@
+/* Puck Editor Sidebar Text Fix
+ * Override Puck's white text color to black for visibility on dark backgrounds
+ */
+
+@import "@puckeditor/core/puck.css";
+
+/* Force all text to black in the puck editor */
+.puck-editor {
+  --puck-color-white: #000000 !important;
+  --puck-color-grey-08: #000000 !important;
+  --puck-color-grey-07: #1a1a1a !important;
+  --puck-color-grey-06: #333333 !important;
+  --puck-color-grey-05: #666666 !important;
+  --puck-color-grey-04: #888888 !important;
+}
+
+/* Make all elements inside puck use black text */
+.puck-editor,
+.puck-editor * {
+  color: #000000 !important;
+}
+
+/* Specific override for sidebar components */
+.puck-editor [class*="Sidebar"],
+.puck-editor [class*="sidebar"],
+.puck-editor [class*="ComponentList"],
+.puck-editor [class*="Category"],
+.puck-editor [class*="Item"] {
+  color: #000000 !important;
+}
+
+/* Override inline styles by using !important on specific elements */
+.puck-editor [data-testid],
+.puck-editor button,
+.puck-editor span,
+.puck-editor p,
+.puck-editor div {
+  color: inherit !important;
+}
