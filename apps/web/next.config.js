@@ -1,13 +1,16 @@
-/** @type {import('next').NextConfig} */
+import nextra from 'nextra'
+
+// Nextra 4 uses a simplified initialization
+const withNextra = nextra({}) 
+
 const isDev = process.env.NODE_ENV === 'development';
 const proxyBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
 const normalizedProxyBasePath =
   proxyBasePath && proxyBasePath !== '/' ? proxyBasePath.replace(/\/+$/, '') : '';
 
-const nextConfig = {
+export default withNextra({
   reactStrictMode: true,
 
-  // Only enable a non-root base path when the deployment explicitly requires it.
   ...(!isDev && normalizedProxyBasePath
     ? {
         basePath: normalizedProxyBasePath,
@@ -21,8 +24,6 @@ const nextConfig = {
     externalDir: true,
   },
 
-  turbopack: {}, // Required when webpack config exists
-
   transpilePackages: ["@react-three/fiber", "@react-three/drei", "three", "@wonderspace/ide-engine"],
 
   images: {
@@ -33,10 +34,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Headers for WebGL & Cross-Origin & Security
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Client-side chunking strategy for better performance
       config.optimization = {
         ...config.optimization,
         splitChunks: {
@@ -44,7 +43,6 @@ const nextConfig = {
           cacheGroups: {
             default: false,
             vendors: false,
-            // Separate heavy WebGL libraries from other node_modules
             webgl: {
               test: /[\\/]node_modules[\\/](three|@react-three|babylon)/,
               name: 'chunk-webgl',
@@ -52,33 +50,25 @@ const nextConfig = {
               reuseExistingChunk: true,
               enforce: true,
             },
-            // Separate UI editor libraries
             editors: {
               test: /[\\/]node_modules[\\/](monaco|codemirror|ace)/,
               name: 'chunk-editors',
               priority: 25,
               reuseExistingChunk: true,
+              enforce: true,
             },
-            // Main vendor chunk for everything else
             vendor: {
               test: /[\\/]node_modules[\\/]/,
               name: 'chunk-vendors',
               priority: 10,
               reuseExistingChunk: true,
-            },
-            // Common code shared between multiple entry points
-            common: {
-              minChunks: 2,
-              name: 'chunk-common',
-              priority: 5,
-              reuseExistingChunk: true,
+              enforce: true,
             },
           },
         },
       };
     }
 
-    // Handle raw shader files
     config.module.rules.push({
       test: /\.(glsl|vs|fs)$/,
       type: 'asset/source',
@@ -87,7 +77,6 @@ const nextConfig = {
     return config;
   },
 
-  // Headers for WebGL & Cross-Origin & Security
   headers: async () => [
     {
       source: '/:path*',
@@ -114,6 +103,4 @@ const nextConfig = {
       ],
     },
   ],
-};
-
-module.exports = nextConfig;
+})
