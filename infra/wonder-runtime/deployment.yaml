@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wonder-runtime-placeholder
+  namespace: default
+  labels:
+    app.kubernetes.io/name: wonder-runtime
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: wonder-runtime
+  template:
+    metadata:
+      labels:
+        app: wonder-runtime
+    spec:
+      containers:
+        - name: wonder-runtime
+          image: ord.ocir.io/axgejcaos4uw/ai-wonderland/wonder-runtime:latest
+          ports:
+            - containerPort: 3090
+              name: http
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PROJECT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/project-id']
+            - name: USER_FILES_PATH
+              value: "/app/user-project"
+            - name: EDITOR_PATH
+              value: "/app/public/webglstudio"
+            - name: PLAYCANVAS_PATH
+              value: "/app/public/playcanvas"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3090
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: user-project
+              mountPath: /app/user-project
+      volumes:
+        - name: user-project
+          persistentVolumeClaim:
+            claimName: wonder-files-placeholder
+      imagePullSecrets:
+        - name: oci-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wonder-runtime-placeholder
+  namespace: default
+  labels:
+    app.kubernetes.io/name: wonder-runtime
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3090
+      targetPort: 3090
+      protocol: TCP
+      name: http
+  selector:
+    app: wonder-runtime

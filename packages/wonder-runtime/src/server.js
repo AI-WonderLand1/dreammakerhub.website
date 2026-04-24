@@ -1,57 +1,117 @@
 import Fastify from 'fastify';
 import { Document, NodeIO } from '@gltf-transform/core';
 import { KHRONOS_EXTENSIONS } from '@gltf-transform/extensions';
-import { draco, textureCompress, dedup, flatten, join, weld } from '@gltf-transform/functions';
+import { dedup, flatten, join, weld, textureCompress } from '@gltf-transform/functions';
 import sharp from 'sharp';
-import { readFileSync, existsSync, statSync } from 'fs';
-import { join as pathJoin } from 'path';
+import { readFileSync, writeFileSync, existsSync, statSync, readdirSync } from 'fs';
+import { join as pathJoin, dirname } from 'path';
 
 const PROJECT_ID = process.env.PROJECT_ID || 'default';
 const SSH_KEY_PATH = process.env.SSH_KEY_PATH || '/run/secrets/wonder-ssh/id_ed25519';
-const EDITOR_PATH = process.env.EDITOR_PATH || '/app/public/webglstudio';
+const WEBGLSTUDIO_PATH = process.env.EDITOR_PATH || '/app/public/webglstudio';
+const PLAYCANVAS_PATH = process.env.PLAYCANVAS_PATH || '/app/public/playcanvas';
 const USER_FILES_PATH = process.env.USER_FILES_PATH || '/app/user-project';
 
 const f = Fastify({ logger: true });
 
 const io = new NodeIO().registerExtensions(KHRONOS_EXTENSIONS);
 
-function getSSHKey(): string | null {
+function getSSHKey() {
   if (existsSync(SSH_KEY_PATH)) {
     return readFileSync(SSH_KEY_PATH, 'utf-8');
   }
   return null;
 }
 
-function loadUserFiles(): any {
-  const userDir = USER_FILES_PATH;
-  if (!existsSync(userDir)) {
+function loadUserFiles() {
+  if (!existsSync(USER_FILES_PATH)) {
     return null;
   }
-  const files: Record<string, any> = {};
+  const files = {};
   try {
-    const entries = readdirSync(userDir, { withFileTypes: true });
+    const entries = readdirSync(USER_FILES_PATH, { withFileTypes: true });
     for (const entry of entries) {
       if (entry.isFile() && entry.name.endsWith('.json')) {
-        const content = readFileSync(pathJoin(userDir, entry.name), 'utf-8');
+        const content = readFileSync(pathJoin(USER_FILES_PATH, entry.name), 'utf-8');
         files[entry.name] = JSON.parse(content);
       }
     }
-  } catch {}
+  } catch {
+    f.log.warn('Failed to load user files');
+  }
   return files;
 }
+
+function serveFile(fullPath, contentType) {
+  if (!existsSync(fullPath)) {
+    return { status: 404, error: 'Not found' };
+  }
+  const content = readFileSync(fullPath);
+  return { content, contentType };
+}
+
+const CONTENT_TYPES = {
+  'js': 'application/javascript',
+  'mjs': 'application/javascript',
+  'css': 'text/css',
+  'html': 'text/html',
+  'json': 'application/json',
+  'txt': 'text/plain',
+  'glsl': 'x-shader/x-glsl',
+  'png': 'image/png',
+  'jpg': 'image/jpeg',
+  'svg': 'image/svg+xml',
+  'woff': 'font/woff',
+  'woff2': 'font/woff2',
+  'ttf': 'font/ttf',
+};
 
 f.get('/health', async () => {
   const sshKey = getSSHKey();
   const userFiles = loadUserFiles();
-  
-  return { 
-    status: 'ok', 
+  return {
+    status: 'ok',
     project: PROJECT_ID,
     hasSSHKey: !!sshKey,
     hasUserFiles: !!userFiles,
+    features: ['webglstudio', 'playcanvas', 'gltf-optimization'],
     sshKeyPreview: sshKey ? sshKey.slice(0, 50) + '...' : null,
     files: Object.keys(userFiles || {})
   };
+});
+
+f.get('/editor/*', async (request, reply) => {
+  const filePath = request.url.replace('/editor/', '');
+  const fullPath = pathJoin(WEBGLSTUDIO_PATH, filePath);
+  
+  if (!existsSync(fullPath) || !statSync(fullPath).isFile()) {
+    return reply.status(404).send({ error: 'Not found', path: filePath });
+  }
+  
+  const ext = filePath.split('.').pop();
+  const contentType = CONTENT_TYPES[ext] || 'text/plain';
+  
+  return reply
+    .status(200)
+    .header('Content-Type', contentType)
+    .send(readFileSync(fullPath));
+});
+
+f.get('/playcanvas/*', async (request, reply) => {
+  const filePath = request.url.replace('/playcanvas/', '');
+  const fullPath = pathJoin(PLAYCANVAS_PATH, filePath);
+  
+  if (!existsSync(fullPath) || !statSync(fullPath).isFile()) {
+    return reply.status(404).send({ error: 'Not found', path: filePath });
+  }
+  
+  const ext = filePath.split('.').pop();
+  const contentType = CONTENT_TYPES[ext] || 'application/javascript';
+  
+  return reply
+    .status(200)
+    .header('Content-Type', contentType)
+    .send(readFileSync(fullPath));
 });
 
 f.post('/optimize', async (request, reply) => {
@@ -60,6 +120,7 @@ f.post('/optimize', async (request, reply) => {
     if (!buffer || buffer.length === 0) {
       return reply.status(400).send({ error: 'No glTF data provided' });
     }
+    
     const document = await io.readBinary(new Uint8Array(buffer));
     await document.transform(
       dedup(),
@@ -71,8 +132,8 @@ f.post('/optimize', async (request, reply) => {
         targetFormat: 'webp',
         resize: [2048, 2048],
       }),
-      draco(),
     );
+    
     const optimized = await io.writeBinary(document);
     return reply
       .status(200)
@@ -84,67 +145,58 @@ f.post('/optimize', async (request, reply) => {
   }
 });
 
-f.get('/editor/*', async (request, reply) => {
-  const filePath = request.url.replace('/editor/', '');
-  const fullPath = pathJoin(EDITOR_PATH, filePath);
-  
-  if (!existsSync(fullPath) || !statSync(fullPath).isFile()) {
-    return reply.status(404).send({ error: 'Not found', path: filePath });
+f.post('/files/save', async (request, reply) => {
+  try {
+    const { filename, content } = request.body || {};
+    if (!filename || !content) {
+      return reply.status(400).send({ error: 'Missing filename or content' });
+    }
+    
+    const filePath = pathJoin(USER_FILES_PATH, filename);
+    const dir = dirname(filePath);
+    
+    if (!existsSync(dir)) {
+      writeFileSync(dir, '');
+    }
+    
+    writeFileSync(filePath, typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+    
+    return { success: true, filename };
+  } catch (err) {
+    f.log.error(err);
+    return reply.status(500).send({ error: 'Failed to save file' });
   }
-  
-  const content = readFileSync(fullPath);
-  const ext = filePath.split('.').pop();
-  const contentTypes: Record<string, string> = {
-    'js': 'application/javascript',
-    'mjs': 'application/javascript',
-    'css': 'text/css',
-    'html': 'text/html',
-    'json': 'application/json',
-    'txt': 'text/plain'
-  };
-  
-  return reply
-    .status(200)
-    .header('Content-Type', contentTypes[ext || 'txt'] || 'text/plain')
-    .send(content);
 });
 
-f.get('/playcanvas/*', async (request, reply) => {
-  const filePath = request.url.replace('/playcanvas/', '');
-  const basePath = process.env.PLAYCANVAS_PATH || '/app/public/playcanvas';
-  const fullPath = pathJoin(basePath, filePath);
-  
-  if (!existsSync(fullPath)) {
-    return reply.status(404).send({ error: 'Not found' });
-  }
-  
-  const content = readFileSync(fullPath);
-  return reply
-    .status(200)
-    .header('Content-Type', 'application/javascript')
-    .send(content);
+f.get('/files', async () => {
+  return { files: loadUserFiles() || {} };
 });
 
-f.get('/project/files', async () => {
-  const userFiles = loadUserFiles();
-  return { projectId: PROJECT_ID, files: userFiles || {} };
-});
-
-f.get('/project/*', async (request, reply) => {
-  const pathParts = request.url.replace('/project/', '').split('/');
-  const fileName = pathParts[pathParts.length - 1];
+f.get('/files/*', async (request, reply) => {
+  const fileName = request.url.replace('/files/', '');
   const fullPath = pathJoin(USER_FILES_PATH, fileName);
   
   if (!existsSync(fullPath)) {
     return reply.status(404).send({ error: 'File not found' });
   }
   
-  return reply.send(readFileSync(fullPath));
+  const ext = fileName.split('.').pop();
+  const contentType = CONTENT_TYPES[ext] || 'application/json';
+  
+  return reply
+    .status(200)
+    .header('Content-Type', contentType)
+    .send(readFileSync(fullPath));
+});
+
+f.get('/project/files', async () => {
+  return { projectId: PROJECT_ID, files: loadUserFiles() || {} };
 });
 
 async function start() {
   await f.listen({ port: 3090, host: '0.0.0.0' });
   f.log.info(`Wonder Runtime started for project ${PROJECT_ID}`);
+  f.log.info(`Features: WebGL Studio + PlayCanvas + glTF Optimizer`);
   f.log.info(`SSH key loaded: ${!!getSSHKey()}`);
 }
 
