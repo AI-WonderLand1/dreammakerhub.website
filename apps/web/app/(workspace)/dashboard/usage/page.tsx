@@ -14,7 +14,8 @@ import {
   ArrowUpRight,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Shield
 } from "lucide-react";
 
 type UsageData = {
@@ -238,6 +239,33 @@ export default function BillingUsagePage() {
             <span className="text-white/70">Storage</span>
             <span>{formatBytes(planLimits.storageLimit)}</span>
           </div>
+        </div>
+      </div>
+
+      {/* Cloud Storage Links */}
+      <div className="mt-6 pt-6 border-t border-white/10">
+        <h2 className="font-semibold mb-4">Cloud Storage</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Link 
+            href="/dashboard/settings/byoc" 
+            className="flex items-center gap-3 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+          >
+            <Database size={20} className="text-blue-400" />
+            <div>
+              <div className="font-medium">Connect Storage</div>
+              <div className="text-xs text-white/50">Use your own S3, GCS, or R2</div>
+            </div>
+          </Link>
+          <Link 
+            href="/settings/billing" 
+            className="flex items-center gap-3 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+          >
+            <CreditCard size={20} className="text-green-400" />
+            <div>
+              <div className="font-medium">Billing & Invoices</div>
+              <div className="text-xs text-white/50">Manage payment methods</div>
+            </div>
+          </Link>
         </div>
       </div>
 
