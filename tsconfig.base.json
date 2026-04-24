@@ -43,6 +43,12 @@
       ],
       "@puckeditor/core/*": [
         "packages/puckeditor-core/*"
+      ],
+      "@/lib/*": [
+        "apps/web/lib/*"
+      ],
+      "@/types/*": [
+        "apps/web/types/*"
       ]
     }
   }

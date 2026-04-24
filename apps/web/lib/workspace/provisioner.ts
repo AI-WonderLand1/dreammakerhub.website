@@ -1,73 +1,241 @@
-export type WorkspaceType = 'ide' | 'playcanvas' | 'full';
+import { supabaseServer } from "@/lib/supabaseServer";
+import { decrypt, encrypt } from "@/lib/security/crypto";
+import { 
+  createProjectSecret,
+  createProjectDeployment,
+  createProjectService,
+  createNetworkPolicy,
+  deleteProjectResources 
+} from "@/lib/k8s/client";
 
-export interface WorkspaceConfig {
-  workspaceId: string;
-  userId: string;
-  projectId?: string;
-  name: string;
-  type: WorkspaceType;
-  resources?: { cpu: number; memoryGB: number; storageGB: number };
-}
+export async function getProjectSSHKey(projectId: string): Promise<string | null> {
+  const { data, error } = await supabaseServer
+    .from("project_ssh_keys")
+    .select("private_key_encrypted")
+    .eq("project_id", projectId)
+    .single();
 
-export interface WorkspaceInfo {
-  id: string;
-  name: string;
-  type: WorkspaceType;
-  status: 'provisioning' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error' | 'deleted';
-  url: string;
-  playcanvasUrl: string;
-  webglStudioUrl: string;
-  containerId?: string;
-  createdAt: string;
-  resources: { cpu: number; memoryGB: number; storageGB: number };
-}
-
-const WORKSPACE_DOMAIN = process.env.WORKSPACE_DOMAIN || 'localhost';
-
-export function getWorkspaceUrls(workspaceId: string): { ide: string; playcanvas: string; webglStudio: string } {
-  const domain = WORKSPACE_DOMAIN;
-  if (domain === 'localhost') {
-    const basePort = 10000 + hashCode(workspaceId) % 5000;
-    return { ide: `http://localhost:${basePort}`, playcanvas: `http://localhost:${basePort + 1}`, webglStudio: `http://localhost:${basePort + 2}` };
+  if (error || !data) {
+    console.error("Failed to get SSH key:", error);
+    return null;
   }
-  return { ide: `https://${workspaceId}.${domain}`, playcanvas: `https://pc-${workspaceId}.${domain}`, webglStudio: `https://ws-${workspaceId}.${domain}` };
+
+  try {
+    return decrypt(data.private_key_encrypted);
+  } catch (e) {
+    console.error("SSH key decryption failed:", e);
+    return null;
+  }
 }
 
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); }
-  return Math.abs(hash);
+export async function createProjectPVC(projectId: string, size: string = "1Gi"): Promise<boolean> {
+  try {
+    const { CoreV1Api } = require('@kubernetes/client-node');
+    const k8s = require('@kubernetes/client-node');
+    const kc = new k8s.KubeConfig();
+    
+    try {
+      kc.loadFromCluster();
+    } catch {
+      kc.loadFromDefault();
+    }
+    
+    const coreApi = kc.makeApiClient(CoreV1Api);
+    
+    const pvc = {
+      apiVersion: 'v1',
+      kind: 'PersistentVolumeClaim',
+      metadata: {
+        name: `wonder-files-${projectId}`,
+        labels: {
+          'app.kubernetes.io/name': 'wonder-runtime',
+          'app.kubernetes.io/project-id': projectId
+        }
+      },
+      spec: {
+        accessModes: ['ReadWriteOnce'],
+        resources: {
+          requests: {
+            storage: size
+          }
+        },
+        storageClassName: 'oci',
+        volumeMode: 'Filesystem'
+      }
+    };
+    
+    await coreApi.createNamespacedPersistentVolumeClaim('default', pvc);
+    return true;
+  } catch (error: any) {
+    if (error.response?.body?.reason === 'AlreadyExists') {
+      return true;
+    }
+    console.error('PVC creation failed:', error.message);
+    return false;
+  }
 }
 
-function mockWorkspace(config: WorkspaceConfig): WorkspaceInfo {
-  const urls = getWorkspaceUrls(config.workspaceId);
-  return { id: config.workspaceId, name: config.name, type: config.type, status: 'running', url: urls.ide, playcanvasUrl: urls.playcanvas, webglStudioUrl: urls.webglStudio, createdAt: new Date().toISOString(), resources: config.resources || { cpu: 2, memoryGB: 4, storageGB: 5 } };
+export async function createProjectRuntime(
+  projectId: string,
+  options?: { storageSize?: string }
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const privateKey = await getProjectSSHKey(projectId);
+    if (!privateKey) {
+      return { success: false, error: "No SSH key found for project" };
+    }
+
+    const image = process.env.RUNTIME_IMAGE || 'ord.ocir.io/axgejcaos4uw/ai-wonderland/wonder-runtime:latest';
+    const storageSize = options?.storageSize || '1Gi';
+
+    await createProjectPVC(projectId, storageSize);
+    await createProjectSecret(projectId, privateKey);
+    await createProjectDeployment(projectId, image);
+    await createProjectService(projectId);
+    await createNetworkPolicy(projectId);
+
+    const domain = process.env.RUNTIME_DOMAIN || 'wonder.dev';
+    const runtimeUrl = `https://${projectId}.${domain}`;
+
+    return { success: true, url: runtimeUrl };
+  } catch (error: any) {
+    console.error("Runtime provisioning failed:", error);
+    return { success: false, error: error.message };
+  }
 }
 
-// Workspaces run in the browser via WebContainer — no Docker needed.
-// Each user gets an isolated browser-based workspace.
-// VPS is used as a build server for heavy ops (npm install, asset generation).
-export async function provisionWorkspace(config: WorkspaceConfig): Promise<WorkspaceInfo> {
-  return mockWorkspace(config);
+export async function deleteProjectRuntime(
+  projectId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await deleteProjectResources(projectId);
+    
+    try {
+      const { CoreV1Api } = require('@kubernetes/client-node');
+      const k8s = require('@kubernetes/client-node');
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const coreApi = kc.makeApiClient(CoreV1Api);
+      await coreApi.deleteNamespacedPersistentVolumeClaim(`wonder-files-${projectId}`, 'default');
+    } catch {}
+    
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
-export async function stopWorkspace(workspaceId: string): Promise<boolean> {
-  return true;
+export async function getRuntimeStatus(
+  projectId: string
+): Promise<{ running: boolean; url?: string; storage?: string }> {
+  try {
+    const { AppsV1Api, CoreV1Api } = require('@kubernetes/client-node');
+    const k8s = require('@kubernetes/client-node');
+    const kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+    const appsApi = kc.makeApiClient(AppsV1Api);
+    const coreApi = kc.makeApiClient(CoreV1Api);
+
+    const deployment = await appsApi.readNamespacedDeployment(
+      `wonder-runtime-${projectId}`,
+      'default'
+    );
+
+    if (deployment.body?.status?.readyReplicas === 1) {
+      let storageUsed = null;
+      
+      try {
+        const pvc = await coreApi.readNamespacedPersistentVolumeClaim(
+          `wonder-files-${projectId}`,
+          'default'
+        );
+        storageUsed = pvc.body?.status?.capacity?.storage || 'unknown';
+      } catch {}
+      
+      const domain = process.env.RUNTIME_DOMAIN || 'wonder.dev';
+      return { 
+        running: true, 
+        url: `https://${projectId}.${domain}`,
+        storage: storageUsed
+      };
+    }
+
+    return { running: false };
+  } catch {
+    return { running: false };
+  }
 }
 
-export async function startWorkspace(workspaceId: string): Promise<boolean> {
-  return true;
+export async function saveProjectFiles(
+  projectId: string,
+  files: Record<string, any>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const runtimeUrl = await getProjectRuntimeUrl(projectId);
+    
+    if (!runtimeUrl) {
+      return { success: false, error: "Runtime not running" };
+    }
+
+    const response = await fetch(`${runtimeUrl}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (response.ok) {
+      return { success: true };
+    }
+    
+    return { success: false, error: "Save failed" };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
-export async function terminateWorkspace(workspaceId: string): Promise<boolean> {
-  return true;
+export async function loadProjectFiles(
+  projectId: string
+): Promise<{ success: boolean; files?: Record<string, any>; error?: string }> {
+  try {
+    const runtimeUrl = await getProjectRuntimeUrl(projectId);
+    
+    if (!runtimeUrl) {
+      return { success: false, error: "Runtime not running" };
+    }
+
+    const response = await fetch(`${runtimeUrl}/files`, {
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (response.ok) {
+      const files = await response.json();
+      return { success: true, files };
+    }
+    
+    return { success: false, error: "Load failed" };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
-export async function getWorkspaceStatus(workspaceId: string): Promise<WorkspaceInfo | null> {
-  const urls = getWorkspaceUrls(workspaceId);
-  return { id: workspaceId, name: workspaceId, type: 'full', status: 'running', url: urls.ide, playcanvasUrl: urls.playcanvas, webglStudioUrl: urls.webglStudio, createdAt: new Date().toISOString(), resources: { cpu: 2, memoryGB: 4, storageGB: 5 } };
-}
+async function getProjectRuntimeUrl(projectId: string): Promise<string | null> {
+  try {
+    const { CoreV1Api } = require('@kubernetes/client-node');
+    const k8s = require('@kubernetes/client-node');
+    const kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+    const coreApi = kc.makeApiClient(CoreV1Api);
 
-export async function listUserWorkspaces(userId: string): Promise<WorkspaceInfo[]> {
-  return [];
+    const result = await coreApi.readNamespacedService(
+      `wonder-runtime-${projectId}`,
+      'default'
+    );
+    
+    if (result.body?.spec?.clusterIP) {
+      return `http://${result.body.spec.clusterIP}:3090`;
+    }
+  } catch {}
+  
+  return null;
 }

@@ -27,6 +27,7 @@
     "@gltf-transform/extensions": "^4.3.0",
     "@gltf-transform/functions": "^4.3.0",
     "@google/generative-ai": "^0.24.1",
+    "@kubernetes/client-node": "^1.4.0",
     "@monaco-editor/react": "^4.7.0",
     "@octokit/rest": "^22.0.1",
     "@puckeditor/cloud-client": "^0.6.0",
