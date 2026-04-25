@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createBrowserClient } from "@/lib/supabase/client";
 
+
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;
@@ -105,6 +107,7 @@ async function checkAuth(req: NextRequest): Promise<boolean> {
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
 
   if (path.startsWith("/admin")) {
     const isAuthenticated = await checkAuth(req);

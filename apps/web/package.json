@@ -1,8 +1,10 @@
 {
   "name": "ai-wonder-web",
   "private": true,
+
   "scripts": {
     "dev": "node ./scripts/run-dev.mjs",
+    "prestart": "npm run build",
     "build": "npx next build",
     "start": "next start -p 5000 -H 0.0.0.0",
     "dev:clean": "sh -c 'rm -rf .next && node ./scripts/run-dev.mjs'"
