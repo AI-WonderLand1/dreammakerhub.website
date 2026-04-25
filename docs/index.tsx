@@ -26,7 +26,7 @@ export default function DocsHome() {
               <iframe
                 src="https://skybox.blockadelabs.com/e/6aa9d9fa2e747c8737d275e7a08a5e4f"
                 className="absolute top-0 left-0 w-full h-full border-0"
-                allow="fullscreen"
+                allowFullScreen={true}
               ></iframe>
             </div>
           </div>
