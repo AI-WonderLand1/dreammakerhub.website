@@ -21,6 +21,15 @@ export default function DocsHome() {
           <p className="text-lg text-gray-600">
             Explore comprehensive guides, tutorials, API references, and best practices to build powerful AI‑powered applications.
           </p>
+          <div className="mt-4">
+            <div className="relative w-full pb-[100%]">
+              <iframe
+                src="https://skybox.blockadelabs.com/e/6aa9d9fa2e747c8737d275e7a08a5e4f"
+                className="absolute top-0 left-0 w-full h-full border-0"
+                allow="fullscreen"
+              ></iframe>
+            </div>
+          </div>
         </section>
         <section id="getting-started" className="mb-12">
           <h2 className="text-2xl font-semibold mb-2">Getting Started</h2>
