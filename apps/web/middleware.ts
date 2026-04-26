@@ -1,17 +1,71 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createBrowserClient } from "@/lib/supabase/client";
 
 
 
-interface RateLimitEntry {
+interface DistributedRateLimitResult {
   count: number;
   resetTime: number;
 }
 
-const rateLimits = new Map<string, RateLimitEntry>();
-
 const RATE_LIMIT_WINDOW = 60 * 1000;
+const REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+async function incrementDistributedRateLimit(key: string): Promise<DistributedRateLimitResult | null> {
+  if (!REDIS_REST_URL || !REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  const base = REDIS_REST_URL.replace(/\/$/, "");
+  const headers = {
+    Authorization: `Bearer ${REDIS_REST_TOKEN}`,
+  };
+
+  const incrRes = await fetch(`${base}/incr/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers,
+    cache: "no-store",
+  }).catch(() => null);
+
+  if (!incrRes?.ok) {
+    return null;
+  }
+
+  const incrData = (await incrRes.json().catch(() => null)) as { result?: number } | null;
+  const count = typeof incrData?.result === "number" ? incrData.result : null;
+  if (count === null) {
+    return null;
+  }
+
+  if (count === 1) {
+    await fetch(`${base}/expire/${encodeURIComponent(key)}/${Math.ceil(RATE_LIMIT_WINDOW / 1000)}`, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    }).catch(() => null);
+  }
+
+  const ttlRes = await fetch(`${base}/pttl/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers,
+    cache: "no-store",
+  }).catch(() => null);
+
+  const ttlData = ttlRes?.ok
+    ? ((await ttlRes.json().catch(() => null)) as { result?: number } | null)
+    : null;
+  const ttl = typeof ttlData?.result === "number" && ttlData.result > 0 ? ttlData.result : RATE_LIMIT_WINDOW;
+
+  return {
+    count,
+    resetTime: Date.now() + ttl,
+  };
+}
+
+function buildRateLimitKey(req: NextRequest): string {
+  return `rl:${getRateLimitMax(req.nextUrl.pathname)}:${getClientIdentifier(req)}`;
+}
 const RATE_LIMIT_MAX = {
   ai: 20,
   auth: 10,
@@ -80,6 +134,33 @@ async function resolveCustomDomain(req: NextRequest) {
   return rewriteUrl;
 }
 
+function extractSupabaseAccessToken(cookieHeader: string): string | null {
+  const parts = cookieHeader.split(";").map((part) => part.trim());
+
+  for (const part of parts) {
+    const eqIndex = part.indexOf("=");
+    if (eqIndex <= 0) continue;
+
+    const name = part.slice(0, eqIndex);
+    const value = part.slice(eqIndex + 1);
+
+    if (!name.startsWith("sb-") || !name.endsWith("-auth-token")) continue;
+
+    try {
+      const decoded = decodeURIComponent(value);
+      const parsed = JSON.parse(decoded);
+
+      if (parsed && typeof parsed.access_token === "string" && parsed.access_token.length > 0) {
+        return parsed.access_token;
+      }
+    } catch {
+      // Ignore malformed cookie and continue searching.
+    }
+  }
+
+  return null;
+}
+
 async function checkAuth(req: NextRequest): Promise<boolean> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -92,10 +173,13 @@ async function checkAuth(req: NextRequest): Promise<boolean> {
     const cookieHeader = req.headers.get("cookie");
     if (!cookieHeader) return false;
 
-    const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+    const accessToken = extractSupabaseAccessToken(cookieHeader);
+    if (!accessToken) return false;
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: {
         apikey: supabaseAnonKey,
-        cookie: cookieHeader,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
