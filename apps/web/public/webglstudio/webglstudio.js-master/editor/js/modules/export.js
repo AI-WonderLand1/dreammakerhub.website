@@ -140,7 +140,6 @@ var ExportModule = {
 
 	showOptimizeLibrariesDialog: function()
 	{
-		var that = this;
 		var dialog = new LiteGUI.Dialog( { title: "Optimize Libraries", close: true, width: 800, height: 400, scroll: false, draggable: true } );
 
 		var area = new LiteGUI.Area({width:"100%",height:"100%"});
