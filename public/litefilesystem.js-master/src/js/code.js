@@ -758,6 +758,11 @@ function refreshFiles( fullpath, on_complete )
 	//select folder
 	var folder_class = LFS.cleanPath( current_unit + "/" + current_folder).replace(/\//g,"__"); 
 	$(".folder-item-" + folder_class ).addClass("selected");
+	if(!session || typeof session.getFilesByPath !== "function")
+	{
+		bootbox.alert("Session not ready");
+		return;
+	}
 	$(".folder-item-" + folder_class + " .glyphicon").addClass("glyphicon-folder-open").removeClass("glyphicon-folder-close");
 
 	//get files in that folder
