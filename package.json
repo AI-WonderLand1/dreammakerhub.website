@@ -17,7 +17,8 @@
     "fast-xml-parser": ">=5.7.0",
     "@prisma/dev": {
       "@hono/node-server": ">=1.19.13"
-    }
+    },
+    "@next/swc-linux-x64-gnu": false
   },
   "scripts": {
     "dev": "npm run dev --workspace=ai-wonder-web",
