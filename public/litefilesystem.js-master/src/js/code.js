@@ -548,6 +548,12 @@ function selectUnit()
 
 function refreshUnits()
 {
+	if(!session || typeof session.getUnits !== "function")
+	{
+		console.warn("Session not ready, cannot refresh units yet.");
+		return;
+	}
+
 	session.getUnits(function(units){
 		var pos = 1;
 		var root = $(".units-list .content");
