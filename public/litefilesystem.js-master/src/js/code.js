@@ -204,6 +204,11 @@ function systemReady()
 				delete_backup_button[0].dataset["backup_name"] = backup.name;
 				delete_backup_button.click(function(){
 					var name = this.dataset["backup_name"];
+					if(!session || !session.deleteBackup)
+					{
+						bootbox.alert("Cannot delete backup");
+						return;
+					}
 					session.deleteBackup( name, function(v, resp){
 						if(v)
 						{
@@ -233,6 +238,12 @@ function systemReady()
 							if(!result || result != name)
 								return;
 							var dialog = bootbox.dialog({ closeButton: false, message: "Restoring backup, please wait, this could take some time..." + progressbar_code});
+							if(!session || !session.restoreBackup)
+							{
+								dialog.remove();
+								bootbox.alert("Cannot restore backup");
+								return;
+							}
 							session.restoreBackup( name, function(v, resp){
 								dialog.remove();
 								if(v)
