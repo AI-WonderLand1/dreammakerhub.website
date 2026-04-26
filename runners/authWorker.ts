@@ -4,10 +4,17 @@ import { createClient } from "@supabase/supabase-js";
 import { requireEnv } from "../lib/env";
 import { logger } from "../lib/logger";
 
+function safeRequireEnv(key: string): string {
+  if (typeof requireEnv !== "function") {
+    throw new Error("Invalid env helper: requireEnv is not a function");
+  }
+  return requireEnv(key);
+}
+
 function getServerClient() {
   return createClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    safeRequireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    safeRequireEnv("SUPABASE_SERVICE_ROLE_KEY"),
   );
 }
 
