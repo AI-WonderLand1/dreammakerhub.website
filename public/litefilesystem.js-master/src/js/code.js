@@ -47,12 +47,15 @@ function systemReady()
 		$("#inputPassword").val( values["password"] );
 
 		//create user
-		LiteFileServer.login( values["username"], values["password"], function(session, result){
+		LiteFileServer.login( values["username"], values["password"], function(user_session, result){
 			login_button.stop();
 			$(".form-signin").css("opacity",1);
 
-			if( session.status == LiteFileServer.LOGGED )
+			if( user_session.status == LiteFileServer.LOGGED )
+			{
+				session = user_session;
 				onLoggedIn(session);
+			}
 			else
 				bootbox.alert(result.msg);
 
