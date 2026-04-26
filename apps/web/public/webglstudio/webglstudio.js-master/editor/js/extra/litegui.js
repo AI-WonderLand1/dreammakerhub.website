@@ -3538,9 +3538,9 @@ LiteGUI.Console = Console;
 			{
 				if(sections[i].id) section.id = sections[i].id;
 				if(options.vertical)
-					section.style.height = (typeof(sections[i].height) == "Number" ? sections[i].height.toFixed(1) + "%" : sections[i].height);
+					section.style.height = (typeof(sections[i].height) == "number" ? sections[i].height.toFixed(1) + "%" : sections[i].height);
 				else
-					section.style.width = (typeof(sections[i].width) == "Number" ? sections[i].width.toFixed(1) + "%" : sections[i].width);
+					section.style.width = (typeof(sections[i].width) == "number" ? sections[i].width.toFixed(1) + "%" : sections[i].width);
 			}
 
 			section.add = function(element) {
