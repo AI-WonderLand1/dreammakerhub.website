@@ -34,7 +34,7 @@ export async function verifyAuth(req: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      logger.error("AuthWorker: token verification failed", error?.message);
+      logger?.error?.("AuthWorker: token verification failed", error?.message);
       return {
         authenticated: false,
         user: null,
@@ -50,7 +50,7 @@ export async function verifyAuth(req: NextRequest) {
       },
     };
   } catch (err) {
-    logger.error("AuthWorker error", { error: err instanceof Error ? err.message : err });
+    logger?.error?.("AuthWorker error", { error: err instanceof Error ? err.message : err });
     return {
       authenticated: false,
       user: null,
