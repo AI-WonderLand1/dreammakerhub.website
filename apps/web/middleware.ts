@@ -4,14 +4,69 @@ import { createBrowserClient } from "@/lib/supabase/client";
 
 
 
-interface RateLimitEntry {
+interface DistributedRateLimitResult {
   count: number;
   resetTime: number;
 }
 
-const rateLimits = new Map<string, RateLimitEntry>();
-
 const RATE_LIMIT_WINDOW = 60 * 1000;
+const REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+async function incrementDistributedRateLimit(key: string): Promise<DistributedRateLimitResult | null> {
+  if (!REDIS_REST_URL || !REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  const base = REDIS_REST_URL.replace(/\/$/, "");
+  const headers = {
+    Authorization: `Bearer ${REDIS_REST_TOKEN}`,
+  };
+
+  const incrRes = await fetch(`${base}/incr/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers,
+    cache: "no-store",
+  }).catch(() => null);
+
+  if (!incrRes?.ok) {
+    return null;
+  }
+
+  const incrData = (await incrRes.json().catch(() => null)) as { result?: number } | null;
+  const count = typeof incrData?.result === "number" ? incrData.result : null;
+  if (count === null) {
+    return null;
+  }
+
+  if (count === 1) {
+    await fetch(`${base}/expire/${encodeURIComponent(key)}/${Math.ceil(RATE_LIMIT_WINDOW / 1000)}`, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    }).catch(() => null);
+  }
+
+  const ttlRes = await fetch(`${base}/pttl/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers,
+    cache: "no-store",
+  }).catch(() => null);
+
+  const ttlData = ttlRes?.ok
+    ? ((await ttlRes.json().catch(() => null)) as { result?: number } | null)
+    : null;
+  const ttl = typeof ttlData?.result === "number" && ttlData.result > 0 ? ttlData.result : RATE_LIMIT_WINDOW;
+
+  return {
+    count,
+    resetTime: Date.now() + ttl,
+  };
+}
+
+function buildRateLimitKey(req: NextRequest): string {
+  return `rl:${getRateLimitMax(req.nextUrl.pathname)}:${getClientIdentifier(req)}`;
+}
 const RATE_LIMIT_MAX = {
   ai: 20,
   auth: 10,
