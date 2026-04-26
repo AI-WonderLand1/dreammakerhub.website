@@ -877,6 +877,11 @@ function onRenameFile(e){
 		value: filename,
 		callback: function(result) {
 			if(!result)
+			if(!session || typeof session.moveFile !== "function")
+			{
+				bootbox.alert("Cannot rename file: session is not ready.");
+				return;
+			}
 				return;
 			info.filename = result;
 			var new_fullpath = info.getFullpath();
