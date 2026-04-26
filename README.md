@@ -1,8 +1,11 @@
 # Ai-Wonderland (DreamMakerHub)
 AI-powered creative platform for building web experiences, 3D worlds, and interactive apps.
 
+# Current Status: Under Maintenance
+
 # 🌐 Visit the Site | ☕ Support the Project
  # https://www.dreammakerhub.website
+
 # 🛡️ Proprietary Notice & Licensing
 This project is NOT Open Source. All original components, including the AI Constitution, the Alice & Rick Personas, and the custom-merged PlayCanvas/WebGL engine logic, are Proprietary and All Rights Reserved.
 
