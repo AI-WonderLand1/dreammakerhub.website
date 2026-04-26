@@ -1,5 +1,3 @@
-import { SupabaseStorageProvider } from "@/services/storage/SupabaseProvider";
-
 let supabase: ReturnType<typeof createClient> | null = null;
 
 function getSupabaseClient() {
