@@ -769,7 +769,7 @@ export const categories = {
       "floatingCTA"
     ],
   },
-  basics: {
+  basicsCore: {
     title: "Basic Elements",
     components: [
       "button", "input", "typography", "heading", "badge",
