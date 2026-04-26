@@ -1,15 +1,11 @@
-import nextra from 'nextra'
-
-// Nextra 4 uses a simplified initialization
-const withNextra = nextra({}) 
-
 const isDev = process.env.NODE_ENV === 'development';
 const proxyBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
 const normalizedProxyBasePath =
   proxyBasePath && proxyBasePath !== '/' ? proxyBasePath.replace(/\/+$/, '') : '';
 
-export default withNextra({
+const nextConfig = {
   reactStrictMode: true,
+  turbopack: {},
 
   ...(!isDev && normalizedProxyBasePath
     ? {
@@ -103,4 +99,6 @@ export default withNextra({
       ],
     },
   ],
-})
+};
+
+export default nextConfig;
