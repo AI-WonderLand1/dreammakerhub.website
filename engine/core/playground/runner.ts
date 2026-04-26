@@ -17,7 +17,7 @@ export async function runPlaygroundModule(
 ): Promise<PlaygroundModuleResult> {
   const moduleId: PlaygroundModuleId = input.moduleId;
 
-  const moduleImpl = playgroundModulesById[moduleId];
+  const moduleImpl = playgroundModulesById?.[moduleId];
   if (!moduleImpl) {
     throw new Error(`Unknown playground module: ${moduleId}`);
   }
