@@ -29,3 +29,14 @@ spec:
             name: playcanvas-webgl
             port:
               number: 80
+
+  - host: www.dreammakerhub.website
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wonder-web
+            port:
+              number: 80
