@@ -246,9 +246,10 @@ export function createRateLimiter(
   windowMs: number = 15 * 60 * 1000 // 15 minutes
 ) {
   const requests = new Map<string, { count: number; resetTime: number }>();
+  let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
   
   // Clean up old entries periodically
-  setInterval(() => {
+  cleanupIntervalId = setInterval(() => {
     const now = Date.now();
     for (const [key, value] of requests.entries()) {
       if (now > value.resetTime) {
@@ -257,24 +258,35 @@ export function createRateLimiter(
     }
   }, 60 * 1000); // Clean every minute
   
-  return (identifier: string): { allowed: boolean; remaining: number } => {
-    const now = Date.now();
-    const requestData = requests.get(identifier);
-    
-    if (!requestData || now > requestData.resetTime) {
-      // First request or window expired
-      requests.set(identifier, {
-        count: 1,
-        resetTime: now + windowMs
-      });
-      return { allowed: true, remaining: maxRequests - 1 };
+  const cleanup = () => {
+    if (cleanupIntervalId) {
+      clearInterval(cleanupIntervalId);
+      cleanupIntervalId = null;
     }
-    
-    if (requestData.count >= maxRequests) {
-      return { allowed: false, remaining: 0 };
-    }
-    
-    requestData.count++;
-    return { allowed: true, remaining: maxRequests - requestData.count };
+    requests.clear();
+  };
+  
+  return {
+    limiter: (identifier: string): { allowed: boolean; remaining: number } => {
+      const now = Date.now();
+      const requestData = requests.get(identifier);
+      
+      if (!requestData || now > requestData.resetTime) {
+        // First request or window expired
+        requests.set(identifier, {
+          count: 1,
+          resetTime: now + windowMs
+        });
+        return { allowed: true, remaining: maxRequests - 1 };
+      }
+      
+      if (requestData.count >= maxRequests) {
+        return { allowed: false, remaining: 0 };
+      }
+      
+      requestData.count++;
+      return { allowed: true, remaining: maxRequests - requestData.count };
+    },
+    cleanup
   };
 }

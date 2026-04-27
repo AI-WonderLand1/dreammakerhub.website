@@ -49,6 +49,7 @@ export function IsolatedPlayCanvas({
 }: IsolatedPlayCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const clientRef = useRef<PlayCanvasClient | null>(null);
+  const heartbeatIntervalsRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set());
   const [status, setStatus] = useState<string>('Initializing...');
   const [isReady, setIsReady] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,13 +101,14 @@ export function IsolatedPlayCanvas({
               signalContainerReady(userId);
               
               // Start heartbeat to keep container alive while user is editing
-              setInterval(() => {
+              const heartbeatInterval = setInterval(() => {
                 fetch('/api/playcanvas-isolation', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action: 'ping' }),
                 }).catch(() => {});
               }, 60000); // Ping every minute
+              heartbeatIntervalsRef.current.add(heartbeatInterval);
               
               // Register container with service worker
               if (clientRef.current) {
@@ -193,6 +195,10 @@ export function IsolatedPlayCanvas({
 
     return () => {
       isCancelled = true;
+      
+      // Cleanup heartbeat intervals
+      heartbeatIntervalsRef.current.forEach(id => clearInterval(id));
+      heartbeatIntervalsRef.current.clear();
       
       // Cleanup
       if (clientRef.current) {
