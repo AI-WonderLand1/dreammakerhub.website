@@ -13,9 +13,7 @@ terraform {
 
 provider "coder" {}
 
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-}
+provider "kubernetes" {}
 
 variable "namespace" {
   type        = string
