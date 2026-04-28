@@ -57,27 +57,28 @@ resource "coder_agent" "main" {
   }
 }
 
-# AI Wonderland specific environment variables
-resource "coder_env" "ai_wonderland_vars" {
-  agent_id   = coder_agent.main.id
-  agent_name = "main"
-  
-  name  = "AI_WONDERLAND_WORKSPACE"
-  value = "true"
-  
-  name  = "NODE_ENV"
-  value = "development"
+# Environment Variable: Workspace Flag
+resource "coder_env" "ai_wonderland_workspace" {
+  agent_id = coder_agent.main.id
+  name     = "AI_WONDERLAND_WORKSPACE"
+  value    = "true"
+}
+
+# Environment Variable: Node Env
+resource "coder_env" "node_env" {
+  agent_id = coder_agent.main.id
+  name     = "NODE_ENV"
+  value    = "development"
 }
 
 # VS Code for development
 module "code-server" {
-  count  = data.coder_workspace.me.start_count
-  source = "registry.coder.com/coder/code-server/coder"
+  count   = data.coder_workspace.me.start_count
+  source  = "registry.coder.com/coder/code-server/coder"
   version = "~> 1.0"
 
-  agent_id   = coder_agent.main.id
-  agent_name = "main"
-  
+  agent_id = coder_agent.main.id
+ 
   # AI Wonderland specific extensions
   extensions = [
     "ms-vscode.vscode-typescript-next",
@@ -90,7 +91,8 @@ module "code-server" {
 # Development ports
 resource "coder_app" "ai_wonderland_dev" {
   agent_id     = coder_agent.main.id
-  name         = "AI Wonderland Dev"
+  slug         = "ai-wonderland-dev"
+  display_name = "AI Wonderland Dev"
   url          = "http://localhost:3000"
   icon         = "/icon/rocket.svg"
   subdomain    = false
@@ -99,7 +101,8 @@ resource "coder_app" "ai_wonderland_dev" {
 
 resource "coder_app" "code_server" {
   agent_id     = coder_agent.main.id
-  name         = "VS Code"
+  slug         = "code-server"
+  display_name = "VS Code"
   url          = "http://localhost:8080"
   icon         = "/icon/code.svg"
   subdomain    = true
