@@ -23,6 +23,18 @@ variable "namespace" {
   default     = "coder" # Keep this as "coder" - Coder service account has permissions here
 }
 
+variable "template_id" {
+  type        = string
+  description = "Coder template ID for the workspaces"
+}
+
+variable "autostop" {
+  description = "Autostop after inactivity (hours)"
+  default     = 4
+  type        = number
+
+
+data "coder_workspace" "me" {}
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
@@ -103,6 +115,7 @@ data "coder_parameter" "home_disk_size" {
 }
 
 resource "coder_workspace" "this" {
+  depends_on = [coder_template_version.this]
   count                    = data.coder_workspace.me.start_count
   name                     = data.coder_workspace.me.name
   template_id              = var.template_id
@@ -115,12 +128,6 @@ resource "coder_workspace" "this" {
   priority                 = 0
   deletion_burst_limit     = 0
   deletion_frequency_limit = "10m"
-}
-
-variable "autostop" {
-  description = "Autostop after inactivity (hours)"
-  default     = 4
-  type        = number
 }
 
 resource "coder_agent" "main" {
