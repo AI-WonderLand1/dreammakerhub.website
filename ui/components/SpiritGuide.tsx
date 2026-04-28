@@ -1,136 +1,221 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-// Ensure this matches your directory: lib/agents.ts
-import { Platform } from "@lib/agents"; 
-import { logger } from "@lib/logger";
+import { useAccessibility } from '@/lib/accessibility-context';
+import { useState } from 'react';
+import SpiritGuideChat from '@/app/components/SpiritGuideChat';
 
-type AgentTask = {
-  agent: string;
-  command: string;
-  platform: Platform;
-  output?: string;
-  status: "success" | "warning" | "error";
-};
+export function SpiritGuide() {
+  const {
+    voiceEnabled,
+    setVoiceEnabled,
+    transcriptEnabled,
+    setTranscriptEnabled,
+    speechRate,
+    setSpeechRate,
+    voicePitch,
+    setVoicePitch,
+    transcript,
+    clearTranscript,
+    speak,
+  } = useAccessibility();
 
-export default function SpiritGuide() {
-  const [value, setValue] = useState("");
-  const [activePlatform, setActivePlatform] = useState<Platform>("multi");
-  const [tasks, setTasks] = useState<AgentTask[]>([]);
-  const [isBusy, setIsBusy] = useState(false);
-
-  async function runAgent(agent: string, command: string) {
-    if (!command && agent !== "cleanup") return;
-    
-    setIsBusy(true);
-    try {
-      const res = await fetch("/api/agent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          agent, 
-          command, 
-          platform: activePlatform // Passing platform context
-        }),
-      });
-
-      const data = await res.json();
-
-      const newTask: AgentTask = {
-        agent,
-        command: command || "Executed",
-        platform: activePlatform,
-        output: data.answer || data.content,
-        status: data.status === "blocked" ? "error" : "success"
-      };
-
-      setTasks((prev) => [newTask, ...prev]); // Newest tasks first
-    } catch (err) {
-      logger.error("Agent Execution Failed", { error: err });
-    } finally {
-      setIsBusy(false);
-      setValue("");
-    }
-  }
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl border border-white/15 bg-black/60 backdrop-blur-xl shadow-[0_0_70px_rgba(168,85,247,0.28)] overflow-hidden transition-all duration-500">
-      {/* Header with Platform Indicator */}
-      <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-        <div className="flex flex-col">
-          <span className="font-semibold tracking-wide text-white">✦ Spirit Manager</span>
-          <span className="text-[10px] uppercase text-purple-400 font-bold tracking-tighter">
-            Target: {activePlatform}
-          </span>
-        </div>
-        <div className="flex gap-1">
-          {["web", "ios", "android"].map((p) => (
+    <>
+      {/* Floating Accessibility Button */}
+      <button
+        onClick={() => setPanelOpen(!panelOpen)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 transition-all duration-300 shadow-lg neon-glow flex items-center justify-center group"
+        title="AI Spirit Guide (Alt + A)"
+        aria-label="Open Accessibility Menu"
+      >
+        <span className="text-2xl group-hover:scale-110 transition">🔮</span>
+
+        {/* Notification badge */}
+        {(voiceEnabled || transcriptEnabled) && (
+          <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+        )}
+      </button>
+
+      {/* Accessibility Control Panel */}
+      {panelOpen && (
+        <div className="fixed bottom-24 right-6 z-50 w-80 border-2 border-cyan-500/50 rounded-lg bg-black/95 backdrop-blur-xl shadow-2xl animated-in fade-in slide-in-from-bottom-4">
+          {/* Header */}
+          <div className="border-b border-cyan-500/30 p-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-cyan-300">🧙 AI Spirit Guide</h3>
             <button
-              key={p}
-              onClick={() => setActivePlatform(p as Platform)}
-              className={`text-[9px] px-2 py-0.5 rounded border ${
-                activePlatform === p 
-                ? "bg-purple-500 border-purple-400 text-white" 
-                : "border-white/10 text-white/40"
-              }`}
+              onClick={() => setPanelOpen(false)}
+              className="text-white/60 hover:text-white transition"
             >
-              {p.toUpperCase()}
+              ✕
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div className="px-5 py-4 space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
-        {/* Input Area */}
-        <div className="relative">
-          <input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="Describe your vision..."
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors"
-          />
-          {isBusy && (
-            <div className="absolute right-3 top-3.5">
-              <div className="h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-        </div>
-
-        {/* Multi-Platform Agent Grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {["chat", "vision", "install", "cleanup", "image-to-code", "scan"].map((agent) => (
-            <button
-              key={agent}
-              disabled={isBusy}
-              onClick={() => runAgent(agent, value)}
-              className="rounded-xl border border-white/10 bg-white/5 py-2 text-[11px] text-white/70 hover:bg-purple-500/20 hover:border-purple-500/40 hover:text-white transition-all active:scale-95 disabled:opacity-50"
-            >
-              {agent}
-            </button>
-          ))}
-        </div>
-
-        {/* Unified Task & Scan Log */}
-        <div className="space-y-3">
-          {tasks.map((t, i) => (
-            <div 
-              key={i} 
-              className={`rounded-xl border p-3 text-xs animate-in slide-in-from-top-2 duration-300 ${
-                t.status === "error" ? "border-red-500/30 bg-red-500/5" : "border-white/10 bg-white/5"
-              }`}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <span className="text-purple-400 font-mono">[{t.agent}]</span>
-                <span className="text-[10px] text-white/30">{t.platform}</span>
+          <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
+            {/* Voice Toggle */}
+            <div className="flex items-center justify-between p-3 rounded border border-cyan-500/30 bg-cyan-500/5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔊</span>
+                <div>
+                   <p className="font-semibold text-white">Voice Guidance</p>
+                   <p className="text-xs text-white/60">Spiritual insights and guidance</p>
+                </div>
               </div>
-              <p className="text-white/90 mb-2 italic">"{t.command}"</p>
-              <div className="text-white/50 leading-relaxed bg-black/20 p-2 rounded-lg font-mono text-[10px] overflow-x-auto">
-                {t.output}
+              <button
+                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                className={`w-12 h-6 rounded-full transition relative ${
+                  voiceEnabled ? 'bg-green-600' : 'bg-white/20'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${
+                    voiceEnabled ? 'right-1' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Captions Toggle */}
+            <div className="flex items-center justify-between p-3 rounded border border-cyan-500/30 bg-cyan-500/5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📝</span>
+                <div>
+                   <p className="font-semibold text-white">Wisdom Transcripts</p>
+                   <p className="text-xs text-white/60">Written guidance and insights</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTranscriptEnabled(!transcriptEnabled)}
+                className={`w-12 h-6 rounded-full transition relative ${
+                  transcriptEnabled ? 'bg-green-600' : 'bg-white/20'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${
+                    transcriptEnabled ? 'right-1' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Speech Settings */}
+            {voiceEnabled && (
+              <div className="p-3 rounded border border-purple-500/30 bg-purple-500/5 space-y-3">
+                 <h4 className="font-semibold text-purple-300 flex items-center gap-2">
+                   🎚️ Voice Guidance Settings
+                 </h4>
+
+                {/* Speech Rate */}
+                <div>
+                  <label className="text-sm text-white/70 flex items-center justify-between mb-2">
+                    <span>Speed</span>
+                    <span className="text-xs bg-purple-500/20 px-2 py-1 rounded">{(speechRate * 100).toFixed(0)}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={speechRate}
+                    onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-purple-900 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  />
+                  <p className="text-xs text-white/50 mt-1">0.5x - 2x speed</p>
+                </div>
+
+                {/* Pitch */}
+                <div>
+                  <label className="text-sm text-white/70 flex items-center justify-between mb-2">
+                    <span>Pitch</span>
+                    <span className="text-xs bg-purple-500/20 px-2 py-1 rounded">{voicePitch.toFixed(1)}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={voicePitch}
+                    onChange={(e) => setVoicePitch(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-purple-900 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  />
+                  <p className="text-xs text-white/50 mt-1">Lower to higher</p>
+                </div>
+
+                {/* Test Button */}
+                <button
+                   onClick={() => speak('Greetings, seeker. I am your AI spirit guide. Adjust my voice to resonate with your soul.')}
+                  className="w-full py-2 rounded bg-purple-600 hover:bg-purple-700 transition text-sm font-semibold text-white"
+                >
+                   🔮 Test Guidance
+                </button>
+              </div>
+            )}
+
+            {/* Transcript History */}
+            {transcript.length > 0 && (
+              <div className="p-3 rounded border border-green-500/30 bg-green-500/5">
+                <div className="flex items-center justify-between mb-2">
+                   <h4 className="font-semibold text-green-300 flex items-center gap-2">
+                     📜 Wisdom Log ({transcript.length})
+                   </h4>
+                  <button
+                    onClick={clearTranscript}
+                    className="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/40 px-2 py-1 rounded transition"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {transcript.slice(-5).map((item) => (
+                    <div key={item.id} className="text-xs p-2 rounded bg-black/50 border border-green-500/20">
+                      <p className="text-green-300 font-mono">{item.text}</p>
+                      <p className="text-white/40 text-xs mt-1">
+                        {new Date(item.timestamp).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Keyboard Shortcuts */}
+            <div className="p-3 rounded border border-yellow-500/30 bg-yellow-500/5">
+              <h4 className="font-semibold text-yellow-300 mb-2">⌨️ Shortcuts</h4>
+              <div className="space-y-1 text-xs text-white/70">
+                <p>
+                   <kbd className="bg-black/50 px-2 py-1 rounded">Ctrl+Alt+V</kbd> Toggle guidance voice
+                </p>
+                <p>
+                   <kbd className="bg-black/50 px-2 py-1 rounded">Ctrl+Alt+C</kbd> Toggle wisdom transcripts
+                </p>
+                <p>
+                  <kbd className="bg-black/50 px-2 py-1 rounded">Esc</kbd> Close panel
+                </p>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-cyan-500/30 p-3 text-xs text-white/50 text-center">
+            <p>AI-WONDERLAND Spirit Guide v1.0</p>
+            <p>Your mystical companion for creative journeys</p>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {/* Close on Escape */}
+      {panelOpen && (
+        <div
+          onClick={() => setPanelOpen(false)}
+          className="fixed inset-0 z-40"
+          role="presentation"
+        />
+      )}
+
+      {/* Spirit Guide Chat */}
+      <SpiritGuideChat />
+    </>
   );
 }

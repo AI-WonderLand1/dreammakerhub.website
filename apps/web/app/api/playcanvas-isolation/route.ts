@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { PlayCanvasContainerManager } from '@/components/playcanvas-isolation/webcontainer/PlayCanvasContainer';
 import { getCurrentUserSession } from '@/components/playcanvas-isolation/utils/auth';
 import type { IsolationConfig } from '@/components/playcanvas-isolation/types/isolation';
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
         );
     }
   } catch (error) {
-    console.error('[API] Error in GET /api/playcanvas-isolation:', error);
+    logger.error('[API] Error in GET /api/playcanvas-isolation:', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
         const readyInstance = await manager.getContainer(userSession.userId);
         readyInstance.isActive = true;
         readyInstance.lastUsed = Date.now();
-        console.log(`[API] Container marked ready for user ${userSession.userId.substring(0, 8)}`);
+        logger.info(`[API] Container marked ready for user ${userSession.userId.substring(0, 8)}`);
         return NextResponse.json({ success: true, containerId: readyInstance.id });
 
       case 'create_scene':
@@ -172,7 +173,7 @@ export async function POST(request: Request) {
         );
     }
   } catch (error) {
-    console.error('[API] Error in POST /api/playcanvas-isolation:', error);
+    logger.error('[API] Error in POST /api/playcanvas-isolation:', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -205,7 +206,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[API] Error in DELETE /api/playcanvas-isolation:', error);
+    logger.error('[API] Error in DELETE /api/playcanvas-isolation:', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
