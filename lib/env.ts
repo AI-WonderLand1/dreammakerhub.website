@@ -12,6 +12,8 @@ export const env = createEnv({
     AI_PROVIDER: z.string().default("opencode"),
     GEMINI_API_KEY: z.string().optional(),
     GOOGLE_API_KEY: z.string().optional(),
+    AGENT_API_URL: z.string().url().default("http://localhost:8000"),
+    ALICE_API_KEY: z.string().optional(),
   },
 
   /*
@@ -40,6 +42,8 @@ export const env = createEnv({
     AI_PROVIDER: process.env.AI_PROVIDER,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+    AGENT_API_URL: process.env.AGENT_API_URL,
+    ALICE_API_KEY: process.env.ALICE_API_KEY,
     // Add these so you can use them in your Webhooks/Agents:
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
