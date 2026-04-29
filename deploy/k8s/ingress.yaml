@@ -6,8 +6,14 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - dreammakerhub.website
+    - www.dreammakerhub.website
+    secretName: wonder-web-tls
   rules:
   - host: ide.dreammakerhub.website
     http:
@@ -30,6 +36,16 @@ spec:
             port:
               number: 80
 
+  - host: dreammakerhub.website
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wonder-web
+            port:
+              number: 80
   - host: www.dreammakerhub.website
     http:
       paths:
