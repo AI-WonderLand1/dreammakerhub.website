@@ -14,6 +14,13 @@ spec:
     - dreammakerhub.website
     - www.dreammakerhub.website
     secretName: wonder-web-tls
+  - hosts:
+    - play.dreammakerhub.website
+    - wonderplay.dreammakerhub.website
+    secretName: wonderplay-tls
+  - hosts:
+    - ai.dreammakerhub.website
+    secretName: ai-playground-tls
   rules:
   - host: ide.dreammakerhub.website
     http:
@@ -33,6 +40,36 @@ spec:
         backend:
           service:
             name: playcanvas-webgl
+            port:
+              number: 80
+  - host: wonderplay.dreammakerhub.website
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wonderplay-service
+            port:
+              number: 3090
+  - host: play.dreammakerhub.website
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wonderplay-service
+            port:
+              number: 3090
+  - host: ai.dreammakerhub.website
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wonder-web
             port:
               number: 80
 
