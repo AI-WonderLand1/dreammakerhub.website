@@ -2,20 +2,28 @@ import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypt
 import { readFileSync, unlinkSync } from "fs";
 import { execSync } from "child_process";
 
-if (!process.env.SSH_KEY_ENCRYPTION_KEY) {
-  throw new Error(
-    "SSH_KEY_ENCRYPTION_KEY environment variable is required. " +
-    "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
-  );
+let _encryptionKey: string | null = null;
+
+function getEncryptionKey(): string {
+  if (!_encryptionKey) {
+    const key = process.env.SSH_KEY_ENCRYPTION_KEY;
+    if (!key) {
+      throw new Error(
+        "SSH_KEY_ENCRYPTION_KEY environment variable is required. " +
+        "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+      );
+    }
+    _encryptionKey = key;
+  }
+  return _encryptionKey;
 }
-const ENCRYPTION_KEY = process.env.SSH_KEY_ENCRYPTION_KEY;
 
 function deriveKey(masterKey: string): Buffer {
   return createHash('sha256').update(masterKey).digest();
 }
 
 export function encrypt(text: string): string {
-  const key = deriveKey(ENCRYPTION_KEY);
+  const key = deriveKey(getEncryptionKey());
   const iv = randomBytes(16);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   
@@ -28,7 +36,7 @@ export function encrypt(text: string): string {
 }
 
 export function decrypt(encryptedData: string): string {
-  const key = deriveKey(ENCRYPTION_KEY);
+  const key = deriveKey(getEncryptionKey());
   const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
   
   if (!ivHex || !authTagHex || !encrypted) {

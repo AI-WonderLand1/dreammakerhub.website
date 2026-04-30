@@ -1,16 +1,18 @@
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { CheckResult, SystemFinding } from '../types';
+
+const execAsync = promisify(exec);
 
 export async function checkEslint(workspaceRoot: string): Promise<CheckResult> {
   const start = Date.now();
   const findings: SystemFinding[] = [];
 
   try {
-    const stdout = execSync('npx eslint . --format json', {
+    const { stdout } = await execAsync('npx eslint . --format json', {
       cwd: workspaceRoot,
       timeout: 30000,
       encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     const results = JSON.parse(stdout.trim());
@@ -30,9 +32,10 @@ export async function checkEslint(workspaceRoot: string): Promise<CheckResult> {
       }
     }
   } catch (e: unknown) {
-    if (e.stdout) {
+    const err = e as { stdout?: string };
+    if (err.stdout) {
       try {
-        const results = JSON.parse(e.stdout.trim());
+        const results = JSON.parse(err.stdout.trim());
         for (const file of results) {
           for (const msg of file.messages) {
             findings.push({
