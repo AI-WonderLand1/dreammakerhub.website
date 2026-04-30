@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: wonder-runtime
     app.kubernetes.io/managed-by: kustomize
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: wonder-runtime
@@ -16,6 +16,8 @@ spec:
       labels:
         app: wonder-runtime
     spec:
+      nodeSelector:
+        node-pool: cluster1  # Separate node pool for 3D runtime
       containers:
         - name: wonder-runtime
           image: ord.ocir.io/axgejcaos4uw/ai-wonderland/wonder-runtime:latest
