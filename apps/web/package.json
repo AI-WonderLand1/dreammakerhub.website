@@ -1,6 +1,7 @@
 {
   "name": "ai-wonder-web",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "node ./scripts/run-dev.mjs",
     "prestart": "npm run build",
@@ -81,6 +82,7 @@
     "zod": "^4.3.5"
   },
   "overrides": {
-    "lightningcss-android-arm64": "npm:lightningcss@1.31.1"
+    "lightningcss-android-arm64": "npm:lightningcss@1.31.1",
+    "@next/swc-linux-x64-gnu": "npm:@next/swc-linux-arm64-gnu@16.2.4"
   }
 }
