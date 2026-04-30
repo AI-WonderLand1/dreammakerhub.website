@@ -10,6 +10,7 @@ const normalizedProxyBasePath =
 
 const nextConfig = {
   reactStrictMode: true,
+  turbopack: {},
 
   ...(!isDev && normalizedProxyBasePath
     ? {
