@@ -33,7 +33,7 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  output: 'standalone',
+  // output: 'standalone',
 
   typescript: {
     ignoreBuildErrors: true,

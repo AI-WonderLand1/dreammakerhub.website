@@ -18,4 +18,8 @@ export const supabaseServer = new Proxy({} as SupabaseClient, {
   },
 });
 
-export const supabaseAdmin = getInstance();
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(_target: SupabaseClient, prop: string | symbol) {
+    return (getInstance() as any)[prop];
+  },
+});
