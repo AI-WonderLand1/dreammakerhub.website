@@ -15,7 +15,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
     "eslint": "^10.2.1",
-    "eslint-config-next": "^16.2.1",
+    "eslint-config-next": "^15.1.0",
     "lodash-es": "^4.18.1",
     "typescript": "6.0.3",
     "typescript-eslint": "^8.58.2"
@@ -62,7 +62,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
     "motion": "^12.25.0",
-    "next": "^16.2.4",
+    "next": "^15.1.0",
     "playcanvas": "^2.17.0",
     "postcss": "^8.5.12",
     "react": "^19.2.5",
@@ -81,7 +81,6 @@
     "zod": "^4.3.5"
   },
   "overrides": {
-    "lightningcss-linux-x64-gnu": "npm:lightningcss-linux-arm64-gnu@1.31.1",
-    "@next/swc-linux-x64-gnu": "npm:@next/swc-linux-arm64-gnu@16.2.4"
+    "lightningcss-linux-x64-gnu": "npm:lightningcss-linux-arm64-gnu@1.31.1"
   }
 }
