@@ -1,16 +1,18 @@
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { CheckResult, SystemFinding } from '../types';
+
+const execAsync = promisify(exec);
 
 export async function checkDeadCode(workspaceRoot: string): Promise<CheckResult> {
   const start = Date.now();
   const findings: SystemFinding[] = [];
 
   try {
-    const stdout = execSync('npx ts-prune 2>&1', {
+    const { stdout } = await execAsync('npx ts-prune', {
       cwd: workspaceRoot,
       timeout: 30000,
       encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'pipe'],
     });
     const lines = stdout.split('\n').filter(l => l.trim() && !l.includes('✨'));
     for (const line of lines) {

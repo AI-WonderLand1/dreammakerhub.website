@@ -17,8 +17,7 @@
     "fast-xml-parser": ">=5.7.0",
     "@prisma/dev": {
       "@hono/node-server": ">=1.19.13"
-    },
-    "@next/swc-linux-x64-gnu": false
+    }
   },
   "scripts": {
     "dev": "npm run dev --workspace=ai-wonder-web",
@@ -32,7 +31,7 @@
     "clean:ghosts": "npx ts-prune -p tsconfig.json && npm run lint"
   },
   "devDependencies": {
-    "@next/swc-linux-x64-gnu": "^16.2.7",
+    "@next/swc-linux-arm64-gnu": "^16.2.7",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/pg": "^8.20.0",
