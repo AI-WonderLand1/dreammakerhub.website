@@ -13,16 +13,14 @@ spec:
       labels:
         app: wonderplay
     spec:
+      nodeSelector:
+        node-pool: cluster1
       containers:
         - name: wonderplay
-          image: ord.ocir.io/axgejcaos4uw/ai-wonderland/wonderplay:latest
+          image: ord.ocir.io/axgejcaos4uw/ai-wonderland/wonder-runtime:latest
           ports:
-            - containerPort: 3000
-              name: ide
-            - containerPort: 3001
-              name: playcanvas
-            - containerPort: 3002
-              name: webgl-studio
+            - containerPort: 3090
+              name: http
           resources:
             requests:
               memory: "512Mi"
@@ -32,15 +30,16 @@ spec:
               cpu: "2000m"
           livenessProbe:
             httpGet:
-              path: /healthz
-              port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
+              path: /health
+              port: 3090
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /healthz
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 5
+              path: /health
+              port: 3090
+            initialDelaySeconds: 5
+            periodSeconds: 10
       imagePullSecrets:
         - name: oci-registry-secret

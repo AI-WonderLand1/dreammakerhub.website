@@ -7,16 +7,8 @@ spec:
   selector:
     app: wonderplay
   ports:
-    - name: ide
+    - name: http
       protocol: TCP
-      port: 3000
-      targetPort: 3000
-    - name: playcanvas
-      protocol: TCP
-      port: 3001
-      targetPort: 3001
-    - name: webgl-studio
-      protocol: TCP
-      port: 3002
-      targetPort: 3002
+      port: 3090
+      targetPort: 3090
   type: ClusterIP

@@ -6,11 +6,15 @@ LABEL description="Unified 3D editor runtime combining WebGL Studio, PlayCanvas,
 
 WORKDIR /app
 
-# Install system dependencies for sharp image processing
+# Install system dependencies for sharp image processing + WebGL software rendering
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
+    libgl1-mesa-glx \
+    libgl1-mesa-dri \
+    mesa-utils \
+    xvfb \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
@@ -53,5 +57,8 @@ ENV PLAYCANVAS_PATH=/app/public/playcanvas
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3090/health || exit 1
 
-# Start the runtime server
-CMD ["node", "packages/wonder-runtime/src/server.js"]
+# Set display for Xvfb (virtual framebuffer for WebGL)
+ENV DISPLAY=:99
+
+# Start Xvfb and runtime server
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & sleep 1 && node packages/wonder-runtime/src/server.js"]

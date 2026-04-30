@@ -16,7 +16,7 @@ release_gates:
   image: node:20
   before_script:
     - corepack enable
-    - pnpm install --frozen-lockfile
+    - npm ci
   script:
     - bash scripts/release-gates-check.sh
 
