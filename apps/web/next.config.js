@@ -10,7 +10,9 @@ const normalizedProxyBasePath =
 
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {},
+  turbopack: {
+    root: join(__dirname),
+  },
 
   ...(!isDev && normalizedProxyBasePath
     ? {
