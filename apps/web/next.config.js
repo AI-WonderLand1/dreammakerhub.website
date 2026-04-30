@@ -1,3 +1,8 @@
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const isDev = process.env.NODE_ENV === 'development';
 const proxyBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
 const normalizedProxyBasePath =
@@ -5,7 +10,6 @@ const normalizedProxyBasePath =
 
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {},
 
   ...(!isDev && normalizedProxyBasePath
     ? {
