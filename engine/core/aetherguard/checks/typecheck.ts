@@ -1,18 +1,19 @@
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { CheckResult, SystemFinding } from '../types';
+
+const execAsync = promisify(exec);
 
 export async function checkTypeScript(workspaceRoot: string): Promise<CheckResult> {
   const start = Date.now();
   const findings: SystemFinding[] = [];
 
   try {
-    execSync('npx tsc --noEmit 2>&1', {
+    await execAsync('npx tsc --noEmit', {
       cwd: workspaceRoot,
       timeout: 60000,
       encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    // no errors
   } catch (e: unknown) {
     const err = e as { stderr?: string; stdout?: string };
     const output = err.stderr || err.stdout || '';
