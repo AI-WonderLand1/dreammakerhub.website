@@ -129,15 +129,24 @@ resource "coder_agent" "main" {
   startup_script = <<-EOT
     set -e
 
-    # Install code-server
+    # Install code-server for IDE
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
 
-    # Install dependencies
-    cd ~/wonderspace
-    npm install 2>/dev/null || true
+    # Generate SSH key for user isolation
+    mkdir -p /home/coder/.ssh
+    ssh-keygen -t ed25519 -f /home/coder/.ssh/id_ed25519 -N "" -C "wonderspace-$(whoami)@ide" 2>/dev/null || true
+    cat /home/coder/.ssh/id_ed25519.pub >> /home/coder/.ssh/authorized_keys 2>/dev/null || true
+    chmod 700 /home/coder/.ssh
+    chmod 600 /home/coder/.ssh/*
 
-    # Start code-server
-    /tmp/code-server/bin/code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
+    # Start SSH daemon for isolated access
+    service ssh start 2>/dev/null || /usr/sbin/sshd 2>/dev/null || true
+
+    # Start code-server on port 13337
+    /tmp/code-server/bin/code-server --auth none --port 13337 --host 0.0.0.0 >/tmp/code-server.log 2>&1 &
+    
+    # Log ready
+    echo "✅ WonderSpace IDE ready with SSH access"
   EOT
 
   metadata {

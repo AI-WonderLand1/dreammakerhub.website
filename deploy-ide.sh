@@ -30,7 +30,7 @@ ACTION="${2:-all}"
 
 build() {
   echo "=== Building IDE image ==="
-  docker build -t "$IDE_IMAGE" -f kubernetes-devcontainer/.devcontainer/Dockerfile .
+  docker build -t "$IDE_IMAGE" -f packages/wonder-runtime/Dockerfile .
   echo "=== Built: $IDE_IMAGE ==="
 }
 
@@ -93,7 +93,7 @@ apply() {
   echo "     coder login https://$DOMAIN"
   echo ""
   echo "  5. Push the Coder template:"
-  echo "     coder template push -d kubernetes-devcontainer wonderspace-ide"
+  echo "     coder template push -d infra/coder/template wonderspace-ide"
   echo ""
   echo "  6. Create your first workspace:"
   echo "     coder create my-ide -t wonderspace-ide"
