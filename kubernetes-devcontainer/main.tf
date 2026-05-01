@@ -12,8 +12,9 @@ terraform {
 }
 
 provider "kubernetes" {
-  # This allows the provisioner to talk to the cluster internally
-  host = "https://kubernetes.default.svc"
+  # Pointing to your specific OKE Public Endpoint
+  host        = "https://64.181.195.19:6443"
+  config_path = "~/.kube/config"
 }
 
 data "coder_workspace" "me" {}
@@ -124,6 +125,8 @@ resource "kubernetes_persistent_volume_claim_v1" "home" {
   }
   spec {
     access_modes = ["ReadWriteOnce"]
+    # OCI standard block volume storage class
+    storage_class_name = "oci-bv" 
     resources {
       requests = {
         storage = "10Gi"
