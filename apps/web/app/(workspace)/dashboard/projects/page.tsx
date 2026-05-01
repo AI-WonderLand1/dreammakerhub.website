@@ -33,8 +33,8 @@ type ProjectTemplate = {
 const PROJECT_TEMPLATES: ProjectTemplate[] = [
   { id: "wonderbuild", name: "Wonderbuild AI", description: "AI-powered website builder", icon: Sparkles, color: "border-l-purple-500" },
   { id: "wonderbuild_ui", name: "Wonderbuild UI", description: "Visual drag-and-drop editor", icon: Pencil, color: "border-l-orange-500" },
-  { id: "game", name: "Game Project", description: "Interactive game with Wonderplay", icon: Gamepad2, color: "border-l-pink-500" },
-  { id: "3d_scene", name: "3D Scene", description: "3D environment with Wonderplay", icon: Box, color: "border-l-blue-500" },
+  { id: "game", name: "Game Project", description: "Interactive game with WonderPlay 3D", icon: Gamepad2, color: "border-l-pink-500" },
+  { id: "3d_scene", name: "3D Scene", description: "3D environment with WonderPlay 3D", icon: Box, color: "border-l-blue-500" },
   { id: "web_app", name: "Web App", description: "Code-first web application", icon: Globe, color: "border-l-green-500" },
   { id: "workspace", name: "Code Workspace", description: "WonderSpace IDE", icon: Code2, color: "border-l-cyan-500" },
 ];
