@@ -36,9 +36,13 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
         `/api/assets/search?q=${encodeURIComponent(query)}&source=${selectedSource}&limit=12`
       );
       const data = await res.json();
+      console.log('[AssetPicker] Search results:', data);
       setAssets(data.assets || []);
+      if (data.error) {
+        console.error('[AssetPicker] API error:', data.error);
+      }
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error('[AssetPicker] Search failed:', err);
     } finally {
       setLoading(false);
     }
@@ -130,6 +134,9 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
           <div className="text-center py-8 text-white/40">
             <p>Search for 3D models from external libraries</p>
             <p className="text-sm mt-2">Try: car, character, building, tree</p>
+            {selectedSource === 'sketchfab' && (
+              <p className="text-xs mt-2 text-yellow-400">Note: Sketchfab requires API token in .env file</p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">

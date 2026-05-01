@@ -26,6 +26,7 @@ export interface AssetFetchRequest {
 }
 
 const SKETCHFAB_API = "https://api.sketchfab.com/v3";
+const SKETCHFAB_TOKEN = process.env.SKETCHFAB_API_TOKEN || process.env.NEXT_PUBLIC_SKETCHFAB_TOKEN || "";
 
 async function fetchOpenSource3DAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
   const assets: ExternalAsset[] = [];
@@ -64,23 +65,23 @@ async function fetchPolyHavenAssets(query: string, limit = 10): Promise<External
   const assets: ExternalAsset[] = [];
 
   try {
-    const res = await fetch(`https://3dmodelhaven.com/files/models?search=${encodeURIComponent(query)}&limit=${limit}`);
+    const res = await fetch(`https://api.polyhaven.com/assets?type=models&search=${encodeURIComponent(query)}&limit=${limit}`);
     const data = await res.json();
 
-    if (data) {
-      const items = Array.isArray(data) ? data : data.files || [];
-      for (const item of items) {
+    if (data && data.results) {
+      for (const [id, item] of Object.entries(data.results)) {
+        const typedItem = item as any;
         assets.push({
-          id: `ph_${item.id || item.model_id}`,
-          name: item.model_name || item.name,
+          id: `ph_${id}`,
+          name: typedItem.name || id,
           source: "poly-haven",
-          url: `https://3dmodelhaven.com/mod/${item.model_id || item.id}`,
-          thumbnailUrl: item.preview_url || item.thumbnail || `https://3dmodelhaven.com/tex/thumbs/${item.model_id || item.id}_100_100.jpg`,
-          downloadUrl: item.download || "",
+          url: `https://polyhaven.com/a/${id}`,
+          thumbnailUrl: typedItem.thumbnail?.url || `https://api.polyhaven.com/files/${id}/thumbnail?width=256`,
+          downloadUrl: `https://api.polyhaven.com/files/${id}/blend`,
           format: "glb",
-          category: item.category || "model",
-          tags: item.tags || [],
-          author: item.author,
+          category: typedItem.category || "model",
+          tags: typedItem.tags || [],
+          author: "Poly Haven",
           license: "CC0"
         });
       }
@@ -97,7 +98,11 @@ async function fetchSketchfabAssets(query: string, limit = 10): Promise<External
 
   try {
     const searchUrl = `${SKETCHFAB_API}/search/models?q=${encodeURIComponent(query)}&downloadable=true&animated=false&limit=${limit}`;
-    const res = await fetch(searchUrl);
+    const headers: Record<string, string> = {};
+    if (SKETCHFAB_TOKEN) {
+      headers["Authorization"] = `Token ${SKETCHFAB_TOKEN}`;
+    }
+    const res = await fetch(searchUrl, { headers });
     const data = await res.json();
 
     if (data.results) {
