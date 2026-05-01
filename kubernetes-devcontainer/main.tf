@@ -12,7 +12,8 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path = "~/.kube/config"
+  # This allows the provisioner to talk to the cluster internally
+  host = "https://kubernetes.default.svc"
 }
 
 data "coder_workspace" "me" {}
@@ -98,7 +99,7 @@ resource "coder_agent" "main" {
   }
 }
 
-# --- THE APP (THE BUTTON ON YOUR SITE) ---
+# --- THE APP ---
 
 resource "coder_app" "ide" {
   agent_id     = coder_agent.main.id
@@ -175,7 +176,7 @@ resource "kubernetes_deployment_v1" "main" {
           
           volume_mount {
             mount_path = "/home/coder/project"
-            name       = "project-data"
+            name        = "project-data"
           }
         }
 
