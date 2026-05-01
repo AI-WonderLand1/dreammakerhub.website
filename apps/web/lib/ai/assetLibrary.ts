@@ -26,7 +26,6 @@ export interface AssetFetchRequest {
 }
 
 const SKETCHFAB_API = "https://api.sketchfab.com/v3";
-const SKETCHFAB_TOKEN = process.env.SKETCHFAB_API_TOKEN || process.env.NEXT_PUBLIC_SKETCHFAB_TOKEN || "";
 
 async function fetchOpenSource3DAssets(query: string, limit = 10): Promise<ExternalAsset[]> {
   const assets: ExternalAsset[] = [];
@@ -99,8 +98,9 @@ async function fetchSketchfabAssets(query: string, limit = 10): Promise<External
   try {
     const searchUrl = `${SKETCHFAB_API}/search/models?q=${encodeURIComponent(query)}&downloadable=true&animated=false&limit=${limit}`;
     const headers: Record<string, string> = {};
-    if (SKETCHFAB_TOKEN) {
-      headers["Authorization"] = `Token ${SKETCHFAB_TOKEN}`;
+    const token = process.env.SKETCHFAB_API_TOKEN || "";
+    if (token) {
+      headers["Authorization"] = `Token ${token}`;
     }
     const res = await fetch(searchUrl, { headers });
     const data = await res.json();
