@@ -26,7 +26,8 @@ import {
   MicOff,
   MessageCircle,
   Bug,
-  Bot
+  Bot,
+  Database
 } from "lucide-react";
 
 type SidebarItem = {
@@ -72,10 +73,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const mainItems: SidebarItem[] = [
     { href: "/dashboard", label: "Actions", icon: LayoutDashboard },
     { href: "/dashboard/projects", label: "Projects", icon: Folder },
+    { href: "/library", label: "My Scenes", icon: Database },
     { href: "/agent-playground", label: "AI Playground", icon: Pencil },
     { href: "/dashboard/agents", label: "Agents", icon: Bot },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
-    { href: "/wonder-build/playcanvas", label: "Wonderplay", icon: Play },
+    { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
   ];
 
   const managementItems: MenuItem[] = [
