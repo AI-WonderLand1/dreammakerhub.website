@@ -42,7 +42,7 @@ const DESTINATIONS: Destination[] = [
     ] 
   },
   { 
-    label: "Wonderplay", 
+    label: "WonderPlay 3D", 
     href: "/wonder-build/playcanvas", 
     hints: ["3d", "scene", "engine", "wonderplay"], 
     aliases: [
