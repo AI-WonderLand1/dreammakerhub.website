@@ -47,14 +47,14 @@ type Project = {
   type: string;
 };
 
-const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
-  wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
-  wonderbuild_ui: { editor: "/wonder-build/puck", label: "Wonderbuild UI" },
-  game: { editor: "/wonder-build/playcanvas", label: "Wonderplay" },
-  "3d_scene": { editor: "/wonder-build/playcanvas", label: "Wonderplay" },
-  web_app: { editor: "/wonder-build/ai-builder", label: "AI Builder" },
-  workspace: { editor: "/wonderspace/ide", label: "IDE" },
-};
+  const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
+    wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
+    wonderbuild_ui: { editor: "/wonder-build/puck", label: "Wonderbuild UI" },
+    game: { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
+    "3d_scene": { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
+    web_app: { editor: "/wonder-build/ai-builder", label: "AI Builder" },
+    workspace: { editor: "/wonderspace/ide", label: "IDE" },
+  };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
