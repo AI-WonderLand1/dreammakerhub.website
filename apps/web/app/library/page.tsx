@@ -89,11 +89,11 @@ export default function LibraryPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            <Link 
-              href="/wonder-build/ai-builder" 
+            <Link
+              href="/wonder-build/playcanvas?sceneId=blank_canvas"
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform"
             >
-              🤖 Generate New Scene
+              🎨 Start 3D Editor
             </Link>
             {user && (
               <Link 
@@ -190,11 +190,11 @@ export default function LibraryPage() {
             <div className="text-6xl mb-4">🏗️</div>
             <h3 className="text-xl font-semibold mb-2">No scenes yet</h3>
             <p className="text-white/60 mb-6">Be the first to create a scene!</p>
-            <Link 
-              href="/wonder-build/ai-builder" 
+            <Link
+              href="/wonder-build/playcanvas?sceneId=blank_canvas"
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform"
             >
-              🤖 Generate Your First Scene
+              🎨 Start 3D Editor
             </Link>
           </div>
         ) : (
