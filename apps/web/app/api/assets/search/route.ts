@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchExternalAssets, downloadAssetToStorage } from "@/lib/ai/assetLibrary";
+import { createSupabaseServerClient } from "@lib/supabase/server-client";
 
 export const runtime = "nodejs";
 
@@ -23,9 +24,18 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { asset, userId } = body;
+    const { asset } = body;
 
     if (!asset?.downloadUrl) {
       return NextResponse.json(
@@ -34,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await downloadAssetToStorage(asset, userId);
+    const result = await downloadAssetToStorage(asset, session.user.id);
 
     if (!result.success) {
       return NextResponse.json(
