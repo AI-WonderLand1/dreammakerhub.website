@@ -6,23 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 
 import { useAuth } from "@lib/supabase/auth-context";
-
-const PAID_PLANS = {
-  pro: {
-    id: "pro",
-    name: "The Architect",
-    price: "$19/mo",
-    features: ["Unlimited AI Chats", "3D Engine access", "Egyptian Voice Module", "1-Click Deployment"],
-  },
-  elite: {
-    id: "elite",
-    name: "The Creator",
-    price: "$49/mo",
-    features: ["Everything in Pro", "Priority GPU rendering", "Custom Domains", "God Mode"],
-  },
-} as const;
-
-type PaidPlanId = keyof typeof PAID_PLANS;
+import { PLANS, PAID_PLANS, type PlanId } from "@lib/billing/plans";
 
 const DEFAULT_REDIRECT = "/dashboard/projects";
 
@@ -34,9 +18,11 @@ function sanitizeRedirectPath(raw: string | null): string {
   return trimmed;
 }
 
-function parsePlan(raw: string | null): PaidPlanId | null {
-  if (raw === "pro" || raw === "elite") return raw;
-  return null;
+function parsePlan(raw: string | null): PlanId | null {
+  if (!raw) return null;
+  const plan = PLANS[raw as PlanId];
+  if (!plan || plan.price === 0 || raw === "enterprise") return null;
+  return raw as PlanId;
 }
 
 function CheckoutContent() {
@@ -49,7 +35,7 @@ function CheckoutContent() {
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
   const planId = parsePlan(searchParams.get("plan"));
 
-  const plan = useMemo(() => (planId ? PAID_PLANS[planId] : null), [planId]);
+  const plan = useMemo(() => (planId ? PLANS[planId] : null), [planId]);
 
   const completeCheckout = async () => {
     if (!planId) return;
