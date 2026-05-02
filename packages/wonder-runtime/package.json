@@ -4,6 +4,7 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
   },
