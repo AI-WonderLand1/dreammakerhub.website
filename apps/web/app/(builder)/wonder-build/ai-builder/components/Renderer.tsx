@@ -13,12 +13,11 @@ export function JSONRenderer({ puckData }: JSONRendererProps) {
   }), []);
 
   return (
-    <div className="json-renderer">
+    <div className="json-renderer pointer-events-none">
       <Puck
         data={puckData}
         config={config}
         onChange={() => {}}
-        className="pointer-events-none"
       />
     </div>
   );
