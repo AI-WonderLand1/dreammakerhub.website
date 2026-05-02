@@ -99,7 +99,7 @@ const nextConfig = {
             "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js-mtls-com.s3.amazonaws.com",
             "style-src 'self' 'unsafe-inline' https://rsms.me",
             "img-src 'self' blob: data: https:",
-            "font-src 'self' data:",
+            "font-src 'self' data: https://rsms.me",
             "connect-src 'self' https://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com",
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com blob: data:",
             "worker-src 'self' blob:",
