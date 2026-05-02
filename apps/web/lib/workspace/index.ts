@@ -21,10 +21,10 @@ export type WorkspaceInfo = {
 export type WorkspaceType = 'ide' | 'playcanvas' | 'full';
 
 export async function provisionWorkspace(config: WorkspaceConfig): Promise<WorkspaceInfo> {
-  const { projectId, name, type } = config;
-  const result = await createProjectRuntime(projectId || name, { storageSize: '1Gi' });
+  const { workspaceId, name, type } = config;
+  const result = await createProjectRuntime(workspaceId, { storageSize: '1Gi' });
   return {
-    id: projectId || name,
+    id: workspaceId,
     name,
     type,
     status: result.success ? 'running' : 'error',
