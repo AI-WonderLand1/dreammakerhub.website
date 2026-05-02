@@ -51,11 +51,15 @@ export async function POST(req: NextRequest) {
       }
       glbBuffer = await response.arrayBuffer();
     } else if (assetId) {
-      const { data: asset } = await supabase
+      const { data: asset, error: assetError } = await supabase
         .from("user_assets")
         .select("local_url")
         .eq("asset_id", assetId)
-        .single();
+        .maybeSingle();
+
+      if (assetError) {
+        return NextResponse.json({ error: "Failed to fetch asset", details: assetError.message }, { status: 500 });
+      }
 
       if (!asset?.local_url) {
         return NextResponse.json(
@@ -118,13 +122,17 @@ export async function POST(req: NextRequest) {
       .from("3d-assets")
       .getPublicUrl(`meshes/${userId}/${fileNameSafe}`);
 
+    const savings = glbBuffer.byteLength > 0 
+      ? Math.round((1 - optimizedBuffer.byteLength / glbBuffer.byteLength) * 100) 
+      : 0;
+
     return NextResponse.json({
       success: true,
       originalUrl: assetUrl || null,
       optimizedUrl: publicUrl,
       originalSize: glbBuffer.byteLength,
       optimizedSize: optimizedBuffer.byteLength,
-      savings: Math.round((1 - optimizedBuffer.byteLength / glbBuffer.byteLength) * 100) + "%",
+      savings: savings + "%",
     });
   } catch (error) {
     console.error("Asset processing error:", error);

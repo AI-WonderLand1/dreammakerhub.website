@@ -8,8 +8,23 @@ TheatreBridge.attributes.add('lipsMorph', { type: 'string', default: 'mouthPucke
 
 TheatreBridge.prototype.initialize = function() {
     const { getProject, t } = window;
+    
+    if (!getProject || !t) {
+        console.warn('TheatreBridge: Theatre.js not loaded yet');
+        return;
+    }
+    
     const project = getProject('WonderlandScene');
+    if (!project) {
+        console.warn('TheatreBridge: Project not found');
+        return;
+    }
+    
     const sheet = project.sheet('MainSheet');
+    if (!sheet) {
+        console.warn('TheatreBridge: Sheet not found');
+        return;
+    }
 
     this.theatreObj = sheet.object(this.theatreKey, {
         position: {
@@ -38,9 +53,18 @@ TheatreBridge.prototype.initialize = function() {
 TheatreBridge.prototype._findMorphTargets = function() {
     if (!this.enableLipSync) return;
     
-    const meshInstances = this.entity.findComponents('render')?.length 
-        ? this.entity.render.meshInstances 
-        : this.entity.model?.meshInstances || [];
+    const renderComponents = this.entity.findComponents('render') || [];
+    const modelComponent = this.entity.model;
+    
+    const meshInstances = [];
+    for (const rc of renderComponents) {
+        if (rc.meshInstances) {
+            meshInstances.push(...rc.meshInstances);
+        }
+    }
+    if (modelComponent && modelComponent.meshInstances) {
+        meshInstances.push(...modelComponent.meshInstances);
+    }
     
     for (const mi of meshInstances) {
         const mesh = mi.mesh;
@@ -112,8 +136,9 @@ TheatreBridge.prototype.playLipSync = function(visemes, onComplete) {
             }
         }
         
+        const duration = next ? next.timestamp - current.timestamp : 1;
         const t = next 
-            ? (elapsed - current.timestamp) / (next.timestamp - current.timestamp) 
+            ? (elapsed - current.timestamp) / duration
             : 0;
         
         this.setViseme(
