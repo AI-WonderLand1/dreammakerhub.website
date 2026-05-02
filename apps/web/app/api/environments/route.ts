@@ -13,6 +13,7 @@ const CreateEnvironmentSchema = z.object({
   projectId: z.string().max(100).optional(),
   name: z.string().min(1).max(100).optional(),
   type: z.enum(['ide', 'playcanvas', 'full']).default('full'),
+  outputType: z.enum(['game', 'movie', 'both']).default('game').optional(),
 })
 
 const EnvironmentIdSchema = z.object({
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
-    const { projectId, name, type } = body
+    const { projectId, name, type, outputType } = body
 
     const workspaceId = `ws-${user.id.slice(0, 8)}-${(projectId || Date.now().toString(36)).slice(0, 8)}`
     const workspaceType: WorkspaceType = type
