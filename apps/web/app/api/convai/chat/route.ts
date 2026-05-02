@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { opencodeProvider } from '@core/ai/providers/opencode';
+import { openrouterProvider } from '@core/ai/providers/openrouter';
 
-interface ConvaiRequest {
+interface NpcRequest {
   sessionId: string;
   utterance: string;
   characterId?: string;
+  provider?: 'opencode' | 'openrouter';
 }
 
-/**
- * Server-side proxy for Convai NPC API calls.
- * This keeps the API key secure on the server instead of exposing it to the client.
- */
-export async function POST(req: NextRequest) {
-  const apiKey = process.env.CONVAI_API_KEY;
-  const defaultCharacterId = process.env.CONVAI_CHARACTER_ID;
-  
-  if (!apiKey) {
-    console.error('CONVAI_API_KEY is not configured');
-    return NextResponse.json(
-      { error: 'Convai API key is not configured' },
-      { status: 500 }
-    );
-  }
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
 
-  let body: ConvaiRequest;
+const conversationHistory = new Map<string, ConversationMessage[]>();
+
+const NPC_SYSTEM_PROMPT = `You are an interactive NPC character in a 3D virtual world. 
+Respond to the user's messages in a natural, characterful way.
+Keep responses concise and conversational (1-3 sentences typically).
+Stay in character as the assigned character.
+If the user asks about your capabilities, explain that you can have conversations, remember context, and help with various tasks in the virtual world.`;
+
+export async function POST(req: NextRequest) {
+  let body: NpcRequest;
   try {
     body = await req.json();
   } catch {
@@ -32,7 +34,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Validate required fields
   if (!body.utterance?.trim()) {
     return NextResponse.json(
       { error: 'Missing required field: utterance' },
@@ -40,46 +41,70 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const characterId = body.characterId || defaultCharacterId;
-  if (!characterId) {
-    return NextResponse.json(
-      { error: 'Missing characterId - either provide it in the request or set CONVAI_CHARACTER_ID' },
-      { status: 400 }
-    );
-  }
+  const sessionId = body.sessionId || `default-${Date.now()}`;
+  const providerType = body.provider || 'opencode';
+  
+  let history = conversationHistory.get(sessionId) || [];
+  
+  history.push({
+    role: 'user',
+    content: body.utterance,
+    timestamp: Date.now()
+  });
+
+  const characterContext = body.characterId 
+    ? `\nCharacter ID: ${body.characterId}` 
+    : '';
+
+  const prompt = `Previous conversation:\n${
+    history.slice(0, -1).map(m => `${m.role}: ${m.content}`).join('\n')
+  }\n\nCurrent user message: ${body.utterance}${characterContext}`;
 
   try {
-    // Convai API endpoint (adjust based on actual Convai API documentation)
-    const response = await fetch('https://api.convai.com/v1/character/response', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        character_id: characterId,
-        session_id: body.sessionId,
-        text: body.utterance,
-      }),
+    const provider = providerType === 'openrouter' ? openrouterProvider : opencodeProvider;
+    
+    const response = await provider.generate(prompt, {
+      model: providerType === 'openrouter' ? 'gemini-2.0-flash' : 'opencode/big-pickle',
+      system: NPC_SYSTEM_PROMPT,
+      temperature: 0.7,
+      maxTokens: 500
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Convai API error:', response.status, errorText);
-      return NextResponse.json(
-        { error: 'Convai API error', details: errorText },
-        { status: response.status }
-      );
-    }
+    const npcText = response.text || "I'm having trouble responding right now.";
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    history.push({
+      role: 'assistant',
+      content: npcText,
+      timestamp: Date.now()
+    });
+
+    if (history.length > 20) {
+      history = history.slice(-20);
+    }
+    conversationHistory.set(sessionId, history);
+
+    return NextResponse.json({
+      text: npcText,
+      timestamp: Date.now(),
+      provider: providerType
+    });
     
   } catch (error) {
-    console.error('Error calling Convai:', error);
+    console.error('Error calling AI provider:', error);
     return NextResponse.json(
-      { error: 'Failed to call Convai API' },
+      { error: 'Failed to generate NPC response', details: String(error) },
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const sessionId = searchParams.get('sessionId');
+  
+  if (sessionId) {
+    conversationHistory.delete(sessionId);
+  }
+  
+  return NextResponse.json({ success: true });
 }
