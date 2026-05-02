@@ -13,7 +13,7 @@ export function AutoStartFromURL() {
   const { setPrompt, setBuildType, runBuild, running } = useSovereignOS();
 
   useEffect(() => {
-    const prompt = searchParams.get('prompt');
+    const prompt = searchParams?.get('prompt');
     const type = searchParams.get('type') as BuildType | null;
 
     if (!prompt) return;
