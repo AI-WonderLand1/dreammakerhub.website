@@ -122,7 +122,7 @@ export async function checkProjectLimit(userId: string, limitType: keyof UserLim
   switch (limitType) {
     case "projectsLimit":
       return {
-        allowed: limits.projectsLimit > limits.projectsLimit - (limits.projectsUsed || 0),
+        allowed: (limits.projectsUsed || 0) < limits.projectsLimit,
         remaining: limits.projectsLimit - (limits.projectsUsed || 0),
         limit: limits.projectsLimit,
       };

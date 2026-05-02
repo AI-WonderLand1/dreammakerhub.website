@@ -4,6 +4,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { useAuth } from "@lib/supabase/auth-context";
+import { PLANS, type PlanId } from "@lib/billing/plans";
 
 type Plan = {
   id: "free" | "pro" | "team" | "enterprise";
@@ -41,79 +42,19 @@ function SubscriptionContent() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const plans: Plan[] = useMemo(
-    () => [
-      {
-        id: "free",
-        name: "The Nomad",
-        price: "$0/forever",
-        desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-        bullets: [
-          "1 active project",
-          "Wonderbuild UI editor",
-          "5K AI tokens/month",
-          "100 API calls/month",
-          "100 MB storage",
-          "Community support",
-          "dreammakerhub.website subdomain"
-        ],
-        cta: "Start Wandering, It's Free",
-        mode: "free",
-        icon: "🌿",
-        href: "/public-pages/auth",
-      },
-      {
-        id: "pro",
-        name: "The Architect",
-        price: "$35/mo",
-        desc: "For builders who are serious about shipping. Full creative power, one subscription.",
-        bullets: [
-          "5 active projects",
-          "100K AI tokens/month",
-          "10K API calls/month",
-          "5 GB storage",
-          "WonderSpace Cloud IDE (1 seat)",
-          "10 runtime hours/month",
-          "Custom domain included",
-          "Priority email support"
-        ],
-        cta: "Become an Architect",
-        mode: "paid",
-        icon: "⭐",
-        highlight: true,
-      },
-      {
-        id: "team",
-        name: "The Guild",
-        price: "$149/mo",
-        desc: "Built for agencies and studios who ship together. Collaborate, iterate, and deliver, without the chaos.",
-        bullets: [
-          "10 active projects",
-          "500K AI tokens/month",
-          "100K API calls/month",
-          "50 GB storage",
-          "WonderSpace IDE (5 seats)",
-          "50 runtime hours/month",
-          "Shared asset library",
-          "300K Compute Credits/mo",
-          "Always-on runners"
-        ],
-        cta: "Build With Your Guild",
-        mode: "paid",
-        icon: "🏢",
-        href: "/checkout?plan=team",
-      },
-      {
-        id: "enterprise",
-        name: "The Architect of Worlds",
-        price: "Custom",
-        desc: "You're not building a site. You're building infrastructure. We'll build it with you.",
-        bullets: ["Unlimited everything", "SSO + SCIM directory sync", "On-premise or private cloud deployment", "Custom AI agent training (your brand voice, your rules)", "Git-sync (GitHub / Bitbucket)", "Data isolation & multi-tenancy", "Accessibility compliance support (WCAG 2.1)", "Dedicated account manager", "SLA-backed uptime", "Custom Compute Credits package"],
-        cta: "Talk to Us",
-        mode: "paid",
-        icon: "🌐",
-        href: "/contact",
-      },
-    ],
+    () =>
+      (Object.values(PLANS) as Plan[]).map((p) => ({
+        ...p,
+        id: p.id as PlanId,
+        price: p.priceDisplay,
+        desc: p.description,
+        bullets: p.features,
+        cta: p.id === "free" ? "Start Wandering, It's Free" : p.id === "enterprise" ? "Talk to Us" : `Subscribe to ${p.displayName}`,
+        mode: p.price === 0 ? ("free" as const) : ("paid" as const),
+        icon: p.id === "free" ? "🌿" : p.id === "pro" ? "⭐" : p.id === "team" ? "🏢" : "🌐",
+        highlight: p.highlight ?? false,
+        href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : undefined,
+      })),
     []
   );
 
