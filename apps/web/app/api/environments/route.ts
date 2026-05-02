@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         project_id: projectId || null,
         status: workspace.status,
         resources: workspace.resources,
+        output_type: outputType || 'game',
       })
       .select()
       .single()
