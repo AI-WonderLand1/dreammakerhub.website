@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
-import NpcPanel from "@/components/NpcPanel";
+import SafeNpcPanel from "@/components/SafeNpcPanel";
 import PlayCanvasEditorHost from "@/components/PlayCanvasEditorHost";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { buildPlayCanvasEditorUrl, getPlayCanvasMode } from "@/lib/playcanvas";

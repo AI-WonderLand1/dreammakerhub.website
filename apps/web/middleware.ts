@@ -11,6 +11,7 @@ interface DistributedRateLimitResult {
 const RATE_LIMIT_WINDOW = 60 * 1000;
 const REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const rateLimits = new Map<string, { count: number; resetTime: number }>();
 
 async function incrementDistributedRateLimit(key: string): Promise<DistributedRateLimitResult | null> {
   if (!REDIS_REST_URL || !REDIS_REST_TOKEN) {
