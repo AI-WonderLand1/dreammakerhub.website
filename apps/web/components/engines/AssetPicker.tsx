@@ -65,6 +65,12 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
           body: JSON.stringify({ asset })
         });
         const data = await res.json();
+        if (data.success) {
+          alert(`Downloaded!`);
+        } else {
+          alert(data.error || 'Download failed');
+        }
+        const data = await res.json();
         if (data.localUrl) {
           alert(`Downloaded to: ${data.localUrl}`);
         }
