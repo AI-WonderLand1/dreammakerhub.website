@@ -135,38 +135,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
-  const { searchParams } = new URL(req.url);
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const action = searchParams.get("action");
-  const storeKey = searchParams.get("key");
-
-  if (action === "store" && storeKey) {
-    // Delete existing first, then insert
-    await supabase.from("user_api_keys").delete()
-      .eq("user_id", session.user.id)
-      .eq("provider", "elevenlabs");
-    
-    const { error } = await supabase.from("user_api_keys").insert(
-      {
-        user_id: session.user.id,
-        provider: "elevenlabs",
-        key: storeKey,
-        name: "ElevenLabs API Key",
-        created_at: new Date().toISOString(),
-      }
-    );
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ success: true, message: "ElevenLabs API key stored" });
   }
 
   const { data: keys } = await supabase
