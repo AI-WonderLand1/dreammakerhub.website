@@ -80,9 +80,31 @@ export async function createProjectRuntime(
   options?: { storageSize?: string }
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    const privateKey = await getProjectSSHKey(projectId);
+    // Auto-generate SSH key pair if it doesn't exist
+    let privateKey = await getProjectSSHKey(projectId);
     if (!privateKey) {
-      return { success: false, error: "No SSH key found for project" };
+      const crypto = require('crypto');
+      const { publicKey, privateKey: privKey } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 4096,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+      });
+      
+      // Store encrypted private key and public key in database
+      const { encrypt } = require('@/lib/security/crypto');
+      const encryptedPrivateKey = encrypt(privKey);
+      
+      const { supabaseServer } = require('@/lib/supabaseServer');
+      await supabaseServer
+        .from("project_ssh_keys")
+        .insert({
+          project_id: projectId,
+          public_key: publicKey,
+          private_key_encrypted: encryptedPrivateKey,
+          created_at: new Date().toISOString()
+        });
+      
+      privateKey = privKey;
     }
 
     const image = process.env.RUNTIME_IMAGE || 'ord.ocir.io/axgejcaos4uw/ai-wonderland/wonder-runtime:latest';
