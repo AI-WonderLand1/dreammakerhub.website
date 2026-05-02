@@ -1,16 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { Puck } from "@measured/puck";
-
-interface PuckData {
-  content: any[];
-  zones: any[];
-  fields: any;
-}
+import { Puck, Data } from "@puckeditor/core";
 
 interface JSONRendererProps {
-  puckData: PuckData;
+  puckData: Data;
 }
 
 export function JSONRenderer({ puckData }: JSONRendererProps) {
