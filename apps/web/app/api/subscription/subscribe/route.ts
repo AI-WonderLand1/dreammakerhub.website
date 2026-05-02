@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { PLANS, type PlanId } from "@lib/billing/plans";
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
-
-const PLANS: Record<string, { name: string; amount: number; interval: "month" | "year" }> = {
-  pro: { name: "Pro Plan", amount: 1000, interval: "month" },
-  elite: { name: "Elite Plan", amount: 2500, interval: "month" },
-};
 
 function getBearerToken(req: NextRequest) {
   const h = req.headers.get("authorization") || "";
@@ -26,12 +22,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { plan } = body ?? {};
 
-    if (!plan || !PLANS[plan]) {
+    if (!plan || !(plan in PLANS)) {
       return NextResponse.json({ error: "Invalid plan selection" }, { status: 400 });
     }
 
     if (!stripe) {
       return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
+    }
+
+    const planConfig = PLANS[plan as PlanId];
+    
+    if (!planConfig.stripePriceId) {
+      return NextResponse.json({ error: "Stripe Price ID not configured for this plan. Set STRIPE_PRICE_PRO_ID and STRIPE_PRICE_TEAM_ID in .env" }, { status: 500 });
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -52,25 +54,13 @@ export async function POST(request: NextRequest) {
 
     const userId = userRes.user.id;
     const userEmail = userRes.user.email;
-    const planConfig = PLANS[plan];
-
-    const product = await stripe.products.create({
-      name: planConfig.name,
-      tax_code: "txcd_10103100",
-    });
-
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: planConfig.amount,
-      currency: "usd",
-      recurring: { interval: planConfig.interval },
-    });
+    const planConfig = PLANS[plan as PlanId];
 
     const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://dreammakerhub.website";
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: price.id, quantity: 1 }],
+      line_items: [{ price: planConfig.stripePriceId, quantity: 1 }],
       customer_email: userEmail || undefined,
       metadata: { userId, plan },
       success_url: `${baseUrl}/subscription?success=true&plan=${plan}&redirectTo=${encodeURIComponent(redirectTo)}`,
