@@ -35,6 +35,15 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = await file.arrayBuffer();
+    
+    // Limit file size to 50MB
+    if (buffer.byteLength > 50 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 50MB" },
+        { status: 400 }
+      );
+    }
+    
     const userId = session.user.id;
     const safeName = (name || file.name).replace(/[^a-zA-Z0-9-_]/g, "_");
     const fileName = `${userId}/${safeName}.${ext}`;
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
       .from("3d-assets")
       .getPublicUrl(fileName);
 
-    await supabase.from("user_assets").insert({
+    const { error: insertError } = await supabase.from("user_assets").insert({
       user_id: userId,
       asset_id: `upload-${Date.now()}`,
       name: safeName,
@@ -65,6 +74,10 @@ export async function POST(req: NextRequest) {
       local_url: publicUrl,
       downloaded_at: new Date().toISOString(),
     });
+
+    if (insertError) {
+      console.warn("Failed to record asset in database:", insertError);
+    }
 
     return NextResponse.json({
       success: true,

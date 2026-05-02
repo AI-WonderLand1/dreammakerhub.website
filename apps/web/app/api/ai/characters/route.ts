@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { opencodeProvider } from "@core/ai/providers/opencode";
+import { createSupabaseServerClient } from "@lib/supabase/server-client";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -21,6 +22,15 @@ You can suggest:
 Always keep responses concise and actionable for 3D artists.`;
 
 export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: GenerateRequest;
   try {
     body = await req.json();
