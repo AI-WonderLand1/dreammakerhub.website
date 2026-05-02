@@ -4,6 +4,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
