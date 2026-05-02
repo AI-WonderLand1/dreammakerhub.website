@@ -9,7 +9,13 @@ export default function HomepagePage() {
         <ConvaiHero />
 
         {/* Action Buttons */}
-        <div className="mt-12 flex gap-4 justify-center">
+        <div className="mt-12 flex gap-4 justify-center flex-wrap">
+          <Link
+            href="/library"
+            className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
+          >
+            🎮 Create 3D Scenes
+          </Link>
           <Link
             href="/subscription"
             className="rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
