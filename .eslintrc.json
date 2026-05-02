@@ -1,6 +1,5 @@
 {
   "extends": ["next/core-web-vitals"],
-  "ignorePatterns": ["node_modules/", "dist/", ".next/", "coverage/", ".coder/"],
   "rules": {
     "@next/next/no-img-element": "off",
     "react/jsx-no-comment-textnodes": "off",
