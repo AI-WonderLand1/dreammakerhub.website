@@ -18,7 +18,6 @@ export function JSONRenderer({ puckData }: JSONRendererProps) {
         data={puckData}
         config={config}
         onChange={() => {}}
-        editable={false}
         className="pointer-events-none"
       />
     </div>
