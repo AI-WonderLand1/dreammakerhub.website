@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@lib/supabase/server-client";
 
 interface TTSRequest {
-  text: string;
+  text?: string;
   voiceId?: string;
   apiKey?: string;
+  action?: string;
+  key?: string;
 }
 
 const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
@@ -29,7 +31,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { text, voiceId, apiKey: userProvidedKey } = body;
+  const { text, voiceId, apiKey: userProvidedKey, action, key: storeKey } = body;
+
+  // Handle store action
+  if (action === "store" && storeKey) {
+    await supabase.from("user_api_keys").delete()
+      .eq("user_id", session.user.id)
+      .eq("provider", "elevenlabs");
+    
+    const { error } = await supabase.from("user_api_keys").insert({
+      user_id: session.user.id,
+      provider: "elevenlabs",
+      key: storeKey,
+      name: "ElevenLabs API Key",
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, message: "ElevenLabs API key stored" });
+  }
 
   if (!text?.trim()) {
     return NextResponse.json(
@@ -42,16 +64,15 @@ export async function POST(req: NextRequest) {
 
   if (!apiKey) {
     try {
-      const { data: keys } = await supabase
+      const { data: keys, error: keyError } = await supabase
         .from("user_api_keys")
         .select("key")
         .eq("user_id", session.user.id)
         .eq("provider", "elevenlabs")
-        .limit(1)
-        .single();
+        .limit(1);
 
-      if (keys?.key) {
-        apiKey = keys.key;
+      if (!keyError && keys && keys.length > 0 && keys[0].key) {
+        apiKey = keys[0].key;
       }
     } catch (e) {
       // Table may not exist, continue to require key in request
@@ -127,15 +148,19 @@ export async function GET(req: NextRequest) {
   const storeKey = searchParams.get("key");
 
   if (action === "store" && storeKey) {
-    const { error } = await supabase.from("user_api_keys").upsert(
+    // Delete existing first, then insert
+    await supabase.from("user_api_keys").delete()
+      .eq("user_id", session.user.id)
+      .eq("provider", "elevenlabs");
+    
+    const { error } = await supabase.from("user_api_keys").insert(
       {
         user_id: session.user.id,
         provider: "elevenlabs",
         key: storeKey,
         name: "ElevenLabs API Key",
         created_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,provider" }
+      }
     );
 
     if (error) {

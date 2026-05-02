@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     const provider = providerType === 'openrouter' ? openrouterProvider : opencodeProvider;
     
     const response = await provider.generate(prompt, {
-      model: providerType === 'openrouter' ? 'gemini-2.0-flash' : 'opencode/big-pickle',
+      model: providerType === 'openrouter' ? 'gemini-2.5-flash' : 'opencode/big-pickle',
       system: NPC_SYSTEM_PROMPT,
       temperature: 0.7,
       maxTokens: 500

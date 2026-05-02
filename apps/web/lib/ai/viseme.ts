@@ -32,7 +32,6 @@ const VISEME_MAP: Record<string, { mouth: number; jaw: number; lips: number }> =
   "Y": { mouth: 0.4, jaw: 0.3, lips: 0.3 },
   "R": { mouth: 0.4, jaw: 0.3, lips: 0.3 },
   "D": { mouth: 0.3, jaw: 0.3, lips: 0.3 },
-  "B": { mouth: 0.1, jaw: 0.1, lips: 0.9 },
 };
 
 function mapPhonemeToViseme(phoneme: string): { mouth: number; jaw: number; lips: number } {
@@ -77,8 +76,9 @@ export function getVisemeAtTime(visemes: Viseme[], time: number): { mouth: numbe
   if (visemes.length === 1) return visemes[0];
 
   for (let i = 0; i < visemes.length - 1; i++) {
-    if (time >= visemes[i].timestamp && time < visemes[i + 1].timestamp) {
-      const t = (time - visemes[i].timestamp) / (visemes[i + 1].timestamp - visemes[i].timestamp);
+    const duration = visemes[i + 1].timestamp - visemes[i].timestamp;
+    if (time >= visemes[i].timestamp && time < visemes[i + 1].timestamp && duration > 0) {
+      const t = (time - visemes[i].timestamp) / duration;
       return {
         mouth: visemes[i].mouth * (1 - t) + visemes[i + 1].mouth * t,
         jaw: visemes[i].jaw * (1 - t) + visemes[i + 1].jaw * t,

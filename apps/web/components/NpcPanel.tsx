@@ -123,10 +123,13 @@ export default function NpcPanel({ provider, onProviderError }: NpcPanelProps) {
   const saveElevenlabsKey = useCallback(async () => {
     if (!elevenlabsKey.trim()) return;
     try {
-      await fetch(`/api/npc/tts?action=store&key=${encodeURIComponent(elevenlabsKey)}`, {
-        method: "GET",
+      await fetch("/api/npc/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "store", key: elevenlabsKey }),
       });
       setShowKeyInput(false);
+      setElevenlabsKey("");
     } catch (e) {
       onProviderError("Failed to save API key");
     }
