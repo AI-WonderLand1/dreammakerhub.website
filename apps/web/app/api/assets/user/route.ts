@@ -1,28 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listUserAssets } from "@/lib/ai/assetLibrary";
+import { createSupabaseServerClient } from "@lib/supabase/server-client";
 
-export const runtime = "nodejs";
+export async function GET(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "userId required" },
-        { status: 400 }
-      );
-    }
-
-    const assets = await listUserAssets(userId);
-
-    return NextResponse.json({ assets });
-  } catch (error: any) {
-    console.error("User assets error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch" },
-      { status: 500 }
-    );
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { data: assets, error } = await supabase
+    .from("user_assets")
+    .select("*")
+    .eq("user_id", session.user.id)
+    .order("downloaded_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const formatted = (assets || []).map((a) => ({
+    id: a.asset_id,
+    name: a.name,
+    source: a.source,
+    downloadUrl: a.local_url,
+    thumbnailUrl: "",
+  }));
+
+  return NextResponse.json({ assets: formatted });
 }
