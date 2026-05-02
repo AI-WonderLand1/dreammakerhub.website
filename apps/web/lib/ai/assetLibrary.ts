@@ -198,7 +198,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
     let finalBuffer = new Uint8Array(originalBuffer);
     const fileName = `${asset.id}.${asset.format}`;
     
-    const optimizerUrl = process.env.NEXT_PUBLIC_OPTIMIZER_URL || "/api/assets/process";
+    const optimizerUrl = process.env.OPTIMIZER_URL || "/api/assets/process";
     
     try {
       const optimizeRes = await fetch(optimizerUrl, {
@@ -217,7 +217,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
         console.warn("[optimizer] Using unoptimized asset");
       }
     } catch (optErr) {
-      console.warn("[optimizer] Skipping optimization, using original:", optErr);
+      console.warn("[optimizer] Skipping optimization, using original:", optErr instanceof Error ? optErr.message : optErr);
     }
 
     const { data, error } = await supabase.storage

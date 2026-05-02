@@ -82,7 +82,8 @@ export async function POST(req: NextRequest) {
       finalBuffer = mergedBuffer;
     }
 
-    const fileName = outputName || `merged-${Date.now()}.glb`;
+    const safeName = (outputName || `merged-${Date.now()}`).replace(/[^a-zA-Z0-9-_]/g, "_");
+    const fileName = `${safeName}.glb`;
     const userId = session.user.id;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
