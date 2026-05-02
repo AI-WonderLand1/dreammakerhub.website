@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { AssetPicker } from "@/components/engines/AssetPicker";
 import { UserAssetLibrary } from "@/components/engines/UserAssetLibrary";
+import { CharacterGenerator } from "@/components/ai/CharacterGenerator";
+import { GLTFUploader } from "@/components/ai/GLTFUploader";
 
 interface Scene {
   id: string;
@@ -23,6 +25,8 @@ export default function LibraryPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [createTab, setCreateTab] = useState<string>("");
+  const [uploadedUrl, setUploadedUrl] = useState<string>("");
 
   useEffect(() => {
     fetchScenes();
@@ -94,6 +98,12 @@ export default function LibraryPage() {
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform"
             >
               🎨 Start 3D Editor
+            </Link>
+            <Link
+              href="?tab=create"
+              className="px-4 py-2 border border-white/20 bg-white/5 rounded-lg text-white hover:bg-white/10 transition"
+            >
+              ✨ Create Character
             </Link>
             {user && (
               <Link 
@@ -171,6 +181,13 @@ export default function LibraryPage() {
         {filter === "my-downloads" && (
           <div className="mb-6">
             <UserAssetLibrary />
+          </div>
+        )}
+
+        {filter === "all" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <CharacterGenerator onGenerate={(desc) => console.log("Generated:", desc)} />
+            <GLTFUploader onUpload={(url, name) => setUploadedUrl(url)} />
           </div>
         )}
 
