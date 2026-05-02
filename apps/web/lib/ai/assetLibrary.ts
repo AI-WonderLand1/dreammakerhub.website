@@ -194,17 +194,35 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       throw new Error(`Download failed: ${response.status}`);
     }
 
-    const buffer = await response.arrayBuffer();
-    const optimizeStart = performance.now();
-    // TODO: Implement optimizeAsset in @wonder/perf-assets package
-    const optimizedBuffer = new Uint8Array(buffer); // optimizeAsset(buffer);
-    console.debug(`[perf] Asset optimized in ${(performance.now() - optimizeStart).toFixed(0)}ms`);
-    
+    const originalBuffer = await response.arrayBuffer();
+    let finalBuffer = new Uint8Array(originalBuffer);
     const fileName = `${asset.id}.${asset.format}`;
     
+    const optimizerUrl = process.env.NEXT_PUBLIC_OPTIMIZER_URL || "/api/assets/process";
+    
+    try {
+      const optimizeRes = await fetch(optimizerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetUrl: asset.downloadUrl, fileName }),
+      });
+      
+      if (optimizeRes.ok) {
+        const optimizeData = await optimizeRes.json();
+        if (optimizeData.optimizedUrl) {
+          finalBuffer = new Uint8Array((await fetch(optimizeData.optimizedUrl).then(r => r.arrayBuffer())));
+          console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
+        }
+      } else {
+        console.warn("[optimizer] Using unoptimized asset");
+      }
+    } catch (optErr) {
+      console.warn("[optimizer] Skipping optimization, using original:", optErr);
+    }
+
     const { data, error } = await supabase.storage
       .from("3d-assets")
-      .upload(`meshes/${fileName}`, optimizedBuffer, {
+      .upload(`meshes/${fileName}`, finalBuffer, {
         contentType: `model/${asset.format}`,
         upsert: true
       });
