@@ -10,6 +10,7 @@ interface TTSRequest {
 }
 
 const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const VOICE_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
@@ -86,11 +87,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const selectedVoiceId = voiceId || DEFAULT_VOICE_ID;
+  const selectedVoiceId = voiceId?.trim() || DEFAULT_VOICE_ID;
+  if (!VOICE_ID_PATTERN.test(selectedVoiceId)) {
+    return NextResponse.json(
+      { error: "Invalid voiceId format" },
+      { status: 400 }
+    );
+  }
 
   try {
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(selectedVoiceId)}`,
       {
         method: "POST",
         headers: {
