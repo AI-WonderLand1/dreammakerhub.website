@@ -109,9 +109,10 @@ async function makeOCISignedRequest(
     ? `${signingHeaders}\ncontent-length: ${body.length}\nx-date: ${date}\nx-content-sha256: ${bodyHash}`
     : `${signingHeaders}\ndate: ${date}`;
 
-  const signer = crypto.createSign('RSA-SHA256');
-  signer.update(signingString);
-  const signature = signer.sign(config.privateKey);
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(signingString, 'utf8');
+  const keyObj = crypto.createPrivateKey(config.privateKey);
+  const signature = sign.sign(keyObj);
   const signatureBase64 = signature.toString('base64');
 
   const authHeader = `Signature version="1",keyId="${config.tenancyId}/${config.userId}/${config.keyFingerprint}",algorithm="RSA-SHA256",headers="(request-target) host date",signature="${signatureBase64}"`;
