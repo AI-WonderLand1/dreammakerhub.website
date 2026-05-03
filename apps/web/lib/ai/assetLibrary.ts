@@ -4,6 +4,40 @@ import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
+const ALLOWED_DOWNLOAD_HOSTS = [
+  "playcanvas.com",
+  "cdn.playcanvas.com",
+  "sketchfab.com",
+  "media.sketchfab.com",
+  "polyhaven.com",
+  "dl.polyhaven.org",
+] as const;
+
+function isAllowedDownloadHost(hostname: string): boolean {
+  return ALLOWED_DOWNLOAD_HOSTS.some(
+    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
+  );
+}
+
+function validateExternalDownloadUrl(rawUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("Invalid download URL");
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("Unsupported download URL protocol");
+  }
+
+  if (!isAllowedDownloadHost(parsed.hostname)) {
+    throw new Error("Download URL host is not allowed");
+  }
+
+  return parsed.toString();
+}
+
 export interface ExternalAsset {
   id: string;
   name: string;
@@ -189,7 +223,9 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
   }
 
   try {
-    const response = await fetch(asset.downloadUrl);
+    const safeDownloadUrl = validateExternalDownloadUrl(asset.downloadUrl);
+
+    const response = await fetch(safeDownloadUrl);
     if (!response.ok) {
       throw new Error(`Download failed: ${response.status}`);
     }
@@ -204,7 +240,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       const optimizeRes = await fetch(optimizerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetUrl: asset.downloadUrl, fileName }),
+        body: JSON.stringify({ assetUrl: safeDownloadUrl, fileName }),
       });
       
       if (optimizeRes.ok) {
