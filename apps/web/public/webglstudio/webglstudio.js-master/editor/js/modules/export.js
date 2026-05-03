@@ -492,8 +492,9 @@ var ExportModule = {
 			resource_names = resources;
 		else
 		{
-			var resources = LS.GlobalScene.getResources( null, true, true, true );
-			for(var i in resources)
+			resource_names = [];
+			var scene_resources = LS.GlobalScene.getResources( null, true, true, true );
+			for(var i in scene_resources)
 				resource_names.push(i);
 		}
 
