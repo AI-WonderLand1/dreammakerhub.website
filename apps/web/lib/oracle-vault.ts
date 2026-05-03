@@ -46,9 +46,9 @@ const vaultOcid = process.env.OCI_VAULT_OCID || 'ocid1.vault.oc1.us-chicago-1.ij
 
     return {
       region: config.region || 'us-chicago-1',
-      tenancy: config.tenancy,
-      user: config.user,
-      fingerprint: config.fingerprint,
+      tenancyId: config.tenancy,
+      userId: config.user,
+      keyFingerprint: config.fingerprint,
       privateKey: privateKey,
       vaultOcid: vaultOcid,
       compartmentId: config.tenancy
