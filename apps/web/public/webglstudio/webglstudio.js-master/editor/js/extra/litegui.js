@@ -9006,16 +9006,14 @@ Inspector.prototype.addCombo = function(name, value, options)
 		else
 		{
 			//search the element index in the values
-			var j = 0;
 			for(var i in values)
 			{
-				if(values[j] == v)
+				if(values[i] == v)
 				{
-					index = j;
+					var parsed_index = parseInt(i,10);
+					index = isNaN(parsed_index) ? i : parsed_index;
 					break;
 				}
-				else
-					j++;
 			}
 		}
 
