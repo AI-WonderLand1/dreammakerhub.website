@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Script, createContext } from "node:vm";
 import { logger } from "@lib/logger";
 
 const API_KEY = process.env.WONDERSPACE_API_KEY;
@@ -13,28 +12,13 @@ function validateKey(key: string) {
   }
 }
 
-function executeJavaScript(code: string) {
-  const logs: string[] = [];
-  const sandbox = {
-    console: {
-      log: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
-      error: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
-      warn: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
-    },
+function executeJavaScript(_code: string) {
+  return {
+    stdout: "",
+    logs: [
+      "JavaScript execution is disabled in this API route for security reasons.",
+    ],
   };
-
-  const context = createContext(sandbox);
-  const script = new Script(code);
-  const result = script.runInContext(context, { timeout: 1000 });
-
-  const stdout =
-    typeof result === "string"
-      ? result
-      : result === undefined
-      ? ""
-      : JSON.stringify(result, null, 2);
-
-  return { stdout, logs };
 }
 
 /**
