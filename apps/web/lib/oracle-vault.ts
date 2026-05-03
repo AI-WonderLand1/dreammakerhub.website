@@ -25,7 +25,12 @@ function readOCIConfigFile(): OCIConfig | null {
     const configPath = path.join(os.homedir(), '.oci', 'config');
     const keyPath = path.join(os.homedir(), '.oci', 'oci_api_key.pem');
 
+    console.log('[OracleVault] Checking paths:', configPath, keyPath);
+    console.log('[OracleVault] Config exists:', fs.existsSync(configPath));
+    console.log('[OracleVault] Key exists:', fs.existsSync(keyPath));
+
     if (!fs.existsSync(configPath) || !fs.existsSync(keyPath)) {
+      console.log('[OracleVault] Files not found, returning null');
       return null;
     }
 
