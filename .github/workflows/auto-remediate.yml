@@ -1,0 +1,43 @@
+name: "AI Auto-Remediate & PM2 Reload"
+
+on:
+  workflow_run:
+    workflows: ["CodeQL"]
+    types: [completed]
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }} # Trigger when vulnerabilities are found
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: Master # Matches your Master branch setup
+
+      - name: AI Patch Agent
+        run: |
+          # This is where your AI agent (Alice or Rick) would insert the logic 
+          # to sanitize SSRF and Code Injection routes identified by CodeQL.
+          echo "AI Agent applying truth-first patches..."
+          
+      - name: Commit and Push Fixes
+        run: |
+          git config --global user.name "AI-Wonderland-Agent"
+          git config --global user.email "agent@ai-wonderland.com"
+          git add .
+          git commit -m "security: automated truth-first patch for CodeQL findings"
+          git push origin Master
+
+  deploy-and-reload:
+    needs: apply-fix
+    runs-on: self-hosted # Use your Chromebook/Linux environment as the runner
+    steps:
+      - name: Pull and Reload PM2
+        run: |
+          cd /path/to/your/apps/web
+          git pull origin Master
+          npm install
+          npm run build
+          # PM2 reload ensures zero-downtime for your multi-tenant IDE platform
+          pm2 reload all --update-env
