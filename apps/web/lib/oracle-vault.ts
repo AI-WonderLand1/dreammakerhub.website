@@ -1,4 +1,7 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 interface OCIConfig {
   region: string;
@@ -17,7 +20,51 @@ interface VaultSecret {
 
 let cachedSecrets: Map<string, string> = new Map();
 
+function readOCIConfigFile(): OCIConfig | null {
+  try {
+    const configPath = path.join(os.homedir(), '.oci', 'config');
+    const keyPath = path.join(os.homedir(), '.oci', 'oci_api_key.pem');
+
+    if (!fs.existsSync(configPath) || !fs.existsSync(keyPath)) {
+      return null;
+    }
+
+    const configContent = fs.readFileSync(configPath, 'utf-8');
+    const privateKey = fs.readFileSync(keyPath, 'utf-8');
+
+    const config: any = {};
+    const lines = configContent.split('\n');
+    for (const line of lines) {
+      const [key, value] = line.split('=').map(s => s.trim());
+      if (key && value) config[key] = value;
+    }
+
+const vaultOcid = process.env.OCI_VAULT_OCID || 'ocid1.vault.oc1.us-chicago-1.iju5tgneaagfe.abxxeljryjr66w2biptepa5gm6ms532ghm2cowsaxzp3binj6s56ceykvbya';
+    if (!vaultOcid) {
+      return null;
+    }
+
+    return {
+      region: config.region || 'us-chicago-1',
+      tenancy: config.tenancy,
+      user: config.user,
+      fingerprint: config.fingerprint,
+      privateKey: privateKey,
+      vaultOcid: vaultOcid,
+      compartmentId: config.tenancy
+    };
+  } catch (error) {
+    console.error('[OracleVault] Failed to read OCI config file:', error);
+    return null;
+  }
+}
+
 export function getOCIConfig(): OCIConfig | null {
+  const fileConfig = readOCIConfigFile();
+  if (fileConfig) {
+    return fileConfig;
+  }
+
   const region = process.env.OCI_REGION;
   const tenancyId = process.env.OCI_TENANCY_ID;
   const userId = process.env.OCI_USER_ID;
