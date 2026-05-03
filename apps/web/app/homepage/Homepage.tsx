@@ -11,6 +11,7 @@ import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-c
 import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";
 import InteractiveSignpost from "./InteractiveSignpost";
 import AIChat from "./AIChat";
+import Convai3DCharacter from "@/components/Convai3DCharacter";
 
 // Spirit Guide helper function
 const openSpiritGuide = () => {
@@ -265,25 +266,35 @@ export default function Homepage() {
 
         {/* Hero content overlay */}
         <div className="relative z-20 flex min-h-[100svh] flex-col justify-between px-6 pb-10 pt-24 sm:px-10">
-          {/* Top: title + subtitle + CTA */}
-          <div className="max-w-2xl">
-            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-pink-400">
-              AI Wonderland
-            </p>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
-              Where your imagination<br className="hidden sm:block" /> comes to life
-            </h1>
-            <p className="mt-4 max-w-lg text-sm text-white/70 drop-shadow sm:text-base">
-              Build websites and 3D games with AI — no coding required.
-            </p>
-            <div className="mt-6">
-              <AIChat compact={true} />
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left: title + subtitle + CTA */}
+            <div className="max-w-2xl">
+              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-pink-400">
+                AI Wonderland
+              </p>
+              <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
+                Where your imagination<br className="hidden sm:block" /> comes to life
+              </h1>
+              <p className="mt-4 max-w-lg text-sm text-white/70 drop-shadow sm:text-base">
+                Build websites and 3D games with AI — no coding required.
+              </p>
+              <div className="mt-6">
+                <AIChat compact={true} />
+              </div>
+              
+              {/* Spirit Guide Availability */}
+              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-purple-300/80">
+                <span className="text-lg">🔮</span>
+                <span>Spirit Guide AI assistant available</span>
+              </div>
             </div>
-            
-            {/* Spirit Guide Availability */}
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-purple-300/80">
-              <span className="text-lg">🔮</span>
-              <span>Spirit Guide AI assistant available</span>
+
+            {/* Right: 3D Convai Character */}
+            <div className="w-full lg:w-[400px] h-[400px]">
+              <Convai3DCharacter 
+                characterId="0c050c2f-2f9b-47ab-a067-d39acee2f88a"
+                className="w-full h-full rounded-2xl overflow-hidden"
+              />
             </div>
           </div>
         </div>
