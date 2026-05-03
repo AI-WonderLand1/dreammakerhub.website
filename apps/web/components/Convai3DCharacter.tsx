@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getConvaiCredentials } from "@/lib/oracle-vault";
 
 declare global {
   interface Window {
@@ -29,11 +28,17 @@ export default function Convai3DCharacter({
 
   useEffect(() => {
     async function loadCredentials() {
-      const creds = await getConvaiCredentials();
-      if (creds) {
-        setCredentials(creds);
-      } else {
-        setError("Convai credentials not available");
+      try {
+        const res = await fetch('/api/vault/credentials');
+        const data = await res.json();
+        if (data.apiKey && data.characterId) {
+          setCredentials(data);
+        } else {
+          setError("Convai credentials not available");
+          setIsLoading(false);
+        }
+      } catch (e) {
+        setError("Failed to load credentials");
         setIsLoading(false);
       }
     }
