@@ -11,7 +11,6 @@ import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-c
 import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";
 import InteractiveSignpost from "./InteractiveSignpost";
 import AIChat from "./AIChat";
-import Convai3DCharacter from "@/components/Convai3DCharacter";
 
 // Spirit Guide helper function
 const openSpiritGuide = () => {
@@ -289,13 +288,7 @@ export default function Homepage() {
               </div>
             </div>
 
-            {/* Right: 3D Convai Character */}
-            <div className="w-full lg:w-[400px] h-[400px]">
-              <Convai3DCharacter 
-                characterId="0c050c2f-2f9b-47ab-a067-d39acee2f88a"
-                className="w-full h-full rounded-2xl overflow-hidden"
-              />
-            </div>
+            
           </div>
         </div>
       </section>
