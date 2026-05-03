@@ -13,8 +13,18 @@ const ALLOWED_DOWNLOAD_HOSTS = [
   "dl.polyhaven.org",
 ] as const;
 
+const ALLOWED_OPTIMIZER_HOSTS = [
+  "localhost",
+] as const;
+
 function isAllowedDownloadHost(hostname: string): boolean {
   return ALLOWED_DOWNLOAD_HOSTS.some(
+    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
+  );
+}
+
+function isAllowedOptimizerHost(hostname: string): boolean {
+  return ALLOWED_OPTIMIZER_HOSTS.some(
     allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
   );
 }
@@ -27,12 +37,37 @@ function validateExternalDownloadUrl(rawUrl: string): string {
     throw new Error("Invalid download URL");
   }
 
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+  if (parsed.protocol !== "https:") {
     throw new Error("Unsupported download URL protocol");
   }
 
   if (!isAllowedDownloadHost(parsed.hostname)) {
     throw new Error("Download URL host is not allowed");
+  }
+
+  return parsed.toString();
+}
+
+function getSafeOptimizerUrl(): string {
+  const optimizerUrl = process.env.OPTIMIZER_URL;
+
+  if (!optimizerUrl) {
+    return "/api/assets/process";
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(optimizerUrl);
+  } catch {
+    throw new Error("Invalid optimizer URL");
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new Error("Unsupported optimizer URL protocol");
+  }
+
+  if (!isAllowedOptimizerHost(parsed.hostname)) {
+    throw new Error("Optimizer URL host is not allowed");
   }
 
   return parsed.toString();
@@ -234,19 +269,20 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
     let finalBuffer = new Uint8Array(originalBuffer);
     const fileName = `${asset.id}.${asset.format}`;
     
-    const optimizerUrl = process.env.OPTIMIZER_URL || "/api/assets/process";
-    
+    const optimizerUrl = getSafeOptimizerUrl();
+
     try {
       const optimizeRes = await fetch(optimizerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assetUrl: safeDownloadUrl, fileName }),
       });
-      
+
       if (optimizeRes.ok) {
         const optimizeData = await optimizeRes.json();
         if (optimizeData.optimizedUrl) {
-          finalBuffer = new Uint8Array((await fetch(optimizeData.optimizedUrl).then(r => r.arrayBuffer())));
+          const safeOptimizedUrl = validateExternalDownloadUrl(optimizeData.optimizedUrl);
+          finalBuffer = new Uint8Array((await fetch(safeOptimizedUrl).then(r => r.arrayBuffer())));
           console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
         }
       } else {
