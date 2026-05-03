@@ -9,6 +9,59 @@ interface MergeRequest {
   outputName?: string;
 }
 
+function isPrivateOrLocalHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+
+  if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+    return true;
+  }
+
+  // Block direct IPv4 private/link-local/loopback ranges.
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const octets = ipv4Match.slice(1).map(Number);
+    if (octets.some((o) => Number.isNaN(o) || o < 0 || o > 255)) {
+      return true;
+    }
+
+    const [a, b] = octets;
+    if (
+      a === 10 || // 10.0.0.0/8
+      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+      (a === 192 && b === 168) || // 192.168.0.0/16
+      a === 127 || // loopback
+      (a === 169 && b === 254) // link-local
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function validateExternalAssetUrl(rawUrl: string, fieldName: "characterUrl" | "sceneUrl"): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`${fieldName} must be a valid absolute URL`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`${fieldName} must use http or https`);
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error(`${fieldName} must not include URL credentials`);
+  }
+
+  if (isPrivateOrLocalHost(parsed.hostname)) {
+    throw new Error(`${fieldName} targets a disallowed host`);
+  }
+
+  return parsed.toString();
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
 
@@ -38,10 +91,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let safeCharacterUrl: string;
+  let safeSceneUrl: string;
+  try {
+    safeCharacterUrl = validateExternalAssetUrl(characterUrl, "characterUrl");
+    safeSceneUrl = validateExternalAssetUrl(sceneUrl, "sceneUrl");
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid asset URL" },
+      { status: 400 }
+    );
+  }
+
   try {
     const [characterRes, sceneRes] = await Promise.all([
-      fetch(characterUrl),
-      fetch(sceneUrl),
+      fetch(safeCharacterUrl),
+      fetch(safeSceneUrl),
     ]);
 
     if (!characterRes.ok) {
