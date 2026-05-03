@@ -117,6 +117,9 @@ async function makeOCISignedRequest(
 
   const authHeader = `Signature version="1",keyId="${config.tenancyId}/${config.userId}/${config.keyFingerprint}",algorithm="RSA-SHA256",headers="(request-target) host date",signature="${signatureBase64}"`;
 
+  console.log('[OracleVault] Making request to:', `https://${host}${path}`);
+  console.log('[OracleVault] Auth header:', authHeader.substring(0, 50) + '...');
+  
   const response = await fetch(`https://${host}${path}`, {
     method,
     headers: {
@@ -129,6 +132,8 @@ async function makeOCISignedRequest(
   });
 
   if (!response.ok) {
+    const text = await response.text();
+    console.log('[OracleVault] API response:', response.status, text);
     throw new Error(`OCI API error: ${response.status} ${response.statusText}`);
   }
 
