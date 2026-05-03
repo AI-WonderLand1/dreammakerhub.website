@@ -194,10 +194,13 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
 
-  if (path.startsWith("/admin")) {
+  const publicPaths = ["/login", "/public-pages/auth", "/subscription", "/terms", "/privacy", "/docs", "/support", "/about", "/contact", "/faq", "/blog", "/careers", "/api/auth"];
+  const isPublicPath = publicPaths.some(p => path === p || path.startsWith(p + "/") || path.startsWith("/api/") || path.startsWith("/_next") || path.startsWith("/static"));
+  
+  if (!isPublicPath) {
     const isAuthenticated = await checkAuth(req);
     if (!isAuthenticated) {
-      const loginUrl = new URL("/login", req.url);
+      const loginUrl = new URL("/public-pages/auth", req.url);
       loginUrl.searchParams.set("redirect", path);
       return NextResponse.redirect(loginUrl);
     }
