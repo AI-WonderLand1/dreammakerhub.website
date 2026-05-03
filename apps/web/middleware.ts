@@ -194,10 +194,27 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
 
-  const publicPaths = ["/login", "/public-pages/auth", "/subscription", "/terms", "/privacy", "/docs", "/support", "/about", "/contact", "/faq", "/blog", "/careers", "/api/auth"];
-  const isPublicPath = publicPaths.some(p => path === p || path.startsWith(p + "/") || path.startsWith("/api/") || path.startsWith("/_next") || path.startsWith("/static"));
+  const protectedPaths = [
+    "/wonder-build", 
+    "/wonder-projects", 
+    "/wonderspace", 
+    "/dashboard", 
+    "/builder", 
+    "/playcanvas",
+    "/editor",
+    "/library",
+    "/scene-library",
+    "/marketplace",
+    "/projects",
+    "/agent-playground",
+    "/settings",
+    "/checkout",
+    "/subscription"
+  ];
   
-  if (!isPublicPath) {
+  const needsAuth = protectedPaths.some(p => path.startsWith(p));
+  
+  if (needsAuth) {
     const isAuthenticated = await checkAuth(req);
     if (!isAuthenticated) {
       const loginUrl = new URL("/public-pages/auth", req.url);
