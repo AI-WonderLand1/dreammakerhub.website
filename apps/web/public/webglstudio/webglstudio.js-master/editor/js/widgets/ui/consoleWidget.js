@@ -210,21 +210,24 @@ ConsoleWidget.prototype.log = function( msg )
 			var link = "http://" + ConsoleWidget.lsroot_doc + "LS.";
 			if( msg.classtype == "component" )
 				link += "Components.";
-			link += (msg.classname || '') + ".html#method_" + (msg.name || '');
+			link += (msg.classname || '').replace(/[<>]/g, '') + ".html#method_" + (msg.name || '').replace(/[<>]/g, '');
 			var description = "";
 			if( msg.description )
-				description = msg.description;
+				description = msg.description.replace(/[<>]/g, '');
 			var li = document.createElement("li");
 			var methodSpan = document.createElement("span");
 			methodSpan.className = "method";
 			var a = document.createElement("a");
-			a.href = link;
+			// Sanitize link to prevent javascript: URLs
+			if (link && link.toLowerCase().indexOf('javascript:') !== 0) {
+				a.href = link;
+			}
 			a.target = "_blank";
-			a.textContent = msg.name || '';
+			a.textContent = (msg.name || '').replace(/[<>]/g, '');
 			methodSpan.appendChild(a);
 			var paramsSpan = document.createElement("span");
 			paramsSpan.className = "params";
-			paramsSpan.textContent = msg.params || '';
+			paramsSpan.textContent = (msg.params || '').replace(/[<>]/g, '');
 			li.appendChild(methodSpan);
 			li.appendChild(document.createTextNode("("));
 			li.appendChild(paramsSpan);
