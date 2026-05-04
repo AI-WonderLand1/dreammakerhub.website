@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@eslint/eslintrc": "^3.3.5",
-    "@heyputer/puter.js": "^2.2.15",
+    "@heyputer/puter.js": "^2.3.2",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tiptap/extension-superscript": "^3.20.4",
