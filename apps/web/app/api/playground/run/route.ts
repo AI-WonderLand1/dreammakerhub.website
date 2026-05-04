@@ -47,6 +47,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Handle Confessions AI module via LiteLLM proxy
+    if (moduleId === "confessions") {
+      const proxyRes = await fetch("http://localhost:4000/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.LITELLM_PROXY_API_KEY || "sk-1234"}`
+        },
+        body: JSON.stringify({
+          model: "litellm_proxy/confessions-model",
+          messages: [{ role: "user", content: prompt }],
+          extra_body: { tags: [`user:${ownerId}`, "source:playground"] }
+        })
+      });
+
+      if (!proxyRes.ok) {
+        const err = await proxyRes.json().catch(() => ({}));
+        throw new Error(err.error || "Confessions AI request failed");
+      }
+
+      const proxyData = await proxyRes.json();
+      return NextResponse.json({
+        ok: true,
+        moduleId: "confessions",
+        message: proxyData.choices?.[0]?.message?.content || "No response",
+        preview: { summary: proxyData.choices?.[0]?.message?.content || "" }
+      });
+    }
+
     const result = await generateAndSaveProject({
       projectId: project.id,
       ownerId,
