@@ -108,7 +108,13 @@ if (typeof jQuery === 'undefined') {
       selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
     }
 
-    var $parent = $(selector)
+    // Sanitize selector to prevent DOM XSS
+    if (selector && typeof selector === 'string') {
+      selector = selector.replace(/[<>]/g, '');
+      if (selector && selector.length < 100) {
+        var $parent = $(selector)
+      }
+    }
 
     if (e) e.preventDefault()
 
@@ -497,10 +503,20 @@ if (typeof jQuery === 'undefined') {
   // CAROUSEL DATA-API
   // =================
 
-  var clickHandler = function (e) {
-    var href
-    var $this   = $(this)
-    var $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
+    var clickHandler = function (e) {
+      var href
+      var $this   = $(this)
+      var targetStr = $this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
+      
+      // Sanitize target selector
+      if (targetStr && typeof targetStr === 'string') {
+        targetStr = targetStr.replace(/[<>]/g, '');
+        if (targetStr.length < 100) {
+          var $target = $(targetStr)
+        }
+      } else {
+        var $target = $()
+      }
     if (!$target.hasClass('carousel')) return
     var options = $.extend({}, $target.data(), $this.data())
     var slideIndex = $this.attr('data-slide-to')
@@ -689,7 +705,14 @@ if (typeof jQuery === 'undefined') {
     var target = $trigger.attr('data-target')
       || (href = $trigger.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
 
-    return $(target)
+    // Sanitize target selector
+    if (target && typeof target === 'string') {
+      target = target.replace(/[<>]/g, '');
+      if (target.length < 100) {
+        return $(target)
+      }
+    }
+    return $()
   }
 
 

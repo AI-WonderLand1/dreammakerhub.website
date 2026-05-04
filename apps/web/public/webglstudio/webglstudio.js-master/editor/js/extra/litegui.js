@@ -2902,7 +2902,10 @@ Console.prototype.addMessage = function(text,className,as_text)
 		if(as_text)
 			element.innerText = txt;
 		else
-			element.innerHTML = txt;
+		{
+			// Use textContent to prevent XSS when not in text mode
+			element.textContent = txt;
+		}
 		element.className = "msg";
 		if(className)
 			element.className += " " + className;
@@ -6843,7 +6846,9 @@ LiteGUI.Console = Console;
 			title = header.textContent;
 
 		var dialog_window = window.open("","","width="+w+", height="+h+", location=no, status=no, menubar=no, titlebar=no, fullscreen=yes");
-		dialog_window.document.write( "<head><title>"+title+"</title>" );
+		// Encode title to prevent XSS
+		var encodedTitle = (title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+		dialog_window.document.write( "<head><title>"+encodedTitle+"</title>" );
 		this.dialog_window = dialog_window;
 
 		//transfer style
@@ -7720,7 +7725,7 @@ Inspector.prototype.createWidget = function( name, content, options )
 	{
 		element.innerHTML = code + "<span class='info_content "+content_class+"' "+contentwidth+"></span>";
 		var content_element = element.querySelector("span.info_content");
-		if(content_element)
+		if(content_element && content)
 			content_element.appendChild( content );
 	}
 
@@ -9148,9 +9153,14 @@ Inspector.prototype.addTags = function(name, value, options)
 		element.tags[tagname] = true;
 
 		var tag = document.createElement("div");
-		tag.data = tagname;
+		tag.dataset.tag = tagname;
 		tag.className = "wtag";
-		tag.innerHTML = tagname+"<span class='close'>X</span>";
+		var textSpan = document.createTextNode(tagname);
+		var closeSpan = document.createElement("span");
+		closeSpan.className = "close";
+		closeSpan.textContent = "X";
+		tag.appendChild(textSpan);
+		tag.appendChild(closeSpan);
 
 		tag.querySelector(".close").addEventListener("click", function(e) {
 			var tagname = this.parentNode.data;

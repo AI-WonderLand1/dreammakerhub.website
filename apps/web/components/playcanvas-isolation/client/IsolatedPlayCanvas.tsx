@@ -163,27 +163,56 @@ export function IsolatedPlayCanvas({
             setIsReady(true);
             setError(null);
             
-            // Show demo content in the container
-            if (containerRef.current) {
-              containerRef.current.innerHTML = `
-                <div style="padding: 40px; text-align: center; background: #1a1a1a; height: 100%;">
-                  <h2 style="color: #00ff00; margin-bottom: 20px;">PlayCanvas Isolated Editor - Demo Mode</h2>
-                  <p style="color: #888; margin-bottom: 20px;">
-                    This is a demonstration of the isolated PlayCanvas architecture.<br>
-                    In production, WebContainer would provide per-user isolation.
-                  </p>
-                  <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <p style="color: #4CAF50; margin: 5px 0;">✓ User: ${userId.substring(0, 8)}...</p>
-                    <p style="color: #4CAF50; margin: 5px 0;">✓ Scene: ${sceneId || 'None'}</p>
-                    <p style="color: #4CAF50; margin: 5px 0;">✓ Isolated: true</p>
-                    <p style="color: #4CAF50; margin: 5px 0;">✓ Filesystem: Virtual per-user</p>
-                  </div>
-                  <p style="color: #666; font-size: 12px;">
-                    Architecture: Service Worker → WebContainer → PlayCanvas Editor
-                  </p>
-                </div>
-              `;
-            }
+             // Show demo content in the container
+             if (containerRef.current) {
+               // Create elements safely to prevent XSS
+               const wrapper = document.createElement('div');
+               wrapper.style.cssText = 'padding: 40px; text-align: center; background: #1a1a1a; height: 100%;';
+               
+               const h2 = document.createElement('h2');
+               h2.style.cssText = 'color: #00ff00; margin-bottom: 20px;';
+               h2.textContent = 'PlayCanvas Isolated Editor - Demo Mode';
+               
+               const p1 = document.createElement('p');
+               p1.style.cssText = 'color: #888; margin-bottom: 20px;';
+               p1.innerHTML = 'This is a demonstration of the isolated PlayCanvas architecture.<br>In production, WebContainer would provide per-user isolation.';
+               
+               const infoDiv = document.createElement('div');
+               infoDiv.style.cssText = 'background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0;';
+               
+               const userP = document.createElement('p');
+               userP.style.cssText = 'color: #4CAF50; margin: 5px 0;';
+               userP.textContent = `✓ User: ${(userId || '').substring(0, 8)}...`;
+               
+               const sceneP = document.createElement('p');
+               sceneP.style.cssText = 'color: #4CAF50; margin: 5px 0;';
+               sceneP.textContent = `✓ Scene: ${sceneId || 'None'}`;
+               
+               const isolatedP = document.createElement('p');
+               isolatedP.style.cssText = 'color: #4CAF50; margin: 5px 0;';
+               isolatedP.textContent = '✓ Isolated: true';
+               
+               const fsP = document.createElement('p');
+               fsP.style.cssText = 'color: #4CAF50; margin: 5px 0;';
+               fsP.textContent = '✓ Filesystem: Virtual per-user';
+               
+               infoDiv.appendChild(userP);
+               infoDiv.appendChild(sceneP);
+               infoDiv.appendChild(isolatedP);
+               infoDiv.appendChild(fsP);
+               
+               const p2 = document.createElement('p');
+               p2.style.cssText = 'color: #666; font-size: 12px;';
+               p2.textContent = 'Architecture: Service Worker → WebContainer → PlayCanvas Editor';
+               
+               wrapper.appendChild(h2);
+               wrapper.appendChild(p1);
+               wrapper.appendChild(infoDiv);
+               wrapper.appendChild(p2);
+               
+               containerRef.current.innerHTML = '';
+               containerRef.current.appendChild(wrapper);
+             }
           } else {
             handleError(err instanceof Error ? err : new Error('Initialization failed'));
           }
