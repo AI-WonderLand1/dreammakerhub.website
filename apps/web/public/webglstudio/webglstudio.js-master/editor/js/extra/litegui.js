@@ -5059,13 +5059,17 @@ LiteGUI.Console = Console;
 	//last position
 			if( current_level < child_level || (offset_index === 0 && current_level === child_level) )
 		{
-				this.root.insertBefore( element, new_childNode );
+				if (element && new_childNode && this.root && new_childNode.parentNode === this.root) {
+					this.root.insertBefore( element, new_childNode );
+				} else if (element && this.root) {
+					this.root.appendChild( element );
+				}
 				return;
 			}
 		}
 
 		//ended
-		if (element && this.root) {
+		if (element && this.root && element.parentNode !== this.root) {
 			this.root.appendChild( element );
 		}
 	}
@@ -7723,7 +7727,12 @@ Inspector.prototype.createWidget = function( name, content, options )
 	}
 	else
 	{
-		element.innerHTML = code + "<span class='info_content "+content_class+"' "+contentwidth+"></span>";
+		// Sanitize inputs before using innerHTML
+		var sanitizedCode = (code || '').replace(/[<>]/g, '');
+		var sanitizedClass = (content_class || '').replace(/[<>"]/g, '');
+		var sanitizedWidth = (contentwidth || '').replace(/[<>"]/g, '');
+		
+		element.innerHTML = sanitizedCode + "<span class='info_content "+sanitizedClass+"' "+sanitizedWidth+"></span>";
 		var content_element = element.querySelector("span.info_content");
 		if(content_element && content)
 			content_element.appendChild( content );
