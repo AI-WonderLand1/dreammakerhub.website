@@ -878,7 +878,14 @@ if (typeof jQuery === 'undefined') {
       selector = selector && /#[A-Za-z]/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
     }
 
-    var $parent = selector && $(selector)
+    // Sanitize selector to prevent DOM XSS
+    var $parent = $()
+    if (selector && typeof selector === 'string' && selector.length < 100) {
+      selector = selector.replace(/[<>]/g, '')
+      if (selector.indexOf('javascript:') !== 0) {
+        $parent = $(selector)
+      }
+    }
 
     return $parent && $parent.length ? $parent : $this.parent()
   }
@@ -1234,7 +1241,20 @@ if (typeof jQuery === 'undefined') {
   $(document).on('click.bs.modal.data-api', '[data-toggle="modal"]', function (e) {
     var $this   = $(this)
     var href    = $this.attr('href')
-    var $target = $($this.attr('data-target') || (href && href.replace(/.*(?=#[^\s]+$)/, ''))) // strip for ie7
+    var targetStr = $this.attr('data-target') || (href && href.replace(/.*(?=#[^\s]+$)/, ''))
+    
+    // Sanitize target to prevent DOM XSS
+    if (targetStr && typeof targetStr === 'string') {
+      targetStr = targetStr.replace(/[<>]/g, '');
+      if (targetStr.length < 100 && targetStr.indexOf('javascript:') !== 0) {
+        var $target = $(targetStr)
+      } else {
+        var $target = $()
+      }
+    } else {
+      var $target = $()
+    }
+    
     var option  = $target.data('bs.modal') ? 'toggle' : $.extend({ remote: !/#/.test(href) && href }, $target.data(), $this.data())
 
     if ($this.is('a')) e.preventDefault()
@@ -1533,8 +1553,15 @@ if (typeof jQuery === 'undefined') {
   Tooltip.prototype.setContent = function () {
     var $tip  = this.tip()
     var title = this.getTitle()
-
-    $tip.find('.tooltip-inner')[this.options.html ? 'html' : 'text'](title)
+    
+    // Always sanitize - use text() by default, only use html() if explicitly enabled and sanitized
+    if (this.options.html) {
+      // Sanitize HTML content to prevent XSS
+      var sanitizedTitle = (title || '').replace(/[<>]/g, '');
+      $tip.find('.tooltip-inner').html(sanitizedTitle)
+    } else {
+      $tip.find('.tooltip-inner').text(title || '')
+    }
     $tip.removeClass('fade in top bottom left right')
   }
 
