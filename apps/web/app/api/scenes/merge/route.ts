@@ -105,9 +105,23 @@ export async function POST(req: NextRequest) {
 
   try {
     const [characterRes, sceneRes] = await Promise.all([
-      fetch(safeCharacterUrl),
-      fetch(safeSceneUrl),
+      fetch(safeCharacterUrl, { redirect: "manual" }),
+      fetch(safeSceneUrl, { redirect: "manual" }),
     ]);
+
+    if (characterRes.status >= 300 && characterRes.status < 400) {
+      return NextResponse.json(
+        { error: "Character URL redirects are not allowed" },
+        { status: 400 }
+      );
+    }
+
+    if (sceneRes.status >= 300 && sceneRes.status < 400) {
+      return NextResponse.json(
+        { error: "Scene URL redirects are not allowed" },
+        { status: 400 }
+      );
+    }
 
     if (!characterRes.ok) {
       return NextResponse.json(
@@ -197,7 +211,17 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${OPTIMIZER_URL}/health`);
+    const validatedUrl = validateExternalAssetUrl(url, "url");
+    const response = await fetch(validatedUrl, { redirect: "manual" });
+    
+    if (response.status >= 300 && response.status < 400) {
+      return NextResponse.json({
+        mergeAvailable: false,
+        url,
+        error: "URL redirects are not allowed",
+      });
+    }
+    
     return NextResponse.json({
       mergeAvailable: response.ok,
       url,
@@ -206,7 +230,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       mergeAvailable: false,
       url,
-      error: "Merge service not reachable",
+      error: error instanceof Error ? error.message : "Invalid URL",
     });
   }
 }

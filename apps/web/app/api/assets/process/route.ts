@@ -9,6 +9,78 @@ interface ProcessRequest {
   fileName?: string;
 }
 
+const ALLOWED_ASSET_HOSTS = [
+  "playcanvas.com",
+  "cdn.playcanvas.com",
+  "sketchfab.com",
+  "media.sketchfab.com",
+  "polyhaven.com",
+  "dl.polyhaven.org",
+  "github.com",
+  "raw.githubusercontent.com",
+  "supabase.co",
+] as const;
+
+function isPrivateOrLocalHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+
+  if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+    return true;
+  }
+
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const octets = ipv4Match.slice(1).map(Number);
+    if (octets.some((o) => Number.isNaN(o) || o < 0 || o > 255)) {
+      return true;
+    }
+
+    const [a, b] = octets;
+    if (
+      a === 10 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      a === 127 ||
+      (a === 169 && b === 254)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function validateAssetUrl(rawUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("assetUrl must be a valid absolute URL");
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new Error("assetUrl must use https protocol");
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error("assetUrl must not include URL credentials");
+  }
+
+  if (isPrivateOrLocalHost(parsed.hostname)) {
+    throw new Error("assetUrl targets a disallowed host");
+  }
+
+  const isAllowedHost = ALLOWED_ASSET_HOSTS.some(
+    allowed => parsed.hostname === allowed || parsed.hostname.endsWith(`.${allowed}`)
+  );
+
+  if (!isAllowedHost) {
+    throw new Error("assetUrl host is not in the allowed list");
+  }
+
+  return parsed.toString();
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
 
@@ -42,7 +114,8 @@ export async function POST(req: NextRequest) {
     let glbBuffer: ArrayBuffer;
 
     if (assetUrl) {
-      const response = await fetch(assetUrl);
+      const safeAssetUrl = validateAssetUrl(assetUrl);
+      const response = await fetch(safeAssetUrl);
       if (!response.ok) {
         return NextResponse.json(
           { error: `Failed to fetch asset: ${response.status}` },
