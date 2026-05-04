@@ -32,4 +32,10 @@ export const playgroundModuleCatalog: PlaygroundModule[] = [
     description: "Generate changes and apply to a selected project.",
     kind: "apply",
   },
+  {
+    id: "confessions",
+    label: "Confessions AI",
+    description: "Truthful AI with reasoning logs, anti-hallucination, and AI constitution.",
+    kind: "chat",
+  },
 ];

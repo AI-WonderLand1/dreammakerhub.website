@@ -1,0 +1,11 @@
+general_settings:
+  master_key: sk-1234
+
+model_list:
+  - model_name: "confessions-model"
+    litellm_params:
+      model: "confessions-llm/my-model"
+
+litellm_settings:
+  custom_provider_map:
+    - {"provider": "confessions-llm", "custom_handler": "agent.litellm_custom_handler.confessions_llm"}
