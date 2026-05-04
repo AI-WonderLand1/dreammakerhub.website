@@ -1639,12 +1639,12 @@ function beautifyCode( code, reserved, skip_css )
 	});
 
 	//strings
-	code = code.replace(/(\"(\\.|[^\"])*\")/g, function(v) {
+	code = code.replace(/"([^"\\]|\\.)*"/g, function(v) {
 		return "<span class='str'>" + v + "</span>";
 	});
 
 	//comments 
-	code = code.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, function(v) { ///(\/\/[a-zA-Z0-9\?\!\(\)_ ]*)/g
+	code = code.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, function(v) {
 		return "<span class='cmnt'>" + v.replace(/<[^>]*>/g, "") + "</span>";
 	});
 
@@ -1682,12 +1682,12 @@ function beautifyJSON( code, skip_css )
 	});
 
 	//strings
-	code = code.replace(/(\"(\\.|[^\"])*\")/g, function(v) {
+	code = code.replace(/"([^"\\]|\\.)*"/g, function(v) {
 		return "<span class='str'>" + v + "</span>";
 	});
 
 	//comments
-	code = code.replace(/(\/\/[a-zA-Z0-9\?\!\(\)_ ]*)/g, function(v) {
+	code = code.replace(/\/\/[\w?!() ]*/g, function(v) {
 		return "<span class='cmnt'>" + v + "</span>";
 	});
 
@@ -5053,16 +5053,18 @@ LiteGUI.Console = Console;
 				continue;
 			}
 
-			//last position
+	//last position
 			if( current_level < child_level || (offset_index === 0 && current_level === child_level) )
-			{
+		{
 				this.root.insertBefore( element, new_childNode );
 				return;
 			}
 		}
 
 		//ended
-		this.root.appendChild( element );
+		if (element && this.root) {
+			this.root.appendChild( element );
+		}
 	}
 
 
@@ -7705,7 +7707,15 @@ Inspector.prototype.createWidget = function( name, content, options )
 		code += "<span class='wname' title='"+title+"' "+namewidth+">"+ pretitle + name + filling + "</span>";
 
 	if( content.constructor === String || content.constructor === Number || content.constructor === Boolean )
-		element.innerHTML = code + "<span class='info_content "+content_class+"' "+contentwidth+">"+content+"</span>";
+	{
+		var textNode = document.createTextNode(String(content));
+		var contentSpan = document.createElement("span");
+		contentSpan.className = "info_content " + content_class;
+		if(contentwidth) contentSpan.setAttribute("style", contentwidth);
+		contentSpan.appendChild(textNode);
+		element.innerHTML = code;
+		element.appendChild(contentSpan);
+	}
 	else
 	{
 		element.innerHTML = code + "<span class='info_content "+content_class+"' "+contentwidth+"></span>";

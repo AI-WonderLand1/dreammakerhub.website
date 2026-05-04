@@ -260,8 +260,11 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
   try {
     const safeDownloadUrl = validateExternalDownloadUrl(asset.downloadUrl);
 
-    const response = await fetch(safeDownloadUrl);
+    const response = await fetch(safeDownloadUrl, { redirect: "manual" });
     if (!response.ok) {
+      if (response.status >= 300 && response.status < 400) {
+        throw new Error("Redirects are not allowed for asset downloads");
+      }
       throw new Error(`Download failed: ${response.status}`);
     }
 
