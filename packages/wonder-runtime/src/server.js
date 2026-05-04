@@ -12,6 +12,47 @@ const WEBGLSTUDIO_PATH = process.env.EDITOR_PATH || '/app/public/webglstudio';
 const PLAYCANVAS_PATH = process.env.PLAYCANVAS_PATH || '/app/public/playcanvas';
 const USER_FILES_PATH = process.env.USER_FILES_PATH || '/app/user-project';
 
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 100;
+const rateLimitStore = new Map();
+
+function cleanupRateLimitStore() {
+  const now = Date.now();
+  for (const [key, data] of rateLimitStore.entries()) {
+    if (now - data.resetTime > RATE_LIMIT_WINDOW_MS) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
+setInterval(cleanupRateLimitStore, RATE_LIMIT_WINDOW_MS);
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const record = rateLimitStore.get(ip);
+  
+  if (!record || now - record.resetTime > RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+  
+  record.count++;
+  rateLimitStore.set(ip, record);
+  
+  if (record.count > RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count };
+}
+
+function getClientIp(request) {
+  return request.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+         request.headers['x-real-ip'] || 
+         request.socket?.remoteAddress || 
+         'unknown';
+}
+
 const f = Fastify({ logger: true });
 
 const io = new NodeIO().registerExtensions(KHRONOS_EXTENSIONS);
@@ -66,7 +107,14 @@ const CONTENT_TYPES = {
   'ttf': 'font/ttf',
 };
 
-f.get('/health', async () => {
+f.get('/health', async (request, reply) => {
+  const ip = getClientIp(request);
+  const rateCheck = checkRateLimit(ip);
+  
+  if (!rateCheck.allowed) {
+    return reply.status(429).send({ error: 'Rate limit exceeded' });
+  }
+  
   const sshKey = getSSHKey();
   const userFiles = loadUserFiles();
   return {
@@ -80,8 +128,26 @@ f.get('/health', async () => {
   };
 });
 
+function isPathSafe(basePath, requestedPath) {
+  const resolvedPath = pathJoin(basePath, requestedPath);
+  const normalizedBase = pathJoin(basePath);
+  return resolvedPath.startsWith(normalizedBase) && !requestedPath.includes('..');
+}
+
 f.get('/editor/*', async (request, reply) => {
-  const filePath = request.url.replace('/editor/', '');
+  const ip = getClientIp(request);
+  const rateCheck = checkRateLimit(ip);
+  
+  if (!rateCheck.allowed) {
+    return reply.status(429).send({ error: 'Rate limit exceeded' });
+  }
+  
+  const filePath = request.url.replace('/editor/', '').split('?')[0];
+  
+  if (!isPathSafe(WEBGLSTUDIO_PATH, filePath)) {
+    return reply.status(403).send({ error: 'Forbidden' });
+  }
+  
   const fullPath = pathJoin(WEBGLSTUDIO_PATH, filePath);
   
   if (!existsSync(fullPath) || !statSync(fullPath).isFile()) {
@@ -98,7 +164,19 @@ f.get('/editor/*', async (request, reply) => {
 });
 
 f.get('/playcanvas/*', async (request, reply) => {
-  const filePath = request.url.replace('/playcanvas/', '');
+  const ip = getClientIp(request);
+  const rateCheck = checkRateLimit(ip);
+  
+  if (!rateCheck.allowed) {
+    return reply.status(429).send({ error: 'Rate limit exceeded' });
+  }
+  
+  const filePath = request.url.replace('/playcanvas/', '').split('?')[0];
+  
+  if (!isPathSafe(PLAYCANVAS_PATH, filePath)) {
+    return reply.status(403).send({ error: 'Forbidden' });
+  }
+  
   const fullPath = pathJoin(PLAYCANVAS_PATH, filePath);
   
   if (!existsSync(fullPath) || !statSync(fullPath).isFile()) {

@@ -3,6 +3,16 @@ import { createClient } from '@/app/utils/supabase/server';
 import { requireEnv } from '@lib/env';
 import { logger } from '@lib/logger';
 
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+function isValidEmail(email: string): boolean {
+  if (email.length > 254 || email.length < 3) {
+    return false;
+  }
+  
+  return EMAIL_REGEX.test(email);
+}
+
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
@@ -21,8 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       return NextResponse.json(
         { 
           success: false, 
