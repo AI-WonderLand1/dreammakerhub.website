@@ -662,7 +662,7 @@ LScript.cleanCode = function(code)
 		I write this to test this func using LScript.cleanCode( LScript.cleanCode.toString() );
 	*/
 	//var rx = /(\/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/)|(\/\/.*)/g;
-	var rx = /\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/g;
+	var rx = /\/\*[\s\S]*?\*\//g;
 	var code = code.replace( rx ,"");
 	var lines = code.split("\n");
 	var result = [];
