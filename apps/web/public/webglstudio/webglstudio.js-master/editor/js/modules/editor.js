@@ -324,11 +324,14 @@ var EditorModule = {
 			return;
 		tabtitle = tabtitle || "Code";
 		console.log(code); //helps navigating
-		code = LiteGUI.htmlEncode( code ); //otherwise < is probleamtic
+		var encodedCode = LiteGUI.htmlEncode( code ); //otherwise < is problematic
 		var w = window.open("",'_blank');
-		w.document.write("<style>* { margin: 0; padding: 0; } html,body { margin: 20px; background-color: #222; color: #ddd; } </style>");
-		var str = beautifyCode( code );
-		w.document.write("<pre>"+str+"</pre>");
+		w.document.write("<style>* { margin:0; padding:0; } html,body { margin: 20px; background-color: #222; color: #ddd; } </style>");
+		var str = beautifyCode( encodedCode );
+		// Create pre element safely
+		var pre = w.document.createElement("pre");
+		pre.textContent = str;
+		w.document.body.appendChild(pre);
 		w.document.close();
 		w.document.title = tabtitle;
 		return w;
