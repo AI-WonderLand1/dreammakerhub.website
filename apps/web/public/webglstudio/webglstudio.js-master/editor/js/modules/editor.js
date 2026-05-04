@@ -352,9 +352,17 @@ var EditorModule = {
 	{
 		valid_fields = valid_fields || ["string","number","vec2","vec3","vec4","color","texture","node"];
 
-		var uid = Math.random().toString();
-		var id = "dialog_inspector_properties";
-		var dialog = document.getElementById( "dialog_inspector_" + uid );
+		// Use crypto.getRandomValues for better randomness if available
+		var uid = "";
+		if (window.crypto && window.crypto.getRandomValues) {
+			var randArray = new Uint32Array(1);
+			window.crypto.getRandomValues(randArray);
+			uid = randArray[0].toString(36);
+		} else {
+			uid = Math.random().toString(36).substring(2);
+		}
+		var id = "dialog_inspector_properties_" + uid;
+		var dialog = document.getElementById( id  );
 
 		var dialog = new LiteGUI.Dialog( { id: id, title: "Properties", parent:"#visor", close: true, minimize: true, width: 300, height: 200, scroll: true, resizable:true, draggable: true});
 		dialog.show('fade');
