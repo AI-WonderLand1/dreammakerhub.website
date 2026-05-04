@@ -913,7 +913,14 @@ var LS = {
 		suffix = suffix || "";
 		var str = this._uid_prefix + prefix + (window.navigator.userAgent.hashCode() % 0x1000000).toString(16) + "-"; //user agent
 		str += (GL.getTime()|0 % 0x1000000).toString(16) + "-"; //date
-		str += Math.floor((1 + Math.random()) * 0x1000000).toString(16) + "-"; //rand
+		// Use crypto.getRandomValues for better randomness if available
+		if (window.crypto && window.crypto.getRandomValues) {
+			var randArray = new Uint32Array(1);
+			window.crypto.getRandomValues(randArray);
+			str += (randArray[0] % 0x1000000).toString(16) + "-";
+		} else {
+			str += Math.floor((1 + Math.random()) * 0x1000000).toString(16) + "-"; //fallback
+		}
 		str += (this._last_uid++).toString(16); //sequence
 		str += suffix;
 		return str; 

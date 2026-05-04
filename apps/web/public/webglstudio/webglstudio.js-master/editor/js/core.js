@@ -398,7 +398,8 @@ var CORE = {
 	log: function( msg, scroll )
 	{
 		var e = document.createElement("p");
-		e.innerHTML = msg;
+		// Use textContent instead of innerHTML to prevent XSS
+		e.textContent = msg;
 		e.className = "startup-console-msg";
 		var root = this.log_container || this.root;
 		root.appendChild(e);

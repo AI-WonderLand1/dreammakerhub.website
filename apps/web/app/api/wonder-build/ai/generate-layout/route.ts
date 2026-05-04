@@ -243,9 +243,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `[AI Builder] Generated "${layout.pageTypeDetected}" layout from prompt: "${prompt}"\n`,
-      `Strategy: ${layout.overallStrategy}\n`,
-      `Blocks: ${layout.blocks.length}`
+      '[AI Builder] Generated layout from prompt:',
+      layout.pageTypeDetected,
+      'Strategy:',
+      layout.overallStrategy,
+      'Blocks:',
+      layout.blocks.length
     );
 
     return NextResponse.json(layout);
