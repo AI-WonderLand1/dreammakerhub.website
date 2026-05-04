@@ -22,12 +22,19 @@ const ALLOWED_ASSET_HOSTS = [
 ] as const;
 
 function isPrivateOrLocalHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
+  const host = hostname.toLowerCase().trim();
 
-  if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+  // Check localhost variants
+  if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "0.0.0.0") {
     return true;
   }
 
+  // Block IPv6 loopback and private ranges
+  if (host.startsWith("[::") || host.startsWith("::ffff:")) {
+    return true;
+  }
+
+  // Block direct IPv4 private/link-local/loopback ranges.
   const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4Match) {
     const octets = ipv4Match.slice(1).map(Number);
@@ -35,16 +42,21 @@ function isPrivateOrLocalHost(hostname: string): boolean {
       return true;
     }
 
-    const [a, b] = octets;
-    if (
-      a === 10 ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      a === 127 ||
-      (a === 169 && b === 254)
-    ) {
-      return true;
-    }
+    const [a, b, c, d] = octets;
+    // 10.0.0.0/8
+    if (a === 10) return true;
+    // 172.16.0.0/12
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    // 192.168.0.0/16
+    if (a === 192 && b === 168) return true;
+    // 127.0.0.0/8 (loopback)
+    if (a === 127) return true;
+    // 169.254.0.0/16 (link-local)
+    if (a === 169 && b === 254) return true;
+    // 100.64.0.0/10 (shared address space)
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    // 198.18.0.0/15 (benchmarking)
+    if (a === 198 && (b === 18 || b === 19)) return true;
   }
 
   return false;
@@ -115,8 +127,14 @@ export async function POST(req: NextRequest) {
 
     if (assetUrl) {
       const safeAssetUrl = validateAssetUrl(assetUrl);
-      const response = await fetch(safeAssetUrl);
+      const response = await fetch(safeAssetUrl, { redirect: "manual" });
       if (!response.ok) {
+        if (response.status >= 300 && response.status < 400) {
+          return NextResponse.json(
+            { error: "Redirects are not allowed" },
+            { status: 400 }
+          );
+        }
         return NextResponse.json(
           { error: `Failed to fetch asset: ${response.status}` },
           { status: response.status }

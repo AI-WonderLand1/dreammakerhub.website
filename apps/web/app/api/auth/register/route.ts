@@ -3,7 +3,7 @@ import { createClient } from '@/app/utils/supabase/server';
 import { requireEnv } from '@lib/env';
 import { logger } from '@lib/logger';
 
-const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9][a-zA-Z0-9.-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9][a-zA-Z0-9.-]{0,61}[a-zA-Z0-9])*$/;
 
 function isValidEmail(email: string): boolean {
   if (email.length > 254 || email.length < 3) {

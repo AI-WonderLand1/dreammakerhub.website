@@ -439,7 +439,7 @@ function parseBasicElements(html: string): PuckBlock[] {
   const linkRegex = /<a[^>]*>([\s\S]*?)<\/a>/gi;
   while ((match = linkRegex.exec(html)) !== null) {
     const linkContent = match[0];
-    if (!linkContent.includes("<button") && !linkContent.includes('class="[^"]*btn')) {
+    if (!linkContent.includes("<button") && !/class="[^"]*btn/.test(linkContent)) {
       blocks.push(parseLinkElement(linkContent));
     }
   }
