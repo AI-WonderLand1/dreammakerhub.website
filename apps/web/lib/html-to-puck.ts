@@ -12,6 +12,43 @@ interface PuckContent {
   root?: { type: string; props: Record<string, unknown> };
 }
 
+function cleanHtmlSafely(html: string): string {
+  if (html.length > 500000) {
+    throw new Error("HTML input exceeds maximum allowed length");
+  }
+
+  let cleaned = html;
+
+  const doctypeEnd = cleaned.indexOf(">");
+  if (doctypeEnd !== -1 && cleaned.substring(0, 9).toUpperCase().includes("<!DOCTYPE")) {
+    cleaned = cleaned.substring(doctypeEnd + 1);
+  }
+
+  const htmlOpen = cleaned.match(/<html[\s>]/i);
+  const htmlClose = cleaned.lastIndexOf("</html>");
+  if (htmlOpen && htmlClose > htmlOpen.index!) {
+    const bodyMatch = cleaned.substring(htmlOpen.index!, htmlClose).match(/<body[\s>][\s\S]*?<\/body>/i);
+    if (bodyMatch) {
+      cleaned = bodyMatch[0].replace(/^<body[\s>][^>]*>/i, "").replace(/<\/body>\s*$/i, "");
+    } else {
+      cleaned = cleaned.substring(htmlOpen.index!, htmlClose);
+    }
+  }
+
+  const headOpen = cleaned.indexOf("<head");
+  const headClose = cleaned.indexOf("</head>");
+  if (headOpen !== -1 && headClose !== -1 && headClose > headOpen) {
+    cleaned = cleaned.substring(0, headOpen) + cleaned.substring(headClose + 7);
+  }
+
+  cleaned = cleaned.replace(/<script[\s>][\s\S]*?<\/script>/gi, "");
+  cleaned = cleaned.replace(/<style[\s>][\s\S]*?<\/style>/gi, "");
+  cleaned = cleaned.replace(/<body[\s>][^>]*>/gi, "");
+  cleaned = cleaned.replace(/<\/body>/gi, "");
+
+  return cleaned;
+}
+
 const TAG_TO_COMPONENT: Record<string, string> = {
   h1: "heading",
   h2: "heading",
@@ -438,19 +475,13 @@ function parseBasicElements(html: string): PuckBlock[] {
 }
 
 export function parseHtmlToBlocks(html: string): PuckBlock[] {
-  const blocks: PuckBlock[] = [];
+  const blocks: PuckBlock[] = {};
   
-  const cleanedHtml = html
-    .replace(/<!DOCTYPE[^>]*>/i, "")
-    .replace(/<html[^>]*>[\s\S]*<\/html>/i, (match) => {
-      const bodyMatch = match.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-      return bodyMatch ? bodyMatch[1] : match;
-    })
-    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
-    .replace(/<body[^>]*>/gi, "")
-    .replace(/<\/body>/gi, "")
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  if (html.length > 500000) {
+    throw new Error("HTML input too large for parsing");
+  }
+  
+  const cleanedHtml = cleanHtmlSafely(html);
   
   const patternBlocks = detectComponentPatterns(cleanedHtml);
   blocks.push(...patternBlocks);
