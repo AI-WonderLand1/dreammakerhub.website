@@ -41,8 +41,8 @@ function cleanHtmlSafely(html: string): string {
     cleaned = cleaned.substring(0, headOpen) + cleaned.substring(headClose + 7);
   }
 
-  cleaned = cleaned.replace(/<script[\s>][\s\S]*?<\/script>/gi, "");
-  cleaned = cleaned.replace(/<style[\s>][\s\S]*?<\/style>/gi, "");
+  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
   cleaned = cleaned.replace(/<body[\s>][^>]*>/gi, "");
   cleaned = cleaned.replace(/<\/body>/gi, "");
 
