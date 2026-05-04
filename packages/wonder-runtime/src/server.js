@@ -244,8 +244,18 @@ f.post('/files/save', async (request, reply) => {
       return reply.status(400).send({ error: 'Missing filename or content' });
     }
     
+    // Validate filename to prevent path traversal
+    if (typeof filename !== 'string' || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return reply.status(400).send({ error: 'Invalid filename' });
+    }
+    
     const filePath = pathJoin(USER_FILES_PATH, filename);
     const dir = dirname(filePath);
+    
+    // Ensure the resolved path is within USER_FILES_PATH
+    if (!filePath.startsWith(USER_FILES_PATH) || !dir.startsWith(USER_FILES_PATH)) {
+      return reply.status(403).send({ error: 'Access denied' });
+    }
     
     if (!existsSync(dir)) {
       writeFileSync(dir, '');

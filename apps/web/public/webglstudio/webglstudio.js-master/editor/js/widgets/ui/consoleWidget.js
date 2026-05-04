@@ -197,29 +197,52 @@ ConsoleWidget.prototype.log = function( msg )
 	switch( msg.type )
 	{
 		case "typed":
-			elem.innerText = "] " + msg.content;
+			elem.innerText = "] " + (msg.content || '');
 			elem.classList.add("me");
 			break;
 		case "error":
-			elem.innerHTML = "<span class='danger'>" + msg.content + "</span>";
+			var span = document.createElement("span");
+			span.className = "danger";
+			span.textContent = msg.content || '';
+			elem.appendChild(span);
 			break;
 		case "method":
 			var link = "http://" + ConsoleWidget.lsroot_doc + "LS.";
 			if( msg.classtype == "component" )
 				link += "Components.";
-			link += msg.classname + ".html#method_" + msg.name;
+			link += (msg.classname || '') + ".html#method_" + (msg.name || '');
 			var description = "";
 			if( msg.description )
 				description = msg.description;
-			elem.innerHTML = "<li><span class='method'><a href='"+link+"' target='_blank'>" + msg.name + "</a></span>(<span class='params'>"+(msg.params || "")+"</span>) "+description+"</li>";
+			var li = document.createElement("li");
+			var methodSpan = document.createElement("span");
+			methodSpan.className = "method";
+			var a = document.createElement("a");
+			a.href = link;
+			a.target = "_blank";
+			a.textContent = msg.name || '';
+			methodSpan.appendChild(a);
+			var paramsSpan = document.createElement("span");
+			paramsSpan.className = "params";
+			paramsSpan.textContent = msg.params || '';
+			li.appendChild(methodSpan);
+			li.appendChild(document.createTextNode("("));
+			li.appendChild(paramsSpan);
+			li.appendChild(document.createTextNode(") " + (description || '')));
+			elem.appendChild(li);
 			break;
 		case "property":
-			elem.innerHTML = "<li><span class='property'>" + msg.name + "</span></li>";
+			var li = document.createElement("li");
+			var span = document.createElement("span");
+			span.className = "property";
+			span.textContent = msg.name || '';
+			li.appendChild(span);
+			elem.appendChild(li);
 			break;
 		case "system":
 		default:
 			if(msg.content)
-				elem.innerHTML = msg.content;
+				elem.textContent = msg.content;
 	}
 
 	this.console_log.appendChild( elem );

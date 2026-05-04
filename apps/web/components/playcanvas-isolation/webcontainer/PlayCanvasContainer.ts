@@ -557,9 +557,9 @@ export class PlayCanvasContainerManager {
         instance.container.teardown();
         this.instances.delete(containerId);
         this.userContainerMap.delete(instance.userId);
-        console.log(`[PlayCanvasContainer] Destroyed container ${containerId}`);
+        console.log('[PlayCanvasContainer] Destroyed container', containerId);
       } catch (error) {
-        console.error(`[PlayCanvasContainer] Error destroying container ${containerId}:`, error);
+        console.error('[PlayCanvasContainer] Error destroying container', containerId, error);
       }
     }
   }
