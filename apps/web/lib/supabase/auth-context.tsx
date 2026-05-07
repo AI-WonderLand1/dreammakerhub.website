@@ -15,6 +15,7 @@ type AuthContextState = {
   signIn: (email: string, password: string) => Promise<{ error?: Error }>
   signOut: () => Promise<void>
   signUp: (email: string, password: string) => Promise<{ error?: Error }>
+  signInWithOAuth: (provider: 'github' | 'google') => Promise<{ error?: Error }>
 }
 
 const AuthContext = createContext<AuthContextState>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextState>({
   signIn: async () => ({}),
   signOut: async () => {},
   signUp: async () => ({}),
+  signInWithOAuth: async () => ({}),
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -32,25 +34,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false;
     const supabase = createClient()
+    
+    // Timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setLoading(false)
+      }
+    }, 10000) // 10 second timeout
+
     if (!supabase) {
+      clearTimeout(timeout);
       setLoading(false)
       return
     }
 
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null)
-      setUser(data.session?.user ?? null)
-      setLoading(false)
+      clearTimeout(timeout);
+      if (!cancelled) {
+        setSession(data.session ?? null)
+        setUser(data.session?.user ?? null)
+        setLoading(false)
+      }
+    }).catch(() => {
+      clearTimeout(timeout);
+      if (!cancelled) {
+        setLoading(false)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s ?? null)
-      setUser(s?.user ?? null)
-      setLoading(false)
+      if (!cancelled) {
+        setSession(s ?? null)
+        setUser(s?.user ?? null)
+        setLoading(false)
+      }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string): Promise<{ error?: Error }> => {
@@ -59,6 +85,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error: new Error('Supabase is not configured in this environment.') }
     }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return error ? { error: new Error(error.message) } : {}
+  }
+
+  const signInWithOAuth = async (provider: 'github' | 'google') => {
+    const supabase = createClient()
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured in this environment.') }
+    }
+    const { error } = await supabase.auth.signInWithOAuth({ 
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`
+      }
+    })
     return error ? { error: new Error(error.message) } : {}
   }
 
@@ -80,8 +120,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setSession(null)
   }
 
+  const signInWithOAuth = async (provider: 'github' | 'google') => {
+    const supabase = createClient()
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured in this environment.') }
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/api/auth/callback`
+      }
+    })
+    return error ? { error: new Error(error.message) } : {}
+  }
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, signInWithOAuth }}>
       {children}
     </AuthContext.Provider>
   )
