@@ -26,7 +26,7 @@ Guidelines:
 async function callGithubAI(system: string, userPrompt: string): Promise<string> {
   const apiKey = process.env.GITHUB_MODELS_API_KEY;
   if (!apiKey) {
-    return "I'm here to help! Please describe what you'd like to build or ask any questions about the Wonderland platform.";
+    throw new Error("GITHUB_MODELS_API_KEY is not configured. Please add it to your .env file.");
   }
 
   try {
@@ -48,13 +48,14 @@ async function callGithubAI(system: string, userPrompt: string): Promise<string>
     });
 
     if (!res.ok) {
-      return "I'm having trouble connecting right now. Please try again in a moment.";
+      const errorText = await res.text();
+      throw new Error(`GitHub Models API error: ${res.status} - ${errorText}`);
     }
 
     const data = await res.json();
     return data.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
-  } catch {
-    return "I'm having trouble connecting right now. Please try again in a moment.";
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -81,12 +82,20 @@ export async function POST(req: NextRequest) {
       ? `Previous conversation:\n${conversationHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\nUser: ${message}`
       : message;
 
-    const response = await callGithubAI(SPIRIT_GUIDE_SYSTEM, fullPrompt);
+    try {
+      const response = await callGithubAI(SPIRIT_GUIDE_SYSTEM, fullPrompt);
 
-    return NextResponse.json({
-      response: response.trim(),
-      action: isCreateRequest ? "create_scene" : "answer"
-    });
+      return NextResponse.json({
+        response: response.trim(),
+        action: isCreateRequest ? "create_scene" : "answer"
+      });
+    } catch (error: any) {
+      console.error("Spirit Guide AI error:", error);
+      return NextResponse.json(
+        { error: error.message || "Failed to connect to AI service. Check GITHUB_MODELS_API_KEY configuration." },
+        { status: 503 }
+      );
+    }
 
   } catch (error: any) {
     console.error("Spirit Guide error:", error);
