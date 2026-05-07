@@ -88,19 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return error ? { error: new Error(error.message) } : {}
   }
 
-  const signInWithOAuth = async (provider: 'github' | 'google') => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
-    }
-    const { error } = await supabase.auth.signInWithOAuth({ 
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`
-      }
-    })
-    return error ? { error: new Error(error.message) } : {}
-  }
+
 
   const signUp = async (email: string, password: string): Promise<{ error?: Error }> => {
     const supabase = createClient()
