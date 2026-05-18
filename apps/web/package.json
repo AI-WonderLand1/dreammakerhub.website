@@ -19,10 +19,10 @@
     "lodash-es": "^4.18.1",
     "prisma": "^7.8.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.59.3"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.58",
+    "@ai-sdk/openai": "^3.0.64",
     "@babel/runtime": "^7.28.6",
     "@base-ui/react": "^1.4.0",
     "@gltf-transform/core": "^4.3.0",
@@ -60,7 +60,7 @@
     "framer": "^3.0.4",
     "groq-sdk": "^1.1.2",
     "http-proxy": "^1.18.1",
-    "jsdom": "^29.0.2",
+    "jsdom": "^29.1.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
     "motion": "^12.25.0",
