@@ -22,7 +22,7 @@
     "typescript-eslint": "^8.59.3"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.58",
+    "@ai-sdk/openai": "^3.0.64",
     "@babel/runtime": "^7.28.6",
     "@base-ui/react": "^1.4.0",
     "@gltf-transform/core": "^4.3.0",
