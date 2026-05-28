@@ -37,14 +37,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { asset } = body;
 
-    if (!asset?.downloadUrl) {
+    const allowedSources = new Set(["playcanvas", "sketchfab", "poly-haven", "free3d", "user"]);
+    const allowedFormats = new Set(["glb", "gltf", "fbx", "obj", "usdz"]);
+
+    if (
+      !asset?.downloadUrl ||
+      typeof asset.downloadUrl !== "string" ||
+      typeof asset.id !== "string" ||
+      typeof asset.name !== "string" ||
+      typeof asset.source !== "string" ||
+      !allowedSources.has(asset.source) ||
+      typeof asset.format !== "string" ||
+      !allowedFormats.has(asset.format.toLowerCase())
+    ) {
       return NextResponse.json(
-        { error: "Asset or download URL missing" },
+        { error: "Invalid asset payload" },
         { status: 400 }
       );
     }
 
-    const result = await downloadAssetToStorage(asset, session.user.id);
+    const sanitizedAsset = {
+      ...asset,
+      format: asset.format.toLowerCase(),
+    };
+
+    const result = await downloadAssetToStorage(sanitizedAsset, session.user.id);
 
     if (!result.success) {
       return NextResponse.json(
