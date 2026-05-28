@@ -17,8 +17,23 @@ const ALLOWED_OPTIMIZER_HOSTS = [
   "localhost",
 ] as const;
 
+const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> = {
+  playcanvas: ["playcanvas.com", "cdn.playcanvas.com"],
+  sketchfab: ["sketchfab.com", "media.sketchfab.com"],
+  "poly-haven": ["polyhaven.com", "dl.polyhaven.org"],
+  free3d: [],
+  user: [],
+};
+
 function isAllowedDownloadHost(hostname: string): boolean {
   return ALLOWED_DOWNLOAD_HOSTS.some(
+    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
+  );
+}
+
+function isAllowedHostForSource(source: ExternalAsset["source"], hostname: string): boolean {
+  const allowedHosts = SOURCE_ALLOWED_HOSTS[source] ?? [];
+  return allowedHosts.some(
     allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
   );
 }
@@ -39,6 +54,14 @@ function validateExternalDownloadUrl(rawUrl: string): string {
 
   if (parsed.protocol !== "https:") {
     throw new Error("Unsupported download URL protocol");
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error("Download URL must not include credentials");
+  }
+
+  if (parsed.port && parsed.port !== "443") {
+    throw new Error("Download URL port is not allowed");
   }
 
   if (!isAllowedDownloadHost(parsed.hostname)) {
@@ -259,6 +282,10 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
 
   try {
     const safeDownloadUrl = validateExternalDownloadUrl(asset.downloadUrl);
+    const parsedDownloadUrl = new URL(safeDownloadUrl);
+    if (!isAllowedHostForSource(asset.source, parsedDownloadUrl.hostname)) {
+      throw new Error("Download URL host does not match asset source");
+    }
 
     const response = await fetch(safeDownloadUrl, { redirect: "manual" });
     if (!response.ok) {
