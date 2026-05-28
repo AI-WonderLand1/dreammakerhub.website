@@ -51,7 +51,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tiptap/extension-superscript": "^3.20.4",
-    "axios": "^1.15.0",
+    "axios": "^1.16.1",
     "dotenv": "^17.4.2",
     "eslint-config-next": "^16.2.6",
     "node-fetch": "^3.3.2",
