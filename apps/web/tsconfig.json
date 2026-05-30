@@ -13,7 +13,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
+
     "paths": {
       "@/*": [
         "./*"
@@ -91,6 +91,7 @@
   "exclude": [
     "node_modules",
     ".next",
-    "dist"
+    "dist",
+    "public"
   ]
 }

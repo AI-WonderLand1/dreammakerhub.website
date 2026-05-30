@@ -168,7 +168,7 @@ void main() {
   warnings.push('Test with WebGL Inspector for debugging');
 
   return {
-    code: \`Fragment Shader:\n\${code}\n\nVertex Shader:\n\${vertexCode}\`,
+    code: `Fragment Shader:\n${code}\n\nVertex Shader:\n${vertexCode}`,
     language: 'glsl',
     imports: [
       'import WebGLStudioEngine from "@/components/engines/WebGLStudioEngine";',
