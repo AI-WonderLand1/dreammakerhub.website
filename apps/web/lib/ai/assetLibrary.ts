@@ -44,7 +44,7 @@ function isAllowedOptimizerHost(hostname: string): boolean {
   );
 }
 
-function validateExternalDownloadUrl(rawUrl: string): string {
+function validateExternalDownloadUrl(rawUrl: string): URL {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -68,7 +68,7 @@ function validateExternalDownloadUrl(rawUrl: string): string {
     throw new Error("Download URL host is not allowed");
   }
 
-  return parsed.toString();
+  return parsed;
 }
 
 function getSafeOptimizerUrl(): string {
@@ -94,6 +94,13 @@ function getSafeOptimizerUrl(): string {
   }
 
   return parsed.toString();
+}
+
+async function safeFetch(url: URL, init?: RequestInit): Promise<Response> {
+  return fetch(url.toString(), {
+    redirect: "manual",
+    ...init,
+  });
 }
 
 export interface ExternalAsset {
@@ -282,12 +289,11 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
 
   try {
     const safeDownloadUrl = validateExternalDownloadUrl(asset.downloadUrl);
-    const parsedDownloadUrl = new URL(safeDownloadUrl);
-    if (!isAllowedHostForSource(asset.source, parsedDownloadUrl.hostname)) {
+    if (!isAllowedHostForSource(asset.source, safeDownloadUrl.hostname)) {
       throw new Error("Download URL host does not match asset source");
     }
 
-    const response = await fetch(safeDownloadUrl, { redirect: "manual" });
+    const response = await safeFetch(safeDownloadUrl);
     if (!response.ok) {
       if (response.status >= 300 && response.status < 400) {
         throw new Error("Redirects are not allowed for asset downloads");
@@ -305,14 +311,14 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       const optimizeRes = await fetch(optimizerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetUrl: safeDownloadUrl, fileName }),
+        body: JSON.stringify({ assetUrl: safeDownloadUrl.toString(), fileName }),
       });
 
       if (optimizeRes.ok) {
         const optimizeData = await optimizeRes.json();
         if (optimizeData.optimizedUrl) {
           const safeOptimizedUrl = validateExternalDownloadUrl(optimizeData.optimizedUrl);
-          finalBuffer = new Uint8Array((await fetch(safeOptimizedUrl).then(r => r.arrayBuffer())));
+          finalBuffer = new Uint8Array((await safeFetch(safeOptimizedUrl).then(r => r.arrayBuffer())));
           console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
         }
       } else {
