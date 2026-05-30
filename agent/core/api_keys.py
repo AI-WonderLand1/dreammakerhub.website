@@ -20,7 +20,16 @@ class APIKeyManager:
     def __init__(self, db_path: str = "data/api_keys.db"):
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.db_path = db_path
+        self._api_key_pepper = os.environ.get("API_KEY_PEPPER", "change-me-in-production").encode("utf-8")
         self._init_db()
+    
+    def _derive_key_hash(self, key: str) -> str:
+        return hashlib.pbkdf2_hmac(
+            "sha256",
+            key.encode("utf-8"),
+            self._api_key_pepper,
+            310000
+        ).hex()
     
     def _init_db(self):
         conn = sqlite3.connect(self.db_path)
@@ -52,7 +61,7 @@ class APIKeyManager:
                    permissions: List[str] = None) -> str:
         raw_key = secrets.token_urlsafe(32)
         key = f"alice_{raw_key[:8]}_{raw_key[8:24]}"
-        key_hash = hashlib.sha256(key.encode()).hexdigest()
+        key_hash = self._derive_key_hash(key)
         key_prefix = key[:15]
         
         created_at = datetime.now()
@@ -74,7 +83,7 @@ class APIKeyManager:
         return key
     
     def validate_key(self, key: str) -> Optional[Dict]:
-        key_hash = hashlib.sha256(key.encode()).hexdigest()
+        key_hash = self._derive_key_hash(key)
         
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
