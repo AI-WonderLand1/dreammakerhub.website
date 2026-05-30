@@ -10,7 +10,7 @@ const BUCKET = "temp_storage";
 
 // POST /api/ghost - Create a ghost link from a project
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
 // GET /api/ghost - List user's ghost links
 export async function GET(_req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

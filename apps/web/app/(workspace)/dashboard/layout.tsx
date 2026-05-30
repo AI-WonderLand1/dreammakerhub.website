@@ -27,7 +27,8 @@ import {
   MessageCircle,
   Bug,
   Bot,
-  Database
+  Database,
+  Shield
 } from "lucide-react";
 
 type SidebarItem = {

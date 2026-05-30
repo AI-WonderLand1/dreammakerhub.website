@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       created_at: timestamp || new Date().toISOString(),
     };
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (supabase) {
       const { error } = await supabase.from("client_error_logs").insert(errorEntry);
       if (error) {

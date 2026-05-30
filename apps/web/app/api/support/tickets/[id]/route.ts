@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export const runtime = "nodejs";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
@@ -35,7 +35,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {

@@ -43,14 +43,14 @@ function SubscriptionContent() {
 
   const plans: Plan[] = useMemo(
     () =>
-      (Object.values(PLANS) as Plan[]).map((p) => ({
-        ...p,
-        id: p.id as PlanId,
+      (Object.values(PLANS)).map((p): Plan => ({
+        id: p.id,
+        name: p.name,
         price: p.priceDisplay,
         desc: p.description,
         bullets: p.features,
         cta: p.id === "free" ? "Start Wandering, It's Free" : p.id === "enterprise" ? "Talk to Us" : `Subscribe to ${p.displayName}`,
-        mode: p.price === 0 ? ("free" as const) : ("paid" as const),
+        mode: p.price === 0 ? "free" : "paid",
         icon: p.id === "free" ? "🌿" : p.id === "pro" ? "⭐" : p.id === "team" ? "🏢" : "🌐",
         highlight: p.highlight ?? false,
         href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : undefined,

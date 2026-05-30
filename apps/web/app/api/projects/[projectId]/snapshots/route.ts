@@ -7,7 +7,7 @@ import { getSmokeUserIdFromRequest } from "@lib/smokeAuth";
 export const runtime = "nodejs";
 
 export async function GET(_req: NextRequest, { params }: { params: { projectId: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const smokeUserId = getSmokeUserIdFromRequest(_req);
   if (!user && !smokeUserId) {
@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { projectId: 
 }
 
 export async function POST(_req: NextRequest, { params }: { params: { projectId: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const smokeUserId = getSmokeUserIdFromRequest(_req);
   if (!user && !smokeUserId) {

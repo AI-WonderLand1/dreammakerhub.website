@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check if user already exists
     const { data: existingUser } = await supabase

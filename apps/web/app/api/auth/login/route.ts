@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = body;
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Attempt login
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 

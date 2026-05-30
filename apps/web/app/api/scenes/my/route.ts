@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     
     if (!supabase) {
       return NextResponse.json(
