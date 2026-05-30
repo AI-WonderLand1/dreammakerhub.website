@@ -23,7 +23,7 @@ export async function GET() {
     // Also try to get from 3d-assets bucket (3D module subfolder)
     try {
       const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
+      const supabase = await createClient();
       
       if (supabase) {
         const { data: files } = await supabase.storage

@@ -42,7 +42,7 @@ async function runTask(task: string, payload: unknown) {
 export async function POST(req: NextRequest) {
   try {
     // --- AUTH (Supabase or Smoke) ---
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const smokeUserId = getSmokeUserIdFromRequest(req);
 

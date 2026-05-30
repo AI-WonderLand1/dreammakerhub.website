@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data, error } = await supabase.auth.verifyOtp({
       token_hash: token,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { error } = await supabase.auth.resend({
       type: 'signup',

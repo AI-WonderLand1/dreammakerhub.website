@@ -7,7 +7,7 @@ export type PaidAIUser = {
 };
 
 export async function requirePaidAIUser(req: NextRequest): Promise<PaidAIUser | NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
 } = await (await supabase).auth.getUser();

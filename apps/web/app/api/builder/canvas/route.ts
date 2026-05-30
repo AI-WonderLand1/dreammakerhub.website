@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@infra/lib/supabase/server-client";
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("projectId");
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("projectId");
 

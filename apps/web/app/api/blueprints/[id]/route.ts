@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: blueprint, error } = await supabase
       .from("blueprints")
       .select("*")
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const body = await request.json();
 
     const { data: user } = await supabase.auth.getUser();
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {

@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const smokeUserId = getSmokeUserIdFromRequest(req);
     if (!user && !smokeUserId) {
