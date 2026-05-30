@@ -44,7 +44,9 @@ function isAllowedOptimizerHost(hostname: string): boolean {
   );
 }
 
-function validateExternalDownloadUrl(rawUrl: string): URL {
+type ValidatedExternalUrl = URL & { readonly __brand: "ValidatedExternalUrl" };
+
+function validateExternalDownloadUrl(rawUrl: string): ValidatedExternalUrl {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -68,7 +70,7 @@ function validateExternalDownloadUrl(rawUrl: string): URL {
     throw new Error("Download URL host is not allowed");
   }
 
-  return parsed;
+  return parsed as ValidatedExternalUrl;
 }
 
 function getSafeOptimizerUrl(): string {
@@ -96,7 +98,7 @@ function getSafeOptimizerUrl(): string {
   return parsed.toString();
 }
 
-async function safeFetch(url: URL, init?: RequestInit): Promise<Response> {
+async function safeFetch(url: ValidatedExternalUrl, init?: RequestInit): Promise<Response> {
   return fetch(url.toString(), {
     redirect: "manual",
     ...init,
