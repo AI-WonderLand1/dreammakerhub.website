@@ -59,7 +59,7 @@ function formatDate(date: Date | string | null): string {
 
 export default async function ProjectPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
 
