@@ -5561,11 +5561,14 @@ LiteGUI.Console = Console;
 	*/
 	Tree.prototype.getItem = function( id )
 	{
-		if(!id)
+		if(id === null || id === undefined)
 			return null;
 
-		if( id.classList ) //if it is already a node
-			return id;
+		//only allow primitive identifiers; never trust object inputs as DOM nodes
+		if(typeof(id) !== "string" && typeof(id) !== "number")
+			return null;
+
+		id = String(id);
 
 		for(var i = 0; i < this.root.childNodes.length; ++i)
 		{
@@ -5866,6 +5869,16 @@ LiteGUI.Console = Console;
 
 		var node = this.getItem( id );
 		var parent = this.getItem( parent_id );
+
+		//defensive checks: only move valid tree items that belong to this tree root
+		if(!node || !parent)
+			return false;
+		if(!node.classList || !node.classList.contains("ltreeitem"))
+			return false;
+		if(!parent.classList || !parent.classList.contains("ltreeitem"))
+			return false;
+		if(node.parentNode !== this.root || parent.parentNode !== this.root)
+			return false;
 
 		if( this.isAncestor( parent, node ) )
 			return false;
