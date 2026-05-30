@@ -10,7 +10,7 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const { sceneId } = resolvedParams;
-    const supabase = createClient();
+    const supabase = await createClient();
     
     if (!supabase) {
       return NextResponse.json(

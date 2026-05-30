@@ -16,6 +16,13 @@ export default function LoginForm() {
   const handleLogin = async () => {
     setLoading(true)
 
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      logger.error('Supabase not configured')
+      setLoading(false)
+      return
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -28,10 +35,6 @@ export default function LoginForm() {
     }
 
     if (data.session) {
-      // Set cookies manually so middleware can read them
-      document.cookie = `sb-access-token=${data.session.access_token}; path=/`
-      document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/`
-
       const redirectTo = searchParams.get('redirectTo') || '/wonder-build'
       router.push(redirectTo)
     }

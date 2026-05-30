@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { error } = await supabase.auth.resetPasswordForEmail(
       email.toLowerCase().trim(),
@@ -81,7 +81,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data, error } = await supabase.auth.updateUser({
       password: password
