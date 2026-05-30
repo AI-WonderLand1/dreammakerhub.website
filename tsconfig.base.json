@@ -12,7 +12,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@engine/*": [
         "engine/*"
@@ -51,5 +50,10 @@
         "apps/web/types/*"
       ]
     }
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "public",
+    "apps/web/public"
+  ]
 }
