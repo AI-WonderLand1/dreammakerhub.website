@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // --- Auth (real check happens here, not middleware) ---
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

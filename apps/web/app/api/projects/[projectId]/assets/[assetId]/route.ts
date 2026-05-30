@@ -27,7 +27,7 @@ async function assertOwner(projectId: string, ownerId: string) {
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string; assetId: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const smokeUserId = getSmokeUserIdFromRequest(req);
   if (!user && !smokeUserId) {

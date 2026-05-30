@@ -11,7 +11,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { ghostId: string } }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const ghostId = params.ghostId;
@@ -70,7 +70,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { ghostId: string } }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

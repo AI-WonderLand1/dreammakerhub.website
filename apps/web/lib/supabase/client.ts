@@ -7,6 +7,13 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
 let didWarnMissingEnv = false
 
+export const getSupabaseClient = () => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  return createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+};
+
 export const createClient = () => {
   if (!isSupabaseConfigured) {
     if (!didWarnMissingEnv && typeof window !== 'undefined') {

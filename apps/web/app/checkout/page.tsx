@@ -102,7 +102,7 @@ function CheckoutContent() {
               <h2 className="text-xl font-semibold">{plan.name}</h2>
               <p className="text-white/70 mt-1">Billed monthly. Cancel any time.</p>
             </div>
-            <p className="text-2xl font-extrabold">{plan.price}</p>
+            <p className="text-2xl font-extrabold">{plan.priceDisplay}</p>
           </div>
 
           <ul className="mt-5 space-y-2 text-sm text-white/80">

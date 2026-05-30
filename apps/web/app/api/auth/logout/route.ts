@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get current user for analytics
     const { data: { user } } = await supabase.auth.getUser();
