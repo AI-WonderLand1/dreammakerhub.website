@@ -1246,7 +1246,11 @@ if (typeof jQuery === 'undefined') {
     // Sanitize target to prevent DOM XSS
     if (targetStr && typeof targetStr === 'string') {
       targetStr = targetStr.replace(/[<>]/g, '');
-      if (targetStr.length < 100 && targetStr.indexOf('javascript:') !== 0) {
+      var normalizedTargetStr = targetStr.trim().toLowerCase()
+      if (targetStr.length < 100 &&
+          normalizedTargetStr.indexOf('javascript:') !== 0 &&
+          normalizedTargetStr.indexOf('data:') !== 0 &&
+          normalizedTargetStr.indexOf('vbscript:') !== 0) {
         var $target = $(targetStr)
       } else {
         var $target = $()
