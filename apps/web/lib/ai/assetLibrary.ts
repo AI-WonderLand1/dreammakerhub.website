@@ -26,22 +26,16 @@ const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> =
 };
 
 function isAllowedDownloadHost(hostname: string): boolean {
-  return ALLOWED_DOWNLOAD_HOSTS.some(
-    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
-  );
+  return ALLOWED_DOWNLOAD_HOSTS.some(allowed => hostname === allowed);
 }
 
 function isAllowedHostForSource(source: ExternalAsset["source"], hostname: string): boolean {
   const allowedHosts = SOURCE_ALLOWED_HOSTS[source] ?? [];
-  return allowedHosts.some(
-    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
-  );
+  return allowedHosts.some(allowed => hostname === allowed);
 }
 
 function isAllowedOptimizerHost(hostname: string): boolean {
-  return ALLOWED_OPTIMIZER_HOSTS.some(
-    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
-  );
+  return ALLOWED_OPTIMIZER_HOSTS.some(allowed => hostname === allowed);
 }
 
 type ValidatedExternalUrl = URL & { readonly __brand: "ValidatedExternalUrl" };
