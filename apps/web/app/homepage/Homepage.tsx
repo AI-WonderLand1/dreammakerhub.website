@@ -321,6 +321,16 @@ export default function Homepage() {
                   Blank canvas - build anything you imagine from the ground up
                 </div>
               </Link>
+
+              <Link
+                href="https://spatial.dreammakerhub.website"
+                className="px-6 py-3 border border-cyan-500/30 bg-cyan-500/10 rounded-lg text-white font-semibold hover:bg-cyan-500/20 transition group relative"
+              >
+                🌌 Spatial Designer
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-cyan-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
+                  3D spatial workspace - design, collaborate, and explore in real-time
+                </div>
+              </Link>
               
               <Link
                 href="/wonder-build/ai-builder"
