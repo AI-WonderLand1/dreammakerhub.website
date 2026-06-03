@@ -1,3 +1,35 @@
+export interface AIResponse {
+  text: string;
+  provider?: string;
+  model?: string;
+  error?: boolean;
+  confessions?: {
+    confidence: number;
+    reasoning: string[];
+    limitations: string[];
+  };
+}
+
+export interface AIProviderOptions {
+  model?: string;
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+  [key: string]: unknown;
+}
+
+export interface AIProvider {
+  name: string;
+  generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse>;
+}
+
+export interface RunModelOptions {
+  model: string;
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
 export type AIModel = {
   id: string;
   provider: "anthropic" | "google" | "github" | "groq" | "local" | "openrouter";
@@ -22,7 +54,12 @@ export type AIRunInput = {
   temperature?: number;
   maxTokens?: number;          // Added to match our openrouter.ts logic
   useConstitutional?: boolean; 
-  targetLanguage?: string;     
+  targetLanguage?: string;
+  context?: {
+    platform?: string;
+    framework?: string;
+    features?: string[];
+  };
 };
 
 export type Artifact = {

@@ -1,10 +1,8 @@
 import "server-only";
-import { openrouterProvider } from "./providers/openrouter";
-import { googleProvider } from "./providers/google";
-import type { AIProvider, RunModelOptions } from "./types";
+import { googleProvider } from "../providers/google";
+import type { AIProvider, RunModelOptions } from "../types";
 
 const PROVIDERS: Record<string, AIProvider> = {
-  openrouter: openrouterProvider,
   google: googleProvider,
 };
 
