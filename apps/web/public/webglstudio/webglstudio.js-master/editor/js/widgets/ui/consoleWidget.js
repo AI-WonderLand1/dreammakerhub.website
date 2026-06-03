@@ -218,8 +218,11 @@ ConsoleWidget.prototype.log = function( msg )
 			var methodSpan = document.createElement("span");
 			methodSpan.className = "method";
 			var a = document.createElement("a");
-			// Sanitize link to prevent javascript: URLs
-			if (link && link.toLowerCase().indexOf('javascript:') !== 0) {
+			// Sanitize link to prevent executable URL schemes
+			var normalizedLink = (link || '').trim().toLowerCase();
+			if (normalizedLink.indexOf('javascript:') !== 0 &&
+				normalizedLink.indexOf('data:') !== 0 &&
+				normalizedLink.indexOf('vbscript:') !== 0) {
 				a.href = link;
 			}
 			a.target = "_blank";
