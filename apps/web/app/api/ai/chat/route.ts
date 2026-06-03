@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { ensureDefaultProject } from '@lib/projects/storage';
-import { runAIPipeline } from '@core/ai/index.ts/runtime/pipeline';
+import { runAIPipeline } from '@core/ai/pipeline-v1/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
 import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';

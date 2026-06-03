@@ -24,7 +24,7 @@ export function manifestVisualBlock(fileName: string, code: string, confession: 
       path: targetPath,
       glimpse: `Created ${fileName} using non-generic primitives.`
     };
-  } catch (error) {
-    return { status: "error", message: error.message };
+  } catch (error: unknown) {
+    return { status: "error", message: error instanceof Error ? error.message : String(error) };
   }
 }

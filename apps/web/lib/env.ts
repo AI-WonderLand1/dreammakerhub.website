@@ -19,6 +19,10 @@ export const env = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
   NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+  AGENT_API_URL: process.env.AGENT_API_URL || 'http://localhost:8000',
+  ALICE_API_KEY: process.env.ALICE_API_KEY || '',
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  EXTENSION_ENCRYPTION_KEY: process.env.EXTENSION_ENCRYPTION_KEY || '',
 }
 
 export function requireEnv(key: string, friendlyName?: string): string {

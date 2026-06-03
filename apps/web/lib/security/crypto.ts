@@ -1,7 +1,13 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
 import { readFileSync } from "fs";
 
-const ENCRYPTION_KEY = process.env.SSH_KEY_ENCRYPTION_KEY || randomBytes(32).toString('hex');
+if (!process.env.SSH_KEY_ENCRYPTION_KEY) {
+  throw new Error(
+    "SSH_KEY_ENCRYPTION_KEY environment variable is required. " +
+    "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  );
+}
+const ENCRYPTION_KEY = process.env.SSH_KEY_ENCRYPTION_KEY;
 
 function deriveKey(masterKey: string): Buffer {
   return createHash('sha256').update(masterKey).digest();

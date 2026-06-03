@@ -37,7 +37,7 @@ function parseConfessionsFromText(
   
   const confessionRegex = /(?:TRUTH|WHAT|WHY|HOW|CONFESSION)[:\-]\s*([^\n]+)/gi;
   let match;
-  let foundFields: Record<string, string> = {};
+  const foundFields: Record<string, string> = {};
 
   while ((match = confessionRegex.exec(text)) !== null) {
     const key = match[1].split(":")[0].trim().toUpperCase();

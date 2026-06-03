@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { env, requireEnv } from '@lib/env'
 import { VM } from 'vm2'
+import { getQuickJS } from 'quickjs-emscripten'
 
 let supabase: ReturnType<typeof createClient> | null = null
 let quickJSInstance: Awaited<ReturnType<typeof getQuickJS>> | null = null
@@ -22,6 +23,22 @@ function getSupabaseClient() {
   }
 
   return supabase
+}
+
+export async function executeCode(code: string): Promise<{ success: boolean; error?: string; hooks?: Record<string, unknown> }> {
+  if (process.env.EXTENSIONS_ENABLED !== "true") {
+    return { success: false, error: "Extensions disabled" };
+  }
+  try {
+    const vm = new VM({
+      timeout: 5000,
+      sandbox: createSandbox(["fetch"], "execute")
+    });
+    const extension = vm.run(code);
+    return { success: true, hooks: extension?.hooks ?? {} };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function runExtension(extensionId: string) {

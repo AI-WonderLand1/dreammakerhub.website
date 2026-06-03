@@ -22,6 +22,9 @@
       "@infra/*": [
         "infra/*"
       ],
+      "@lib/*": [
+        "apps/web/lib/*"
+      ],
       "@types/*": [
         "types/*"
       ],
