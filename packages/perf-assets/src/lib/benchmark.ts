@@ -26,7 +26,7 @@ export async function runBenchmark(
   const frameTimeSamples: number[] = [];
   
   let lastTime = performance.now();
-  let startTime = performance.now();
+  const startTime = performance.now();
   
   for (let i = 0; i < objectCount; i++) {
     const entity = new pc.Entity(`benchmark_${i}`);

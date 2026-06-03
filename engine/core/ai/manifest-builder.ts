@@ -1,4 +1,4 @@
-import { vm2Runner } from "../runners/vm2Runner";
+import { executeCode } from "../runners/vm2Runner";
 import { manifestVisualBlock } from "./bridge";
 
 /**
@@ -8,17 +8,8 @@ import { manifestVisualBlock } from "./bridge";
  */
 export async function executeManifest(agent: string, code: string, confession: string) {
   // 1. IDE Validation (Is the code clean?)
-  const execute = vm2Runner?.execute;
-  if (typeof execute !== "function") {
-    return {
-      success: false,
-      error: "VM2 runner is not available",
-      path: undefined,
-      trustScore: 20
-    };
-  }
-  const audit = await execute(code);
-  
+  const audit = await executeCode(code);
+
   // 2. Visual Manifestation (Push to Builder)
   const result = manifestVisualBlock(
     `${agent}-${Date.now()}.tsx`,

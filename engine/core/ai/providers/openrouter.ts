@@ -6,8 +6,11 @@ import { logger } from "@lib/logger";
 /**
  * Google AI Provider (Gemini)
  * Uses Google AI API directly for Gemini models.
+ *
+ * NOTE: File named openrouter.ts but implements Google AI.
+ * TODO: Re-add actual OpenRouter provider routing to openrouter.ai
  */
-export const openrouterProvider: AIProvider = {
+export const googleProvider: AIProvider = {
   name: "google",
 
   async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
@@ -103,4 +106,6 @@ export const openrouterProvider: AIProvider = {
     }
   },
 };
+
+export const openrouterProvider = googleProvider;
 

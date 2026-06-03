@@ -17,7 +17,7 @@ const PROMPT_FALLBACK = {
 } as const;
 
 let cachedLaws: readonly string[] | null = null;
-let cachedPrompts: Record<string, string> | null = null;
+const cachedPrompts: Record<string, string> | null = null;
 let lastFetch = 0;
 const CACHE_TTL = 60 * 1000;
 
