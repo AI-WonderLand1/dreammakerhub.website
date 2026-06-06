@@ -21,7 +21,7 @@ export interface PendingChange {
   id?: number;
   type: "code" | "memory" | "config";
   path: string;
-  content: any;
+  content: unknown;
   timestamp: number;
   synced: boolean;
 }
@@ -124,7 +124,7 @@ class LocalMemoryService {
   }
 
   // Pending changes (code edits, etc.)
-  async savePendingChange(type: PendingChange["type"], path: string, content: any): Promise<void> {
+  async savePendingChange(type: PendingChange["type"], path: string, content: unknown): Promise<void> {
     await this.init();
     const db = this.db!;
 

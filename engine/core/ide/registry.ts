@@ -7,7 +7,7 @@ const COMPONENTS_DIR = path.resolve(process.cwd(), 'ui/components');
 const REGISTRY_OUTPUT = path.resolve(process.cwd(), 'engine/core/assets/component-registry.json');
 
 export function buildComponentRegistry() {
-  const registry: Record<string, any> = {};
+  const registry: Record<string, unknown> = {};
 
   const scanDir = (dir: string) => {
     const files = fs.readdirSync(dir);
@@ -36,7 +36,7 @@ export function buildComponentRegistry() {
 
   scanDir(COMPONENTS_DIR);
   fs.writeFileSync(REGISTRY_OUTPUT, JSON.stringify(registry, null, 2));
-  console.log(`✅ Registry built: ${Object.keys(registry).length} components found.`);
+  // Registry built
 }
 
 function extractPropsMetadata(content: string) {

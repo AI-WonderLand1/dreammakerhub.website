@@ -4,13 +4,14 @@
  */
 
 import { env } from "@/lib/env";
+import { logger } from "../../lib/logger";
 
 const API_BASE = env.AGENT_API_URL;
 const API_KEY = env.ALICE_API_KEY || "";
 
 export interface MemoryEntry {
   key: string;
-  value: any;
+  value: unknown;
   importance: number;
   created_at?: string;
 }
@@ -20,7 +21,7 @@ export interface RepoAnalysis {
   frontend_path: string | null;
   backend_path: string | null;
   languages: Record<string, number>;
-  file_tree: Record<string, any>;
+  file_tree: Record<string, unknown>;
 }
 
 export interface AgentResponse {
@@ -39,7 +40,7 @@ export class AliceProxy {
     this.apiKey = apiKey;
   }
 
-  private async fetch(endpoint: string, body: object): Promise<any> {
+  private async fetch(endpoint: string, body: object): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.apiBase}${endpoint}`, {
       method: "POST",
       headers: {
@@ -63,9 +64,9 @@ export class AliceProxy {
         question,
         user_id: userId,
       });
-      return data.answer || data.error || "No response";
+      return (data.answer as string) || (data.error as string) || "No response";
     } catch (error) {
-      console.error("Spirit Guide error:", error);
+      logger.error("Spirit Guide error:", { error });
       return "Spirit Guide is offline. Start: cd agent && ./run.sh";
     }
   }
@@ -77,9 +78,9 @@ export class AliceProxy {
         goal,
         user_id: userId,
       });
-      return data.answer || data.error || "No response";
+      return (data.answer as string) || (data.error as string) || "No response";
     } catch (error) {
-      console.error("Orchestrator error:", error);
+      logger.error("Orchestrator error:", { error });
       return "Orchestrator is offline. Start: cd agent && ./run.sh";
     }
   }
@@ -90,15 +91,15 @@ export class AliceProxy {
       const data = await this.fetch("/api/orchestrator/analyze", {
         repo_path: repoPath,
       });
-      return data.summary || null;
+      return (data.summary as RepoAnalysis) || null;
     } catch (error) {
-      console.error("Repo analysis error:", error);
+      logger.error("Repo analysis error:", { error });
       return null;
     }
   }
 
   // Memory operations
-  async storeMemory(key: string, value: any, importance: number = 0.5): Promise<boolean> {
+  async storeMemory(key: string, value: unknown, importance: number = 0.5): Promise<boolean> {
     try {
       await this.fetch("/api/memory/store", {
         key,
@@ -117,7 +118,7 @@ export class AliceProxy {
         query,
         limit,
       });
-      return data.memories || [];
+      return (data.memories as unknown as MemoryEntry[]) || [];
     } catch {
       return [];
     }

@@ -34,8 +34,8 @@ export function startProfiling(app: pc.Application): void {
   
   app.on('update', onUpdate);
   
-  console.debug('[perf] Profiling started');
 }
+
 
 export function stopProfiling(app: pc.Application): void {
   if (!active) return;
@@ -45,10 +45,10 @@ export function stopProfiling(app: pc.Application): void {
   appRef = null;
   frameTimes.samples = [];
   
-  console.debug('[perf] Profiling stopped');
 }
 
-function onUpdate(dt: number): void {
+
+function onUpdate(_dt: number): void {
   const now = performance.now();
   const frameTime = now - lastTime;
   lastTime = now;
@@ -66,13 +66,7 @@ function onUpdate(dt: number): void {
   if (!appRef) return;
   
   const metrics = getMetrics();
-  
-  console.debug(
-    `[perf] FPS: ${metrics.fps.toFixed(1)} | ` +
-    `Frame: ${metrics.frameTimeMs.toFixed(1)}ms | ` +
-    `Objects: ${metrics.objectCount} | ` +
-    `DrawCalls: ${metrics.drawCalls}`
-  );
+  void metrics;
 }
 
 export function getMetrics(): PerfMetrics {
@@ -85,18 +79,18 @@ export function getMetrics(): PerfMetrics {
   let objectCount = 0;
   
   if (appRef) {
-    const renderer = (appRef as any).renderer;
+    const renderer = (appRef as unknown as { renderer: { numDrawCalls?: number; numTriangles?: number } }).renderer;
     if (renderer) {
-      drawCalls = (renderer as any).numDrawCalls || 0;
-      triangleCount = (renderer as any).numTriangles || 0;
+      drawCalls = renderer.numDrawCalls ?? 0;
+      triangleCount = renderer.numTriangles ?? 0;
     }
     
-    const countObjects = (entity: pc.Entity) => {
+    const countObjects = (node: pc.GraphNode) => {
       objectCount++;
-      entity.children?.forEach(countObjects);
+      (node.children as pc.GraphNode[])?.forEach(countObjects);
     };
     
-    appRef.root.children?.forEach(countObjects);
+    (appRef.root.children as pc.GraphNode[])?.forEach(countObjects);
   }
   
   return {

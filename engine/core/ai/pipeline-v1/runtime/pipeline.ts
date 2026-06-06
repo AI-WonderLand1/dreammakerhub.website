@@ -9,8 +9,6 @@ import { evaluateAgainstConstitution } from "../constitutional/evaluator";
 import {
   createRiskFlagConfession,
   createUncertaintyConfession,
-  createHallucinationConfession,
-  createTruthVerifiedConfession,
 } from "../confessions/engine";
 import type { LocalizedConfession, ConfessionType } from "../confessions/types";
 
@@ -35,7 +33,7 @@ function parseConfessionsFromText(
 ): LocalizedConfession[] {
   const confessions: LocalizedConfession[] = [];
   
-  const confessionRegex = /(?:TRUTH|WHAT|WHY|HOW|CONFESSION)[:\-]\s*([^\n]+)/gi;
+  const confessionRegex = /(?:TRUTH|WHAT|WHY|HOW|CONFESSION)[:-]\s*([^\n]+)/gi;
   let match;
   const foundFields: Record<string, string> = {};
 
@@ -95,14 +93,14 @@ Respond in JSON format:
       maxTokens: 2048,
     });
 
-    const responseText = (result as any)?.text || "";
+    const responseText = ((result as Record<string, string>)?.text) ?? "";
     
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
 
     const parsed = JSON.parse(jsonMatch[0]);
     
-    return parsed.map((p: any) => ({
+    return parsed.map((p: Record<string, string>) => ({
       type: p.type as ConfessionType,
       title: p.title || "Extracted Confession",
       detail: p.detail || "",
@@ -115,8 +113,7 @@ Respond in JSON format:
       machineTags: ["llm-extracted"],
       language,
     }));
-  } catch (error) {
-    console.error("[Pipeline] LLM extraction failed:", error);
+  } catch {
     return [];
   }
 }
@@ -143,8 +140,8 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
     });
 
     const text =
-      (modelResponse as any)?.text ??
-      (modelResponse as any)?.output ??
+      ((modelResponse as Record<string, string>)?.text) ??
+      ((modelResponse as Record<string, string>)?.output) ??
       (typeof modelResponse === "string" ? modelResponse : "");
 
     emitProcessStep({
@@ -275,11 +272,10 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       finalText: text,
       confessions,
     };
-  } catch (error: any) {
-    const errDetail =
-      typeof error?.message === "string"
-        ? error.message
-        : "An unknown error occurred while running the AI pipeline.";
+  } catch (error: unknown) {
+    const errDetail = error instanceof Error
+      ? error.message
+      : "An unknown error occurred while running the AI pipeline.";
 
     const confession = createRiskFlagConfession({
       title: "An internal error occurred",

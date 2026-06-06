@@ -19,10 +19,9 @@ export async function runBenchmark(
   app: pc.Application,
   config: BenchmarkConfig
 ): Promise<BenchmarkResult> {
-  const { objectCount, durationSeconds = 10, checkIntervalMs = 500 } = config;
+  const { objectCount, durationSeconds = 10 } = config;
   
   const entities: pc.Entity[] = [];
-  const fpsSamples: number[] = [];
   const frameTimeSamples: number[] = [];
   
   let lastTime = performance.now();
@@ -40,7 +39,7 @@ export async function runBenchmark(
     entities.push(entity);
   }
   
-  const onUpdate = (dt: number) => {
+  const onUpdate = (_dt: number) => {
     const now = performance.now();
     const frameTime = now - lastTime;
     lastTime = now;
@@ -89,10 +88,8 @@ export async function findPerformanceThreshold(
   while (true) {
     const result = await runBenchmark(app, { objectCount: count, durationSeconds: 5 });
     
-    console.debug(
-      `[perf-benchmark] Objects: ${count} | ` +
-      `FPS: ${result.avgFps}`
-    );
+    // perf info
+    void result;
     
     if (result.avgFps < targetFps) {
       return lastStableCount > 0 ? lastStableCount : count - step;
