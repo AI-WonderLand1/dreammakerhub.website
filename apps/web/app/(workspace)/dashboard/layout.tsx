@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@lib/supabase/auth-context";
 import { createClient } from "@/lib/supabase/client";
+import AetherGuardDialog from "@/components/AetherGuardDialog";
 import { 
   LayoutDashboard, 
   Folder,
@@ -285,7 +286,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <VoiceSearchButton />
               </div>
             </div>
-            <Link href="/subscription" className="hidden sm:block ml-4 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600">
+            <AetherGuardDialog />
+            <Link href="/subscription" className="hidden sm:block ml-2 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600">
               Upgrade
             </Link>
           </div>
