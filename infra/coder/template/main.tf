@@ -13,9 +13,7 @@ terraform {
 
 provider "coder" {}
 
-provider "kubernetes" {
-  config_path = pathexpand("~/.kube/config")
-}
+provider "kubernetes" {}
 
 variable "namespace" {
   type        = string
@@ -25,18 +23,6 @@ variable "namespace" {
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
-
-resource "coder_template_version" "this" {
-  template_id = var.template_id
-  icon        = file("${path.module}/icon.png")
-  git {
-    repo   = "https://github.com/AI-WonderLand1/psychic-octo-fishstick.git"
-    branch = "main"
-    path   = "infra/coder/template"
-  }
-}
-
-resource "coder_access_url" "current" {}
 
 locals {
   default_ttl = "4h"
@@ -48,6 +34,7 @@ data "coder_parameter" "cpu" {
   display_name = "CPU"
   description  = "CPU cores (max 4)"
   default      = "1"
+  type         = "number"
   icon         = "/icon/memory.svg"
   mutable      = true
   validation {
@@ -56,11 +43,11 @@ data "coder_parameter" "cpu" {
   }
   option {
     name  = "1 Core"
-    value = "1"
+    value = 1
   }
   option {
     name  = "2 Cores"
-    value = "2"
+    value = 2
   }
 }
 
@@ -68,7 +55,8 @@ data "coder_parameter" "memory" {
   name         = "memory"
   display_name = "Memory"
   description  = "Memory in GB (max 8)"
-  default      = "2"
+  default      = 2
+  type         = "number"
   icon         = "/icon/memory.svg"
   mutable      = true
   validation {
@@ -77,15 +65,15 @@ data "coder_parameter" "memory" {
   }
   option {
     name  = "1 GB"
-    value = "1"
+    value = 1
   }
   option {
     name  = "2 GB"
-    value = "2"
+    value = 2
   }
   option {
     name  = "4 GB"
-    value = "4"
+    value = 4
   }
 }
 
@@ -100,21 +88,6 @@ data "coder_parameter" "home_disk_size" {
     min = 1
     max = 50
   }
-}
-
-resource "coder_workspace" "this" {
-  count                    = data.coder_workspace.me.start_count
-  name                     = data.coder_workspace.me.name
-  template_id              = var.template_id
-  autostart                = true
-  autostop                 = var.autostop
-  default_ttl              = local.default_ttl
-  max_ttl                  = local.max_ttl
-  force_auto_update        = false
-  use_latest_repo_version  = false
-  priority                 = 0
-  deletion_burst_limit     = 0
-  deletion_frequency_limit = "10m"
 }
 
 variable "autostop" {
