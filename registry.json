@@ -8,12 +8,5 @@
       "path": "unreal-wonder-build",
       "targetDirectory": "unreal-wonder-build"
     },
-    {
-      "id": "puck-editor",
-      "source": "local",
-      "kind": "code-package",
-      "path": "packages/puckeditor-core",
-      "targetDirectory": "packages/puckeditor-core"
-    }
   ]
 }

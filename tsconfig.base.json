@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "preserve",
     "strict": true,
     "allowJs": true,
@@ -39,12 +39,6 @@
       ],
       "@components/*": [
         "ui/components/*"
-      ],
-      "@puckeditor/core": [
-        "packages/puckeditor-core/index.js"
-      ],
-      "@puckeditor/core/*": [
-        "packages/puckeditor-core/*"
       ],
       "@/lib/*": [
         "apps/web/lib/*"

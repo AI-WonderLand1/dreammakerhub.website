@@ -4,11 +4,11 @@
  */
 export const googleProvider = {
   name: "google",
-  async generate(prompt: any, options: any) {
+  async generate(prompt: string | unknown[], options: Record<string, unknown>) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY;
     if (!apiKey) throw new Error("Missing GEMINI_API_KEY environment variable.");
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
     const parts: { text: string }[] = [];
     if (options.system) parts.push({ text: `System Instructions: ${options.system}` });
@@ -16,7 +16,7 @@ export const googleProvider = {
 
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         contents: [{ parts }],
         generationConfig: {

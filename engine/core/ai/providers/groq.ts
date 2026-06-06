@@ -10,7 +10,7 @@ import { logger } from "@lib/logger";
 export const groqProvider: AIProvider = {
   name: "groq",
 
-  async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
+  async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = requireEnv(env.GROQ_API_KEY, "GROQ_API_KEY");
     const {
       model = "llama-3.1-8b-instant",
@@ -89,9 +89,10 @@ export const groqProvider: AIProvider = {
           limitations: ["May have usage limits"]
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Unknown network error";
       logger.error("✦ Spirit Guide Connection Severed (GROQ)", {
-        error: error?.message ?? error
+        error: errMsg
       });
 
       return {
@@ -102,7 +103,7 @@ export const groqProvider: AIProvider = {
         confessions: {
           confidence: 0,
           reasoning: ["Network or infrastructure failure"],
-          limitations: [error?.message ?? "Unknown network error"]
+          limitations: [errMsg]
         }
       };
     }

@@ -43,7 +43,6 @@ export class WebContainerPersistence {
       });
 
     if (error) {
-      console.error('[Persistence] Save failed:', error.message);
       throw error;
     }
   }
@@ -92,9 +91,7 @@ export class WebContainerPersistence {
       clearTimeout(this.saveTimer);
     }
     this.saveTimer = setTimeout(() => {
-      this.saveSnapshot(wc).catch((err) => {
-        console.error('[Persistence] Auto-save failed:', err);
-      });
+      this.saveSnapshot(wc).catch(() => {});
     }, this.saveDelay);
   }
 
