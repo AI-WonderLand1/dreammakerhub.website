@@ -13,11 +13,12 @@ export async function updateDependencies(workspaceRoot: string): Promise<RepairR
       success: true,
       description: 'Dependencies updated',
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { stderr?: string };
     return {
       findingId: 'npm-update',
       success: false,
-      description: e.stderr?.slice(0, 200) || 'npm update failed',
+      description: err.stderr?.slice(0, 200) || 'npm update failed',
     };
   }
 }
@@ -34,11 +35,12 @@ export async function fixDepIssues(workspaceRoot: string): Promise<RepairResult>
       success: true,
       description: 'npm audit fix applied',
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { stderr?: string };
     return {
       findingId: 'npm-audit-fix',
       success: false,
-      description: e.stderr?.slice(0, 200) || 'npm audit fix failed',
+      description: err.stderr?.slice(0, 200) || 'npm audit fix failed',
     };
   }
 }

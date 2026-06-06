@@ -1,7 +1,7 @@
 import { getStats, isDaemonRunning } from '@core/aetherguard/daemon';
 import { analyzeCode, explainPatch } from '@core/aetherguard/analyzer';
 import { walkDir, assembleRepoContentPrompt } from '@core/aetherguard/scanner';
-import { applyVulnerabilityFix, applyFixesForFindings, getAutoFixLog } from '@core/aetherguard/autofix';
+import { getAutoFixLog } from '@core/aetherguard/autofix';
 import { checkEslint } from '@core/aetherguard/checks/eslint';
 import { checkTypeScript } from '@core/aetherguard/checks/typecheck';
 import { checkDeps } from '@core/aetherguard/checks/deps';
@@ -56,7 +56,6 @@ export class Orchestrator {
   }
 
   async explainVulnerability(vulnJson: string) {
-    const { VulnerabilityRisk } = await import('@core/aetherguard/types');
     const vuln = JSON.parse(vulnJson) as import('@core/aetherguard/types').VulnerabilityRisk;
     return explainPatch(vuln);
   }
