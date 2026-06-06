@@ -13,7 +13,7 @@ export class ExtensionManager {
   private extensions = new Map<string, Extension>()
   private hooks = new Map<string, Function[]>()
 
-     async install(manifest: any, code: string) {
+     async install(manifest: Record<string, unknown>, code: string) {
     if (process.env.EXTENSIONS_ENABLED !== "true") {
       throw new Error("Extensions disabled");
     } 
@@ -37,7 +37,7 @@ export class ExtensionManager {
     const extension = vm.run(code)
 
     // 3. Register hooks
-    for (const [hookName, handler] of Object.entries(extension.hooks || {})) {
+      for (const [, handler] of Object.entries(extension.hooks || {})) {
       if (!this.hooks.has(hookName)) {
         this.hooks.set(hookName, [])
       }
@@ -54,7 +54,7 @@ export class ExtensionManager {
     return manifest.id
   }
 
-  async executeHook(hookName: string, ...args: any[]) {
+  async executeHook(hookName: string, ...args: unknown[]) {
     const handlers = this.hooks.get(hookName) || []
 
     const results = []
@@ -71,8 +71,8 @@ export class ExtensionManager {
   }
 
   private createSandbox(permissions: string[]) {
-    const sandbox: any = {
-      console: console,
+      const sandbox: Record<string, unknown> = {
+        console: console,
       setTimeout, setInterval, clearTimeout, clearInterval
     }
 
@@ -82,10 +82,10 @@ export class ExtensionManager {
 
     if (permissions.includes('storage')) {
       sandbox.storage = {
-        get: async (key: string) => {
+        get: async (_key: string) => {
           // Implement storage
         },
-        set: async (key: string, value: any) => {
+        set: async (_key: string, _value: unknown) => {
           // Implement storage
         }
       }

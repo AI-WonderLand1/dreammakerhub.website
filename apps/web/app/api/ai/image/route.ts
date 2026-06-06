@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   // Image generation not yet supported via OpenCode - coming soon
-  if (!OPENCODE_API_KEY) {
+  if (!process.env.OPENCODE_API_KEY) {
     return NextResponse.json(
       { error: "Image generation is not yet available. Please use a different method." },
       { status: 501 }

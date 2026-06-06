@@ -33,16 +33,20 @@ apps/
     
 packages/
   ide-engine/             → WebContainer-based browser IDE
-  playcanvas-ext/         → PlayCanvas integration
-  puck-editor/            → Puck visual editor blocks
-  ui-kit/                 → shadcn/ui components
-  engine-core/            → AI orchestration logic
-  shared-types/           → Shared TypeScript definitions
+  optimizer/              → 3D asset optimization server (Fastify)
+  perf-assets/            → 3D scene performance profiling
+  wonder-runtime/         → GLTF transformation server (Fastify)
 
-engine/core/              → AI providers, IDE runtime, PlayCanvas bridge
+engine/core/              → AI providers, IDE runtime, orchestration
 runners/                  → Background workers (aiWorker, authWorker)
 infra/coder/              → Terraform template + K8s manifests for OKE
+infra/lib/                → Shared infra utilities (env, logger, supabase)
+infra/services/           → Backend service K8s manifests
+infra/optimizer/          → Optimizer K8s manifests
+infra/wonder-runtime/     → Wonder Runtime K8s manifests
+infra/wonderplay/         → Wonder Play K8s manifests
 config/ai/                → System prompts, constitution
+agent/                    → Python FastAPI backend (Alice agent)
 ```
 
 ## Path Aliases (tsconfig.base.json)
@@ -51,6 +55,13 @@ config/ai/                → System prompts, constitution
 - `@ui/*` → `ui/*`
 - `@core/*` → `engine/core/*`
 - `@components/*` → `ui/components/*`
+- `@infra/*` → `infra/*`
+- `@lib/*` → `apps/web/lib/*`
+- `@types/*` → `types/*`
+- `@runners/*` → `runners/*`
+- `@config/*` → `config/*`
+- `@/lib/*` → `apps/web/lib/*`
+- `@/types/*` → `apps/web/types/*`
 
 ## Environment Setup
 
@@ -73,7 +84,7 @@ CODER_WILDCARD_ACCESS_URL=*.ide.yourcompany.com
 ## Testing
 
 - Framework: **vitest**
-- No test directory found at project root; tests are likely inline or in workspace folders
+- Tests live in `tests/` at project root
 - CI runs: `npm test` (vitest run)
 
 ## Release Gates (Production Deployments)
@@ -83,8 +94,8 @@ GitLab CI pipeline stages: `test` → `release-gates` → `secret-detection` →
 Required before production:
 
 1. **Automated**: `bash scripts/release-gates-check.sh`
-   - Runs vitest on: projects-route, artifacts-schema, theia-app
-   - Best-effort: artifacts-routes.test.ts
+   - Runs vitest on: tests/
+   - All tests must pass before proceeding
 
 2. **Manual checklist**: See `docs/release-gates.md`
    - Auth flows (signup/login/logout/password reset)
@@ -123,7 +134,7 @@ npm run lint          # ESLint with --fix
 npm run clean:ghosts  # ts-prune + lint (find dead code)
 ```
 
-ESLint config: `next/core-web-vitals` + `prettier`
+ESLint config: `@eslint/js` + `typescript-eslint` (flat config)
 
 ## Common Gotchas
 
@@ -141,8 +152,10 @@ ESLint config: `next/core-web-vitals` + `prettier`
 | Memory | `engine/core/local-memory.ts`, `agent/` (Python FastAPI) |
 | Auth | `runners/authWorker/`, Supabase client in `apps/web/` |
 | IDE | `packages/ide-engine/`, `agent/` |
-| 3D Engine | `packages/playcanvas-ext/`, `engine/core/` |
-| Infra/K8s | `infra/coder/`, `Makefile` (Helm for external-secrets) |
+| 3D Engine | `engine/core/` + `packages/optimizer/` |
+| Optimizer | `packages/optimizer/`, `packages/perf-assets/` |
+| Wonder Runtime | `packages/wonder-runtime/` |
+| Infra/K8s | `infra/coder/`, `infra/*/`, `Makefile` (Helm for external-secrets) |
 
 ## CI/CD
 

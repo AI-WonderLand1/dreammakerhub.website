@@ -10,7 +10,7 @@ const moduleMeta: Record<PlaygroundModuleId, PlaygroundModuleSummary> = Object.f
 ) as Record<PlaygroundModuleId, PlaygroundModuleSummary>;
 
 // Helper: pick a default model if none is passed in context
-const getModel = (ctx: any) => ({
+const getModel = (ctx: Record<string, unknown>) => ({
   id: ctx?.modelId || "gpt-4o-mini",
   provider: "google" as const,
 });

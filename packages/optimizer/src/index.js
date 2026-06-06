@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
-import { Document, NodeIO } from '@gltf-transform/core';
+import { NodeIO } from '@gltf-transform/core';
 import { KHRONOS_EXTENSIONS } from '@gltf-transform/extensions';
-import { draco, meshopt, textureCompress, dedup, flatten, join, weld, simplify } from '@gltf-transform/functions';
+import { draco, textureCompress, dedup, flatten, join, weld } from '@gltf-transform/functions';
 import sharp from 'sharp';
 
 const fastify = Fastify({ logger: true });

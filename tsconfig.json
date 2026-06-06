@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
+  },
+  "include": [
+    "apps/web/**/*.ts",
+    "apps/web/**/*.tsx",
+    "engine/**/*.ts",
+    "packages/**/*.ts",
+    "runners/**/*.ts",
+    "config/**/*.ts",
+    "infra/**/*.ts",
+    "types/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "public",
+    "apps/web/public"
+  ]
+}

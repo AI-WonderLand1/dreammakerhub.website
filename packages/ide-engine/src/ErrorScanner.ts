@@ -123,7 +123,8 @@ export class ErrorScanner {
 
   private scanLine(line: string): void {
     // Strip ANSI escape codes
-    const clean = line.replace(/\x1b\[[0-9;]*m/g, '').trim();
+    const ESC = String.fromCharCode(27);
+    const clean = line.replace(new RegExp(`${ESC}\\[[0-9;]*m`, 'g'), '').trim();
     if (!clean) return;
 
     for (const rule of PATTERNS) {

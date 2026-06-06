@@ -10,7 +10,7 @@ import { logger } from "@lib/logger";
 export const githubProvider: AIProvider = {
   name: "github",
 
-  async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
+  async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = requireEnv(env.GITHUB_MODELS_API_KEY, "GITHUB_MODELS_API_KEY");
     const {
       model = "gpt-4o-mini",
@@ -90,9 +90,10 @@ export const githubProvider: AIProvider = {
           limitations: ["May have usage limits"]
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Unknown network error";
       logger.error("✦ Spirit Guide Connection Severed (GitHub Models)", {
-        error: error?.message ?? error
+        error: errMsg
       });
 
       return {
@@ -103,7 +104,7 @@ export const githubProvider: AIProvider = {
         confessions: {
           confidence: 0,
           reasoning: ["Network or infrastructure failure"],
-          limitations: [error?.message ?? "Unknown network error"]
+          limitations: [errMsg]
         }
       };
     }

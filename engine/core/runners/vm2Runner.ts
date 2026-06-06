@@ -2,17 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { env, requireEnv } from '@lib/env'
 import { VM } from 'vm2'
-import { getQuickJS } from 'quickjs-emscripten'
-
 let supabase: ReturnType<typeof createClient> | null = null
-let quickJSInstance: Awaited<ReturnType<typeof getQuickJS>> | null = null
-
-async function getQuickJSInstance() {
-  if (!quickJSInstance) {
-    quickJSInstance = await getQuickJS()
-  }
-  return quickJSInstance
-}
 
 function getSupabaseClient() {
   if (!supabase) {
@@ -80,7 +70,7 @@ export async function runExtension(extensionId: string) {
 }
 
 function createSandbox(permissions: string[], extensionId: string) {
-  const sandbox: any = {
+  const sandbox: Record<string, unknown> = {
     console: console,
     setTimeout, setInterval, clearTimeout, clearInterval
   }
@@ -101,7 +91,7 @@ function createSandbox(permissions: string[], extensionId: string) {
           .single()
         return data?.value ?? null
       },
-      set: async (key: string, value: any) => {
+      set: async (key: string, value: unknown) => {
         await storageClient
           .from('extension_storage')
           .upsert({
@@ -116,17 +106,4 @@ function createSandbox(permissions: string[], extensionId: string) {
   return sandbox
 }
 
-function isInternalUrl(url: string): boolean {
-  const internalPatterns = [
-    /^https?:\/\/localhost/i,
-    /^https?:\/\/127\./i,
-    /^https?:\/\/10\./i,
-    /^https?:\/\/172\.(1[6-9]|2[0-9]|3[01])\./i,
-    /^https?:\/\/192\.168\./i,
-    /^https?:\/\/0\./i,
-    /^https?:\/\/::1/i,
-    /^file:/i,
-  ]
-  
-  return internalPatterns.some(pattern => pattern.test(url))
-}
+

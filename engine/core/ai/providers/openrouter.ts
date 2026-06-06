@@ -13,7 +13,7 @@ import { logger } from "@lib/logger";
 export const googleProvider: AIProvider = {
   name: "google",
 
-  async generate(prompt: string | any[], options: AIProviderOptions): Promise<AIResponse> {
+  async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
     const {
       model = "gemini-2.5-flash",
@@ -87,20 +87,21 @@ export const googleProvider: AIProvider = {
           limitations: ["May have usage limits"]
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Unknown network error";
       logger.error("✦ Spirit Guide Connection Severed (Google AI)", {
-        error: error?.message ?? error
+        error: errMsg
       });
 
       return {
         text: "The Spirit Guide lost connection to Google AI API.",
         error: true,
-        provider: "google",
+        provider: "openrouter",
         model,
         confessions: {
           confidence: 0,
           reasoning: ["Network or infrastructure failure"],
-          limitations: [error?.message ?? "Unknown network error"]
+          limitations: [errMsg]
         }
       };
     }
