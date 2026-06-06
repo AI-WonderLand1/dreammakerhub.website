@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { createServer } from "http";
 import { parse } from "url";
+import { KubeConfig, CoreV1Api } from "@kubernetes/client-node";
 
 export const runtime = "nodejs";
 
@@ -9,7 +10,6 @@ const RUNTIME_SERVICE_PREFIX = "wonder-runtime-";
 const RUNTIME_PORT = 3090;
 
 async function getRuntimeUrl(projectId: string): Promise<string | null> {
-  const { KubeConfig, CoreV1Api } = require('@kubernetes/client-node');
   const kc = new KubeConfig();
   
   try {
