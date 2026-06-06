@@ -1,6 +1,7 @@
 // engine/core/ai/runModel.ts
 import { Providers } from "./providers";
 
+
 /**
  * Wonder-Build Model Runner
  * - Routes "github/*" to GitHub Models
@@ -17,14 +18,14 @@ export async function runModel({
   maxTokens = 4096,
 }: {
   model: string;
-  messages: Array<{ role: string; content: any }>;
+  messages: Array<{ role: string; content: string | unknown[] }>;
   system?: string;
   temperature?: number;
   maxTokens?: number;
 }) {
-  const lastContent = messages?.[messages.length - 1]?.content;
+  const lastContent = (messages?.[messages.length - 1]?.content ?? "") as string | unknown[];
 
-  console.log(`🤖 Wonder-Build Engine: Routing to ${model}`);
+  // Routing model
 
   // If your agent IDs are like "github/gpt-4o-mini" or "groq/llama-3.1-8b-instant" or "google/gemini-2.5-flash"
   const isGithub = typeof model === "string" && model.startsWith("github/");

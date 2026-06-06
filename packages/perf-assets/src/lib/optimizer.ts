@@ -30,8 +30,7 @@ export async function optimizeAsset(
     }
 
     return await response.arrayBuffer();
-  } catch (err) {
-    console.error('[perf] Optimizer call failed, using original:', err);
+  } catch {
     return buffer;
   }
 }

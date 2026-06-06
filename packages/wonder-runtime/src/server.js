@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { Document, NodeIO } from '@gltf-transform/core';
+import { NodeIO } from '@gltf-transform/core';
 import { KHRONOS_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, flatten, join, weld, textureCompress } from '@gltf-transform/functions';
 import sharp from 'sharp';
@@ -81,14 +81,6 @@ function loadUserFiles() {
     f.log.warn('Failed to load user files');
   }
   return files;
-}
-
-function serveFile(fullPath, contentType) {
-  if (!existsSync(fullPath)) {
-    return { status: 404, error: 'Not found' };
-  }
-  const content = readFileSync(fullPath);
-  return { content, contentType };
 }
 
 const CONTENT_TYPES = {

@@ -15,7 +15,5 @@ export async function createProject(metadata: ProjectMetadata, isTemporary: bool
     createdAt: new Date().toISOString()
   };
 
-  // logic to write to bucket would go here
-  console.log(`Project ${metadata.name} created. Expiry: ${expiresAt || 'Never'}`);
   return enrichedMetadata;
 }

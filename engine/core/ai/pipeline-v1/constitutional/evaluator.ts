@@ -21,7 +21,7 @@ export function evaluateAgainstConstitution(text: string) {
           description: rule.description,
         });
       }
-    } catch (err) {
+    } catch {
       // If a rule is malformed, skip it silently
       continue;
     }

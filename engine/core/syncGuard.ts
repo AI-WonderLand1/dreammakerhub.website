@@ -3,8 +3,9 @@
  * "Shadow Sync" from IndexedDB → Python Memory Bank
  */
 
-import { localMemory, ThoughtEntry, PendingChange } from "./local-memory";
+import { localMemory, PendingChange } from "./local-memory";
 import { alice } from "./alice-proxy";
+import { logger } from "../../lib/logger";
 
 export interface SyncGuardConfig {
   batchSize: number;        // Sync when this many items accumulate
@@ -36,14 +37,14 @@ class SyncGuard {
       this.syncIfNeeded();
     }, this.config.syncIntervalMs);
 
-    console.log("SyncGuard started");
+    logger.info("SyncGuard started");
   }
 
   stop(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
-      console.log("SyncGuard stopped");
+      logger.info("SyncGuard stopped");
     }
   }
 
@@ -62,7 +63,7 @@ class SyncGuard {
   }
 
   // Queue a change for sync
-  async queueChange(type: PendingChange["type"], path: string, content: any): Promise<void> {
+  async queueChange(type: PendingChange["type"], path: string, content: unknown): Promise<void> {
     if (!this.config.enabled) return;
 
     await localMemory.savePendingChange(type, path, content);
@@ -102,7 +103,7 @@ class SyncGuard {
             0.6
           );
         } catch (error) {
-          console.error("Failed to sync thought:", error);
+          logger.error("Failed to sync thought:", { error });
           break;
         }
       }
@@ -111,7 +112,7 @@ class SyncGuard {
       const ids = toSync.map((t) => t.id!).filter(Boolean);
       await localMemory.markSynced("thoughts", ids);
 
-      console.log(`SyncGuard: Synced ${ids.length} thoughts`);
+      logger.info(`SyncGuard: Synced ${ids.length} thoughts`);
     } finally {
       this.isSyncing = false;
     }
@@ -134,7 +135,7 @@ class SyncGuard {
           }
           // Add other change types as needed
         } catch (error) {
-          console.error("Failed to sync change:", error);
+          logger.error("Failed to sync change:", { error });
           break;
         }
       }
@@ -143,7 +144,7 @@ class SyncGuard {
       const ids = unsyncedChanges.map((c) => c.id!).filter(Boolean);
       await localMemory.markSynced("pendingChanges", ids);
 
-      console.log(`SyncGuard: Synced ${ids.length} changes`);
+      logger.info(`SyncGuard: Synced ${ids.length} changes`);
     } finally {
       this.isSyncing = false;
     }
