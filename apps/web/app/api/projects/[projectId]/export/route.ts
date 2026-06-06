@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import JSZip from "jszip";
 
 export const runtime = "nodejs";
 
@@ -56,7 +57,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     }
 
     if (exportFormat === 'zip') {
-      const JSZip = require('jszip');
       const zip = new JSZip();
       
       zip.file('project.json', JSON.stringify(exportData, null, 2));

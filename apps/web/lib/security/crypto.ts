@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
-import { readFileSync } from "fs";
+import { readFileSync, unlinkSync } from "fs";
+import { execSync } from "child_process";
 
 if (!process.env.SSH_KEY_ENCRYPTION_KEY) {
   throw new Error(
@@ -47,7 +48,6 @@ export function decrypt(encryptedData: string): string {
 }
 
 export function generateSSHKeyPair(comment: string): { privateKey: string; publicKey: string } {
-  const { execSync } = require('child_process');
   const tempPath = `/tmp/wonder-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   
   try {
@@ -58,8 +58,8 @@ export function generateSSHKeyPair(comment: string): { privateKey: string; publi
     const privateKey = readFileSync(tempPath, 'utf-8');
     const publicKey = readFileSync(`${tempPath}.pub`, 'utf-8').trim();
     
-    require('fs').unlinkSync(tempPath);
-    require('fs').unlinkSync(`${tempPath}.pub`);
+    unlinkSync(tempPath);
+    unlinkSync(`${tempPath}.pub`);
     
     return { privateKey, publicKey };
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
+import { KubeConfig, CoreV1Api, AppsV1Api } from "@kubernetes/client-node";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     let health = null;
 
     try {
-      const { KubeConfig, CoreV1Api, AppsV1Api } = require('@kubernetes/client-node');
       const kc = new KubeConfig();
       
       try {

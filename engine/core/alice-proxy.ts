@@ -3,11 +3,10 @@
  * Acts as "Remote Brain" interface for Next.js frontend
  */
 
-import { env } from "@/lib/env";
 import { logger } from "../../lib/logger";
 
-const API_BASE = env.AGENT_API_URL;
-const API_KEY = env.ALICE_API_KEY || "";
+const API_BASE = process.env.AGENT_API_URL || "http://localhost:8000";
+const API_KEY = process.env.ALICE_API_KEY || "";
 
 export interface MemoryEntry {
   key: string;
