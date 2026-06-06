@@ -7,6 +7,8 @@ import {
   createNetworkPolicy,
   deleteProjectResources 
 } from "@/lib/k8s/client";
+import * as k8s from "@kubernetes/client-node";
+import { generateKeyPairSync } from "crypto";
 
 export async function getProjectSSHKey(projectId: string): Promise<string | null> {
   const { data, error } = await supabaseServer
@@ -30,8 +32,7 @@ export async function getProjectSSHKey(projectId: string): Promise<string | null
 
 export async function createProjectPVC(projectId: string, size: string = "1Gi"): Promise<boolean> {
   try {
-    const { CoreV1Api } = require('@kubernetes/client-node');
-    const k8s = require('@kubernetes/client-node');
+    const { CoreV1Api } = k8s;
     const kc = new k8s.KubeConfig();
     
     try {
@@ -83,18 +84,15 @@ export async function createProjectRuntime(
     // Auto-generate SSH key pair if it doesn't exist
     let privateKey = await getProjectSSHKey(projectId);
     if (!privateKey) {
-      const crypto = require('crypto');
-      const { publicKey, privateKey: privKey } = crypto.generateKeyPairSync('rsa', {
+      const { publicKey, privateKey: privKey } = generateKeyPairSync('rsa', {
         modulusLength: 4096,
         publicKeyEncoding: { type: 'spki', format: 'pem' },
         privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
       });
       
       // Store encrypted private key and public key in database
-      const { encrypt } = require('@/lib/security/crypto');
       const encryptedPrivateKey = encrypt(privKey);
       
-      const { supabaseServer } = require('@/lib/supabaseServer');
       await supabaseServer
         .from("project_ssh_keys")
         .insert({
@@ -133,8 +131,7 @@ export async function deleteProjectRuntime(
     await deleteProjectResources(projectId);
     
     try {
-      const { CoreV1Api } = require('@kubernetes/client-node');
-      const k8s = require('@kubernetes/client-node');
+      const { CoreV1Api } = k8s;
       const kc = new k8s.KubeConfig();
       kc.loadFromDefault();
       const coreApi = kc.makeApiClient(CoreV1Api);
@@ -151,8 +148,7 @@ export async function getRuntimeStatus(
   projectId: string
 ): Promise<{ running: boolean; url?: string; storage?: string }> {
   try {
-    const { AppsV1Api, CoreV1Api } = require('@kubernetes/client-node');
-    const k8s = require('@kubernetes/client-node');
+    const { AppsV1Api, CoreV1Api } = k8s;
     const kc = new k8s.KubeConfig();
     kc.loadFromDefault();
     const appsApi = kc.makeApiClient(AppsV1Api);
@@ -243,8 +239,7 @@ export async function loadProjectFiles(
 
 async function getProjectRuntimeUrl(projectId: string): Promise<string | null> {
   try {
-    const { CoreV1Api } = require('@kubernetes/client-node');
-    const k8s = require('@kubernetes/client-node');
+    const { CoreV1Api } = k8s;
     const kc = new k8s.KubeConfig();
     kc.loadFromDefault();
     const coreApi = kc.makeApiClient(CoreV1Api);

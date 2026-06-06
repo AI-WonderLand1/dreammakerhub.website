@@ -82,10 +82,10 @@ export default function AIBuilderPage() {
     setPrompt(prev => `${prev} Include ${asset.name} ${asset.type}`);
   }, []);
 
-  const acceptToPuck = useCallback(() => {
+  const acceptToPuck = useCallback(async () => {
     if (!result?.code) return;
     try {
-      const puckData = htmlToPuckBlocks(result.code);
+      const puckData = await htmlToPuckBlocks(result.code);
       const dataKey = storePuckData(puckData);
       router.push(`/wonder-build/puck?ai_data=${dataKey}`);
     } catch (err) {

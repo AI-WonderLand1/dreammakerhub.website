@@ -19,7 +19,7 @@ export interface PuckData {
  * Parse HTML string and convert to Puck blocks
  * This handles common HTML structures and maps them to available Puck components
  */
-export function htmlToPuckBlocks(htmlString: string): PuckData {
+export async function htmlToPuckBlocks(htmlString: string): Promise<PuckData> {
   const blocks: PuckBlock[] = [];
 
   if (!htmlString || typeof htmlString !== "string") {
@@ -30,12 +30,12 @@ export function htmlToPuckBlocks(htmlString: string): PuckData {
     // Create a temporary DOM parser
     const parser = new (typeof window !== "undefined"
       ? window.DOMParser
-      : require("jsdom").JSDOM)();
+      : (await import("jsdom")).JSDOM)();
 
     const doc =
       typeof window !== "undefined"
         ? new DOMParser().parseFromString(htmlString, "text/html")
-        : new (require("jsdom").JSDOM)(htmlString).window.document;
+        : new ((await import("jsdom")).JSDOM)(htmlString).window.document;
 
     const bodyElements = doc.body?.children || [];
 
