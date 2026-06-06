@@ -11,7 +11,7 @@ const normalizedProxyBasePath =
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {
-    root: join(__dirname),
+    root: join(__dirname, '..', '..'),
   },
 
   ...(!isDev && normalizedProxyBasePath
@@ -35,9 +35,6 @@ const nextConfig = {
 
   typescript: {
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
 
   webpack: (config, { isServer }) => {
