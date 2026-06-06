@@ -13,11 +13,12 @@ export async function runEslintFix(workspaceRoot: string): Promise<RepairResult>
       success: true,
       description: 'ESLint auto-fix applied',
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { stderr?: string };
     return {
       findingId: 'eslint-fix-all',
       success: false,
-      description: e.stderr?.slice(0, 200) || 'ESLint fix failed',
+      description: err.stderr?.slice(0, 200) || 'ESLint fix failed',
     };
   }
 }
@@ -34,11 +35,12 @@ export async function runPrettier(workspaceRoot: string): Promise<RepairResult> 
       success: true,
       description: 'Prettier formatting applied',
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { stderr?: string };
     return {
       findingId: 'prettier-fmt',
       success: false,
-      description: e.stderr?.slice(0, 200) || 'Prettier failed',
+      description: err.stderr?.slice(0, 200) || 'Prettier failed',
     };
   }
 }
