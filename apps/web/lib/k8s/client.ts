@@ -1,4 +1,4 @@
-import { CoreV1Api, AppsV1Api, NetworkingV1Api } from '@kubernetes/client-node';
+import { CoreV1Api, AppsV1Api, NetworkingV1Api, KubeConfig } from '@kubernetes/client-node';
 
 let coreApi: CoreV1Api | null = null;
 let appsApi: AppsV1Api | null = null;
@@ -9,8 +9,7 @@ function getK8sClient(): { coreApi: CoreV1Api; appsApi: AppsV1Api; netApi: Netwo
     return { coreApi, appsApi, netApi };
   }
   
-  const k8s = require('@kubernetes/client-node');
-  const kc = new k8s.KubeConfig();
+  const kc = new KubeConfig();
   
   try {
     kc.loadFromCluster();

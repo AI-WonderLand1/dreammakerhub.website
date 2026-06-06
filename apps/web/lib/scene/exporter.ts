@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js"
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { SceneFile } from "./schema"
 
 export async function exportSceneToGLB(scene: SceneFile) {
@@ -23,7 +24,7 @@ export async function exportSceneToGLB(scene: SceneFile) {
 }
 
 async function loadGLB(url: string) {
-  const loader = new (require("three/examples/jsm/loaders/GLTFLoader").GLTFLoader)()
+  const loader = new GLTFLoader()
   return new Promise((resolve, reject) => {
     loader.load(url, resolve, undefined, reject)
   })

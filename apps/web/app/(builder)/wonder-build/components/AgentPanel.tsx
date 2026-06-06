@@ -64,9 +64,9 @@ export function AgentPanel() {
     });
   }, []);
 
-  const acceptToPuck = useCallback(() => {
+  const acceptToPuck = useCallback(async () => {
     if (!result?.code) return;
-    const puckData = htmlToPuckBlocks(result.code);
+    const puckData = await htmlToPuckBlocks(result.code);
     const dataKey = storePuckData(puckData);
     router.push(`/wonder-build/puck?ai_data=${dataKey}`);
   }, [result?.code, router]);
