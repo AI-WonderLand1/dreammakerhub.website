@@ -77,6 +77,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { href: "/library", label: "My Scenes", icon: Database },
     { href: "/agent-playground", label: "AI Playground", icon: Pencil },
     { href: "/dashboard/agents", label: "Agents", icon: Bot },
+    { href: "/dashboard/aetherguard", label: "AetherGuard", icon: Shield },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
     { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
   ];
