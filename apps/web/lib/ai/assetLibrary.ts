@@ -60,9 +60,21 @@ function validateExternalDownloadUrl(rawUrl: string): ValidatedExternalUrl {
     throw new Error("Download URL port is not allowed");
   }
 
-  if (!isAllowedDownloadHost(parsed.hostname)) {
+  if (parsed.hash) {
+    throw new Error("Download URL fragment is not allowed");
+  }
+
+  const normalizedHostname = parsed.hostname.toLowerCase();
+  if (!isAllowedDownloadHost(normalizedHostname)) {
     throw new Error("Download URL host is not allowed");
   }
+
+  const pathSegments = parsed.pathname.split("/").filter(Boolean);
+  if (pathSegments.some(segment => segment === "." || segment === "..")) {
+    throw new Error("Download URL path is not allowed");
+  }
+
+  parsed.hostname = normalizedHostname;
 
   return parsed as ValidatedExternalUrl;
 }
