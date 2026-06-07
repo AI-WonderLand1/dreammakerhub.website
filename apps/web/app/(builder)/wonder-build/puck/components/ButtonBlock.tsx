@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@wonder/shadon";
+import { Button } from "@/components/ui/button";
 
 export type ButtonBlockProps = {
   label: string;
