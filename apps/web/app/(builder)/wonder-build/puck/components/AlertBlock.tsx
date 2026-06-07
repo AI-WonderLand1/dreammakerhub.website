@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert } from "@wonder/shadon";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export type AlertBlockProps = {
   title: string;

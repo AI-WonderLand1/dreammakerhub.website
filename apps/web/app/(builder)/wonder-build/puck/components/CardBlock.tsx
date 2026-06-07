@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@wonder/shadon";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export type CardBlockProps = {
   title: string;
