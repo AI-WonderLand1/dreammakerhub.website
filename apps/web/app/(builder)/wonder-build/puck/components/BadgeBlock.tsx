@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@wonder/shadon";
+import { Badge } from "@/components/ui/badge";
 
 export type BadgeBlockProps = {
   label: string;
