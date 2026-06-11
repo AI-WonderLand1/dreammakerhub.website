@@ -236,12 +236,12 @@ function decode64ToArray(input)
 
 function hexEncode(data){
 	var b16_digits = '0123456789abcdef';
-	var b16_map = new Array();
+	var b16_map = [];
 	for (var i=0; i<256; i++) {
 		b16_map[i] = b16_digits.charAt(i >> 4) + b16_digits.charAt(i & 15);
 	}
 	
-	var result = new Array();
+	var result = [];
 	for (var i=0; i<data.length; i++) {
 		result[i] = b16_map[data.charCodeAt(i)];
 	}
@@ -252,12 +252,12 @@ function hexEncode(data){
 
 function hexEncodeArray(data){
 	var b16_digits = '0123456789abcdef';
-	var b16_map = new Array();
+	var b16_map = [];
 	for (var i=0; i<256; i++) {
 		b16_map[i] = b16_digits.charAt(i >> 4) + b16_digits.charAt(i & 15);
 	}
 	
-	var result = new Array();
+	var result = [];
 	for (var i=0; i<data.byteLength; i++) {
 		result[i] = b16_map[data[i]];
 	}
