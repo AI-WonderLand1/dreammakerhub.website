@@ -1,9 +1,9 @@
-// @ts-ignore
+// @ts-expect-error - supabaseServer import from path alias
 import { supabaseServer } from "@/lib/supabaseServer";
-// @ts-ignore
+// @ts-expect-error - EngineType import from path alias
 import type { EngineType } from "@/types/db";
 import { randomUUID } from "crypto";
-// @ts-ignore
+// @ts-expect-error - crypto functions from path alias
 import { generateSSHKeyPair, encrypt } from "@/lib/security/crypto";
 
 export async function createProject(

@@ -1478,7 +1478,7 @@ export function buildPuckConfig(): Config {
     render: ({ companies }: any) => (
       <div className="flex gap-8 overflow-hidden py-4">
         <div className="flex animate-marquee gap-8">
-          {[...companies?.split(","), ...companies?.split(",")].map((company: string, i: number) => (
+           {[...companies.split(","), ...companies.split(",")].map((company: string, i: number) => (
             <span key={i} className="text-2xl font-bold text-white/30 whitespace-nowrap">{company.trim()}</span>
           ))}
         </div>
