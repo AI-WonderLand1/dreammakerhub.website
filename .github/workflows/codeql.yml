@@ -92,11 +92,11 @@ jobs:
       if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
+       - name: Run manual build steps
+       if: matrix.build-mode == 'manual'
+       shell: bash
+       run: |
+         echo "No manual build required for this project"
         exit 1
 
     - name: Perform CodeQL Analysis
