@@ -32,152 +32,120 @@ npm run lint     # Lint + typecheck
 
 ---
 
-## Why Should I Care? — Pitch Deck
+## 30-Second Quickstart
 
-### Problem
+Here's what it feels like to use DreamMakerHub:
 
-Building software today is fragmented and complex:
-- Developers juggle multiple tools (IDE, hosting, AI, APIs)
-- Non-technical users are locked out
-- Setup time slows down innovation
-- AI tools are disconnected from real development environments
+```
+1. Open localhost:3000
+2. Click "Create Workspace"
+3. Select "AI Builder" engine
+4. Type "build a landing page for a SaaS startup"
+5. Watch the project generate in real time
+6. Preview and deploy — done
+```
 
-**Result:** Building anything is harder than it should be.
-
----
-
-### Solution
-
-**DreamMakerHub** simplifies the entire process. A unified platform where users can:
-- Launch a full development environment instantly
-- Build using AI, code, or visual tools
-- Use multiple "engines" depending on their workflow
-- Deploy directly from the same system
+No terminal, no config, no context switching. From idea → running project in under a minute.
 
 ---
 
-### What It Is
+## Why Should I Care? — Real Demo Flow
 
-DreamMakerHub is a **multi-engine development platform** combining:
-- Cloud IDE (workspace environments)
-- AI agent system
-- No-code / low-code builders
-- API & backend generation tools
-- Deployment infrastructure
+### Architecture Overview
 
-All in one platform.
+```mermaid
+graph TB
+    User[User / Browser] --> FE[Next.js 16 App]
+    FE --> WS[Workspace Engine]
 
----
+    subgraph Engines
+        AI[AI Agent Engine<br/>OpenRouter, Gemini, Groq]
+        BI[AI-Builder Engine<br/>Prompt-to-code, Image-to-code]
+        CE[Code Engine<br/>Monaco + WebContainer]
+        VB[Visual Builder<br/>Puck drag-and-drop]
+        TD[3D Studio<br/>PlayCanvas + WebGL]
+    end
 
-### Product Architecture
+    WS -->|select engine| AI
+    WS -->|select engine| BI
+    WS -->|select engine| CE
+    WS -->|select engine| VB
+    WS -->|select engine| TD
 
-DreamMakerHub is modular and extensible.
+    subgraph Backend
+        PY[Python Agent<br/>FastAPI, MemoryBank]
+        DB[(Supabase<br/>Auth, Storage, pgvector)]
+        DEP[Deployment Engine<br/>OCI + K8s + Coder]
+    end
 
-| Layer | Purpose |
-|-------|---------|
-| **Workspace Engine** | Instant dev environments |
-| **AI Agent Engine** | Automation + generation |
-| **Builder Engines** | Visual + no-code tools |
-| **Deployment Engine** | Hosting + infrastructure |
-| **API Engine** | Backend generation |
-
----
-
-### Key Engine: AI-Bilder
-
-AI-Bilder is one of the platform's engines. It enables:
-- Drag-and-drop website & app building
-- AI-powered generation
-- Image-to-code conversion
-- API generation
-- Code export (React / HTML)
-- Domain + analytics integration
-
-This serves as the entry point for non-technical users.
-
----
-
-### How It Works
-
-1. User clicks **Create Workspace**
-2. A cloud development environment is created instantly
-3. User selects an engine (AI builder, code, etc.)
-4. Builds using AI, visual tools, or code
-5. Runs and deploys directly
+    AI --> PY
+    BI --> PY
+    CE --> DEP
+    VB --> DEP
+    TD --> DEP
+    PY --> DB
+    DEP --> User
+```
 
 ---
 
-### Why This Is Different
+### Demo 1: Launch a Workspace
 
-Most platforms focus on one piece:
-- **Webflow** → design
-- **Replit** → coding
-- **Vercel** → deployment
-- **AI tools** → generation
+**User action:** Clicks "Create Workspace" on the dashboard.
 
-**DreamMakerHub combines all of them.** A platform of platforms.
+**System response:** Cloud IDE provisions instantly — file tree, terminal, preview panel appear.
 
----
+**Output:** A full browser-based development environment, ready in seconds.
 
-### Market Opportunity
-
-- AI development tools market → rapidly growing
-- No-code / low-code → billions in adoption
-- Cloud IDEs → expanding with remote dev
-
-DreamMakerHub sits at the intersection of all three.
+<p align="center">
+  <img src="public/images/screenshots/workspace-ui.svg" alt="DreamMakerHub Workspace UI" width="90%">
+</p>
 
 ---
 
-### Business Model
+### Demo 2: Build with AI
 
-- SaaS subscriptions (workspace usage)
-- Premium AI usage tiers
-- Engine marketplace (future)
-- Deployment & hosting fees
+**User action:** Selects "AI Builder" engine, types "build a landing page for a SaaS startup".
 
----
+**System response:** AI generates the full project — React components, styling, animations — streaming in real time.
 
-### Current Status
-
-- Core platform architecture built
-- AI-Bilder engine developed
-- Infrastructure + deployment system in place
-- Multi-engine foundation established
+**Output:** A working landing page with Hero, Features, Pricing sections. Code appears in the editor, preview updates live.
 
 ---
 
-### Vision
+### Demo 3: Switch Engines Mid-Project
 
-> Make building anything as simple as describing it.
+**User action:** Clicks the engine selector and switches from "AI Builder" to "Code Editor".
 
-Future expansion:
-- Engine marketplace
-- User-created tools
-- AI automation pipelines
-- Team collaboration environments
+**System response:** The same project instantly opens in a Monaco editor. All generated code is fully editable.
 
----
+**Output:** You can toggle between AI-assisted building and manual coding on the same project, same workspace.
 
-### Closing
-
-DreamMakerHub transforms how software is built:
-- **Faster**
-- **Simpler**
-- **More accessible**
-
-From idea → to product → instantly.
+<p align="center">
+  <img src="public/images/screenshots/engine-switching.svg" alt="Engine Switching Demo" width="90%">
+</p>
 
 ---
 
-### Call to Action
+### Demo 4: Deploy to Production
 
-**Seeking:**
-- Investment
-- Technical partnerships
-- Early adopters
+**User action:** Clicks "Deploy" in the workspace toolbar.
 
-Let's build the future of creation.
+**System response:** Build pipeline runs, deploys to OCI Kubernetes, provisions a URL.
+
+**Output:** Live production URL — share it immediately. No cloud console, no CI config, no DevOps setup.
+
+---
+
+### Why This Matters
+
+Most platforms make you choose:
+- **Webflow** → design only
+- **Replit** → coding only
+- **Vercel** → deployment only
+- **AI chat tools** → generation only
+
+DreamMakerHub is the only platform where you can go from **idea → AI generation → code editing → deploy** without ever leaving your workspace.
 
 ---
 
