@@ -10,7 +10,7 @@ export async function getWebContainer(): Promise<WebContainer> {
 
   containerPromise = (async () => {
     await auth.init({
-      clientId: "wc_api_wonderingtribe_7254a85d8ff580f6d0f5206c5d51d04d",
+      clientId: process.env.NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID || "",
       scope: "",
     });
 

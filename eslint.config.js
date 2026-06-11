@@ -6,7 +6,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["node_modules/", "dist/", ".next/", "coverage/", ".coder/"]
+    ignores: ["**/node_modules/", "**/dist/", "**/.next/", "**/coverage/", "**/.coder/", "**/venv/", "**/public/"]
   },
   {
     files: ["**/*.js"],
