@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
+import { lookup } from "dns/promises";
+import { isIP } from "node:net";
 // TODO: Create @wonder/perf-assets package for asset optimization
 // import { optimizeAsset } from "@wonder/perf-assets";
 
@@ -76,7 +78,11 @@ function validateExternalDownloadUrl(rawUrl: string): ValidatedExternalUrl {
 
   parsed.hostname = normalizedHostname;
 
-  return parsed as ValidatedExternalUrl;
+  const canonicalUrl = new URL(`https://${normalizedHostname}`);
+  canonicalUrl.pathname = parsed.pathname;
+  canonicalUrl.search = parsed.search;
+
+  return canonicalUrl as ValidatedExternalUrl;
 }
 
 function getSafeOptimizerUrl(): string {
@@ -104,7 +110,47 @@ function getSafeOptimizerUrl(): string {
   return parsed.toString();
 }
 
+function isUnsafeIpv4(ip: string): boolean {
+  const parts = ip.split(".").map(Number);
+  if (parts.length !== 4 || parts.some(part => Number.isNaN(part) || part < 0 || part > 255)) {
+    return true;
+  }
+
+  const [a, b] = parts;
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
+}
+
+function isUnsafeIpv6(ip: string): boolean {
+  const normalized = ip.toLowerCase();
+  return (
+    normalized === "::" ||
+    normalized === "::1" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:")
+  );
+}
+
+function isUnsafeResolvedIp(ip: string): boolean {
+  const family = isIP(ip);
+  if (family === 4) return isUnsafeIpv4(ip);
+  if (family === 6) return isUnsafeIpv6(ip);
+  return true;
+}
+
 async function safeFetch(url: ValidatedExternalUrl, init?: RequestInit): Promise<Response> {
+  const records = await lookup(url.hostname, { all: true, verbatim: true });
+  if (!records.length || records.some(record => isUnsafeResolvedIp(record.address))) {
+    throw new Error("Download URL resolves to a disallowed network address");
+  }
+
   return fetch(url.toString(), {
     redirect: "manual",
     ...init,
