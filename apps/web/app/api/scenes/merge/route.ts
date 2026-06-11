@@ -3,6 +3,18 @@ import { createSupabaseServerClient } from "@lib/supabase/server-client";
 
 const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
 
+const ALLOWED_ASSET_HOSTS = [
+  "playcanvas.com",
+  "cdn.playcanvas.com",
+  "sketchfab.com",
+  "media.sketchfab.com",
+  "polyhaven.com",
+  "dl.polyhaven.org",
+  "github.com",
+  "raw.githubusercontent.com",
+  "supabase.co",
+] as const;
+
 interface MergeRequest {
   characterUrl: string;
   sceneUrl: string;
@@ -58,8 +70,8 @@ function validateExternalAssetUrl(rawUrl: string, fieldName: "characterUrl" | "s
     throw new Error(`${fieldName} must be a valid absolute URL`);
   }
 
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error(`${fieldName} must use http or https`);
+  if (parsed.protocol !== "https:") {
+    throw new Error(`${fieldName} must use https`);
   }
 
   if (parsed.username || parsed.password) {
@@ -68,6 +80,14 @@ function validateExternalAssetUrl(rawUrl: string, fieldName: "characterUrl" | "s
 
   if (isPrivateOrLocalHost(parsed.hostname)) {
     throw new Error(`${fieldName} targets a disallowed host`);
+  }
+
+  const isAllowedHost = ALLOWED_ASSET_HOSTS.some(
+    allowed => parsed.hostname === allowed || parsed.hostname.endsWith(`.${allowed}`)
+  );
+
+  if (!isAllowedHost) {
+    throw new Error(`${fieldName} host is not in the allowed list`);
   }
 
   return parsed.toString();
