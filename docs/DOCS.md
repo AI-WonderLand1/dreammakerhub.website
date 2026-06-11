@@ -33,9 +33,6 @@ WonderSpace is a monorepo built around three core systems:
 | `apps/web/` | Next.js app — pages, API routes, components |
 | `engine/core/` | AI providers, IDE runtime, PlayCanvas bridge, filesystem, persistence |
 | `packages/ide-engine/` | WebContainer-based browser IDE (SessionStore, TerminalEmulator, ErrorScanner) |
-| `packages/playcanvas-ext/` | PlayCanvas integration package |
-| `packages/puck-editor/` | Puck visual editor blocks and config |
-| `packages/shadon/` | Shared UI component library |
 | `ui/components/` | ChatBox, SpiritGuide, BYOCExplanation, Billing components |
 | `lib/` | Shared utilities (`env`, `logger`, `requireEnv`, auth helpers) |
 | `runners/` | Background workers (aiWorker, authWorker, registry, data-processing) |
@@ -380,10 +377,6 @@ npm run dev          # Start dev server
 ### Docs Sync
 
 Run `scripts/sync-guides.sh` to mirror docs from `docs/` to the app's marketing pages.
-
-### Puck Editor Blocks
-
-19 built-in blocks available in `packages/puck-editor/`: Hero, Text, Image, Video, Button, Container, Grid, Columns, Tabs, Accordion, Card, Carousel, Form, Spacer, Divider, Quote, Pricing, FAQ, Navigation.
 
 ### Replit Configuration
 
