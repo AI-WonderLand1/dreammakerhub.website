@@ -78,7 +78,11 @@ function validateExternalDownloadUrl(rawUrl: string): ValidatedExternalUrl {
 
   parsed.hostname = normalizedHostname;
 
-  return parsed as ValidatedExternalUrl;
+  const canonicalUrl = new URL(`https://${normalizedHostname}`);
+  canonicalUrl.pathname = parsed.pathname;
+  canonicalUrl.search = parsed.search;
+
+  return canonicalUrl as ValidatedExternalUrl;
 }
 
 function getSafeOptimizerUrl(): string {
