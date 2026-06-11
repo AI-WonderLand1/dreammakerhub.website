@@ -79,7 +79,7 @@ export class SceneStreamLoader {
           this.scene.entities = [];
           break;
           
-        case "entity":
+        case "entity": {
           this.scene.entities[data.index] = data.data;
           this.loadedEntities++;
           
@@ -91,6 +91,7 @@ export class SceneStreamLoader {
           this.options.onProgress?.(progress);
           this.options.onEntity?.(data.data, data.index, this.entityCount);
           break;
+        }
           
         case "entities_end":
           // Entities loading complete
@@ -106,7 +107,7 @@ export class SceneStreamLoader {
           this.scene.lights = [];
           break;
           
-        case "light":
+        case "light": {
           this.scene.lights[data.index] = data.data;
           this.loadedLights++;
           
@@ -118,6 +119,7 @@ export class SceneStreamLoader {
           this.options.onProgress?.(progress2);
           this.options.onLight?.(data.data, data.index, this.lightCount);
           break;
+        }
           
         case "lights_end":
           // Lights loading complete

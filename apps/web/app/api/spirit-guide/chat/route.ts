@@ -29,34 +29,30 @@ async function callGithubAI(system: string, userPrompt: string): Promise<string>
     throw new Error("GITHUB_MODELS_API_KEY is not configured. Please add it to your .env file.");
   }
 
-  try {
-    const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024,
-      }),
-    });
+  const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 1024,
+    }),
+  });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`GitHub Models API error: ${res.status} - ${errorText}`);
-    }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
-  } catch (error) {
-    throw error;
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`GitHub Models API error: ${res.status} - ${errorText}`);
   }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
 }
 
 export async function POST(req: NextRequest) {

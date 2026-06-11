@@ -106,7 +106,7 @@ export function PuckAIPanel({
             className="w-full h-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 resize-none focus:outline-none focus:border-violet-500/50"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                currentData ? handleModify() : handleBuild();
+                if (currentData) handleModify(); else handleBuild();
               }
             }}
           />

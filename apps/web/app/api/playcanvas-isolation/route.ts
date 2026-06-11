@@ -49,13 +49,14 @@ export async function GET(request: Request) {
           maxInstances: 10,
         });
 
-      case 'container':
+      case 'container': {
         const instance = await manager.getContainer(userSession.userId);
         return NextResponse.json({
           containerId: instance.id,
           serverUrl: instance.serverUrl,
           isActive: instance.isActive,
         });
+      }
 
       default:
         return NextResponse.json(
@@ -88,15 +89,16 @@ export async function POST(request: Request) {
     const manager = getContainerManager();
 
     switch (action) {
-      case 'ready':
+      case 'ready': {
         // Mark container as ready - prevents cleanup
         const readyInstance = await manager.getContainer(userSession.userId);
         readyInstance.isActive = true;
         readyInstance.lastUsed = Date.now();
         logger.info(`[API] Container marked ready for user ${userSession.userId.substring(0, 8)}`);
         return NextResponse.json({ success: true, containerId: readyInstance.id });
+      }
 
-      case 'create_scene':
+      case 'create_scene': {
         if (!sceneId) {
           return NextResponse.json(
             { error: 'sceneId is required' },
@@ -129,8 +131,9 @@ export async function POST(request: Request) {
           sceneId,
           containerId: instance.id,
         });
+      }
 
-      case 'mount_files':
+      case 'mount_files': {
         if (!files || typeof files !== 'object') {
           return NextResponse.json(
             { error: 'files object is required' },
@@ -145,12 +148,13 @@ export async function POST(request: Request) {
           success: true,
           containerId: fileInstance.id,
         });
+      }
 
       case 'destroy_container':
         await manager.destroyContainer(`pc-container-${userSession.hashedId}`);
         return NextResponse.json({ success: true });
 
-      case 'cron_cleanup':
+      case 'cron_cleanup': {
         // Called by cron job to cleanup stuck containers
         const stuck = manager.cleanupStuckContainers(15 * 60 * 1000); // 15 min timeout
         return NextResponse.json({ 
@@ -158,13 +162,15 @@ export async function POST(request: Request) {
           cleaned: stuck,
           message: `Cleaned up ${stuck} stuck containers` 
         });
+      }
 
-      case 'ping':
+      case 'ping': {
         // Keep-alive ping from active user
         const pingInstance = await manager.getContainer(userSession.userId);
         pingInstance.lastUsed = Date.now();
         pingInstance.isActive = true;
         return NextResponse.json({ success: true });
+      }
 
       default:
         return NextResponse.json(
