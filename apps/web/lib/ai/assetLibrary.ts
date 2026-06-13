@@ -12,7 +12,7 @@ const ALLOWED_DOWNLOAD_HOSTS = [
   "dl.polyhaven.org",
 ] as const;
 
-const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> = {
+const SOURCE_ALLOWED_HOSTS: Record<string, readonly string[]> = {
   playcanvas: ["playcanvas.com", "cdn.playcanvas.com"],
   sketchfab: ["sketchfab.com", "media.sketchfab.com"],
   "poly-haven": ["polyhaven.com", "dl.polyhaven.org"],
@@ -266,9 +266,10 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       if (optimizeRes.ok) {
         const optimizeData = await optimizeRes.json();
         if (optimizeData.optimizedUrl) {
-          finalBuffer = new Uint8Array((await ssrfFetch(optimizeData.optimizedUrl, {
+          const optResp = await ssrfFetch(optimizeData.optimizedUrl, {
             allowedHosts: ALLOWED_DOWNLOAD_HOSTS,
-          }).then(r => r.arrayBuffer())));
+          });
+          finalBuffer = new Uint8Array(await optResp.arrayBuffer());
           console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
         }
       } else {
