@@ -33,5 +33,4 @@ COPY --from=builder /app/apps/web/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 
-EXPOSE 5000
 CMD ["npm", "run", "start"]
