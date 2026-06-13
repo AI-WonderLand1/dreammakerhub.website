@@ -109,7 +109,8 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     throw new SsrfError('URL resolves to a disallowed network address')
   }
 
-  return fetch(url, {
+  const validatedUrl = new URL(`https://${hostname}${parsed.pathname}${parsed.search}`)
+  return fetch(validatedUrl.toString(), {
     redirect: 'manual',
     ...options,
   })
