@@ -7,7 +7,8 @@
  *   /wonder-build/ai-builder  → AI builder (websites, games, 3D assets)
  *   /wonder-build/playcanvas  → 3D scene editor (PlayCanvas)
  *   /wonder-build/puck        → Visual drag-drop builder (Puck)
- *   /wonder-build/3d          → WebGL Studio (future)
+ *   /wonder-build/3d          → WebGL Studio
+ *   /wonder-build/spatial     → Spatial Designer (embed of external or future integration)
  *
  * Legacy redirects (preserved for backward compatibility):
  *   /builder         → QuadEngineShell (legacy multi-engine UI)

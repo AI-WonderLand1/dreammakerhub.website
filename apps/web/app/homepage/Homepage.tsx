@@ -289,7 +289,7 @@ export default function Homepage() {
               </Link>
 
               <Link
-                href="https://spatial.dreammakerhub.website"
+                href="/wonder-build/spatial"
                 className="px-6 py-3 border border-cyan-500/30 bg-cyan-500/10 rounded-lg text-white font-semibold hover:bg-cyan-500/20 transition group relative"
               >
                 🌌 Spatial Designer
