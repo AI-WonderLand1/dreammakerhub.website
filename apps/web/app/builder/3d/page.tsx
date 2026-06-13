@@ -1,4 +1,4 @@
-import WebGLStudioHost from "@/components/WebGLStudioHost";
+import WebGLStudioHost from "../../../components/WebGLStudioHost";
 
 export default function Builder3DPage() {
   return (

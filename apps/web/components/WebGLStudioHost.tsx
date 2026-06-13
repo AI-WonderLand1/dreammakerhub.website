@@ -72,6 +72,8 @@ function sanitizeGlobals() {
 
 interface WebGLStudioHostProps {
   initialSceneId?: string;
+  onReady?: () => void;
+  onError?: () => void;
 }
 
 type SceneEntry = {
@@ -81,7 +83,7 @@ type SceneEntry = {
   updated_at: string;
 };
 
-export default function WebGLStudioHost({ initialSceneId }: WebGLStudioHostProps) {
+export default function WebGLStudioHost({ initialSceneId, onReady, onError }: WebGLStudioHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const coreRef = useRef<any>(null);
   const { user } = useAuth();
@@ -200,12 +202,14 @@ export default function WebGLStudioHost({ initialSceneId }: WebGLStudioHostProps
 
         if (!cancelled) {
           setLoading(false);
+          onReady?.();
         }
       } catch (err) {
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : 'Failed to load WebGLStudio';
         setError(msg);
         setLoading(false);
+        onError?.();
       }
     }
 

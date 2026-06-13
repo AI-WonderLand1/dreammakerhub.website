@@ -45,6 +45,12 @@
       ],
       "@/types/*": [
         "apps/web/types/*"
+      ],
+      "@/components/*": [
+        "apps/web/components/*"
+      ],
+      "@/app/*": [
+        "apps/web/app/*"
       ]
     }
   },
