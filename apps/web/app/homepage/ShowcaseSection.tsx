@@ -13,31 +13,22 @@ type ShowcaseItem = {
 
 const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
-    id: "ai-builder",
-    title: "AI Builder",
-    description: "Describe what you want in plain English. Three AI agents — Architect, Builder, and Reviewer — collaborate to generate complete websites and games in under a minute.",
+    id: "wonderbuild",
+    title: "WonderBuild",
+    description: "Describe what you want in plain English. Three AI agents — Architect, Builder, and Reviewer — collaborate to generate complete websites, games, and UI dashboards in under a minute.",
     image: "/images/screenshots/puck-builder.svg",
     href: "/wonder-build/ai-builder",
     gradient: "from-violet-600/20 to-fuchsia-600/10",
-    badge: "AI-Powered",
+    badge: "AI Agent Trio",
   },
   {
     id: "wonderplay",
-    title: "WonderPlay 3D",
+    title: "WonderPlay",
     description: "Real-time 3D world editor powered by PlayCanvas. Build immersive environments with physics, materials, lighting, and AI-assisted scene generation.",
     image: "/images/screenshots/playcanvas-builder.svg",
     href: "/wonder-build/playcanvas",
     gradient: "from-blue-600/20 to-cyan-600/10",
     badge: "3D Engine",
-  },
-  {
-    id: "wonder-builder",
-    title: "Wonder Builder",
-    description: "Drag-and-drop page builder with AI assistance. Ship responsive UIs, landing pages, and dashboards without writing a single line of code.",
-    image: "/images/screenshots/webgl-builder.svg",
-    href: "/wonder-build/puck",
-    gradient: "from-emerald-600/20 to-teal-600/10",
-    badge: "Visual Editor",
   },
   {
     id: "wonderspace-ide",
@@ -49,9 +40,9 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     badge: "Cloud IDE",
   },
   {
-    id: "ai-3d-combo",
-    title: "AI + 3D Combo",
-    description: "The magic happens here. Describe a scene in natural language — AI generates the 3D world, populates it with assets, and sets up lighting and physics automatically.",
+    id: "ai-wonder",
+    title: "AI-Wonder",
+    description: "The flagship experience. Describe a scene in natural language — AI generates the 3D world, populates it with assets, and sets up lighting and physics automatically.",
     image: "",
     href: "/wonder-build/playcanvas",
     gradient: "from-purple-600/20 to-pink-600/10",
@@ -59,13 +50,11 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
   },
 ];
 
-function ShowcaseCard({ item, index }: { item: ShowcaseItem; index: number }) {
+function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   return (
     <Link
       href={item.href}
-      className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.gradient} p-0.5 transition duration-300 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-900/20 ${
-        index === 4 ? "sm:col-span-2" : ""
-      }`}
+      className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.gradient} p-0.5 transition duration-300 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-900/20`}
     >
       <div className="relative h-full rounded-2xl bg-black/60 p-5 backdrop-blur-sm">
         <div className="flex items-start justify-between gap-2 mb-3">
@@ -119,7 +108,7 @@ export default function ShowcaseSection() {
           What You Can Build
         </p>
         <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-          Five ways to create
+          Four ways to create
         </h2>
         <p className="mt-2 text-sm text-white/50 max-w-lg mx-auto">
           Pick your tool. Describe your vision. Watch it come to life.
@@ -127,8 +116,8 @@ export default function ShowcaseSection() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {SHOWCASE_ITEMS.map((item, index) => (
-          <ShowcaseCard key={item.id} item={item} index={index} />
+        {SHOWCASE_ITEMS.map((item) => (
+          <ShowcaseCard key={item.id} item={item} />
         ))}
       </div>
     </section>

@@ -39,17 +39,16 @@ export default function AIDiagram() {
             <div className="h-6 w-px bg-gradient-to-b from-purple-500/40 to-purple-500/10" />
           </div>
 
-          {/* ─── Middle: Branch connectors ─────────── */}
+          {/* ─── Middle: Three columns ──────────── */}
           <div className="relative flex w-full max-w-4xl items-start justify-center">
             <div className="absolute left-[16.66%] right-[16.66%] top-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent hidden sm:block" />
 
-            {/* ─── Three column nodes ─────────────── */}
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-              <div className={nodeClass + " border-blue-500/20"}>
+              <div className={nodeClass + " border-violet-500/20"}>
                 <div className="relative">
-                  <div className="absolute -top-8 left-1/2 h-6 w-px -translate-x-1/2 bg-gradient-to-b from-purple-500/20 to-blue-500/20 hidden sm:block" />
-                  <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-blue-900/40 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-blue-300">
-                    🎨 AI Builder
+                  <div className="absolute -top-8 left-1/2 h-6 w-px -translate-x-1/2 bg-gradient-to-b from-purple-500/20 to-violet-500/20 hidden sm:block" />
+                  <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-violet-900/40 border border-violet-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-violet-300">
+                    ⚡ WonderBuild
                   </span>
                 </div>
                 <div className="mt-2 space-y-1.5 text-left">
@@ -63,7 +62,7 @@ export default function AIDiagram() {
                 <div className="relative">
                   <div className="absolute -top-8 left-1/2 h-6 w-px -translate-x-1/2 bg-gradient-to-b from-purple-500/20 to-cyan-500/20 hidden sm:block" />
                   <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-cyan-900/40 border border-cyan-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-300">
-                    🌐 WonderPlay 3D
+                    🌐 WonderPlay
                   </span>
                 </div>
                 <div className="mt-2 space-y-1.5 text-left">
@@ -88,21 +87,21 @@ export default function AIDiagram() {
               </div>
             </div>
 
-            {/* ─── Bottom convergence ─────────────── */}
             <div className="absolute -bottom-6 left-[16.66%] right-[16.66%] h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent hidden sm:block" />
           </div>
 
-          {/* ─── Vertical connector to bottom ─────── */}
+          {/* ─── Vertical connector to AI-Wonder ── */}
           <div className="mt-6 flex justify-center">
             <div className="h-6 w-px bg-gradient-to-b from-purple-500/10 to-purple-500/40" />
           </div>
 
-          {/* ─── Bottom: AI Experience Layer ──────── */}
-          <div className={nodeClass + " mt-0 w-full max-w-lg border-purple-500/20 bg-purple-950/10"}>
+          {/* ─── AI-Wonder Convergence Layer ────── */}
+          <div className={nodeClass + " mt-0 w-full max-w-lg border-pink-500/20 bg-pink-950/10"}>
             <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="text-sm">🔮</span>
-              <span className="text-sm font-bold text-purple-300">AI Experience Layer</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-pink-500/20 text-xs">✨</span>
+              <span className="text-sm font-bold text-pink-300">AI-Wonder Convergence</span>
             </div>
+            <p className="text-[10px] text-white/40 mb-2">All tools feed into the AI-Wonder experience layer</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs text-white/60">
               <span className="flex items-center gap-1">
                 <span>🧙</span> Spirit Guide
