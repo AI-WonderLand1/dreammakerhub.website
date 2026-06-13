@@ -288,7 +288,7 @@ export function PuckEditorClient({
 
   useEffect(() => {
     // Check for AI-generated data from session storage
-    const aiDataKey = searchParams.get("ai_data");
+    const aiDataKey = searchParams?.get("ai_data");
     if (aiDataKey) {
       const aiData = retrievePuckData(aiDataKey);
       if (aiData) {

@@ -37,8 +37,8 @@ function makeToastId() {
 const BRIDGE_READY_TIMEOUT_MS = 30_000;
 
 function PlayCanvasInner() {
-  const params = useSearchParams();
-  const sceneId = params.get("sceneId")?.trim() ?? "";
+  const searchParams = useSearchParams();
+  const sceneId = searchParams?.get("sceneId")?.trim() ?? "";
   const { user } = useAuth();
   const [bridgeLoading, setBridgeLoading] = useState(Boolean(sceneId));
   const [bridgeFailed, setBridgeFailed] = useState(false);
