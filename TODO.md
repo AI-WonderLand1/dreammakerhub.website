@@ -52,6 +52,46 @@
 - [ ] Movies/Videos (pre-rendered, export as MP4)
 - [ ] Both?
 
+## 🏗️ Builders & 3D/Spatial Surfaces
+
+### 6. Builder Page Consolidation
+- [ ] Audit all builder entry points (`/builder`, `/builder-ai`, `/builder/3d`, `/wonder-build/*`)
+- [ ] Define clear routing strategy: marketing funnel → workspace → editor
+- [ ] Unify auth/session handling across builder surfaces
+
+### 7. WebGL Studio (`/builder/3d`)
+- [ ] Replace dynamic import with proper client component boundary
+- [ ] Add Supabase Drive integration (replace LiteFileSystem)
+- [ ] Connect asset library (`lib/ai/assetLibrary.ts`) to WebGL Studio
+- [ ] Add scene save/load via Supabase Storage
+- [ ] Implement collaborative editing (Yjs / CRDT)
+
+### 8. PlayCanvas Editor (`/wonder-build/playcanvas`)
+- [ ] Fix embed timeout — investigate iframe sandbox restrictions
+- [ ] Add glTF drag-drop import from Asset Library
+- [ ] Wire auto-save to Supabase (already has `useAutoSave`)
+- [ ] Add NPC panel memory persistence across sessions
+- [ ] Implement scene forking/versioning
+
+### 9. AI Builder (`/wonder-build/ai-builder`)
+- [ ] Extend `3d-assets` type to output PlayCanvas-ready scenes
+- [ ] Integrate `packages/optimizer/` for generated 3D assets
+- [ ] Add "Open in PlayCanvas" action on build complete
+- [ ] Support iterative refinement (chat → modify scene)
+
+### 10. Puck Visual Builder (`/wonder-build/puck`)
+- [ ] Add 3D block types (`ThreeCanvasWrapperBlock` exists)
+- [ ] Connect to `assetLibrary` for 3D model insertion
+- [ ] Export to PlayCanvas scene format
+- [ ] Add collaborative editing (multi-user cursors)
+
+### 11. Spatial Designer (External: `spatial.dreammakerhub.website`)
+- [ ] Decide: integrate into monorepo or keep external?
+- [ ] If integrating: migrate to `/wonder-build/spatial`
+- [ ] Add real-time collab (WebRTC / WebSocket)
+- [ ] Connect to Supabase for persistence
+- [ ] Unified auth with main app
+
 ## ❌ Don't Touch
 - ✅ PlayCanvas.com (ignore completely)
 - ✅ Your K8s pod architecture (it's solid)
