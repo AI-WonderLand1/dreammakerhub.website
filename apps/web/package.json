@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "node ./scripts/run-dev.mjs",
     "build": "next build",
-    "start": "next start -p 5000 -H 0.0.0.0",
+    "start": "next start -p ${PORT:-5000} -H 0.0.0.0",
     "dev:clean": "sh -c 'rm -rf .next && node ./scripts/run-dev.mjs'"
   },
   "devDependencies": {
