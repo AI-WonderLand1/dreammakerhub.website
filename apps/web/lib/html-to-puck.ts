@@ -41,10 +41,13 @@ function cleanHtmlSafely(html: string): string {
     cleaned = cleaned.substring(0, headOpen) + cleaned.substring(headClose + 7);
   }
 
-  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-  cleaned = cleaned.replace(/<body[\s>][^>]*>/gi, "");
-  cleaned = cleaned.replace(/<\/body>/gi, "");
+  cleaned = cleaned.replace(/<script[\s>][\s\S]*?<\/script\s*>/gi, "");
+  cleaned = cleaned.replace(/<style[\s>][\s\S]*?<\/style\s*>/gi, "");
+  cleaned = cleaned.replace(/<body[\s>][\s\S]*?<\/body\s*>/gi, "");
+  cleaned = cleaned.replace(/<object[\s>][\s\S]*?<\/object\s*>/gi, "");
+  cleaned = cleaned.replace(/<embed[\s>][\s\S]*?<\/embed\s*>/gi, "");
+  cleaned = cleaned.replace(/<iframe[\s>][\s\S]*?<\/iframe\s*>/gi, "");
+  cleaned = cleaned.replace(/<svg[\s>][\s\S]*?<\/svg\s*>/gi, "");
 
   return cleaned;
 }

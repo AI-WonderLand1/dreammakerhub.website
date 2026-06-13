@@ -62,8 +62,8 @@ export default function AiModulesPage() {
   const [trainingLog, setTrainingLog] = useState<string[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("WONDER_BYOK_KEY");
-    if (saved) { setUserApiKey(saved); setKeyActive(true); }
+    const saved = sessionStorage.getItem("WONDER_BYOK_KEY");
+    if (saved) { try { setUserApiKey(atob(saved)); setKeyActive(true); } catch {} }
 
     fetch("/api/cloud-connections")
       .then((r) => r.ok ? r.json() : null)
@@ -98,7 +98,8 @@ export default function AiModulesPage() {
   }, []);
 
   const saveKey = () => {
-    localStorage.setItem("WONDER_BYOK_KEY", userApiKey);
+    const encoded = btoa(userApiKey);
+    sessionStorage.setItem("WONDER_BYOK_KEY", encoded);
     setKeyActive(!!userApiKey.trim());
     setShowKeyModal(false);
   };
