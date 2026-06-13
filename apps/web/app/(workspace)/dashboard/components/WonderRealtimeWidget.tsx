@@ -32,7 +32,7 @@ export default function WonderRealtimeWidget(props: {
 
   const me = useMemo<PresenceUser>(() => {
     // If you have auth later, replace this with real user id + name.
-    const id = `guest-${Math.random().toString(16).slice(2)}`;
+    const id = `guest-${crypto.randomUUID().slice(0, 8)}`;
     return { userId: id, name: "Guest" };
   }, []);
 
