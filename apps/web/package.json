@@ -3,9 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "node ./scripts/run-dev.mjs",
-    "prestart": "npm run build",
     "build": "next build",
-    "start": "next start -p 5000 -H 0.0.0.0",
+    "start": "next start -p ${PORT:-5000} -H 0.0.0.0",
     "dev:clean": "sh -c 'rm -rf .next && node ./scripts/run-dev.mjs'"
   },
   "devDependencies": {
@@ -37,8 +36,10 @@
     "@prisma/client": "^6.0.0",
     "@puckeditor/cloud-client": "^0.7.0",
     "@puckeditor/core": "^0.21.2",
+    "@prisma/adapter-pg": "^6.0.0",
+    "@prisma/client": "^6.0.0",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
-    "@radix-ui/react-slot": "^1.2.5",
+    "@radix-ui/react-slot": "^1.0.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@supabase/ssr": "^0.10.2",

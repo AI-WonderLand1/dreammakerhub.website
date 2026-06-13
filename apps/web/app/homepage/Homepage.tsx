@@ -11,6 +11,8 @@ import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-c
 import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";
 import InteractiveSignpost from "./InteractiveSignpost";
 import AIChat from "./AIChat";
+import ShowcaseSection from "./ShowcaseSection";
+import AIDiagram from "./AIDiagram";
 
 // Spirit Guide helper function
 const openSpiritGuide = () => {
@@ -43,7 +45,7 @@ const PLANS = [
     price: "$0",
     period: "/forever",
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-    bullets: ["1 active project", "Wonderbuild UI editor", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
+    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
     cta: "Start Wandering, It's Free",
     href: "/public-pages/auth",
     highlight: false,
@@ -56,7 +58,7 @@ const PLANS = [
     price: "$35",
     period: "/mo",
     desc: "For builders who are serious about shipping. Full creative power, one subscription.",
-    bullets: ["5 active projects", "Unlimited AI chats", "Wonderplay 3D Engine (WebGL + glTF)", "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment", "Custom domain included", "Accessibility tools for all creators", "Priority email support"],
+    bullets: ["5 active projects", "Unlimited AI chats", "WonderPlay 3D Engine (WebGL + glTF)", "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment", "Custom domain included", "Accessibility tools for all creators", "Priority email support"],
     cta: "Become an Architect",
     href: "/subscription",
     highlight: true,
@@ -99,45 +101,6 @@ const REGISTRY_ITEMS = [
   { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "AI" },
 ];
 
-const FEATURE_OVERLAP_ROWS = [
-  {
-    platform: "Seele AI",
-    websiteBuilder: "✅",
-    gameEngine: "✅ (Native 3D)",
-    aiPlayground: "✅ (Asset & Agent Gen)",
-    browserIde: "✅",
-  },
-  {
-    platform: "Rosebud AI",
-    websiteBuilder: "⚠️ (Interactive)",
-    gameEngine: "✅",
-    aiPlayground: "⚠️ (Asset Gen)",
-    browserIde: "✅",
-  },
-  {
-    platform: "GDevelop",
-    websiteBuilder: "⚠️ (Game focus)",
-    gameEngine: "✅ (Open Source)",
-    aiPlayground: "✅ (AI Agent)",
-    browserIde: "✅",
-  },
-  {
-    platform: "CreatiCode",
-    websiteBuilder: "❌",
-    gameEngine: "✅",
-    aiPlayground: "✅ (Training focus)",
-    browserIde: "✅",
-  },
-  {
-    platform: "Replit",
-    websiteBuilder: "✅",
-    gameEngine: "⚠️ (Requires libraries)",
-    aiPlayground: "✅ (AI Agent)",
-    browserIde: "✅",
-  },
-];
-
-
 const NAV_LINKS = [
   { label: "Features", href: "/#features" },
   { label: "Pricing", href: "/#pricing" },
@@ -150,7 +113,7 @@ export default function Homepage() {
   const isAuthenticated = Boolean(user);
   const router = useRouter();
   const destinationNames = signMap.map((link) => link.label).join(", ");
-  const iframeLabel = `Wonderplay Landing Page destinations: ${destinationNames}`;
+  const iframeLabel = `WonderPlay Landing Page destinations: ${destinationNames}`;
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -293,6 +256,9 @@ export default function Homepage() {
         </div>
       </section>
 
+      {/* ─── SHOWCASE SECTION — main attractions ──────────────────────────── */}
+      <ShowcaseSection />
+
       {/* ─── IMMEDIATE ACTION CTA ────────────────────────────────────────────── */}
       <section className="relative mx-auto -mt-16 w-full max-w-4xl px-6">
         <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/30 rounded-2xl p-8 backdrop-blur-lg shadow-2xl shadow-purple-900/20">
@@ -323,7 +289,7 @@ export default function Homepage() {
               </Link>
 
               <Link
-                href="https://spatial.dreammakerhub.website"
+                href="/wonder-build/spatial"
                 className="px-6 py-3 border border-cyan-500/30 bg-cyan-500/10 rounded-lg text-white font-semibold hover:bg-cyan-500/20 transition group relative"
               >
                 🌌 Spatial Designer
@@ -336,9 +302,9 @@ export default function Homepage() {
                 href="/wonder-build/ai-builder"
                 className="px-6 py-3 border border-green-500/30 bg-green-500/10 rounded-lg text-white font-semibold hover:bg-green-500/20 transition group relative"
               >
-                🤖 AI Builder
+                🤖 WonderBuild
                 <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-green-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
-                  Describe what you want - AI builds it automatically
+                  Describe what you want — three AI agents build it automatically
                 </div>
               </Link>
               
@@ -360,60 +326,12 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* ─── WEBGL STUDIO CTA ───────────────────────────────────────────────── */}
-      <section className="relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-950/60 to-black px-6 py-10 sm:px-8">
-        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 -translate-y-1/4 translate-x-1/4 rounded-full bg-blue-600/20 blur-[80px]" />
-        <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-blue-400">Wonderplay 3D Engine</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Wonderplay 3D Editor</h2>
-            <p className="mt-1 max-w-xl text-sm text-gray-400">
-              Build and render real-time 3D worlds with Wonderplay. Launch the full editor to start creating immersive scenes.
-            </p>
-          </div>
-          <Link
-            href="/wonder-build/playcanvas"
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:bg-blue-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Launch Editor
-          </Link>
-        </div>
-      </section>
-
-      {/* ─── AI BUILDER CTA ─────────────────────────────────────────────────── */}
-      <section className="relative mx-auto mt-6 w-full max-w-6xl overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/60 to-black px-6 py-10 sm:px-8">
-        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 -translate-y-1/4 translate-x-1/4 rounded-full bg-violet-600/20 blur-[80px]" />
-        <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-violet-400">Wonderbuild AI</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Wonderbuild — Websites &amp; Games</h2>
-            <p className="mt-1 max-w-xl text-sm text-gray-400">
-              Describe what you want. Three AI agents collaborate — Architect, Builder, and Reviewer — to generate complete, working websites and playable games in under a minute.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["Portfolio websites", "HTML5 games", "Dashboard UIs", "Landing pages", "Space shooters"].map((tag) => (
-                <span key={tag} className="rounded-full bg-violet-900/40 border border-violet-500/20 px-3 py-0.5 text-xs text-violet-300">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-          <Link
-            href="/wonder-build/ai-builder"
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition hover:bg-violet-500"
-          >
-            ✨ Open AI Builder
-          </Link>
-        </div>
-      </section>
-
       {/* ─── BUILDER SHOWCASE SCREENSHOTS ───────────────────────────────────── */}
       <section id="builder-showcase" className="mx-auto mt-8 w-full max-w-7xl px-6 sm:px-8">
         <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-xl shadow-cyan-900/20 backdrop-blur-sm">
           <h2 className="text-3xl font-bold text-white">Builder Showcase</h2>
           <p className="mt-2 text-sm text-white/70">These are snapshots of the engines in action. Each card opens the builder experience so you can continue the flow immediately.</p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {BUILDER_SHOWCASE_CARDS.map((card) => (
               <Link
                 key={card.title}
@@ -609,14 +527,14 @@ export default function Homepage() {
                 <td className="py-3 px-4 text-center text-white">Unlimited</td>
               </tr>
               <tr>
-                <td className="py-3 px-4 text-gray-300">Wonderbuild UI Editor</td>
+                <td className="py-3 px-4 text-gray-300">WonderBuild</td>
                 <td className="py-3 px-4 text-center text-gray-400">Basic</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
               </tr>
               <tr>
-                <td className="py-3 px-4 text-gray-300">Wonderplay 3D Engine</td>
+                <td className="py-3 px-4 text-gray-300">WonderPlay 3D Engine</td>
                 <td className="py-3 px-4 text-center text-gray-500">—</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
                 <td className="py-3 px-4 text-center text-green-400">✓</td>
@@ -683,44 +601,15 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* ─── PLATFORM FEATURE OVERLAP ─────────────────────────────────────── */}
-      <section className="relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-black px-6 py-10 sm:px-8">
-        <div className="text-center mb-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-2">Comparison Table</p>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">Feature Overlap</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-4 text-gray-400 font-semibold">Platform</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-semibold">Website Builder</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-semibold">3D Game Engine</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-semibold">AI Playground/Training</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-semibold">Browser-Based IDE</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {FEATURE_OVERLAP_ROWS.map((row) => (
-                <tr key={row.platform}>
-                  <td className="py-3 px-4 text-white font-medium">{row.platform}</td>
-                  <td className="py-3 px-4 text-gray-300">{row.websiteBuilder}</td>
-                  <td className="py-3 px-4 text-gray-300">{row.gameEngine}</td>
-                  <td className="py-3 px-4 text-gray-300">{row.aiPlayground}</td>
-                  <td className="py-3 px-4 text-gray-300">{row.browserIde}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {/* ─── AI ARCHITECTURE DIAGRAM ──────────────────────────────────────── */}
+      <AIDiagram />
 
       {/* ─── PLAYCANVAS INTEGRATION ─────────────────────────────────────────── */}
       <section className="relative mx-auto mt-12 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black px-6 py-10 sm:px-8">
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[100px]" />
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <h2 className="mb-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            Powerful <span className="text-blue-500">Wonderplay</span> 3D Integration
+            Powerful <span className="text-blue-500">WonderPlay</span> 3D Integration
           </h2>
           <p className="mx-auto mb-6 max-w-xl text-sm text-gray-400">
             Seamless real-time 3D editing and high-performance gameplay directly in the browser.
