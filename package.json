@@ -28,7 +28,8 @@
     "registry:sync": "node scripts/registry/sync-assets.mjs",
     "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run",
     "lint": "eslint apps/ engine/ packages/ runners/ infra/ --fix",
-    "clean:ghosts": "npx ts-prune -p tsconfig.json && npm run lint"
+    "clean:ghosts": "npx ts-prune -p tsconfig.json && npm run lint",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
@@ -40,6 +41,7 @@
     "globals": "^16.5.0",
     "jsdom": "^29.1.1",
     "lodash-es": "^4.18.1",
+    "prisma": "^6.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.3",
     "undici": "^8.1.0",
