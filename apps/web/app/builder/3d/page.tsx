@@ -1,13 +1,9 @@
-"use client"
+import WebGLStudioHost from "../../../components/WebGLStudioHost";
 
-import dynamic from "next/dynamic"
-
-const WebGLStudioHost = dynamic(() => import("@/components/WebGLStudioHost"), { ssr: false })
-
-export default function EditorPage() {
+export default function Builder3DPage() {
   return (
-    <div className="w-full h-screen">
+    <div className="h-screen w-full">
       <WebGLStudioHost />
     </div>
-  )
+  );
 }

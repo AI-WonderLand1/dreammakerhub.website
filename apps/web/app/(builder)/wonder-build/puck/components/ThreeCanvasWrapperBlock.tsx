@@ -1,10 +1,17 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
 export type ThreeCanvasWrapperBlockProps = {
   label: string;
   height: "sm" | "md" | "lg" | "xl";
   sceneType: "webgl" | "3d-world" | "particle" | "custom";
   showControls: boolean;
+  modelUrl?: string;
+  backgroundColor?: string;
+  autoRotate?: boolean;
 };
 
 const heights = {
@@ -14,65 +21,165 @@ const heights = {
   xl: "h-[32rem]",
 };
 
-const sceneIcons = {
-  webgl: "⬡",
-  "3d-world": "🌐",
-  particle: "✦",
-  custom: "⚙",
-};
+function createScene(container: HTMLDivElement, sceneType: string, backgroundColor: string) {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
 
-const sceneLabels = {
-  webgl: "WebGL Scene",
-  "3d-world": "3D World",
-  particle: "Particle System",
-  custom: "Custom Scene",
-};
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(backgroundColor || "#0a0a1a");
+
+  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  camera.position.set(5, 5, 10);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 2;
+
+  const ambientLight = new THREE.AmbientLight(0x404060);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(10, 10, 10);
+  scene.add(directionalLight);
+
+  const pointLight = new THREE.PointLight(0x4488ff, 1, 20);
+  pointLight.position.set(-5, 5, -5);
+  scene.add(pointLight);
+
+  let mesh: THREE.Mesh | null = null;
+
+  if (sceneType === "particle") {
+    const geometry = new THREE.BufferGeometry();
+    const count = 2000;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 40;
+    }
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+      color: 0x4488ff,
+      size: 0.05,
+      transparent: true,
+    });
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+  } else {
+    const geometry = new THREE.BoxGeometry(2, 2, 2);
+    const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(Math.random() * 0xffffff),
+      metalness: 0.3,
+      roughness: 0.4,
+      envMapIntensity: 1,
+    });
+    mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const wireframeGeo = new THREE.EdgesGeometry(geometry);
+    const wireframeMat = new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.3 });
+    const wireframe = new THREE.LineSegments(wireframeGeo, wireframeMat);
+    mesh.add(wireframe);
+
+    const gridHelper = new THREE.GridHelper(10, 10, 0x4488ff, 0x224488);
+    gridHelper.position.y = -1.5;
+    scene.add(gridHelper);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    if (mesh) {
+      mesh.rotation.x += 0.003;
+      mesh.rotation.y += 0.005;
+    }
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  return {
+    renderer,
+    controls,
+    scene,
+    camera,
+    resize: () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    },
+  };
+}
 
 export default function ThreeCanvasWrapperBlock({
   label = "3D Canvas",
   height = "md",
   sceneType = "webgl",
   showControls = true,
+  backgroundColor = "#0a0a1a",
+  autoRotate = true,
 }: ThreeCanvasWrapperBlockProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<ReturnType<typeof createScene> | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    sceneRef.current = createScene(container, sceneType, backgroundColor);
+    sceneRef.current.controls.autoRotate = autoRotate;
+    setReady(true);
+
+    const handleResize = () => sceneRef.current?.resize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      sceneRef.current?.renderer.dispose();
+      sceneRef.current = null;
+    };
+  }, [sceneType, backgroundColor, autoRotate]);
+
+  useEffect(() => {
+    if (sceneRef.current) {
+      sceneRef.current.controls.autoRotate = autoRotate;
+    }
+  }, [autoRotate]);
+
   return (
     <div className="p-4" data-block="three-canvas-wrapper">
       {label && (
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-cyan-400">{label}</p>
       )}
       <div
+        ref={containerRef}
         className={`relative overflow-hidden rounded-2xl border border-cyan-500/30 bg-black ${heights[height]}`}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/30 via-transparent to-transparent" />
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <span className="text-5xl text-cyan-400/60">{sceneIcons[sceneType]}</span>
-          <p className="text-sm font-semibold text-white/60">{sceneLabels[sceneType]}</p>
-          <p className="text-xs text-white/30">WebGL / Three.js canvas renders here</p>
-
-          {showControls && (
-            <div className="mt-2 flex items-center gap-2">
-              {["Orbit", "Zoom", "Pan"].map((ctrl) => (
-                <span
-                  key={ctrl}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] text-white/40"
-                >
-                  {ctrl}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-black/60 px-3 py-1 text-[10px] text-cyan-400 backdrop-blur-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          {sceneLabels[sceneType]} Ready
-        </div>
-
-        <div className="absolute left-0 right-0 top-0 grid grid-cols-[repeat(12,1fr)] gap-px opacity-10">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <div key={i} className="h-8 border-b border-r border-cyan-400/30" />
-          ))}
-        </div>
+        {!ready && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+          </div>
+        )}
+        {showControls && ready && (
+          <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+            {["Orbit", "Zoom", "Pan"].map((ctrl) => (
+              <span
+                key={ctrl}
+                className="rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[10px] text-white/40 backdrop-blur-sm"
+              >
+                {ctrl}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
