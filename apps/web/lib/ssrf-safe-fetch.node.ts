@@ -8,6 +8,10 @@ export class SsrfError extends Error {
   }
 }
 
+function normalizeHostname(hostname: string): string {
+  return hostname.trim().toLowerCase().replace(/\.+$/, '')
+}
+
 function isPrivateIpv4(ip: string): boolean {
   const parts = ip.split('.').map(Number)
   if (parts.length !== 4 || parts.some(p => Number.isNaN(p) || p < 0 || p > 255)) {
@@ -81,7 +85,7 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     throw new SsrfError('URL must not include credentials')
   }
 
-  const hostname = parsed.hostname.toLowerCase()
+  const hostname = normalizeHostname(parsed.hostname)
 
   if (isLocalHostname(hostname)) {
     if (options.blockLocalhost !== false) {
@@ -96,7 +100,8 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
   }
 
   if (options.allowedHosts && options.allowedHosts.length > 0) {
-    const isAllowed = options.allowedHosts.some(
+    const normalizedAllowedHosts = options.allowedHosts.map(allowed => normalizeHostname(allowed))
+    const isAllowed = normalizedAllowedHosts.some(
       allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
     )
     if (!isAllowed) {
@@ -109,7 +114,13 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     throw new SsrfError('URL resolves to a disallowed network address')
   }
 
-  const validatedUrl = new URL(`https://${hostname}${parsed.pathname}${parsed.search}`)
+  const validatedUrl = new URL(parsed.toString())
+  validatedUrl.protocol = 'https:'
+  validatedUrl.hostname = hostname
+  validatedUrl.port = ''
+  validatedUrl.username = ''
+  validatedUrl.password = ''
+
   return fetch(validatedUrl.toString(), {
     redirect: 'manual',
     ...options,
