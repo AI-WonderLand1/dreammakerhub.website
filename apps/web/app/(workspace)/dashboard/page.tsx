@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { 
@@ -34,6 +34,8 @@ const PROJECT_ICONS: Record<string, React.ElementType> = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,6 +50,7 @@ export default function DashboardPage() {
         router.replace("/public-pages/auth");
         return;
       }
+      setUserEmail(user?.email || null);
 
       const { data: projects } = await supabase
         .from("projects")
@@ -59,6 +62,8 @@ export default function DashboardPage() {
 
       if (!projects || projects.length === 0) {
         router.replace("/dashboard/projects");
+      } else {
+        setLoading(false);
       }
     }
 
@@ -69,7 +74,13 @@ export default function DashboardPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-white/50">Loading your workspace...</p>
+        {loading ? (
+          <p className="text-sm text-white/50 animate-pulse">Loading your workspace...</p>
+        ) : (
+          <p className="text-sm text-white/50">
+            Welcome back{userEmail ? `, ${userEmail}` : ""}! Choose an action below to get started.
+          </p>
+        )}
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
