@@ -1,8 +1,8 @@
 'use client';
 
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@lib/supabase/auth-context';
 import Link from 'next/link';
 
@@ -12,13 +12,19 @@ function AuthPageContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, signUp, signInWithOAuth, user } = useAuth();
-  const router = useRouter();
+  const { signIn, signUp, signInWithOAuth, user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
 
   const redirectTo =
     searchParams.get('redirectTo') ||
     (isSignUp ? '/subscription?redirectTo=/wonder-build?startAI=true' : '/dashboard/projects');
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      const target = searchParams.get('redirectTo') || '/dashboard/projects';
+      window.location.href = target;
+    }
+  }, [authLoading, user, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,13 +63,23 @@ if (authError) {
           }
         }
 
-        router.push(`/subscription?redirectTo=${encodeURIComponent(targetBuilder)}`);
+        window.location.href = `/subscription?redirectTo=${encodeURIComponent(targetBuilder)}`;
         return;
       }
 
-      router.push(redirectTo);
+      window.location.href = redirectTo;
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white/50 text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  if (user) return null;
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
