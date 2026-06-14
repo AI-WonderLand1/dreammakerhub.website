@@ -32,6 +32,7 @@ export async function runModel({
   const isGroq = typeof model === "string" && model.startsWith("groq/");
   const isGoogle = typeof model === "string" && model.startsWith("google/");
   const isOpencode = typeof model === "string" && model.startsWith("opencode/");
+  const isN8n = typeof model === "string" && model.startsWith("n8n/");
 
   if (isGithub) {
     // GitHub Models expects a model name that does NOT include "github/" prefix.
@@ -75,6 +76,15 @@ export async function runModel({
 
     return Providers.opencode.generate(lastContent, {
       model: opencodeModel || "opencode/big-pickle",
+      system,
+      temperature,
+      maxTokens,
+    });
+  }
+
+  if (isN8n) {
+    // n8n classification webhook
+    return Providers.n8n.generate(lastContent, {
       system,
       temperature,
       maxTokens,
