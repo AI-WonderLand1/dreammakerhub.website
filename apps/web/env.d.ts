@@ -28,6 +28,8 @@ declare namespace NodeJS {
     OPENAI_API_KEY?: string;
     GEMINI_API_KEY?: string;
     CEREBRAS_API_KEY?: string;
+    N8N_API_KEY?: string;
+    N8N_WEBHOOK_URL?: string;
     
     // Convai - server-side proxy only (client should not have direct API access)
     CONVAI_API_KEY?: string;
