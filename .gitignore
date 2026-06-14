@@ -1,3 +1,4 @@
+bin/
 node_modules/
 .next/
 .pnpm-store/
@@ -56,4 +57,4 @@ logs
 *.log
 # --- OS FILES ---
 .DS_Store
-Thumbs.db
+Thumbs.dbbin/
