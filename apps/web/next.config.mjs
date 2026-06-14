@@ -91,12 +91,12 @@ const nextConfig = {
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-        {
-          key: 'Content-Security-Policy',
-          value: [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js-mtls-com.s3.amazonaws.com",
-            "style-src 'self' 'unsafe-inline' https://rsms.me",
+{
+           key: 'Content-Security-Policy',
+           value: [
+             "default-src 'self'",
+             "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js-mtls-com.s3.amazonaws.com https://static.cloudflareinsights.com",
+             "style-src 'self' 'unsafe-inline' https://rsms.me",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data: https://rsms.me",
             "connect-src 'self' https://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com",
