@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@lib/supabase/server-client";
-import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch";
+import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch.node";
 
 const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
 
