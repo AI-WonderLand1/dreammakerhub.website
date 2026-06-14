@@ -1,3 +1,6 @@
+import { lookup } from 'node:dns/promises'
+import { isIP } from 'node:net'
+
 export class SsrfError extends Error {
   constructor(message: string) {
     super(message)
@@ -35,8 +38,9 @@ function isPrivateIpv6(ip: string): boolean {
 }
 
 function isUnsafeResolvedIp(ip: string): boolean {
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) return isPrivateIpv4(ip)
-  if (ip.includes(':')) return isPrivateIpv6(ip)
+  const family = isIP(ip)
+  if (family === 4) return isPrivateIpv4(ip)
+  if (family === 6) return isPrivateIpv6(ip)
   return true
 }
 
@@ -98,6 +102,11 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     if (!isAllowed) {
       throw new SsrfError('Host is not in the allowed list')
     }
+  }
+
+  const records = await lookup(hostname, { all: true, verbatim: true })
+  if (!records.length || records.some(record => isUnsafeResolvedIp(record.address))) {
+    throw new SsrfError('URL resolves to a disallowed network address')
   }
 
   const validatedUrl = new URL(`https://${hostname}${parsed.pathname}${parsed.search}`)
