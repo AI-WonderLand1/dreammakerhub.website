@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     `;
 
     const result = await runModel({
-      model: "google/gemini-2.0-flash",
+      model: "opencode/big-pickle",
       messages: [{ role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }],
       system: systemPrompt,
       temperature: 0.7,

@@ -84,7 +84,7 @@ Start your output with <!DOCTYPE html>`;
 
 async function callAI(system: string, userPrompt: string): Promise<string> {
   const result = await runModel({
-    model: "google/gemini-2.0-flash",
+    model: "opencode/big-pickle",
     messages: [{ role: "user", content: userPrompt }],
     system,
     temperature: 0.8,
