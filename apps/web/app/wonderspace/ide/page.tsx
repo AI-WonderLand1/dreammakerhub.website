@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import GitHubStyleLayout from "@/components/layouts/GitHubStyleLayout";
+import GitHubStyleLayout from "@/app/components/layouts/GitHubStyleLayout";
 
 type Platform = "web" | "ios" | "android" | "multi";
 
