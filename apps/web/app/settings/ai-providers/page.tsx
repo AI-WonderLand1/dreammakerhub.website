@@ -9,6 +9,7 @@ interface AIProviderConfig {
   apiKey: string;
   baseUrl?: string;
   model: string;
+  showKey?: boolean;
 }
 
 interface ProviderInfo {
@@ -163,7 +164,7 @@ export default function AIProvidersSettingsPage() {
       [providerId]: {
         ...prev[providerId],
         showKey: !(prev[providerId]?.showKey ?? true),
-      } as any,
+      },
     }));
   }
 
