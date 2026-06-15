@@ -84,7 +84,7 @@ Start your output with <!DOCTYPE html>`;
 
 async function callAI(system: string, userPrompt: string): Promise<string> {
   const result = await runModel({
-    model: "opencode/big-pickle",
+    model: "groq/llama-3.3-70b-versatile",
     messages: [{ role: "user", content: userPrompt }],
     system,
     temperature: 0.8,

@@ -1,0 +1,1 @@
+- [AI Wonderland migration](ai-wonderland-migration.md) — Supabase→Replit Auth/DB adapter pattern; central file is apps/web/app/utils/supabase/server.ts
