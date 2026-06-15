@@ -145,11 +145,25 @@ function extractSupabaseAccessToken(cookieHeader: string): string | null {
     const name = part.slice(0, eqIndex);
     const value = part.slice(eqIndex + 1);
 
-    if (!name.startsWith("sb-") || !name.endsWith("-auth-token")) continue;
+    // Supabase v2 uses supabase.auth.token* as cookie name (base64url encoded with prefix)
+    // Legacy v1 format: sb-*auth-token
+    const isSupabaseV2 = name === "supabase.auth.token" || name.startsWith("supabase.auth.token.");
+    const isLegacyV1 = name.startsWith("sb-") && name.endsWith("-auth-token");
+
+    if (!isSupabaseV2 && !isLegacyV1) continue;
 
     try {
       const decoded = decodeURIComponent(value);
-      const parsed = JSON.parse(decoded);
+      
+      // Supabase v2 cookies may have base64- prefix
+      let parsed: any;
+      if (decoded.startsWith("base64-")) {
+        const base64Value = decoded.slice(7);
+        const jsonString = atob(base64Value.replace(/-/g, "+").replace(/_/g, "/"));
+        parsed = JSON.parse(jsonString);
+      } else {
+        parsed = JSON.parse(decoded);
+      }
 
       if (parsed && typeof parsed.access_token === "string" && parsed.access_token.length > 0) {
         return parsed.access_token;
@@ -218,7 +232,7 @@ export async function proxy(req: NextRequest) {
     const isAuthenticated = await checkAuth(req);
     if (!isAuthenticated) {
       const loginUrl = new URL("/public-pages/auth", req.url);
-      loginUrl.searchParams.set("redirect", path);
+      loginUrl.searchParams.set("redirectTo", path);
       return NextResponse.redirect(loginUrl);
     }
   }
