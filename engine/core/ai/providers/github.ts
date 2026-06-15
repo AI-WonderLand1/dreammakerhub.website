@@ -4,13 +4,13 @@ import { logger } from "@lib/logger";
 
 /**
  * GitHub Models Provider (via Azure OpenAI)
- * Uses GitHub Models accessible through Azure OpenAI endpoints.
+ * Uses GITHUB_MODELS_API_KEY or user-provided apiKey.
  */
 export const githubProvider: AIProvider = {
   name: "github",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = process.env.GITHUB_MODELS_API_KEY || '';
+    const apiKey = options.apiKey as string || process.env.GITHUB_MODELS_API_KEY || '';
     const {
       model = "gpt-4o-mini",
       system,
@@ -20,14 +20,14 @@ export const githubProvider: AIProvider = {
 
     if (!apiKey) {
       return {
-        text: "GITHUB_MODELS_API_KEY not configured. Add it to Railway.",
+        text: "GITHUB_MODELS_API_KEY not configured. Add it in Settings → AI Providers.",
         error: true,
         provider: "github",
         model,
         confessions: {
           confidence: 0,
           reasoning: ["GITHUB_MODELS_API_KEY missing"],
-          limitations: ["Set GITHUB_MODELS_API_KEY in Railway environment"]
+          limitations: ["Set GITHUB_MODELS_API_KEY in Settings → AI Providers"]
         }
       };
     }

@@ -5,13 +5,13 @@ import { logger } from "@lib/logger";
 /**
  * OpenRouter Provider
  * Routes requests to many models via openrouter.ai
- * Uses OPENROUTER_API_KEY secret.
+ * Uses OPENROUTER_API_KEY secret or user-provided apiKey.
  */
 export const openrouterProvider: AIProvider = {
   name: "openrouter",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = process.env.OPENROUTER_API_KEY || '';
+    const apiKey = options.apiKey as string || process.env.OPENROUTER_API_KEY || '';
     const {
       model = "google/gemini-flash-1.5",
       system,
@@ -21,14 +21,14 @@ export const openrouterProvider: AIProvider = {
 
     if (!apiKey) {
       return {
-        text: "OPENROUTER_API_KEY not configured.",
+        text: "OPENROUTER_API_KEY not configured. Add it in Settings → AI Providers.",
         error: true,
         provider: "openrouter",
         model,
         confessions: {
           confidence: 0,
           reasoning: ["OPENROUTER_API_KEY missing"],
-          limitations: ["Set OPENROUTER_API_KEY in environment"]
+          limitations: ["Set OPENROUTER_API_KEY in Settings → AI Providers"]
         }
       };
     }
