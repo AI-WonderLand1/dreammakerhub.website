@@ -135,7 +135,7 @@ export async function POST(req: Request) {
     `;
 
     const aiResponse = await runModel({
-      model: "opencode/big-pickle",
+      model: "groq/llama-3.3-70b-versatile",
       messages: [{ role: "user", content: command }],
       system: systemPrompt,
       temperature: 0.7,

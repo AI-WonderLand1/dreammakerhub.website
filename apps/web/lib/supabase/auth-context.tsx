@@ -1,10 +1,10 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClient } from './client'
 
 type AuthUser = {
   id: string
   email?: string
+  name?: string
   [key: string]: any
 }
 
@@ -34,92 +34,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false;
-    const supabase = createClient()
-    
-    // Timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.user) {
+          setUser(data.user)
+          setSession(data.session ?? { user: data.user })
+        }
         setLoading(false)
-      }
-    }, 10000) // 10 second timeout
-
-    if (!supabase) {
-      clearTimeout(timeout);
-      setLoading(false)
-      return
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      clearTimeout(timeout);
-      if (!cancelled) {
-        setSession(data.session ?? null)
-        setUser(data.session?.user ?? null)
-        setLoading(false)
-      }
-    }).catch(() => {
-      clearTimeout(timeout);
-      if (!cancelled) {
-        setLoading(false)
-      }
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (!cancelled) {
-        setSession(s ?? null)
-        setUser(s?.user ?? null)
-        setLoading(false)
-      }
-    })
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-      subscription.unsubscribe()
-    }
+      })
+      .catch(() => setLoading(false))
   }, [])
 
-  const signIn = async (email: string, password: string): Promise<{ error?: Error }> => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
+  const signIn = async (_email: string, _password: string): Promise<{ error?: Error }> => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/replit-login'
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return error ? { error: new Error(error.message) } : {}
+    return {}
   }
 
-
-
-  const signUp = async (email: string, password: string): Promise<{ error?: Error }> => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
+  const signUp = async (_email: string, _password: string): Promise<{ error?: Error }> => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/replit-login'
     }
-    const { error } = await supabase.auth.signUp({ email, password })
-    return error ? { error: new Error(error.message) } : {}
+    return {}
   }
 
   const signOut = async () => {
-    const supabase = createClient()
-    if (supabase) {
-      await supabase.auth.signOut()
-    }
+    await fetch('/api/auth/logout', { method: 'POST' })
     setUser(null)
     setSession(null)
+    if (typeof window !== 'undefined') {
+      window.location.href = '/public-pages/auth'
+    }
   }
 
-  const signInWithOAuth = async (provider: 'github' | 'google') => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
+  const signInWithOAuth = async (_provider: 'github' | 'google') => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/replit-login'
     }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/api/auth/callback`
-      }
-    })
-    return error ? { error: new Error(error.message) } : {}
+    return {}
   }
 
   return (
