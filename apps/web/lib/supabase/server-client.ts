@@ -1,5 +1,1 @@
-import { createSupabaseServerClient as createServerClient } from '@/app/utils/supabase/server'
-
-export async function createSupabaseServerClient() {
-  return createServerClient()
-}
+export { createClient as createSupabaseServerClient, createClient } from '@/app/utils/supabase/server'
