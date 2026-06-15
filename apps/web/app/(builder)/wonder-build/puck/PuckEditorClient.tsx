@@ -3,12 +3,13 @@
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Eye, Monitor, Code, Clock, Download, Sparkles, Box } from "lucide-react";
+import { Eye, Monitor, Code, Clock, Download, Sparkles, Box, Sun, Moon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
 import { useAuth } from "@/lib/supabase/auth-context";
 import "@puckeditor/core/puck.css";
 import "@/styles/puck-dark-fix.css";
+import "@/styles/puck-framer-theme.css";
 import { config } from "./puck.config";
 import { retrievePuckData } from "@/lib/ai-to-puck";
 import { useAutoSave } from "@/components/VersionHistory";
@@ -208,6 +209,7 @@ export function PuckEditorClient({
   const [assetSearching, setAssetSearching] = useState(false);
   const [importingAsset, setImportingAsset] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
+  const [editorTheme, setEditorTheme] = useState<"dark" | "framer">("dark");
   const [storageInfo, setStorageInfo] = useState<{type: string; hoursRemaining?: number; expiresAt?: string}>({type: "platform"});
   const searchParams = useSearchParams();
 
@@ -497,6 +499,14 @@ export function PuckEditorClient({
             3D
           </button>
           <button
+            onClick={() => setEditorTheme(editorTheme === "dark" ? "framer" : "dark")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white/80 transition-colors"
+            title={editorTheme === "dark" ? "Switch to Framer theme" : "Switch to Dark theme"}
+          >
+            {editorTheme === "dark" ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+            Theme
+          </button>
+          <button
             onClick={() => setShowExportModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white/80 transition-colors"
           >
@@ -598,20 +608,22 @@ export function PuckEditorClient({
         </div>
       )}
       
-      {status !== "loading" && (hasContent || status === "loaded") && (
+{status !== "loading" && (hasContent || status === "loaded") && (
         <>
           {editorMode === "visual" && (
-            <Puck
-              config={config}
-              data={data ?? { content: [] }}
-              onPublish={handlePublish}
-              onChange={handleDataChange}
-               iframe={{
-                 enabled: false,
-               }}
-            >
-              <LayoutWrapper />
-            </Puck>
+            <div className={editorTheme === "framer" ? "puck-framer-theme" : ""}>
+              <Puck
+                config={config}
+                data={data ?? { content: [] }}
+                onPublish={handlePublish}
+                onChange={handleDataChange}
+                iframe={{
+                  enabled: false,
+                }}
+              >
+                <LayoutWrapper />
+              </Puck>
+            </div>
           )}
           
           {editorMode === "preview" && (
