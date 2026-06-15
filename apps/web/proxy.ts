@@ -154,19 +154,24 @@ function extractSupabaseAccessToken(cookieHeader: string): string | null {
 
     try {
       const decoded = decodeURIComponent(value);
-      
+
       // Supabase v2 cookies may have base64- prefix
-      let parsed: any;
+      let parsed: unknown;
       if (decoded.startsWith("base64-")) {
         const base64Value = decoded.slice(7);
-        const jsonString = atob(base64Value.replace(/-/g, "+").replace(/_/g, "/"));
+        // Convert base64url to base64 with padding
+        let base64 = base64Value.replace(/-/g, "+").replace(/_/g, "/");
+        while (base64.length % 4) {
+          base64 += "=";
+        }
+        const jsonString = Buffer.from(base64, "base64").toString("utf-8");
         parsed = JSON.parse(jsonString);
       } else {
         parsed = JSON.parse(decoded);
       }
 
-      if (parsed && typeof parsed.access_token === "string" && parsed.access_token.length > 0) {
-        return parsed.access_token;
+      if (parsed && typeof (parsed as any).access_token === "string" && (parsed as any).access_token.length > 0) {
+        return (parsed as any).access_token;
       }
     } catch {
       // Ignore malformed cookie and continue searching.
