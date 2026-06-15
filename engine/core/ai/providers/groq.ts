@@ -1,6 +1,5 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env, requireEnv } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
@@ -11,13 +10,27 @@ export const groqProvider: AIProvider = {
   name: "groq",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.GROQ_API_KEY, "GROQ_API_KEY");
+    const apiKey = process.env.GROQ_API_KEY || '';
     const {
       model = "llama-3.1-8b-instant",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
+
+    if (!apiKey) {
+      return {
+        text: "GROQ_API_KEY not configured. Add it to Railway.",
+        error: true,
+        provider: "groq",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["GROQ_API_KEY missing"],
+          limitations: ["Set GROQ_API_KEY in Railway environment"]
+        }
+      };
+    }
 
     try {
       const messages = [];

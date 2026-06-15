@@ -1,13 +1,25 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env, requireEnv } from "@lib/env";
 import { logger } from "@lib/logger";
 
 export const opencodeProvider: AIProvider = {
   name: "opencode",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.OPENCODE_API_KEY, "OPENCODE_API_KEY");
+    const apiKey = process.env.OPENCODE_API_KEY || '';
+    if (!apiKey) {
+      return {
+        text: "OPENCODE_API_KEY not configured. Add it to Railway or use a different provider.",
+        error: true,
+        provider: "opencode",
+        model: options?.model || "opencode/big-pickle",
+        confessions: {
+          confidence: 0,
+          reasoning: ["OPENCODE_API_KEY missing"],
+          limitations: ["Set OPENCODE_API_KEY in environment"]
+        }
+      };
+    }
     const {
       model = "opencode/big-pickle",
       system,

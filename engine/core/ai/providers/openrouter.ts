@@ -1,6 +1,5 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env, requireEnv } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
@@ -14,13 +13,27 @@ export const googleProvider: AIProvider = {
   name: "google",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
+    const apiKey = process.env.GOOGLE_AI_API_KEY || '';
     const {
       model = "gemini-2.5-flash",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
+
+    if (!apiKey) {
+      return {
+        text: "GOOGLE_AI_API_KEY not configured. Add it to Railway.",
+        error: true,
+        provider: "google",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["GOOGLE_AI_API_KEY missing"],
+          limitations: ["Set GOOGLE_AI_API_KEY in Railway environment"]
+        }
+      };
+    }
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -96,7 +109,7 @@ export const googleProvider: AIProvider = {
       return {
         text: "The Spirit Guide lost connection to Google AI API.",
         error: true,
-        provider: "openrouter",
+        provider: "google",
         model,
         confessions: {
           confidence: 0,
