@@ -1,11 +1,16 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { User, Session } from '@supabase/supabase-js'
+
+type AuthUser = {
+  id: string
+  email?: string
+  name?: string
+  [key: string]: any
+}
 
 type AuthContextState = {
-  user: User | null
-  session: Session | null
+  user: AuthUser | null
+  session: any | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>
@@ -22,53 +27,38 @@ const AuthContext = createContext<AuthContextState>({
 })
 
 export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [session, setSession] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.user) {
+          setUser(data.user)
+          setSession(data.session ?? { user: data.user })
+        }
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
-  const signIn = async (email: string, password: string) => {
-    const supabase = createClient()
-    if (!supabase) return { error: new Error('Supabase not configured') }
-    
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error }
+  const signIn = async (_email: string, _password: string) => {
+    if (typeof window !== 'undefined') window.location.href = '/api/auth/replit-login'
+    return { error: null }
   }
 
-  const signUp = async (email: string, password: string) => {
-    const supabase = createClient()
-    if (!supabase) return { error: new Error('Supabase not configured') }
-    
-    const { error } = await supabase.auth.signUp({ email, password })
-    return { error }
+  const signUp = async (_email: string, _password: string) => {
+    if (typeof window !== 'undefined') window.location.href = '/api/auth/replit-login'
+    return { error: null }
   }
 
   const signOut = async () => {
-    const supabase = createClient()
-    await supabase?.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST' })
     setUser(null)
     setSession(null)
+    if (typeof window !== 'undefined') window.location.href = '/public-pages/auth'
   }
 
   return (
