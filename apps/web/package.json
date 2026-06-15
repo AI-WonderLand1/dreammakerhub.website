@@ -33,7 +33,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@octokit/rest": "^22.0.1",
     "@prisma/adapter-pg": "^6.0.0",
-    "@prisma/client": "^6.0.0",
+    "@prisma/client": "^7.8.0",
     "@puckeditor/cloud-client": "^0.7.0",
     "@puckeditor/core": "^0.21.2",
     "@prisma/adapter-pg": "^6.0.0",
