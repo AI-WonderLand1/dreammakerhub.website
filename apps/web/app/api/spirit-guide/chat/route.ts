@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runModel } from "@core/ai/runModel";
+import { supabaseRouteClient } from "@/lib/supabase/route";
+import { decryptSecret } from "@/lib/crypto/secrets";
 
 export const runtime = "nodejs";
 
@@ -24,12 +26,43 @@ export async function POST(req: NextRequest) {
     }
     messages.push({ role: "user", content: message });
 
+    const supabase = await supabaseRouteClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let userApiKey: string | undefined;
+    let model = "groq/llama-3.1-8b-instant";
+
+    if (user) {
+      const { data: config } = await supabase
+        .from("ai_provider_configs")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      if (config?.api_key_encrypted && config?.api_key_iv && config?.api_key_tag) {
+        try {
+          userApiKey = decryptSecret(config.api_key_encrypted, config.api_key_iv, config.api_key_tag);
+        } catch (e) {
+          console.error("Failed to decrypt API key:", e);
+        }
+      }
+
+      if (config?.default_model) {
+        model = config.default_model;
+        if (!model.includes("/")) {
+          model = `${config.provider}/${model}`;
+        }
+      }
+    }
+
     const result = await runModel({
-      model: "groq/llama-3.3-70b-versatile",
+      model,
       messages,
       system: SPIRIT_GUIDE_SYSTEM,
       temperature: 0.8,
       maxTokens: 512,
+      userApiKey,
     });
 
     const response = result.text || "I sense great creativity in you. What would you like to build?";
@@ -38,10 +71,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ response, action: isCreateRequest ? "create_scene" : "answer" });
 
-  } catch (error: any) {
-    console.error("Spirit Guide error:", error);
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Spirit Guide error:", errMsg);
     return NextResponse.json(
-      { error: error.message || "Spirit Guide is resting. Try again shortly." },
+      { error: errMsg || "Spirit Guide is resting. Try again shortly." },
       { status: 500 }
     );
   }
