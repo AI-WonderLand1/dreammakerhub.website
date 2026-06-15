@@ -91,9 +91,9 @@ export async function runModel({
     });
   }
 
-  // Default: OpenCode provider for high-quality inference
-  return Providers.opencode.generate(lastContent, {
-    model,
+  // Default: GROQ provider for fast inference
+  return Providers.groq.generate(lastContent, {
+    model: model || "llama-3.1-8b-instant",
     system,
     temperature,
     maxTokens,
