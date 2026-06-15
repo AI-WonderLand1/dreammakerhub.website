@@ -42,7 +42,7 @@ async function getCurrentUser(): Promise<ReplitUser | null> {
 
 function makeQueryBuilder(db: ReturnType<typeof getDb>, table: string, user: ReplitUser | null) {
   let _selectCols = "*";
-  let _filters: Array<[string, any]> = [];
+  const _filters: Array<[string, any]> = [];
   let _limit: number | null = null;
   let _order: { col: string; ascending: boolean } | null = null;
   let _single = false;
