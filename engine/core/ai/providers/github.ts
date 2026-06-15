@@ -1,6 +1,5 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env, requireEnv } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
@@ -11,13 +10,27 @@ export const githubProvider: AIProvider = {
   name: "github",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.GITHUB_MODELS_API_KEY, "GITHUB_MODELS_API_KEY");
+    const apiKey = process.env.GITHUB_MODELS_API_KEY || '';
     const {
       model = "gpt-4o-mini",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
+
+    if (!apiKey) {
+      return {
+        text: "GITHUB_MODELS_API_KEY not configured. Add it to Railway.",
+        error: true,
+        provider: "github",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["GITHUB_MODELS_API_KEY missing"],
+          limitations: ["Set GITHUB_MODELS_API_KEY in Railway environment"]
+        }
+      };
+    }
 
     try {
       const messages = [];
