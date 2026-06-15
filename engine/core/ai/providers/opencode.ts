@@ -6,17 +6,17 @@ export const opencodeProvider: AIProvider = {
   name: "opencode",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = process.env.OPENCODE_API_KEY || '';
+    const apiKey = options.apiKey as string || process.env.OPENCODE_API_KEY || '';
     if (!apiKey) {
       return {
-        text: "OPENCODE_API_KEY not configured. Add it to Railway or use a different provider.",
+        text: "OPENCODE_API_KEY not configured. Add it in Settings → AI Providers.",
         error: true,
         provider: "opencode",
         model: options?.model || "opencode/big-pickle",
         confessions: {
           confidence: 0,
           reasoning: ["OPENCODE_API_KEY missing"],
-          limitations: ["Set OPENCODE_API_KEY in environment"]
+          limitations: ["Set OPENCODE_API_KEY in Settings → AI Providers"]
         }
       };
     }

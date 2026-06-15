@@ -5,12 +5,13 @@ import { logger } from "@lib/logger";
 /**
  * GROQ AI Provider
  * Uses GROQ API for fast inference with various models.
+ * Supports user-provided apiKey via options.
  */
 export const groqProvider: AIProvider = {
   name: "groq",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = process.env.GROQ_API_KEY || '';
+    const apiKey = options.apiKey as string || process.env.GROQ_API_KEY || '';
     const {
       model = "llama-3.1-8b-instant",
       system,
@@ -20,14 +21,14 @@ export const groqProvider: AIProvider = {
 
     if (!apiKey) {
       return {
-        text: "GROQ_API_KEY not configured. Add it to Railway.",
+        text: "GROQ_API_KEY not configured. Add it in Settings → AI Providers.",
         error: true,
         provider: "groq",
         model,
         confessions: {
           confidence: 0,
           reasoning: ["GROQ_API_KEY missing"],
-          limitations: ["Set GROQ_API_KEY in Railway environment"]
+          limitations: ["Set GROQ_API_KEY in Settings → AI Providers"]
         }
       };
     }
