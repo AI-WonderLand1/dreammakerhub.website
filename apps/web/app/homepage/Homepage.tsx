@@ -140,8 +140,8 @@ export default function Homepage() {
         }`}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          {/* Logo - goes to dashboard if authenticated, otherwise stays on homepage */}
+          <Link href={isAuthenticated ? "/dashboard/projects" : "/"} className="flex items-center gap-2">
             <span className="text-sm font-extrabold tracking-tight text-white">AI Wonderland</span>
           </Link>
 

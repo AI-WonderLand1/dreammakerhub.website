@@ -5,11 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
 
 const NAV_LINKS = [
-  { href: '/wonder-build', label: 'Hub', icon: '🏠' },
-  { href: '/wonder-build/ai-builder', label: 'AI Builder', icon: '🤖' },
-  { href: '/wonder-build/puck', label: 'Puck Editor', icon: '🎨' },
-  { href: '/wonder-build/playcanvas', label: 'PlayCanvas', icon: '🎮' },
-  { href: '/wonder-build/spatial', label: 'Spatial', icon: '🌌' },
+   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
 ] as const;
 
 export function SovereignNavBar() {
