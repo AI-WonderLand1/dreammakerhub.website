@@ -131,14 +131,16 @@ export class CoderIntegration {
   async provisionIDEForProject(
     userId: string,
     projectName: string,
-    projectCode?: string
+    projectCode?: string,
+    templateId?: string
   ): Promise<{ workspace: CoderWorkspace; ideUrl: string }> {
+    const workspaceTemplateId = templateId || 'wonderspace-ide';
     // Check for existing workspace
     let workspace = await this.getUserWorkspace(userId);
 
     if (!workspace) {
       // Create new workspace
-      workspace = await this.createWorkspace(userId, projectName);
+      workspace = await this.createWorkspace(userId, projectName, workspaceTemplateId);
     }
 
     // Wait for workspace to be ready
