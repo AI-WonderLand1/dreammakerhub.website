@@ -58,11 +58,11 @@ function detectHumanLanguage(prompt: string): string {
 }
 
 const AGENTS = {
-  "builder-default": { id: "opencode/big-pickle", provider: "opencode" },
-  "github-fast": { id: "opencode/big-pickle", provider: "opencode" },
-  "github-powerful": { id: "opencode/big-pickle", provider: "opencode" },
-  "google-vision": { id: "gemini-2.5-pro-vision", provider: "google" },
-  "openrouter-general": { id: "openrouter/auto", provider: "openrouter" },
+  "builder-default": { id: "groq/llama-3.3-70b-versatile", provider: "groq" },
+  "github-fast": { id: "groq/llama-3.1-8b-instant", provider: "groq" },
+  "github-powerful": { id: "groq/llama-3.3-70b-versatile", provider: "groq" },
+  "google-vision": { id: "google/gemini-2.5-flash", provider: "google" },
+  "openrouter-general": { id: "google/gemini-flash-1.5", provider: "openrouter" },
 };
 
 const planForRequest = (req: NextRequest) => req.headers.get("x-plan") || "free";
