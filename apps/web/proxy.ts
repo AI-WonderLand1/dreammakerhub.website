@@ -214,11 +214,11 @@ export async function proxy(req: NextRequest) {
 
 
   const protectedPaths = [
-    "/wonder-build", 
-    "/wonder-projects", 
-    "/wonderspace", 
-    "/dashboard", 
-    "/builder", 
+    "/wonder-build",
+    "/wonder-projects",
+    "/wonderspace",
+    "/dashboard",
+    "/builder",
     "/playcanvas",
     "/editor",
     "/library",
@@ -228,7 +228,8 @@ export async function proxy(req: NextRequest) {
     "/agent-playground",
     "/settings",
     "/checkout",
-    "/subscription"
+    "/subscription",
+    "/ide"
   ];
   
   const needsAuth = protectedPaths.some(p => path.startsWith(p));
