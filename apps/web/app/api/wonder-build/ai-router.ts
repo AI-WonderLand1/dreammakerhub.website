@@ -93,6 +93,21 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
   }
 
   if (!content) {
+    // Fallback to Groq
+    try {
+      const result = await runModel({
+        model: 'groq/llama-3.3-70b-versatile',
+        messages: [
+          { role: 'user', content: `${systemPrompt}\n\n${prompt}` }
+        ],
+      });
+      content = result.text || '';
+    } catch (error: any) {
+      return { error: error.message || 'All AI providers failed', success: false };
+    }
+  }
+
+  if (!content) {
     return { error: 'No AI provider configured', success: false };
   }
 
@@ -112,7 +127,7 @@ export async function POST(req: Request) {
 
   if (mode === 'classify') {
     const classificationPrompt = buildClassificationPrompt(prompt);
-    const result = await runModel({ model: 'github/gpt-4o-mini', messages: [{ role: 'user', content: classificationPrompt }] });
+    const result = await runModel({ model: 'groq/llama-3.1-8b-instant', messages: [{ role: 'user', content: classificationPrompt }] });
     
     // Rick: We're parsing the AI's garbage output. Better be JSON or I'm out.
     try {
