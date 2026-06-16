@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 export type PromptInputBlockProps = {
-  placeholder: string;
-  buttonLabel: string;
-  label: string;
-  theme: "violet" | "cyan" | "amber";
+  placeholder?: string;
+  buttonLabel?: string;
+  label?: string;
+  theme?: "violet" | "cyan" | "amber";
+  onSubmit?: (prompt: string) => void;
 };
 
 const themes = {
@@ -30,11 +33,37 @@ const themes = {
 
 export default function PromptInputBlock({
   placeholder = "Describe what you want to build...",
-  buttonLabel = "✨ Magic",
+  buttonLabel = "✨ Generate",
   label = "AI Prompt",
   theme = "violet",
+  onSubmit,
 }: PromptInputBlockProps) {
   const t = themes[theme];
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit() {
+    if (!prompt.trim() || loading) return;
+    
+    setLoading(true);
+    if (onSubmit) {
+      onSubmit(prompt);
+    } else {
+      try {
+        const res = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, agentId: "website_builder" }),
+        });
+        const data = await res.json();
+        // Could emit event or callback with result
+        console.log("AI response:", data);
+      } catch (e) {
+        console.error("AI request failed:", e);
+      }
+    }
+    setLoading(false);
+  }
 
   return (
     <div className="p-4" data-block="prompt-input">
@@ -45,15 +74,22 @@ export default function PromptInputBlock({
       )}
       <div className={`rounded-2xl border bg-white/[0.03] p-1 transition ${t.border}`}>
         <textarea
-          readOnly
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
           rows={4}
           placeholder={placeholder}
-          className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm text-white placeholder:text-white/30 outline-none"
+          disabled={loading}
+          className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm text-white placeholder:text-white/30 outline-none disabled:opacity-50"
         />
         <div className="flex items-center justify-between px-4 pb-3">
-          <p className={`text-[10px] ${t.hint}`}>Press Enter or click the button to generate</p>
-          <button className={`rounded-xl px-5 py-2 text-sm font-bold transition ${t.btn}`}>
-            {buttonLabel}
+          <p className={`text-[10px] ${t.hint}`}>Enter for single line, Shift+Enter for new line</p>
+          <button 
+            onClick={handleSubmit}
+            disabled={loading || !prompt.trim()}
+            className={`rounded-xl px-5 py-2 text-sm font-bold transition disabled:opacity-50 ${t.btn}`}
+          >
+            {loading ? "Generating..." : buttonLabel}
           </button>
         </div>
       </div>
