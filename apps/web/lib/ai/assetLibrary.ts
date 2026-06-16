@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/client";
+<<<<<<< HEAD
 import { lookup } from "dns/promises";
 import { isIP } from "node:net";
 // TODO: Create @wonder/perf-assets package for asset optimization
 // import { optimizeAsset } from "@wonder/perf-assets";
+=======
+import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 const supabase = createClient();
 
@@ -15,11 +19,15 @@ const ALLOWED_DOWNLOAD_HOSTS = [
   "dl.polyhaven.org",
 ] as const;
 
+<<<<<<< HEAD
 const ALLOWED_OPTIMIZER_HOSTS = [
   "localhost",
 ] as const;
 
 const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> = {
+=======
+const SOURCE_ALLOWED_HOSTS: Record<string, readonly string[]> = {
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   playcanvas: ["playcanvas.com", "cdn.playcanvas.com"],
   sketchfab: ["sketchfab.com", "media.sketchfab.com"],
   "poly-haven": ["polyhaven.com", "dl.polyhaven.org"],
@@ -27,15 +35,19 @@ const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> =
   user: [],
 };
 
+<<<<<<< HEAD
 function isAllowedDownloadHost(hostname: string): boolean {
   return ALLOWED_DOWNLOAD_HOSTS.some(allowed => hostname === allowed);
 }
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 function isAllowedHostForSource(source: ExternalAsset["source"], hostname: string): boolean {
   const allowedHosts = SOURCE_ALLOWED_HOSTS[source] ?? [];
   return allowedHosts.some(allowed => hostname === allowed);
 }
 
+<<<<<<< HEAD
 function isAllowedOptimizerHost(hostname: string): boolean {
   return ALLOWED_OPTIMIZER_HOSTS.some(allowed => hostname === allowed);
 }
@@ -81,6 +93,8 @@ function validateExternalDownloadUrl(rawUrl: string): ValidatedExternalUrl {
   return parsed as ValidatedExternalUrl;
 }
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 function getSafeOptimizerUrl(): string {
   const optimizerUrl = process.env.OPTIMIZER_URL;
 
@@ -99,13 +113,18 @@ function getSafeOptimizerUrl(): string {
     throw new Error("Unsupported optimizer URL protocol");
   }
 
+<<<<<<< HEAD
   if (!isAllowedOptimizerHost(parsed.hostname)) {
+=======
+  if (parsed.hostname !== "localhost") {
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     throw new Error("Optimizer URL host is not allowed");
   }
 
   return parsed.toString();
 }
 
+<<<<<<< HEAD
 function isUnsafeIpv4(ip: string): boolean {
   const parts = ip.split(".").map(Number);
   if (parts.length !== 4 || parts.some(part => Number.isNaN(part) || part < 0 || part > 255)) {
@@ -153,6 +172,8 @@ async function safeFetch(url: ValidatedExternalUrl, init?: RequestInit): Promise
   });
 }
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 export interface ExternalAsset {
   id: string;
   name: string;
@@ -338,12 +359,23 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
   }
 
   try {
+<<<<<<< HEAD
     const safeDownloadUrl = validateExternalDownloadUrl(asset.downloadUrl);
     if (!isAllowedHostForSource(asset.source, safeDownloadUrl.hostname)) {
       throw new Error("Download URL host does not match asset source");
     }
 
     const response = await safeFetch(safeDownloadUrl);
+=======
+    const parsedUrl = new URL(asset.downloadUrl);
+    if (!isAllowedHostForSource(asset.source, parsedUrl.hostname.toLowerCase())) {
+      throw new Error("Download URL host does not match asset source");
+    }
+
+    const response = await ssrfFetch(asset.downloadUrl, {
+      allowedHosts: ALLOWED_DOWNLOAD_HOSTS,
+    });
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     if (!response.ok) {
       if (response.status >= 300 && response.status < 400) {
         throw new Error("Redirects are not allowed for asset downloads");
@@ -361,14 +393,25 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       const optimizeRes = await fetch(optimizerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+<<<<<<< HEAD
         body: JSON.stringify({ assetUrl: safeDownloadUrl.toString(), fileName }),
+=======
+        body: JSON.stringify({ assetUrl: asset.downloadUrl, fileName }),
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       });
 
       if (optimizeRes.ok) {
         const optimizeData = await optimizeRes.json();
         if (optimizeData.optimizedUrl) {
+<<<<<<< HEAD
           const safeOptimizedUrl = validateExternalDownloadUrl(optimizeData.optimizedUrl);
           finalBuffer = new Uint8Array((await safeFetch(safeOptimizedUrl).then(r => r.arrayBuffer())));
+=======
+          const optResp = await ssrfFetch(optimizeData.optimizedUrl, {
+            allowedHosts: ALLOWED_DOWNLOAD_HOSTS,
+          });
+          finalBuffer = new Uint8Array(await optResp.arrayBuffer());
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
         }
       } else {

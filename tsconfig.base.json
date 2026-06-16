@@ -45,6 +45,15 @@
       ],
       "@/types/*": [
         "apps/web/types/*"
+<<<<<<< HEAD
+=======
+      ],
+      "@/components/*": [
+        "apps/web/components/*"
+      ],
+      "@/app/*": [
+        "apps/web/app/*"
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       ]
     }
   },

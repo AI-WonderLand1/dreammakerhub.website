@@ -1,10 +1,10 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClient } from './client'
 
 type AuthUser = {
   id: string
   email?: string
+  name?: string
   [key: string]: any
 }
 
@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+<<<<<<< HEAD
     let cancelled = false;
     const supabase = createClient()
     
@@ -104,8 +105,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (supabase) {
       await supabase.auth.signOut()
     }
+=======
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.user) {
+          setUser(data.user)
+          setSession(data.session ?? { user: data.user })
+        }
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const signIn = async (_email: string, _password: string): Promise<{ error?: Error }> => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/replit-login'
+    }
+    return {}
+  }
+
+  const signUp = async (_email: string, _password: string): Promise<{ error?: Error }> => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/replit-login'
+    }
+    return {}
+  }
+
+  const signOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     setUser(null)
     setSession(null)
+    if (typeof window !== 'undefined') {
+      window.location.href = '/public-pages/auth'
+    }
+  }
+
+  const signInWithOAuth = async (_provider: 'github' | 'google') => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/replit-login'
+    }
+    return {}
   }
 
   const signInWithOAuth = async (provider: 'github' | 'google') => {

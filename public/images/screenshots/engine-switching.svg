@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1120"/>
+      <stop offset="100%" stop-color="#060a14"/>
+    </linearGradient>
+    <linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="grad3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="grad4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="600" fill="url(#bg)"/>
+
+  <!-- Header -->
+  <text x="600" y="50" font-family="Arial, sans-serif" font-size="28" fill="#e2e8f0" font-weight="700" text-anchor="middle">Switch Engines Without Leaving Your Workspace</text>
+  <text x="600" y="76" font-family="Arial, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">The same project, any tool — AI builder, code editor, visual designer, terminal</text>
+
+  <!-- Engine cards row -->
+  <!-- Card 1: AI Builder (selected) -->
+  <rect x="30" y="100" width="270" height="200" rx="16" fill="#1e293b" stroke="#a78bfa" stroke-width="2.5"/>
+  <rect x="30" y="100" width="270" height="200" rx="16" fill="url(#grad1)" opacity="0.08"/>
+  <rect x="54" y="120" width="40" height="40" rx="10" fill="url(#grad1)"/>
+  <text x="62" y="146" font-family="Arial, sans-serif" font-size="18" fill="#fff">🤖</text>
+  <text x="108" y="142" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0" font-weight="600">AI Builder</text>
+  <text x="240" y="142" font-family="Arial, sans-serif" font-size="11" fill="#a78bfa" font-weight="600">ACTIVE</text>
+  <text x="54" y="178" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">Generate from prompts,</text>
+  <text x="54" y="196" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">convert images to code,</text>
+  <text x="54" y="214" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">describe and create.</text>
+
+  <!-- Card 2: Code Editor -->
+  <rect x="320" y="100" width="270" height="200" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <rect x="344" y="120" width="40" height="40" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="352" y="146" font-family="Arial, sans-serif" font-size="18" fill="#fff">⌨️</text>
+  <text x="398" y="142" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0" font-weight="600">Code Editor</text>
+  <text x="344" y="178" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">Monaco-powered IDE with</text>
+  <text x="344" y="196" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">full language support,</text>
+  <text x="344" y="214" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">Terminal, Git integration.</text>
+
+  <!-- Card 3: Visual Builder -->
+  <rect x="610" y="100" width="270" height="200" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <rect x="634" y="120" width="40" height="40" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="642" y="146" font-family="Arial, sans-serif" font-size="18" fill="#fff">🎨</text>
+  <text x="688" y="142" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0" font-weight="600">Visual Builder</text>
+  <text x="634" y="178" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">Drag-and-drop puck editor,</text>
+  <text x="634" y="196" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">real-time component</text>
+  <text x="634" y="214" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">placement and styling.</text>
+
+  <!-- Card 4: 3D Studio -->
+  <rect x="900" y="100" width="270" height="200" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <rect x="924" y="120" width="40" height="40" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="932" y="146" font-family="Arial, sans-serif" font-size="18" fill="#fff">🌍</text>
+  <text x="978" y="142" font-family="Arial, sans-serif" font-size="16" fill="#e2e8f0" font-weight="600">3D Studio</text>
+  <text x="924" y="178" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">PlayCanvas/WebGL scene</text>
+  <text x="924" y="196" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">editor, real-time 3D</text>
+  <text x="924" y="214" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">rendering and animation.</text>
+
+  <!-- Arrow between cards -->
+  <text x="305" y="200" font-family="Arial, sans-serif" font-size="24" fill="#475569">→</text>
+  <text x="595" y="200" font-family="Arial, sans-serif" font-size="24" fill="#475569">→</text>
+  <text x="885" y="200" font-family="Arial, sans-serif" font-size="24" fill="#475569">→</text>
+
+  <!-- Dropdown selector mockup -->
+  <rect x="350" y="330" width="500" height="48" rx="12" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+  <rect x="350" y="330" width="500" height="48" rx="12" fill="url(#grad1)" opacity="0.05"/>
+  <text x="380" y="360" font-family="Arial, sans-serif" font-size="15" fill="#e2e8f0" font-weight="600">Current Engine:  AI Builder</text>
+  <text x="650" y="360" font-family="Arial, sans-serif" font-size="12" fill="#64748b">▼</text>
+
+  <rect x="350" y="386" width="500" height="180" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+
+  <rect x="360" y="394" width="480" height="36" rx="6" fill="#2d3a50"/>
+  <text x="380" y="418" font-family="Arial, sans-serif" font-size="13" fill="#e2e8f0">🤖  AI Builder</text>
+
+  <rect x="360" y="434" width="480" height="36" rx="6" fill="transparent"/>
+  <text x="380" y="458" font-family="Arial, sans-serif" font-size="13" fill="#94a3b8">⌨️  Code Editor (Monaco)</text>
+
+  <rect x="360" y="474" width="480" height="36" rx="6" fill="transparent"/>
+  <text x="380" y="498" font-family="Arial, sans-serif" font-size="13" fill="#94a3b8">🎨  Visual Builder (Puck)</text>
+
+  <rect x="360" y="514" width="480" height="36" rx="6" fill="transparent"/>
+  <text x="380" y="538" font-family="Arial, sans-serif" font-size="13" fill="#94a3b8">🌍  3D Studio (PlayCanvas)</text>
+
+  <!-- Result callout -->
+  <rect x="220" y="540" width="760" height="40" rx="20" fill="#0f172a" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="600" y="566" font-family="Arial, sans-serif" font-size="13" fill="#a78bfa" text-anchor="middle">The same project persists across engines — your code, your assets, your workspace.</text>
+</svg>

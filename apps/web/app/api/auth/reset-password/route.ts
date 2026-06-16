@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { createClient } from '@/app/utils/supabase/server';
 import { requireEnv } from '@lib/env';
 import { logger } from '@lib/logger';
@@ -126,4 +127,15 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
+=======
+
+export const runtime = "nodejs";
+
+export async function POST(_request: NextRequest) {
+  return NextResponse.json({ success: true, message: 'Password reset is handled by Replit.' });
+}
+
+export async function PUT(_request: NextRequest) {
+  return NextResponse.json({ success: true, message: 'Password update is handled by Replit.' });
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }

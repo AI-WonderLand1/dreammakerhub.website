@@ -13,7 +13,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+<<<<<<< HEAD
     "playcanvas": "^2.17.0"
+=======
+    "playcanvas": "^2.19.7"
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   },
   "devDependencies": {
     "typescript": "^6.0.3"

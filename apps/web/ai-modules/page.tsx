@@ -63,8 +63,8 @@ export default function ConstitutionalPlayground() {
   const [trainingLog, setTrainingLog] = useState<string[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("byok_key");
-    if (saved) { setByokKey(saved); setByokSaved(true); }
+    const saved = sessionStorage.getItem("byok_key");
+    if (saved) { try { setByokKey(atob(saved)); setByokSaved(true); } catch {} }
 
     fetch("/api/cloud-connections")
       .then((r) => r.ok ? r.json() : null)
@@ -112,6 +112,7 @@ export default function ConstitutionalPlayground() {
   };
 
   const saveByok = () => {
+<<<<<<< HEAD
     // Note: Storing API keys in localStorage is not secure.
     // In production, use httpOnly cookies or secure server-side storage.
     // This is kept for demo purposes but with a warning.
@@ -120,6 +121,14 @@ export default function ConstitutionalPlayground() {
         localStorage.setItem("byok_key", byokKey);
         setByokSaved(true);
         speakAsRobot("API key saved. Remember to use secure storage in production.");
+=======
+    if (byokKey && byokKey.length > 10) {
+      try {
+        const encoded = btoa(byokKey);
+        sessionStorage.setItem("byok_key", encoded);
+        setByokSaved(true);
+        speakAsRobot("API key saved.");
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       } catch (e) {
         console.error('Failed to save API key:', e);
       }

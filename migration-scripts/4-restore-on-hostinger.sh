@@ -101,7 +101,11 @@ kubectl create secret generic wonderspace-secrets \
   --from-literal=OPENCODE_API_KEY="op-your-key-here" \
   --from-literal=SUPABASE_URL="https://your-project.supabase.co" \
   --from-literal=SUPABASE_KEY="your-anon-key" \
+<<<<<<< HEAD
   --from-literal=DATABASE_URL="postgres://wonderspace:wonderspace123@localhost:5432/wonderspace_db" \
+=======
+  --from-literal=DATABASE_URL="postgres://wonderspace:${DB_PASSWORD}@localhost:5432/wonderspace_db" \
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   --from-literal=CODER_ACCESS_URL="http://localhost:7080" \
   --dry-run=client -o yaml | kubectl apply -f -
 

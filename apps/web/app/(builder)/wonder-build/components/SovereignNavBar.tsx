@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+<<<<<<< HEAD
 import { useSovereignOS } from '../context/SovereignOSContext';
 
 const MODE_TABS = [
@@ -11,6 +12,17 @@ const MODE_TABS = [
 ] as const;
 
 export function SovereignNavBar() {
+=======
+import { usePathname } from 'next/navigation';
+import { useSovereignOS } from '../context/SovereignOSContext';
+
+const NAV_LINKS = [
+   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+] as const;
+
+export function SovereignNavBar() {
+  const pathname = usePathname();
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const { running } = useSovereignOS();
 
   return (
@@ -24,6 +36,7 @@ export function SovereignNavBar() {
       </div>
 
       <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1 md:flex">
+<<<<<<< HEAD
         {MODE_TABS.map((tab) => (
           <button
             key={tab.id}
@@ -35,6 +48,23 @@ export function SovereignNavBar() {
             {tab.label}
           </button>
         ))}
+=======
+        {NAV_LINKS.map((link) => {
+          const isActive = pathname === link.href;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                isActive ? 'bg-white/15 text-white' : 'text-white/55 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <span>{link.icon}</span>
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       </nav>
 
       <div className="flex items-center gap-2">

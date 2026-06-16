@@ -1,14 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@lib/supabase/server-client";
+<<<<<<< HEAD
 
 const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
 
+=======
+import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch.node";
+
+const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
+
+const ALLOWED_ASSET_HOSTS = [
+  "playcanvas.com",
+  "cdn.playcanvas.com",
+  "sketchfab.com",
+  "media.sketchfab.com",
+  "polyhaven.com",
+  "dl.polyhaven.org",
+  "github.com",
+  "raw.githubusercontent.com",
+  "supabase.co",
+] as const;
+
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 interface MergeRequest {
   characterUrl: string;
   sceneUrl: string;
   outputName?: string;
 }
 
+<<<<<<< HEAD
 function isPrivateOrLocalHost(hostname: string): boolean {
   const host = hostname.toLowerCase().trim();
 
@@ -73,6 +93,8 @@ function validateExternalAssetUrl(rawUrl: string, fieldName: "characterUrl" | "s
   return parsed.toString();
 }
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
 
@@ -102,6 +124,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+<<<<<<< HEAD
   let safeCharacterUrl: string;
   let safeSceneUrl: string;
   try {
@@ -118,6 +141,12 @@ export async function POST(req: NextRequest) {
     const [characterRes, sceneRes] = await Promise.all([
       fetch(safeCharacterUrl, { redirect: "manual" }),
       fetch(safeSceneUrl, { redirect: "manual" }),
+=======
+  try {
+    const [characterRes, sceneRes] = await Promise.all([
+      ssrfFetch(characterUrl, { allowedHosts: ALLOWED_ASSET_HOSTS }),
+      ssrfFetch(sceneUrl, { allowedHosts: ALLOWED_ASSET_HOSTS }),
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     ]);
 
     if (characterRes.status >= 300 && characterRes.status < 400) {
@@ -222,8 +251,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+<<<<<<< HEAD
     const validatedUrl = validateExternalAssetUrl(url, "url");
     const response = await fetch(validatedUrl, { redirect: "manual" });
+=======
+    const response = await ssrfFetch(url, { allowedHosts: ALLOWED_ASSET_HOSTS });
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     
     if (response.status >= 300 && response.status < 400) {
       return NextResponse.json({

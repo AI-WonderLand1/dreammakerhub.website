@@ -13,6 +13,7 @@
   - Or repurpose for your own AI proxy
 
 ### 2. Add ElevenLabs TTS (Users Bring Their Own Key)
+<<<<<<< HEAD
 - [ ] Create `apps/web/app/api/npc/tts/route.ts`
   - Accept text, return audio URL or base64
   - Call ElevenLabs API with user's API key (stored like SSH keys in Supabase)
@@ -27,6 +28,14 @@
   - Send to optimizer service (or run in wonder-runtime pod)
   - Return optimized file URL from Supabase `3d-assets` bucket
 
+=======
+- [x] Create `apps/web/app/api/npc/tts/route.ts` — DONE (route exists)
+- [ ] Wire TTS into UI (call endpoint from frontend)
+
+### 3. Optimize glTF Files (Save Supabase Storage/Memory)
+- [x] Ensure `packages/optimizer/` is deployed and working — DONE
+- [x] Create `apps/web/app/api/assets/process/route.ts` — DONE (route exists)
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 - [ ] Wire into upload flow (`lib/ai/assetLibrary.ts`)
   - Auto-optimize on upload
   - Store optimized version in Supabase
@@ -48,12 +57,15 @@
   - Optional: `POST /api/scenes/merge` → combine using `merge()` from `@gltf-transform/functions`
   - Redirect to `https://{workspaceId}.dreammakerhub.website`
 
+<<<<<<< HEAD
 ### 6. Fix Current Bugs
 - [ ] Fix `rateLimits` variable in `apps/web/middleware.ts` (already done in commit `876bd1c`)
 - [ ] Fix CSP font-src to include `https://rsms.me` (already done in commit `2a6c287`)
 - [ ] Remove COEP `require-corp` header blocking external fonts (already done in commit `a6252a9`)
 - [ ] Ensure `rsms.me` is in `style-src` CSP (already done in commit `5dade33`)
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 ## 🔹 Low Priority
 
 ### 7. Character & Scene Management
@@ -66,6 +78,49 @@
 - [ ] Movies/Videos (pre-rendered, export as MP4)
 - [ ] Both?
 
+<<<<<<< HEAD
+=======
+## 🏗️ Builders & 3D/Spatial Surfaces
+
+### 6. Builder Page Consolidation
+- [ ] Audit all builder entry points (`/builder`, `/builder-ai`, `/builder/3d`, `/wonder-build/*`)
+- [ ] Define clear routing strategy: marketing funnel → workspace → editor
+- [ ] Unify auth/session handling across builder surfaces
+
+### 7. WebGL Studio (`/builder/3d`)
+- [ ] Replace dynamic import with proper client component boundary
+- [ ] Add Supabase Drive integration (replace LiteFileSystem)
+- [ ] Connect asset library (`lib/ai/assetLibrary.ts`) to WebGL Studio
+- [ ] Add scene save/load via Supabase Storage
+- [ ] Implement collaborative editing (Yjs / CRDT)
+
+### 8. PlayCanvas Editor (`/wonder-build/playcanvas`)
+- [ ] Fix embed timeout — investigate iframe sandbox restrictions
+- [ ] Add glTF drag-drop import from Asset Library
+- [ ] Wire auto-save to Supabase (already has `useAutoSave`)
+- [ ] Add NPC panel memory persistence across sessions
+- [ ] Implement scene forking/versioning
+
+### 9. AI Builder (`/wonder-build/ai-builder`)
+- [ ] Extend `3d-assets` type to output PlayCanvas-ready scenes
+- [ ] Integrate `packages/optimizer/` for generated 3D assets
+- [ ] Add "Open in PlayCanvas" action on build complete
+- [ ] Support iterative refinement (chat → modify scene)
+
+### 10. Puck Visual Builder (`/wonder-build/puck`)
+- [ ] Add 3D block types (`ThreeCanvasWrapperBlock` exists)
+- [ ] Connect to `assetLibrary` for 3D model insertion
+- [ ] Export to PlayCanvas scene format
+- [ ] Add collaborative editing (multi-user cursors)
+
+### 11. Spatial Designer (External: `spatial.dreammakerhub.website`)
+- [ ] Decide: integrate into monorepo or keep external?
+- [ ] If integrating: migrate to `/wonder-build/spatial`
+- [ ] Add real-time collab (WebRTC / WebSocket)
+- [ ] Connect to Supabase for persistence
+- [ ] Unified auth with main app
+
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 ## ❌ Don't Touch
 - ✅ PlayCanvas.com (ignore completely)
 - ✅ Your K8s pod architecture (it's solid)

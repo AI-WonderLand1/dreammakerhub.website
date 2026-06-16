@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/app/utils/supabase/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
+<<<<<<< HEAD
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
 
@@ -17,4 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(new URL("/dashboard", request.url));
+=======
+  return NextResponse.redirect(new URL('/dashboard', request.url));
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }

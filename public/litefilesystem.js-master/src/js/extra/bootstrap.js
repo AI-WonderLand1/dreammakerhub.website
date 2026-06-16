@@ -882,7 +882,11 @@ if (typeof jQuery === 'undefined') {
     var $parent = $()
     if (selector && typeof selector === 'string' && selector.length < 100) {
       selector = selector.replace(/[<>]/g, '')
+<<<<<<< HEAD
       if (selector.indexOf('javascript:') !== 0) {
+=======
+      if (!/^\s*(javascript|data|vbscript):/i.test(selector)) {
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         $parent = $(selector)
       }
     }

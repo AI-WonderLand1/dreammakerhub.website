@@ -3,9 +3,19 @@
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+<<<<<<< HEAD
 import { Eye, Monitor, Code, Clock, Download, Sparkles } from "lucide-react";
 import "@puckeditor/core/puck.css";
 import "@/styles/puck-dark-fix.css";
+=======
+import { Eye, Monitor, Code, Clock, Download, Sparkles, Box, Sun, Moon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
+import { useAuth } from "@/lib/supabase/auth-context";
+import "@puckeditor/core/puck.css";
+import "@/styles/puck-dark-fix.css";
+import "@/styles/puck-framer-theme.css";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { config } from "./puck.config";
 import { retrievePuckData } from "@/lib/ai-to-puck";
 import { useAutoSave } from "@/components/VersionHistory";
@@ -190,6 +200,11 @@ export function PuckEditorClient({
   readOnly = false,
   showAIPanel = true,
 }: PuckEditorClientProps) {
+<<<<<<< HEAD
+=======
+  const router = useRouter();
+  const { user } = useAuth();
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const [status, setStatus] = useState<EditorStatus>("loading");
   const [data, setData] = useState<InitialData | null>(initialData);
   const [saveStatus, setSaveStatus] = useState<string>("");
@@ -197,7 +212,17 @@ export function PuckEditorClient({
   const [showAI, setShowAI] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showTempWarning, setShowTempWarning] = useState(false);
+<<<<<<< HEAD
   const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
+=======
+  const [showAssetLib, setShowAssetLib] = useState(false);
+  const [assets, setAssets] = useState<ExternalAsset[]>([]);
+  const [assetSearch, setAssetSearch] = useState("");
+  const [assetSearching, setAssetSearching] = useState(false);
+  const [importingAsset, setImportingAsset] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
+  const [editorTheme, setEditorTheme] = useState<"dark" | "framer">("dark");
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const [storageInfo, setStorageInfo] = useState<{type: string; hoursRemaining?: number; expiresAt?: string}>({type: "platform"});
   const searchParams = useSearchParams();
 
@@ -246,10 +271,46 @@ export function PuckEditorClient({
     URL.revokeObjectURL(url);
     setShowExportModal(false);
   }, [data]);
+<<<<<<< HEAD
 
   useEffect(() => {
     // Check for AI-generated data from session storage
     const aiDataKey = searchParams.get("ai_data");
+=======
+
+  const handleSearchAssets = useCallback(async () => {
+    setAssetSearching(true);
+    try {
+      const results = await searchExternalAssets({ query: assetSearch || "3d model", limit: 12 });
+      setAssets(results);
+    } finally {
+      setAssetSearching(false);
+    }
+  }, [assetSearch]);
+
+  const handleImportAsset = useCallback(async (asset: ExternalAsset) => {
+    if (!user) return;
+    setImportingAsset(asset.id);
+    try {
+      const result = await downloadAssetToStorage(asset, user.id);
+      if (result.success && result.localUrl) {
+        setData(prev => prev ? {
+          ...prev,
+          content: [...prev.content, {
+            type: "ThreeCanvasWrapperBlock",
+            props: { label: asset.name, height: "md", sceneType: "3d-world", showControls: true, modelUrl: result.localUrl }
+          }]
+        } : prev);
+      }
+    } finally {
+      setImportingAsset(null);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Check for AI-generated data from session storage
+    const aiDataKey = searchParams?.get("ai_data");
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     if (aiDataKey) {
       const aiData = retrievePuckData(aiDataKey);
       if (aiData) {
@@ -451,6 +512,24 @@ export function PuckEditorClient({
             <span className="text-[10px] text-white/30 animate-pulse">Saving...</span>
           )}
           <button
+<<<<<<< HEAD
+=======
+            onClick={() => setShowAssetLib(!showAssetLib)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/50 hover:bg-violet-600 rounded-lg text-xs font-medium text-white/80 transition-colors"
+          >
+            <Box className="w-3 h-3" />
+            3D
+          </button>
+          <button
+            onClick={() => setEditorTheme(editorTheme === "dark" ? "framer" : "dark")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white/80 transition-colors"
+            title={editorTheme === "dark" ? "Switch to Framer theme" : "Switch to Dark theme"}
+          >
+            {editorTheme === "dark" ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+            Theme
+          </button>
+          <button
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
             onClick={() => setShowExportModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white/80 transition-colors"
           >
@@ -461,10 +540,55 @@ export function PuckEditorClient({
       )}
 
       {saveStatus && (
+<<<<<<< HEAD
         <div className="absolute top-2 right-36 z-50 rounded-md bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur">
           {saveStatus}
         </div>
       )}
+=======
+        <div className="absolute top-2 right-44 z-50 rounded-md bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur">
+          {saveStatus}
+        </div>
+      )}
+
+      {showAssetLib && (
+        <div className="absolute left-2 top-14 z-50 w-96 rounded-lg border border-white/10 bg-[#1a1a2e] p-3 shadow-xl">
+          <div className="mb-2 flex items-center gap-2">
+            <input
+              value={assetSearch}
+              onChange={(e) => setAssetSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSearchAssets(); }}
+              placeholder="Search 3D assets..."
+              className="flex-1 rounded border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white placeholder-white/30"
+            />
+            <button
+              onClick={handleSearchAssets}
+              disabled={assetSearching}
+              className="rounded bg-violet-600 px-3 py-1.5 text-xs text-white hover:bg-violet-500 disabled:opacity-40"
+            >
+              {assetSearching ? "..." : "Search"}
+            </button>
+          </div>
+          {assets.length > 0 && (
+            <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
+              {assets.map((asset) => (
+                <button
+                  key={asset.id}
+                  onClick={() => handleImportAsset(asset)}
+                  disabled={importingAsset === asset.id}
+                  className="flex shrink-0 flex-col items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-2 hover:border-violet-500/50 disabled:opacity-40"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-white/10 text-lg">
+                    🎨
+                  </div>
+                  <span className="max-w-16 truncate text-[10px] text-white/60">{asset.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       
       {status === "loading" && (
         <div className={shellClassName}>
@@ -514,6 +638,7 @@ export function PuckEditorClient({
         </div>
       )}
       
+<<<<<<< HEAD
       {status !== "loading" && (hasContent || status === "loaded") && (
         <>
           {editorMode === "visual" && (
@@ -528,6 +653,24 @@ export function PuckEditorClient({
             >
               <LayoutWrapper />
             </Puck>
+=======
+{status !== "loading" && (hasContent || status === "loaded") && (
+        <>
+          {editorMode === "visual" && (
+            <div className={editorTheme === "framer" ? "puck-framer-theme" : ""}>
+              <Puck
+                config={config}
+                data={data ?? { content: [] }}
+                onPublish={handlePublish}
+                onChange={handleDataChange}
+                iframe={{
+                  enabled: false,
+                }}
+              >
+                <LayoutWrapper />
+              </Puck>
+            </div>
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           )}
           
           {editorMode === "preview" && (
@@ -611,6 +754,25 @@ export function PuckEditorClient({
                   <p className="text-xs text-white/50">Raw Puck data format</p>
                 </div>
               </button>
+<<<<<<< HEAD
+=======
+
+              <button
+                onClick={() => {
+                  setShowExportModal(false);
+                  router.push("/wonder-build/playcanvas");
+                }}
+                className="w-full flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
+              >
+                <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">🎮</span>
+                </div>
+                <div>
+                  <p className="font-medium text-white">PlayCanvas Scene</p>
+                  <p className="text-xs text-white/50">Open in 3D scene editor</p>
+                </div>
+              </button>
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
             </div>
             
             <button
