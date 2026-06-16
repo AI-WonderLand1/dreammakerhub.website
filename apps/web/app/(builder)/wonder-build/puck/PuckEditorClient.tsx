@@ -647,9 +647,10 @@ export function PuckEditorClient({
               data={data ?? { content: [] }}
               onPublish={handlePublish}
               onChange={handleDataChange}
-               iframe={{
-                 enabled: false,
-               }}
+              iframe={{
+                enabled: true,
+                style: { border: 'none', background: 'transparent', borderRadius: '8px' },
+              }}
             >
               <LayoutWrapper />
             </Puck>

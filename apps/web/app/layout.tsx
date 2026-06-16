@@ -11,6 +11,7 @@ import { PlayCanvasBootstrapStartup } from "@/app/components/startup/PlayCanvasB
 import { ClientAccessibilityWrapper } from "@/components/ClientAccessibilityWrapper";
 import { cn } from "@/lib/utils";
 import UniversalAIAssistant from "@/components/ai/UniversalAIAssistant";
+import { AutoRunAI, AutoRunFromURL, AutoBuildTrigger } from "@/components/ai/AutoRunAI";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>}>
               {children}
             </Suspense>
-              <UniversalAIAssistant 
+              <UniversalAIAssistant
                 position="bottom-right"
                 theme="dark"
                 enableAgents={true}
@@ -32,6 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 defaultAgent="spirit-guide"
                 dashboardUrl="/dashboard"
               />
+              <AutoRunAI />
+              <AutoRunFromURL />
+              <AutoBuildTrigger />
               {/* Persistent accessibility components - wrapped in client component */}
               <ClientAccessibilityWrapper />
             </AccessibilityProvider>
