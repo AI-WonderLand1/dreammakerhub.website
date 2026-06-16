@@ -1,9 +1,5 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-<<<<<<< HEAD
-import { env, requireEnv } from "@lib/env";
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { logger } from "@lib/logger";
 
 export const opencodeProvider: AIProvider = {

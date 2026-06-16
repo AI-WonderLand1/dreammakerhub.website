@@ -8,13 +8,6 @@ import { logger } from "@lib/logger";
  */
 export const googleProvider: AIProvider = {
   name: "google",
-<<<<<<< HEAD
-  async generate(prompt: string | unknown[], options: Record<string, unknown>) {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY;
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY environment variable.");
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-=======
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = options.apiKey as string || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY;
@@ -24,7 +17,6 @@ export const googleProvider: AIProvider = {
       temperature = 0.7,
       maxTokens = 8192
     } = options ?? {};
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
     if (!apiKey) {
       return {
