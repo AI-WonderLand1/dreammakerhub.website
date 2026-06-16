@@ -2,10 +2,6 @@ import net from 'node:net';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-<<<<<<< HEAD
-import { selectDevPort } from './dev-port.mjs';
-
-=======
 import { readFileSync } from 'node:fs';
 import { selectDevPort } from './dev-port.mjs';
 
@@ -32,7 +28,6 @@ try {
   console.warn(`[run-dev] Could not load .env from ${envPath}:`, err.message);
 }
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 const require = createRequire(import.meta.url);
 
 function isPortAvailable(port) {

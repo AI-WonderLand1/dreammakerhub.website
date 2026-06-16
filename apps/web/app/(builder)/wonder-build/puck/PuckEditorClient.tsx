@@ -3,11 +3,6 @@
 import { Puck } from "@puckeditor/core";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-<<<<<<< HEAD
-import { Eye, Monitor, Code, Clock, Download, Sparkles } from "lucide-react";
-import "@puckeditor/core/puck.css";
-import "@/styles/puck-dark-fix.css";
-=======
 import { Eye, Monitor, Code, Clock, Download, Sparkles, Box, Sun, Moon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
@@ -15,7 +10,6 @@ import { useAuth } from "@/lib/supabase/auth-context";
 import "@puckeditor/core/puck.css";
 import "@/styles/puck-dark-fix.css";
 import "@/styles/puck-framer-theme.css";
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { config } from "./puck.config";
 import { retrievePuckData } from "@/lib/ai-to-puck";
 import { useAutoSave } from "@/components/VersionHistory";
@@ -200,11 +194,8 @@ export function PuckEditorClient({
   readOnly = false,
   showAIPanel = true,
 }: PuckEditorClientProps) {
-<<<<<<< HEAD
-=======
   const router = useRouter();
   const { user } = useAuth();
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const [status, setStatus] = useState<EditorStatus>("loading");
   const [data, setData] = useState<InitialData | null>(initialData);
   const [saveStatus, setSaveStatus] = useState<string>("");
@@ -212,9 +203,6 @@ export function PuckEditorClient({
   const [showAI, setShowAI] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showTempWarning, setShowTempWarning] = useState(false);
-<<<<<<< HEAD
-  const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
-=======
   const [showAssetLib, setShowAssetLib] = useState(false);
   const [assets, setAssets] = useState<ExternalAsset[]>([]);
   const [assetSearch, setAssetSearch] = useState("");
@@ -222,7 +210,6 @@ export function PuckEditorClient({
   const [importingAsset, setImportingAsset] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
   const [editorTheme, setEditorTheme] = useState<"dark" | "framer">("dark");
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const [storageInfo, setStorageInfo] = useState<{type: string; hoursRemaining?: number; expiresAt?: string}>({type: "platform"});
   const searchParams = useSearchParams();
 
@@ -271,12 +258,6 @@ export function PuckEditorClient({
     URL.revokeObjectURL(url);
     setShowExportModal(false);
   }, [data]);
-<<<<<<< HEAD
-
-  useEffect(() => {
-    // Check for AI-generated data from session storage
-    const aiDataKey = searchParams.get("ai_data");
-=======
 
   const handleSearchAssets = useCallback(async () => {
     setAssetSearching(true);
@@ -310,7 +291,6 @@ export function PuckEditorClient({
   useEffect(() => {
     // Check for AI-generated data from session storage
     const aiDataKey = searchParams?.get("ai_data");
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     if (aiDataKey) {
       const aiData = retrievePuckData(aiDataKey);
       if (aiData) {
@@ -512,8 +492,6 @@ export function PuckEditorClient({
             <span className="text-[10px] text-white/30 animate-pulse">Saving...</span>
           )}
           <button
-<<<<<<< HEAD
-=======
             onClick={() => setShowAssetLib(!showAssetLib)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/50 hover:bg-violet-600 rounded-lg text-xs font-medium text-white/80 transition-colors"
           >
@@ -529,7 +507,6 @@ export function PuckEditorClient({
             Theme
           </button>
           <button
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
             onClick={() => setShowExportModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white/80 transition-colors"
           >
@@ -540,12 +517,6 @@ export function PuckEditorClient({
       )}
 
       {saveStatus && (
-<<<<<<< HEAD
-        <div className="absolute top-2 right-36 z-50 rounded-md bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur">
-          {saveStatus}
-        </div>
-      )}
-=======
         <div className="absolute top-2 right-44 z-50 rounded-md bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur">
           {saveStatus}
         </div>
@@ -588,7 +559,6 @@ export function PuckEditorClient({
           )}
         </div>
       )}
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       
       {status === "loading" && (
         <div className={shellClassName}>
@@ -638,23 +608,6 @@ export function PuckEditorClient({
         </div>
       )}
       
-<<<<<<< HEAD
-      {status !== "loading" && (hasContent || status === "loaded") && (
-        <>
-          {editorMode === "visual" && (
-            <Puck
-              config={config}
-              data={data ?? { content: [] }}
-              onPublish={handlePublish}
-              onChange={handleDataChange}
-              iframe={{
-                enabled: true,
-                style: { border: 'none', background: 'transparent', borderRadius: '8px' },
-              }}
-            >
-              <LayoutWrapper />
-            </Puck>
-=======
 {status !== "loading" && (hasContent || status === "loaded") && (
         <>
           {editorMode === "visual" && (
@@ -671,7 +624,6 @@ export function PuckEditorClient({
                 <LayoutWrapper />
               </Puck>
             </div>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           )}
           
           {editorMode === "preview" && (
@@ -755,8 +707,6 @@ export function PuckEditorClient({
                   <p className="text-xs text-white/50">Raw Puck data format</p>
                 </div>
               </button>
-<<<<<<< HEAD
-=======
 
               <button
                 onClick={() => {
@@ -773,7 +723,6 @@ export function PuckEditorClient({
                   <p className="text-xs text-white/50">Open in 3D scene editor</p>
                 </div>
               </button>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
             </div>
             
             <button

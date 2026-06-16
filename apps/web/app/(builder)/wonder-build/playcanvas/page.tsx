@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-<<<<<<< HEAD
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-=======
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { useSearchParams } from "next/navigation";
 
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
@@ -16,11 +12,8 @@ import PlayCanvasEditorHost from "@/components/PlayCanvasEditorHost";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { buildPlayCanvasEditorUrl, getPlayCanvasMode } from "@/lib/playcanvas";
 import { useAutoSave, cleanSceneData } from "@/lib/scene/auto-save";
-<<<<<<< HEAD
-=======
 import { saveSceneToSupabase, listUserScenes } from "@/lib/scene/supabase-store";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { useAuth } from "@/lib/supabase/auth-context";
 
 type SceneTemplate = {
@@ -30,15 +23,12 @@ type SceneTemplate = {
   category: string;
   thumbnail?: string;
 };
-<<<<<<< HEAD
-=======
 
 type SceneVersion = {
   id: string;
   version: number;
   created_at: string;
 };
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 function makeToastId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -47,13 +37,8 @@ function makeToastId() {
 const BRIDGE_READY_TIMEOUT_MS = 30_000;
 
 function PlayCanvasInner() {
-<<<<<<< HEAD
-  const params = useSearchParams();
-  const sceneId = params.get("sceneId")?.trim() ?? "";
-=======
   const searchParams = useSearchParams();
   const sceneId = searchParams?.get("sceneId")?.trim() ?? "";
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const { user } = useAuth();
   const [bridgeLoading, setBridgeLoading] = useState(Boolean(sceneId));
   const [bridgeFailed, setBridgeFailed] = useState(false);
@@ -64,8 +49,6 @@ function PlayCanvasInner() {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
 
-<<<<<<< HEAD
-=======
   const [assets, setAssets] = useState<ExternalAsset[]>([]);
   const [assetSearch, setAssetSearch] = useState("");
   const [assetSearching, setAssetSearching] = useState(false);
@@ -77,7 +60,6 @@ function PlayCanvasInner() {
   const [showAssetLib, setShowAssetLib] = useState(false);
   const editorRef = useRef<any>(null);
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const { saveNow } = useAutoSave(sceneId, sceneData, user?.id, {
     intervalMs: 30000,
     enabled: !!sceneId && !!sceneData,
@@ -102,8 +84,6 @@ function PlayCanvasInner() {
         });
     }
   }, [sceneId]);
-<<<<<<< HEAD
-=======
 
   useEffect(() => {
     if (!sceneId) return;
@@ -115,7 +95,6 @@ function PlayCanvasInner() {
       })
       .catch(() => {});
   }, [sceneId]);
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   const pushToast = useCallback((message: string, tone: ToastItem["tone"]) => {
     const id = makeToastId();
@@ -157,8 +136,6 @@ function PlayCanvasInner() {
     loadAndCleanScene();
   }, [sceneId, isCleaningUp, pushToast]);
 
-<<<<<<< HEAD
-=======
   const handleSave = useCallback(async () => {
     if (!sceneId || !user || !sceneData) return;
     setSaving(true);
@@ -191,7 +168,6 @@ function PlayCanvasInner() {
     }
   }, [pushToast]);
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const handlePublish = useCallback(async () => {
     if (!sceneId) return;
     pushToast("Publishing...", "success");
@@ -200,8 +176,6 @@ function PlayCanvasInner() {
     window.location.href = `/play/${sceneId}`;
   }, [sceneId, saveNow, pushToast]);
 
-<<<<<<< HEAD
-=======
   const handleSearchAssets = useCallback(async () => {
     setAssetSearching(true);
     try {
@@ -230,7 +204,6 @@ function PlayCanvasInner() {
     }
   }, [user, pushToast]);
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   return (
     <div className="space-y-4 text-white">
       <ToastStack toasts={toasts} />
@@ -242,8 +215,6 @@ function PlayCanvasInner() {
           </Link>
         </div>
       )}
-<<<<<<< HEAD
-=======
 
       {sceneId && (
         <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
@@ -332,17 +303,12 @@ function PlayCanvasInner() {
           )}
         </div>
       )}
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
       {!sceneId ? (
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white">Choose a Scene Template</h2>
-<<<<<<< HEAD
-            <p className="mt-2 text-white/60">Select a template to launch the WebGL editor</p>
-=======
             <p className="mt-2 text-white/60">Select a template to launch the PlayCanvas editor</p>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           </div>
 
           {loadingTemplates ? (
@@ -400,9 +366,6 @@ function PlayCanvasInner() {
                 <p className="mx-auto mt-2 max-w-2xl text-sm text-white/70">
                   The PlayCanvas editor did not report readiness in 30 seconds. This may be due to browser sandbox restrictions.
                 </p>
-<<<<<<< HEAD
-                <div className="mt-5"></div>
-=======
                 <div className="mt-5">
                   <button
                     onClick={() => { setBridgeLoading(true); setBridgeFailed(false); }}
@@ -411,7 +374,6 @@ function PlayCanvasInner() {
                     Retry
                   </button>
                 </div>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
               </div>
             </div>
           ) : (
@@ -457,11 +419,7 @@ function PlayCanvasInner() {
         <Link href="/game-builder/create" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
           🎨 Create New
         </Link>
-<<<<<<< HEAD
-        <button 
-=======
         <button
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           onClick={handlePublish}
           disabled={!sceneId}
           className="rounded-md border border-green-500/50 bg-green-600/20 px-3 py-2 text-green-400 hover:bg-green-600/30 disabled:opacity-50"
@@ -474,13 +432,8 @@ function PlayCanvasInner() {
       </div>
 
       <div>
-<<<<<<< HEAD
-        <Link href="/wonder-build/puck" className="text-sm text-white/70 hover:text-white">
-          ← Back to Wonderbuild UI
-=======
         <Link href="/wonder-build" className="text-sm text-white/70 hover:text-white">
           ← Back to Wonder Build
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         </Link>
       </div>
     </div>

@@ -21,43 +21,6 @@ export async function POST(req: Request) {
       Use Tailwind CSS for styling. Do not explain the code.
     `;
 
-<<<<<<< HEAD
-    // Map user selection to GitHub Models
-    const modelMap: Record<string, string> = {
-      'fast': 'gpt-4o-mini',
-      'pro': 'gpt-4o',
-      'creative': 'gpt-4o',
-      'vision': 'gpt-4o' // GitHub Models doesn't have native vision, use best model
-    };
-
-    const selectedModel = modelMap[modelId] || modelMap['fast'];
-
-    const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.GITHUB_MODELS_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`GitHub Models API Error: ${data.error.message}`);
-    }
-
-    // Parse the AI's content string back into JSON for the Engine
-    const aiContent = JSON.parse(data.choices[0].message.content);
-=======
     const result = await runModel({
       model: "groq/llama-3.3-70b-versatile",
       messages: [{ role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }],
@@ -71,7 +34,6 @@ export async function POST(req: Request) {
     }
 
     const aiContent = JSON.parse(result.text);
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
     return NextResponse.json(aiContent);
   } catch (error) {

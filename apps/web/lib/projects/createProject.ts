@@ -1,18 +1,9 @@
-<<<<<<< HEAD
-// @ts-ignore
-import { supabaseServer } from "@/lib/supabaseServer";
-// @ts-ignore
-import type { EngineType } from "@/types/db";
-import { randomUUID } from "crypto";
-// @ts-ignore
-=======
 // @ts-expect-error - supabaseServer import from path alias
 import { supabaseServer } from "@/lib/supabaseServer";
 // @ts-expect-error - EngineType import from path alias
 import type { EngineType } from "@/types/db";
 import { randomUUID } from "crypto";
 // @ts-expect-error - crypto functions from path alias
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { generateSSHKeyPair, encrypt } from "@/lib/security/crypto";
 
 export async function createProject(

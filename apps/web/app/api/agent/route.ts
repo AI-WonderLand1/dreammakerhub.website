@@ -134,15 +134,6 @@ export async function POST(req: Request) {
       }
     `;
 
-<<<<<<< HEAD
-    const aiResponse = await runModel({ 
-      system: systemPrompt, 
-      userPrompt: command, 
-      temperature: 0.7 
-    });
-
-    const manifest = JSON.parse(aiResponse || '{}');
-=======
     const aiResponse = await runModel({
       model: "groq/llama-3.3-70b-versatile",
       messages: [{ role: "user", content: command }],
@@ -151,7 +142,6 @@ export async function POST(req: Request) {
     });
 
     const manifest = JSON.parse(aiResponse.text || '{}');
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
     // Validate AI output doesn't contain dangerous code
     if (manifest.code) {

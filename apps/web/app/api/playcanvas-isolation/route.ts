@@ -49,21 +49,14 @@ export async function GET(request: Request) {
           maxInstances: 10,
         });
 
-<<<<<<< HEAD
-      case 'container':
-=======
       case 'container': {
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         const instance = await manager.getContainer(userSession.userId);
         return NextResponse.json({
           containerId: instance.id,
           serverUrl: instance.serverUrl,
           isActive: instance.isActive,
         });
-<<<<<<< HEAD
-=======
       }
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
       default:
         return NextResponse.json(
@@ -96,25 +89,16 @@ export async function POST(request: Request) {
     const manager = getContainerManager();
 
     switch (action) {
-<<<<<<< HEAD
-      case 'ready':
-=======
       case 'ready': {
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         // Mark container as ready - prevents cleanup
         const readyInstance = await manager.getContainer(userSession.userId);
         readyInstance.isActive = true;
         readyInstance.lastUsed = Date.now();
         logger.info(`[API] Container marked ready for user ${userSession.userId.substring(0, 8)}`);
         return NextResponse.json({ success: true, containerId: readyInstance.id });
-<<<<<<< HEAD
-
-      case 'create_scene':
-=======
       }
 
       case 'create_scene': {
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         if (!sceneId) {
           return NextResponse.json(
             { error: 'sceneId is required' },
@@ -147,14 +131,9 @@ export async function POST(request: Request) {
           sceneId,
           containerId: instance.id,
         });
-<<<<<<< HEAD
-
-      case 'mount_files':
-=======
       }
 
       case 'mount_files': {
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         if (!files || typeof files !== 'object') {
           return NextResponse.json(
             { error: 'files object is required' },
@@ -169,20 +148,13 @@ export async function POST(request: Request) {
           success: true,
           containerId: fileInstance.id,
         });
-<<<<<<< HEAD
-=======
       }
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
       case 'destroy_container':
         await manager.destroyContainer(`pc-container-${userSession.hashedId}`);
         return NextResponse.json({ success: true });
 
-<<<<<<< HEAD
-      case 'cron_cleanup':
-=======
       case 'cron_cleanup': {
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         // Called by cron job to cleanup stuck containers
         const stuck = manager.cleanupStuckContainers(15 * 60 * 1000); // 15 min timeout
         return NextResponse.json({ 
@@ -190,23 +162,15 @@ export async function POST(request: Request) {
           cleaned: stuck,
           message: `Cleaned up ${stuck} stuck containers` 
         });
-<<<<<<< HEAD
-
-      case 'ping':
-=======
       }
 
       case 'ping': {
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         // Keep-alive ping from active user
         const pingInstance = await manager.getContainer(userSession.userId);
         pingInstance.lastUsed = Date.now();
         pingInstance.isActive = true;
         return NextResponse.json({ success: true });
-<<<<<<< HEAD
-=======
       }
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
       default:
         return NextResponse.json(

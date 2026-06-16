@@ -1,12 +1,7 @@
 'use client';
 
-<<<<<<< HEAD
-import { useState, useCallback } from "react";
-import { Sparkles, Send, X, Loader2, RefreshCw, Wand2 } from "lucide-react";
-=======
 import { useState, useCallback, useEffect } from "react";
 import { Sparkles, Send, X, Loader2, RefreshCw, Wand2, Plus, Layers, ArrowRight } from "lucide-react";
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { sendToAIBuilder, PuckData } from "@/lib/ai/puckBuilder";
 
 interface PuckAIPanelProps {
@@ -16,8 +11,6 @@ interface PuckAIPanelProps {
   onClose: () => void;
 }
 
-<<<<<<< HEAD
-=======
 const QUICK_PROMPTS = [
   { label: "Hero + Features", prompt: "Create a hero section with features below" },
   { label: "Pricing Page", prompt: "Build a pricing page with 3 plans" },
@@ -27,7 +20,6 @@ const QUICK_PROMPTS = [
   { label: "FAQ", prompt: "Add an FAQ accordion section" },
 ];
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 export function PuckAIPanel({ 
   currentData, 
   onApplyData, 
@@ -38,8 +30,6 @@ export function PuckAIPanel({
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState("");
   const [error, setError] = useState("");
-<<<<<<< HEAD
-=======
   const [activeTab, setActiveTab] = useState<"build" | "add" | "modify">("build");
 
   useEffect(() => {
@@ -49,7 +39,6 @@ export function PuckAIPanel({
       setError("");
     }
   }, [isOpen]);
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   const handleBuild = useCallback(async () => {
     if (!prompt.trim()) return;
@@ -72,8 +61,6 @@ export function PuckAIPanel({
     }
   }, [prompt, currentData, onApplyData]);
 
-<<<<<<< HEAD
-=======
   const handleAddComponent = useCallback(async (componentType: string) => {
     setLoading(true);
     setError("");
@@ -99,7 +86,6 @@ export function PuckAIPanel({
     }
   }, [currentData, onApplyData]);
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const handleModify = useCallback(async () => {
     if (!prompt.trim() || !currentData) return;
 
@@ -124,18 +110,6 @@ export function PuckAIPanel({
     }
   }, [prompt, currentData, onApplyData]);
 
-<<<<<<< HEAD
-  const handleClear = useCallback(() => {
-    setPrompt("");
-    setResponse("");
-    setError("");
-  }, []);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50 w-96 max-h-[500px] bg-[#0a0a10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-=======
   const handleQuickPrompt = (quickPrompt: string) => {
     setPrompt(quickPrompt);
     handleBuild();
@@ -147,17 +121,13 @@ export function PuckAIPanel({
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-[480px] max-h-[600px] bg-[#0a0a10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col">
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       <div className="flex items-center justify-between px-4 py-3 bg-black/40 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-violet-400" />
           <span className="text-sm font-medium text-white">AI Builder</span>
-<<<<<<< HEAD
-=======
           <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded">
             Drag & Drop Ready
           </span>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         </div>
         <button
           onClick={onClose}
@@ -167,11 +137,6 @@ export function PuckAIPanel({
         </button>
       </div>
 
-<<<<<<< HEAD
-      <div className="p-4 space-y-4 overflow-y-auto max-h-[350px]">
-        {currentData && currentData.content.length > 0 && (
-          <div className="text-xs text-white/40 bg-white/5 rounded-lg px-3 py-2">
-=======
       <div className="px-4 py-2 bg-white/5 border-b border-white/10">
         <div className="flex gap-1">
           <button
@@ -215,53 +180,10 @@ export function PuckAIPanel({
         {hasContent && activeTab !== "add" && (
           <div className="text-xs text-white/40 bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
             <Layers className="w-3 h-3" />
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
             Current: {currentData.content.map(c => c.type).join(", ")}
           </div>
         )}
 
-<<<<<<< HEAD
-        <div className="space-y-2">
-          <label className="text-xs text-white/60">Describe what you want to build or modify:</label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder={currentData ? "Modify the current page..." : "Build a landing page with hero, features, and pricing..."}
-            className="w-full h-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 resize-none focus:outline-none focus:border-violet-500/50"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                currentData ? handleModify() : handleBuild();
-              }
-            }}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={handleBuild}
-            disabled={loading || !prompt.trim()}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-white transition-colors"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Wand2 className="w-4 h-4" />
-            )}
-            {currentData ? "Modify" : "Build"}
-          </button>
-          
-          {currentData && (
-            <button
-              onClick={handleModify}
-              disabled={loading || !prompt.trim()}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-white transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Update
-            </button>
-          )}
-        </div>
-=======
         {activeTab === "build" && (
           <>
             <div className="space-y-2">
@@ -328,7 +250,6 @@ export function PuckAIPanel({
             />
           </div>
         )}
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
         {error && (
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
@@ -341,19 +262,6 @@ export function PuckAIPanel({
             <p className="text-xs text-white/70 whitespace-pre-wrap">{response}</p>
           </div>
         )}
-<<<<<<< HEAD
-
-        {currentData && currentData.content.length > 0 && (
-          <div className="text-xs text-white/40">
-            Components: {currentData.content.length}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-2 bg-black/20 border-t border-white/5">
-        <p className="text-[10px] text-white/30">
-          Press Ctrl+Enter to build • AI generates Puck components
-=======
       </div>
 
       <div className="p-4 border-t border-white/10">
@@ -389,7 +297,6 @@ export function PuckAIPanel({
 
         <p className="text-[10px] text-white/30 text-center mt-2">
           AI generates Puck components • Drag blocks from sidebar to reorder
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         </p>
       </div>
     </div>

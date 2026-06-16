@@ -112,23 +112,12 @@ export default function ConstitutionalPlayground() {
   };
 
   const saveByok = () => {
-<<<<<<< HEAD
-    // Note: Storing API keys in localStorage is not secure.
-    // In production, use httpOnly cookies or secure server-side storage.
-    // This is kept for demo purposes but with a warning.
-    if (byokKey && byokKey.length > 10) {
-      try {
-        localStorage.setItem("byok_key", byokKey);
-        setByokSaved(true);
-        speakAsRobot("API key saved. Remember to use secure storage in production.");
-=======
     if (byokKey && byokKey.length > 10) {
       try {
         const encoded = btoa(byokKey);
         sessionStorage.setItem("byok_key", encoded);
         setByokSaved(true);
         speakAsRobot("API key saved.");
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       } catch (e) {
         console.error('Failed to save API key:', e);
       }

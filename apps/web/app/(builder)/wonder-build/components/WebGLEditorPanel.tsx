@@ -2,11 +2,7 @@
 
 import dynamic from 'next/dynamic';
 
-<<<<<<< HEAD
-const WebGLStudioHost = dynamic(() => import('@/components/WebGLStudioHost'), { ssr: false });
-=======
 const WebGLStudioHost = dynamic(() => import('../../../../components/WebGLStudioHost'), { ssr: false });
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 export function WebGLEditorPanel() {
   return (

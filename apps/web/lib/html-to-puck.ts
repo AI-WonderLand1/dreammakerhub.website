@@ -12,8 +12,6 @@ interface PuckContent {
   root?: { type: string; props: Record<string, unknown> };
 }
 
-<<<<<<< HEAD
-=======
 const DANGEROUS_TAGS = new Set(['script', 'style', 'object', 'embed', 'iframe', 'svg', 'noscript'])
 
 function stripTagContent(input: string, tagName: string): string {
@@ -68,7 +66,6 @@ function stripTagContent(input: string, tagName: string): string {
   return result.join('')
 }
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 function cleanHtmlSafely(html: string): string {
   if (html.length > 500000) {
     throw new Error("HTML input exceeds maximum allowed length");
@@ -98,16 +95,9 @@ function cleanHtmlSafely(html: string): string {
     cleaned = cleaned.substring(0, headOpen) + cleaned.substring(headClose + 7);
   }
 
-<<<<<<< HEAD
-  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-  cleaned = cleaned.replace(/<body[\s>][^>]*>/gi, "");
-  cleaned = cleaned.replace(/<\/body>/gi, "");
-=======
   for (const tag of DANGEROUS_TAGS) {
     cleaned = stripTagContent(cleaned, tag)
   }
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   return cleaned;
 }
@@ -137,12 +127,6 @@ const HEADING_LEVELS: Record<string, string> = {
 };
 
 function extractTextContent(html: string): string {
-<<<<<<< HEAD
-  return html
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-=======
   let result = ''
   let inTag = false
   let inQuote: string | null = null
@@ -163,7 +147,6 @@ function extractTextContent(html: string): string {
     }
   }
   return result.replace(/\s+/g, ' ').trim()
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }
 
 function extractAttributes(html: string): Record<string, string> {
