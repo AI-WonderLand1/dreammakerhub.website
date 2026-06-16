@@ -2,6 +2,7 @@ import "./globals.css";
 import "./(builder)/wonder-build/wonder-build.css";
 
 import { Suspense } from "react";
+import Script from "next/script";
 import { AuthProvider } from "@lib/supabase/auth-context";
 import { BuilderProvider } from "@/app/(builder)/wonder-build/context/BuilderContext";
 import { AccessibilityProvider } from "@/lib/accessibility-context";
@@ -16,6 +17,9 @@ import { AutoRunAI, AutoRunFromURL, AutoBuildTrigger } from "@/components/ai/Aut
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={cn("dark", "font-sans")}>
+      <head>
+        <Script src="/correctai-monitor.js" strategy="beforeInteractive" />
+      </head>
       <body className="bg-background text-foreground antialiased">
         <AuthProvider>
           <BuilderProvider>
