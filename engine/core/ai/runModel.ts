@@ -18,6 +18,7 @@ export async function runModel({
   temperature = 0.7,
   maxTokens = 4096,
   userApiKey,
+  baseUrl,
 }: {
   model: string;
   messages: Array<{ role: string; content: string | unknown[]; }>;
@@ -25,6 +26,7 @@ export async function runModel({
   temperature?: number;
   maxTokens?: number;
   userApiKey?: string;
+  baseUrl?: string;
 }) {
   const lastContent = (messages?.[messages.length - 1]?.content ?? "") as string | unknown[];
 
@@ -40,6 +42,8 @@ export async function runModel({
   const isCerebras = typeof model === "string" && model.startsWith("cerebras/");
   const isOpenai = typeof model === "string" && model.startsWith("openai/");
   const isAnthropic = typeof model === "string" && model.startsWith("anthropic/");
+  const isCustomApi = typeof model === "string" && model.startsWith("custom-api/");
+  const isWebhook = typeof model === "string" && model.startsWith("webhook/");
 
   if (isGithub) {
     const githubModel = model.replace(/^github\//, "");
@@ -134,6 +138,29 @@ export async function runModel({
       temperature,
       maxTokens,
       apiKey: userApiKey,
+    });
+  }
+
+  if (isCustomApi) {
+    const customApiModel = model.replace(/^custom-api\//, "");
+    return Providers["custom-api"].generate(lastContent, {
+      model: customApiModel || "custom-model",
+      system,
+      temperature,
+      maxTokens,
+      apiKey: userApiKey,
+      baseUrl,
+    });
+  }
+
+  if (isWebhook) {
+    const webhookModel = model.replace(/^webhook\//, "");
+    return Providers.webhook.generate(lastContent, {
+      model: webhookModel || "webhook",
+      system,
+      temperature,
+      apiKey: userApiKey,
+      baseUrl,
     });
   }
 

@@ -116,6 +116,24 @@ const PROVIDERS: ProviderInfo[] = [
     models: ["claude-3-5-haiku-latest", "claude-3-5-sonnet-latest", "claude-3-opus-latest"],
     docsUrl: "https://docs.anthropic.com",
   },
+  {
+    id: "custom-api",
+    name: "Custom API",
+    description: "Any OpenAI-compatible API endpoint",
+    apiKeyName: "CUSTOM_API_KEY",
+    defaultModel: "custom-model",
+    models: [],
+    docsUrl: undefined,
+  },
+  {
+    id: "webhook",
+    name: "Webhook",
+    description: "Custom webhook endpoint for AI processing",
+    apiKeyName: "WEBHOOK_API_KEY",
+    defaultModel: "webhook",
+    models: [],
+    docsUrl: undefined,
+  },
 ];
 
 export default function AIProvidersSettingsPage() {
@@ -332,29 +350,54 @@ export default function AIProvidersSettingsPage() {
                       <div>
                         <label className="block text-sm font-medium mb-2">Model</label>
                         <div className="relative">
-                          <select
-                            value={activeConfig.model || provider.defaultModel}
-                            onChange={e => updateConfig(activeProvider, "model", e.target.value)}
-                            className="w-full appearance-none px-4 py-2.5 bg-black/50 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/50"
-                          >
-                            {provider.models.map(model => (
-                              <option key={model} value={model}>
-                                {model}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                          {provider.models.length > 0 ? (
+                            <>
+                              <select
+                                value={activeConfig.model || provider.defaultModel}
+                                onChange={e => updateConfig(activeProvider, "model", e.target.value)}
+                                className="w-full appearance-none px-4 py-2.5 bg-black/50 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500/50"
+                              >
+                                {provider.models.map(model => (
+                                  <option key={model} value={model}>
+                                    {model}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                            </>
+                          ) : (
+                            <input
+                              type="text"
+                              value={activeConfig.model || provider.defaultModel}
+                              onChange={e => updateConfig(activeProvider, "model", e.target.value)}
+                              placeholder={provider.defaultModel}
+                              className="w-full px-4 py-2.5 bg-black/50 border border-white/20 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50"
+                            />
+                          )}
                         </div>
                       </div>
 
-                      {provider.id === "openrouter" && (
+                      {(provider.id === "openrouter" || provider.id === "custom-api") && (
                         <div>
-                          <label className="block text-sm font-medium mb-2">Base URL (Optional)</label>
+                          <label className="block text-sm font-medium mb-2">Base URL</label>
                           <input
                             type="text"
                             value={activeConfig.baseUrl || ""}
                             onChange={e => updateConfig(activeProvider, "baseUrl", e.target.value)}
-                            placeholder="https://openrouter.ai/api/v1"
+                            placeholder={provider.id === "custom-api" ? "https://api.openai.com/v1" : "https://openrouter.ai/api/v1"}
+                            className="w-full px-4 py-2.5 bg-black/50 border border-white/20 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50"
+                          />
+                        </div>
+                      )}
+
+                      {provider.id === "webhook" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Webhook URL</label>
+                          <input
+                            type="text"
+                            value={activeConfig.baseUrl || ""}
+                            onChange={e => updateConfig(activeProvider, "baseUrl", e.target.value)}
+                            placeholder="https://your-webhook.example.com/endpoint"
                             className="w-full px-4 py-2.5 bg-black/50 border border-white/20 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50"
                           />
                         </div>
@@ -423,6 +466,12 @@ export default function AIProvidersSettingsPage() {
           </p>
           <p>
             <strong className="text-white">Anthropic</strong> gives you access to Claude models for advanced reasoning and safety.
+          </p>
+          <p>
+            <strong className="text-white">Custom API</strong> lets you connect any OpenAI-compatible API endpoint. Enter your base URL, API key, and model name.
+          </p>
+          <p>
+            <strong className="text-white">Webhook</strong> routes prompts to any webhook endpoint. The response body is parsed for text/output/response fields.
           </p>
           <p className="pt-2 text-white/40">
             Your API keys are encrypted before storage and never exposed to client-side code.
