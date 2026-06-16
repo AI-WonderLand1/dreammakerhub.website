@@ -9,12 +9,22 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
+<<<<<<< HEAD
     "fastify": "^5.8.5",
+=======
+    "@fastify/rate-limit": "^11.0.0",
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     "@gltf-transform/core": "^4.0.0",
     "@gltf-transform/extensions": "^4.0.0",
     "@gltf-transform/functions": "^4.0.0",
     "draco3dgltf": "^1.5.7",
+<<<<<<< HEAD
     "sharp": "^0.34.5",
     "meshoptimizer": "^1.1.1"
+=======
+    "fastify": "^5.8.5",
+    "meshoptimizer": "^1.1.1",
+    "sharp": "^0.34.5"
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   }
 }

@@ -79,7 +79,11 @@ export class SceneStreamLoader {
           this.scene.entities = [];
           break;
           
+<<<<<<< HEAD
         case "entity":
+=======
+        case "entity": {
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           this.scene.entities[data.index] = data.data;
           this.loadedEntities++;
           
@@ -91,6 +95,10 @@ export class SceneStreamLoader {
           this.options.onProgress?.(progress);
           this.options.onEntity?.(data.data, data.index, this.entityCount);
           break;
+<<<<<<< HEAD
+=======
+        }
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           
         case "entities_end":
           // Entities loading complete
@@ -106,7 +114,11 @@ export class SceneStreamLoader {
           this.scene.lights = [];
           break;
           
+<<<<<<< HEAD
         case "light":
+=======
+        case "light": {
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           this.scene.lights[data.index] = data.data;
           this.loadedLights++;
           
@@ -118,6 +130,10 @@ export class SceneStreamLoader {
           this.options.onProgress?.(progress2);
           this.options.onLight?.(data.data, data.index, this.lightCount);
           break;
+<<<<<<< HEAD
+=======
+        }
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           
         case "lights_end":
           // Lights loading complete

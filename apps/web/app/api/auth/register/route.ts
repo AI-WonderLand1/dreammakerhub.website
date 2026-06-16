@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { createClient } from '@/app/utils/supabase/server';
 import { requireEnv } from '@lib/env';
 import { logger } from '@lib/logger';
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9][a-zA-Z0-9.-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9][a-zA-Z0-9.-]{0,61}[a-zA-Z0-9])*$/;
 
@@ -15,6 +18,7 @@ function isValidEmail(email: string): boolean {
 
 export const runtime = "nodejs";
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
   try {
     const { email, password, name } = await request.json();
@@ -200,4 +204,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+=======
+export async function POST(_request: NextRequest) {
+  return NextResponse.json({
+    success: false,
+    error: 'Please use the login button to sign in with Replit.',
+  }, { status: 400 });
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }

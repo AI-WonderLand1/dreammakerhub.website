@@ -89,7 +89,11 @@ export default function SecuritySettingsPage() {
   async function fetchSessions() {
     setLoading(true);
     try {
+<<<<<<< HEAD
       const { data: { user }, error: userError } = await supabase?.auth.getUser();
+=======
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       
       if (userError || !user) {
         router.push('/login');

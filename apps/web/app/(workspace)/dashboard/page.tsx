@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import { useEffect } from "react";
+=======
+import { useEffect, useState } from "react";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { 
@@ -34,6 +38,11 @@ const PROJECT_ICONS: Record<string, React.ElementType> = {
 
 export default function DashboardPage() {
   const router = useRouter();
+<<<<<<< HEAD
+=======
+  const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,6 +57,10 @@ export default function DashboardPage() {
         router.replace("/public-pages/auth");
         return;
       }
+<<<<<<< HEAD
+=======
+      setUserEmail(user?.email || null);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
       const { data: projects } = await supabase
         .from("projects")
@@ -59,6 +72,11 @@ export default function DashboardPage() {
 
       if (!projects || projects.length === 0) {
         router.replace("/dashboard/projects");
+<<<<<<< HEAD
+=======
+      } else {
+        setLoading(false);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       }
     }
 
@@ -69,7 +87,17 @@ export default function DashboardPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
+<<<<<<< HEAD
         <p className="text-sm text-white/50">Loading your workspace...</p>
+=======
+        {loading ? (
+          <p className="text-sm text-white/50 animate-pulse">Loading your workspace...</p>
+        ) : (
+          <p className="text-sm text-white/50">
+            Welcome back{userEmail ? `, ${userEmail}` : ""}! Choose an action below to get started.
+          </p>
+        )}
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

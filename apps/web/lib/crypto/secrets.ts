@@ -25,3 +25,10 @@ export function encryptSecret(plainText: string) {
     secret_alg: ALGO,
   }
 }
+
+export function decryptSecret(ciphertext: string, iv: string, tag: string) {
+  const decipher = crypto.createDecipheriv(ALGO, getKey(), Buffer.from(iv, 'base64'))
+  decipher.setAuthTag(Buffer.from(tag, 'base64'))
+  const decrypted = Buffer.concat([decipher.update(Buffer.from(ciphertext, 'base64')), decipher.final()])
+  return decrypted.toString('utf8')
+}

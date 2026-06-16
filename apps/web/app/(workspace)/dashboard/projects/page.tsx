@@ -294,12 +294,20 @@ export default function ProjectsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {projects.map((project) => {
+<<<<<<< HEAD
                 const Icon = PROJECT_ICONS[project.type] || Pencil;
+=======
+                const Icon = getProjectIcon(project.type);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
                 return (
                   <tr key={project.id} className="hover:bg-white/5">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
+<<<<<<< HEAD
                         <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border-l-2 ${PROJECT_COLORS[project.type] || "border-l-gray-500"}`}>
+=======
+                        <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border-l-2 ${getProjectColor(project.type)}`}>
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
                           <Icon size={14} />
                         </div>
                         <div>

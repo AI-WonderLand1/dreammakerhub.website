@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
 import { AssetLibrary } from "@/components/ai/AssetLibrary";
 
+<<<<<<< HEAD
 type BuildType = "website" | "game" | "component" | "3d-assets";
+=======
+type BuildType = "website" | "game" | "component" | "3d-assets" | "playcanvas";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 type AgentStage = "architect" | "builder" | "reviewer";
 type AgentStatus = "idle" | "running" | "done" | "error";
 
@@ -29,6 +33,10 @@ const TYPE_OPTIONS: { value: BuildType; label: string; icon: string; desc: strin
   { value: "game", icon: "🎮", label: "Game", desc: "Playable HTML5 Canvas games" },
   { value: "component", icon: "🧩", label: "Component", desc: "Interactive React UI components" },
   { value: "3d-assets", icon: "🎨", label: "3D Assets", desc: "Websites with embedded 3D models and assets" },
+<<<<<<< HEAD
+=======
+  { value: "playcanvas", icon: "🎮", label: "PlayCanvas Scene", desc: "3D scenes for the PlayCanvas editor" },
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 ];
 
 const STAGE_ORDER: AgentStage[] = ["architect", "builder", "reviewer"];
@@ -60,6 +68,14 @@ const EXAMPLES: Record<BuildType, string[]> = {
     "An architectural portfolio with interactive building models",
     "A tech company homepage with animated 3D elements",
   ],
+<<<<<<< HEAD
+=======
+  playcanvas: [
+    "A sci-fi room with neon lights and a holographic display",
+    "An outdoor forest scene with dynamic lighting and fog",
+    "A space scene with orbiting planets and particle effects",
+  ],
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 };
 
 export default function AIBuilderPage() {
@@ -251,6 +267,7 @@ export default function AIBuilderPage() {
                    ))}
                  </div>
                  
+<<<<<<< HEAD
                  {buildType === "3d-assets" && (
                    <div className="mt-4">
                      <AssetLibrary onAssetDrop={handleAssetDrop} />
@@ -270,6 +287,27 @@ export default function AIBuilderPage() {
                      )}
                    </div>
                  )}
+=======
+                  {(buildType === "3d-assets" || buildType === "playcanvas") && (
+                    <div className="mt-4">
+                      <AssetLibrary onAssetDrop={handleAssetDrop} />
+                      
+                      {droppedAssets.length > 0 && (
+                        <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                          <p className="text-xs text-green-300">
+                            <span className="font-semibold">Assets added:</span> {droppedAssets.join(", ")}
+                          </p>
+                          <button 
+                            onClick={() => setDroppedAssets([])}
+                            className="text-xs text-green-300/70 hover:text-green-300 mt-1"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
                  </div>
 
               {!isBuilding ? (
@@ -335,6 +373,12 @@ export default function AIBuilderPage() {
                   <button onClick={copyCode} className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors">Copy</button>
                   <button onClick={downloadFile} className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors">Download</button>
                   <button onClick={acceptProject} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-900/30">{saving ? "Saving..." : "Accept & Edit"}</button>
+<<<<<<< HEAD
+=======
+                  {result?.type === "playcanvas" && (
+                    <button onClick={() => router.push("/wonder-build/playcanvas")} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors shadow-lg shadow-cyan-600/50 flex items-center gap-2">Open in PlayCanvas</button>
+                  )}
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
                   <button onClick={acceptToPuck} className="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-lg shadow-emerald-600/50 flex items-center gap-2">Accept & Continue</button>
                   <button onClick={() => { setResult(null); setAgents({}); setError(null); }} className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors">Build again</button>
                 </div>

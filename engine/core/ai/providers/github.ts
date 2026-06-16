@@ -1,17 +1,28 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
+<<<<<<< HEAD
 import { env, requireEnv } from "@lib/env";
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { logger } from "@lib/logger";
 
 /**
  * GitHub Models Provider (via Azure OpenAI)
+<<<<<<< HEAD
  * Uses GitHub Models accessible through Azure OpenAI endpoints.
+=======
+ * Uses GITHUB_MODELS_API_KEY or user-provided apiKey.
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
  */
 export const githubProvider: AIProvider = {
   name: "github",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
+<<<<<<< HEAD
     const apiKey = requireEnv(env.GITHUB_MODELS_API_KEY, "GITHUB_MODELS_API_KEY");
+=======
+    const apiKey = options.apiKey as string || process.env.GITHUB_MODELS_API_KEY || '';
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     const {
       model = "gpt-4o-mini",
       system,
@@ -19,6 +30,23 @@ export const githubProvider: AIProvider = {
       maxTokens = 4096
     } = options ?? {};
 
+<<<<<<< HEAD
+=======
+    if (!apiKey) {
+      return {
+        text: "GITHUB_MODELS_API_KEY not configured. Add it in Settings → AI Providers.",
+        error: true,
+        provider: "github",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["GITHUB_MODELS_API_KEY missing"],
+          limitations: ["Set GITHUB_MODELS_API_KEY in Settings → AI Providers"]
+        }
+      };
+    }
+
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     try {
       const messages = [];
 

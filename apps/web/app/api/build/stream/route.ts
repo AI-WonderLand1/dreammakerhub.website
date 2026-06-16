@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { manifestVisualBlock } from "@core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
+<<<<<<< HEAD
+=======
+import { runModel } from "@core/ai/runModel";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 export const runtime = "nodejs";
 
@@ -12,9 +16,12 @@ const BuildRequestSchema = z.object({
   fileName: z.string().optional(),
 });
 
+<<<<<<< HEAD
 const MAX_STREAM_DURATION_MS = 120_000;
 const MAX_OUTPUT_SIZE_KB = 512;
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 const WEBSITE_SYSTEM = `You are an elite frontend engineer. Build a COMPLETE, visually stunning single-page website.
 Rules:
 - Output a FULL standalone HTML file
@@ -84,6 +91,7 @@ Rules:
 
 Start your output with <!DOCTYPE html>`;
 
+<<<<<<< HEAD
 
 
 const FREE_MODELS = [
@@ -132,6 +140,22 @@ async function callGithubAI(system: string, userPrompt: string, isPaid: boolean)
   }
 
   return text;
+=======
+async function callAI(system: string, userPrompt: string): Promise<string> {
+  const result = await runModel({
+    model: "groq/llama-3.3-70b-versatile",
+    messages: [{ role: "user", content: userPrompt }],
+    system,
+    temperature: 0.8,
+    maxTokens: 8192,
+  });
+
+  if (result.error) {
+    throw new Error(result.text || "AI call failed");
+  }
+
+  return result.text;
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }
 
 function sse(event: string, data: object): string {
@@ -211,8 +235,11 @@ export async function POST(req: NextRequest) {
   const { prompt, type, save, fileName } = body;
   const typeLabel = getTypeLabel(type);
   let totalOutputSize = 0;
+<<<<<<< HEAD
 
   const startTime = Date.now();
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: string, data: object) => {
@@ -227,7 +254,11 @@ export async function POST(req: NextRequest) {
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel} Tier)` });
 
+<<<<<<< HEAD
         const plan = await callGithubAI(
+=======
+        const plan = await callAI(
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
           `Plan a ${typeLabel} based on: "${prompt}"`,
           isPaid
@@ -238,7 +269,11 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel} Tier)` });
 
+<<<<<<< HEAD
         const rawCode = await callGithubAI(
+=======
+        const rawCode = await callAI(
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           getSystemPrompt(type),
           `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
           isPaid
@@ -250,7 +285,11 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
+<<<<<<< HEAD
         const reviewed = await callGithubAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
+=======
+        const reviewed = await callAI(getReviewerSystem(type), `Improve this code:\n\n${code}`);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });

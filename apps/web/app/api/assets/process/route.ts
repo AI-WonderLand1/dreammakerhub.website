@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@lib/supabase/server-client";
+<<<<<<< HEAD
+=======
+import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch.node";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
 
@@ -21,6 +25,7 @@ const ALLOWED_ASSET_HOSTS = [
   "supabase.co",
 ] as const;
 
+<<<<<<< HEAD
 function isPrivateOrLocalHost(hostname: string): boolean {
   const host = hostname.toLowerCase().trim();
 
@@ -93,6 +98,8 @@ function validateAssetUrl(rawUrl: string): string {
   return parsed.toString();
 }
 
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
 
@@ -126,8 +133,12 @@ export async function POST(req: NextRequest) {
     let glbBuffer: ArrayBuffer;
 
     if (assetUrl) {
+<<<<<<< HEAD
       const safeAssetUrl = validateAssetUrl(assetUrl);
       const response = await fetch(safeAssetUrl, { redirect: "manual" });
+=======
+      const response = await ssrfFetch(assetUrl, { allowedHosts: ALLOWED_ASSET_HOSTS });
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       if (!response.ok) {
         if (response.status >= 300 && response.status < 400) {
           return NextResponse.json(
@@ -159,7 +170,11 @@ export async function POST(req: NextRequest) {
         );
       }
 
+<<<<<<< HEAD
       const response = await fetch(asset.local_url);
+=======
+      const response = await ssrfFetch(asset.local_url);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       if (!response.ok) {
         return NextResponse.json(
           { error: `Failed to fetch asset: ${response.status}` },

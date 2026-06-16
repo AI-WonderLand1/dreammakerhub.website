@@ -12,6 +12,63 @@ interface PuckContent {
   root?: { type: string; props: Record<string, unknown> };
 }
 
+<<<<<<< HEAD
+=======
+const DANGEROUS_TAGS = new Set(['script', 'style', 'object', 'embed', 'iframe', 'svg', 'noscript'])
+
+function stripTagContent(input: string, tagName: string): string {
+  const result: string[] = []
+  let i = 0
+  const lowerTag = tagName.toLowerCase()
+
+  while (i < input.length) {
+    if (input[i] === '<') {
+      const openEnd = input.indexOf('>', i)
+      if (openEnd === -1) {
+        result.push(input.slice(i))
+        break
+      }
+      const tagStr = input.slice(i + 1, openEnd).trimStart()
+      const tagMatch = tagStr.match(/^(\/?)([a-zA-Z0-9]+)/)
+      if (tagMatch) {
+        const slash = tagMatch[1]
+        const tagname = tagMatch[2].toLowerCase()
+        if (!slash && tagname === lowerTag) {
+          let depth = 1
+          let j = openEnd + 1
+          while (j < input.length && depth > 0) {
+            if (input[j] === '<') {
+              const e = input.indexOf('>', j)
+              if (e === -1) break
+              const inner = input.slice(j + 1, e).trimStart()
+              const m = inner.match(/^(\/?)([a-zA-Z0-9]+)/)
+              if (m) {
+                const n = m[2].toLowerCase()
+                if (n === lowerTag) {
+                  if (m[1] === '/') depth--
+                  else depth++
+                }
+              }
+              j = e + 1
+            } else {
+              j++
+            }
+          }
+          i = j
+          continue
+        }
+      }
+      result.push(input[i])
+      i++
+    } else {
+      result.push(input[i])
+      i++
+    }
+  }
+  return result.join('')
+}
+
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 function cleanHtmlSafely(html: string): string {
   if (html.length > 500000) {
     throw new Error("HTML input exceeds maximum allowed length");
@@ -41,10 +98,16 @@ function cleanHtmlSafely(html: string): string {
     cleaned = cleaned.substring(0, headOpen) + cleaned.substring(headClose + 7);
   }
 
+<<<<<<< HEAD
   cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
   cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
   cleaned = cleaned.replace(/<body[\s>][^>]*>/gi, "");
   cleaned = cleaned.replace(/<\/body>/gi, "");
+=======
+  for (const tag of DANGEROUS_TAGS) {
+    cleaned = stripTagContent(cleaned, tag)
+  }
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   return cleaned;
 }
@@ -74,10 +137,33 @@ const HEADING_LEVELS: Record<string, string> = {
 };
 
 function extractTextContent(html: string): string {
+<<<<<<< HEAD
   return html
     .replace(/<[^>]*>/g, "")
     .replace(/\s+/g, " ")
     .trim();
+=======
+  let result = ''
+  let inTag = false
+  let inQuote: string | null = null
+  for (let i = 0; i < html.length; i++) {
+    const ch = html[i]
+    if (inTag) {
+      if (inQuote) {
+        if (ch === inQuote) inQuote = null
+      } else if (ch === '"' || ch === "'") {
+        inQuote = ch
+      } else if (ch === '>') {
+        inTag = false
+      }
+    } else if (ch === '<') {
+      inTag = true
+    } else {
+      result += ch
+    }
+  }
+  return result.replace(/\s+/g, ' ').trim()
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }
 
 function extractAttributes(html: string): Record<string, string> {

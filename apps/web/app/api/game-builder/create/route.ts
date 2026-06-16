@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runModel } from "@core/ai/runModel";
+<<<<<<< HEAD
 import { GoogleGenerativeAI } from "@google/generative-ai";
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 export const dynamic = 'force-dynamic';
 export const runtime = "nodejs";
 
+<<<<<<< HEAD
 const AI_PROVIDER = process.env.AI_PROVIDER || "opencode";
 
 async function callOpenCode(system: string, userPrompt: string): Promise<string> {
@@ -39,6 +43,18 @@ async function callGemini(system: string, userPrompt: string): Promise<string> {
   return text;
 }
 
+=======
+async function callAI(system: string, userPrompt: string): Promise<string> {
+  const result = await runModel({
+    model: "groq/llama-3.3-70b-versatile",
+    messages: [{ role: "user", content: userPrompt }],
+    system,
+  });
+  if (!result.text) throw new Error("Empty AI response");
+  return result.text;
+}
+
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 const GAME_SCENE_SYSTEM = `You are an expert PlayCanvas 3D scene architect. Create complete 3D scene definitions for PlayCanvas engine.
 
 OUTPUT FORMAT - JSON ONLY (no markdown):
@@ -102,9 +118,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+<<<<<<< HEAD
     const sceneJson = AI_PROVIDER === "google"
     ? await callGemini(GAME_SCENE_SYSTEM, `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`)
     : await callOpenCode(GAME_SCENE_SYSTEM, `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`);
+=======
+    const sceneJson = await callAI(GAME_SCENE_SYSTEM, `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
     let sceneData;
     try {

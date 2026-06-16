@@ -1,7 +1,11 @@
 import { runModel } from "@core/ai/runModel";
 import { VulnerabilityRisk, AuditResult } from "./types";
 
+<<<<<<< HEAD
 const DEFAULT_MODEL = "opencode/big-pickle";
+=======
+const DEFAULT_MODEL = "groq/llama-3.3-70b-versatile";
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 const AUDIT_SYSTEM_PROMPT = `You are a code security auditor. Analyze the workspace codebase and:
 1. Identify bugs, vulnerabilities, and security risks.

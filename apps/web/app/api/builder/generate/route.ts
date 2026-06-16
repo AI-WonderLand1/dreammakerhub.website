@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
+import { runModel } from "@core/ai/runModel";
 
 export async function POST(req: Request) {
   try {
     const { prompt, mode, platform, modelId, image } = await req.json();
 
-    // Default System Instructions
     const systemPrompt = `
       You are the Wonder-Build AI Engine.
       Platform Target: ${platform}
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       Use Tailwind CSS for styling. Do not explain the code.
     `;
 
+<<<<<<< HEAD
     // Map user selection to GitHub Models
     const modelMap: Record<string, string> = {
       'fast': 'gpt-4o-mini',
@@ -56,6 +57,21 @@ export async function POST(req: Request) {
 
     // Parse the AI's content string back into JSON for the Engine
     const aiContent = JSON.parse(data.choices[0].message.content);
+=======
+    const result = await runModel({
+      model: "groq/llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }],
+      system: systemPrompt,
+      temperature: 0.7,
+      maxTokens: 4096,
+    });
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    const aiContent = JSON.parse(result.text);
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
     return NextResponse.json(aiContent);
   } catch (error) {

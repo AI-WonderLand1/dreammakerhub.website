@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let _supabase: SupabaseClient | null = null;
@@ -28,3 +29,7 @@ export const supabase = new Proxy({} as SupabaseClient, {
     return (client as any)[prop];
   },
 });
+=======
+export const supabase = null as any;
+export function getClient() { return null; }
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786

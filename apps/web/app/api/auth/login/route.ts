@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { z } from 'zod';
 import { createClient } from '@/app/utils/supabase/server';
 import { logger } from '@lib/logger';
@@ -184,10 +185,17 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+=======
+
+export const runtime = "nodejs";
+
+export async function POST(_request: NextRequest) {
+  return NextResponse.redirect(new URL('/api/auth/replit-login', _request.url));
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }
 
-// Optional: Support OAuth redirects
 export async function GET(request: NextRequest) {
+<<<<<<< HEAD
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
 
@@ -211,4 +219,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.redirect(
     new URL('/dashboard', request.url)
   );
+=======
+  return NextResponse.redirect(new URL('/api/auth/replit-login', request.url));
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }

@@ -1,13 +1,33 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
+<<<<<<< HEAD
 import { env, requireEnv } from "@lib/env";
+=======
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import { logger } from "@lib/logger";
 
 export const opencodeProvider: AIProvider = {
   name: "opencode",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
+<<<<<<< HEAD
     const apiKey = requireEnv(env.OPENCODE_API_KEY, "OPENCODE_API_KEY");
+=======
+    const apiKey = options.apiKey as string || process.env.OPENCODE_API_KEY || '';
+    if (!apiKey) {
+      return {
+        text: "OPENCODE_API_KEY not configured. Add it in Settings → AI Providers.",
+        error: true,
+        provider: "opencode",
+        model: options?.model || "opencode/big-pickle",
+        confessions: {
+          confidence: 0,
+          reasoning: ["OPENCODE_API_KEY missing"],
+          limitations: ["Set OPENCODE_API_KEY in Settings → AI Providers"]
+        }
+      };
+    }
+>>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     const {
       model = "opencode/big-pickle",
       system,
