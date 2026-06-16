@@ -76,20 +76,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return {}
   }
 
-  const signInWithOAuth = async (provider: 'github' | 'google') => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
-    }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/api/auth/callback`
-      }
-    })
-    return error ? { error: new Error(error.message) } : {}
-  }
-
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, signInWithOAuth }}>
       {children}

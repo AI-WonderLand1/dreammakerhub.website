@@ -40,22 +40,8 @@ export const googleProvider: AIProvider = {
       };
     }
 
-<<<<<<< HEAD
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens ?? 8192,
-        },
-      }),
-    });
-=======
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
       const parts: { text: string }[] = [];
       if (system) parts.push({ text: `System Instructions: ${system}` });
