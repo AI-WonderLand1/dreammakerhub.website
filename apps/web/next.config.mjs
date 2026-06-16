@@ -21,32 +21,29 @@ const nextConfig = {
       }
     : {}),
 
-<<<<<<< HEAD
-  allowedDevOrigins: ["*.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.worf.replit.dev", "*.repl.co"],
-=======
-  allowedDevOrigins: ["*.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.worf.replit.dev", "*.repl.co", "*.replit.app", "*.riker.replit.dev"],
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
+  allowedDevOrigins: [
+    '*.replit.dev',
+    '*.kirk.replit.dev',
+    '*.janeway.replit.dev',
+    '*.worf.replit.dev',
+    '*.repl.co',
+    '*.replit.app',
+    '*.riker.replit.dev',
+  ],
 
   experimental: {
     externalDir: true,
   },
 
-  transpilePackages: ["@react-three/fiber", "@react-three/drei", "three", "@wonderspace/ide-engine"],
+  transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
 
   images: {
     unoptimized: true,
-<<<<<<< HEAD
-  },
-
-  // output: 'standalone',
-
-=======
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
     ],
   },
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -98,11 +95,7 @@ const nextConfig = {
     {
       source: '/:path*',
       headers: [
-<<<<<<< HEAD
-        { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-=======
         { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
@@ -111,31 +104,18 @@ const nextConfig = {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
-<<<<<<< HEAD
-            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js-mtls-com.s3.amazonaws.com",
-            "style-src 'self' 'unsafe-inline' https://rsms.me",
-            "img-src 'self' blob: data: https:",
-            "font-src 'self' data: https://rsms.me",
-            "connect-src 'self' https://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com",
-            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com blob: data:",
-=======
             "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://replit.com https://js-mtls-com.s3.amazonaws.com https://static.cloudflareinsights.com",
             "style-src 'self' 'unsafe-inline' https://rsms.me",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data: https://rsms.me",
             "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app",
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com https://replit.com blob: data:",
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
             "worker-src 'self' blob:",
-          ].join('; ')
+          ].join('; '),
         },
       ],
     },
   ],
 };
 
-<<<<<<< HEAD
 export default nextConfig;
-=======
-export default nextConfig;
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786

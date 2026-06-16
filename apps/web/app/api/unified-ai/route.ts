@@ -247,11 +247,7 @@ async function handleDashboardRequest(action: string, context?: any, req?: Reque
     // Map dashboard actions to platform options API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
-<<<<<<< HEAD
-    let endpoint = '/api/platform/options';
-=======
     const endpoint = '/api/platform/options';
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     let body: any = { action: 'list' };
     
     // Parse action string

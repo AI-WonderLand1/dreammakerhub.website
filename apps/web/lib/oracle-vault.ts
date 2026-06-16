@@ -18,11 +18,7 @@ interface VaultSecret {
   value: string;
 }
 
-<<<<<<< HEAD
-let cachedSecrets: Map<string, string> = new Map();
-=======
 const cachedSecrets: Map<string, string> = new Map();
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 function readOCIConfigFile(): OCIConfig | null {
   try {
@@ -48,11 +44,7 @@ function readOCIConfigFile(): OCIConfig | null {
       if (key && value) config[key] = value;
     }
 
-<<<<<<< HEAD
-const vaultOcid = process.env.OCI_VAULT_OCID || 'ocid1.vault.oc1.us-chicago-1.iju5tgneaagfe.abxxeljryjr66w2biptepa5gm6ms532ghm2cowsaxzp3binj6s56ceykvbya';
-=======
 const vaultOcid = process.env.OCI_VAULT_OCID;
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     if (!vaultOcid) {
       return null;
     }

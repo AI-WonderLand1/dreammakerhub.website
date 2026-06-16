@@ -34,78 +34,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-<<<<<<< HEAD
-    let cancelled = false;
-    const supabase = createClient()
-    
-    // Timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
-        setLoading(false)
-      }
-    }, 10000) // 10 second timeout
-
-    if (!supabase) {
-      clearTimeout(timeout);
-      setLoading(false)
-      return
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      clearTimeout(timeout);
-      if (!cancelled) {
-        setSession(data.session ?? null)
-        setUser(data.session?.user ?? null)
-        setLoading(false)
-      }
-    }).catch(() => {
-      clearTimeout(timeout);
-      if (!cancelled) {
-        setLoading(false)
-      }
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (!cancelled) {
-        setSession(s ?? null)
-        setUser(s?.user ?? null)
-        setLoading(false)
-      }
-    })
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-      subscription.unsubscribe()
-    }
-  }, [])
-
-  const signIn = async (email: string, password: string): Promise<{ error?: Error }> => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
-    }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return error ? { error: new Error(error.message) } : {}
-  }
-
-
-
-  const signUp = async (email: string, password: string): Promise<{ error?: Error }> => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
-    }
-    const { error } = await supabase.auth.signUp({ email, password })
-    return error ? { error: new Error(error.message) } : {}
-  }
-
-  const signOut = async () => {
-    const supabase = createClient()
-    if (supabase) {
-      await supabase.auth.signOut()
-    }
-=======
     fetch('/api/auth/session')
       .then(r => r.json())
       .then(data => {
@@ -134,7 +62,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     setUser(null)
     setSession(null)
     if (typeof window !== 'undefined') {

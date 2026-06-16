@@ -11,9 +11,6 @@ export function getPlayCanvasBootstrapSrc() {
 }
 
 export function shouldUseDirectPlayCanvasMode() {
-<<<<<<< HEAD
-  return true; // always direct mode — no iframes
-=======
   if (typeof window === "undefined") return false;
   
   const path = window.location.pathname;
@@ -22,7 +19,6 @@ export function shouldUseDirectPlayCanvasMode() {
     path.includes('playcanvas');
   
   return needsEngine;
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }
 
 export function resetPlayCanvasBootstrapLoader() {

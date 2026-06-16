@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { manifestVisualBlock } from "@core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
-<<<<<<< HEAD
-=======
 import { runModel } from "@core/ai/runModel";
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 export const runtime = "nodejs";
 
@@ -16,12 +13,6 @@ const BuildRequestSchema = z.object({
   fileName: z.string().optional(),
 });
 
-<<<<<<< HEAD
-const MAX_STREAM_DURATION_MS = 120_000;
-const MAX_OUTPUT_SIZE_KB = 512;
-
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 const WEBSITE_SYSTEM = `You are an elite frontend engineer. Build a COMPLETE, visually stunning single-page website.
 Rules:
 - Output a FULL standalone HTML file
@@ -91,56 +82,6 @@ Rules:
 
 Start your output with <!DOCTYPE html>`;
 
-<<<<<<< HEAD
-
-
-const FREE_MODELS = [
-  "openai/gpt-oss-120b:free",
-  "qwen/qwen3.6-plus:free",
-  "openai/gpt-oss-20b:free",
-  "minimax/minimax-m2.5:free",
-] as const;
-
-const PAID_MODELS = [
-  "gpt-4o",
-  "llama-3.1-70b-versatile",
-] as const;
-
-async function callGithubAI(system: string, userPrompt: string, isPaid: boolean): Promise<string> {
-  const apiKey = process.env.GITHUB_MODELS_API_KEY;
-  if (!apiKey) throw new Error("GITHUB_MODELS_API_KEY is not configured.");
-
-  const model = isPaid ? "gpt-4o" : "gpt-4o-mini";
-
-  const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.8,
-      max_tokens: 8192,
-    }),
-  });
-
-  const data = await res.json();
-  if (data.error) {
-    throw new Error(`GitHub Models (${model}): ${data.error.message}`);
-  }
-
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) {
-    throw new Error(`${model}: empty response`);
-  }
-
-  return text;
-=======
 async function callAI(system: string, userPrompt: string): Promise<string> {
   const result = await runModel({
     model: "groq/llama-3.3-70b-versatile",
@@ -155,7 +96,6 @@ async function callAI(system: string, userPrompt: string): Promise<string> {
   }
 
   return result.text;
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 }
 
 function sse(event: string, data: object): string {
@@ -235,11 +175,6 @@ export async function POST(req: NextRequest) {
   const { prompt, type, save, fileName } = body;
   const typeLabel = getTypeLabel(type);
   let totalOutputSize = 0;
-<<<<<<< HEAD
-
-  const startTime = Date.now();
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: string, data: object) => {
@@ -254,11 +189,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel} Tier)` });
 
-<<<<<<< HEAD
-        const plan = await callGithubAI(
-=======
         const plan = await callAI(
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
           `Plan a ${typeLabel} based on: "${prompt}"`,
           isPaid
@@ -269,11 +200,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel} Tier)` });
 
-<<<<<<< HEAD
-        const rawCode = await callGithubAI(
-=======
         const rawCode = await callAI(
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
           getSystemPrompt(type),
           `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
           isPaid
@@ -285,11 +212,7 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-<<<<<<< HEAD
-        const reviewed = await callGithubAI(getReviewerSystem(type), `Improve this code:\n\n${code}`, isPaid);
-=======
         const reviewed = await callAI(getReviewerSystem(type), `Improve this code:\n\n${code}`);
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });

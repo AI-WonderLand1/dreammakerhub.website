@@ -1,13 +1,9 @@
 'use client';
 
-<<<<<<< HEAD
-import { useEffect, useRef, useState } from 'react';
-=======
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { saveSceneToSupabase, loadSceneFromSupabase, listUserScenes } from '@/lib/scene/supabase-store';
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from '@/lib/ai/assetLibrary';
 import { useAuth } from '@/lib/supabase/auth-context';
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 const BASE = '/webglstudio/webglstudio.js-master/editor';
 
@@ -20,13 +16,8 @@ const STYLES = [
 const SCRIPTS = [
   `${BASE}/js/extra/jscolor/jscolor.js`,
   `${BASE}/js/extra/gl-matrix-min.js`,
-<<<<<<< HEAD
-  `${BASE}/js/extra/litegl.js`,     // MUST load before litegui.js (defines LEvent)
-  `${BASE}/js/extra/litegraph.js`,   // MUST load before litescene.js
-=======
   `${BASE}/js/extra/litegl.js`,
   `${BASE}/js/extra/litegraph.js`,
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   `${BASE}/js/extra/canvas-to-blob.js`,
   `${BASE}/js/extra/pako.js`,
   `${BASE}/js/extra/litescene.js`,
@@ -48,10 +39,6 @@ function loadStyle(href: string): Promise<void> {
 }
 
 const loadedScripts = new Set<string>();
-<<<<<<< HEAD
-const initializedGlobals = new Set<string>();
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -59,19 +46,11 @@ function loadScript(src: string): Promise<void> {
       resolve();
       return;
     }
-<<<<<<< HEAD
-    
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     const existing = document.querySelector(`script[src="${src}"]`);
     if (existing) {
       resolve();
       return;
     }
-<<<<<<< HEAD
-    
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     loadedScripts.add(src);
     const script = document.createElement('script');
     script.type = 'text/javascript';
@@ -92,16 +71,6 @@ function sanitizeGlobals() {
 }
 
 interface WebGLStudioHostProps {
-<<<<<<< HEAD
-  onReady?: () => void;
-  onError?: (err: Error) => void;
-}
-
-export default function WebGLStudioHost({ onReady, onError }: WebGLStudioHostProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-=======
   initialSceneId?: string;
   onReady?: () => void;
   onError?: () => void;
@@ -205,35 +174,11 @@ export default function WebGLStudioHost({ initialSceneId, onReady, onError }: We
       setImportingAsset(null);
     }
   }, [user]);
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   useEffect(() => {
     let cancelled = false;
 
     async function mount() {
-<<<<<<< HEAD
-    try {
-      sanitizeGlobals();
-      
-      // Load styles
-      for (const href of STYLES) {
-        if (cancelled) return;
-        await loadStyle(href);
-      }
-
-      // Load scripts in order
-      for (const src of SCRIPTS) {
-        if (cancelled) return;
-        await loadScript(src);
-      }
-
-        if (cancelled) return;
-
-        // Initialize WebGLStudio — it attaches to document.body by default
-        const core = (window as any).CORE;
-        if (core && typeof core.init === 'function') {
-          core.init();
-=======
       try {
         sanitizeGlobals();
 
@@ -253,7 +198,6 @@ export default function WebGLStudioHost({ initialSceneId, onReady, onError }: We
         if (core && typeof core.init === 'function') {
           core.init();
           coreRef.current = core;
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         }
 
         if (!cancelled) {
@@ -265,11 +209,7 @@ export default function WebGLStudioHost({ initialSceneId, onReady, onError }: We
         const msg = err instanceof Error ? err.message : 'Failed to load WebGLStudio';
         setError(msg);
         setLoading(false);
-<<<<<<< HEAD
-        onError?.(new Error(msg));
-=======
         onError?.();
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       }
     }
 
@@ -278,28 +218,6 @@ export default function WebGLStudioHost({ initialSceneId, onReady, onError }: We
     return () => {
       cancelled = true;
     };
-<<<<<<< HEAD
-  }, [onReady, onError]);
-
-  return (
-    <div ref={containerRef} className="relative w-full h-full">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-cyan-400">Loading WebGL Studio...</p>
-          </div>
-        </div>
-      )}
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-500/10 z-20">
-          <div className="text-center p-4">
-            <p className="text-red-400 font-bold mb-2">WebGL Studio failed to load</p>
-            <p className="text-red-300 text-sm">{error}</p>
-          </div>
-        </div>
-      )}
-=======
   }, []);
 
   useEffect(() => {
@@ -419,7 +337,6 @@ export default function WebGLStudioHost({ initialSceneId, onReady, onError }: We
           </div>
         )}
       </div>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     </div>
   );
 }

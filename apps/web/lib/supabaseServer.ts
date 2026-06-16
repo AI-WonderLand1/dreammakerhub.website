@@ -24,28 +24,5 @@ const makeProxy = () =>
     },
   });
 
-<<<<<<< HEAD
-function getInstance(): SupabaseClient {
-  if (!_instance) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    _instance = createClient(url, key, { auth: { persistSession: false } });
-  }
-  return _instance;
-}
-
-export const supabaseServer = new Proxy({} as SupabaseClient, {
-  get(_target: SupabaseClient, prop: string | symbol) {
-    return (getInstance() as any)[prop];
-  },
-});
-
-export const supabaseAdmin = new Proxy({} as SupabaseClient, {
-  get(_target: SupabaseClient, prop: string | symbol) {
-    return (getInstance() as any)[prop];
-  },
-});
-=======
 export const supabaseServer = makeProxy();
 export const supabaseAdmin = makeProxy();
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786

@@ -21,11 +21,8 @@ export const env = {
   NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
   AGENT_API_URL: process.env.AGENT_API_URL || 'http://localhost:8000',
   ALICE_API_KEY: process.env.ALICE_API_KEY || '',
-<<<<<<< HEAD
-=======
   N8N_API_KEY: process.env.N8N_API_KEY || '',
   N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL || 'https://aiwonderland.app.n8n.cloud/webhook/user-choice',
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   EXTENSION_ENCRYPTION_KEY: process.env.EXTENSION_ENCRYPTION_KEY || '',
 }

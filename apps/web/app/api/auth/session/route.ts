@@ -5,13 +5,9 @@ export const runtime = "nodejs";
 
 export async function GET(_request: NextRequest) {
   try {
-<<<<<<< HEAD
-    const supabase = await createClient();
-=======
     const h = await headers();
     const userId = h.get('x-replit-user-id');
     const userName = h.get('x-replit-user-name');
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
     if (!userId || !userName) {
       return NextResponse.json({ success: true, session: null, user: null });

@@ -1,22 +1,12 @@
 "use client";
 
-<<<<<<< HEAD
-=======
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/supabase/auth-context';
 
 const WonderSpaceIDE = dynamic(() => import('@/components/engines/WonderSpaceIDE'), { ssr: false });
 
-<<<<<<< HEAD
-export default function IDEPage() {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div className="bg-black text-green-500 p-4">Booting environment...</div>;
-  if (!user) return <div className="bg-black text-red-500 p-4">Auth required.</div>;
-=======
 const CODER_ACCESS_URL = process.env.NEXT_PUBLIC_CODER_ACCESS_URL || 'https://coder.dreammakerhub.website';
 
 function IDEContent() {
@@ -53,14 +43,11 @@ function IDEContent() {
       </div>
     </div>
   );
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 
   return (
     <div className="w-full h-screen">
       <WonderSpaceIDE />
     </div>
-<<<<<<< HEAD
-=======
   );
 }
 
@@ -76,6 +63,5 @@ export default function IDEPage() {
     }>
       <IDEContent />
     </Suspense>
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
   );
 }
