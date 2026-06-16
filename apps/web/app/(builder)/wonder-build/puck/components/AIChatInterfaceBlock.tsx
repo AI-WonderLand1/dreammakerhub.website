@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 export type AIChatInterfaceBlockProps = {
-  agentName: string;
-  agentRole: string;
-  theme: "hieroglyphic" | "neon" | "minimal";
-  samplePrompt: string;
-  sampleResponse: string;
+  agentName?: string;
+  agentRole?: string;
+  theme?: "hieroglyphic" | "neon" | "minimal";
+  apiEndpoint?: string;
 };
 
 const themes = {
@@ -30,7 +31,7 @@ const themes = {
     btn: "bg-cyan-500 hover:bg-cyan-400 text-black",
   },
   minimal: {
-    wrapper: "border-white/10 bg-white/[0.02]",
+    wrapper: "border-white/10 bg-[#0a0a10]",
     header: "border-white/10 bg-white/5",
     accent: "text-violet-400",
     badge: "bg-violet-500/10 border border-violet-500/30 text-violet-300",
@@ -42,13 +43,40 @@ const themes = {
 };
 
 export default function AIChatInterfaceBlock({
-  agentName = "Anubis AI",
-  agentRole = "Hieroglyphic Decoder",
-  theme = "hieroglyphic",
-  samplePrompt = "Decode this ancient symbol for me",
-  sampleResponse = "𓂀 The Eye of Horus represents protection and royal power. In this context it suggests...",
+  agentName = "Spirit Guide",
+  agentRole = "AI Assistant",
+  theme = "minimal",
+  apiEndpoint = "/api/ai/chat",
 }: AIChatInterfaceBlockProps) {
   const t = themes[theme];
+  const [messages, setMessages] = useState<Array<{role: "user" | "assistant", content: string}>>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSend() {
+    if (!input.trim() || loading) return;
+    
+    const userMessage = input.trim();
+    setMessages(m => [...m, { role: "user", content: userMessage }]);
+    setInput("");
+    setLoading(true);
+    
+    try {
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: userMessage, agentId: "website_builder" }),
+      });
+      
+      const data = await res.json();
+      const response = data.response || "I'm here to help!";
+      setMessages(m => [...m, { role: "assistant", content: response }]);
+    } catch {
+      setMessages(m => [...m, { role: "assistant", content: "Connection failed. Please try again." }]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="p-4" data-block="ai-chat-interface">
@@ -62,26 +90,45 @@ export default function AIChatInterfaceBlock({
             <p className="text-[10px] text-white/40">{agentRole}</p>
           </div>
           <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium ${t.badge}`}>
-            Live
+            AI
           </span>
         </div>
 
-        <div className="space-y-3 p-4">
-          <div className={`ml-auto max-w-xs rounded-xl rounded-br-sm border p-3 text-xs text-white ${t.userMsg}`}>
-            {samplePrompt}
-          </div>
-          <div className={`mr-auto max-w-sm rounded-xl rounded-bl-sm border p-3 text-xs text-white/80 ${t.agentMsg}`}>
-            {sampleResponse}
-          </div>
+        <div className="h-48 space-y-3 overflow-y-auto p-4">
+          {messages.length === 0 && (
+            <div className="text-center text-white/40 text-xs py-4">
+              Start a conversation with the AI
+            </div>
+          )}
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`max-w-xs rounded-xl rounded-${msg.role === "user" ? "br" : "bl"}-sm border p-3 text-xs ${msg.role === "user" ? `ml-auto ${t.userMsg}` : `mr-auto ${t.agentMsg}`}`}
+            >
+              {msg.content}
+            </div>
+          ))}
+          {loading && (
+            <div className={`mr-auto max-w-xs rounded-xl rounded-bl-sm border p-3 text-xs ${t.agentMsg}`}>
+              <span className="animate-pulse">Thinking...</span>
+            </div>
+          )}
         </div>
 
         <div className={`flex items-center gap-2 border-t px-4 py-3 ${t.header}`}>
           <input
-            readOnly
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleSend(); }}
             placeholder="Type a message..."
             className={`flex-1 rounded-lg border bg-transparent px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none transition ${t.input}`}
+            disabled={loading}
           />
-          <button className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${t.btn}`}>
+          <button 
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${t.btn}`}
+          >
             Send
           </button>
         </div>
