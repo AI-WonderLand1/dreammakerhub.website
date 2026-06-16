@@ -1,28 +1,18 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-<<<<<<< HEAD
-import { env, requireEnv } from "@lib/env";
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
+import { env } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
  * GROQ AI Provider
  * Uses GROQ API for fast inference with various models.
-<<<<<<< HEAD
-=======
  * Supports user-provided apiKey via options.
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
  */
 export const groqProvider: AIProvider = {
   name: "groq",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-<<<<<<< HEAD
-    const apiKey = requireEnv(env.GROQ_API_KEY, "GROQ_API_KEY");
-=======
     const apiKey = options.apiKey as string || process.env.GROQ_API_KEY || '';
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     const {
       model = "llama-3.1-8b-instant",
       system,
@@ -30,8 +20,6 @@ export const groqProvider: AIProvider = {
       maxTokens = 4096
     } = options ?? {};
 
-<<<<<<< HEAD
-=======
     if (!apiKey) {
       return {
         text: "GROQ_API_KEY not configured. Add it in Settings → AI Providers.",
@@ -46,7 +34,6 @@ export const groqProvider: AIProvider = {
       };
     }
 
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     try {
       const messages = [];
 

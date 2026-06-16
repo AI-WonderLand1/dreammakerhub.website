@@ -10,9 +10,6 @@ export const opencodeProvider: AIProvider = {
   name: "opencode",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-<<<<<<< HEAD
-    const apiKey = requireEnv(env.OPENCODE_API_KEY, "OPENCODE_API_KEY");
-=======
     const apiKey = options.apiKey as string || process.env.OPENCODE_API_KEY || '';
     if (!apiKey) {
       return {
@@ -27,7 +24,6 @@ export const opencodeProvider: AIProvider = {
         }
       };
     }
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
     const {
       model = "opencode/big-pickle",
       system,
