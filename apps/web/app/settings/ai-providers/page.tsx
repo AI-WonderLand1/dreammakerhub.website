@@ -89,6 +89,33 @@ const PROVIDERS: ProviderInfo[] = [
     models: ["user-choice"],
     docsUrl: "https://n8n.io",
   },
+  {
+    id: "cerebras",
+    name: "Cerebras",
+    description: "Fast inference on Cerebras hardware (Llama, etc.)",
+    apiKeyName: "CEREBRAS_API_KEY",
+    defaultModel: "llama-3.3-70b",
+    models: ["llama-3.3-70b", "llama-3.1-8b"],
+    docsUrl: "https://inference-docs.cerebras.ai",
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    description: "GPT-4o, GPT-4o-mini and other OpenAI models",
+    apiKeyName: "OPENAI_API_KEY",
+    defaultModel: "gpt-4o-mini",
+    models: ["gpt-4o-mini", "gpt-4o", "o1-mini", "o1-preview", "gpt-4-turbo"],
+    docsUrl: "https://platform.openai.com/docs",
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    description: "Claude models by Anthropic",
+    apiKeyName: "ANTHROPIC_API_KEY",
+    defaultModel: "claude-3-5-haiku-latest",
+    models: ["claude-3-5-haiku-latest", "claude-3-5-sonnet-latest", "claude-3-opus-latest"],
+    docsUrl: "https://docs.anthropic.com",
+  },
 ];
 
 export default function AIProvidersSettingsPage() {
@@ -387,6 +414,15 @@ export default function AIProvidersSettingsPage() {
           </p>
           <p>
             <strong className="text-white">Google AI</strong> gives you access to Gemini models for vision and reasoning tasks.
+          </p>
+          <p>
+            <strong className="text-white">Cerebras</strong> offers fast inference on Cerebras hardware for Llama models. Great for heavy workloads.
+          </p>
+          <p>
+            <strong className="text-white">OpenAI</strong> provides access to GPT-4o and GPT-4o-mini models directly.
+          </p>
+          <p>
+            <strong className="text-white">Anthropic</strong> gives you access to Claude models for advanced reasoning and safety.
           </p>
           <p className="pt-2 text-white/40">
             Your API keys are encrypted before storage and never exposed to client-side code.
