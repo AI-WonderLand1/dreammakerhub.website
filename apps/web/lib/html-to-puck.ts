@@ -544,7 +544,7 @@ function parseBasicElements(html: string): PuckBlock[] {
 }
 
 export function parseHtmlToBlocks(html: string): PuckBlock[] {
-  const blocks: PuckBlock[] = {};
+   const blocks: PuckBlock[] = [];
   
   if (html.length > 500000) {
     throw new Error("HTML input too large for parsing");
