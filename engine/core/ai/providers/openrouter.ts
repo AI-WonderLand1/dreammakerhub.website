@@ -3,31 +3,17 @@ import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
 import { logger } from "@lib/logger";
 
 /**
-<<<<<<< HEAD
- * Google AI Provider (Gemini)
- * Uses Google AI API directly for Gemini models.
- *
- * NOTE: File named openrouter.ts but implements Google AI.
- * TODO: Re-add actual OpenRouter provider routing to openrouter.ai
-=======
  * OpenRouter Provider
  * Routes requests to many models via openrouter.ai
  * Uses OPENROUTER_API_KEY secret or user-provided apiKey.
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
  */
-export const googleProvider: AIProvider = {
-  name: "google",
+export const openrouterProvider: AIProvider = {
+  name: "openrouter",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-<<<<<<< HEAD
-    const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
-    const {
-      model = "gemini-2.5-flash",
-=======
     const apiKey = options.apiKey as string || process.env.OPENROUTER_API_KEY || '';
     const {
       model = "google/gemini-flash-1.5",
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
       system,
       temperature = 0.7,
       maxTokens = 4096
@@ -74,7 +60,7 @@ export const googleProvider: AIProvider = {
       const data = await response.json();
 
       if (data.error) {
-        logger.error("❌ OpenRouter API Error", { error: data.error });
+        logger.error("OpenRouter API Error", { error: data.error });
         return {
           text: "OpenRouter encountered an error.",
           error: true,
@@ -110,7 +96,7 @@ export const googleProvider: AIProvider = {
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "Unknown error";
-      logger.error("✦ OpenRouter connection error", { error: errMsg });
+      logger.error("OpenRouter connection error", { error: errMsg });
       return {
         text: "OpenRouter connection failed.",
         error: true,
@@ -121,9 +107,3 @@ export const googleProvider: AIProvider = {
     }
   },
 };
-<<<<<<< HEAD
-
-export const openrouterProvider = googleProvider;
-
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
