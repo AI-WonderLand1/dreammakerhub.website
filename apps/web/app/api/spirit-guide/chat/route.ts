@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       temperature: 0.8,
       maxTokens: 512,
       userApiKey,
+      baseUrl: config?.base_url || undefined,
     });
 
     const response = result.text || "I sense great creativity in you. What would you like to build?";
