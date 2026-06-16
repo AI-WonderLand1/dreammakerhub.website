@@ -37,6 +37,9 @@ export async function runModel({
   const isOpencode = typeof model === "string" && model.startsWith("opencode/");
   const isOpenrouter = typeof model === "string" && model.startsWith("openrouter/");
   const isN8n = typeof model === "string" && model.startsWith("n8n/");
+  const isCerebras = typeof model === "string" && model.startsWith("cerebras/");
+  const isOpenai = typeof model === "string" && model.startsWith("openai/");
+  const isAnthropic = typeof model === "string" && model.startsWith("anthropic/");
 
   if (isGithub) {
     const githubModel = model.replace(/^github\//, "");
@@ -98,6 +101,39 @@ export async function runModel({
       system,
       temperature,
       maxTokens,
+    });
+  }
+
+  if (isCerebras) {
+    const cerebrasModel = model.replace(/^cerebras\//, "");
+    return Providers.cerebras.generate(lastContent, {
+      model: cerebrasModel || "llama-3.3-70b",
+      system,
+      temperature,
+      maxTokens,
+      apiKey: userApiKey,
+    });
+  }
+
+  if (isOpenai) {
+    const openaiModel = model.replace(/^openai\//, "");
+    return Providers.openai.generate(lastContent, {
+      model: openaiModel || "gpt-4o-mini",
+      system,
+      temperature,
+      maxTokens,
+      apiKey: userApiKey,
+    });
+  }
+
+  if (isAnthropic) {
+    const anthropicModel = model.replace(/^anthropic\//, "");
+    return Providers.anthropic.generate(lastContent, {
+      model: anthropicModel || "claude-3-5-haiku-latest",
+      system,
+      temperature,
+      maxTokens,
+      apiKey: userApiKey,
     });
   }
 

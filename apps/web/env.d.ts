@@ -30,6 +30,8 @@ declare namespace NodeJS {
     CEREBRAS_API_KEY?: string;
     N8N_API_KEY?: string;
     N8N_WEBHOOK_URL?: string;
+    ANTHROPIC_API_KEY?: string;
+    GROQ_API_KEY?: string;
     
     // Convai - server-side proxy only (client should not have direct API access)
     CONVAI_API_KEY?: string;
