@@ -1,31 +1,33 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
+import { env } from "@lib/env";
 import { logger } from "@lib/logger";
 
-export const opencodeProvider: AIProvider = {
-  name: "opencode",
+export const openaiProvider: AIProvider = {
+  name: "openai",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = options.apiKey as string || process.env.OPENCODE_API_KEY || '';
-    if (!apiKey) {
-      return {
-        text: "OPENCODE_API_KEY not configured. Add it in Settings → AI Providers.",
-        error: true,
-        provider: "opencode",
-        model: options?.model || "opencode/big-pickle",
-        confessions: {
-          confidence: 0,
-          reasoning: ["OPENCODE_API_KEY missing"],
-          limitations: ["Set OPENCODE_API_KEY in Settings → AI Providers"]
-        }
-      };
-    }
+    const apiKey = options.apiKey as string || process.env.OPENAI_API_KEY || '';
     const {
-      model = "opencode/big-pickle",
+      model = "gpt-4o-mini",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
+
+    if (!apiKey) {
+      return {
+        text: "OPENAI_API_KEY not configured. Add it in Settings → AI Providers.",
+        error: true,
+        provider: "openai",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["OPENAI_API_KEY missing"],
+          limitations: ["Set OPENAI_API_KEY in Settings → AI Providers"]
+        }
+      };
+    }
 
     try {
       const messages = [];
@@ -39,7 +41,7 @@ export const opencodeProvider: AIProvider = {
         content: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt)
       });
 
-      const response = await fetch("https://opencode.ai/v1/chat/completions", {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -56,30 +58,30 @@ export const opencodeProvider: AIProvider = {
       const data = await response.json();
 
       if (data.error) {
-        logger.error("OpenCode API Error", { error: data.error });
+        logger.error("OpenAI API Error", { error: data.error });
         return {
-          text: "The Spirit Guide encountered an error with OpenCode API.",
+          text: "OpenAI API returned an error.",
           error: true,
-          provider: "opencode",
+          provider: "openai",
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["OpenCode API returned an error"],
+            reasoning: ["OpenAI API returned an error"],
             limitations: [data.error.message || "Unknown error"]
           }
         };
       }
 
       if (!data.choices?.length) {
-        logger.error("OpenCode API returned no choices", { data });
+        logger.error("OpenAI API returned no choices", { data });
         return {
-          text: "The Spirit Guide received no response from OpenCode API.",
+          text: "No response from OpenAI API.",
           error: true,
-          provider: "opencode",
+          provider: "openai",
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["No choices returned from OpenCode API"],
+            reasoning: ["No choices returned from OpenAI API"],
             limitations: ["Empty response"]
           }
         };
@@ -89,24 +91,22 @@ export const opencodeProvider: AIProvider = {
 
       return {
         text: outputText,
-        provider: "opencode",
+        provider: "openai",
         model,
         confessions: {
           confidence: 0.95,
-          reasoning: ["Processed via OpenCode API"],
+          reasoning: ["Processed via OpenAI API"],
           limitations: ["May have usage limits"]
         }
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "Unknown network error";
-      logger.error("Spirit Guide Connection Severed (OpenCode)", {
-        error: errMsg
-      });
+      logger.error("OpenAI connection error", { error: errMsg });
 
       return {
-        text: "The Spirit Guide lost connection to OpenCode API.",
+        text: "Lost connection to OpenAI API.",
         error: true,
-        provider: "opencode",
+        provider: "openai",
         model,
         confessions: {
           confidence: 0,
