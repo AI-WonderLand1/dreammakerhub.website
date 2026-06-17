@@ -1,6 +1,14 @@
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
 
+const METADATA_HOSTNAMES = [
+  '169.254.169.254',
+  'metadata.google.internal',
+  'metadata.google.internal.',
+  '100.100.100.200',
+  '100.100.100.200',
+]
+
 export class SsrfError extends Error {
   constructor(message: string) {
     super(message)
@@ -64,12 +72,17 @@ function isIpFormat(hostname: string): boolean {
   return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':')
 }
 
+function isMetadataHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim()
+  return METADATA_HOSTNAMES.some(m => host === m || host.endsWith(`.${m}`))
+}
+
 export interface SsrfFetchOptions extends RequestInit {
   allowedHosts?: readonly string[]
   blockLocalhost?: boolean
 }
 
-export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
+async function validateUrl(url: string, options: SsrfFetchOptions): Promise<string> {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -93,6 +106,10 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     }
   }
 
+  if (isMetadataHostname(hostname)) {
+    throw new SsrfError('Metadata endpoints are not allowed')
+  }
+
   if (isIpFormat(hostname)) {
     if (isUnsafeResolvedIp(hostname)) {
       throw new SsrfError('Direct IP to a disallowed address')
@@ -114,15 +131,30 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     throw new SsrfError('URL resolves to a disallowed network address')
   }
 
-  const validatedUrl = new URL(parsed.toString())
-  validatedUrl.protocol = 'https:'
-  validatedUrl.hostname = hostname
-  validatedUrl.port = ''
-  validatedUrl.username = ''
-  validatedUrl.password = ''
+  return url
+}
 
-  return fetch(validatedUrl.toString(), {
+async function validateRedirect(response: Response, options: SsrfFetchOptions): Promise<Response> {
+  if (!response.status || response.status < 300 || response.status >= 400) {
+    return response
+  }
+  const location = response.headers.get('location')
+  if (!location) {
+    return response
+  }
+  const resolvedUrl = new URL(location, response.url).toString()
+  await validateUrl(resolvedUrl, options)
+  const redirectResponse = await fetch(resolvedUrl, { ...options, redirect: 'manual' })
+  return validateRedirect(redirectResponse, options)
+}
+
+export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
+  const validatedUrl = await validateUrl(url, options)
+
+  const response = await fetch(validatedUrl, {
     redirect: 'manual',
     ...options,
   })
+
+  return validateRedirect(response, options)
 }

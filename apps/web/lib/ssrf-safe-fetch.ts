@@ -1,3 +1,9 @@
+const METADATA_HOSTNAMES = [
+  '169.254.169.254',
+  'metadata.google.internal',
+  '100.100.100.200',
+]
+
 export class SsrfError extends Error {
   constructor(message: string) {
     super(message)
@@ -56,12 +62,21 @@ function isIpFormat(hostname: string): boolean {
   return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':')
 }
 
+function isMetadataHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim()
+  return METADATA_HOSTNAMES.some(m => host === m || host.endsWith(`.${m}`))
+}
+
+function normalizeHostname(hostname: string): string {
+  return hostname.trim().toLowerCase().replace(/\.+$/, '')
+}
+
 export interface SsrfFetchOptions extends RequestInit {
   allowedHosts?: readonly string[]
   blockLocalhost?: boolean
 }
 
-export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
+async function validateUrl(url: string, options: SsrfFetchOptions): Promise<string> {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -77,12 +92,16 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     throw new SsrfError('URL must not include credentials')
   }
 
-  const hostname = parsed.hostname.toLowerCase()
+  const hostname = normalizeHostname(parsed.hostname)
 
   if (isLocalHostname(hostname)) {
     if (options.blockLocalhost !== false) {
       throw new SsrfError('Localhost URLs are not allowed')
     }
+  }
+
+  if (isMetadataHostname(hostname)) {
+    throw new SsrfError('Metadata endpoints are not allowed')
   }
 
   if (isIpFormat(hostname)) {
@@ -92,7 +111,8 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
   }
 
   if (options.allowedHosts && options.allowedHosts.length > 0) {
-    const isAllowed = options.allowedHosts.some(
+    const normalizedAllowedHosts = options.allowedHosts.map(allowed => normalizeHostname(allowed))
+    const isAllowed = normalizedAllowedHosts.some(
       allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
     )
     if (!isAllowed) {
@@ -100,9 +120,30 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     }
   }
 
-  const validatedUrl = new URL(`https://${hostname}${parsed.pathname}${parsed.search}`)
-  return fetch(validatedUrl.toString(), {
+  return url
+}
+
+async function validateRedirect(response: Response, options: SsrfFetchOptions): Promise<Response> {
+  if (!response.status || response.status < 300 || response.status >= 400) {
+    return response
+  }
+  const location = response.headers.get('location')
+  if (!location) {
+    return response
+  }
+  const resolvedUrl = new URL(location, response.url).toString()
+  await validateUrl(resolvedUrl, options)
+  const redirectResponse = await fetch(resolvedUrl, { ...options, redirect: 'manual' })
+  return validateRedirect(redirectResponse, options)
+}
+
+export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
+  const validatedUrl = await validateUrl(url, options)
+
+  const response = await fetch(validatedUrl, {
     redirect: 'manual',
     ...options,
   })
+
+  return validateRedirect(response, options)
 }

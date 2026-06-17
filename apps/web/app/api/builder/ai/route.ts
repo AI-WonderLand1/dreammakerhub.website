@@ -10,8 +10,16 @@ function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-function stripScripts(html: string) {
-  return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]*\s(on\w+)\s*=\s*["'][^"']*["'][^>]*>/gi, "")
+    .replace(/<[^>]*\s(on\w+)\s*=\s*[^\s>]+/gi, "")
+    .replace(/\s(on\w+)\s*=\s*["'][^"']*["']/gi, "")
+    .replace(/javascript\s*:/gi, "")
+    .replace(/<embed[\s>]/gi, "<embed_disabled ")
+    .replace(/<object[\s>]/gi, "<object_disabled ")
+    .replace(/<iframe[\s>]/gi, "<iframe_disabled ")
 }
 
 async function callOpenAI(apiKey: string, prompt: string) {
@@ -215,7 +223,7 @@ ${prompt}
     }
 
     const message = String(parsed.message ?? "Done.");
-    const html = stripScripts(String(parsed.html ?? ""));
+    const html = sanitizeHtml(String(parsed.html ?? ""));
     const css = String(parsed.css ?? "");
 
     return NextResponse.json(
