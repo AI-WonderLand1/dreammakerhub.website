@@ -46,7 +46,7 @@ jobs:
         - language: actions
           build-mode: none
         - language: c-cpp
-          build-mode: manual
+          build-mode: autobuild
         - language: javascript-typescript
           build-mode: none
         - language: python
@@ -93,6 +93,7 @@ jobs:
       shell: bash
       run: |
         echo "No manual build required for this project"
+        exit 1
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
