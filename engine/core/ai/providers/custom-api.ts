@@ -2,30 +2,46 @@ import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
 import { logger } from "@lib/logger";
 
-export const opencodeProvider: AIProvider = {
-  name: "opencode",
+export const customApiProvider: AIProvider = {
+  name: "custom-api",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = options.apiKey as string || process.env.OPENCODE_API_KEY || '';
-    if (!apiKey) {
-      return {
-        text: "OPENCODE_API_KEY not configured. Add it in Settings → AI Providers.",
-        error: true,
-        provider: "opencode",
-        model: options?.model || "opencode/big-pickle",
-        confessions: {
-          confidence: 0,
-          reasoning: ["OPENCODE_API_KEY missing"],
-          limitations: ["Set OPENCODE_API_KEY in Settings → AI Providers"]
-        }
-      };
-    }
+    const apiKey = options.apiKey as string || '';
+    const baseUrl = (options.baseUrl as string || '').replace(/\/$/, '');
     const {
-      model = "opencode/big-pickle",
+      model = "custom-model",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
+
+    if (!apiKey) {
+      return {
+        text: "Custom API key not configured. Add it in Settings → AI Providers.",
+        error: true,
+        provider: "custom-api",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["Custom API key missing"],
+          limitations: ["Set API key in Settings → AI Providers"]
+        }
+      };
+    }
+
+    if (!baseUrl) {
+      return {
+        text: "Custom API base URL not configured.",
+        error: true,
+        provider: "custom-api",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["Custom API base URL missing"],
+          limitations: ["Set a base URL in Settings → AI Providers"]
+        }
+      };
+    }
 
     try {
       const messages = [];
@@ -39,7 +55,7 @@ export const opencodeProvider: AIProvider = {
         content: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt)
       });
 
-      const response = await fetch("https://opencode.ai/v1/chat/completions", {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -56,30 +72,30 @@ export const opencodeProvider: AIProvider = {
       const data = await response.json();
 
       if (data.error) {
-        logger.error("OpenCode API Error", { error: data.error });
+        logger.error("Custom API Error", { error: data.error });
         return {
-          text: "The Spirit Guide encountered an error with OpenCode API.",
+          text: "Custom API returned an error.",
           error: true,
-          provider: "opencode",
+          provider: "custom-api",
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["OpenCode API returned an error"],
+            reasoning: ["Custom API returned an error"],
             limitations: [data.error.message || "Unknown error"]
           }
         };
       }
 
       if (!data.choices?.length) {
-        logger.error("OpenCode API returned no choices", { data });
+        logger.error("Custom API returned no choices", { data });
         return {
-          text: "The Spirit Guide received no response from OpenCode API.",
+          text: "No response from Custom API.",
           error: true,
-          provider: "opencode",
+          provider: "custom-api",
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["No choices returned from OpenCode API"],
+            reasoning: ["No choices returned from Custom API"],
             limitations: ["Empty response"]
           }
         };
@@ -89,24 +105,22 @@ export const opencodeProvider: AIProvider = {
 
       return {
         text: outputText,
-        provider: "opencode",
+        provider: "custom-api",
         model,
         confessions: {
           confidence: 0.95,
-          reasoning: ["Processed via OpenCode API"],
-          limitations: ["May have usage limits"]
+          reasoning: ["Processed via Custom API"],
+          limitations: ["Depends on the configured endpoint"]
         }
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "Unknown network error";
-      logger.error("Spirit Guide Connection Severed (OpenCode)", {
-        error: errMsg
-      });
+      logger.error("Custom API connection error", { error: errMsg });
 
       return {
-        text: "The Spirit Guide lost connection to OpenCode API.",
+        text: "Lost connection to Custom API.",
         error: true,
-        provider: "opencode",
+        provider: "custom-api",
         model,
         confessions: {
           confidence: 0,
