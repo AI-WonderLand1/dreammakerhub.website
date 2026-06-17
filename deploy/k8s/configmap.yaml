@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coder-config
+  namespace: wonderland
+data:
+  CODER_ACCESS_URL: "https://coder.dreammakerhub.website"
+  CODER_WILDCARD_ACCESS_URL: "*.coder.dreammakerhub.website"
+  CODER_DERP_FORCE_WEBSOCKETS: "true"
+  CODER_SESSION_HOST_PREFIX_COOKIES: "true"
