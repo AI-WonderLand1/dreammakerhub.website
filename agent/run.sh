@@ -1,9 +1,12 @@
 #!/bin/bash
-export GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 cd "$(dirname "$0")"
 
+set -a; source ../.env 2>/dev/null; set +a
+
+PYTHON=/nix/store/3lll9y925zz9393sa59h653xik66srjb-python3-3.13.9/bin/python3
+
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
+    $PYTHON -m venv venv
 fi
 
 source venv/bin/activate

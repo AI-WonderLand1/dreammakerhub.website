@@ -82,21 +82,21 @@ Rules:
 
 Start your output with <!DOCTYPE html>`;
 
-async function callAI(system: string, userPrompt: string): Promise<string> {
-  const result = await runModel({
-    model: "groq/llama-3.3-70b-versatile",
-    messages: [{ role: "user", content: userPrompt }],
-    system,
-    temperature: 0.8,
-    maxTokens: 8192,
-  });
+async function callAI(system: string, userPrompt: string, isPaid?: boolean): Promise<string> {
+   const result = await runModel({
+     model: isPaid ? "groq/llama-3.3-70b-versatile" : "groq/llama-3.1-8b-instant",
+     messages: [{ role: "user", content: userPrompt }],
+     system,
+     temperature: 0.8,
+     maxTokens: 8192,
+   });
 
-  if (result.error) {
-    throw new Error(result.text || "AI call failed");
-  }
+   if (result.error) {
+     throw new Error(result.text || "AI call failed");
+   }
 
-  return result.text;
-}
+   return result.text;
+ }
 
 function sse(event: string, data: object): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -191,7 +191,8 @@ export async function POST(req: NextRequest) {
 
         const plan = await callAI(
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
-          `Plan a ${typeLabel} based on: "${prompt}"`
+          `Plan a ${typeLabel} based on: "${prompt}"`,
+          isPaid
         );
 
         send("agent", { stage: "architect", status: "done", label: "Architect Agent", message: plan.slice(0, 300) });
@@ -201,7 +202,8 @@ export async function POST(req: NextRequest) {
 
         const rawCode = await callAI(
           getSystemPrompt(type),
-          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`
+          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
+          isPaid
         );
         const code = stripCodeFences(rawCode);
 
