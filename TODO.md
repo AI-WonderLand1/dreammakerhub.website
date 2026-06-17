@@ -13,29 +13,12 @@
   - Or repurpose for your own AI proxy
 
 ### 2. Add ElevenLabs TTS (Users Bring Their Own Key)
-<<<<<<< HEAD
-- [ ] Create `apps/web/app/api/npc/tts/route.ts`
-  - Accept text, return audio URL or base64
-  - Call ElevenLabs API with user's API key (stored like SSH keys in Supabase)
-
-### 3. Optimize glTF Files (Save Supabase Storage/Memory)
-- [ ] Ensure `packages/optimizer/` is deployed and working
-  - Already has: Draco compression, WebP textures, mesh optimization
-  - Uses `@gltf-transform/functions`
-
-- [ ] Create `apps/web/app/api/assets/process/route.ts`
-  - Accept uploaded `.glb`/`.gltf`
-  - Send to optimizer service (or run in wonder-runtime pod)
-  - Return optimized file URL from Supabase `3d-assets` bucket
-
-=======
 - [x] Create `apps/web/app/api/npc/tts/route.ts` — DONE (route exists)
 - [ ] Wire TTS into UI (call endpoint from frontend)
 
 ### 3. Optimize glTF Files (Save Supabase Storage/Memory)
 - [x] Ensure `packages/optimizer/` is deployed and working — DONE
 - [x] Create `apps/web/app/api/assets/process/route.ts` — DONE (route exists)
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 - [ ] Wire into upload flow (`lib/ai/assetLibrary.ts`)
   - Auto-optimize on upload
   - Store optimized version in Supabase
@@ -57,15 +40,7 @@
   - Optional: `POST /api/scenes/merge` → combine using `merge()` from `@gltf-transform/functions`
   - Redirect to `https://{workspaceId}.dreammakerhub.website`
 
-<<<<<<< HEAD
-### 6. Fix Current Bugs
-- [ ] Fix `rateLimits` variable in `apps/web/middleware.ts` (already done in commit `876bd1c`)
-- [ ] Fix CSP font-src to include `https://rsms.me` (already done in commit `2a6c287`)
-- [ ] Remove COEP `require-corp` header blocking external fonts (already done in commit `a6252a9`)
-- [ ] Ensure `rsms.me` is in `style-src` CSP (already done in commit `5dade33`)
 
-=======
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 ## 🔹 Low Priority
 
 ### 7. Character & Scene Management
@@ -78,8 +53,6 @@
 - [ ] Movies/Videos (pre-rendered, export as MP4)
 - [ ] Both?
 
-<<<<<<< HEAD
-=======
 ## 🏗️ Builders & 3D/Spatial Surfaces
 
 ### 6. Builder Page Consolidation
@@ -119,8 +92,6 @@
 - [ ] Add real-time collab (WebRTC / WebSocket)
 - [ ] Connect to Supabase for persistence
 - [ ] Unified auth with main app
-
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
 ## ❌ Don't Touch
 - ✅ PlayCanvas.com (ignore completely)
 - ✅ Your K8s pod architecture (it's solid)
