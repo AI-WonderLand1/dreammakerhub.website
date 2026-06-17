@@ -92,6 +92,7 @@
 - [ ] Add real-time collab (WebRTC / WebSocket)
 - [ ] Connect to Supabase for persistence
 - [ ] Unified auth with main app
+
 ## ❌ Don't Touch
 - ✅ PlayCanvas.com (ignore completely)
 - ✅ Your K8s pod architecture (it's solid)
