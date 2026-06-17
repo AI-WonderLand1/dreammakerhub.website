@@ -201,6 +201,13 @@ export async function listSnapshots(projectId: string, ownerId: string): Promise
   return [];
 }
 
+export async function restoreSnapshot(projectId: string, ownerId: string, snapshotId: string): Promise<Snapshot> {
+  const snapshots = await listSnapshots(projectId, ownerId);
+  const snapshot = snapshots.find((entry) => entry.id === snapshotId);
+  if (!snapshot) throw new Error("Snapshot not found");
+  return snapshot;
+}
+
 // Legacy storage shim for compatibility
 export const storage = {
   upload: async (path: string, file: any) => ({ error: null }),
