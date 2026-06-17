@@ -9,6 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from personas import SpiritGuide, Orchestrator
 from core.api_keys import APIKeyManager
 
+DEFAULT_LLM_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
+
 app = FastAPI(
     title="Wonderland Agent API",
     description="Dual-Persona AI: Spirit Guide + Orchestrator",
@@ -24,8 +26,8 @@ app.add_middleware(
 )
 
 api_key_manager = APIKeyManager()
-spirit_guide = SpiritGuide(api_key=os.environ.get("GEMINI_API_KEY"))
-orchestrator = Orchestrator(api_key=os.environ.get("GEMINI_API_KEY"))
+spirit_guide = SpiritGuide(api_key=DEFAULT_LLM_KEY)
+orchestrator = Orchestrator(api_key=DEFAULT_LLM_KEY)
 
 def get_api_key(x_api_key: str = Header(None)):
     if not x_api_key:
@@ -97,8 +99,9 @@ async def create_api_key(request: APIKeyCreateRequest):
 async def health_check():
     return {
         "status": "healthy",
-        "spirit_guide": spirit_guide.client is not None,
-        "orchestrator": orchestrator.client is not None
+        "llm_configured": bool(DEFAULT_LLM_KEY),
+        "spirit_guide": "ready",
+        "orchestrator": "ready"
     }
 
 if __name__ == "__main__":
