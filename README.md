@@ -1,5 +1,13 @@
-# Ai-Wonderland (DreamMakerHub)
-# WonderSpace System Architecture
+# DreamMakerHub
+
+> **Build anything instantly — no setup required.**
+> AI-powered multi-engine development platform.
+
+---
+
+## What Is This?
+
+DreamMakerHub is a unified platform where anyone can launch a dev environment, build with AI/code/visual tools, and deploy — all from one place. No more juggling IDEs, AI tools, hosting, and APIs separately.
 
 ## Overview
 
@@ -529,7 +537,6 @@ bash scripts/release-gates-check.sh
 
 ### Architecture Philosophy
 "Thin TS / Heavy Python"
-=======
 ---
 
 ## How Do I Run It?
@@ -711,13 +718,7 @@ ui/                       → Shared UI components (shadcn/ui based)
 - Python = Deep reasoning, persistent memory, repo analysis, conversation
 - SyncGuard = Bridge with priority-based batching
 
-## References
-
-- **Architecture Plan**: `ARCHITECTURE_PLAN.md` (Thin TS / Heavy Python philosophy)
-- **Release Gates**: `docs/release-gates.md` (production deployment checklist)
-- **Technology Stack**: `package.json` (workspace configuration)
-- **Path Aliases**: `tsconfig.base.json` (TypeScript module resolution)
-- **Database**: `prisma/schema.prisma` (PostgreSQL schema)
+See [ARCHITECTURE_PLAN.md](./ARCHITECTURE_PLAN.md) for full details.
 
 ---
 

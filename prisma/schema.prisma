@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
   schemas  = ["auth", "public"]
 }
 
@@ -164,7 +163,7 @@ model mfa_factors {
   mfa_challenges               mfa_challenges[]
   users                        users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  // Partial unique index mfa_factors_user_friendly_name_unique exists in Supabase Auth but is not representable in Prisma schema syntax.
+  @@unique([friendly_name, user_id], map: "mfa_factors_user_friendly_name_unique")
   @@unique([user_id, phone], map: "unique_phone_factor_per_user")
   @@index([user_id, created_at], map: "factor_id_created_at_idx")
   @@index([user_id])
@@ -193,7 +192,7 @@ model oauth_authorizations {
   oauth_clients         oauth_clients              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users                 users?                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  // Partial index oauth_auth_pending_exp_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  @@index([expires_at], map: "oauth_auth_pending_exp_idx")
   @@schema("auth")
 }
 
@@ -243,8 +242,8 @@ model oauth_consents {
   users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, client_id], map: "oauth_consents_user_client_unique")
-  // Partial index oauth_consents_active_client_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
-  // Partial index oauth_consents_active_user_client_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  @@index([client_id], map: "oauth_consents_active_client_idx")
+  @@index([user_id, client_id], map: "oauth_consents_active_user_client_idx")
   @@index([user_id, granted_at(sort: Desc)], map: "oauth_consents_user_order_idx")
   @@schema("auth")
 }
@@ -411,15 +410,15 @@ model users {
   id                          String                  @id @db.Uuid
   aud                         String?                 @db.VarChar(255)
   role                        String?                 @db.VarChar(255)
-  email                       String?                 @db.VarChar(255) // Partial unique index users_email_partial_key exists in Supabase Auth but is not representable in Prisma schema syntax.
+  email                       String?                 @unique(map: "users_email_partial_key") @db.VarChar(255)
   encrypted_password          String?                 @db.VarChar(255)
   email_confirmed_at          DateTime?               @db.Timestamptz(6)
   invited_at                  DateTime?               @db.Timestamptz(6)
-  confirmation_token          String?                 @db.VarChar(255) // Partial unique index confirmation_token_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  confirmation_token          String?                 @unique(map: "confirmation_token_idx") @db.VarChar(255)
   confirmation_sent_at        DateTime?               @db.Timestamptz(6)
-  recovery_token              String?                 @db.VarChar(255) // Partial unique index recovery_token_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  recovery_token              String?                 @unique(map: "recovery_token_idx") @db.VarChar(255)
   recovery_sent_at            DateTime?               @db.Timestamptz(6)
-  email_change_token_new      String?                 @db.VarChar(255) // Partial unique index email_change_token_new_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  email_change_token_new      String?                 @unique(map: "email_change_token_new_idx") @db.VarChar(255)
   email_change                String?                 @db.VarChar(255)
   email_change_sent_at        DateTime?               @db.Timestamptz(6)
   last_sign_in_at             DateTime?               @db.Timestamptz(6)
@@ -434,10 +433,10 @@ model users {
   phone_change_token          String?                 @default("") @db.VarChar(255)
   phone_change_sent_at        DateTime?               @db.Timestamptz(6)
   confirmed_at                DateTime?               @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
-  email_change_token_current  String?                 @default("") @db.VarChar(255) // Partial unique index email_change_token_current_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  email_change_token_current  String?                 @unique(map: "email_change_token_current_idx") @default("") @db.VarChar(255)
   email_change_confirm_status Int?                    @default(0) @db.SmallInt
   banned_until                DateTime?               @db.Timestamptz(6)
-  reauthentication_token      String?                 @default("") @db.VarChar(255) // Partial unique index reauthentication_token_idx exists in Supabase Auth but is not representable in Prisma schema syntax.
+  reauthentication_token      String?                 @unique(map: "reauthentication_token_idx") @default("") @db.VarChar(255)
   reauthentication_sent_at    DateTime?               @db.Timestamptz(6)
   is_sso_user                 Boolean                 @default(false)
   deleted_at                  DateTime?               @db.Timestamptz(6)
