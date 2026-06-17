@@ -46,11 +46,7 @@ jobs:
         - language: actions
           build-mode: none
         - language: c-cpp
-<<<<<<< HEAD
-          build-mode: autobuild
-=======
           build-mode: manual
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
         - language: javascript-typescript
           build-mode: none
         - language: python
@@ -96,20 +92,7 @@ jobs:
       if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-<<<<<<< HEAD
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
-=======
-       - name: Run manual build steps
-       if: matrix.build-mode == 'manual'
-       shell: bash
-       run: |
-         echo "No manual build required for this project"
->>>>>>> 72119c4dfe138606f92bafa58b8eca713140e786
-        exit 1
+        echo "No manual build required for this project"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
