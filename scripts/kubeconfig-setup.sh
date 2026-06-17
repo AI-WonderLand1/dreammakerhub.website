@@ -47,16 +47,11 @@ echo "1. Oracle Cloud Infrastructure (OKE)"
 echo "   - Get kubeconfig from OCI Console > Developer Services > Kubernetes Clusters"
 echo "   - Or use OCI CLI: oci ce cluster create-kubeconfig --cluster-id <cluster-ocid>"
 echo ""
-echo "2. Hostinger VPS"
-echo "   - SSH to your VPS and run:"
-echo "   - scp root@your-hostinger-ip:/etc/kubernetes/admin.conf ~/.kube/config"
-echo "   - Or download from Hostinger panel"
-echo ""
-echo "3. Generic kubeconfig file"
+echo "2. Generic kubeconfig file"
 echo "   - Provide path to existing kubeconfig"
 echo ""
 
-read -p "Select option (1/2/3) or paste kubeconfig URL: " choice
+read -p "Select option (1/2) or paste kubeconfig URL: " choice
 
 case $choice in
   1)
@@ -76,16 +71,6 @@ case $choice in
     fi
     ;;
   2)
-    echo ""
-    read -p "Enter your Hostinger VPS IP: " HOSTINGER_IP
-    echo "Please SSH to your VPS and run:"
-    echo "  cat /etc/kubernetes/admin.conf"
-    echo "Then paste the content below (Ctrl+D to finish):"
-    cat > "$ORAKE_KUBECONFIG"
-    chmod 600 "$ORAKE_KUBECONFIG"
-    echo "✓ Hostinger kubeconfig saved"
-    ;;
-  3)
     echo ""
     read -p "Enter path to kubeconfig file: " KUBECONFIG_PATH
     if [ -f "$KUBECONFIG_PATH" ]; then

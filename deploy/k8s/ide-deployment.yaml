@@ -13,7 +13,7 @@ metadata:
 type: Opaque
 stringData:
   CODER_URL: "https://ide.dreammakerhub.website"
-  CODER_SESSION_TOKEN: "9YHRoQSF03-nss4CnTlrdfeoHvfwEgOnI"
+  CODER_SESSION_TOKEN: "CHANGE_ME" # Set via: kubectl create secret generic coder-env -n coder --from-literal=CODER_SESSION_TOKEN=<token>
 ---
 apiVersion: apps/v1
 kind: Deployment
