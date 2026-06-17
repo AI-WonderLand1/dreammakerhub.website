@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "php-8.2"]
+modules = ["nodejs-20", "web", "php-8.2", "python-3.11"]
 [agent]
 expertMode = true
 integrations = ["javascript_database:1.0.0"]
@@ -6,7 +6,7 @@ stack = "BEST_EFFORT_FALLBACK"
 
 [nix]
 channel = "stable-25_05"
-packages = ["code-server"]
+packages = ["code-server", "opencode"]
 
 [workflows]
 runButton = "Project"

@@ -60,7 +60,7 @@ export const openrouterProvider: AIProvider = {
       const data = await response.json();
 
       if (data.error) {
-        logger.error("❌ OpenRouter API Error", { error: data.error });
+        logger.error("OpenRouter API Error", { error: data.error });
         return {
           text: "OpenRouter encountered an error.",
           error: true,
@@ -96,7 +96,7 @@ export const openrouterProvider: AIProvider = {
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "Unknown error";
-      logger.error("✦ OpenRouter connection error", { error: errMsg });
+      logger.error("OpenRouter connection error", { error: errMsg });
       return {
         text: "OpenRouter connection failed.",
         error: true,

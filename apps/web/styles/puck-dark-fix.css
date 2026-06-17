@@ -1,39 +1,38 @@
-/* Puck Editor Sidebar Text Fix
- * Override Puck's white text color to black for visibility on dark backgrounds
+/* Puck Editor Dark Mode Fix
+ * Keeps Puck's default dark theme while ensuring visibility
  */
 
 @import "@puckeditor/core/puck.css";
 
-/* Force all text to black in the puck editor */
-.puck-editor {
-  --puck-color-white: #000000 !important;
-  --puck-color-grey-08: #000000 !important;
-  --puck-color-grey-07: #1a1a1a !important;
-  --puck-color-grey-06: #333333 !important;
-  --puck-color-grey-05: #666666 !important;
-  --puck-color-grey-04: #888888 !important;
+/* Puck already ships with dark mode — only override specific visibility issues */
+.puck-editor [class*="Sidebar"] {
+  background: #0a0a0f !important;
 }
 
-/* Make all elements inside puck use black text */
-.puck-editor,
-.puck-editor * {
-  color: #000000 !important;
+.puck-editor [class*="ComponentList"] {
+  color: #e5e5e5 !important;
 }
 
-/* Specific override for sidebar components */
-.puck-editor [class*="Sidebar"],
-.puck-editor [class*="sidebar"],
-.puck-editor [class*="ComponentList"],
-.puck-editor [class*="Category"],
-.puck-editor [class*="Item"] {
-  color: #000000 !important;
+/* Make sure buttons and inputs are readable */
+.puck-editor button {
+  color: #ffffff !important;
 }
 
-/* Override inline styles by using !important on specific elements */
-.puck-editor [data-testid],
-.puck-editor button,
-.puck-editor span,
-.puck-editor p,
-.puck-editor div {
-  color: inherit !important;
+/* Ensure the drag overlay works */
+.puck-editor [class*="DragOverlay"],
+.puck-editor [class*="dragOverlay"] {
+  background: rgba(124, 58, 237, 0.15) !important;
+  border: 1px solid rgba(124, 58, 237, 0.5) !important;
+  border-radius: 8px !important;
+}
+
+/* Fix drop zone highlighting */
+.puck-editor [class*="DropZone"] {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.puck-editor [class*="DropZone"]:hover,
+.puck-editor [class*="DropZone"] [class*="isOver"] {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+  background: rgba(139, 92, 246, 0.05) !important;
 }

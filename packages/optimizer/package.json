@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@fastify/rate-limit": "^11.0.0",
+    "fastify": "^5.8.5",
     "@gltf-transform/core": "^4.0.0",
     "@gltf-transform/extensions": "^4.0.0",
     "@gltf-transform/functions": "^4.0.0",
     "draco3dgltf": "^1.5.7",
-    "fastify": "^5.8.5",
     "meshoptimizer": "^1.1.1",
     "sharp": "^0.34.5"
   }

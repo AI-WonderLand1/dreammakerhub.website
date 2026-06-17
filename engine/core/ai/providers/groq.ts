@@ -1,5 +1,6 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
+import { env } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**

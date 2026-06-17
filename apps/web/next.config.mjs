@@ -21,13 +21,21 @@ const nextConfig = {
       }
     : {}),
 
-  allowedDevOrigins: ["*.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.worf.replit.dev", "*.repl.co", "*.replit.app", "*.riker.replit.dev"],
+  allowedDevOrigins: [
+    '*.replit.dev',
+    '*.kirk.replit.dev',
+    '*.janeway.replit.dev',
+    '*.worf.replit.dev',
+    '*.repl.co',
+    '*.replit.app',
+    '*.riker.replit.dev',
+  ],
 
   experimental: {
     externalDir: true,
   },
 
-  transpilePackages: ["@react-three/fiber", "@react-three/drei", "three", "@wonderspace/ide-engine"],
+  transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
 
   images: {
     unoptimized: true,
@@ -103,7 +111,7 @@ const nextConfig = {
             "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app",
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com https://replit.com blob: data:",
             "worker-src 'self' blob:",
-          ].join('; ')
+          ].join('; '),
         },
       ],
     },
