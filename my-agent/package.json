@@ -19,6 +19,9 @@
     "tar": ">=7.5.11",
     "uuid": ">=14.0.0",
     "fast-xml-parser": ">=5.7.0",
-    "esbuild": ">=0.28.1"
+    "esbuild": ">=0.28.1",
+    "hono": ">=4.6.0",
+    "brace-expansion": ">=2.0.1",
+    "@opentelemetry/core": ">=1.30.0"
   }
 }
