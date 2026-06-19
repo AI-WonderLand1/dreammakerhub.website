@@ -1,32 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { createSupabaseServerClient } from '@/app/utils/supabase/server';
 
 export const runtime = "nodejs";
 
 export async function GET(_request: NextRequest) {
   try {
-    const h = await headers();
-    const userId = h.get('x-replit-user-id');
-    const userName = h.get('x-replit-user-name');
+    const supabase = await createSupabaseServerClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (!userId || !userName) {
+    if (!session?.user) {
       return NextResponse.json({ success: true, session: null, user: null });
     }
 
-    const user = {
-      id: userId,
-      email: `${userName}@users.replit.com`,
-      name: userName,
-      email_confirmed: true,
-      created_at: new Date().toISOString(),
-    };
-
     return NextResponse.json({
       success: true,
-      session: { access_token: `replit-${userId}`, user },
-      user,
+      session: { access_token: session.access_token, user: session.user },
+      user: session.user,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: 'Unexpected error', session: null, user: null }, { status: 500 });
   }
+}
+
+export async function POST(_request: NextRequest) {
+  return GET(_request);
 }
