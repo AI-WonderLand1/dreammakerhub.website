@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 const RATE_LIMIT_WINDOW = 60 * 1000;
 const rateLimits = new Map<string, { count: number; resetTime: number }>();
@@ -72,12 +73,6 @@ async function resolveCustomDomain(req: NextRequest) {
   return rewriteUrl;
 }
 
-function checkAuth(req: NextRequest): boolean {
-  const userId = req.headers.get("x-replit-user-id");
-  const userName = req.headers.get("x-replit-user-name");
-  return !!userId && !!userName;
-}
-
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
@@ -103,7 +98,34 @@ export async function middleware(req: NextRequest) {
   const needsAuth = protectedPaths.some((p) => path.startsWith(p));
 
   if (needsAuth) {
-    const isAuthenticated = checkAuth(req);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          for (const { name, value } of cookiesToSet) {
+            req.cookies.set(name, value);
+          }
+          const response = NextResponse.next();
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set(name, value, options);
+          }
+        },
+      },
+    });
+
+    let isAuthenticated = false;
+    try {
+      const { data } = await supabase.auth.getSession();
+      isAuthenticated = !!data?.session;
+    } catch {
+      isAuthenticated = false;
+    }
+
     if (!isAuthenticated) {
       const loginUrl = new URL("/public-pages/auth", req.url);
       loginUrl.searchParams.set("redirectTo", path);

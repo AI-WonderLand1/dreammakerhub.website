@@ -34,6 +34,7 @@ function CheckoutContent() {
 
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
   const planId = parsePlan(searchParams.get("plan"));
+  const interval = searchParams.get("interval") === "year" ? "year" : "month";
 
   const plan = useMemo(() => (planId ? PLANS[planId] : null), [planId]);
 
@@ -42,7 +43,7 @@ function CheckoutContent() {
 
     const token = session?.access_token;
     if (!token || !user) {
-      const back = `/checkout?plan=${encodeURIComponent(planId)}&redirectTo=${encodeURIComponent(redirectTo)}`;
+      const back = `/checkout?plan=${encodeURIComponent(planId)}&interval=${interval}&redirectTo=${encodeURIComponent(redirectTo)}`;
       router.push(`/public-pages/auth?redirectTo=${encodeURIComponent(back)}`);
       return;
     }
@@ -55,7 +56,7 @@ function CheckoutContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({ plan: planId, interval }),
       });
 
       const data = await res.json();
@@ -100,9 +101,9 @@ function CheckoutContent() {
           <div className="flex items-start justify-between gap-6">
             <div>
               <h2 className="text-xl font-semibold">{plan.name}</h2>
-              <p className="text-white/70 mt-1">Billed monthly. Cancel any time.</p>
+              <p className="text-white/70 mt-1">{interval === "year" ? "Billed annually" : "Billed monthly"}. Cancel any time.</p>
             </div>
-            <p className="text-2xl font-extrabold">{plan.priceDisplay}</p>
+            <p className="text-2xl font-extrabold">{interval === "year" ? plan.yearlyPriceDisplay : plan.priceDisplay}</p>
           </div>
 
           <ul className="mt-5 space-y-2 text-sm text-white/80">

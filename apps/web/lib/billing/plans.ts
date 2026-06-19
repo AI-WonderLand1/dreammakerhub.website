@@ -4,12 +4,14 @@ export type PlanDefinition = {
   id: PlanId;
   name: string;
   displayName: string;
-  price: number; // in cents
+  price: number;
   priceDisplay: string;
+  yearlyPriceDisplay: string;
   interval: "month" | "year";
   description: string;
   features: string[];
-  stripePriceId?: string; // Set this after creating prices in Stripe dashboard
+  stripePriceId?: string;
+  stripePriceYearlyId?: string;
   highlight?: boolean;
 };
 
@@ -36,11 +38,13 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: "pro",
     name: "architect",
     displayName: "The Architect",
-    price: 3900, // $39/mo - reflects unique value: IDE + AI + 3D in one
+    price: 3900,
     priceDisplay: "$39/mo",
+    yearlyPriceDisplay: "$390/yr ($32.50/mo)",
     interval: "month",
     description: "For builders who are serious about shipping. Full creative power, one subscription.",
     stripePriceId: process.env.STRIPE_PRICE_PRO_ID,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_PRO_YEARLY_ID,
     highlight: true,
     features: [
       "5 active projects",
@@ -57,11 +61,13 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: "team",
     name: "guild",
     displayName: "The Guild",
-    price: 12900, // $129/mo - for agencies using your full platform
+    price: 12900,
     priceDisplay: "$129/mo",
+    yearlyPriceDisplay: "$1,290/yr ($107.50/mo)",
     interval: "month",
     description: "Built for agencies and studios who ship together. Collaborate, iterate, and deliver, without the chaos.",
     stripePriceId: process.env.STRIPE_PRICE_TEAM_ID,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_TEAM_YEARLY_ID,
     features: [
       "10 active projects",
       "500K AI tokens/month",
