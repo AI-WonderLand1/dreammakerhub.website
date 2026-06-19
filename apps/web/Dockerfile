@@ -33,5 +33,6 @@ COPY --from=builder /app/apps/web/package.json ./package.json
 # Copy workspace structure so @wonderspace/ide-engine resolves at runtime
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/templates ./templates
 
 CMD ["npm", "run", "start"]

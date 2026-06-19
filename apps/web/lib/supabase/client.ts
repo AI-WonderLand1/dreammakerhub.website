@@ -23,11 +23,14 @@ export function getSupabaseClient() {
       },
       set(name, value, opts) {
         if (typeof document === 'undefined') return
-        document.cookie = `${name}=${value}; path=/; max-age=${opts?.maxAge ?? 3600}; same-site=lax${opts?.secure ? '; secure' : ''}`
+        const maxAge = opts?.maxAge ?? 604800
+        let cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`
+        if (opts?.secure) cookie += '; Secure'
+        document.cookie = cookie
       },
       remove(name, _opts) {
         if (typeof document === 'undefined') return
-        document.cookie = `${name}=; path=/; max-age=0`
+        document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`
       },
     },
   })

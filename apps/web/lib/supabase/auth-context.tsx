@@ -13,20 +13,20 @@ type AuthContextState = {
   user: AuthUser | null
   session: any | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: Error }>
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
-  signUp: (email: string, password: string) => Promise<{ error?: Error }>
-  signInWithOAuth: (provider: 'github' | 'google') => Promise<{ error?: Error }>
+  signUp: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithOAuth: (provider: 'github' | 'google', options?: { redirectTo?: string }) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextState>({
   user: null,
   session: null,
   loading: true,
-  signIn: async () => ({}),
+  signIn: async () => ({ error: null }),
   signOut: async () => {},
-  signUp: async () => ({}),
-  signInWithOAuth: async () => ({}),
+  signUp: async () => ({ error: null }),
+  signInWithOAuth: async () => ({ error: null }),
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -67,21 +67,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const supabase = getSupabaseClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return error ? { error: new Error(error.message) } : {}
+    return { error: error ? new Error(error.message) : null }
   }, [])
 
   const signUp = useCallback(async (email: string, password: string) => {
     const supabase = getSupabaseClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signUp({ email, password })
-    return error ? { error: new Error(error.message) } : {}
+    return { error: error ? new Error(error.message) : null }
   }, [])
 
-  const signInWithOAuth = useCallback(async (provider: 'github' | 'google') => {
+  const signInWithOAuth = useCallback(async (provider: 'github' | 'google', options?: { redirectTo?: string }) => {
     const supabase = getSupabaseClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
-    const { error } = await supabase.auth.signInWithOAuth({ provider })
-    return error ? { error: new Error(error.message) } : {}
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options })
+    return { error: error ? new Error(error.message) : null }
   }, [])
 
   const signOut = useCallback(async () => {

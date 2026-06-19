@@ -107,7 +107,7 @@ export async function middleware(req: NextRequest) {
           return req.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          for (const { name, value, options } of cookiesToSet) {
+          for (const { name, value } of cookiesToSet) {
             req.cookies.set(name, value);
           }
           const response = NextResponse.next();
@@ -118,8 +118,13 @@ export async function middleware(req: NextRequest) {
       },
     });
 
-    const { data } = await supabase.auth.getSession();
-    const isAuthenticated = !!data?.session;
+    let isAuthenticated = false;
+    try {
+      const { data } = await supabase.auth.getSession();
+      isAuthenticated = !!data?.session;
+    } catch {
+      isAuthenticated = false;
+    }
 
     if (!isAuthenticated) {
       const loginUrl = new URL("/public-pages/auth", req.url);
