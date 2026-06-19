@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { saveSceneToSupabase } from "@/lib/scene/supabase-store";
 
 export const runtime = "nodejs";
@@ -15,10 +15,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const token = req.headers.get("authorization")?.replace("Bearer ", "");
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     let userId: string | undefined;
 
-    if (supabase) {
+    if (token && supabaseUrl && anonKey) {
+      const supabase = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
       const { data: { user } } = await supabase.auth.getUser();
       userId = user?.id;
     }

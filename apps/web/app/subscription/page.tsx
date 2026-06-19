@@ -4,7 +4,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { useAuth } from "@lib/supabase/auth-context";
-import { PLANS, type PlanId } from "@lib/billing/plans";
+import { PLANS } from "@lib/billing/plans";
 
 type Plan = {
   id: "free" | "pro" | "team" | "enterprise";
@@ -36,6 +36,8 @@ function SubscriptionContent() {
   
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
+  const successPlan = success ? searchParams.get("plan") : null;
+  const successPlanName = successPlan && PLANS[successPlan as keyof typeof PLANS] ? PLANS[successPlan as keyof typeof PLANS].displayName : null;
   const [dismissBanner, setDismissBanner] = useState(false);
 
   const { user, session, loading: authLoading } = useAuth();
@@ -125,7 +127,7 @@ function SubscriptionContent() {
               <span className="text-green-400 text-xl">✓</span>
               <div>
                 <p className="text-green-200 font-semibold">Subscription activated!</p>
-                <p className="text-green-200/70 text-sm">Welcome to The Architect plan.</p>
+                <p className="text-green-200/70 text-sm">Welcome to {successPlanName ?? "your"} plan.</p>
               </div>
             </div>
             <button onClick={() => setDismissBanner(true)} className="text-green-400 hover:text-green-300">✕</button>

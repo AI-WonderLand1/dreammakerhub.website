@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 
 import { useAuth } from "@lib/supabase/auth-context";
-import { PLANS, PAID_PLANS, type PlanId } from "@lib/billing/plans";
+import { PLANS, type PlanId } from "@lib/billing/plans";
 
 const DEFAULT_REDIRECT = "/dashboard/projects";
 

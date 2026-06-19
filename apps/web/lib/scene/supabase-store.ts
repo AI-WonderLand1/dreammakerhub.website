@@ -1,9 +1,17 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient();
+let _client: ReturnType<typeof createClient> | null = null;
+function sb() {
+  if (!_client) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (url && key) _client = createClient(url, key);
+  }
+  return _client;
+}
 
 export async function saveSceneToSupabase(sceneId: string, sceneData: object, userId?: string): Promise<{ success: boolean; path?: string }> {
-  if (!supabase) {
+  if (!sb()) {
     console.warn("Supabase not configured, falling back to memory");
     const { saveSceneToMemory } = await import("./memory-store");
     await saveSceneToMemory(sceneId, sceneData);
@@ -11,7 +19,7 @@ export async function saveSceneToSupabase(sceneId: string, sceneData: object, us
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb()!
       .from("scenes")
       .upsert({
         id: sceneId,
@@ -32,7 +40,6 @@ export async function saveSceneToSupabase(sceneId: string, sceneData: object, us
     };
   } catch (error) {
     console.error("Failed to save to Supabase:", error);
-    // Fallback to memory
     const { saveSceneToMemory } = await import("./memory-store");
     await saveSceneToMemory(sceneId, sceneData);
     return { success: true };
@@ -40,13 +47,13 @@ export async function saveSceneToSupabase(sceneId: string, sceneData: object, us
 }
 
 export async function loadSceneFromSupabase(sceneId: string): Promise<object | null> {
-  if (!supabase) {
+  if (!sb()) {
     const { loadSceneFromMemory } = await import("./memory-store");
     return loadSceneFromMemory(sceneId);
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb()!
       .from("scenes")
       .select("data")
       .eq("id", sceneId)
@@ -56,19 +63,18 @@ export async function loadSceneFromSupabase(sceneId: string): Promise<object | n
     return data?.data || null;
   } catch (error) {
     console.error("Failed to load from Supabase:", error);
-    // Fallback to memory
     const { loadSceneFromMemory } = await import("./memory-store");
     return loadSceneFromMemory(sceneId);
   }
 }
 
 export async function listUserScenes(userId: string): Promise<any[]> {
-  if (!supabase) {
+  if (!sb()) {
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb()!
       .from("scenes")
       .select("id, name, created_at, updated_at")
       .eq("user_id", userId)
@@ -83,12 +89,12 @@ export async function listUserScenes(userId: string): Promise<any[]> {
 }
 
 export async function listPublicScenes(limit = 20): Promise<any[]> {
-  if (!supabase) {
+  if (!sb()) {
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb()!
       .from("scenes")
       .select("id, name, data, created_at, updated_at, is_public")
       .eq("is_public", true)
@@ -104,14 +110,14 @@ export async function listPublicScenes(limit = 20): Promise<any[]> {
 }
 
 export async function deleteSceneFromSupabase(sceneId: string): Promise<boolean> {
-  if (!supabase) {
+  if (!sb()) {
     const { deleteSceneFromMemory } = await import("./memory-store");
     deleteSceneFromMemory(sceneId);
     return true;
   }
 
   try {
-    const { error } = await supabase
+    const { error } = await sb()!
       .from("scenes")
       .delete()
       .eq("id", sceneId);
