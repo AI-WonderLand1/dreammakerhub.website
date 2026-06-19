@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient();
 const BUCKET_NAME = "3d-assets";
 
 export async function GET(
@@ -11,11 +10,13 @@ export async function GET(
   try {
     const { filename } = params;
     
-    if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
     }
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Try to get the file from the 3d-assets bucket
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .download(filename);
