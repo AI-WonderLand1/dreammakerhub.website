@@ -722,93 +722,20 @@ export const uiKitComponents: Record<string, PuckComponentConfig> = {
 
 // Category mapping
 export const categories = {
-  basics: {
-    title: "Basic Elements",
-    components: [
-      "button", "input", "typography", "badge", "heading", "blockquote",
-      "kinetiText", "checkbox", "radioGroup", "switch", "slider",
-      "floatingLabelInput", "skeleton", "progress", "tooltip",
-      "badgeVariant", "avatar", "dotIndicator", "kbd", "divider",
-      "iconWrapper", "link"
-    ],
-  },
-  animations: {
-    title: "Animations",
-    components: [
-      "fadeIn", "slideUp", "scaleIn", "bounce", "glitchText", 
-      "typewriterHero", "confettiExplosion", "particleCanvas"
-    ],
-  },
-  marketing: {
-    title: "Marketing",
-    components: [
-      "splitHero", "centerHero", "microHero", "pricingTable", 
-      "featureGrid", "logoCloud", "logoMarquee", "testimonialCard",
-      "stepProcess", "statsSection", "ctaBox", "newsletterStrip"
-    ],
-  },
-  interactive: {
-    title: "Interactive",
-    components: [
-      "glassAccordion", "hoverCard", "tabsSystem", "videoPlayer",
-      "accordionFAQ", "cardHover"
-    ],
-  },
-  content: {
-    title: "Content",
-    components: [
-      "blogPreviewGrid", "teamGrid", "testimonialCarousel", 
-      "masonryGallery", "iconGrid", "timelineLayout"
-    ],
-  },
-  layout: {
-    title: "Layout",
-    components: [
-      "stickyHeader", "multiColumnFooter", "contactSplit",
-      "glassmorphicHero", "parallaxSection", "beforeAfterSlider",
-      "floatingCTA"
-    ],
-  },
-  basicsCore: {
-    title: "Basic Elements",
-    components: [
-      "button", "input", "typography", "heading", "badge",
-      "blockquote", "checkbox", "switch", "slider", "progress",
-      "skeleton", "floatingLabelInput"
-    ],
-  },
-  templates: {
-    title: "Full Page Templates",
-    components: [
-      "saaSLanding", "portfolioLanding", "newsletterLanding",
-      "waitlistLanding", "productLaunchLanding", "agencyLanding",
-      "appLanding", "eventLanding", "personalLanding", "ecommerceLanding"
-    ],
-  },
-  dashboards: {
-    title: "Dashboard Templates",
-    components: [
-      "analyticsDashboardTemplate", "userManagementTemplate",
-      "agentControlTemplate", "projectManagementTemplate",
-      "financialDashboardTemplate", "supportDashboardTemplate",
-      "marketingDashboardTemplate", "inventoryDashboardTemplate",
-      "settingsDashboardTemplate", "monitoringDashboardTemplate"
-    ],
-  },
-  utility: {
-    title: "Utility Pages",
-    components: [
-      "error404", "maintenancePage", "authFlow", "onboardingWizard",
-      "contactPage", "termsPage", "privacyPage", "comingSoon",
-      "searchResults", "feedbackForm", "maintenanceMode"
-    ],
-  },
-  experimental: {
-    title: "Experimental",
-    components: [
-      "glitchText", "typewriterHero", "confettiExplosion", "particleCanvas"
-    ],
-  },
+  layout: { title: "Layout", components: ["stickyHeader", "multiColumnFooter", "contactSplit", "glassmorphicHero", "parallaxSection", "beforeAfterSlider", "floatingCTA", "splitHero", "centerHero", "microHero", "timelineLayout", "tabbedContent"] },
+  media: { title: "Media", components: ["videoPlayer", "imageLightbox", "masonryGallery", "logoCloud", "logoMarquee", "logoGridStatic", "videoHero", "videoBackgroundSection", "iconGrid"] },
+  forms: { title: "Forms", components: ["input", "floatingLabelInput", "checkbox", "radioGroup", "switch", "slider", "formWizard", "authForm", "cloudConnectorForm", "contactPage", "feedbackForm", "newsletterStrip", "searchBar"] },
+  embeds: { title: "Embeds", components: ["interactiveMap", "codeSandbox", "jsonTree", "databaseTable", "realtimeStream"] },
+  advanced: { title: "Advanced", components: ["glassModal", "slideOverPanel", "notificationToast", "confettiTrigger", "floatingDock", "tooltipOverlay", "contextMenu", "confettiExplosion", "glitchText", "typewriterHero", "particleCanvas", "spotlightEffect", "voiceVisualizer", "parallaxScrollContainer", "customCursor", "loadingSpinner", "successMessage", "errorBanner"] },
+  basics: { title: "Basic", components: ["button", "heading", "typography", "badge", "blockquote", "divider", "link", "avatar", "dotIndicator", "kbd", "iconWrapper", "tooltip", "skeleton", "progress"] },
+  marketing: { title: "Marketing", components: ["pricingTable", "featureGrid", "testimonialCard", "stepProcess", "statsSection", "ctaBox", "pricingComparison", "comparisonTable", "featureHighlightList", "testimonialCarousel", "userReviewSummary", "faqSingleColumn", "callToActionBox", "productShowcaseHero", "storyHero", "cookieBanner"] },
+  interactive: { title: "Interactive", components: ["glassAccordion", "hoverCard", "tabsSystem", "accordionFAQ", "cardHover", "draggableCard"] },
+  content: { title: "Content", components: ["blogPreviewGrid", "teamGrid", "masonryGallery", "timelineLayout", "accordionFAQ", "blogPostDetail", "blogIndex", "documentationPage", "caseStudy", "pressRelease", "newsletterArchive", "tutorialPage", "authorProfile"] },
+  navigation: { title: "Navigation", components: ["megaMenu", "breadcrumbTrail", "paginationControls", "sideCommandPalette", "languageSwitcher", "mobileDrawer", "scrollIndicator", "socialLinks"] },
+  ai: { title: "AI Components", components: ["thoughtBubble", "agentTerminal", "logicFlow", "modelStatus", "promptInput", "contextChip"] },
+  templates: { title: "Page Templates", components: ["saaSLanding", "portfolioLanding", "newsletterLanding", "waitlistLanding", "productLaunchLanding", "agencyLanding", "appLanding", "eventLanding", "personalLanding", "ecommerceLanding"] },
+  dashboards: { title: "Dashboards", components: ["analyticsDashboardTemplate", "userManagementTemplate", "agentControlTemplate", "projectManagementTemplate", "financialDashboardTemplate", "supportDashboardTemplate", "marketingDashboardTemplate", "inventoryDashboardTemplate", "settingsDashboardTemplate", "monitoringDashboardTemplate"] },
+  utility: { title: "Utility Pages", components: ["error404", "maintenancePage", "authFlow", "onboardingWizard", "contactPage", "termsPage", "privacyPage", "comingSoon", "searchResults", "feedbackForm", "maintenanceMode"] },
 };
 
 // Build Puck config from registry
