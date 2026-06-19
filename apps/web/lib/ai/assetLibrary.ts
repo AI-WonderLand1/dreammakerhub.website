@@ -1,7 +1,15 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch";
 
-const supabase = createClient();
+let _client: ReturnType<typeof createClient> | null = null;
+function sb() {
+  if (!_client) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (url && key) _client = createClient(url, key);
+  }
+  return _client;
+}
 
 const ALLOWED_DOWNLOAD_HOSTS = [
   "playcanvas.com",
@@ -180,7 +188,7 @@ export async function searchExternalAssets(request: AssetFetchRequest): Promise<
   const { query = "3d model", source = "all", limit = 10 } = request;
   const results: ExternalAsset[] = [];
 
-  const { data: dbAssets } = await supabase
+  const { data: dbAssets } = await sb()!
     .from("assets")
     .select("*")
     .or(`name.ilike.%${query}%,tags.cs.{${query}}`)
@@ -279,7 +287,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       console.warn("[optimizer] Skipping optimization, using original:", optErr instanceof Error ? optErr.message : optErr);
     }
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await sb()!.storage
       .from("3d-assets")
       .upload(`meshes/${fileName}`, finalBuffer, {
         contentType: `model/${asset.format}`,
@@ -290,12 +298,12 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       throw error;
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = sb()!.storage
       .from("3d-assets")
       .getPublicUrl(`meshes/${fileName}`);
 
     if (userId) {
-      await supabase.from("user_assets").insert({
+      await sb()!.from("user_assets").insert({
         user_id: userId,
         asset_id: asset.id,
         name: asset.name,
@@ -305,7 +313,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       });
     }
 
-    await supabase.from("asset_metadata").insert({
+    await sb()!.from("asset_metadata").insert({
       glb_url: publicUrl,
       format: asset.format,
       version: 1
@@ -318,7 +326,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
 }
 
 export async function listUserAssets(userId: string): Promise<ExternalAsset[]> {
-  const { data, error } = await supabase
+  const { data, error } = await sb()!
     .from("user_assets")
     .select("*")
     .eq("user_id", userId)
