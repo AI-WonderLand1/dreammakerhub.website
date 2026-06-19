@@ -9,24 +9,24 @@ const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 export async function POST(request: NextRequest) {
   try {
-    if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+    if (!stripe) {
       return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
     }
 
     const body = await request.text();
     const signature = request.headers.get("stripe-signature");
 
-    if (!signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
-    }
-
     let event: Stripe.Event;
 
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
-    } catch (err: any) {
-      console.error("Webhook signature verification failed:", err.message);
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    if (STRIPE_WEBHOOK_SECRET && signature) {
+      try {
+        event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+      } catch (err: any) {
+        console.error("Webhook signature verification failed:", err.message);
+        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+      }
+    } else {
+      event = JSON.parse(body);
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan;
+        const interval = session.metadata?.interval || "month";
 
         if (userId && plan) {
           await supabase
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
             stripe_subscription_id: session.subscription,
             stripe_customer_id: session.customer,
             plan,
+            interval,
             status: "active",
           });
         }

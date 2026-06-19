@@ -40,13 +40,15 @@ function SubscriptionContent() {
 
   const { user, session, loading: authLoading } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const isYearly = billingInterval === "year";
 
   const plans: Plan[] = useMemo(
     () =>
       (Object.values(PLANS)).map((p): Plan => ({
         id: p.id,
         name: p.name,
-        price: p.priceDisplay,
+        price: isYearly && "yearlyPriceDisplay" in p ? (p as any).yearlyPriceDisplay : p.priceDisplay,
         desc: p.description,
         bullets: p.features,
         cta: p.id === "free" ? "Start Wandering, It's Free" : p.id === "enterprise" ? "Talk to Us" : `Subscribe to ${p.displayName}`,
@@ -55,7 +57,7 @@ function SubscriptionContent() {
         highlight: p.highlight ?? false,
         href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : undefined,
       })),
-    []
+    [isYearly]
   );
 
   const requireAuthToken = () => {
@@ -105,13 +107,12 @@ function SubscriptionContent() {
 
     if (plan.mode === "free") return ensureFree();
 
-    // Use custom href if provided (for enterprise)
     if (plan.href) {
       router.push(plan.href);
       return;
     }
 
-    const checkoutHref = `/checkout?plan=${encodeURIComponent(plan.id)}&redirectTo=${encodeURIComponent(redirectTo)}`;
+    const checkoutHref = `/checkout?plan=${encodeURIComponent(plan.id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`;
     router.push(checkoutHref);
   };
 
@@ -148,6 +149,24 @@ function SubscriptionContent() {
           <p className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-2">Pricing</p>
           <h1 className="text-3xl font-bold text-white mb-3">Choose your path</h1>
           <p className="text-gray-400">Start free. Upgrade when you're ready to build without limits.</p>
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <button
+              onClick={() => setBillingInterval("month")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                !isYearly ? "bg-purple-600 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval("year")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                isYearly ? "bg-purple-600 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+              }`}
+            >
+              Yearly <span className="text-green-400 text-xs ml-1">Save ~17%</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
