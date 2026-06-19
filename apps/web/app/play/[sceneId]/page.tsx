@@ -78,8 +78,11 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
 
     async function initScene() {
       try {
-        // Load scene from API
-        const res = await fetch(`/api/scenes/${params.sceneId}`)
+        // Load scene from API with timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000)
+        const res = await fetch(`/api/scenes/${params.sceneId}`, { signal: controller.signal })
+        clearTimeout(timeoutId)
         if (!res.ok) {
           throw new Error("Scene not found")
         }

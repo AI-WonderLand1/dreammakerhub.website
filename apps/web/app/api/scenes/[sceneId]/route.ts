@@ -23,7 +23,7 @@ export async function GET(
       const fs = await import('fs');
       const path = await import('path');
       
-      const templatesDir = '/home/dreammakerhub/htdocs/dreammakerhub.website/psychic-octo-fishstick/templates/3d';
+      const templatesDir = path.join(process.cwd(), 'templates/3d');
       const templateFile = `${sceneId}.json`;
       const filePath = path.join(templatesDir, templateFile);
       
