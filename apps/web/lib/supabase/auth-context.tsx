@@ -1,5 +1,6 @@
 'use client'
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { getSupabaseClient } from './client'
 
 type AuthUser = {
   id: string
@@ -12,20 +13,20 @@ type AuthContextState = {
   user: AuthUser | null
   session: any | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: Error }>
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
-  signUp: (email: string, password: string) => Promise<{ error?: Error }>
-  signInWithOAuth: (provider: 'github' | 'google') => Promise<{ error?: Error }>
+  signUp: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithOAuth: (provider: 'github' | 'google', options?: { redirectTo?: string }) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextState>({
   user: null,
   session: null,
   loading: true,
-  signIn: async () => ({}),
+  signIn: async () => ({ error: null }),
   signOut: async () => {},
-  signUp: async () => ({}),
-  signInWithOAuth: async () => ({}),
+  signUp: async () => ({ error: null }),
+  signInWithOAuth: async () => ({ error: null }),
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -34,47 +35,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/auth/session')
-      .then(r => r.json())
-      .then(data => {
-        if (data?.user) {
-          setUser(data.user)
-          setSession(data.session ?? { user: data.user })
-        }
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (s?.user) {
+        setUser(s.user as unknown as AuthUser)
+        setSession(s)
+      }
+      setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (s?.user) {
+        setUser(s.user as unknown as AuthUser)
+        setSession(s)
+      } else {
+        setUser(null)
+        setSession(null)
+      }
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = async (_email: string, _password: string): Promise<{ error?: Error }> => {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/api/auth/replit-login'
-    }
-    return {}
-  }
+  const signIn = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: new Error('Supabase not configured') }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error ? new Error(error.message) : null }
+  }, [])
 
-  const signUp = async (_email: string, _password: string): Promise<{ error?: Error }> => {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/api/auth/replit-login'
-    }
-    return {}
-  }
+  const signUp = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: new Error('Supabase not configured') }
+    const { error } = await supabase.auth.signUp({ email, password })
+    return { error: error ? new Error(error.message) : null }
+  }, [])
 
-  const signOut = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
+  const signInWithOAuth = useCallback(async (provider: 'github' | 'google', options?: { redirectTo?: string }) => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: new Error('Supabase not configured') }
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options })
+    return { error: error ? new Error(error.message) : null }
+  }, [])
+
+  const signOut = useCallback(async () => {
+    const supabase = getSupabaseClient()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     setUser(null)
     setSession(null)
     if (typeof window !== 'undefined') {
       window.location.href = '/public-pages/auth'
     }
-  }
-
-  const signInWithOAuth = async (_provider: 'github' | 'google') => {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/api/auth/replit-login'
-    }
-    return {}
-  }
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, signInWithOAuth }}>
