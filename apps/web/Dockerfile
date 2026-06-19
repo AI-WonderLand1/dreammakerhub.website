@@ -11,6 +11,7 @@ COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 
 # Copy prisma schema for postinstall (prisma generate)
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install
 
