@@ -35,4 +35,5 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/templates ./templates
 
+EXPOSE 5000
 CMD ["npm", "run", "start"]

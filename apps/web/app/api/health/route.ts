@@ -89,9 +89,9 @@ export async function GET() {
       healthCheck.details.supabaseConfigured = true;
       
       try {
-        // Test Supabase connection
+        // Test Supabase connection (auth endpoint works without table access)
         const supabase = await createSupabaseServerClient();
-        const { data, error } = await supabase.from('puck_projects').select('count').limit(1);
+        const { error } = await supabase.auth.getUser();
         
         if (!error) {
           healthCheck.checks.database = 'healthy';
