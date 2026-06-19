@@ -23,5 +23,5 @@ export async function GET(_request: NextRequest) {
 }
 
 export async function POST(_request: NextRequest) {
-  return GET(_request);
+  return NextResponse.json({ error: 'Use GET to read session' }, { status: 405 });
 }
