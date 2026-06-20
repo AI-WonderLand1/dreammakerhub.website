@@ -5,7 +5,7 @@
     "dockerfilePath": "apps/web/Dockerfile"
   },
   "deploy": {
-    "healthcheckPath": "/api/health",
+    "healthcheckPath": "/health",
     "healthcheckTimeout": 30
   }
 }
