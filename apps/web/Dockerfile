@@ -36,4 +36,7 @@ COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/templates ./templates
 
 EXPOSE 5000
+RUN sed -i 's/edge/community/g' /etc/apk/repositories \
+  && apk add --no-cache wget
+HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 CMD wget -qO- http://localhost:5000/api/health || exit 1
 CMD ["npm", "run", "start"]
