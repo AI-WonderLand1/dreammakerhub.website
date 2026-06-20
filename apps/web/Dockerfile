@@ -33,4 +33,7 @@ COPY --from=builder /app/apps/web/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 
-CMD ["npm", "run", "start"]
+RUN sed -i 's/edge/community/g' /etc/apk/repositories \
+  && apk add --no-cache curl
+HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 CMD curl -f http://localhost:5000/health || exit 1
+CMD ["sh", "-c", "next start -p ${PORT:-5000} -H 0.0.0.0"]
