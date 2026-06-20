@@ -39,4 +39,4 @@ EXPOSE 5000
 RUN sed -i 's/edge/community/g' /etc/apk/repositories \
   && apk add --no-cache wget
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 CMD wget -qO- http://localhost:5000/api/health || exit 1
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "next start -p ${PORT:-5000} -H 0.0.0.0"]
