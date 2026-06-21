@@ -1,4 +1,4 @@
-name: "AI Auto-Remediate (PR-based)"
+name: "AI Proof-Carrying Auto-Remediate"
 
 on:
   workflow_run:
@@ -6,7 +6,7 @@ on:
     types: [completed]
 
 jobs:
-  apply-fix:
+  remediate:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     permissions:
@@ -19,46 +19,43 @@ jobs:
         with:
           ref: Master
 
-      - name: Create fix branch
-        run: |
-          git checkout -b auto-remediate-${{ github.run_id }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Create remediation branch
+        run: git checkout -b auto-remediate-${{ github.run_id }}
 
       - name: Fetch CodeQL findings
         run: |
           gh api repos/${{ github.repository }}/code-scanning/alerts \
             --jq '[.[] | select(.state=="open")]' > findings.json
-          cat findings.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: AI Patch Agent (Claude)
+      - name: Generate, prove, and apply patch
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          FINDINGS=$(cat findings.json)
-          curl -s https://api.anthropic.com/v1/messages \
-            -H "x-api-key: $ANTHROPIC_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            -d "$(jq -n --arg findings "$FINDINGS" \
-              '{model:"claude-sonnet-4-6",max_tokens:2000,
-                messages:[{role:"user",content:("Here are CodeQL findings as JSON:\n" + $findings + "\n\nList the file paths and one-line fix suggestions only.")}]}')" \
-            > patch_suggestions.json
-          cat patch_suggestions.json
+        run: node .github/scripts/ai-remediate.mjs
 
-      - name: Commit suggestions (no auto-apply)
+      - name: Commit verified fix
+        if: success()
         run: |
           git config --global user.name "AI-Wonderland-Agent"
           git config --global user.email "agent@ai-wonderland.com"
-          mv patch_suggestions.json SECURITY_SUGGESTIONS.json
-          git add SECURITY_SUGGESTIONS.json
-          git diff --cached --quiet || git commit -m "chore: AI security suggestions for CodeQL findings"
-
-      - name: Open PR for review
-        run: |
+          git add .
+          git commit -m "security: proof-carrying patch for CodeQL finding (test + fix verified)"
           git push origin auto-remediate-${{ github.run_id }}
+
+      - name: Open PR with proof
+        if: success()
+        run: |
           gh pr create --base Master --head auto-remediate-${{ github.run_id }} \
-            --title "AI security suggestions ($(date +%F))" \
-            --body "Automated CodeQL remediation suggestions. Review before merging — nothing here is auto-applied."
+            --title "Verified security fix ($(date +%F))" \
+            --body "Includes a reproduction test that failed before this fix and passes after. Full suite confirmed passing. Proof log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
