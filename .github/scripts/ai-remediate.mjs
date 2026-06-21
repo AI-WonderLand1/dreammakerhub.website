@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 
 const KEY = process.env.ANTHROPIC_API_KEY;
 const findings = JSON.parse(fs.readFileSync('findings.json', 'utf8'));
@@ -30,7 +30,7 @@ fs.writeFileSync(poc.test_file_path, poc.test_file_content);
 
 // 2. Confirm it fails
 let failed = false;
-try { execSync(`npm test -- ${poc.test_file_path}`, { stdio: 'inherit' }); }
+try { execFileSync('npm', ['test', '--', poc.test_file_path], { stdio: 'inherit' }); }
 catch { failed = true; }
 if (!failed) { console.error('PoC did not fail — false positive or bad PoC. Aborting.'); process.exit(1); }
 
@@ -41,7 +41,7 @@ Respond ONLY JSON: {"file_path": "${file}", "fixed_content": "..."}`);
 fs.writeFileSync(patch.file_path, patch.fixed_content);
 
 // 4. Confirm PoC now passes
-try { execSync(`npm test -- ${poc.test_file_path}`, { stdio: 'inherit' }); }
+try { execFileSync('npm', ['test', '--', poc.test_file_path], { stdio: 'inherit' }); }
 catch { console.error('Fix did not resolve vuln. Aborting.'); process.exit(1); }
 
 // 5. Confirm full suite passes
