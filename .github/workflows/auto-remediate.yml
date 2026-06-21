@@ -1,61 +1,80 @@
-name: "AI Proof-Carrying Auto-Remediate"
+name: "AI Predictive Remediation"
 
 on:
+  pull_request:
+    branches: [Master]
   workflow_run:
     workflows: ["CodeQL"]
     types: [completed]
 
 jobs:
-  remediate:
+  predict-and-suggest:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: node .github/scripts/predict-risk.mjs
+      - name: Suggest fixes for risky files
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node .github/scripts/suggest-fixes.mjs
+      - name: Post PR comment
+        if: success()
+        run: |
+          if [ -f risk-comment.md ]; then
+            gh pr comment ${{ github.event.pull_request.number }} --body-file risk-comment.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  remediate:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       security-events: read
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           ref: Master
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install deps
-        run: npm install
-
-      - name: Create remediation branch
-        run: git checkout -b auto-remediate-${{ github.run_id }}
-
+      - run: npm install
+      - run: git checkout -b auto-remediate-${{ github.run_id }}
       - name: Fetch CodeQL findings
         run: |
           gh api repos/${{ github.repository }}/code-scanning/alerts \
             --jq '[.[] | select(.state=="open")]' > findings.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Generate, prove, and apply patch
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node .github/scripts/ai-remediate.mjs
-
       - name: Commit verified fix
         if: success()
         run: |
           git config --global user.name "AI-Wonderland-Agent"
           git config --global user.email "agent@ai-wonderland.com"
           git add .
-          git commit -m "security: proof-carrying patch for CodeQL finding (test + fix verified)"
+          git commit -m "security: proof-carrying patch for CodeQL finding"
           git push origin auto-remediate-${{ github.run_id }}
-
       - name: Open PR with proof
         if: success()
         run: |
           gh pr create --base Master --head auto-remediate-${{ github.run_id }} \
             --title "Verified security fix ($(date +%F))" \
-            --body "Includes a reproduction test that failed before this fix and passes after. Full suite confirmed passing. Proof log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --body "Includes reproduction test (failed before fix, passes after). Full suite confirmed passing."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
