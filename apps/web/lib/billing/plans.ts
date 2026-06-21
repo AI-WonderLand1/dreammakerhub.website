@@ -13,6 +13,7 @@ export type PlanDefinition = {
   stripePriceId?: string;
   stripePriceYearlyId?: string;
   highlight?: boolean;
+  trialDays?: number;
 };
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
@@ -22,11 +23,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     displayName: "The Nomad",
     price: 0,
     priceDisplay: "$0/forever",
+    yearlyPriceDisplay: "$0/yr ($0/mo)",
     interval: "month",
     description: "Every adventure begins somewhere. Wander in, no credit card required.",
     features: [
       "1 active project",
       "Wonderbuild UI editor",
+      "1 IDE seat",
+      "10 runtime hours/month",
       "5K AI tokens/month",
       "100 API calls/month",
       "100 MB storage",
@@ -46,6 +50,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceId: process.env.STRIPE_PRICE_PRO_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_PRO_YEARLY_ID,
     highlight: true,
+    trialDays: 7,
     features: [
       "5 active projects",
       "100K AI tokens/month",
@@ -68,6 +73,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     description: "Built for agencies and studios who ship together. Collaborate, iterate, and deliver, without the chaos.",
     stripePriceId: process.env.STRIPE_PRICE_TEAM_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_TEAM_YEARLY_ID,
+    trialDays: 7,
     features: [
       "10 active projects",
       "500K AI tokens/month",
@@ -86,6 +92,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     displayName: "The Architect of Worlds",
     price: 0, // Custom pricing
     priceDisplay: "Custom",
+    yearlyPriceDisplay: "Custom",
     interval: "month",
     description: "You're not building a site. You're building infrastructure. We'll build it with you.",
     features: [

@@ -39,7 +39,7 @@ function CheckoutContent() {
   const plan = useMemo(() => (planId ? PLANS[planId] : null), [planId]);
 
   const completeCheckout = async () => {
-    if (!planId) return;
+    if (!planId || !plan) return;
 
     const token = session?.access_token;
     if (!token || !user) {
@@ -50,25 +50,26 @@ function CheckoutContent() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/subscription/subscribe", {
+      const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: planId, interval }),
+        body: JSON.stringify({
+          planId,
+          interval,
+          trialDays: plan.trialDays || 0,
+          redirectTo,
+        }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || "Subscription failed");
+      const data = await response.json();
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.error || "Checkout failed");
       }
 
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        router.push(redirectTo);
-      }
+      window.location.href = data.url;
     } catch (err) {
       console.error(err);
       alert("Checkout failed. Please try again.");
@@ -114,6 +115,16 @@ function CheckoutContent() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-4 text-xs text-white/60">
+            By subscribing, you agree to our{' '}
+            <Link href="/(public)/terms" className="text-purple-300 hover:underline">Terms of Service</Link>
+            ,{' '}
+            <Link href="/(public)/privacy" className="text-purple-300 hover:underline">Privacy Policy</Link>
+            , and{' '}
+            <Link href="/(public)/refund" className="text-purple-300 hover:underline">Refund & Return Policy</Link>
+            .
+          </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <button
