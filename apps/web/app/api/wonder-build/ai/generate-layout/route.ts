@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { WonderBuildEngine } from "@/lib/3dWonderBuildEngine";
 
 export const runtime = "nodejs";
+
+const wonderEngine = new WonderBuildEngine();
 
 interface BlockGeneration {
   blockId: string;
@@ -374,10 +377,6 @@ function parseAIBuilderResponse(text: string): AIBuilderResponse | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = request.headers.get("authorization") || "";
-    const apiKey = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-    const providerHeader = request.headers.get("x-ai-provider")?.toLowerCase() || "cerebras";
-
     const { prompt } = await request.json();
 
     if (!prompt || typeof prompt !== "string") {
@@ -387,79 +386,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine which provider to use
-    let layout: GeneratedLayout | null = null;
-
-    if (providerHeader === "openai" || providerHeader === "gemini" || providerHeader === "groq" || providerHeader === "github") {
-      let rawContent = "";
-
-      try {
-        if (providerHeader === "openai" && apiKey) {
-          rawContent = await callOpenAI(apiKey, prompt);
-        } else if (providerHeader === "gemini" && apiKey) {
-          rawContent = await callGemini(apiKey, prompt);
-        } else if (providerHeader === "groq" && apiKey) {
-          rawContent = await callGroq(apiKey, prompt);
-        } else if (providerHeader === "github" && apiKey) {
-          rawContent = await callGithub(apiKey, prompt);
-        }
-
-        const aiBuilderResponse = parseAIBuilderResponse(rawContent);
-
-        if (aiBuilderResponse) {
-          console.log(
-            '[AI Builder] Generated HTML/CSS from prompt via',
-            providerHeader,
-            'Strategy: Complete page layout'
-          );
-
-          return NextResponse.json(
-            {
-              message: aiBuilderResponse.message,
-              html: sanitizeHtml(aiBuilderResponse.html),
-              css: aiBuilderResponse.css,
-            },
-            { headers: { "Cache-Control": "no-store" } }
-          );
-        }
-      } catch (err) {
-        console.error(`${providerHeader.toUpperCase()} failed for layout generation:`, err);
-      }
-    }
-
-    // Fallback to Cerebras/HuggingFace for template-based layout
-    if (CEREBRAS_API_KEY) {
-      try {
-        const text = await callCerebras(`Generate a complete page layout for: "${prompt}"`);
-        layout = parseAIResponse(text, prompt);
-      } catch (err: any) {
-        console.error("Cerebras failed for layout generation:", err.message);
-      }
-    }
-
-    if (!layout && HF_TOKEN) {
-      try {
-        const text = await callHuggingFace(`Generate a complete page layout for: "${prompt}"`);
-        layout = parseAIResponse(text, prompt);
-      } catch (err: any) {
-        console.error("HuggingFace failed for layout generation:", err.message);
-      }
-    }
-
-    if (!layout) {
-      layout = generateFallbackLayout(prompt);
-    }
-
-    console.log(
-      '[AI Builder] Generated layout from prompt:',
-      layout.pageTypeDetected,
-      'Strategy:',
-      layout.overallStrategy,
-      'Blocks:',
-      layout.blocks.length
+    // Use local Wonder-Build engine for deterministic generation
+    const localResult = await wonderEngine.generateLayout(prompt);
+    return NextResponse.json(
+      {
+        id: "wonder-build-local",
+        name: "Local Build",
+        description: "Generated locally without external AI",
+        pageTypeDetected: "landing-page",
+        promptAnalysis: `Analyzed prompt: "${prompt}"`,
+        overallStrategy: "Local Wonder-Build generation",
+        blocks: [
+          { blockId: "hero", label: "Hero Section", props: { text: localResult.html } },
+        ],
+        ...localResult,
+      },
+      { headers: { "Cache-Control": "no-store" } }
     );
-
-    return NextResponse.json(layout);
   } catch (error) {
     console.error("Layout generation error:", error);
     return NextResponse.json(
