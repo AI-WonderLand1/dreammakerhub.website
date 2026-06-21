@@ -16,15 +16,15 @@ export const openaiProvider: AIProvider = {
     } = options ?? {};
 
     if (!apiKey) {
+      // No OpenAI key – fall back to OpenRouter
+      const fallback = await import('./openrouter').then(m => m.openrouterProvider.generate(prompt, options));
       return {
-        text: "OPENAI_API_KEY not configured. Add it in Settings → AI Providers.",
-        error: true,
+        text: fallback.text || "Falling back to OpenRouter model",
+        ...fallback,
         provider: "openai",
-        model,
         confessions: {
-          confidence: 0,
-          reasoning: ["OPENAI_API_KEY missing"],
-          limitations: ["Set OPENAI_API_KEY in Settings → AI Providers"]
+          ...fallback.confessions,
+          reasoning: ["Fallback to OpenRouter due to missing OpenAI key"]
         }
       };
     }

@@ -20,15 +20,15 @@ export const githubProvider: AIProvider = {
     } = options ?? {};
 
     if (!apiKey) {
+      // No GitHub key – fall back to GROQ
+      const fallback = await import('./groq').then(m => m.groqProvider.generate(prompt, options));
       return {
-        text: "GITHUB_MODELS_API_KEY not configured. Add it in Settings → AI Providers.",
-        error: true,
+        text: fallback.text || "Falling back to GROQ model",
+        ...fallback,
         provider: "github",
-        model,
         confessions: {
-          confidence: 0,
-          reasoning: ["GITHUB_MODELS_API_KEY missing"],
-          limitations: ["Set GITHUB_MODELS_API_KEY in Settings → AI Providers"]
+          ...fallback.confessions,
+          reasoning: ["Fallback to GROQ due to missing GitHub Models key"]
         }
       };
     }

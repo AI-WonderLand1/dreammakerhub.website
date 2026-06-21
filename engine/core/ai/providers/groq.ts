@@ -1,7 +1,6 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env } from "@lib/env";
-import { logger } from "@lib/logger";
+import { openrouterProvider } from "./openrouter";
 
 /**
  * GROQ AI Provider
@@ -21,22 +20,20 @@ export const groqProvider: AIProvider = {
     } = options ?? {};
 
     if (!apiKey) {
+      const fallback = await openrouterProvider.generate(prompt, options);
       return {
-        text: "GROQ_API_KEY not configured. Add it in Settings → AI Providers.",
-        error: true,
+        text: fallback.text || "Falling back to OpenRouter",
+        ...fallback,
         provider: "groq",
-        model,
         confessions: {
-          confidence: 0,
-          reasoning: ["GROQ_API_KEY missing"],
-          limitations: ["Set GROQ_API_KEY in Settings → AI Providers"]
+          ...fallback.confessions,
+          reasoning: ["Fallback to OpenRouter due to missing API key"]
         }
       };
     }
 
     try {
-      const messages = [];
-
+      const messages: Array<{ role: string; content: string | unknown[]}> = [];
       if (system) {
         messages.push({ role: "system", content: system });
       }
@@ -63,7 +60,7 @@ export const groqProvider: AIProvider = {
       const data = await response.json();
 
       if (data.error) {
-        logger.error("❌ GROQ API Error", { error: data.error });
+        const errorMessage = data.error.message || "Unknown error";
         return {
           text: "The Spirit Guide encountered an error with GROQ API.",
           error: true,
@@ -71,14 +68,13 @@ export const groqProvider: AIProvider = {
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["GROQ API returned an error"],
-            limitations: [data.error.message || "Unknown error"]
+            reasoning: ["GROQ API returned an error", errorMessage],
+            limitations: ["Check GROQ_API_KEY configuration"]
           }
         };
       }
 
       if (!data.choices?.length) {
-        logger.error("❌ GROQ API returned no choices", { data });
         return {
           text: "The Spirit Guide received no response from GROQ API.",
           error: true,
@@ -101,15 +97,11 @@ export const groqProvider: AIProvider = {
         confessions: {
           confidence: 0.95,
           reasoning: ["Processed via GROQ API"],
-          limitations: ["May have usage limits"]
+          limitations: ["May have usage limits"],
         }
       };
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "Unknown network error";
-      logger.error("✦ Spirit Guide Connection Severed (GROQ)", {
-        error: errMsg
-      });
-
       return {
         text: "The Spirit Guide lost connection to GROQ API.",
         error: true,
