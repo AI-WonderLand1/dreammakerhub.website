@@ -125,11 +125,29 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
 export async function POST(req: Request) {
   const { prompt, mode } = await req.json();
 
-  if (mode === 'classify') {
+ // Provider header – default "groq"
+ const providerHeader = req.headers.get("x-ai-provider")?.toLowerCase() || "groq";
+
+
+   if (mode === 'classify') {
     const classificationPrompt = buildClassificationPrompt(prompt);
-    const result = await runModel({ model: 'groq/llama-3.1-8b-instant', messages: [{ role: 'user', content: classificationPrompt }] });
     
-    // Rick: We're parsing the AI's garbage output. Better be JSON or I'm out.
+    // Map provider header to model string
+    const providerMap: Record<string, string> = {
+      openai: "openai/gpt-4o-mini",
+      gemini: "google/gemini-2.5-flash",
+      groq: "groq/llama-3.1-8b-instant",
+      github: "github/gpt-4o-mini"
+    };
+    const modelStr = providerMap[providerHeader] || providerMap["groq"];
+    
+    // Use user key if provided, otherwise fallback to system
+    const result = await runModel({ 
+      model: modelStr, 
+      messages: [{ role: 'user', content: classificationPrompt }],
+      userApiKey: userApiKey || undefined
+    });
+    
     try {
       const parsed = JSON.parse(result.text);
       return NextResponse.json(parsed);
