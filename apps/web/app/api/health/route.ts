@@ -1,182 +1,97 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/app/utils/supabase/server';
-import { logger } from '@/lib/logger';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-interface HealthCheck {
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  timestamp: string;
-  checks: {
-    api: 'healthy' | 'unhealthy';
-    database: 'healthy' | 'unhealthy' | 'not_configured';
-    environment: 'healthy' | 'unhealthy';
-    memory: 'healthy' | 'warning' | 'critical';
-  };
-  details: {
-    uptime: number;
-    nodeVersion: string;
-    environment: string;
-    memoryUsage: {
-      rss: number;
-      heapTotal: number;
-      heapUsed: number;
-      external: number;
-    };
-    supabaseConfigured: boolean;
-    supabaseReachable: boolean;
-  };
-}
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const startTime = Date.now();
-  const traceId = crypto.randomUUID();
   
-  const healthCheck: HealthCheck = {
-    status: 'healthy',
+  const checks = {
+    status: 'healthy' as 'healthy' | 'degraded' | 'unhealthy',
     timestamp: new Date().toISOString(),
-    checks: {
+    services: {
       api: 'healthy',
-      database: 'not_configured',
-      environment: 'healthy',
-      memory: 'healthy'
+      ai: 'healthy',
+      auth: 'healthy',
+      database: 'healthy',
     },
     details: {
       uptime: process.uptime(),
       nodeVersion: process.version,
       environment: process.env.NODE_ENV || 'development',
       memoryUsage: process.memoryUsage(),
-      supabaseConfigured: false,
-      supabaseReachable: false
+      responseTime: 0,
     }
   };
-
+  
   try {
-    // Check environment variables
-    const requiredEnvVars = [
-      'NEXT_PUBLIC_SUPABASE_URL',
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY'
-    ];
-    
-    const missingEnvVars = requiredEnvVars.filter(
-      varName => !process.env[varName]
-    );
-    
-    if (missingEnvVars.length > 0) {
-      healthCheck.checks.environment = 'unhealthy';
-      healthCheck.status = 'degraded';
-      healthCheck.details.missingEnvVars = missingEnvVars;
+    // Test basic API endpoint
+    const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/health`);
+    if (!apiResponse.ok) {
+      checks.services.api = 'unhealthy';
+      checks.status = 'degraded';
     }
-
-    // Check memory usage
-    const memoryUsage = process.memoryUsage();
-    const memoryPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
     
-    if (memoryPercent > 90) {
-      healthCheck.checks.memory = 'critical';
-      healthCheck.status = 'unhealthy';
-    } else if (memoryPercent > 70) {
-      healthCheck.checks.memory = 'warning';
-      healthCheck.status = 'degraded';
-    }
-
-    // Check Supabase configuration
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Test AI endpoint (basic connectivity test)
+    const aiResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'health check' })
+    }).catch(() => null);
     
-    if (supabaseUrl && supabaseAnonKey) {
-      healthCheck.details.supabaseConfigured = true;
-      
-      try {
-        // Test Supabase connection (auth endpoint works without table access)
-        const supabase = await createSupabaseServerClient();
-        const { error } = await supabase.auth.getUser();
-        
-        if (!error) {
-          healthCheck.checks.database = 'healthy';
-          healthCheck.details.supabaseReachable = true;
-        } else {
-          healthCheck.checks.database = 'unhealthy';
-          healthCheck.status = 'degraded';
-          healthCheck.details.supabaseError = error.message;
-        }
-      } catch (dbError: any) {
-        healthCheck.checks.database = 'unhealthy';
-        healthCheck.status = 'degraded';
-        healthCheck.details.supabaseError = dbError.message;
-      }
+    if (!aiResponse?.ok) {
+      checks.services.ai = 'degraded';
+      checks.status = 'degraded';
     }
-
+    
+    // Test auth endpoint
+    const authResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/health/auth`);
+    if (!authResponse.ok) {
+      checks.services.auth = 'unhealthy';
+      checks.status = 'degraded';
+    }
+    
+    // Test database endpoint
+    const dbResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/health/db`);
+    if (!dbResponse.ok) {
+      checks.services.database = 'unhealthy';
+      checks.status = 'degraded';
+    }
+    
+    // Test AI service specifically
+    const aiServiceResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/health/ai`);
+    if (!aiServiceResponse.ok) {
+      checks.services.ai = 'unhealthy';
+      checks.status = 'degraded';
+    }
+    
     // Calculate response time
-    const responseTime = Date.now() - startTime;
-    healthCheck.details.responseTime = responseTime;
-
-    // Determine overall status
-    const unhealthyChecks = Object.values(healthCheck.checks).filter(
-      status => status === 'unhealthy'
-    ).length;
+    checks.details.responseTime = Date.now() - startTime;
     
-    const degradedChecks = Object.values(healthCheck.checks).filter(
-      status => status === 'warning'
-    ).length;
-
-    if (unhealthyChecks > 0) {
-      healthCheck.status = 'unhealthy';
-    } else if (degradedChecks > 0) {
-      healthCheck.status = 'degraded';
-    }
-
-    // Log health check
-    logger.info('Health check performed', {
-      traceId,
-      status: healthCheck.status,
-      responseTime,
-      memoryPercent: Math.round(memoryPercent)
+    // Log the health check
+    console.log('Health check completed:', {
+      status: checks.status,
+      responseTime: checks.details.responseTime,
+      services: checks.services,
+      timestamp: checks.timestamp,
     });
-
-    // Return appropriate HTTP status
-    const statusCode = healthCheck.status === 'healthy' ? 200 :
-                      healthCheck.status === 'degraded' ? 200 : 503;
-
-    return NextResponse.json(healthCheck, {
-      status: statusCode,
+    
+    return NextResponse.json(checks, {
+      status: checks.status === 'healthy' ? 200 : 503,
       headers: {
-        'X-Trace-Id': traceId,
+        'X-Health-Check': 'ok',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Content-Type': 'application/json'
       }
     });
-
-  } catch (error: any) {
-    logger.error('Health check failed', {
-      traceId,
-      error: error.message,
-      stack: error.stack
-    });
-
+    
+  } catch (error) {
+    console.error('Health check failed:', error);
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
       error: 'Health check failed',
-      message: error.message,
-      traceId
-    }, {
-      status: 503,
-      headers: {
-        'X-Trace-Id': traceId
-      }
-    });
+      message: error instanceof Error ? error.message : String(error)
+    }, { status: 503 });
   }
-}
-
-// Simple ping endpoint
-export async function HEAD() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'X-Health-Check': 'ok',
-      'Cache-Control': 'no-cache'
-    }
-  });
 }
