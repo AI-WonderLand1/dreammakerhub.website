@@ -36,6 +36,7 @@ COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/templates ./templates
 
 EXPOSE 5000
+ENV PATH="/app/node_modules/.bin:$PATH"
 RUN apk add --no-cache curl
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 CMD curl -f http://localhost:5000/health || exit 1
 CMD ["sh", "-c", "next start -p ${PORT:-5000} -H 0.0.0.0"]
