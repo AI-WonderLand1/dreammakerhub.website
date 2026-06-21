@@ -19,16 +19,16 @@ export const openrouterProvider: AIProvider = {
       maxTokens = 4096
     } = options ?? {};
 
-    if (!apiKey) {
+if (!apiKey) {
+      // No API key – fall back to a free provider (GROQ) to avoid errors
+      const fallback = await import('./groq').then(m => m.groqProvider.generate(prompt, options));
       return {
-        text: "OPENROUTER_API_KEY not configured. Add it in Settings → AI Providers.",
-        error: true,
+        text: fallback.text || "Falling back to free GROQ model",
+        ...fallback,
         provider: "openrouter",
-        model,
         confessions: {
-          confidence: 0,
-          reasoning: ["OPENROUTER_API_KEY missing"],
-          limitations: ["Set OPENROUTER_API_KEY in Settings → AI Providers"]
+          ...fallback.confessions,
+          reasoning: ["Fallback to GROQ due to missing OpenRouter key"]
         }
       };
     }
