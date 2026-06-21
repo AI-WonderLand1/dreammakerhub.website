@@ -1,4 +1,4 @@
-name: "AI Auto-Remediate & PM2 Reload"
+name: "AI Auto-Remediate (PR-based)"
 
 on:
   workflow_run:
@@ -8,36 +8,57 @@ on:
 jobs:
   apply-fix:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }} # Trigger when vulnerabilities are found
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    permissions:
+      contents: write
+      pull-requests: write
+      security-events: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
         with:
-          ref: Master # Matches your Master branch setup
+          ref: Master
 
-      - name: AI Patch Agent
+      - name: Create fix branch
         run: |
-          # This is where your AI agent (Alice or Rick) would insert the logic 
-          # to sanitize SSRF and Code Injection routes identified by CodeQL.
-          echo "AI Agent applying truth-first patches..."
-          
-      - name: Commit and Push Fixes
+          git checkout -b auto-remediate-${{ github.run_id }}
+
+      - name: Fetch CodeQL findings
+        run: |
+          gh api repos/${{ github.repository }}/code-scanning/alerts \
+            --jq '[.[] | select(.state=="open")]' > findings.json
+          cat findings.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: AI Patch Agent (Claude)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FINDINGS=$(cat findings.json)
+          curl -s https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "$(jq -n --arg findings "$FINDINGS" \
+              '{model:"claude-sonnet-4-6",max_tokens:2000,
+                messages:[{role:"user",content:("Here are CodeQL findings as JSON:\n" + $findings + "\n\nList the file paths and one-line fix suggestions only.")}]}')" \
+            > patch_suggestions.json
+          cat patch_suggestions.json
+
+      - name: Commit suggestions (no auto-apply)
         run: |
           git config --global user.name "AI-Wonderland-Agent"
           git config --global user.email "agent@ai-wonderland.com"
-          git add .
-          git commit -m "security: automated truth-first patch for CodeQL findings"
-          git push origin Master
+          mv patch_suggestions.json SECURITY_SUGGESTIONS.json
+          git add SECURITY_SUGGESTIONS.json
+          git diff --cached --quiet || git commit -m "chore: AI security suggestions for CodeQL findings"
 
-  deploy-and-reload:
-    needs: apply-fix
-    runs-on: self-hosted # Use your Chromebook/Linux environment as the runner
-    steps:
-      - name: Pull and Reload PM2
+      - name: Open PR for review
         run: |
-          cd /path/to/your/apps/web
-          git pull origin Master
-          npm install
-          npm run build
-          # PM2 reload ensures zero-downtime for your multi-tenant IDE platform
-          pm2 reload all --update-env
+          git push origin auto-remediate-${{ github.run_id }}
+          gh pr create --base Master --head auto-remediate-${{ github.run_id }} \
+            --title "AI security suggestions ($(date +%F))" \
+            --body "Automated CodeQL remediation suggestions. Review before merging — nothing here is auto-applied."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
