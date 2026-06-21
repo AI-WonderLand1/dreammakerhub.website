@@ -82,7 +82,7 @@ export interface SsrfFetchOptions extends RequestInit {
   blockLocalhost?: boolean
 }
 
-async function validateUrl(url: string, options: SsrfFetchOptions): Promise<string> {
+async function validateUrl(url: string, options: SsrfFetchOptions): Promise<URL> {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -131,7 +131,7 @@ async function validateUrl(url: string, options: SsrfFetchOptions): Promise<stri
     throw new SsrfError('URL resolves to a disallowed network address')
   }
 
-  return parsed.toString()
+  return parsed
 }
 
 async function validateRedirect(response: Response, options: SsrfFetchOptions): Promise<Response> {
@@ -152,8 +152,8 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
   const validatedUrl = await validateUrl(url, options)
 
   const response = await fetch(validatedUrl, {
-    redirect: 'manual',
     ...options,
+    redirect: 'manual',
   })
 
   return validateRedirect(response, options)
