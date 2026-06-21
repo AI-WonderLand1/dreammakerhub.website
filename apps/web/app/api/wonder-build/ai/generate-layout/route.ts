@@ -21,8 +21,26 @@ interface GeneratedLayout {
   overallStrategy: string;
 }
 
+interface AIBuilderResponse {
+  message: string;
+  html: string;
+  css: string;
+}
+
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
+
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]*\s(on\w+)\s*=\s*["'][^"']*["'][^>]*>/gi, "")
+    .replace(/<[^>]*\s(on\w+)\s*=\s*[^\s>]+/gi, "")
+    .replace(/\s(on\w+)\s*=\s*["'][^"']*["']/gi, "")
+    .replace(/javascript\s*:/gi, "")
+    .replace(/<embed[\s>]/gi, "<embed_disabled ")
+    .replace(/<object[\s>]/gi, "<object_disabled ")
+    .replace(/<iframe[\s>]/gi, "<iframe_disabled ");
+}
 
 const SYSTEM_PROMPT = `You are an AI layout generator for a visual web page builder.
 
@@ -78,7 +96,7 @@ const FALLBACK_TEMPLATES: Record<string, { blocks: any[]; strategy: string }> = 
     strategy: "Content-first layout with engagement",
     blocks: [
       { blockId: "heading", label: "Article Title", props: { text: "Blog Post Title", level: 1 }, reasoning: "H1 title for SEO and readability.", confidence: 0.96, alternativesConsidered: ["H2 heading"] },
-      { blockId: "text", label: "Metadata", props: { text: "By Author \u2022 Published on Date" }, reasoning: "Author + date establishes credibility.", confidence: 0.85, alternativesConsidered: ["Separate author + date blocks"] },
+      { blockId: "text", label: "Metadata", props: { text: "By Author • Published on Date" }, reasoning: "Author + date establishes credibility.", confidence: 0.85, alternativesConsidered: ["Separate author + date blocks"] },
       { blockId: "image", label: "Featured Image", props: { src: "", alt: "Article cover" }, reasoning: "Featured image increases engagement.", confidence: 0.93, alternativesConsidered: ["Video"] },
       { blockId: "text", label: "Article Content", props: { text: "Your article content goes here..." }, reasoning: "Main content block.", confidence: 0.97, alternativesConsidered: ["Rich text editor"] },
     ],
@@ -197,6 +215,137 @@ async function callHuggingFace(prompt: string): Promise<string> {
   return Array.isArray(data) ? data[0]?.generated_text : data.generated_text || "";
 }
 
+async function callOpenAI(apiKey: string, prompt: string) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content:
+            'You are a website builder assistant. Output ONLY strict JSON: {"message": string, "html": string, "css": string}. No markdown. No extra keys.',
+        },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`OpenAI error ${response.status}: ${text}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
+async function callGemini(apiKey: string, prompt: string) {
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" +
+    encodeURIComponent(apiKey);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                'Output ONLY strict JSON: {"message": string, "html": string, "css": string}. No markdown. No extra keys.\n\n' +
+                prompt,
+            },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0.2 },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Gemini error ${response.status}: ${text}`);
+  }
+
+  const data = await response.json();
+  return (
+    data?.candidates?.[0]?.content?.parts
+      ?.map((p: any) => p?.text ?? "")
+      .join("") ?? ""
+  );
+}
+
+async function callGroq(apiKey: string, prompt: string) {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "user",
+          content:
+            'Output ONLY strict JSON: {"message": string, "html": string, "css": string}. No markdown. No extra keys.\n\n' + prompt,
+        },
+      ],
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`GROQ error ${response.status}: ${text}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
+async function callGithub(apiKey: string, prompt: string) {
+  const response = await fetch(
+    "https://models.inference.ai.azure.com/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content:
+              'Output ONLY strict JSON: {"message": string, "html": string, "css": string}. No markdown. No extra keys.\n\n' + prompt,
+          },
+        ],
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`GitHub Models error ${response.status}: ${text}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
 function parseAIResponse(text: string, prompt: string): GeneratedLayout | null {
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -207,8 +356,28 @@ function parseAIResponse(text: string, prompt: string): GeneratedLayout | null {
   return null;
 }
 
+function parseAIBuilderResponse(text: string): AIBuilderResponse | null {
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (
+      typeof parsed.message === "string" &&
+      typeof parsed.html === "string" &&
+      typeof parsed.css === "string"
+    ) {
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const auth = request.headers.get("authorization") || "";
+    const apiKey = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+    const providerHeader = request.headers.get("x-ai-provider")?.toLowerCase() || "cerebras";
+
     const { prompt } = await request.json();
 
     if (!prompt || typeof prompt !== "string") {
@@ -218,8 +387,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine which provider to use
     let layout: GeneratedLayout | null = null;
 
+    if (providerHeader === "openai" || providerHeader === "gemini" || providerHeader === "groq" || providerHeader === "github") {
+      let rawContent = "";
+
+      try {
+        if (providerHeader === "openai" && apiKey) {
+          rawContent = await callOpenAI(apiKey, prompt);
+        } else if (providerHeader === "gemini" && apiKey) {
+          rawContent = await callGemini(apiKey, prompt);
+        } else if (providerHeader === "groq" && apiKey) {
+          rawContent = await callGroq(apiKey, prompt);
+        } else if (providerHeader === "github" && apiKey) {
+          rawContent = await callGithub(apiKey, prompt);
+        }
+
+        const aiBuilderResponse = parseAIBuilderResponse(rawContent);
+
+        if (aiBuilderResponse) {
+          console.log(
+            '[AI Builder] Generated HTML/CSS from prompt via',
+            providerHeader,
+            'Strategy: Complete page layout'
+          );
+
+          return NextResponse.json(
+            {
+              message: aiBuilderResponse.message,
+              html: sanitizeHtml(aiBuilderResponse.html),
+              css: aiBuilderResponse.css,
+            },
+            { headers: { "Cache-Control": "no-store" } }
+          );
+        }
+      } catch (err) {
+        console.error(`${providerHeader.toUpperCase()} failed for layout generation:`, err);
+      }
+    }
+
+    // Fallback to Cerebras/HuggingFace for template-based layout
     if (CEREBRAS_API_KEY) {
       try {
         const text = await callCerebras(`Generate a complete page layout for: "${prompt}"`);
