@@ -1,30 +1,52 @@
-import { createClient } from '../../../utils/supabase/server';
 import { requireEnv } from '@lib/env';
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    const aiResponse = await fetch('https://api.openai.com/v1/models', {
+    // Test Groq (primary AI provider)
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/models', {
       headers: {
-        'Authorization': `Bearer ${requireEnv('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${requireEnv('GROQ_API_KEY')}`, 
+      }
+    });
+    
+    // Test OpenRouter (fallback provider)
+    const openrouterResponse = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${requireEnv('OPENROUTER_API_KEY')}`, 
+      }
+    });
+    
+    // Test Google Gemini (another provider)
+    const googleResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+      headers: {
+        'x-goog-api-key': requireEnv('GOOGLE_API_KEY'),
       }
     });
 
-    return Response.json({ 
-      status: aiResponse.ok ? 'operational' : 'degraded',
+    const isGroqOperational = groqResponse.ok;
+    const isOpenrouterOperational = openrouterResponse.ok;
+    const isGoogleOperational = googleResponse.ok;
+
+    const hasWorkingProviders = isGroqOperational || isOpenrouterOperational || isGoogleOperational;
+
+    return Response.json({
+      status: hasWorkingProviders ? 'operational' : 'major_outage',
       timestamp: new Date().toISOString(),
-      message: aiResponse.ok ? 'AI services available' : 'AI services experiencing issues',
+      message: hasWorkingProviders ? 'AI services available' : 'AI services experiencing issues',
       details: {
-        openai: aiResponse.ok,
-        providers: ['openai', 'anthropic', 'google']
+        groq: isGroqOperational,
+        openrouter: isOpenrouterOperational,
+        google: isGoogleOperational,
+        workingProviders: hasWorkingProviders ? 
+          (isGroqOperational ? 'groq' : '') + 
+          (isOpenrouterOperational ? ' openrouter' : '') + 
+          (isGoogleOperational ? ' google' : '') : 'none'
       }
     });
   } catch (error) {
-    return Response.json({ 
+    return Response.json({
       status: 'major_outage',
       timestamp: new Date().toISOString(),
       message: 'AI services unavailable',
