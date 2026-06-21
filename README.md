@@ -1,4 +1,7 @@
-# DreamMakerHub .
+
+### AI-WONDERLAND INOVATIONS .LLC
+
+
 
 > **Build anything instantly — no setup required.**
 > AI-powered multi-engine development platform.
@@ -7,11 +10,13 @@
 
 ## What Is This?
 
-DreamMakerHub is a unified platform where anyone can launch a dev environment, build with AI/code/visual tools, and deploy — all from one place. No more juggling IDEs, AI tools, hosting, and APIs separately.
+### AI-WONDERLAND INOVATIONS .LLC 
+is a unified platform where anyone can launch a dev environment, build with AI/code/visual tools, and deploy — all from one place. No more juggling IDEs, AI tools, hosting, and APIs separately.
 
 ## Overview
 
-WonderSpace is a full-stack platform combining AI-powered development tools, 3D scene building, and collaborative workspaces. The architecture follows a "Thin TS / Heavy Python" philosophy with TypeScript handling the browser experience and orchestration, while Python manages deep reasoning and persistent memory.
+### AI-WONDERLAND INOVATIONS .LLC 
+is a full-stack platform combining AI-powered development tools, 3D scene building, and collaborative workspaces. The architecture follows a "Thin TS / Heavy Python" philosophy with TypeScript handling the browser experience and orchestration, while Python manages deep reasoning and persistent memory.
 
 DreamMakerHub is a unified platform where anyone can launch a dev environment, build with AI/code/visual tools, and deploy — all from one place. No more juggling IDEs, AI tools, hosting, and APIs separately.
 
