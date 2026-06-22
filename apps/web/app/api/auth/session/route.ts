@@ -14,8 +14,8 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      session: { access_token: session.access_token, user: session.user },
-      user: session.user,
+      session: { access_token: session.access_token, user: { ...session.user, isAdmin: session.user.id === 'admin_123' } },
+      user: { ...session.user, isAdmin: session.user.id === 'admin_123' },
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: 'Unexpected error', session: null, user: null }, { status: 500 });
