@@ -82,6 +82,28 @@ export interface SsrfFetchOptions extends RequestInit {
   blockLocalhost?: boolean
 }
 
+function buildSafeFetchInit(options: SsrfFetchOptions): RequestInit {
+  const init: RequestInit = {
+    redirect: 'manual',
+  }
+
+  if (options.method !== undefined) init.method = options.method
+  if (options.headers !== undefined) init.headers = options.headers
+  if (options.body !== undefined) init.body = options.body
+  if (options.signal !== undefined) init.signal = options.signal
+  if (options.cache !== undefined) init.cache = options.cache
+  if (options.credentials !== undefined) init.credentials = options.credentials
+  if (options.integrity !== undefined) init.integrity = options.integrity
+  if (options.keepalive !== undefined) init.keepalive = options.keepalive
+  if (options.mode !== undefined) init.mode = options.mode
+  if (options.priority !== undefined) init.priority = options.priority
+  if (options.referrer !== undefined) init.referrer = options.referrer
+  if (options.referrerPolicy !== undefined) init.referrerPolicy = options.referrerPolicy
+  if (options.duplex !== undefined) init.duplex = options.duplex
+
+  return init
+}
+
 async function validateUrl(url: string, options: SsrfFetchOptions): Promise<URL> {
   let parsed: URL
   try {
@@ -144,17 +166,14 @@ async function validateRedirect(response: Response, options: SsrfFetchOptions): 
   }
   const resolvedUrl = new URL(location, response.url).toString()
   const validatedRedirectUrl = await validateUrl(resolvedUrl, options)
-  const redirectResponse = await fetch(validatedRedirectUrl, { ...options, redirect: 'manual' })
+  const redirectResponse = await fetch(validatedRedirectUrl, buildSafeFetchInit(options))
   return validateRedirect(redirectResponse, options)
 }
 
 export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
   const validatedUrl = await validateUrl(url, options)
 
-  const response = await fetch(validatedUrl, {
-    ...options,
-    redirect: 'manual',
-  })
+  const response = await fetch(validatedUrl, buildSafeFetchInit(options))
 
   return validateRedirect(response, options)
 }
