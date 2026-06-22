@@ -53,7 +53,7 @@ type Project = {
     wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
     wonderbuild_ui: { editor: "/wonder-build/puck", label: "Wonderbuild UI" },
     game: { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
-    "3d_scene": { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
+    "3d_scene": { editor: "/dashboard/settings/3d-project", label: "3D Project" },
     web_app: { editor: "/wonder-build/ai-builder", label: "AI Builder" },
     workspace: { editor: "/wonderspace/ide", label: "IDE" },
   };
@@ -81,6 +81,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { href: "/dashboard/aetherguard", label: "AetherGuard", icon: Shield },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
     { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
+    { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
 
   const managementItems: MenuItem[] = [
