@@ -156,9 +156,16 @@ async function validateUrl(url: string, options: SsrfFetchOptions): Promise<URL>
   return parsed
 }
 
-async function validateRedirect(response: Response, options: SsrfFetchOptions): Promise<Response> {
+async function validateRedirect(
+  response: Response,
+  options: SsrfFetchOptions,
+  remainingRedirects: number = 5
+): Promise<Response> {
   if (!response.status || response.status < 300 || response.status >= 400) {
     return response
+  }
+  if (remainingRedirects <= 0) {
+    throw new SsrfError('Too many redirects')
   }
   const location = response.headers.get('location')
   if (!location) {
@@ -167,10 +174,14 @@ async function validateRedirect(response: Response, options: SsrfFetchOptions): 
   const resolvedUrl = new URL(location, response.url).toString()
   const validatedRedirectUrl = await validateUrl(resolvedUrl, options)
   const redirectResponse = await fetch(validatedRedirectUrl, buildSafeFetchInit(options))
-  return validateRedirect(redirectResponse, options)
+  return validateRedirect(redirectResponse, options, remainingRedirects - 1)
 }
 
 export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
+  if (!options.allowedHosts || options.allowedHosts.length === 0) {
+    throw new SsrfError('allowedHosts must be provided and non-empty')
+  }
+
   const validatedUrl = await validateUrl(url, options)
 
   const response = await fetch(validatedUrl, buildSafeFetchInit(options))
