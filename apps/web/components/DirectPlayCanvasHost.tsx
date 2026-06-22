@@ -73,8 +73,8 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
         }
         
         // Check if mount returned a cleanup object with destroy method
-        if (!cleanup || typeof cleanup.destroy !== 'function') {
-          console.warn('PlayCanvas mount did not return a cleanup object with destroy method. Memory leaks may occur.');
+        if (!cleanup || typeof cleanup.destroy !== "function") {
+          console.warn("PlayCanvas mount did not return a cleanup object with destroy method. Memory leaks may occur.");
         }
         
         onStatusRef.current?.("ready");
