@@ -12,7 +12,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ success: true, session: null, user: null });
     }
 
-    const adminUserIds = ['952c9513-a0ee-438f-b45a-676f3a049706'];
+    const adminUserIds = (process.env.ADMIN_USER_IDS || '').split(',').filter(Boolean);
     const isAdmin = adminUserIds.includes(session.user.id);
 
     return NextResponse.json({
