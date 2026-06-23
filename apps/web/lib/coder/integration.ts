@@ -9,8 +9,8 @@ export interface CoderWorkspace {
 export class CoderIntegration {
   private coderApiUrl: string;
 
-  constructor(apiUrl: string = process.env.CODER_API_URL || 'https://coder.example.com') {
-    this.coderApiUrl = apiUrl;
+  constructor(apiUrl: string = process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app') {
+    this.coderApiUrl = apiUrl.replace(/\/$/, '');
   }
 
   /**
@@ -25,7 +25,11 @@ export class CoderIntegration {
     // Generate unique workspace name for this user
     const workspaceName = `${userId}-${projectName}-${Date.now()}`;
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
     const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces`, {
+      signal: controller.signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,6 +59,7 @@ export class CoderIntegration {
       throw new Error(`Failed to create workspace: ${response.statusText}`);
     }
 
+    clearTimeout(timeoutId);
     const data = await response.json();
     return {
       id: data.id,
@@ -69,12 +74,17 @@ export class CoderIntegration {
    * Get user's existing workspace
    */
   async getUserWorkspace(userId: string): Promise<CoderWorkspace | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
     const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces?owner=${userId}`, {
+      signal: controller.signal,
       headers: {
         'Coder-User-ID': userId,
       },
     });
 
+    clearTimeout(timeoutId);
     if (!response.ok) {
       return null;
     }
@@ -103,7 +113,14 @@ export class CoderIntegration {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
-      const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces/${workspaceId}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces/${workspaceId}`, {
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'running') {
@@ -182,9 +199,13 @@ export class CoderIntegration {
 
     // Upload each file
     for (const [filename, content] of Object.entries(files)) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
       const response = await fetch(
         `${this.coderApiUrl}/api/v2/workspaces/${workspaceId}/files/${encodeURIComponent(filename)}`,
         {
+          signal: controller.signal,
           method: 'PUT',
           headers: {
             'Content-Type': 'text/plain',
@@ -193,6 +214,7 @@ export class CoderIntegration {
         }
       );
 
+      clearTimeout(timeoutId);
       if (!response.ok) {
         console.warn(`Failed to upload ${filename} to workspace`);
       }
