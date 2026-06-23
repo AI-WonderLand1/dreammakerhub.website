@@ -1,0 +1,63 @@
+---
+title: "Getting Started"
+description: "Learn how to set up your environment, install dependencies, and start building."
+---
+
+# Getting Started
+
+Learn how to set up your environment, install dependencies, and start building with AI Wonderland.
+
+## Prerequisites
+
+- Node.js 18+
+- pnpm (recommended) or npm
+- Git
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/AI-WonderLand1/dreammakerhub.website.git
+cd dreammakerhub.website
+
+# Install dependencies
+pnpm install
+
+# Set up environment variables
+cp apps/web/.env.example apps/web/.env
+# Edit .env with your keys
+
+# Start development server
+pnpm dev
+```
+
+## Project Structure
+
+```
+dreammakerhub.website/
+├── apps/
+│   └── web/              # Next.js 14+ application
+├── packages/
+│   └── gesture-engine/   # Gesture recognition package
+├── supabase/
+│   └── functions/        # Edge functions
+└── infra/                # Infrastructure configs
+```
+
+## First Steps
+
+1. **Create an account** - Sign up at the dashboard
+2. **Explore Playground** - Try AI modules at `/playground`
+3. **Build with Wonder-Build** - Generate UI at `/wonder-build/ai-builder`
+4. **Publish** - Deploy your projects from the dashboard
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server) | Yes |
+| `STRIPE_SECRET_KEY` | Stripe secret key | For billing |
+| `CEREBRAS_API_KEY` | Cerebras API for AI | Optional |
+| `HUGGINGFACE_TOKEN` | HuggingFace token | Optional |

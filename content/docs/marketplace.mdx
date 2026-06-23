@@ -1,0 +1,75 @@
+---
+title: "Marketplace"
+description: "Post, browse, and install marketplace extensions or plugins."
+---
+
+# Marketplace
+
+Discover, install, and publish extensions for AI Wonderland.
+
+## Browsing Extensions
+
+Visit `/marketplace` to browse categories:
+- **UI Components** - Buttons, forms, layouts
+- **AI Modules** - Custom prompts, agents, tools
+- **Integrations** - Stripe, Supabase, GitHub, etc.
+- **Templates** - Starter projects, themes
+
+## Installation
+
+```bash
+# Via CLI
+wonder install <extension-name>
+
+# Via Dashboard
+# Click "Install" on any extension card
+```
+
+## Publishing
+
+### Package Structure
+```
+my-extension/
+├── wonder.json          # Manifest
+├── src/
+│   └── index.ts        # Entry point
+├── README.md
+└── package.json
+```
+
+### Manifest (wonder.json)
+```json
+{
+  "name": "my-extension",
+  "version": "1.0.0",
+  "description": "Does amazing things",
+  "author": "Your Name",
+  "license": "MIT",
+  "keywords": ["ui", "component"],
+  "main": "src/index.ts",
+  "wonder": {
+    "type": "component",
+    "category": "ui",
+    "permissions": ["storage", "network"]
+  }
+}
+```
+
+### Publish Command
+```bash
+wonder publish
+```
+
+## Revenue Share
+
+- **Free extensions** - 0% fee
+- **Paid extensions** - 15% platform fee
+- **Enterprise** - Custom terms
+
+## Review Process
+
+All extensions undergo automated + manual review:
+1. Security scan
+2. Functionality test
+3. Code quality check
+4. Approval (24-48 hours)

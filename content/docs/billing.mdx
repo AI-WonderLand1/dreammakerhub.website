@@ -1,0 +1,61 @@
+---
+title: "Billing & Subscriptions"
+description: "Manage plans, handle payments, and manage subscriptions with Stripe integration."
+---
+
+# Billing & Subscriptions
+
+Manage plans, handle payments, and manage subscriptions with Stripe integration.
+
+## Plans
+
+| Feature | Personal | Enterprise |
+|---------|----------|------------|
+| Playground | ✅ | ✅ Unlimited |
+| Wonder-Build | ✅ | ✅ Unlimited |
+| Publishing | 10/month | Unlimited |
+| Custom Domains | ❌ | ✅ |
+| SSO/SAML | ❌ | ✅ |
+| Priority Support | ❌ | ✅ |
+| SLA | ❌ | 99.9% |
+
+## Subscription Management
+
+### Upgrade Plan
+```bash
+POST /api/billing/upgrade
+{
+  "planId": "enterprise"
+}
+```
+
+### Cancel Subscription
+```bash
+POST /api/billing/cancel
+```
+
+### Get Current Plan
+```bash
+GET /api/billing/plan
+```
+
+## Webhooks
+
+Configure Stripe webhooks for:
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
+- `customer.subscription.deleted`
+- `customer.subscription.updated`
+
+Webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
+
+## Invoices
+
+Download invoices from the dashboard or via API:
+```bash
+GET /api/billing/invoices
+```
+
+## Refunds
+
+Request refunds within 7 days via support. Enterprise contracts have custom terms.

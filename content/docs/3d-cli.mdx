@@ -1,0 +1,357 @@
+---
+title: "3D CLI Reference"
+description: "Complete command reference for the 3D development CLI - create, manage, and deploy 3D projects."
+---
+
+# 3D CLI Reference
+
+The AI Wonderland 3D CLI lets you create, manage, and deploy 3D development environments from the terminal.
+
+## Installation
+
+```bash
+# Via npm
+npm install -g @ai-wonderland/3d-cli
+
+# Via pnpm
+pnpm add -g @ai-wonderland/3d-cli
+
+# Verify installation
+wonder3d --version
+```
+
+## Authentication
+
+```bash
+# Login with your account
+wonder3d auth login
+
+# Check current user
+wonder3d auth whoami
+
+# Logout
+wonder3d auth logout
+```
+
+## Project Commands
+
+### Create a New Project
+
+```bash
+# WebGL Studio (Three.js + React)
+wonder3d create webgl my-project
+
+# PlayCanvas (Web-first game engine)
+wonder3d create playcanvas my-game
+
+# Custom 3D Runtime (Bare metal WebGL/WebGPU)
+wonder3d create custom my-runtime
+
+# With options
+wonder3d create webgl my-project --template=react-three-fiber --port=3001
+```
+
+**Templates per engine:**
+| Engine | Templates |
+|--------|-----------|
+| `webgl` | `react-three-fiber`, `threejs`, `babylonjs`, `vanilla` |
+| `playcanvas` | `blank`, `fps`, `rpg`, `arcade` |
+| `custom` | `webgl`, `webgpu`, `webgpu-compute` |
+
+### List Projects
+
+```bash
+# List all your projects
+wonder3d list
+
+# List with details
+wonder3d list --verbose
+
+# Filter by engine
+wonder3d list --engine=webgl
+```
+
+### Project Status
+
+```bash
+# Check status of a project
+wonder3d status <project-id>
+
+# Watch for changes
+wonder3d status <project-id> --watch
+```
+
+### Open Project
+
+```bash
+# Open in browser
+wonder3d open <project-id>
+
+# Open in IDE
+wonder3d open <project-id> --ide=vscode
+
+# Open specific port
+wonder3d open <project-id> --port=3000
+```
+
+### Delete Project
+
+```bash
+# Delete with confirmation
+wonder3d delete <project-id>
+
+# Force delete
+wonder3d delete <project-id> --force
+```
+
+## Development Commands
+
+### Start Development Server
+
+```bash
+# Start with auto-reload
+wonder3d dev <project-id>
+
+# Custom port
+wonder3d dev <project-id> --port=3001
+
+# Open browser automatically
+wonder3d dev <project-id> --open
+```
+
+### Build for Production
+
+```bash
+# Production build
+wonder3d build <project-id>
+
+# Build with specific target
+wonder3d build <project-id> --target=webgl2
+
+# Output directory
+wonder3d build <project-id> --out=./dist
+```
+
+### Preview Production Build
+
+```bash
+wonder3d preview <project-id>
+```
+
+## Deployment Commands
+
+### Deploy to WonderSpace
+
+```bash
+# Deploy to WonderSpace hosting
+wonder3d deploy <project-id>
+
+# Deploy with custom domain
+wonder3d deploy <project-id> --domain=mygame.com
+
+# Deploy specific build
+wonder3d deploy <project-id> --build-id=abc123
+```
+
+### Export for Other Platforms
+
+```bash
+# Export as static site
+wonder3d export <project-id> --format=static
+
+# Export as Docker image
+wonder3d export <project-id> --format=docker
+
+# Export as Electron app
+wonder3d export <project-id> --format=electron
+
+# Export for mobile (Capacitor)
+wonder3d export <project-id> --format=capacitor --platform=ios
+```
+
+## Configuration
+
+### Project Config (wonder3d.config.json)
+
+```json
+{
+  "name": "my-project",
+  "engine": "webgl",
+  "template": "react-three-fiber",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "ports": {
+    "dev": 3000,
+    "preview": 4173
+  },
+  "environment": {
+    "NODE_ENV": "development"
+  },
+  "deploy": {
+    "platform": "wonderspace",
+    "domain": "",
+    "region": "us-east-1"
+  }
+}
+```
+
+### Global Config
+
+```bash
+# Set default engine
+wonder3d config set engine webgl
+
+# Set default region
+wonder3d config set region eu-west-1
+
+# View all config
+wonder3d config list
+```
+
+## Workspace Commands
+
+### Initialize Workspace
+
+```bash
+# Create monorepo workspace
+wonder3d workspace init my-workspace
+
+# Add project to workspace
+wonder3d workspace add <project-id>
+
+# List workspace projects
+wonder3d workspace list
+```
+
+### Share Workspace
+
+```bash
+# Generate share link
+wonder3d workspace share <workspace-id>
+
+# Revoke access
+wonder3d workspace revoke <workspace-id> <user-email>
+```
+
+## Utility Commands
+
+### Doctor (Diagnostics)
+
+```bash
+# Check system requirements
+wonder3d doctor
+
+# Fix common issues
+wonder3d doctor --fix
+```
+
+### Logs
+
+```bash
+# View project logs
+wonder3d logs <project-id>
+
+# Follow logs
+wonder3d logs <project-id> --follow
+
+# Filter logs
+wonder3d logs <project-id> --level=error
+```
+
+### Update CLI
+
+```bash
+# Check for updates
+wonder3d update
+
+# Update to latest
+wonder3d update --latest
+```
+
+## Web Dashboard Integration
+
+All CLI commands sync with the web dashboard at `/dashboard/projects`:
+
+- Projects created via CLI appear in dashboard
+- Dashboard changes reflect in CLI
+- Shared authentication state
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WONDER3D_API_URL` | API endpoint | `https://api.ai-wonderland.app` |
+| `WONDER3D_TOKEN` | Auth token | From `auth login` |
+| `WONDER3D_CONFIG_DIR` | Config directory | `~/.wonder3d` |
+| `DEBUG` | Enable debug logs | `false` |
+
+## Examples
+
+### Quick Start: WebGL Game
+
+```bash
+wonder3d create webgl space-shooter --template=react-three-fiber
+cd space-shooter
+wonder3d dev
+```
+
+### Quick Start: PlayCanvas FPS
+
+```bash
+wonder3d create playcanvas my-fps --template=fps
+wonder3d open my-fps
+```
+
+### CI/CD Pipeline
+
+```yaml
+# .github/workflows/deploy.yml
+- name: Deploy to WonderSpace
+  run: |
+    wonder3d auth login --token ${{ secrets.WONDER_TOKEN }}
+    wonder3d build my-game
+    wonder3d deploy my-game --domain=mygame.ai-wonderland.app
+```
+
+## Troubleshooting
+
+### "Command not found"
+```bash
+# Add to PATH
+export PATH=$PATH:$(npm bin -g)
+# Or reinstall
+npm install -g @ai-wonderland/3d-cli
+```
+
+### "Port already in use"
+```bash
+wonder3d dev my-project --port=3001
+# Or kill existing process
+lsof -ti:3000 | xargs kill -9
+```
+
+### "WebGPU not supported"
+Use `--target=webgl2` or choose `webgl` engine instead of `custom`.
+
+### "Authentication expired"
+```bash
+wonder3d auth logout
+wonder3d auth login
+```
+
+## API Reference
+
+The CLI uses these REST endpoints:
+
+- `POST /api/3d-cli/create` - Create project
+- `GET /api/3d-cli/list` - List projects
+- `GET /api/3d-cli/status/:id` - Project status
+- `POST /api/3d-cli/deploy` - Deploy project
+- `DELETE /api/3d-cli/:id` - Delete project
+- `GET /api/3d-cli/logs/:id` - Project logs
+
+All endpoints require `Authorization: Bearer <token>` header.
