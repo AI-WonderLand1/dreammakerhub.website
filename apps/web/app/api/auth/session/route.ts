@@ -12,10 +12,13 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ success: true, session: null, user: null });
     }
 
+    const adminUserIds = ['952c9513-a0ee-438f-b45a-676f3a049706'];
+    const isAdmin = adminUserIds.includes(session.user.id);
+
     return NextResponse.json({
       success: true,
-      session: { access_token: session.access_token, user: { ...session.user, isAdmin: session.user.id === 'admin_123' } },
-      user: { ...session.user, isAdmin: session.user.id === 'admin_123' },
+      session: { access_token: session.access_token, user: { ...session.user, isAdmin } },
+      user: { ...session.user, isAdmin },
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: 'Unexpected error', session: null, user: null }, { status: 500 });
