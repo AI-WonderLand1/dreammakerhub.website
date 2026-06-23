@@ -1,0 +1,104 @@
+---
+title: "API Reference"
+description: "Explore the available API endpoints, request schemas, and authentication methods."
+---
+
+# API Reference
+
+REST endpoints for projects, Playground runs, publishing, and snapshots. Auth via Bearer tokens.
+
+## Authentication
+
+All API requests require a Bearer token:
+
+```bash
+curl -X GET https://ai-wonderland.app/api/projects \
+  -H "Authorization: Bearer <your-token>"
+```
+
+Get your token from the dashboard or via Supabase Auth.
+
+---
+
+## Projects
+
+### List Projects
+
+```bash
+GET /api/projects
+```
+
+**Response:**
+```json
+{
+  "projects": [
+    { "id": "1", "name": "My Project", "created_at": "2024-01-01" }
+  ]
+}
+```
+
+### Create Project
+
+```bash
+POST /api/projects
+Content-Type: application/json
+
+{
+  "name": "My Project"
+}
+```
+
+---
+
+## Playground
+
+### Run Module
+
+```bash
+POST /api/playground/run
+Content-Type: application/json
+
+{
+  "moduleId": "chat",
+  "mode": "test",
+  "prompt": "Summarize today's updates"
+}
+```
+
+**Modules:** `chat`, `code`, `agent`, `data`, `vision`
+
+---
+
+## Publishing
+
+### Publish Project
+
+```bash
+POST /api/projects/{projectId}/publish
+```
+
+---
+
+## Snapshots
+
+### Restore Snapshot
+
+```bash
+POST /api/projects/{projectId}/snapshots/restore
+```
+
+---
+
+## Error Format
+
+```json
+{
+  "error": "Error message",
+  "code": "ERROR_CODE"
+}
+```
+
+## Rate Limits
+
+- 100 requests/minute for authenticated users
+- 10 requests/minute for unauthenticated

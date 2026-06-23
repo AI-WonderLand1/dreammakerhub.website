@@ -1,0 +1,67 @@
+---
+title: "FAQ"
+description: "Frequently asked questions and troubleshooting guide."
+---
+
+# FAQ
+
+## Product
+
+### How do I start a Playground session?
+Open `/playground`, pick a module (chat, code, agent, data, vision), and type your prompt. Advanced parameters stay tucked away until you toggle them on.
+
+### Can I undo changes applied to a project?
+Yes. Each apply action captures a snapshot. Use the project actions drawer in Playground or the dashboard to restore.
+
+### Which models are supported?
+Claude Sonnet 4 powers chat, code, agent, and vision-planning modules today. We add models behind feature flags before general release.
+
+### How does Wonder-Build work?
+Describe what you want in natural language. AI agents architect, build, review, and run the code. Output appears in the IDE—copy, download, or save to runners.
+
+## Billing
+
+### How does billing work?
+**Personal** includes Playground, Wonder-Build, and publishing limits suitable for small teams. **Enterprise** unlocks unlimited modules, extensions, and domain controls.
+
+### Can I cancel anytime?
+Yes. Cancel from the dashboard. Access continues until the period ends.
+
+### Do you offer refunds?
+Request within 7 days via support. Enterprise contracts have custom terms.
+
+## Security
+
+### Do you store my prompts and outputs?
+We retain prompts and outputs only for session continuity and debugging. Request deletion via support; enterprise tenants can disable retention.
+
+### How do I report a security issue?
+Email `security@ai-wonderland.com` with details and reproduction steps. We respond within one business day.
+
+### Is my data encrypted?
+Yes. TLS 1.3 in transit, AES-256 at rest. Supabase handles auth and database encryption.
+
+## Deployment
+
+### Where can I deploy?
+- **WonderSpace** - Native hosting with custom domains
+- **Vercel/Netlify** - One-click deploy from dashboard
+- **Docker** - Export container image
+- **Self-hosted** - Enterprise only
+
+### Custom domains?
+Personal: 1 domain. Enterprise: unlimited with SSL auto-provisioning.
+
+## Troubleshooting
+
+### Build fails with "Module not found"
+Ensure all dependencies are in `package.json`. Run `npm install` in the runner.
+
+### PlayCanvas scene won't load
+Check WebGL support. Try Chrome/Edge. Verify scene ID is correct.
+
+### Auth redirects to wrong URL
+Set `NEXT_PUBLIC_SITE_URL` in `.env`. Match Supabase redirect URLs.
+
+### Rate limited?
+Personal: 100 req/min. Enterprise: custom limits. Upgrade or batch requests.
