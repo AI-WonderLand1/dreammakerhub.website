@@ -6,8 +6,9 @@ import { runAIPipeline } from '@core/ai/pipeline-v1/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
 import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { storeConfessionToMem0, isMem0Enabled, searchMemories as searchMem0Memories, storeMemory as storeMem0Memory } from '@lib/ai/mem0Client';
+import { storeConfessionToMem0, isMem0Enabled } from '@lib/ai/mem0Client';
 import { getConfessionConfig } from '@lib/ai/confessionConfig';
+import { searchMemories, storeMemory } from '@lib/ai/mem0Service';
 
 export const runtime = "nodejs";
 
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
     // ── Retrieve relevant past memories ──
     let memoryContext = "";
     try {
-      const pastMemories = await searchMem0Memories(prompt, paidUser.userId, 5);
+      const pastMemories = await searchMemories(prompt, paidUser.userId, 5);
       if (pastMemories.length > 0) {
         memoryContext = "\n\nRELEVANT PAST MEMORIES:\n" +
           pastMemories.map((m, i) => `${i + 1}. ${m.text}`).join("\n");
@@ -180,7 +181,7 @@ export async function POST(req: NextRequest) {
     if (config.enableMem0) {
       try {
         // Store conversation as memory via mem0ai SDK
-        await storeMem0Memory(
+        await storeMemory(
           [
             { role: "user", content: prompt },
             { role: "assistant", content: pipelineResult.finalText },
