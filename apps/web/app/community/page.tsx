@@ -27,6 +27,42 @@ export default function CommunityPage() {
           </p>
         </header>
 
+        {/* ——— Welcome to Ai-wonderland innovation ——— */}
+        <section id="welcome" className="mt-10 rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold text-sky-200">Welcome to Ai-wonderland innovation</h2>
+          <p className="mt-2 text-slate-300">
+            You are joining a community of AI builders, designers, and dreamers. We believe in calm,
+            production‑grade AI – tools that augment rather than overwhelm.
+          </p>
+        </section>
+
+        {/* ——— New to wonderland ——— */}
+        <section id="new" className="mt-10 rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold text-sky-200">New to wonderland</h2>
+          <p className="mt-2 text-slate-300">
+            First time here? Start with the quick‑start guide, introduce yourself in the #welcome channel,
+            and pick a starter template to begin building.
+          </p>
+        </section>
+
+        {/* ——— Programming Help ——— */}
+        <section id="help" className="mt-10 rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold text-sky-200">Programming Help</h2>
+          <p className="mt-2 text-slate-300">
+            Stuck on something? Ask in the forum, check the docs, or pair with a community mentor during
+            office hours.
+          </p>
+        </section>
+
+        {/* ——— Education & Skilling ——— */}
+        <section id="education" className="mt-10 rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold text-sky-200">Education &amp; Skilling</h2>
+          <p className="mt-2 text-slate-300">
+            Browse tutorials, workshops, and certification tracks. See <a href="/docs#wonder-education" className="text-sky-200 underline">Wonder Education</a> for full courses
+            or <a href="/docs#wonder-learn" className="text-sky-200 underline">Wonder Learn</a> for quick tutorials.
+          </p>
+        </section>
+
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           {channels.map((channel) => (
             <a
@@ -73,12 +109,12 @@ export default function CommunityPage() {
           <div className="flex items-center gap-3">
             <Sparkles className="h-5 w-5 text-sky-300" />
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Share what you’re building</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Share what you&rsquo;re building</p>
               <h2 className="text-xl font-semibold text-slate-50">Bring your work to show-and-tell</h2>
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-300">
-            Have a pattern to share? Drop a note in the forum or tag a post in the release notes thread—we highlight
+            Have a pattern to share? Drop a note in the forum or tag a post in the release notes thread&mdash;we highlight
             standout builds every month.
           </p>
         </section>
