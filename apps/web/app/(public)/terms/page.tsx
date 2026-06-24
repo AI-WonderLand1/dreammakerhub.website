@@ -1,3 +1,5 @@
+export default function TermsPage() {
+  return (
 <div className="max-w-4xl mx-auto p-6">
   <div className="text-center mb-8">
     <h1 className="text-3xl font-bold">Terms of Use</h1>
@@ -158,3 +160,5 @@
     </div>
   </div>
 </div>
+  );
+}
