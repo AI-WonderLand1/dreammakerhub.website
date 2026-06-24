@@ -18,8 +18,8 @@ export default function PagesHub() {
     },
     {
       name: "Playground",
-      href: "/playground",
-      description: "Test and experiment with AI models",
+      href: "https://playground.dreammakerhub.website",
+      description: "AI Module Playground — train, create, and test",
       color: "red"
     },
     {

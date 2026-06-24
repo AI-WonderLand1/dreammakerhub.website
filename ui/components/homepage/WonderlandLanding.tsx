@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 const signLinks = [
-  { id: "playground", label: "AI Playground", top: "37%", left: "23%", path: "/playground" },
+  { id: "playground", label: "AI Playground", top: "37%", left: "23%", path: "https://playground.dreammakerhub.website" },
   { id: "dashboard", label: "IDE Dashboard", top: "69%", left: "26%", path: "/dashboard" },
   { id: "rabbit-hole", label: "ANYTHING BUILDER", top: "79%", left: "23%", path: "/wonderspace" },
   { id: "somewhere", label: "About Wonderland", top: "89%", left: "25%", path: "/about" },

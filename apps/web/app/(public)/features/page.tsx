@@ -3,7 +3,7 @@
 const features = [
   {
     title: "AI Playground",
-    description: "Run tests and demos anytime. Applying changes and exports are included with your subscription.",
+    description: "Train, create, and test AI modules at playground.dreammakerhub.website.",
     included: "Personal",
   },
   {
