@@ -145,7 +145,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {isOwner && (
                 <>
                   <Link
-                    href={`/wonder-build/playcanvas?sceneId=${project.id}`}
+                    href={`/wonder-build/playcanvas/editor/${project.id}`}
                     className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
                     Open in Editor
@@ -157,7 +157,7 @@ export default async function ProjectPage({ params }: PageProps) {
               )}
               {!isOwner && isPublic && (
                 <Link
-                  href={`/wonder-build/playcanvas?sceneId=${project.id}`}
+                  href={`/wonder-build/playcanvas/editor/${project.id}`}
                   className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
                   Fork Project
@@ -254,7 +254,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   </div>
                   <p className="text-gray-500 text-sm">Click "Open in Editor" to view 3D scene</p>
                   <Link
-                    href={`/wonder-build/playcanvas?sceneId=${project.id}`}
+                    href={`/wonder-build/playcanvas/editor/${project.id}`}
                     className="inline-block mt-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Launch 3D Viewer

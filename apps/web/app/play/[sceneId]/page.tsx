@@ -344,7 +344,7 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
               onChange={handleFileImport}
             />
             <Link
-              href={`/wonder-build/playcanvas?scene=${params.sceneId}`}
+              href={`/wonder-build/playcanvas/editor/${params.sceneId}`}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition"
             >
               ✏️ Open in Editor

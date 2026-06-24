@@ -64,7 +64,7 @@ export default function LibraryPage() {
   };
 
   const getScenePreviewUrl = (sceneId: string) => {
-    return `/wonder-build/playcanvas?sceneId=${sceneId}`;
+    return `/wonder-build/playcanvas/editor/${sceneId}`;
   };
 
   const getCategoryColor = (category: string) => {
@@ -94,7 +94,7 @@ export default function LibraryPage() {
           
           <div className="flex items-center gap-4">
             <Link
-              href="/wonder-build/playcanvas?sceneId=blank_canvas"
+              href="/wonder-build/playcanvas/editor/blank_canvas"
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform"
             >
               🎨 Start 3D Editor
@@ -208,7 +208,7 @@ export default function LibraryPage() {
             <h3 className="text-xl font-semibold mb-2">No scenes yet</h3>
             <p className="text-white/60 mb-6">Be the first to create a scene!</p>
             <Link
-              href="/wonder-build/playcanvas?sceneId=blank_canvas"
+              href="/wonder-build/playcanvas/editor/blank_canvas"
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform"
             >
               🎨 Start 3D Editor
