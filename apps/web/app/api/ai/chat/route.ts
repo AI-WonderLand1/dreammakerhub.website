@@ -6,7 +6,7 @@ import { runAIPipeline } from '@core/ai/pipeline-v1/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
 import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { storeConfessionToMem0, isMem0Enabled } from '@lib/ai/mem0Client';
+import { storeConfessionToMem0, isMem0Enabled, searchMemories as searchMem0Memories, storeMemory as storeMem0Memory } from '@lib/ai/mem0Client';
 import { getConfessionConfig } from '@lib/ai/confessionConfig';
 
 export const runtime = "nodejs";
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     const persona = getPersonaPrompt(personaId);
     const lawPrompt = buildLawPrompt();
 
-    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}`;
+    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}${memoryContext}`;
 
     const systemInstructions: string[] = [
       "AI LAWS (HIGHEST PRIORITY - ALWAYS FOLLOW):",
@@ -136,6 +136,18 @@ export async function POST(req: NextRequest) {
     const useLLMExtraction = config.mode === "paid" && config.enableMem0;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
+
+    // ── Retrieve relevant past memories ──
+    let memoryContext = "";
+    try {
+      const pastMemories = await searchMem0Memories(prompt, paidUser.userId, 5);
+      if (pastMemories.length > 0) {
+        memoryContext = "\n\nRELEVANT PAST MEMORIES:\n" +
+          pastMemories.map((m, i) => `${i + 1}. ${m.text}`).join("\n");
+      }
+    } catch {
+      // mem0 not configured – skip
+    }
 
     const pipelineResult = await runAIPipeline({
       operationId: traceId,
@@ -167,6 +179,17 @@ export async function POST(req: NextRequest) {
     let mem0Store: { ok: boolean; stored?: number; error?: string } = { ok: false };
     if (config.enableMem0) {
       try {
+        // Store conversation as memory via mem0ai SDK
+        await storeMem0Memory(
+          [
+            { role: "user", content: prompt },
+            { role: "assistant", content: pipelineResult.finalText },
+          ],
+          paidUser.userId,
+          { traceId, projectId: project.id, persona: persona.id }
+        );
+
+        // Also store confessions if any
         let stored = 0;
         for (const confession of pipelineResult.confessions) {
           const storedConfession = {
