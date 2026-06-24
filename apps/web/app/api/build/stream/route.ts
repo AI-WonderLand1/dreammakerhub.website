@@ -84,7 +84,7 @@ Start your output with <!DOCTYPE html>`;
 
 async function callAI(system: string, userPrompt: string, isPaid?: boolean): Promise<string> {
    const result = await runModel({
-     model: isPaid ? "groq/llama-3.3-70b-versatile" : "groq/llama-3.1-8b-instant",
+      model: isPaid ? "openrouter/meta-llama/llama-3.3-70b-instruct" : "openrouter/google/gemini-flash-1.5",
      messages: [{ role: "user", content: userPrompt }],
      system,
      temperature: 0.8,

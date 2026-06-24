@@ -164,9 +164,9 @@ export async function runModel({
     });
   }
 
-  // Default: GROQ provider for fast inference
-  return Providers.groq.generate(lastContent, {
-    model: model || "llama-3.1-8b-instant",
+  // Default: OpenRouter provider (supports many free models)
+  return Providers.openrouter.generate(lastContent, {
+    model: model || "google/gemini-flash-1.5",
     system,
     temperature,
     maxTokens,

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     `;
 
     const result = await runModel({
-      model: "groq/llama-3.3-70b-versatile",
+      model: "openrouter/meta-llama/llama-3.3-70b-instruct",
       messages: [{ role: "user", content: `${prompt}${image ? `\n\nImage reference: ${image}` : ''}` }],
       system: systemPrompt,
       temperature: 0.7,

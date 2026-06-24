@@ -59,9 +59,9 @@ function detectHumanLanguage(prompt: string): string {
 }
 
 const AGENTS = {
-  "builder-default": { id: "groq/llama-3.3-70b-versatile", provider: "groq" },
-  "github-fast": { id: "groq/llama-3.1-8b-instant", provider: "groq" },
-  "github-powerful": { id: "groq/llama-3.3-70b-versatile", provider: "groq" },
+  "builder-default": { id: "openrouter/meta-llama/llama-3.3-70b-instruct", provider: "openrouter" },
+  "github-fast": { id: "openrouter/google/gemini-flash-1.5", provider: "openrouter" },
+  "github-powerful": { id: "openrouter/meta-llama/llama-3.3-70b-instruct", provider: "openrouter" },
   "google-vision": { id: "google/gemini-2.5-flash", provider: "google" },
   "openrouter-general": { id: "google/gemini-flash-1.5", provider: "openrouter" },
 };
@@ -89,14 +89,6 @@ export async function POST(req: NextRequest) {
     if (!agent) {
       return NextResponse.json(
         { ok: false, error: { code: "AGENT_NOT_FOUND", message: "Agent not available" }, traceId },
-        { status: 403 }
-      );
-    }
-
-    const plan = planForRequest(req);
-    if (plan === "free" && agent.provider === "openrouter") {
-      return NextResponse.json(
-        { ok: false, error: { code: "PLAN_RESTRICTED", message: "Upgrade required for this agent" }, traceId },
         { status: 403 }
       );
     }

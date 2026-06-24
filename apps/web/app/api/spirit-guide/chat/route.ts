@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     let userApiKey: string | undefined;
-    let model = "groq/llama-3.1-8b-instant";
+    let model = "openrouter/google/gemini-flash-1.5";
 
     if (user) {
       const { data: config } = await supabase

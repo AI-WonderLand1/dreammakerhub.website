@@ -96,7 +96,7 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
     // Fallback to Groq
     try {
       const result = await runModel({
-        model: 'groq/llama-3.3-70b-versatile',
+        model: 'openrouter/meta-llama/llama-3.3-70b-instruct',
         messages: [
           { role: 'user', content: `${systemPrompt}\n\n${prompt}` }
         ],
@@ -125,8 +125,8 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
 export async function POST(req: Request) {
   const { prompt, mode } = await req.json();
 
- // Provider header – default "groq"
- const providerHeader = req.headers.get("x-ai-provider")?.toLowerCase() || "groq";
+ // Provider header – default "openrouter"
+ const providerHeader = req.headers.get("x-ai-provider")?.toLowerCase() || "openrouter";
 
 
    if (mode === 'classify') {
@@ -136,10 +136,10 @@ export async function POST(req: Request) {
     const providerMap: Record<string, string> = {
       openai: "openai/gpt-4o-mini",
       gemini: "google/gemini-2.5-flash",
-      groq: "groq/llama-3.1-8b-instant",
+      openrouter: "openrouter/google/gemini-flash-1.5",
       github: "github/gpt-4o-mini"
     };
-    const modelStr = providerMap[providerHeader] || providerMap["groq"];
+    const modelStr = providerMap[providerHeader] || providerMap["openrouter"];
     
     // Use user key if provided, otherwise fallback to system
     const result = await runModel({ 

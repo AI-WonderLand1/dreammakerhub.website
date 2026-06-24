@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 async function callAI(system: string, userPrompt: string): Promise<string> {
   const result = await runModel({
-    model: "groq/llama-3.3-70b-versatile",
+    model: "openrouter/meta-llama/llama-3.3-70b-instruct",
     messages: [{ role: "user", content: userPrompt }],
     system,
   });
