@@ -21,6 +21,18 @@ export const groqProvider: AIProvider = {
 
     if (!apiKey) {
       const fallback = await openrouterProvider.generate(prompt, options);
+      if (fallback.error) {
+        return {
+          text: "No AI provider is configured. Set GROQ_API_KEY or OPENROUTER_API_KEY in your environment, or configure a provider in Settings.",
+          error: true,
+          provider: "groq",
+          confessions: {
+            confidence: 0,
+            reasoning: ["Missing API key", "OpenRouter fallback also failed"],
+            limitations: ["Configure GROQ_API_KEY or OPENROUTER_API_KEY in environment"]
+          }
+        };
+      }
       return {
         text: fallback.text || "Falling back to OpenRouter",
         ...fallback,
@@ -62,7 +74,7 @@ export const groqProvider: AIProvider = {
       if (data.error) {
         const errorMessage = data.error.message || "Unknown error";
         return {
-          text: "The Spirit Guide encountered an error with GROQ API.",
+          text: `AI service error: ${errorMessage}`,
           error: true,
           provider: "groq",
           model,

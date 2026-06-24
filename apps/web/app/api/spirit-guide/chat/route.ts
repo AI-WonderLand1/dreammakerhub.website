@@ -66,6 +66,20 @@ export async function POST(req: NextRequest) {
       baseUrl: config?.base_url || undefined,
     });
 
+    if (result.error) {
+      const detail = result.confessions?.limitations?.[0];
+      console.error("[Spirit Guide] AI provider error:", {
+        provider: result.provider,
+        model: result.model,
+        detail,
+      });
+      return NextResponse.json({
+        response: result.text || "The Spirit Guide is unavailable right now.",
+        error: true,
+        detail,
+      });
+    }
+
     const response = result.text || "I sense great creativity in you. What would you like to build?";
     const createKeywords = ["create", "make", "build", "generate", "design", "3d", "scene", "game", "world"];
     const isCreateRequest = createKeywords.some(kw => message.toLowerCase().includes(kw));
