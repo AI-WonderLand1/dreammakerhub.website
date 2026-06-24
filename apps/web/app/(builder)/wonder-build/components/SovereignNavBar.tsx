@@ -5,7 +5,13 @@ import { usePathname } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
 
 const NAV_LINKS = [
-   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { href: '/wonder-build', label: 'Hub', icon: '🏠' },
+  { href: '/wonder-build/agent', label: 'AI Builder', icon: '🤖' },
+  { href: '/wonder-build/preview', label: 'Preview', icon: '👁️' },
+  { href: '/wonder-build/sandbox', label: 'Sandbox', icon: '📄' },
+  { href: '/wonder-build/puck', label: 'Puck', icon: '🎨' },
+  { href: '/wonder-build/playcanvas', label: '3D', icon: '🎮' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
 ] as const;
 
 export function SovereignNavBar() {
@@ -24,7 +30,7 @@ export function SovereignNavBar() {
 
       <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1 md:flex">
         {NAV_LINKS.map((link) => {
-          const isActive = pathname === link.href;
+          const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
           return (
             <Link
               key={link.href}
