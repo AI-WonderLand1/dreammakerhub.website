@@ -19,7 +19,8 @@
     "brace-expansion": ">=2.0.1",
     "@prisma/dev": {
       "@hono/node-server": ">=1.19.13"
-    }
+    },
+    "@mediapipe/tasks-vision": ">=0.10.35"
   },
   "scripts": {
     "dev": "npm run dev --workspace=ai-wonder-web",
