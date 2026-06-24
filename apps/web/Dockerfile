@@ -13,7 +13,7 @@ COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install
+RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
 
 # Copy the whole repo and build
 COPY . .
