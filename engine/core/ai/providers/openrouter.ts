@@ -21,13 +21,13 @@ export const openrouterProvider: AIProvider = {
 
 if (!apiKey) {
       return {
-        text: "No API key configured for AI providers. Please set GROQ_API_KEY or OPENROUTER_API_KEY in your environment.",
+        text: "No API key configured. Get a free key at https://openrouter.ai/keys and set OPENROUTER_API_KEY in your environment.",
         error: true,
         provider: "openrouter",
         confessions: {
           confidence: 0,
           reasoning: ["Missing API key"],
-          limitations: ["Set GROQ_API_KEY or OPENROUTER_API_KEY in environment"]
+          limitations: ["Get a free key at https://openrouter.ai/keys"]
         }
       };
     }

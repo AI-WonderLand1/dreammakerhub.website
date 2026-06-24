@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await runModel({
-      model: "groq/llama-3.1-8b-instant",
+      model: "openrouter/google/gemini-flash-1.5",
       messages: [{ role: "user", content: message }]
     })
     return NextResponse.json({ text: result.text || "" })
