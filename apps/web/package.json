@@ -58,7 +58,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "colyseus.js": "^0.16.22",
-    "framer": "^3.0.4",
     "groq-sdk": "^1.1.2",
     "http-proxy": "^1.18.1",
     "jsdom": "^29.1.1",
