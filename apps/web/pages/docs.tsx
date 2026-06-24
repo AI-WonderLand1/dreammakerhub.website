@@ -1,4 +1,4 @@
-import Sidebar from "../../ui/components/docs/Sidebar";
+import Sidebar from "@ui/components/docs/Sidebar";
 
 export default function DocsPage() {
   return (
