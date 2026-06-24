@@ -11,7 +11,7 @@ const navigationGroups = [
     label: "Platform",
     items: [
       { name: "Dashboard", href: "/dashboard" },
-      { name: "Playground", href: "/playground" },
+      { name: "Playground", href: "https://playground.dreammakerhub.website" },
       { name: "WonderSpace", href: "/wonderspace" },
       { name: "Wonder Build", href: "/wonder-build" },
     ],

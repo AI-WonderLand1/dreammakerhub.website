@@ -30,7 +30,7 @@ export default function Navbar() {
       items: [
         // { name: "WonderSpace IDE", href: "/wonderspace", icon: "💻" }, // TODO: Re-enable when IDE is ready
         { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
-        { name: "Wonder Playground", href: "/playground", icon: "🎮" },
+        { name: "Playground", href: "https://playground.dreammakerhub.website", icon: "🎮" },
         { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
       ]
     },

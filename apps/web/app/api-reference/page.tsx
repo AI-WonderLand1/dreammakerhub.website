@@ -32,20 +32,6 @@ const endpoints: Endpoint[] = [
   },
   {
     method: "POST",
-    path: "/api/playground/run",
-    group: "Playground",
-    description: "Execute a Playground module (chat, code, agent, data, vision).",
-    example: `curl -X POST https://ai-wonderland.app/api/playground/run \\
-  -H "Authorization: Bearer <token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "moduleId": "chat",
-    "mode": "test",
-    "prompt": "Summarize today's updates"
-  }'`,
-  },
-  {
-    method: "POST",
     path: "/api/projects/{projectId}/publish",
     group: "Publish",
     description: "Publish the latest build artifacts for a project.",
@@ -92,7 +78,7 @@ export default function ApiReferencePage() {
               Build on AI Wonderland
             </h1>
             <p className="mt-3 max-w-2xl text-slate-300">
-              REST endpoints for projects, Playground runs, publishing, and snapshots. Auth via Bearer tokens.
+              REST endpoints for projects, publishing, and snapshots. Auth via Bearer tokens.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100">
