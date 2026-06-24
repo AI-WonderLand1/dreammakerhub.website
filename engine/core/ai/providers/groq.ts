@@ -2,6 +2,18 @@ import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
 import { openrouterProvider } from "./openrouter";
 
+const GROQ_FREE_TIER_MAX_INPUT_TOKENS = 5000;
+const TOKEN_ESTIMATE_RATIO = 0.25;
+
+function truncatePrompt(prompt: string | unknown[], maxTokens: number): string | unknown[] {
+  const text = Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt);
+  const estimatedTokens = Math.ceil(text.length * TOKEN_ESTIMATE_RATIO);
+  if (estimatedTokens <= maxTokens) return prompt;
+  const maxChars = Math.floor(maxTokens / TOKEN_ESTIMATE_RATIO);
+  const truncated = text.slice(0, maxChars);
+  return truncated + "\n\n[Message truncated due to length]";
+}
+
 /**
  * GROQ AI Provider
  * Uses GROQ API for fast inference with various models.
@@ -45,6 +57,12 @@ export const groqProvider: AIProvider = {
     }
 
     try {
+      const systemTokens = system ? Math.ceil(system.length * TOKEN_ESTIMATE_RATIO) : 0;
+      const inputBudget = GROQ_FREE_TIER_MAX_INPUT_TOKENS - systemTokens - maxTokens;
+      const safePrompt = inputBudget > 0
+        ? truncatePrompt(prompt, inputBudget)
+        : prompt;
+
       const messages: Array<{ role: string; content: string | unknown[]}> = [];
       if (system) {
         messages.push({ role: "system", content: system });
@@ -52,7 +70,7 @@ export const groqProvider: AIProvider = {
 
       messages.push({
         role: "user",
-        content: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt)
+        content: Array.isArray(safePrompt) ? JSON.stringify(safePrompt) : String(safePrompt)
       });
 
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
