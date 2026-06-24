@@ -1,4 +1,66 @@
 import { supabaseRouteClient } from "../supabase/route";
+import { MemoryClient } from "mem0ai";
+
+// ── New: real mem0ai SDK ──────────────────────────────────────────
+
+const MEM0_API_KEY = process.env.MEM0AI_API_KEY || "";
+
+let mem0Client: MemoryClient | null = null;
+
+function getMem0Client(): MemoryClient {
+  if (!mem0Client) {
+    if (!MEM0_API_KEY) throw new Error("MEM0AI_API_KEY not set");
+    mem0Client = new MemoryClient({ apiKey: MEM0_API_KEY });
+  }
+  return mem0Client;
+}
+
+export async function storeMemory(
+  messages: { role: string; content: string }[],
+  userId: string,
+  metadata?: Record<string, unknown>
+): Promise<boolean> {
+  try {
+    await getMem0Client().add(messages, { user_id: userId, metadata });
+    return true;
+  } catch (error) {
+    console.error("[Mem0AI] storeMemory failed:", error);
+    return false;
+  }
+}
+
+export async function searchMemories(
+  query: string,
+  userId: string,
+  limit: number = 5
+): Promise<{ id?: string; text: string; score?: number }[]> {
+  try {
+    const results = await getMem0Client().search(query, {
+      filters: { user_id: userId },
+      limit,
+    });
+    return (results as any[]).map((r) => ({
+      id: r.id,
+      text: r.text || r.content || "",
+      score: r.score,
+    }));
+  } catch (error) {
+    console.error("[Mem0AI] searchMemories failed:", error);
+    return [];
+  }
+}
+
+export async function deleteUserMemories(userId: string): Promise<boolean> {
+  try {
+    await getMem0Client().deleteAll({ user_id: userId });
+    return true;
+  } catch (error) {
+    console.error("[Mem0AI] deleteUserMemories failed:", error);
+    return false;
+  }
+}
+
+// ── Old: Supabase-based "mem0" (kept for backwards compat) ────────
 
 export function isMem0Enabled(): boolean {
   return Boolean(
@@ -31,7 +93,6 @@ export async function storeConfessionToMem0(
 ): Promise<boolean> {
   try {
     const supabase = supabaseRouteClient();
-    
     const bucket = CONFESSIONS_BUCKET;
     const date = new Date().toISOString().slice(0, 10);
     const path = `users/${confession.userId}/projects/${confession.projectId}/${date}/${confession.traceId}.json`;
@@ -61,25 +122,21 @@ export async function storeConfessionToMem0(
 
     if (error) {
       console.log("[Mem0] Storage upload failed, trying to create bucket:", error.message);
-      
       await supabase.storage.createBucket(bucket, {
         public: false,
         fileSizeLimit: 5242880,
       });
-
       const { error: retryError } = await supabase.storage
         .from(bucket)
         .upload(path, JSON.stringify(record), {
           contentType: "application/json",
           upsert: true,
         });
-
       if (retryError) {
         console.error("[Mem0] Failed to store confession:", retryError);
         return false;
       }
     }
-
     return true;
   } catch (error) {
     console.error("[Mem0] Failed to store confession:", error);
@@ -95,32 +152,25 @@ export async function searchMem0Confessions(
   try {
     const supabase = supabaseRouteClient();
     const bucket = CONFESSIONS_BUCKET;
-
     const { data: files, error } = await supabase.storage
       .from(bucket)
       .list(`users/${userId}/`, { limit });
-
     if (error || !files) {
       console.log("[Mem0] No confessions found:", error?.message);
       return [];
     }
-
     const confessions: StoredConfession[] = [];
     const queryLower = query.toLowerCase();
-
     for (const file of files) {
       if (confessions.length >= limit) break;
-
       const { data } = await supabase.storage
         .from(bucket)
         .download(`users/${userId}/${file.name}`);
-
       if (data) {
         const text = await data.text();
         try {
           const record = JSON.parse(text);
           const searchText = `${record.title} ${record.truth} ${record.what} ${record.why} ${record.how}`.toLowerCase();
-          
           if (searchText.includes(queryLower)) {
             confessions.push({
               userId: record.user_id,
@@ -143,7 +193,6 @@ export async function searchMem0Confessions(
         }
       }
     }
-
     return confessions;
   } catch (error) {
     console.error("[Mem0] Failed to search confessions:", error);
@@ -159,29 +208,22 @@ export async function getUserConfessions(
   try {
     const supabase = supabaseRouteClient();
     const bucket = CONFESSIONS_BUCKET;
-
     const prefix = projectId
       ? `users/${userId}/projects/${projectId}/`
       : `users/${userId}/`;
-
     const { data: files, error } = await supabase.storage
       .from(bucket)
       .list(prefix, { limit: limit * 10 });
-
     if (error || !files) {
       console.log("[Mem0] No confessions found:", error?.message);
       return [];
     }
-
     const confessions: StoredConfession[] = [];
-
     for (const file of files) {
       if (confessions.length >= limit) break;
-
       const { data } = await supabase.storage
         .from(bucket)
         .download(`${prefix}${file.name}`);
-
       if (data) {
         const text = await data.text();
         try {
@@ -206,8 +248,7 @@ export async function getUserConfessions(
         }
       }
     }
-
-    return confessions.sort((a, b) => 
+    return confessions.sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   } catch (error) {
