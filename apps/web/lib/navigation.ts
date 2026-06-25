@@ -47,6 +47,13 @@ export const PAGES: PageConfig[] = [
 
   // Play & Preview
   {
+    path: '/playground',
+    label: 'Playground',
+    icon: '🎮',
+    category: 'tools',
+    description: 'AI Module Playground - train, create, and test AI modules',
+  },
+  {
     path: '/play',
     label: 'Play',
     icon: '▶️',
