@@ -34,7 +34,7 @@ const pathAliases = {
 
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: null,
+  turbopack: {},
 
   ...(!isDev && normalizedProxyBasePath
     ? {
