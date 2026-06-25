@@ -47,6 +47,8 @@ resource "coder_app" "code_server" {
   subdomain = false
   share = "owner"
   healthcheck {
-    url = "http://localhost:13337/healthz"
+    url       = "http://localhost:13337/healthz"
+    interval  = 3
+    threshold = 10
   }
 }
