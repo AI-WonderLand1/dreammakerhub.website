@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsage } from "@core/playground/usage";
-import { useAuth } from "@lib/supabase/auth-context";
-import { logger } from "@lib/logger";
+import { getUsage } from "@/lib/playground/usage";
+import { useAuth } from "@/lib/supabase/auth-context";
+import { logger } from "@/lib/logger";
 
 export default function UsageBadge() {
   const { user } = useAuth();

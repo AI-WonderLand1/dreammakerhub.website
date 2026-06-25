@@ -3,9 +3,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import { useAuth } from "@lib/supabase/auth-context";
-import { PLANS } from "@lib/billing/plans";
+import { useAuth } from "@/lib/supabase/auth-context";
 
+import { PLANS } from "@/lib/billing/plans";
 type Plan = {
   id: "free" | "pro" | "team" | "enterprise";
   name: string;
