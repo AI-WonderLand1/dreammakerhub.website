@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getSupabaseClient } from '@lib/supabase/client'
-import { logger } from '@lib/logger'
+import { getSupabaseClient } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export default function LoginForm() {
   const supabase = getSupabaseClient()

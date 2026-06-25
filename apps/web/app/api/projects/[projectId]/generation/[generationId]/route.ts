@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/app/utils/supabase/server';
-import { getSmokeUserIdFromRequest } from '@lib/smokeAuth';
-import { readFile, writeFile } from '@lib/projects/storage';
+import { getSmokeUserIdFromRequest } from '@/lib/smokeAuth';
+import { readFile, writeFile } from '@/lib/projects/storage';
 
 type WorkerId = 'A' | 'B' | 'C' | 'D';
 type GenerationStatus = 'running' | 'complete' | 'failed';

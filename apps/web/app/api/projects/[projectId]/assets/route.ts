@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { createClient } from "@/app/utils/supabase/server";
-import { getSmokeUserIdFromRequest } from "@lib/smokeAuth";
+import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 
 const DATA_ROOT = path.join(process.cwd(), ".data", "projects");
 const ALLOWED_MIME = new Set([

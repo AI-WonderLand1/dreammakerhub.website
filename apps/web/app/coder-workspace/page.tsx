@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@lib/supabase/auth-context';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 export default function CoderWorkspacePage() {
   const { user, subscription } = useAuth();

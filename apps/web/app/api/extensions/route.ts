@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { env, requireEnv } from '@lib/env'
+import { env, requireEnv } from '@/lib/env'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { ensureDefaultProject } from '@lib/projects/storage';
+import { ensureDefaultProject } from '@/lib/projects/storage';
 import { runAIPipeline } from '@core/ai/pipeline-v1/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
-import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
+import { writeAiMemoryEntry } from '@/lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { storeConfessionToMem0, isMem0Enabled } from '@lib/ai/mem0Client';
-import { getConfessionConfig } from '@lib/ai/confessionConfig';
-import { searchMemories, storeMemory } from '@lib/ai/mem0Service';
+import { storeConfessionToMem0, isMem0Enabled } from '@/lib/ai/mem0Client';
+import { getConfessionConfig } from '@/lib/ai/confessionConfig';
+import { searchMemories, storeMemory } from '@/lib/ai/mem0Service';
 
 export const runtime = "nodejs";
 

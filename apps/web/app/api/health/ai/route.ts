@@ -1,4 +1,4 @@
-import { requireEnv } from '@lib/env';
+import { requireEnv } from '@/lib/env';
 
 export const runtime = "nodejs";
 

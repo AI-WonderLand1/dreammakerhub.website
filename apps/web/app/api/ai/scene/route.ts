@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { SceneFile } from "@/lib/scene/schema"
 import { requirePaidAIUser } from '@/app/api/ai/auth'
-import { uploadAiAssetEntry } from '@lib/ai/assetStore'
-import { generate3DSceneDraft } from '@lib/ai/threeDGenerator'
+import { uploadAiAssetEntry } from '@/lib/ai/assetStore'
+import { generate3DSceneDraft } from '@/lib/ai/threeDGenerator'
 
 export const runtime = 'nodejs'
 

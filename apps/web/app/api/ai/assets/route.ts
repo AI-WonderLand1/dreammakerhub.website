@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePaidAIUser } from '@/app/api/ai/auth'
-import { uploadAiAssetEntry } from '@lib/ai/assetStore'
+import { uploadAiAssetEntry } from '@/lib/ai/assetStore'
 
 export const runtime = 'nodejs'
 

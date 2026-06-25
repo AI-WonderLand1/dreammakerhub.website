@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import dynamic from 'next/dynamic'
-import { useAuth } from '@lib/supabase/auth-context'
+import { useAuth } from '@/lib/supabase/auth-context'
 
 const WorkspaceEditor3D = dynamic(() => import('@/components/workspace/WorkspaceEditor3D'), { ssr: false })
 

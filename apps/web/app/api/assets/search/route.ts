@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchExternalAssets, downloadAssetToStorage } from "@/lib/ai/assetLibrary";
-import { createSupabaseServerClient } from "@lib/supabase/server-client";
+import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 
 export const runtime = "nodejs";
 
