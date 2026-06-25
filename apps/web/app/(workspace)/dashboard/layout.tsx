@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@lib/supabase/auth-context";
+import { useAuth } from "@/lib/supabase/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import AetherGuardDialog from "@/components/AetherGuardDialog";
 import { 

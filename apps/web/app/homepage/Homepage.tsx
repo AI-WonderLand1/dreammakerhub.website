@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { useAuth } from "@lib/supabase/auth-context";
+import { useAuth } from "@/lib/supabase/auth-context";
 import signMap from "./homepage-sign-map.json";
 import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-cards";
 import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";

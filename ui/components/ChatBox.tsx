@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { logger } from "@lib/logger";
+import { logger } from "@/lib/logger";
 
 export default function ChatBox() {
   const [input, setInput] = useState("");
