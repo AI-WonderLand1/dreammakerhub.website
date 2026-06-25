@@ -1,4 +1,4 @@
-import { runModel } from "@core/ai/runModel"
+import { runModel } from "@/core/ai/runModel"
 import { NextResponse } from "next/server"
 
 export const runtime = "nodejs";

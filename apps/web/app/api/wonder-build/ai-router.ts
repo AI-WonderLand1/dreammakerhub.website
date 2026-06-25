@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { runModel } from '@core/ai/runModel';
-import { buildClassificationPrompt } from '@core/ai/promptBuilder';
+import { runModel } from '@/core/ai/runModel';
+import { buildClassificationPrompt } from '@/core/ai/promptBuilder';
 
 const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;

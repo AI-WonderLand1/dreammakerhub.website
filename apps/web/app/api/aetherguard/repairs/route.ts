@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { runEslintFix, runPrettier } from '@core/aetherguard/repairs';
-import { updateDependencies, fixDepIssues } from '@core/aetherguard/repairs';
+import { runEslintFix, runPrettier } from '@/core/aetherguard/repairs';
+import { updateDependencies, fixDepIssues } from '@/core/aetherguard/repairs';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));

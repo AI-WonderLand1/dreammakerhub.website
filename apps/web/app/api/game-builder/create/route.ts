@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runModel } from "@core/ai/runModel";
+import { runModel } from "@/core/ai/runModel";
 
 export const dynamic = 'force-dynamic';
 export const runtime = "nodejs";

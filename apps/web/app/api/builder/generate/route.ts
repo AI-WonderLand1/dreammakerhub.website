@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { runModel } from "@core/ai/runModel";
+import { runModel } from "@/core/ai/runModel";
 
 export async function POST(req: Request) {
   try {

@@ -5,7 +5,7 @@ import {
   planRegistryAssets,
   type AssetPlan,
   type RegistryDocument,
-} from "@runners/registry.worker";
+} from "@/runners/registry.worker";
 
 export type AssetSyncResult = AssetPlan & {
   status: "ready" | "missing";

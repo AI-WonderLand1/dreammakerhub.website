@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { opencodeProvider } from "@core/ai/providers/opencode";
+import { opencodeProvider } from "@/core/ai/providers/opencode";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 
 export const runtime = "nodejs";

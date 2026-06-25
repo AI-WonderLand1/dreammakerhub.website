@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { manifestVisualBlock } from "@core/ai/bridge";
+import { manifestVisualBlock } from "@/core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
-import { runModel } from "@core/ai/runModel";
+import { runModel } from "@/core/ai/runModel";
 
 export const runtime = "nodejs";
 
