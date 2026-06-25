@@ -206,14 +206,14 @@ export default function Homepage() {
       {/* ─── HERO — Full-bleed image with overlaid content ─────────────────── */}
       <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
         {/* Full-bleed background image */}
-        <Image
-          src="/images/wonderland-theme.webp"
-          alt="AI Wonderland hero scene"
-          fill
-          priority
-          className="object-cover object-left"
-          sizes="100vw"
-        />
+<Image
+           src="/images/wonderland-theme.webp"
+           alt="WonderPlay Landing Page - A whimsical wonderland forest scene with a wooden signpost pointing toward different paths"
+           fill
+           priority
+           className="object-cover object-left"
+           sizes="100vw"
+         />
 
         {/* Gradient overlays */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/80" />
