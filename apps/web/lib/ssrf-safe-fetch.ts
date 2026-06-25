@@ -120,7 +120,7 @@ async function validateUrl(url: string, options: SsrfFetchOptions): Promise<stri
     }
   }
 
-  return url
+  return parsed.toString()
 }
 
 async function validateRedirect(response: Response, options: SsrfFetchOptions): Promise<Response> {
@@ -132,8 +132,8 @@ async function validateRedirect(response: Response, options: SsrfFetchOptions): 
     return response
   }
   const resolvedUrl = new URL(location, response.url).toString()
-  await validateUrl(resolvedUrl, options)
-  const redirectResponse = await fetch(resolvedUrl, { ...options, redirect: 'manual' })
+  const validatedRedirectUrl = await validateUrl(resolvedUrl, options)
+  const redirectResponse = await fetch(validatedRedirectUrl, { ...options, redirect: 'manual' })
   return validateRedirect(redirectResponse, options)
 }
 
