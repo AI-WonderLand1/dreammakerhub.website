@@ -66,6 +66,7 @@ export default function Navbar() {
     { name: "Projects", href: "/dashboard/projects" },
     { name: "Subscription", href: "/subscription" },
     { name: "Settings", href: "/settings" },
+    { name: "AI Playground", href: "https://playground.dreammakerhub.website" },
   ];
 
   const toggleMenu = (title: string) => {
