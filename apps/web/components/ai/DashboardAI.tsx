@@ -72,6 +72,13 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
       href: '/subscription',
       icon: '🚀',
       requiresPro: false // Show for free users
+    },
+    {
+      id: 'playground',
+      label: 'AI Playground',
+      description: 'Visit the AI Playground',
+      href: 'https://playground.dreammakerhub.website',
+      icon: '🎮'
     }
   ];
 
