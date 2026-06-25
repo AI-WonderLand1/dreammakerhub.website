@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { checkEslint } from '@core/aetherguard/checks/eslint';
-import { checkTypeScript } from '@core/aetherguard/checks/typecheck';
-import { checkDeps } from '@core/aetherguard/checks/deps';
-import { checkDeadCode } from '@core/aetherguard/checks/deadcode';
+import { checkEslint } from '@/core/aetherguard/checks/eslint';
+import { checkTypeScript } from '@/core/aetherguard/checks/typecheck';
+import { checkDeps } from '@/core/aetherguard/checks/deps';
+import { checkDeadCode } from '@/core/aetherguard/checks/deadcode';
 
 export async function GET() {
   const cwd = process.cwd();

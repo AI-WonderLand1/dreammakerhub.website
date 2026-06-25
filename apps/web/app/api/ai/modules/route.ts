@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { publicAiModules } from "@core/ai/modules/registry";
+import { publicAiModules } from "@/core/ai/modules/registry";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
 
 export const runtime = "nodejs";

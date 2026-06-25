@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runModel } from "@core/ai/runModel";
+import { runModel } from "@/core/ai/runModel";
 import { supabaseRouteClient } from "@/lib/supabase/route";
 import { decryptSecret } from "@/lib/crypto/secrets";
 

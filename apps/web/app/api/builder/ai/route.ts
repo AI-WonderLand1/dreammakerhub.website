@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { appendAIConfession } from "@core/projects/aiConfessions";
+import { appendAIConfession } from "@/core/projects/aiConfessions";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

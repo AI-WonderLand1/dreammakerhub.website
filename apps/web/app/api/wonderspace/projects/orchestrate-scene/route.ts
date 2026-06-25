@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { orchestrateScenePipeline } from '@infra/services/jobs/orchestrateScenePipeline'
+import { orchestrateScenePipeline } from '@/infra/services/jobs/orchestrateScenePipeline'
 
 export const runtime = 'nodejs'
 

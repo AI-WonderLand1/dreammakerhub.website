@@ -1,4 +1,4 @@
-import { storageProvider } from "@infra/services/storage/provider";
+import { storageProvider } from "@/infra/services/storage/provider";
 import {
   artifactMetadataPath,
   artifactMetadataPrefix,

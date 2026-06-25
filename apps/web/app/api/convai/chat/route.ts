@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { groqProvider } from '@core/ai/providers/groq';
-import { openrouterProvider } from '@core/ai/providers/openrouter';
+import { groqProvider } from '@/core/ai/providers/groq';
+import { openrouterProvider } from '@/core/ai/providers/openrouter';
 
 interface NpcRequest {
   sessionId: string;
