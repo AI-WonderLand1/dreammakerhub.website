@@ -53,6 +53,12 @@
       "@types/*": [
         "../../types/*"
       ],
+      "@ai-modules/*": [
+        "./ai-modules/*"
+      ],
+      "@styles/*": [
+        "./styles/*"
+      ],
       "@/utils/*": [
         "./app/utils/*",
         "./utils/*"

@@ -34,6 +34,12 @@ COPY --from=builder /app/apps/web/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/templates ./templates
+# Copy engine, infra, runners, ui, types for monorepo imports
+COPY --from=builder /app/engine ./engine
+COPY --from=builder /app/infra ./infra
+COPY --from=builder /app/runners ./runners
+COPY --from=builder /app/ui ./ui
+COPY --from=builder /app/types ./types
 
 EXPOSE 5000
 ENV PATH="/app/node_modules/.bin:$PATH"
