@@ -10,6 +10,26 @@ interface ProcessRequest {
   fileName?: string;
 }
 
+function sanitizeUserProvidedHttpsUrl(rawUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new SsrfError("Invalid URL");
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new SsrfError("Only HTTPS URLs are allowed");
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new SsrfError("URL must not include credentials");
+  }
+
+  parsed.hash = "";
+  return parsed.toString();
+}
+
 const ALLOWED_ASSET_HOSTS = [
   "playcanvas.com",
   "cdn.playcanvas.com",
@@ -55,7 +75,8 @@ export async function POST(req: NextRequest) {
     let glbBuffer: ArrayBuffer;
 
     if (assetUrl) {
-      const response = await ssrfFetch(assetUrl, { allowedHosts: ALLOWED_ASSET_HOSTS });
+      const sanitizedAssetUrl = sanitizeUserProvidedHttpsUrl(assetUrl);
+      const response = await ssrfFetch(sanitizedAssetUrl, { allowedHosts: ALLOWED_ASSET_HOSTS });
       if (!response.ok) {
         if (response.status >= 300 && response.status < 400) {
           return NextResponse.json(
