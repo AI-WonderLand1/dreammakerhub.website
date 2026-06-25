@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20.20-alpine AS builder
 WORKDIR /app
 
 # Copy all workspace package files for proper npm ci resolution
