@@ -104,7 +104,7 @@ function buildSafeFetchInit(options: SsrfFetchOptions): RequestInit {
   return init
 }
 
-async function validateUrl(url: string, options: SsrfFetchOptions): Promise<URL> {
+async function validateUrl(url: string, options: SsrfFetchOptions): Promise<string> {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -153,7 +153,7 @@ async function validateUrl(url: string, options: SsrfFetchOptions): Promise<URL>
     throw new SsrfError('URL resolves to a disallowed network address')
   }
 
-  return parsed
+  return parsed.toString()
 }
 
 async function validateRedirect(
