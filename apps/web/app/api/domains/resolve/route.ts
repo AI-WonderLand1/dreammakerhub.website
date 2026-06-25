@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { logger } from "@/lib/logger";
 
