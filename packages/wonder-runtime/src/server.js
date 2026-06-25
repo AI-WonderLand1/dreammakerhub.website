@@ -125,7 +125,14 @@ function isPathSafe(basePath, requestedPath) {
   return resolvedPath.startsWith(normalizedBase) && !requestedPath.includes('..');
 }
 
-f.get('/editor/*', async (request, reply) => {
+f.get('/editor/*', {
+  config: {
+    rateLimit: {
+      max: 100,
+      timeWindow: '1 minute',
+    },
+  },
+}, async (request, reply) => {
   const filePath = request.url.replace('/editor/', '').split('?')[0];
   
   if (!isPathSafe(WEBGLSTUDIO_PATH, filePath)) {
@@ -147,7 +154,14 @@ f.get('/editor/*', async (request, reply) => {
     .send(readFileSync(fullPath));
 });
 
-f.get('/playcanvas/*', async (request, reply) => {
+f.get('/playcanvas/*', {
+  config: {
+    rateLimit: {
+      max: 100,
+      timeWindow: '1 minute',
+    },
+  },
+}, async (request, reply) => {
   const filePath = request.url.replace('/playcanvas/', '').split('?')[0];
   
   if (!isPathSafe(PLAYCANVAS_PATH, filePath)) {
