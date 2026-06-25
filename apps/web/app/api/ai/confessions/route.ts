@@ -5,8 +5,8 @@ import {
   getUserConfessions,
   searchMem0Confessions,
   isMem0Enabled,
-} from "@lib/ai/mem0Client";
-import { getConfessionConfig } from "@lib/ai/confessionConfig";
+} from "@/lib/ai/mem0Client";
+import { getConfessionConfig } from "@/lib/ai/confessionConfig";
 
 export const runtime = "nodejs";
 

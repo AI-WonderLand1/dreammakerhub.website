@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
-import { useAuth } from '@lib/supabase/auth-context'
+import { useAuth } from '@/lib/supabase/auth-context'
 
 type WorkspaceInfo = {
   id: string
