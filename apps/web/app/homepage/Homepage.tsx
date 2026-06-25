@@ -308,16 +308,16 @@ export default function Homepage() {
                 </div>
               </Link>
               
-              {/* Spirit Guide Button */}
-              <button className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative"
-                onClick={openSpiritGuide}
-              >
-                🔮 Spirit Guide
-                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56">
-                  <strong>AI Assistant</strong><br/>
-                  Ask me anything! I can help you create scenes, fix issues, or explain features.
-                </div>
-              </button>
+{/* Spirit Guide Button */}
+               <a 
+                 href="https://playground.dreammakerhub.website"
+                 className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative"
+               >
+                 🎮 Playground
+                 <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56">
+                   AI Module Playground - train, create, and test AI modules
+                 </div>
+               </a>
             </div>
             <p className="text-white/40 text-sm mt-4">
               💡 Hover over buttons to see what they do
