@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import crypto from "crypto";
 import { SceneFile } from "@/lib/scene/schema"
 import { requirePaidAIUser } from '@/app/api/ai/auth'
 import { uploadAiAssetEntry } from '@/lib/ai/assetStore'
