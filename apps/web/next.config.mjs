@@ -8,11 +8,33 @@ const proxyBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH
 const normalizedProxyBasePath =
   proxyBasePath && proxyBasePath !== '/' ? proxyBasePath.replace(/\/+$/, '') : '';
 
+const pathAliases = {
+  '@': __dirname,
+  '@app': join(__dirname, 'app'),
+  '@builder': join(__dirname, 'app/(builder)/wonder-build'),
+  '@/core': join(__dirname, '../../engine/core'),
+  '@core': join(__dirname, '../../engine/core'),
+  '@components': join(__dirname, '../../ui/components'),
+  '@lib': join(__dirname, 'lib'),
+  '@engine': join(__dirname, '../../engine'),
+  '@ui': join(__dirname, '../../ui'),
+  '@infra': join(__dirname, '../../infra'),
+  '@runners': join(__dirname, '../../runners'),
+  '@services': join(__dirname, '../../infra/services'),
+  '@types': join(__dirname, '../../types'),
+  '@ai-modules': join(__dirname, 'ai-modules'),
+  '@/ai-modules': join(__dirname, 'ai-modules'),
+  '@styles': join(__dirname, 'styles'),
+  '@/styles': join(__dirname, 'styles'),
+  '@data': join(__dirname, 'data'),
+  '@/data': join(__dirname, 'data'),
+  '@/utils': [join(__dirname, 'app/utils'), join(__dirname, 'utils')],
+  '@/components': join(__dirname, 'components'),
+};
+
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {
-    root: join(__dirname, '..', '..'),
-  },
+  turbopack: null,
 
   ...(!isDev && normalizedProxyBasePath
     ? {
@@ -82,6 +104,11 @@ const nextConfig = {
         },
       };
     }
+
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      ...pathAliases,
+    };
 
     config.module.rules.push({
       test: /\.(glsl|vs|fs)$/,
