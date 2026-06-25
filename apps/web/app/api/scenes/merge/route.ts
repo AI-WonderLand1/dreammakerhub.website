@@ -22,6 +22,26 @@ interface MergeRequest {
   outputName?: string;
 }
 
+function sanitizeUserProvidedHttpsUrl(rawUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new SsrfError("Invalid URL");
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new SsrfError("Only HTTPS URLs are allowed");
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new SsrfError("URL must not include credentials");
+  }
+
+  parsed.hash = "";
+  return parsed.toString();
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
 
@@ -159,7 +179,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const response = await ssrfFetch(url, { allowedHosts: ALLOWED_ASSET_HOSTS });
+    const sanitizedUrl = sanitizeUserProvidedHttpsUrl(url);
+    const response = await ssrfFetch(sanitizedUrl, { allowedHosts: ALLOWED_ASSET_HOSTS });
     
     if (response.status >= 300 && response.status < 400) {
       return NextResponse.json({
