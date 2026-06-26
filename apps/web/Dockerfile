@@ -8,6 +8,7 @@ COPY packages/ide-engine/package*.json ./packages/ide-engine/
 COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
+COPY ai-modules/* ./apps/web/ai-modules
 
 # Copy prisma schema for postinstall (prisma generate)
 COPY prisma ./prisma
@@ -40,6 +41,7 @@ COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners
 COPY --from=builder /app/ui ./ui
 COPY --from=builder /app/types ./types
+COPY --from=builder /app/ai-modules ./apps/web/ai-modules
 
 EXPOSE 5000
 ENV PATH="/app/node_modules/.bin:$PATH"
