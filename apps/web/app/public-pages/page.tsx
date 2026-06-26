@@ -18,7 +18,7 @@ export default function PagesHub() {
     },
     {
       name: "Playground",
-      href: "https://playground.dreammakerhub.website",
+      href: "/wonder-build",
       description: "AI Module Playground — train, create, and test",
       color: "red"
     },

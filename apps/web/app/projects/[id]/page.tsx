@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 
   return {
-    title: project ? `${project.name} - DreamMakerHub` : 'Project Not Found',
+    title: project ? `${project.name} - AI Wonderland` : 'Project Not Found',
   };
 }
 
@@ -275,7 +275,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 <div>
                   <h3 className="text-xs font-medium text-gray-500 uppercase mb-1">Description</h3>
                   <p className="text-sm text-gray-700">
-                    {project.name} - A 3D project built with DreamMakerHub
+                    {project.name} - A 3D project built with AI Wonderland
                   </p>
                 </div>
 

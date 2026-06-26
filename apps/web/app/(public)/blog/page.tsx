@@ -119,7 +119,7 @@ export default function BlogPage() {
               </div>
               <h2 className="mt-3 text-xl font-semibold text-slate-50">{post.title}</h2>
               <p className="mt-2 text-sm text-slate-300">{post.summary}</p>
-              <div className="mt-3 text-sm text-sky-200">Coming soon: full post</div>
+              <div className="mt-3 text-sm text-sky-200">Read full post →</div>
             </article>
           ))}
           {filtered.length === 0 && (
