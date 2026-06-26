@@ -58,17 +58,17 @@ export default function Custom3DCLInterface() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black">
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">3D CLI Interface</h1>
-          <p className="text-gray-600 mt-2">Create and manage your 3D development environments</p>
+          <h1 className="text-3xl font-bold text-white">WonderBuild 3D CLI</h1>
+          <p className="text-violet-300 mt-2">Create and manage your AI Wonderland 3D development environments</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="rounded-lg border border-white/10 bg-slate-900/70 p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-violet-200 mb-2">
                 Project Name
               </label>
               <input
@@ -76,21 +76,21 @@ export default function Custom3DCLInterface() {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="my-3d-project"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white placeholder:text-slate-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-violet-200 mb-2">
                 Engine Type
               </label>
               <select
                 value={projectType}
                 onChange={(e) => setProjectType(e.target.value as ProjectType)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white"
               >
-                <option value="webgl">WebGL Studio (Default)</option>
-                <option value="playcanvas">PlayCanvas</option>
+                <option value="webgl">WonderPlay 3D (WebGL)</option>
+                <option value="playcanvas">WonderPlay 3D (PlayCanvas)</option>
                 <option value="custom">Custom 3D Runtime</option>
               </select>
             </div>
@@ -98,7 +98,7 @@ export default function Custom3DCLInterface() {
             <button
               onClick={create3DProject}
               disabled={isCreating || !projectName.trim()}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-violet-600 text-white py-3 px-4 rounded-lg hover:bg-violet-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
             >
               {isCreating ? 'Creating 3D Environment...' : `Create ${getTemplateLabel(projectType)} Project`}
             </button>
@@ -135,14 +135,14 @@ export default function Custom3DCLInterface() {
           </div>
         )}
 
-        <div className="mt-8 bg-gray-100 rounded-lg p-6">
-          <h2 className="font-semibold text-lg mb-4">Command Reference</h2>
-          <div className="space-y-3 text-sm text-gray-700">
-            <p><code className="bg-gray-200 px-2 py-1 rounded">create webgl my-project</code> - Create WebGL Studio project</p>
-            <p><code className="bg-gray-200 px-2 py-1 rounded">create playcanvas my-game</code> - Create PlayCanvas project</p>
-            <p><code className="bg-gray-200 px-2 py-1 rounded">create custom my-runtime</code> - Create custom 3D runtime</p>
-            <p><code className="bg-gray-200 px-2 py-1 rounded">list</code> - List all your projects</p>
-            <p><code className="bg-gray-200 px-2 py-1 rounded">status {`{project-id}`}</code> - Check project status</p>
+        <div className="mt-8 rounded-lg border border-white/10 bg-slate-900/50 p-6">
+          <h2 className="font-semibold text-lg mb-4 text-white">Command Reference</h2>
+          <div className="space-y-3 text-sm text-slate-300">
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create webgl my-project</code> - Create WonderPlay 3D (WebGL) project</p>
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create playcanvas my-game</code> - Create WonderPlay 3D (PlayCanvas) project</p>
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create custom my-runtime</code> - Create custom 3D runtime</p>
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">list</code> - List all your projects</p>
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">status {`{project-id}`}</code> - Check project status</p>
           </div>
         </div>
       </div>

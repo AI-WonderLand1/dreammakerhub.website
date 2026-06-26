@@ -70,7 +70,7 @@ export default function CoderWorkspacePage() {
           {hasAccess ? (
             <div>
               <Link 
-                href="https://coder.yourdomain.com" // Replace with your Coder URL
+                href="https://coder.ai-wonderland.app"
                 className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition"
                 target="_blank"
               >

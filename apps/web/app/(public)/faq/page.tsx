@@ -9,7 +9,7 @@ const faqs: Faq[] = [
   {
     question: "How do I access the Playground?",
     answer:
-      "Visit playground.dreammakerhub.website to train, create, and test AI modules.",
+      "Visit the Playground at /wonder-build to train, create, and test AI modules.",
     category: "Product",
   },
   {

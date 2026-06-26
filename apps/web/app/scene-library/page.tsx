@@ -35,8 +35,8 @@ function SceneLibraryInner() {
           <Link href="/" className="text-sm text-white/60 hover:text-white">
             ← Back to Home
           </Link>
-          <h1 className="text-3xl font-bold mt-4">Scene Library</h1>
-          <p className="text-white/60 mt-2">Choose a starting world for your project</p>
+          <h1 className="text-3xl font-bold mt-4">AI Wonderland Scene Library</h1>
+          <p className="text-white/60 mt-2">Choose a starting world for your WonderPlay 3D project</p>
         </div>
 
         {loading ? (
