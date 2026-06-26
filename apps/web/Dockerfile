@@ -40,6 +40,7 @@ ENV NEXT_TURBOPACK=disable
 ENV ALICE_API_KEY=dummy
 ENV SIMPLE_RICK_API_KEY=dummy
 ENV SPIRIT_GUIDE_API_KEY=dummy
+ENV MONGODB_URI=dummy
 RUN npm run build
 
 # Production image
