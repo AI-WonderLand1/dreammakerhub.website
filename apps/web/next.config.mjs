@@ -56,12 +56,6 @@ const pathAliases = {
 
 const nextConfig = {
   reactStrictMode: true,
- turbopack: {
-  resolveAlias: {
-    ...pathAliases,
-    '@utils': join(__dirname, 'app/utils'),   // turbopack needs a single path, not an array fallback
-  },
-},
 
   allowedDevOrigins: [
     '*.replit.dev',
