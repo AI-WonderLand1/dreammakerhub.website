@@ -38,6 +38,8 @@ COPY apps/web ./apps/web
 WORKDIR /app/apps/web
 ENV NEXT_TURBOPACK=disable
 ENV ALICE_API_KEY=dummy
+ENV SIMPLE_RICK_API_KEY=dummy
+ENV SPIRIT_GUIDE_API_KEY=dummy
 RUN npm run build
 
 # Production image
