@@ -26,7 +26,7 @@ const pathAliases = {
     '@runners': join(__dirname, '../../runners'),
     '@services': join(__dirname, '../../infra/services'),
     '@types': join(__dirname, '../../types'),
-    '@/ai-modules/EgyptianVoiceModule': join(__dirname, '../../packages/ide-engine/src/ai/modules/EgyptianVoiceModule'),
+    '@/ai-modules/EgyptianVoiceModule': join(__dirname, 'ai-modules/EgyptianVoiceModule'),
     '@/core/aetherguard/autofix': join(__dirname, '../../infra/aetherguard/autofix'),
     '@/core/aetherguard/checks/deadcode': join(__dirname, '../../infra/aetherguard/checks/deadcode'),
     '@/core/aetherguard/checks/deps': join(__dirname, '../../infra/aetherguard/checks/deps'),
@@ -56,14 +56,12 @@ const pathAliases = {
 
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {},
-
-  ...(!isDev && normalizedProxyBasePath
-    ? {
-        basePath: normalizedProxyBasePath,
-        assetPrefix: normalizedProxyBasePath,
-      }
-    : {}),
+ turbopack: {
+  resolveAlias: {
+    ...pathAliases,
+    '@utils': join(__dirname, 'app/utils'),   // turbopack needs a single path, not an array fallback
+  },
+},
 
   allowedDevOrigins: [
     '*.replit.dev',
