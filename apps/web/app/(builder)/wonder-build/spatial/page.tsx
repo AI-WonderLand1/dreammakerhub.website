@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
 
-const SPATIAL_CLOUD_URL = process.env.NEXT_PUBLIC_SPATIAL_CLOUD_URL || "https://spatial.dreammakerhub.website";
+const SPATIAL_CLOUD_URL = process.env.NEXT_PUBLIC_SPATIAL_CLOUD_URL || "https://spatial.ai-wonderland.app";
 
 export default function SpatialDesignerPage() {
   const { user, loading } = useAuth();

@@ -77,7 +77,7 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
       id: 'playground',
       label: 'AI Playground',
       description: 'Visit the AI Playground',
-      href: 'https://playground.dreammakerhub.website',
+      href: '/wonder-build',
       icon: '🎮'
     }
   ];

@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/supabase/auth-context';
 
 const WonderSpaceIDE = dynamic(() => import('@/components/engines/WonderSpaceIDE'), { ssr: false });
 
-const CODER_ACCESS_URL = process.env.NEXT_PUBLIC_CODER_ACCESS_URL || 'https://coder.dreammakerhub.website';
+const CODER_ACCESS_URL = process.env.NEXT_PUBLIC_CODER_ACCESS_URL || 'https://coder.ai-wonderland.app';
 
 function IDEContent() {
   const searchParams = useSearchParams();
