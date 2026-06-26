@@ -9,12 +9,12 @@ COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 
-# Copy ide-engine source for build
-COPY packages/ide-engine/src ./packages/ide-engine/src/
-
 # Copy prisma files for generation
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+
+# Copy ide-engine source for build
+COPY packages/ide-engine/src ./packages/ide-engine/src/
 
 # Install dependencies (this step is cached if package.json files don't change)
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
