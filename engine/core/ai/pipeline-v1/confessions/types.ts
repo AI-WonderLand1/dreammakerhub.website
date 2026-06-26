@@ -1,4 +1,4 @@
-export type ConfessionType =
+export type ConfessionType = 
   | "UNCERTAINTY"
   | "REJECTED_ACTION"
   | "RISK_FLAG"
@@ -18,8 +18,8 @@ export interface Confession {
   why: string;
   how: string;
   impactLevel: ImpactLevel;
-  relatedStepCode?: string | null;
-  machineTags?: string[];
+  relatedStepCode?: string | null; // Matched to relatedStepCode? in your screenshot
+  machineTags?: string[];          // Matched to machineTags? in your screenshot
 }
 
 export interface LocalizedConfession extends Confession {
