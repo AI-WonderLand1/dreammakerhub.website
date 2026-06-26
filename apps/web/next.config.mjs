@@ -69,6 +69,7 @@ const nextConfig = {
 
   experimental: {
     externalDir: true,
+    turbopack: false, // Explicitly disable Turbopack
   },
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
@@ -128,6 +129,8 @@ const nextConfig = {
       test: /\.(glsl|vs|fs)$/,
       type: 'asset/source',
     });
+
+    config.resolve.pool = false;
 
     return config;
   },
