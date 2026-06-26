@@ -68,11 +68,22 @@ export function AssetManager({ onInsertAsset }: AssetManagerProps) {
   }, [assets]);
 
   const handleAddUrl = useCallback(() => {
-    if (!urlInput.trim()) return;
+    const rawUrl = urlInput.trim();
+    if (!rawUrl) return;
+
+    let safeUrl: string;
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return;
+      safeUrl = parsed.toString();
+    } catch {
+      return;
+    }
+
     const newAsset: Asset = {
       id: `asset-${Date.now()}`,
-      name: urlInput.split("/").pop() || "External Image",
-      url: urlInput.trim(),
+      name: safeUrl.split("/").pop() || "External Image",
+      url: safeUrl,
       type: "url",
       timestamp: Date.now(),
     };
