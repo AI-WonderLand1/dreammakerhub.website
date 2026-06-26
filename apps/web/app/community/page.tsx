@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import {
   Users, MessageSquare, Flame, Filter, Search, PlusCircle,
   ThumbsUp, MessageCircle, Share2, Tag, User, X,
-  Github, Twitter, Youtube
+  GitFork, Play
 } from 'lucide-react';
 
 interface ForumPost {
@@ -295,15 +295,15 @@ export default function CommunityPage() {
                   <span>Discord</span>
                 </a>
                 <a href="https://x.com/aiwonderland" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <Twitter className="w-3.5 h-3.5 text-[#1DA1F2]" />
+                  <Share2 className="w-3.5 h-3.5 text-[#1DA1F2]" />
                   <span>Twitter / X</span>
                 </a>
                 <a href="https://github.com/AI-WonderLand1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <Github className="w-3.5 h-3.5 text-white" />
+                  <GitFork className="w-3.5 h-3.5 text-white" />
                   <span>GitHub</span>
                 </a>
                 <a href="https://youtube.com/@aiwonderland" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <Youtube className="w-3.5 h-3.5 text-[#FF0000]" />
+                  <Play className="w-3.5 h-3.5 text-[#FF0000]" />
                   <span>YouTube</span>
                 </a>
               </div>
