@@ -12,6 +12,10 @@ COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 # Copy ide-engine source for build
 COPY packages/ide-engine/src ./packages/ide-engine/src/
 
+# Copy prisma files for generation
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
 # Install dependencies (this step is cached if package.json files don't change)
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
 
@@ -25,8 +29,6 @@ COPY apps/web/ai-modules ./apps/web/ai-modules
 COPY apps/web/data ./apps/web/data
 COPY apps/web/styles ./apps/web/styles
 COPY apps/web/components ./apps/web/components
-COPY prisma ./prisma
-COPY prisma.config.ts ./
 COPY tsconfig.base.json ./
 COPY apps/web/tsconfig.json ./apps/web/
 COPY apps/web/next.config.mjs ./apps/web/
