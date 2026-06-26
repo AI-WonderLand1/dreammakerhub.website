@@ -9,8 +9,13 @@ COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 
-# Copy monorepo source directories BEFORE npm install
-# This ensures path aliases can resolve during build
+# Copy ide-engine source for build
+COPY packages/ide-engine/src ./packages/ide-engine/src/
+
+# Install dependencies (this step is cached if package.json files don't change)
+RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
+
+# Copy the rest of the source code
 COPY engine ./engine
 COPY infra ./infra
 COPY runners ./runners
@@ -20,19 +25,11 @@ COPY apps/web/ai-modules ./apps/web/ai-modules
 COPY apps/web/data ./apps/web/data
 COPY apps/web/styles ./apps/web/styles
 COPY apps/web/components ./apps/web/components
-
-# Copy prisma schema for postinstall (prisma generate)
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-
-# Copy tsconfig and config files needed for build
 COPY tsconfig.base.json ./
 COPY apps/web/tsconfig.json ./apps/web/
 COPY apps/web/next.config.mjs ./apps/web/
-
-RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
-
-# Copy the rest of the app source
 COPY apps/web ./apps/web
 
 # Build Next.js app
