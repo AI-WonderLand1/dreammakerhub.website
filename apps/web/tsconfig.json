@@ -13,74 +13,38 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./"
-      ],
-      "@app/*": [
-        "./app/*"
-      ],
-      "@builder/*": [
-        "./app/(builder)/wonder-build/*"
-      ],
-      "@core/*": [
-        "../../engine/core/*"
-      ],
-      "@components/*": [
-        "../../ui/components/*"
-      ],
-      "@lib/*": [
-        "./lib/*"
-      ],
-      "@lib": [
-        "./lib"
-      ],
-      "@engine/*": [
-        "../../engine/*"
-      ],
-      "@ui/*": [
-        "../../ui/*"
-      ],
-      "@infra/*": [
-        "../../infra/*"
-      ],
-      "@runners/*": [
-        "../../runners/*"
-      ],
-      "@services/*": [
-        "../../infra/services/*"
-      ],
-      "@types/*": [
-        "../../types/*"
-      ],
-      "@ai-modules/*": [
-        "./ai-modules/*"
-      ],
-      "@styles/*": [
-        "./styles/*"
-      ],
-      "@/utils/*": [
-        "./app/utils/*",
-        "./utils/*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ]
+"paths": {
+      "@/*": ["./"],
+      "@app/*": ["./app/*"],
+      "@builder/*": ["./app/(builder)/wonder-build/*"],
+      "@core/*": ["../../engine/core/*"],
+      "@components/*": ["../../ui/components/*"],
+      "@lib/*": ["./lib/*"],
+      "@lib": ["./lib"],
+      "@engine/*": ["../../engine/*"],
+      "@ui/*": ["../../ui/*"],
+      "@infra/*": ["../../infra/*"],
+      "@runners/*": ["../../runners/*"],
+      "@services/*": ["../../infra/services/*"],
+      "@types/*": ["../../types/*"],
+      "@ai-modules/*": ["./ai-modules/*"],
+      "@styles/*": ["./styles/*"],
+      "@/utils/*": ["./app/utils/*", "./utils/*"],
+      "@/components/*": ["./components/*"],
+      "@/core/*": ["../../engine/core/*"],
+      "@/infra/*": ["../../infra/*"],
+      "@/runners/*": ["../../runners/*"],
+      "@/types/*": ["../../types/*"],
+      "@/ai-modules/*": ["./ai-modules/*"],
+      "@/styles/*": ["./styles/*"],
+      "@/data/*": ["./data/*"]
     },
     "skipLibCheck": true,
     "incremental": true,
-    "types": [
-      "next"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "types": ["next"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "plugins": [
-      {
-        "name": "next"
-      }
+      { "name": "next" }
     ],
     "forceConsistentCasingInFileNames": true,
     "ignoreDeprecations": "6.0"
