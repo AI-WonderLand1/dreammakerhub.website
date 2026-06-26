@@ -1,7 +1,6 @@
 'use client';
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -13,6 +12,7 @@ import InteractiveSignpost from "./InteractiveSignpost";
 import AIChat from "./AIChat";
 import ShowcaseSection from "./ShowcaseSection";
 import AIDiagram from "./AIDiagram";
+import Link from "next/link";
 
 // Spirit Guide helper function
 const openSpiritGuide = () => {
