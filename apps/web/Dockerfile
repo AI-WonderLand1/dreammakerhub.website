@@ -37,6 +37,7 @@ COPY apps/web ./apps/web
 
 # Build Next.js app
 WORKDIR /app/apps/web
+ENV NEXT_TURBOPACK=disable
 RUN npm run build
 
 # Production image
