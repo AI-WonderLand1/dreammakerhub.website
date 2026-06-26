@@ -10,6 +10,13 @@ COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 COPY apps/web/ai-modules ./apps/web/ai-modules
 
+# Copy monorepo source directories required for @/* path aliases
+COPY engine ./engine
+COPY infra ./infra
+COPY runners ./runners
+COPY ui ./ui
+COPY types ./types
+
 # Copy prisma schema for postinstall (prisma generate)
 COPY prisma ./prisma
 COPY prisma.config.ts ./
