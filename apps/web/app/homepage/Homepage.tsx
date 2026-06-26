@@ -45,7 +45,7 @@ const PLANS = [
     price: "$0",
     period: "/forever",
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
+    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "ai-wonderland.app subdomain"],
     cta: "Start Wandering, It's Free",
     href: "/public-pages/auth",
     highlight: false,
@@ -310,12 +310,12 @@ export default function Homepage() {
               
 {/* Spirit Guide Button */}
                <a 
-                 href="https://playground.dreammakerhub.website"
-                 className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative"
-               >
-                 🎮 Playground
+href="/wonder-build"
+                  className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative"
+                >
+                  🎮 WonderBuild
                  <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56">
-                   AI Module Playground - train, create, and test AI modules
+                   Build anything with AI — websites, 3D games, and interactive experiences
                  </div>
                </a>
             </div>

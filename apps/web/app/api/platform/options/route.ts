@@ -17,7 +17,7 @@ export async function GET() {
     ai: [
       option("ai-builder", "AI Builder", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/ai-builder"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
-      option("playground", "Playground", "Train, create, and test AI modules.", "https://playground.dreammakerhub.website", "beta"),
+      option("playground", "Playground", "Train, create, and test AI modules.", "/wonder-build", "beta"),
     ],
     agents: [
       option("dashboard-agents", "Dashboard Agents", "Configure and compare agent patterns for product tasks.", "/dashboard/agents"),

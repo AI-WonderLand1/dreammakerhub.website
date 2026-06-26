@@ -22,7 +22,7 @@ export const BUILDER_LINKS: BuilderDockLink[] = [
   },
   {
     label: "Playground",
-    href: "https://playground.dreammakerhub.website",
+    href: "/wonder-build",
     icon: Terminal,
     description: "AI Module Playground — train, create, and test",
   },

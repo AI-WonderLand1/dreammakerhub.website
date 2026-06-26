@@ -28,7 +28,7 @@ const DEFAULT_PLAYCANVAS_PROJECT: FileSystemTree = {
     directory: {
       'authorized_keys': {
         file: {
-          contents: '# Auto-generated authorized_keys\n# DreamMakerHub SSH keys injected here',
+          contents: '# Auto-generated authorized_keys\n# AI Wonderland SSH keys injected here',
         },
       },
     },
@@ -176,7 +176,7 @@ app.listen(PORT, '0.0.0.0', () => {
           contents: `<!DOCTYPE html>
 <html>
 <head>
-  <title>DreamMakerHub Studio</title>
+  <title>WonderPlay 3D Studio</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d0d14; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
@@ -246,11 +246,11 @@ app.listen(PORT, '0.0.0.0', () => {
 <body>
   <div class="loading-overlay" id="loading">
     <div class="spinner"></div>
-    <div style="color: #00d9ff; font-size: 14px;">Starting DreamMakerHub Studio...</div>
+    <div style="color: #00d9ff; font-size: 14px;">Starting WonderPlay 3D Studio...</div>
   </div>
   
   <div class="toolbar">
-    <span style="color: #00d9ff; font-weight: bold; margin-right: 16px;">DreamMakerHub</span>
+    <span style="color: #00d9ff; font-weight: bold; margin-right: 16px;">WonderPlay 3D</span>
     <button class="toolbar-btn active" data-panel="scene">Scene</button>
     <button class="toolbar-btn" data-panel="objects">Objects</button>
     <button class="toolbar-btn" data-panel="properties">Properties</button>

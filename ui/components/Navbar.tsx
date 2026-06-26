@@ -30,7 +30,7 @@ export default function Navbar() {
       items: [
         // { name: "WonderSpace IDE", href: "/wonderspace", icon: "💻" }, // TODO: Re-enable when IDE is ready
         { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
-        { name: "Playground", href: "https://playground.dreammakerhub.website", icon: "🎮" },
+        { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
         { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
       ]
     },
@@ -66,7 +66,7 @@ export default function Navbar() {
     { name: "Projects", href: "/dashboard/projects" },
     { name: "Subscription", href: "/subscription" },
     { name: "Settings", href: "/settings" },
-    { name: "AI Playground", href: "https://playground.dreammakerhub.website" },
+    { name: "WonderBuild", href: "/wonder-build" },
   ];
 
   const toggleMenu = (title: string) => {

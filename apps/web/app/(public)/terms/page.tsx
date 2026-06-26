@@ -9,7 +9,7 @@ export default function TermsPage() {
   <div className="prose lg:prose-xl space-y-6">
     <div>
       <p>
-        We are AI-Wonderland Innovation ("Company," "we," "us," "our"). We operate dreammakerhub.website and any other related products and services that refer or link to these legal terms (the "Legal Terms").
+        We are AI-Wonderland Innovation ("Company," "we," "us," "our"). We operate ai-wonderland.app and any other related products and services that refer or link to these legal terms (the "Legal Terms").
       </p>
       <p>
         You can contact us by email at <a href="mailto:aiwonderland@zohomail.com">aiwonderland@zohomail.com</a> or by mail to:
