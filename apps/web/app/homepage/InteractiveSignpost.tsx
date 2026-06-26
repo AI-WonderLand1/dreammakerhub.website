@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { useState } from 'react';
 
@@ -140,19 +141,19 @@ export default function InteractiveSignpost({ iframeLabel, heroMode = false }: I
       <div className="absolute inset-0" aria-label={iframeLabel}>
 <div className="pointer-events-none absolute inset-0 z-10 md:z-20">
         {SIGNS.map((sign, i) => (
-          <button
+<Link
             key={sign.href}
+            href={sign.href}
             onClick={() => {
               setHoveredIndex(i);
               window.location.href = sign.href;
             }}
-            aria-label={`${sign.text} \u2013 ${sign.destination}`}
-            tabIndex="0"
+            aria-label={`${sign.text} – ${sign.destination}`}
             className="transition duration-200 hover:bg-[${sign.color}50] text-[${sign.color}] font-semibold rounded-full w-full h-full"
             style={{ top: sign.top, left: sign.left, width: sign.width, height: sign.height, zIndex: 20, clipPath: 'polygon(8% 0%, 100% 0%, 100% 100%, 8% 100%, 0% 50%)' }}
           >
             {sign.destination}
-          </button>
+          </Link>
         ))}
       </div>
         <p className="pointer-events-none absolute bottom-24 left-1/2 z-20 -translate-x-1/2 rounded-full border border-white/10 bg-black/50 px-4 py-1.5 text-xs text-white/50 backdrop-blur-md">

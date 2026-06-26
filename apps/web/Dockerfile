@@ -41,6 +41,7 @@ ENV ALICE_API_KEY=dummy
 ENV SIMPLE_RICK_API_KEY=dummy
 ENV SPIRIT_GUIDE_API_KEY=dummy
 ENV MONGODB_URI=dummy
+ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 RUN npm run build
 
 # Production image

@@ -69,7 +69,7 @@ const nextConfig = {
 
   experimental: {
     externalDir: true,
-    turbopack: false, // Explicitly disable Turbopack
+    turbopack: false,
   },
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
