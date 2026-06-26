@@ -8,7 +8,7 @@ COPY packages/ide-engine/package*.json ./packages/ide-engine/
 COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
-COPY ai-modules/* ./apps/web/ai-modules
+COPY apps/web/ai-modules ./apps/web/ai-modules
 
 # Copy prisma schema for postinstall (prisma generate)
 COPY prisma ./prisma
