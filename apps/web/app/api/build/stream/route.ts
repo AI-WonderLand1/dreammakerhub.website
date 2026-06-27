@@ -146,6 +146,12 @@ function getReviewerSystem(type: string): string {
   }
 }
 
+function checkAbort(signal: AbortSignal): void {
+  if (signal.aborted) {
+    throw new Error('Build aborted by user');
+  }
+}
+
 export async function POST(req: NextRequest) {
   // Validate input
   let body: z.infer<typeof BuildRequestSchema>;
