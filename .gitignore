@@ -1,4 +1,3 @@
 
-# Ignore large binaries
 bin/coder
 node_modules
