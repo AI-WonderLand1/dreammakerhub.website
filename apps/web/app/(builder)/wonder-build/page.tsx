@@ -61,7 +61,7 @@ export default function WonderBuildHub() {
             <Link
               key={t.href}
               href={t.href}
-              className="group rounded-xl border border-white/10 bg-white/[0.02] p-5 transition-all hover:border-violet-500/40 hover:bg-violet-500/5"
+              className="group rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-violet-500/40 hover:bg-violet-500/10"
             >
               <span className="text-2xl">{t.icon}</span>
               <p className="mt-2 text-sm font-semibold text-white/80 group-hover:text-white">{t.title}</p>
