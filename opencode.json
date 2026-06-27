@@ -1,0 +1,41 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-6",
+  "small_model": "anthropic/claude-haiku-4-5",
+  "default_agent": "build",
+  "instructions": ["AGENTS.md"],
+
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+
+  "agent": {
+    "coder-integration": {
+      "description": "Wires DreamMakerHub UI to the Coder API on Civo Kubernetes.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6",
+      "permission": { "edit": "ask", "bash": "ask" }
+    }
+  },
+
+  "permission": {
+    "edit": "ask",
+    "bash": {
+      "git *": "allow",
+      "kubectl get *": "allow",
+      "kubectl *": "ask",
+      "rm *": "deny",
+      "*": "ask"
+    },
+    "external_directory": {
+      "~/secrets/**": "deny",
+      "*": "allow"
+    }
+  },
+
+  "formatter": false,
+  "lsp": false,
+
+  "tool_output": { "max_lines": 200, "max_bytes": 8192 },
+  "compaction": { "auto": true, "tail_turns": 15 }
+}
