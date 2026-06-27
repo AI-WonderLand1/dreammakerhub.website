@@ -3,11 +3,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const isDev = process.env.NODE_ENV === 'development';
-const proxyBasePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
-const normalizedProxyBasePath =
-  proxyBasePath && proxyBasePath !== '/' ? proxyBasePath.replace(/\/+$/, '') : '';
-
 const pathAliases = {
     '@': __dirname,
     '@app': join(__dirname, 'app'),
@@ -57,6 +52,31 @@ const pathAliases = {
 const nextConfig = {
   reactStrictMode: true,
 
+  async redirects() {
+    return [
+      {
+        source: '/wonder-build/preview',
+        destination: '/wonder-build/studio',
+        permanent: true,
+      },
+      {
+        source: '/wonder-build/ai-builder',
+        destination: '/wonder-build/studio',
+        permanent: true,
+      },
+      {
+        source: '/wonder-build/agent',
+        destination: '/wonder-build/studio',
+        permanent: true,
+      },
+      {
+        source: '/wonder-build/puck',
+        destination: '/wonder-build/studio',
+        permanent: true,
+      },
+    ];
+  },
+
   allowedDevOrigins: [
     '*.replit.dev',
     '*.kirk.replit.dev',
@@ -69,7 +89,6 @@ const nextConfig = {
 
   experimental: {
     externalDir: true,
-    turbopack: false,
   },
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
@@ -129,8 +148,6 @@ const nextConfig = {
       test: /\.(glsl|vs|fs)$/,
       type: 'asset/source',
     });
-
-    config.resolve.pool = false;
 
     return config;
   },

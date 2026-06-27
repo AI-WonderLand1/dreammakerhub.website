@@ -43,6 +43,9 @@ interface PuckEditorClientProps {
   projectId?: string;
   readOnly?: boolean;
   showAIPanel?: boolean;
+  viewMode?: "visual" | "preview" | "code";
+  onDataChange?: (data: InitialData) => void;
+  onModeChange?: (mode: "visual" | "preview" | "code") => void;
 }
 
 function generateHTMLExport(data: InitialData): string {
@@ -99,6 +102,8 @@ export function PuckEditorClient({
   projectId,
   readOnly = false,
   showAIPanel = true,
+  viewMode,
+  onDataChange,
 }: PuckEditorClientProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -114,10 +119,21 @@ export function PuckEditorClient({
   const [assetSearch, setAssetSearch] = useState("");
   const [assetSearching, setAssetSearching] = useState(false);
   const [importingAsset, setImportingAsset] = useState<string | null>(null);
-  const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">("visual");
+  const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">(viewMode || "visual");
   const [editorTheme, setEditorTheme] = useState<"dark" | "framer">("dark");
   const [storageInfo, setStorageInfo] = useState<{ type: string; hoursRemaining?: number; expiresAt?: string }>({ type: "platform" });
   const searchParams = useSearchParams();
+
+  const updateData = useCallback((updater: InitialData | ((prev: InitialData | null) => InitialData)) => {
+    setData((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (next) {
+        onDataChange?.(next);
+      }
+      return next;
+    });
+  }, [onDataChange]);
+
 
   // New state
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -142,10 +158,10 @@ export function PuckEditorClient({
   const { lastSaved, saving: autoSaving } = useAutoSave(localProjectId || null, data, 60000);
 
   const handleApplyAIData = useCallback((newData: InitialData) => {
-    setData(newData);
+    updateData(newData);
     setStatus("loaded");
     setShowAI(false);
-  }, []);
+  }, [updateData]);
 
   const handleExport = useCallback((format: "html" | "json" | "react") => {
     if (!data) return;
@@ -199,7 +215,7 @@ export function PuckEditorClient({
     const prev = undoStack[undoStack.length - 1];
     setRedoStack((r) => [...r, data.content]);
     setUndoStack((u) => u.slice(0, -1));
-    setData({ ...data, content: prev });
+    updateData({ ...data, content: prev });
   }, [undoStack, data]);
 
   const handleRedo = useCallback(() => {
@@ -207,7 +223,7 @@ export function PuckEditorClient({
     const next = redoStack[redoStack.length - 1];
     setUndoStack((u) => [...u, data.content]);
     setRedoStack((r) => r.slice(0, -1));
-    setData({ ...data, content: next });
+    updateData({ ...data, content: next });
   }, [redoStack, data]);
 
   // ---- Data change ----
@@ -219,33 +235,59 @@ export function PuckEditorClient({
       pushHistory(prevContentRef.current);
     }
     prevContentRef.current = content;
-    setData({ content, root });
-  }, [pushHistory]);
+    updateData({ content, root });
+  }, [pushHistory, updateData]);
 
   // ---- Add component ----
-  const handleAddComponent = useCallback((type: string) => {
+  const handleAddComponent = useCallback((type: string, props: Record<string, unknown> = {}) => {
     if (!data) return;
-    const defaultProps = (config as any).components?.[type]?.defaultProps || {};
-    const newItem: ContentItem = { type, props: { ...defaultProps } };
+    const newItem: ContentItem = { type, props: { ...props } };
     const newContent = [...data.content, newItem];
     pushHistory(data.content);
-    setData({ ...data, content: newContent });
+    updateData({ ...data, content: newContent });
     setSelectedIndex(newContent.length - 1);
     setStatus("loaded");
-  }, [data, pushHistory]);
+  }, [data, pushHistory, updateData]);
 
   // ---- Keyboard shortcuts ----
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const ctrl = e.ctrlKey || e.metaKey;
+      const shift = e.shiftKey;
+
+      // View modes
+      if (ctrl && e.key === "1") {
+        e.preventDefault();
+        setEditorMode("visual");
+      }
+      if (ctrl && e.key === "2") {
+        e.preventDefault();
+        setEditorMode("preview");
+      }
+      if (ctrl && e.key === "3") {
+        e.preventDefault();
+        setEditorMode("code");
+      }
+
+      // AI Assistant toggle
+      if (ctrl && shift && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setShowAI((prev) => !prev);
+      }
+
+      // Sidebar toggle
+      if (ctrl && shift && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        setShowElementPanel((prev) => !prev);
+      }
 
       // Undo: Ctrl+Z
-      if (ctrl && e.key === "z" && !e.shiftKey) {
+      if (ctrl && e.key === "z" && !shift) {
         e.preventDefault();
         handleUndo();
       }
       // Redo: Ctrl+Shift+Z or Ctrl+Y
-      if ((ctrl && e.key === "y") || (ctrl && e.key === "z" && e.shiftKey)) {
+      if ((ctrl && e.key === "y") || (ctrl && e.key === "z" && shift)) {
         e.preventDefault();
         handleRedo();
       }
@@ -263,7 +305,7 @@ export function PuckEditorClient({
         setClipboard({ ...item });
         const newContent = data.content.filter((_, i) => i !== selectedIndex);
         pushHistory(data.content);
-        setData({ ...data, content: newContent });
+        updateData({ ...data, content: newContent });
         setSelectedIndex(null);
       }
 
@@ -277,7 +319,7 @@ export function PuckEditorClient({
         const insertAt = selectedIndex !== null ? selectedIndex + 1 : data.content.length;
         const newContent = [...data.content.slice(0, insertAt), newItem, ...data.content.slice(insertAt)];
         pushHistory(data.content);
-        setData({ ...data, content: newContent });
+        updateData({ ...data, content: newContent });
         setSelectedIndex(insertAt);
       }
 
@@ -293,30 +335,31 @@ export function PuckEditorClient({
           e.preventDefault();
           const newContent = data.content.filter((_, i) => i !== selectedIndex);
           pushHistory(data.content);
-          setData({ ...data, content: newContent });
+          updateData({ ...data, content: newContent });
           setSelectedIndex(null);
         }
       }
     }
+  }, [data, selectedIndex, clipboard, handleUndo, handleRedo, pushHistory, setEditorMode, setShowAI, setShowElementPanel]);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [data, selectedIndex, clipboard, handleUndo, handleRedo, pushHistory]);
+  // ---- Listen for external events (e.g. from ComponentsLibrary) ----
+  useEffect(() => {
+    const handleToggleAI = (e: any) => {
+      if (e.detail) setShowAI(true);
+    };
+    const handleAddBlock = (e: any) => {
+      const { type, props } = e.detail;
+      handleAddComponent(type);
+      // Note: props could be used to further customize the added block
+    };
 
-  // ---- Multi-select ----
-  const handleSelectElement = useCallback((index: number, multi = false) => {
-    if (multi) {
-      setSelectedIndices((prev) => {
-        const next = new Set(prev);
-        if (next.has(index)) next.delete(index);
-        else next.add(index);
-        return next;
-      });
-    } else {
-      setSelectedIndex(index);
-      setSelectedIndices(new Set([index]));
-    }
-  }, []);
+    window.addEventListener('toggleAI', handleToggleAI);
+    window.addEventListener('addBlock', handleAddBlock);
+    return () => {
+      window.removeEventListener('toggleAI', handleToggleAI);
+      window.removeEventListener('addBlock', handleAddBlock);
+    };
+  }, [handleAddComponent]);
 
   // ---- Content builder for layers ----
   const layerTree = useMemo(() => {
@@ -335,7 +378,7 @@ export function PuckEditorClient({
       const aiData = retrievePuckData(aiDataKey);
       if (aiData) {
         setStatus("loaded");
-        setData({
+        updateData({
           content: aiData.content,
           root: aiData.root || { type: "Fragment", props: {} },
         });
@@ -344,13 +387,13 @@ export function PuckEditorClient({
     }
     if (initialData?.content?.length) {
       setStatus("loaded");
-      setData(initialData);
+      updateData(initialData);
     } else if (projectId) {
       loadProject(projectId);
     } else {
       setStatus("empty");
     }
-  }, [initialData, projectId, searchParams]);
+  }, [initialData, projectId, searchParams, updateData]);
 
   const loadProject = async (pid: string) => {
     setStatus("loading");
@@ -359,7 +402,7 @@ export function PuckEditorClient({
       const res = await fetch(`/api/puck/save?projectId=${pid}`);
       const json = await res.json();
       if (json.ok && json.project) {
-        setData(json.project.content);
+        updateData(json.project);
         setLocalProjectId(pid);
         setStatus("loaded");
         if (json.storageInfo) {
@@ -440,7 +483,7 @@ export function PuckEditorClient({
           type: "ThreeCanvasWrapperBlock",
           props: { label: asset.name, height: "md", sceneType: "3d-world", showControls: true, modelUrl: result.localUrl },
         };
-        setData((prev) => prev ? { ...prev, content: [...prev.content, newItem] } : prev);
+        updateData((prev) => prev ? { ...prev, content: [...prev.content, newItem] } : prev);
       }
     } finally {
       setImportingAsset(null);
@@ -454,7 +497,7 @@ export function PuckEditorClient({
       type: "image",
       props: { src: url, alt: name },
     };
-    setData({ ...data, content: [...data.content, newItem] });
+    updateData({ ...data, content: [...data.content, newItem] });
     setShowAssetMgr(false);
   }, [data]);
 
@@ -469,7 +512,7 @@ export function PuckEditorClient({
     const newContent = data.content.map((item, i) =>
       i === selectedIndex ? { ...item, props: newProps } : item
     );
-    setData({ ...data, content: newContent });
+    updateData({ ...data, content: newContent });
   }, [selectedIndex, data]);
 
   // ---- Delete from layers ----
@@ -478,7 +521,7 @@ export function PuckEditorClient({
     if (isNaN(idx) || !data) return;
     const newContent = data.content.filter((_, i) => i !== idx);
     pushHistory(data.content);
-    setData({ ...data, content: newContent });
+    updateData({ ...data, content: newContent });
     if (selectedIndex === idx) setSelectedIndex(null);
   }, [data, selectedIndex, pushHistory]);
 
@@ -492,7 +535,7 @@ export function PuckEditorClient({
     };
     const newContent = data.content.map((c, i) => (i === selectedIndex ? container : c));
     pushHistory(data.content);
-    setData({ ...data, content: newContent });
+    updateData({ ...data, content: newContent });
   }, [selectedIndex, data, pushHistory]);
 
   // ---- Canvas width (responsive breakpoint) ----
@@ -624,7 +667,7 @@ export function PuckEditorClient({
             <VersionHistory
               projectId={localProjectId}
               onRestore={(content) => {
-                setData(content);
+                updateData(content);
                 setStatus("loaded");
               }}
             />
@@ -727,7 +770,7 @@ export function PuckEditorClient({
                   <button onClick={() => setShowAI(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-sm font-medium text-white"
                   ><Sparkles className="w-4 h-4" /> Build with AI</button>
-                  <button onClick={() => { setData({ content: [], root: { type: "Fragment", props: {} } }); setStatus("loaded"); }}
+                  <button onClick={() => { updateData({ content: [], root: { type: "Fragment", props: {} } }); setStatus("loaded"); }}
                     className="rounded-md border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
                   >Start Blank</button>
                 </div>

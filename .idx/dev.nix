@@ -9,7 +9,8 @@
   ];
   idx = {
     extensions = [
-      "dsznajder.es7-react-js-snippets",
+      "dsznajder.es7-react-js-snippets"
+      ,
       "bradlc.vscode-tailwindcss",
       "esbenp.prettier-vscode"
     ];
