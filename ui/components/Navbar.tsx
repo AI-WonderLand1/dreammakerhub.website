@@ -76,7 +76,7 @@ export default function Navbar() {
     }));
   };
 
-  const showPublicNav = !isAppPath && !user;
+  const showPublicNav = !user;
   const showDashboardNav = Boolean(user);
 
   return (
