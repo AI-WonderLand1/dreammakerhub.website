@@ -19,8 +19,9 @@ const menuItems = [
     title: "Products",
     items: [
       { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
-      { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
-      { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
+      { name: "AI-PLAYGROUND", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
+      { name: "WonderSpace IDE", href: "/wonder-build/studio", icon: "💻" },
+      { name: "3D Wonder-Build", href: "/wonder-build/spatial", icon: "🧊" },
     ]
   },
   {
