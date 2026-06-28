@@ -52,8 +52,6 @@ const pathAliases = {
 const nextConfig = {
   reactStrictMode: true,
 
-  turbopack: {},
-
   async redirects() {
     return [
       {
