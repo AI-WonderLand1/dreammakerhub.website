@@ -3,19 +3,57 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Menu, X, ChevronDown } from "lucide-react";
 
 import { useAuth } from "@/lib/supabase/auth-context";
 import signMap from "./homepage-sign-map.json";
 import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-cards";
 import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";
 import InteractiveSignpost from "./InteractiveSignpost";
-import AIChat from "./AIChat";
 import ShowcaseSection from "./ShowcaseSection";
 import AIDiagram from "./AIDiagram";
 import Link from "next/link";
 
+const menuItems = [
+  {
+    title: "Products",
+    items: [
+      { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
+      { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
+      { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
+    ]
+  },
+  {
+    title: "Solutions",
+    items: [
+      { name: "For Developers", href: "/solutions/developers", icon: "👨‍💻" },
+      { name: "For Designers", href: "/solutions/designers", icon: "🎨" },
+      { name: "For Teams", href: "/solutions/teams", icon: "👥" }
+    ]
+  },
+  {
+    title: "Resources",
+    items: [
+      { name: "Documentation", href: "/docs", icon: "📚" },
+      { name: "API Reference", href: "/api-reference", icon: "📖" },
+      { name: "Tutorials", href: "/tutorials", icon: "🎓" },
+      { name: "Blog", href: "/blog", icon: "📝" }
+    ]
+  },
+  {
+    title: "Company",
+    items: [
+      { name: "About Us", href: "/about", icon: "ℹ️" },
+      { name: "Careers", href: "/careers", icon: "💼" },
+      { name: "Contact", href: "/contact", icon: "📧" },
+      { name: "Privacy Policy", href: "/privacy", icon: "🔒" }
+    ]
+  }
+];
+
 // Spirit Guide helper function
 const openSpiritGuide = () => {
+
   // Method 1: Look for UniversalAIAssistant button by aria-label
   const assistantButton = document.querySelector('button[aria-label="Open AI Assistant"]');
   if (assistantButton) {
@@ -101,12 +139,6 @@ const REGISTRY_ITEMS = [
   { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "AI" },
 ];
 
-const NAV_LINKS = [
-  { label: "Features", href: "/#features" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "Docs", href: "/docs" },
-  { label: "Community", href: "/community" },
-];
 
 export default function Homepage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -116,6 +148,8 @@ export default function Homepage() {
   const iframeLabel = `WonderPlay Landing Page destinations: ${destinationNames}`;
 
   const [scrolled, setScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -140,80 +174,115 @@ export default function Homepage() {
         }`}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-          {/* Logo - goes to dashboard if authenticated, otherwise stays on homepage */}
+          {/* Logo */}
           <Link href={isAuthenticated ? "/dashboard/projects" : "/"} className="flex items-center gap-2">
-            <span className="text-sm font-extrabold tracking-tight text-white">AI Wonderland</span>
+            <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span>
           </Link>
 
-          {/* Nav links — hidden on mobile */}
-          <div className="hidden items-center gap-6 sm:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-xs font-medium text-white/60 transition hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Auth actions */}
-          <div className="flex items-center gap-2">
+          {/* Right side: Menu button and Auth */}
+          <div className="flex items-center gap-4">
             {/* Spirit Guide Indicator */}
             <div className="hidden sm:flex items-center gap-1 text-xs text-purple-300/60">
               <span className="text-sm">🔮</span>
-              <span>AI Guide</span>
+              <span>Spirit Guide</span>
             </div>
-            
-            {authLoading ? (
-              <div className="h-7 w-20 animate-pulse rounded-full bg-white/10" />
-            ) : isAuthenticated ? (
-              <>
-                <Link
-                  href="/dashboard/projects"
-                  className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-                >
-                  Dashboard →
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/50 transition hover:text-white"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/public-pages/auth"
-                  className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/public-pages/auth"
-                  className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                >
-                  Register
-                </Link>
-              </>
-            )}
+
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Toggle Menu"
+            >
+              {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
           </div>
         </div>
+
+        {/* Dropdown Menu */}
+        {isMenuOpen && (
+          <div className="absolute top-full left-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-2xl max-h-[calc(100vh-3.5rem)] overflow-y-auto md:w-80 md:left-auto md:right-6 md:top-14 md:rounded-b-2xl md:border-t-0 md:border-l md:border-r md:border-b-0">
+            <div className="p-6 flex flex-col gap-6">
+              {menuItems.map((menu) => (
+                <div key={menu.title} className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setExpandedCategory(expandedCategory === menu.title ? null : menu.title)}
+                    className="flex items-center justify-between w-full text-left text-white font-semibold text-lg"
+                  >
+                    {menu.title}
+                    <ChevronDown size={20} className={expandedCategory === menu.title ? "rotate-180 transition-transform" : ""} />
+                  </button>
+                  {expandedCategory === menu.title && (
+                    <div className="flex flex-col gap-3 pl-4 border-l border-white/10">
+                      {menu.items.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="text-white/60 hover:text-white text-sm transition-colors"
+                        >
+                          {item.icon} {item.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <div className="pt-6 border-t border-white/10 flex flex-col gap-4">
+                {authLoading ? (
+                  <div className="h-10 w-full animate-pulse rounded-full bg-white/10" />
+                ) : isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/dashboard/projects"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full text-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                    >
+                      Dashboard →
+                    </Link>
+                    <button
+                      onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
+                      className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/50 transition hover:text-white"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/public-pages/auth"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full text-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/public-pages/auth?signup=true"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full text-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
+
 
       {/* ─── HERO — Full-bleed image with overlaid content ─────────────────── */}
       <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
         {/* Full-bleed background image */}
 <Image
-           src="/images/wonderland-theme.webp"
-           alt="WonderPlay Landing Page - A whimsical wonderland forest scene with a wooden signpost pointing toward different paths"
-           fill
-           priority
-           className="object-cover object-left"
-           sizes="100vw"
-         />
+            src="/images/wonderland-background.png"
+            alt="WonderPlay Landing Page - A whimsical wonderland forest scene with a wooden signpost pointing toward different paths"
+            fill
+            priority
+            className="object-cover object-left"
+            sizes="100vw"
+          />
 
         {/* Gradient overlays */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/80" />
@@ -232,20 +301,17 @@ export default function Homepage() {
             {/* Left: title + subtitle + CTA */}
             <div className="max-w-2xl">
               <p className="mb-2 text-xs font-bold uppercase tracking-widest text-pink-400">
-                AI Wonderland
+                             <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span>
               </p>
               <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
                 Where your imagination<br className="hidden sm:block" /> comes to life
               </h1>
               <p className="mt-4 max-w-lg text-sm text-white/70 drop-shadow sm:text-base">
-                Build websites and 3D games with AI — no coding required.
+                Build websites and 3D games — no coding required.
               </p>
-              <div className="mt-6">
-                <AIChat compact={true} />
-              </div>
               
               {/* Spirit Guide Availability */}
-              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-purple-300/80">
+              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-purple-300/80">
                 <span className="text-lg">🔮</span>
                 <span>Spirit Guide AI assistant available</span>
               </div>
@@ -361,11 +427,11 @@ href="/wonder-build"
               <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-emerald-400">Premium Feature</p>
               <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Cloud Development Workspace</h2>
               <p className="mt-1 max-w-xl text-sm text-gray-400">
-                Get your own cloud development environment with VS Code, pre-configured for AI Wonderland projects.
+                Get your own cloud development environment with VS Code, pre-configured for              <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span> projects.
                 Available for Pro and Elite subscribers.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {["VS Code in Browser", "Pre-configured AI Wonderland", "Git Integration", "Terminal Access"].map((tag) => (
+                {["VS Code in Browser", "Pre-configured              <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span>", "Git Integration", "Terminal Access"].map((tag) => (
                   <span key={tag} className="rounded-full bg-emerald-900/40 border border-emerald-500/20 px-3 py-0.5 text-xs text-emerald-300">
                     {tag}
                   </span>

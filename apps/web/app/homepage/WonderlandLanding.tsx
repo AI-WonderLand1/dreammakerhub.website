@@ -43,9 +43,9 @@ export default function WonderlandLandingPage() {
         }`}
       >
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold text-white">AI Wonderland</span>
-          </Link>
+           <Link href="/" className="flex items-center gap-2">
+             <span className="text-lg font-bold text-white">Wonderland</span>
+           </Link>
 
           <div className="hidden items-center gap-6 sm:flex">
             <Link href="#products" className="text-sm text-white/60 transition hover:text-white">
@@ -96,10 +96,10 @@ export default function WonderlandLandingPage() {
       {/* HERO */}
       <section className="relative flex min-h-screen items-center justify-center px-6 pt-20">
         <div className="relative z-10 max-w-4xl text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-[#F2A93B]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#F2A93B]" />
-            AI-NATIVE CREATION PLATFORM
-          </div>
+           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-[#F2A93B]">
+             <span className="h-1.5 w-1.5 rounded-full bg-[#F2A93B]" />
+             CREATION PLATFORM
+           </div>
           <h1 className="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
             Build anything.<br />
             <em className="font-normal text-[#F2A93B]">Just by describing it.</em>
