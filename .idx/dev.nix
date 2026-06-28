@@ -10,8 +10,7 @@
   idx = {
     extensions = [
       "dsznajder.es7-react-js-snippets"
-      ,
-      "bradlc.vscode-tailwindcss",
+      "bradlc.vscode-tailwindcss"
       "esbenp.prettier-vscode"
     ];
     workspace = {
