@@ -1,3 +1,5 @@
 
 bin/coder
 node_modules
+*.tgz
+node-v*-linux-x64/
