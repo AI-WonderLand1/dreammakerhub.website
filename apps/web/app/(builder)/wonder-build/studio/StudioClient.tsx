@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { PageHeader } from "@/app/components/layout/PageHeader";
-import { PuckEditorClient } from "./PuckEditorClient";
+import { PuckEditorClient } from "../puck/PuckEditorClient";
 import ComponentsLibrary from "./ComponentsLibrary";
 import { BottomBar } from "./BottomBar";
 import AIAssistantModal from "./AIAssistantModal";

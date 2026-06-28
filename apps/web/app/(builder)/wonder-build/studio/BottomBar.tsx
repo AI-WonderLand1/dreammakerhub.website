@@ -5,7 +5,7 @@ interface BottomBarProps {
   setEditorMode: (mode: "visual" | "preview" | "code") => void;
 }
 
-export default function BottomBar({ editorMode, setEditorMode }: BottomBarProps) {
+export function BottomBar({ editorMode, setEditorMode }: BottomBarProps) {
   return (
     <div className="h-8 bg-black/80 border-t border-white/10 px-4 flex items-center justify-between text-white/40 text-[10px] font-medium">
       <div className="flex items-center gap-4">

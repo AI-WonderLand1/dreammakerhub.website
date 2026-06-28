@@ -4,14 +4,15 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   LayoutGrid, Columns3, Rows3, Square, Type, AlignLeft, Quote, 
-  Image as ImageIcon, Video, UserCircle, Input, CheckSquare, 
+  Image as ImageIcon, Video, UserCircle, CheckSquare, 
   MousePointer2, ChevronDown, Menu, Link as LinkIcon, Table, 
-  Card, Tag, Zap, MessageSquare, Search, 
+  CreditCard, Tag, Zap, MessageSquare, Search, 
   Layers, ChevronRight, Settings, Bell, Heart, Star, 
   Calendar, MapPin, Phone, Mail, User, Globe, Shield, 
-  CreditCard, ShoppingBag, ShoppingCart, Briefcase, GraduationCap,
+  ShoppingBag, ShoppingCart, Briefcase, GraduationCap,
   Coffee, Music, Film, Camera, Activity, PieChart, BarChart3,
-  Wind, Flame, Droplets, Sun, Moon, Cloud, CloudRain, CloudLightning
+  Wind, Flame, Droplets, Sun, Moon, Cloud, CloudRain, CloudLightning,
+  Sparkles
 } from "lucide-react";
 
 interface ComponentsLibraryProps {
@@ -48,7 +49,7 @@ const BLOCKS: Block[] = [
   { type: "Avatar", icon: UserCircle, label: "Avatar", category: "Media", color: "bg-orange-500/20 text-orange-300" },
 
   // Forms
-  { type: "Input", icon: Input, label: "Input", category: "Forms", color: "bg-green-500/20 text-green-300" },
+  { type: "Input", icon: Type, label: "Input", category: "Forms", color: "bg-green-500/20 text-green-300" },
   { type: "Checkbox", icon: CheckSquare, label: "Checkbox", category: "Forms", color: "bg-green-500/20 text-green-300" },
   { type: "Button", icon: MousePointer2, label: "Button", category: "Forms", color: "bg-green-500/20 text-green-300" },
   { type: "Select", icon: ChevronDown, label: "Select", category: "Forms", color: "bg-green-500/20 text-green-300" },
@@ -59,7 +60,7 @@ const BLOCKS: Block[] = [
 
   // Data Display
   { type: "Table", icon: Table, label: "Table", category: "Data Display", color: "bg-yellow-500/20 text-yellow-300" },
-  { type: "Card", icon: Card, label: "Card", category: "Data Display", color: "bg-yellow-500/20 text-yellow-300" },
+  { type: "Card", icon: CreditCard, label: "Card", category: "Data Display", color: "bg-yellow-500/20 text-yellow-300" },
   { type: "Badge", icon: Tag, label: "Badge", category: "Data Display", color: "bg-yellow-500/20 text-yellow-300" },
 
   // Special
