@@ -431,7 +431,7 @@ href="/wonder-build"
                 Available for Pro and Elite subscribers.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {["VS Code in Browser", "Pre-configured              <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span>", "Git Integration", "Terminal Access"].map((tag) => (
+                {["VS Code in Browser", "Pre-configured Wonderland", "Git Integration", "Terminal Access"].map((tag) => (
                   <span key={tag} className="rounded-full bg-emerald-900/40 border border-emerald-500/20 px-3 py-0.5 text-xs text-emerald-300">
                     {tag}
                   </span>
