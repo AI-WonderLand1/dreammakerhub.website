@@ -1,11 +1,10 @@
 { pkgs, ... }: {
   channel = "stable-24.05";
   packages = [
-    pkgs.nodejs-20_x
+    pkgs.nodejs_20
     pkgs.nodePackages.pnpm
     pkgs.nano
     pkgs.git
-    pkgs.nvm
   ];
   idx = {
     extensions = [
