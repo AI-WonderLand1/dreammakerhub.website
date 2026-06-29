@@ -46,7 +46,7 @@
     "@theatre/core": "^0.7.2",
     "@theatre/studio": "^0.7.2",
     "@tiptap/extension-superscript": "^3.27.1",
-    "@types/three": "^0.184.0",
+    "@types/three": "^0.185.0",
     "@webcontainer/api": "^1.5.0",
     "@wonderspace/ide-engine": "*",
     "@xterm/addon-fit": "^0.11.0",
