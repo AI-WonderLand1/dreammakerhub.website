@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
 "dev": "node ./scripts/run-dev.mjs",
-    "build": "next build --no-turbopack",
+    "build": "next build --webpack",
     "start": "next start -p ${PORT:-5000} -H 0.0.0.0",
     "dev:clean": "sh -c 'rm -rf .next && node ./scripts/run-dev.mjs'"
   },
