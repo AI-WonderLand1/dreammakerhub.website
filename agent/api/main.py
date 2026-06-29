@@ -1,12 +1,11 @@
-from fastapi import FastAPI, HTTPException, Header, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from typing import Optional, List, Any
 import os
 import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from personas import SpiritGuide, Orchestrator
+from core.alice import AliceAgent
 from core.api_keys import APIKeyManager
 
 DEFAULT_LLM_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
@@ -28,6 +27,7 @@ app.add_middleware(
 api_key_manager = APIKeyManager()
 spirit_guide = SpiritGuide(api_key=DEFAULT_LLM_KEY)
 orchestrator = Orchestrator(api_key=DEFAULT_LLM_KEY)
+alice_agent = AliceAgent(api_key=DEFAULT_LLM_KEY)
 
 def get_api_key(x_api_key: str = Header(None)):
     if not x_api_key:
@@ -45,6 +45,11 @@ class OrchestratorRequest(BaseModel):
     goal: str
     user_id: Optional[str] = "worker"
 
+class AskRequest(BaseModel):
+    question: str
+    context: Optional[str] = None
+    user_id: Optional[str] = "user"
+
 class RepoAnalyzeRequest(BaseModel):
     repo_path: str
 
@@ -58,9 +63,14 @@ class APIKeyCreateRequest(BaseModel):
 async def root():
     return {
         "name": "Wonderland Agent",
-        "personas": ["spirit_guide", "orchestrator"],
+        "personas": ["spirit_guide", "orchestrator", "rick", "default"],
         "status": "online"
     }
+
+@app.post("/api/ask")
+async def ask_alice(request: AskRequest, api_info: dict = Depends(get_api_key)):
+    answer = alice_agent.ask(request.question, user_id=request.user_id, context=request.context)
+    return {"answer": answer}
 
 @app.post("/api/spirit-guide/consult")
 async def consult_spirit_guide(request: SpiritGuideRequest, api_info: dict = Depends(get_api_key)):
@@ -101,9 +111,11 @@ async def health_check():
         "status": "healthy",
         "llm_configured": bool(DEFAULT_LLM_KEY),
         "spirit_guide": "ready",
-        "orchestrator": "ready"
+        "orchestrator": "ready",
+        "alice": "ready"
     }
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
