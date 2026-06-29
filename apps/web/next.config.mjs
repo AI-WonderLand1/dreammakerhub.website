@@ -89,7 +89,6 @@ const nextConfig = {
 
   experimental: {
     externalDir: true,
-    turbopack: {},
   },
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
