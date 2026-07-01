@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "npc-sim"
   ],
   "overrides": {
     "@puckeditor/core": {

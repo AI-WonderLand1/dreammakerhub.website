@@ -15,7 +15,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
@@ -44,7 +44,7 @@ jobs:
       pull-requests: write
       security-events: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: Master
       - uses: actions/setup-node@v6
