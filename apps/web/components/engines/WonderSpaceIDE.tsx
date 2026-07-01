@@ -1,56 +1,57 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
-import { CoderIntegration } from '@/lib/coder/integration';
 
-// Each user gets their OWN private cloud IDE at Coder.com
-// Like GitHub Codespaces - isolated, no installation required
+type ProvisionState = 'form' | 'provisioning' | 'ready' | 'error';
 
 export default function WonderSpaceIDE() {
   const { user, loading } = useAuth();
-  const [ideUrl, setIdeUrl] = useState<string>('');
-  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [podName, setPodName] = useState('');
+  const [state, setState] = useState<ProvisionState>('form');
+  const [ideUrl, setIdeUrl] = useState('');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!user || loading) return;
+  const defaultPodName = user?.email?.split('@')[0] || 'my-ide';
 
-    const provisionIDE = async () => {
-      setCreatingWorkspace(true);
-      setError('');
+  const handleProvision = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = podName.trim() || defaultPodName;
+    setState('provisioning');
+    setError('');
 
-      try {
-        const coder = new CoderIntegration();
-        
-        // Each user gets their OWN isolated workspace
-        const { ideUrl } = await coder.provisionIDEForProject(
-          user.id,
-          'wonderspace-project'
-        );
+    try {
+      const res = await fetch('/api/user-workspace/provision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ podName: name }),
+      });
 
-        setIdeUrl(ideUrl);
-        
-        // Redirect to their private Coder workspace
-        window.location.href = ideUrl;
-        
-      } catch (err) {
-        console.error('Failed to provision IDE:', err);
-        setError('Failed to create your private IDE workspace. Please try again.');
-      } finally {
-        setCreatingWorkspace(false);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to provision workspace');
       }
-    };
 
-    provisionIDE();
-  }, [user, loading]);
+      setIdeUrl(data.ideUrl);
+      setState('ready');
+
+      // Redirect after brief delay so user sees success message
+      setTimeout(() => {
+        window.location.href = data.ideUrl;
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+      setState('error');
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
           <p className="text-lg">Authenticating...</p>
         </div>
       </div>
@@ -63,8 +64,8 @@ export default function WonderSpaceIDE() {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
           <p className="text-gray-400 mb-6">Please sign in to access your private IDE workspace.</p>
-          <Link 
-            href="/auth/login" 
+          <Link
+            href="/public-pages/auth"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Sign In
@@ -74,57 +75,102 @@ export default function WonderSpaceIDE() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold mb-4">Workspace Creation Failed</h1>
-          <p className="text-gray-400 mb-6">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-6"></div>
-        <h1 className="text-3xl font-bold mb-4">Creating Your Private IDE</h1>
-        <p className="text-gray-400 mb-2">Provisioning your isolated cloud workspace...</p>
-        <p className="text-gray-500 text-sm">
-          Each user gets their own private environment - just like GitHub Codespaces
-        </p>
-        
-        {ideUrl && (
-          <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <p className="text-green-400 text-sm">
-              Your workspace is ready! Redirecting to your private IDE...
+      <div className="w-full max-w-md px-6">
+
+        {/* ─── FORM STATE ──────────────────────────────────── */}
+        {state === 'form' && (
+          <div className="text-center">
+            <div className="text-5xl mb-6">💻</div>
+            <h1 className="text-3xl font-bold mb-2">Launch Your IDE</h1>
+            <p className="text-gray-400 mb-8">
+              Your private cloud workspace with VS Code, terminal, and git — just like GitHub Codespaces.
             </p>
-            <p className="text-green-400/70 text-xs mt-1">
-              If redirect doesn't work, <a href={ideUrl} className="underline">click here</a>
+
+            <form onSubmit={handleProvision} className="space-y-4">
+              <div className="text-left">
+                <label htmlFor="podName" className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Pod Name
+                </label>
+                <input
+                  id="podName"
+                  type="text"
+                  value={podName}
+                  onChange={(e) => setPodName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                  placeholder={defaultPodName}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  maxLength={62}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Lowercase letters, numbers, and hyphens. 3–62 characters.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                🚀 Launch Workspace
+              </button>
+            </form>
+
+            <p className="mt-6 text-xs text-gray-600">
+              An SSH key will be generated and attached to your workspace automatically.
             </p>
           </div>
         )}
-        
-        {creatingWorkspace && (
-          <div className="mt-6 space-y-2">
-            <div className="flex justify-center space-x-2">
+
+        {/* ─── PROVISIONING STATE ──────────────────────────── */}
+        {state === 'provisioning' && (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-6" />
+            <h1 className="text-3xl font-bold mb-4">Creating Your Workspace</h1>
+            <p className="text-gray-400 mb-2">Provisioning pod <span className="text-white font-mono">{podName || defaultPodName}</span>...</p>
+            <p className="text-gray-500 text-sm">Injecting SSH key and configuring environment</p>
+            <div className="mt-6 flex justify-center space-x-2">
               {[0, 1, 2].map((i) => (
-                <div 
+                <div
                   key={i}
                   className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 />
               ))}
             </div>
-            <p className="text-gray-500 text-xs">This may take a minute...</p>
+          </div>
+        )}
+
+        {/* ─── READY STATE ─────────────────────────────────── */}
+        {state === 'ready' && (
+          <div className="text-center">
+            <div className="text-5xl mb-6">✅</div>
+            <h1 className="text-3xl font-bold mb-4">Workspace Ready!</h1>
+            <p className="text-gray-400 mb-6">Redirecting to your private IDE...</p>
+            {ideUrl && (
+              <a
+                href={ideUrl}
+                className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                Open IDE Manually
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* ─── ERROR STATE ─────────────────────────────────── */}
+        {state === 'error' && (
+          <div className="text-center">
+            <div className="text-5xl mb-6">⚠️</div>
+            <h1 className="text-2xl font-bold mb-4">Workspace Creation Failed</h1>
+            <p className="text-gray-400 mb-6">{error}</p>
+            <button
+              onClick={() => setState('form')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
       </div>
