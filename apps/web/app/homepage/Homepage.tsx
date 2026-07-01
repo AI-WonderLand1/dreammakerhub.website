@@ -25,6 +25,14 @@ const menuItems = [
     ]
   },
   {
+    title: "Solutions",
+    items: [
+      { name: "For Developers", href: "/solutions/developers", icon: "👨‍💻" },
+      { name: "For Designers", href: "/solutions/designers", icon: "🎨" },
+      { name: "For Teams", href: "/solutions/teams", icon: "👥" }
+    ]
+  },
+  {
     title: "Resources",
     items: [
       { name: "Documentation", href: "/docs", icon: "📚" },
