@@ -13,7 +13,7 @@ export interface UserSSHKey {
  */
 export async function getUserSSHKey(userId: string, userEmail: string): Promise<UserSSHKey> {
   const { data, error } = await supabaseServer
-    .from("user_profiles")
+    .from("profiles")
     .select("ssh_public_key, ssh_private_key_encrypted, ssh_key_generated_at")
     .eq("id", userId)
     .single();
@@ -37,9 +37,9 @@ export async function getUserSSHKey(userId: string, userEmail: string): Promise<
   const { publicKey, privateKey } = generateSSHKeyPair(comment);
   const encryptedPrivateKey = encrypt(privateKey);
 
-  // Store in user_profiles
+  // Store in profiles
   const { error: updateError } = await supabaseServer
-    .from("user_profiles")
+    .from("profiles")
     .update({
       ssh_public_key: publicKey,
       ssh_private_key_encrypted: encryptedPrivateKey,
