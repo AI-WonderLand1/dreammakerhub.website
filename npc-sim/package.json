@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@ai-wonderland/db": "*",
-    "drizzle-orm": "^0.30.0",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.0.0",
     "@hono/node-server": "^1.0.0"
   },
