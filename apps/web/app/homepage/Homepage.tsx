@@ -20,7 +20,7 @@ const menuItems = [
     items: [
       { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
       { name: "AI-PLAYGROUND", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
-      { name: "WonderSpace IDE", href: "/wonder-build/studio", icon: "💻" },
+       { name: "WonderSpace IDE", href: "/ide", icon: "💻" },
       { name: "3D Wonder-Build", href: "/wonder-build/spatial", icon: "🧊" },
     ]
   },

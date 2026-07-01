@@ -31,7 +31,7 @@ export default function Navbar() {
         // { name: "WonderSpace IDE", href: "/wonderspace", icon: "💻" }, // TODO: Re-enable when IDE is ready
         { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
         { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
-        { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
+        { name: "AI Modules", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
       ]
     },
     {

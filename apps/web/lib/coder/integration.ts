@@ -20,10 +20,27 @@ export class CoderIntegration {
   async createWorkspace(
     userId: string,
     projectName: string,
-    templateId: string = 'wonderspace-ide'
+    templateId: string = 'wonderspace-ide',
+    options?: { customName?: string; sshPublicKey?: string }
   ): Promise<CoderWorkspace> {
-    // Generate unique workspace name for this user
-    const workspaceName = `${userId}-${projectName}-${Date.now()}`;
+    // Use custom name if provided, otherwise generate one
+    const workspaceName = options?.customName
+      ? options.customName.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').slice(0, 62)
+      : `${userId}-${projectName}-${Date.now()}`;
+    
+    const richParameterValues: Array<{ name: string; value: string }> = [
+      { name: 'cpu', value: '2' },
+      { name: 'memory', value: '4' },
+      { name: 'home_disk_size', value: '20' },
+    ];
+
+    // Inject SSH public key if provided
+    if (options?.sshPublicKey) {
+      richParameterValues.push({
+        name: 'ssh_public_key',
+        value: options.sshPublicKey,
+      });
+    }
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -38,20 +55,7 @@ export class CoderIntegration {
       body: JSON.stringify({
         template_id: templateId,
         name: workspaceName,
-        rich_parameter_values: [
-          {
-            name: 'cpu',
-            value: '2', // Default to 2 cores
-          },
-          {
-            name: 'memory', 
-            value: '4', // Default to 4GB
-          },
-          {
-            name: 'home_disk_size',
-            value: '20', // Default to 20GB
-          },
-        ],
+        rich_parameter_values: richParameterValues,
       }),
     });
 
@@ -148,14 +152,15 @@ export class CoderIntegration {
   async provisionIDEForProject(
     userId: string,
     projectName: string,
-    projectCode?: string
+    projectCode?: string,
+    options?: { customName?: string; sshPublicKey?: string }
   ): Promise<{ workspace: CoderWorkspace; ideUrl: string }> {
     // Check for existing workspace
     let workspace = await this.getUserWorkspace(userId);
 
     if (!workspace) {
-      // Create new workspace
-      workspace = await this.createWorkspace(userId, projectName);
+      // Create new workspace with custom name and SSH key
+      workspace = await this.createWorkspace(userId, projectName, 'wonderspace-ide', options);
     }
 
     // Wait for workspace to be ready
