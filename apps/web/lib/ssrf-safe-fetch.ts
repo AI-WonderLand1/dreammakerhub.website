@@ -140,7 +140,9 @@ async function validateRedirect(response: Response, options: SsrfFetchOptions): 
 export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
   const validatedUrl = await validateUrl(url, options)
 
-  const response = await fetch(validatedUrl, {
+  // CodeQL SSRF false positive: validatedUrl has been checked for HTTPS-only,
+  // localhost, private IPs, metadata endpoints, and allowedHosts whitelist.
+  const response = await fetch(validatedUrl, { // CodeQL [js/request-forgery]: Suppressed — URL fully validated above
     redirect: 'manual',
     ...options,
   })
