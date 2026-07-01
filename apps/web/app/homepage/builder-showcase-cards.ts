@@ -21,7 +21,7 @@ export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
   {
      title: "WonderSpace IDE",
      image: "/images/screenshots/theia-builder.svg",
-     href: "/wonder-build/studio",
+     href: "/ide",
      desc: "Cloud IDE for custom coding, debugging, and deployment flows with AI autocomplete.",
   },
 ];
