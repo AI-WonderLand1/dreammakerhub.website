@@ -19,10 +19,10 @@ export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
     desc: "Describe what you want — three AI agents generate complete websites, games, and dashboard UIs.",
   },
   {
-    title: "WonderSpace IDE",
-    image: "/images/screenshots/theia-builder.svg",
-    href: "/ide",
-    desc: "Cloud IDE for custom coding, debugging, and deployment flows with AI autocomplete.",
+     title: "WonderSpace IDE",
+     image: "/images/screenshots/theia-builder.svg",
+     href: "/wonder-build/studio",
+     desc: "Cloud IDE for custom coding, debugging, and deployment flows with AI autocomplete.",
   },
 ];
 
