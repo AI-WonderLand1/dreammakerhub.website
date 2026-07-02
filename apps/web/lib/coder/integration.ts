@@ -6,6 +6,14 @@ export interface CoderWorkspace {
   templateId: string;
 }
 
+interface ProvisionOptions {
+  customName?: string;
+  sshPublicKey?: string;
+  templateId?: string;
+  cpu?: number;
+  memory?: number;
+}
+
 export class CoderIntegration {
   private coderApiUrl: string;
 
@@ -21,30 +29,30 @@ export class CoderIntegration {
     userId: string,
     projectName: string,
     templateId: string = 'wonderspace-ide',
-    options?: { customName?: string; sshPublicKey?: string }
+    options?: ProvisionOptions
   ): Promise<CoderWorkspace> {
-    // Use custom name if provided, otherwise generate one
     const workspaceName = options?.customName
       ? options.customName.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').slice(0, 62)
       : `${userId}-${projectName}-${Date.now()}`;
-    
+
+    const effectiveTemplateId = options?.templateId || templateId;
+
     const richParameterValues: Array<{ name: string; value: string }> = [
-      { name: 'cpu', value: '2' },
-      { name: 'memory', value: '4' },
+      { name: 'cpu', value: String(options?.cpu || 2) },
+      { name: 'memory', value: String(options?.memory || 4) },
       { name: 'home_disk_size', value: '20' },
     ];
 
-    // Inject SSH public key if provided
     if (options?.sshPublicKey) {
       richParameterValues.push({
         name: 'ssh_public_key',
         value: options.sshPublicKey,
       });
     }
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
+
     const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces`, {
       signal: controller.signal,
       method: 'POST',
@@ -53,7 +61,7 @@ export class CoderIntegration {
         'Coder-User-ID': userId,
       },
       body: JSON.stringify({
-        template_id: templateId,
+        template_id: effectiveTemplateId,
         name: workspaceName,
         rich_parameter_values: richParameterValues,
       }),
@@ -80,7 +88,7 @@ export class CoderIntegration {
   async getUserWorkspace(userId: string): Promise<CoderWorkspace | null> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
+
     const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces?owner=${userId}`, {
       signal: controller.signal,
       headers: {
@@ -119,11 +127,11 @@ export class CoderIntegration {
     while (Date.now() - startTime < timeoutMs) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
+
       const response = await fetch(`${this.coderApiUrl}/api/v2/workspaces/${workspaceId}`, {
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       if (response.ok) {
         const data = await response.json();
@@ -142,7 +150,6 @@ export class CoderIntegration {
    * Build IDE URL that redirects to Coder workspace
    */
   buildIDEUrl(workspace: CoderWorkspace): string {
-    // Redirect to Coder.com workspace
     return `${workspace.url}/code-server`;
   }
 
@@ -153,23 +160,19 @@ export class CoderIntegration {
     userId: string,
     projectName: string,
     projectCode?: string,
-    options?: { customName?: string; sshPublicKey?: string }
+    options?: ProvisionOptions
   ): Promise<{ workspace: CoderWorkspace; ideUrl: string }> {
-    // Check for existing workspace
     let workspace = await this.getUserWorkspace(userId);
 
     if (!workspace) {
-      // Create new workspace with custom name and SSH key
       workspace = await this.createWorkspace(userId, projectName, 'wonderspace-ide', options);
     }
 
-    // Wait for workspace to be ready
     if (workspace.status !== 'running') {
       await this.waitForWorkspaceReady(workspace.id);
       workspace.status = 'running';
     }
 
-    // If project code provided, upload it to the workspace
     if (projectCode) {
       await this.uploadProjectToWorkspace(workspace.id, projectCode, projectName);
     }
@@ -186,7 +189,6 @@ export class CoderIntegration {
     code: string,
     projectName: string
   ): Promise<void> {
-    // Create project structure
     const files = {
       'index.html': code,
       'package.json': JSON.stringify({
@@ -202,11 +204,10 @@ export class CoderIntegration {
       }, null, 2),
     };
 
-    // Upload each file
     for (const [filename, content] of Object.entries(files)) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
-      
+
       const response = await fetch(
         `${this.coderApiUrl}/api/v2/workspaces/${workspaceId}/files/${encodeURIComponent(filename)}`,
         {
