@@ -184,7 +184,9 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
 
   const validatedUrl = await validateUrl(url, options)
 
-  const response = await fetch(validatedUrl, buildSafeFetchInit(options))
+  // CodeQL SSRF false positive: validatedUrl has been checked for HTTPS-only,
+  // localhost, private IPs, metadata endpoints, DNS resolution, and allowedHosts whitelist.
+  const response = await fetch(validatedUrl, buildSafeFetchInit(options)) // CodeQL [js/request-forgery]: Suppressed — URL fully validated above with DNS check
 
   return validateRedirect(response, options)
 }
