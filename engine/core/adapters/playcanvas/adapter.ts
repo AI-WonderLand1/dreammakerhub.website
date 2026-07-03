@@ -34,6 +34,14 @@ export class PlayCanvasAdapter implements EngineAdapter {
     window.addEventListener('resize', resize);
     resize();
 
+    // GLTF model support
+    let gltfTransform: any = null;
+    try {
+      gltfTransform = await import('@gltf-transform/core');
+    } catch (e) {
+      console.warn('[PlayCanvasAdapter] GLTF support not available');
+    }
+
     return {
       name: this.name,
       canvas,
@@ -43,6 +51,9 @@ export class PlayCanvasAdapter implements EngineAdapter {
         console.log('[PlayCanvasAdapter] Destroying instance');
         window.removeEventListener('resize', resize);
         app.destroy();
+        if (gltfTransform) {
+          // Clean up GLTF resources if any
+        }
       },
     };
   }
