@@ -1,4 +1,4 @@
-import type { EngineAdapter, EngineConfig, EngineInstance } from '../types';
+import type { EngineAdapter, EngineConfig, EngineInstance, WebGLShader } from '../types';
 
 export class WebGLAdapter implements EngineAdapter {
   public name = 'webgl';
@@ -7,43 +7,81 @@ export class WebGLAdapter implements EngineAdapter {
     console.log('[WebGLAdapter] Creating engine instance...');
     
     const canvas = config.canvas;
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 
     if (!gl) {
       throw new Error('WebGL not supported');
     }
 
-    // Basic shader setup
-    const vsSource = `
-      attribute vec4 aVertexPosition;
-      void main() {
-        gl_Position = aVertexPosition;
-      }
-    `;
+    // Default shader for testing
+    const defaultShader: WebGLShader = {
+      vertex: `
+        attribute vec4 aVertexPosition;
+        void main() {
+          gl_Position = aVertexPosition;
+        }
+      `,
+      fragment: `
+        precision mediump float;
+        uniform float uTime;
+        uniform vec2 uResolution;
+        void main() {
+          float r = sin(uTime * 0.001) * 0.5 + 0.5;
+          float g = cos(uTime * 0.001) * 0.5 + 0.5;
+          float b = sin(uTime * 0.0015) * 0.5 + 0.5;
+          gl_FragColor = vec4(r, g, b, 1.0);
+        }
+      `
+    };
 
-    const fsSource = `
-      precision mediump float;
-      void main() {
-        gl_FragColor = vec4(0.0, 0.5, 1.0, 1.0);
-      }
-    `;
-
-    const program = this.createProgram(gl, vsSource, fsSource);
+    const { program, uniforms } = this.createShaderProgram(gl, defaultShader);
     gl.useProgram(program);
 
+    // Setup vertex buffer for fullscreen triangle
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    const positions = [
-      -1.0,  1.0,
-       1.0,  1.0,
+    const positions = new Float32Array([
       -1.0, -1.0,
        1.0, -1.0,
-    ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+       0.0,  1.0,
+    ]);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
     const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Setup uniforms
+    const uniformLocations = {
+      uTime: gl.getUniformLocation(program, 'uTime'),
+      uResolution: gl.getUniformLocation(program, 'uResolution'),
+    };
+
+    // Setup time and resolution uniforms
+    const startTime = Date.now();
+    const render = (currentTime: number) => {
+      if (!gl || gl.isContextLost()) return;
+      
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      
+      const elapsed = (currentTime - startTime) / 1000.0;
+      gl.uniform1f(uniformLocations.uTime, elapsed);
+      gl.uniform2f(uniformLocations.uResolution, canvas.width, canvas.height);
+      
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    // Animation loop
+    let animationId: number;
+    const startLoop = () => {
+      const animate = (time: number) => {
+        render(time);
+        animationId = requestAnimationFrame(animate);
+      };
+      animationId = requestAnimationFrame(animate);
+    };
+    startLoop();
 
     return {
       name: this.name,
@@ -52,15 +90,20 @@ export class WebGLAdapter implements EngineAdapter {
       device: null,
       destroy: async () => {
         console.log('[WebGLAdapter] Destroying instance');
+        cancelAnimationFrame(animationId);
         gl.deleteProgram(program);
         gl.deleteBuffer(positionBuffer);
+        gl.makeContextCurrent(null);
       },
     };
   }
 
-  private createProgram(gl: WebGLRenderingContext, vsSource: string, fsSource: string): WebGLProgram {
-    const vs = this.loadShader(gl, gl.VERTEX_SHADER, vsSource);
-    const fs = this.loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  private createShaderProgram(gl: WebGLRenderingContext | WebGL2RenderingContext, shader: WebGLShader): {
+    program: WebGLProgram;
+    uniforms: Record<string, WebGLUniformLocation | null>;
+  } {
+    const vs = this.loadShader(gl, gl.VERTEX_SHADER, shader.vertex);
+    const fs = this.loadShader(gl, gl.FRAGMENT_SHADER, shader.fragment);
     const program = gl.createProgram()!;
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
@@ -68,10 +111,19 @@ export class WebGLAdapter implements EngineAdapter {
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       throw new Error('Could not compile WebGL program: ' + gl.getProgramInfoLog(program));
     }
-    return program;
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    
+    const uniforms: Record<string, WebGLUniformLocation | null> = {
+      uTime: gl.getUniformLocation(program, 'uTime'),
+      uResolution: gl.getUniformLocation(program, 'uResolution'),
+      uMouse: gl.getUniformLocation(program, 'uMouse'),
+    };
+    
+    return { program, uniforms };
   }
 
-  private loadShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {
+  private loadShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: number, source: string): WebGLShader {
     const shader = gl.createShader(type)!;
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
