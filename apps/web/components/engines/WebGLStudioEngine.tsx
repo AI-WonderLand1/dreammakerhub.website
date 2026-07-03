@@ -1,56 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-
-interface WebGLStudioEngineProps {
-  engineState?: any;
-  onStateChange?: (state: any) => void;
-}
-
-const SHADER_TEMPLATES = [
-  { name: 'Basic Color', template: 'precision mediump float;\nvoid main() {\n  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n}' },
-  { name: 'Gradient', template: 'precision mediump float;\nvarying vec2 vUv;\nvoid main() {\n  gl_FragColor = vec4(vUv.x, vUv.y, 0.5, 1.0);\n}' },
-  { name: 'Noise', template: 'precision mediump float;\nvarying vec2 vUv;\nfloat noise(vec2 p) {\n  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);\n}\nvoid main() {\n  gl_FragColor = vec4(vec3(noise(vUv)), 1.0);\n}' },
-  { name: 'Perlin Noise', template: 'precision mediump float;\nvarying vec2 vUv;\nfloat perlin(vec3 p) {\n  return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);\n}\nvoid main() {\n  gl_FragColor = vec4(vec3(perlin(vec3(vUv, 0.0))), 1.0);\n}' },
-  { name: 'Mandelbrot', template: 'precision mediump float;\nvarying vec2 vUv;\nvoid main() {\n  vec2 c = vUv * 2.0 - 1.0;\n  vec2 z = vec2(0.0);\n  for(int i = 0; i < 100; i++) {\n    z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;\n  }\n  gl_FragColor = vec4(vec3(length(z) / 2.0), 1.0);\n}' },
-  { name: 'Wave Simulation', template: 'precision mediump float;\nvarying vec2 vUv;\nuniform float uTime;\nvoid main() {\n  float wave = sin(vUv.x * 10.0 + uTime) * 0.5 + 0.5;\n  gl_FragColor = vec4(wave, wave, wave, 1.0);\n}' },
-];
-
-const CANVAS_TOOLS = [
-  { name: 'Pencil', icon: '✏️', modes: ['Free Draw', 'Smooth', 'Pressure'] },
-  { name: 'Brush', icon: '🖌️', modes: ['Soft', 'Hard', 'Texture'] },
-  { name: 'Shape', icon: '⬜', modes: ['Rectangle', 'Circle', 'Polygon'] },
-  { name: 'Text', icon: '🔤', modes: ['Normal', 'Gradient', 'Outline'] },
-  { name: 'Fill', icon: '🪣', modes: ['Solid', 'Gradient', 'Pattern'] },
-  { name: 'Selection', icon: '📐', modes: ['Rectangle', 'Freehand', 'Magic Wand'] },
-];
-
-const FILTERS_LIBRARY = [
-  { name: 'Blur', params: ['Radius (0-50)'] },
-  { name: 'Sharpen', params: ['Amount (0-100)'] },
-  { name: 'Brightness', params: ['Value (-100 to 100)'] },
-  { name: 'Contrast', params: ['Value (-100 to 100)'] },
-  { name: 'Saturation', params: ['Value (-100 to 100)'] },
-  { name: 'Hue Shift', params: ['Angle (0-360)'] },
-  { name: 'Invert', params: [] },
-  { name: 'Grayscale', params: [] },
-  { name: 'Sepia', params: ['Intensity (0-100)'] },
-  { name: 'Color Balance', params: ['Shadows', 'Midtones', 'Highlights'] },
-];
-
-const TEXTURES_LIBRARY = [
-  'Marble', 'Wood', 'Stone', 'Metal', 'Fabric', 'Glass', 'Plastic', 'Rubber',
-  'Leather', 'Paper', 'Concrete', 'Brick', 'Tile', 'Water', 'Fire', 'Cloud'
-];
-
-const BLEND_MODES = [
-  'Normal', 'Multiply', 'Screen', 'Overlay', 'Soft Light', 'Hard Light', 'Color Dodge',
-  'Color Burn', 'Darken', 'Lighten', 'Difference', 'Exclusion', 'Hue', 'Saturation', 'Color', 'Luminosity'
-];
-
-'use client';
-
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import for WebGLStudioViewer (real WebGL rendering)
