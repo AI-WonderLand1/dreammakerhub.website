@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import '../styles/tie-dye-neon.css';
 import { PAGES, getPagesByCategory } from '../lib/navigation';
+import { engineManager, registerAllAdapters } from '@/engine/core';
 
 // Dynamically import engines with ssr: false to prevent server-side issues
 const PlayCanvasEngine = dynamic(() => import('./engines/PlayCanvasEngine'), {
@@ -82,19 +83,42 @@ export function QuadEngineShell() {
     webgl: null,
     puck: null,
   });
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const currentEngine = ENGINES.find((e) => e.id === activeEngine)!;
   const CurrentEngineComponent = currentEngine.component;
 
-  const handleEngineSwitch = useCallback((engineId: EngineType) => {
-    setActiveEngine(engineId);
-  }, []);
+  const handleEngineSwitch = useCallback(async (engineId: EngineType) => {
+    if (isInitializing) return;
+    
+    setIsInitializing(true);
+    try {
+      // 1. Dispose the current engine via the manager
+      await engineManager.dispose();
+      
+      // 2. Load the new engine via the manager
+      // For now, we pass a dummy canvas. The engine adapter will handle the real one.
+      await engineManager.loadEngine(engineId, {
+        canvas: document.createElement('canvas') as any,
+      });
+
+      // 3. Update React state to reflect the new engine
+      setActiveEngine(engineId);
+    } catch (err) {
+      console.error('Engine switch failed:', err);
+    } finally {
+      setIsInitializing(false);
+    }
+  }, [isInitializing]);
 
   const handleSaveEngineState = useCallback((engineId: EngineType, state: any) => {
     setEngineStates((prev) => ({ ...prev, [engineId]: state }));
   }, []);
 
   useEffect(() => {
+    // Register adapters on mount
+    registerAllAdapters();
+
     // Keyboard shortcut to toggle sidebar
     const handleKeyPress = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
@@ -135,10 +159,13 @@ export function QuadEngineShell() {
             <button
               key={engine.id}
               onClick={() => handleEngineSwitch(engine.id)}
+              disabled={isInitializing}
               className={`sidebar-item w-full text-left text-sm font-mono transition-all ${
                 activeEngine === engine.id
                   ? 'active neon-glow-secondary'
-                  : 'text-white/60 hover:text-white'
+                  : isInitializing 
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'text-white/60 hover:text-white'
               }`}
               title={engine.label}
             >
@@ -193,17 +220,17 @@ export function QuadEngineShell() {
           <div className="p-3 flex items-center justify-between border-b border-blue-500/30 bg-black/50">
             <div className="flex items-center gap-3">
               <div
-                className="engine-active w-4 h-4 rounded-full"
-                style={{ boxShadow: `0 0 15px ${currentEngine.color}` }}
+                className={`engine-active w-4 h-4 rounded-full ${isInitializing ? 'animate-pulse bg-yellow-500' : ''}`}
+                style={{ boxShadow: isInitializing ? '0 0 15px #eab308' : `0 0 15px ${currentEngine.color}` }}
               />
               <span className="cyberpunk-text text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-blue-500 to-green-500">
                 AI-WONDERLAND
               </span>
               <span className="text-xs text-cyan-400 font-mono ml-2">
-                {currentEngine.label}
+                {isInitializing ? 'INITIALIZING...' : currentEngine.label}
               </span>
             </div>
-
+            
             <div className="flex items-center gap-2">
               <Link href="/" className="px-3 py-1 rounded text-xs hover:bg-cyan-500/20 transition">
                 🏠 Home
@@ -223,7 +250,7 @@ export function QuadEngineShell() {
               <a href="/support" className="px-3 py-1 rounded text-xs hover:bg-red-500/20 transition">
                 💬 Support
               </a>
-
+              
               <div className="ml-4 border-l border-white/20 pl-4 flex gap-2">
                 <button className="neon-button px-3 py-1 text-xs" title="Settings (Ctrl+,)">
                   ⚙️
@@ -286,10 +313,19 @@ export function QuadEngineShell() {
 
         {/* Engine Container */}
         <div className="flex-1 overflow-hidden engine-container active m-2 rounded-lg">
-          <CurrentEngineComponent
-            engineState={engineStates[activeEngine]}
-            onStateChange={(state: any) => handleSaveEngineState(activeEngine, state)}
-          />
+          {isInitializing ? (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-black via-black to-black">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-cyan-500 font-mono text-sm">Switching Engine...</p>
+              </div>
+            </div>
+          ) : (
+            <CurrentEngineComponent
+              engineState={engineStates[activeEngine]}
+              onStateChange={(state: any) => handleSaveEngineState(activeEngine, state)}
+            />
+          )}
         </div>
 
         {/* Status Bar */}
@@ -302,3 +338,4 @@ export function QuadEngineShell() {
     </div>
   );
 }
+
