@@ -111,7 +111,6 @@ export class EngineManager {
       if (!this.active) return;
 
       // Callback to the active engine for frame updates
-      // @ts-ignore - adding custom onFrame to active for convenience
       if (typeof this.active.onFrame === 'function') {
         this.active.onFrame(time);
       }

@@ -1,3 +1,5 @@
+import type { EngineAdapter } from '../adapters/types';
+
 export interface EngineConfig {
   canvas: HTMLCanvasElement
   width?: number
@@ -16,11 +18,6 @@ export interface EngineInstance {
   destroy: () => Promise<void> | void
 }
 
-export interface EngineAdapter {
-  name: string
-  create(config: EngineConfig): Promise<EngineInstance>
-}
-
 export interface ActiveEngine {
   name: string
   canvas: HTMLCanvasElement
@@ -28,6 +25,8 @@ export interface ActiveEngine {
   device: GPUDevice | null
   rafId: number | null
   destroy: () => Promise<void> | void
+  onFrame?: (time: number) => void
 }
 
 export type EngineName = 'playcanvas' | 'webgl' | 'puck' | 'webgpu'
+export { EngineAdapter }
