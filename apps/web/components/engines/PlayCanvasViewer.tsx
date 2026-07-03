@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { engineManager } from '@/engine/core';
 
 // Dynamic import for PlayCanvas (client-side only)
 let pc: any = null;
@@ -52,7 +53,23 @@ export default function PlayCanvasViewer({
       camera.lookAt(0, 0, 0);
       setZoom(1);
     }
-  }, []);
+   }, []);
+
+   // Create dummy handlers for the Viewer's UI controls
+   const updateStats = useCallback(() => {
+     setStats(prev => ({
+       fps: Math.max(0, prev.fps - 1),
+       entities: Math.max(0, prev.entities - 1),
+     }));
+   }, []);
+
+   const updateZoom = useCallback((delta: number) => {
+     setZoom(prev => Math.max(0.3, Math.min(3, prev * delta)));
+   }, []);
+
+   const updateGrid = useCallback(() => {
+     setShowGrid(prev => !prev);
+   }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -60,202 +77,42 @@ export default function PlayCanvasViewer({
 
     const initPlayCanvas = async () => {
       try {
-        // Dynamically import PlayCanvas
-        if (!pc) {
-          const playcanvas = await import('playcanvas');
-          pc = playcanvas;
-        }
+        // Use EngineManager instead of direct instantiation
+        if (!canvasRef.current) return;
 
-        if (!mounted || !canvasRef.current || !containerRef.current) return;
-
-        // Create PlayCanvas application
-        const canvas = canvasRef.current;
-        const app = new pc.Application(canvas, {
-          mouse: new pc.Mouse(canvas),
-          touch: new pc.TouchDevice(canvas),
-          elementInput: new pc.ElementInput(canvas)
-        });
-
-        appRef.current = app;
-
-        // Set canvas to fill container (responsive)
-        app.setCanvasFillMode(pc.FILLMODE_NONE);
-        app.setCanvasResolution(pc.RESOLUTION_AUTO);
-
-        // Start the application
-        app.start();
-
-        // Initial resize
-        const resize = () => {
-          if (containerRef.current && canvasRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            canvasRef.current.width = rect.width;
-            canvasRef.current.height = rect.height;
-            app.resizeCanvas(rect.width, rect.height);
-          }
-        };
-        resize();
-
-        // Create camera
-        const camera = new pc.Entity('Camera');
-        camera.addComponent('camera', {
-          clearColor: new pc.Color(0.08, 0.08, 0.12), // Dark blue-gray background
-          fov: 45,
-          nearClip: 0.1,
-          farClip: 1000
-        });
-        camera.setPosition(0, 3, 8);
-        camera.lookAt(0, 0, 0);
-        app.root.addChild(camera);
-
-        // Create light
-        const light = new pc.Entity('Light');
-        light.addComponent('light', {
-          type: 'directional',
-          color: new pc.Color(1, 1, 1),
-          intensity: 1,
-          castShadows: true
-        });
-        light.setEulerAngles(45, 30, 0);
-        app.root.addChild(light);
-
-        // Create ambient light
-        const ambientLight = new pc.Entity('Ambient');
-        ambientLight.addComponent('light', {
-          type: 'point',
-          color: new pc.Color(0.4, 0.4, 0.5),
-          intensity: 0.6,
-          range: 100
-        });
-        ambientLight.setPosition(5, 10, 5);
-        app.root.addChild(ambientLight);
-
-        // Create a demo cube with better material
-        const cube = new pc.Entity('Demo Cube');
-        cube.addComponent('render', {
-          type: 'box'
-        });
-        
-        // Create nice material
-        const material = new pc.StandardMaterial();
-        material.diffuse = new pc.Color(0.2, 0.6, 1);
-        material.shininess = 60;
-        material.metalness = 0.3;
-        material.useMetalness = true;
-        material.update();
-        
-        if (cube.render) {
-          cube.render.material = material;
-        }
-        
-        app.root.addChild(cube);
-
-        // Add rotation script
-        app.on('update', (dt: number) => {
-          cube.rotate(15 * dt, 25 * dt, 0);
-        });
-
-        // Create ground plane
-        const ground = new pc.Entity('Ground');
-        ground.addComponent('render', {
-          type: 'plane'
-        });
-        ground.setLocalScale(20, 1, 20);
-        ground.setPosition(0, -1, 0);
-        
-        const groundMaterial = new pc.StandardMaterial();
-        groundMaterial.diffuse = new pc.Color(0.15, 0.15, 0.2);
-        groundMaterial.update();
-        
-        if (ground.render) {
-          ground.render.material = groundMaterial;
-        }
-        
-        app.root.addChild(ground);
-
-        // Add grid helper (visual only)
-        const grid = new pc.Entity('Grid');
-        grid.setLocalScale(20, 1, 20);
-        grid.setPosition(0, -0.99, 0);
-        app.root.addChild(grid);
-
-        // Mouse orbit controls
-        let isDragging = false;
-        let lastMouseX = 0;
-        let lastMouseY = 0;
-        let cameraDistance = 8;
-        let cameraAzimuth = 45;
-        let cameraElevation = 30;
-
-        app.mouse.on(pc.EVENT_MOUSEDOWN, (event: any) => {
-          if (event.button === pc.MOUSEBUTTON_LEFT) {
-            isDragging = true;
-            lastMouseX = event.x;
-            lastMouseY = event.y;
+        // Load engine via EngineManager
+        await engineManager.loadEngine('playcanvas', {
+          canvas: canvasRef.current,
+          onFrame: (time: number) => {
+            // Update stats from the active engine
+            if (engineManager.getActiveEngineName() === 'playcanvas') {
+              const activeEngine = engineManager['active'];
+              if (activeEngine?.context) {
+                setStats(prev => ({
+                  fps: Math.round(1000 / (activeEngine.context as any)._frameTime || 16),
+                  entities: activeEngine.root?.children?.length || 0,
+                }));
+              }
+            }
+          },
+          onReady: () => {
+            setIsLoading(false);
+            onSceneReady?.(null); // EngineManager creates the app
+          },
+          onError: (err: Error) => {
+            setError(err.message);
           }
         });
 
-        app.mouse.on(pc.EVENT_MOUSEUP, () => {
-          isDragging = false;
-        });
+        if (!mounted) return;
+        console.log('[PlayCanvasViewer] Engine initialized via EngineManager');
 
-        app.mouse.on(pc.EVENT_MOUSEMOVE, (event: any) => {
-          if (isDragging) {
-            const dx = event.x - lastMouseX;
-            const dy = event.y - lastMouseY;
-            
-            cameraAzimuth -= dx * 0.3;
-            cameraElevation = Math.max(5, Math.min(85, cameraElevation - dy * 0.3));
-            
-            const phi = cameraElevation * pc.math.DEG_TO_RAD;
-            const theta = cameraAzimuth * pc.math.DEG_TO_RAD;
-            
-            camera.setPosition(
-              cameraDistance * Math.sin(phi) * Math.sin(theta),
-              cameraDistance * Math.cos(phi),
-              cameraDistance * Math.sin(phi) * Math.cos(theta)
-            );
-            camera.lookAt(0, 0, 0);
-            
-            lastMouseX = event.x;
-            lastMouseY = event.y;
-          }
-        });
-
-        app.mouse.on(pc.EVENT_MOUSEWHEEL, (event: any) => {
-          cameraDistance = Math.max(2, Math.min(50, cameraDistance - event.wheel * 0.5));
-          const phi = cameraElevation * pc.math.DEG_TO_RAD;
-          const theta = cameraAzimuth * pc.math.DEG_TO_RAD;
-          
-          camera.setPosition(
-            cameraDistance * Math.sin(phi) * Math.sin(theta),
-            cameraDistance * Math.cos(phi),
-            cameraDistance * Math.sin(phi) * Math.cos(theta)
-          );
-          camera.lookAt(0, 0, 0);
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', resize);
-
-        // Update stats
-        const updateStats = () => {
-          const entities = app.root.children.length;
-          setStats({ fps: Math.round(1000 / (app._frameTime || 16)), entities });
-          animationFrameId = requestAnimationFrame(updateStats);
-        };
-        updateStats();
-
-        setIsLoading(false);
-        onSceneReady?.(app);
-
-        return () => {
-          window.removeEventListener('resize', resize);
-        };
       } catch (err) {
-        console.error('Failed to initialize PlayCanvas:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setIsLoading(false);
+        const errorMsg = err instanceof Error ? err.message : 'Failed to initialize PlayCanvas';
+        console.error('[PlayCanvasViewer] Error:', errorMsg);
+        if (mounted) {
+          setError(errorMsg);
+        }
       }
     };
 
@@ -264,9 +121,9 @@ export default function PlayCanvasViewer({
     return () => {
       mounted = false;
       cancelAnimationFrame(animationFrameId);
-      if (appRef.current) {
-        appRef.current.destroy();
-        appRef.current = null;
+      // EngineManager handles cleanup automatically
+      if (engineManager.getActiveEngineName() === 'playcanvas') {
+        engineManager.dispose();
       }
     };
   }, [onSceneReady, onEntitySelect]);
