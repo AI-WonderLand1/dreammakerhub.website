@@ -4,6 +4,12 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 
 export const runtime = "nodejs";
 
+// Validate UUID format
+const isValidUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+// Sanitize string inputs
+const sanitize = (val: unknown, maxLen = 100) => String(val || "").slice(0, maxLen);
+
 /**
  * POST /api/sync/playground-tokens
  * Syncs token purchases, grants, and balance between platforms.
@@ -37,6 +43,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Missing required fields", traceId }, { status: 400 });
     }
 
+    // Validate inputs
+    if (!isValidUUID(userId)) {
+      return NextResponse.json({ ok: false, error: "Invalid userId format", traceId }, { status: 400 });
+    }
+
+    const validActions = ["add", "subtract", "set"];
+    if (!validActions.includes(action)) {
+      return NextResponse.json({ ok: false, error: "Invalid action", traceId }, { status: 400 });
+    }
+
+    const sanitizedAmount = Math.max(0, Math.min(1000000, Math.floor(Number(amount))));
+    const sanitizedReason = sanitize(reason);
+    const sanitizedTxId = transactionId ? sanitize(transactionId, 200) : null;
+
     // Get current balance
     const { data: current } = await supabase
       .from("token_balances")
@@ -50,16 +70,14 @@ export async function POST(req: NextRequest) {
     // Calculate new balance based on action
     switch (action) {
       case "add":
-        newBalance = currentBalance + amount;
+        newBalance = currentBalance + sanitizedAmount;
         break;
       case "subtract":
-        newBalance = Math.max(0, currentBalance - amount);
+        newBalance = Math.max(0, currentBalance - sanitizedAmount);
         break;
       case "set":
-        newBalance = amount;
+        newBalance = sanitizedAmount;
         break;
-      default:
-        return NextResponse.json({ ok: false, error: "Invalid action", traceId }, { status: 400 });
     }
 
     // Upsert balance
@@ -80,11 +98,11 @@ export async function POST(req: NextRequest) {
     await supabase.from("token_transactions").insert({
       user_id: userId,
       action,
-      amount,
+      amount: sanitizedAmount,
       previous_balance: currentBalance,
       new_balance: newBalance,
-      reason: reason || "playground_sync",
-      transaction_id: transactionId,
+      reason: sanitizedReason || "playground_sync",
+      transaction_id: sanitizedTxId,
       source: "playground",
       created_at: new Date().toISOString(),
     });
@@ -94,7 +112,7 @@ export async function POST(req: NextRequest) {
       source: "playground",
       event_type: "tokens",
       user_id: userId,
-      payload: { action, amount, previousBalance: currentBalance, newBalance },
+      payload: { action, amount: sanitizedAmount, previousBalance: currentBalance, newBalance },
       created_at: new Date().toISOString(),
     });
 
@@ -103,7 +121,7 @@ export async function POST(req: NextRequest) {
       userId,
       balance: newBalance,
       action,
-      amount,
+      amount: sanitizedAmount,
       traceId,
     });
   } catch (err: any) {

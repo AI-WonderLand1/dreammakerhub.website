@@ -21,6 +21,11 @@
  *   
  *   // Report session status
  *   await sync.reportStatus('user-123', 'active', 'session-abc');
+ *   
+ *   // Subscribe to real-time updates
+ *   sync.subscribeToRealtime('user-123', (event) => {
+ *     console.log('Real-time update:', event);
+ *   });
  */
 
 export interface PlaygroundSyncConfig {
@@ -60,6 +65,15 @@ export interface SyncResponse {
   traceId?: string;
   data?: unknown;
 }
+
+export interface RealtimeEvent {
+  type: 'usage' | 'tokens' | 'transaction' | 'status' | 'connected' | 'heartbeat';
+  event?: string;
+  data?: unknown;
+  timestamp: string;
+}
+
+export type RealtimeCallback = (event: RealtimeEvent) => void;
 
 export class PlaygroundSync {
   private config: PlaygroundSyncConfig;
@@ -254,6 +268,62 @@ export class PlaygroundSync {
   }> {
     const params = userId ? `?userId=${userId}` : '';
     return this.request(`/playground-status${params}`, 'GET');
+  }
+
+  /**
+   * Subscribe to real-time updates via Server-Sent Events.
+   * Returns an unsubscribe function.
+   */
+  subscribeToRealtime(
+    userId: string,
+    callback: RealtimeCallback,
+    events: string[] = ['usage', 'tokens', 'status']
+  ): () => void {
+    const params = new URLSearchParams({ userId, events: events.join(',') });
+    const url = `${this.config.apiUrl}/api/sync/realtime?${params.toString()}`;
+
+    const eventSource = new EventSource(url, {
+      withCredentials: false,
+    });
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as RealtimeEvent;
+        callback(data);
+      } catch (e) {
+        console.error('Failed to parse realtime event:', e);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('Realtime connection error:', error);
+      callback({ type: 'heartbeat', timestamp: new Date().toISOString() });
+    };
+
+    // Return unsubscribe function
+    return () => {
+      eventSource.close();
+    };
+  }
+
+  /**
+   * Create an EventSource for real-time updates (browser only).
+   */
+  createRealtimeConnection(
+    userId: string,
+    events: string[] = ['usage', 'tokens', 'status']
+  ): EventSource | null {
+    if (typeof EventSource === 'undefined') {
+      console.warn('EventSource not supported in this environment');
+      return null;
+    }
+
+    const params = new URLSearchParams({ userId, events: events.join(',') });
+    const url = `${this.config.apiUrl}/api/sync/realtime?${params.toString()}`;
+
+    return new EventSource(url, {
+      withCredentials: false,
+    });
   }
 }
 

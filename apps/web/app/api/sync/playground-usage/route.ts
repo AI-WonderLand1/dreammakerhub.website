@@ -39,14 +39,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Missing userId or tokens", traceId }, { status: 400 });
     }
 
+    // Validate userId is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      return NextResponse.json({ ok: false, error: "Invalid userId format", traceId }, { status: 400 });
+    }
+
+    // Sanitize inputs
+    const sanitizedModel = String(model || "unknown").slice(0, 100);
+    const sanitizedSessionId = sessionId ? String(sessionId).slice(0, 100) : null;
+    const sanitizedTokens = Math.max(0, Math.min(1000000, Math.floor(tokens))); // Cap at 1M
+
     // Upsert usage record
     const { data, error } = await supabase
       .from("playground_usage")
       .upsert({
         user_id: userId,
-        total_tokens: tokens,
-        last_model: model || "unknown",
-        last_session_id: sessionId,
+        total_tokens: sanitizedTokens,
+        last_model: sanitizedModel,
+        last_session_id: sanitizedSessionId,
         metadata: metadata || {},
         synced_at: new Date().toISOString(),
         source: "playground",
@@ -63,7 +74,7 @@ export async function POST(req: NextRequest) {
       source: "playground",
       event_type: "usage",
       user_id: userId,
-      payload: { tokens, model, sessionId },
+      payload: { tokens: sanitizedTokens, model: sanitizedModel, sessionId: sanitizedSessionId },
       created_at: new Date().toISOString(),
     });
 
