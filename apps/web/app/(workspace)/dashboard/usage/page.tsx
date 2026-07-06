@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getUserLimits, formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
@@ -15,7 +15,12 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Shield
+  Shield,
+  Gamepad2,
+  Bot,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 
 type UsageData = {
@@ -33,24 +38,83 @@ type UsageData = {
   runtimeHoursUsed: number;
 };
 
+type PlaygroundUsage = {
+  totalTokens: number;
+  lastModel: string;
+  lastSynced: string;
+  playgroundSessions: number;
+};
+
+type TokenBalance = {
+  balance: number;
+  lastUpdated: string;
+  recentTransactions: Array<{
+    action: string;
+    amount: number;
+    reason: string;
+    created_at: string;
+  }>;
+};
+
 export default function BillingUsagePage() {
   const [usage, setUsage] = useState<UsageData | null>(null);
+  const [playground, setPlayground] = useState<PlaygroundUsage | null>(null);
+  const [tokens, setTokens] = useState<TokenBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const fetchPlaygroundData = useCallback(async (uid: string) => {
+    try {
+      const playgroundRes = await fetch(`/api/sync/playground-usage?userId=${uid}`);
+      const playgroundData = await playgroundRes.json();
+      if (playgroundData.ok) {
+        setPlayground({
+          totalTokens: playgroundData.combined?.totalTokens || 0,
+          lastModel: playgroundData.playground?.last_model || "N/A",
+          lastSynced: playgroundData.playground?.synced_at || "",
+          playgroundSessions: 0,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch playground usage:", e);
+    }
+
+    try {
+      const tokensRes = await fetch(`/api/sync/playground-tokens?userId=${uid}`);
+      const tokensData = await tokensRes.json();
+      if (tokensData.ok) {
+        setTokens({
+          balance: tokensData.balance || 0,
+          lastUpdated: tokensData.lastUpdated || "",
+          recentTransactions: tokensData.transactions?.slice(0, 5) || [],
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch token balance:", e);
+    }
+
+    setLastUpdate(new Date());
+  }, []);
 
   useEffect(() => {
-    const loadUsage = async () => {
-      const supabase = createClient();
-      if (!supabase) {
-        setError("Supabase not configured");
-        setLoading(false);
-        return;
-      }
+    const supabase = createClient();
+    if (!supabase) {
+      setError("Supabase not configured");
+      setLoading(false);
+      return;
+    }
 
+    const loadUsage = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        setUserId(user.id);
+
+        // Fetch main usage
         const { data, error } = await supabase
           .from("user_profiles")
           .select("*")
@@ -75,6 +139,91 @@ export default function BillingUsagePage() {
             runtimeHoursUsed: data.runtime_hours_used || 0,
           });
         }
+
+        // Initial fetch of playground data
+        await fetchPlaygroundData(user.id);
+
+        // Set up real-time subscriptions
+        const usageChannel = supabase
+          .channel('playground-usage-changes')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'playground_usage', filter: `user_id=eq.${user.id}` },
+            (payload) => {
+              console.log('Playground usage updated:', payload);
+              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                const newData = payload.new as any;
+                setPlayground(prev => prev ? {
+                  ...prev,
+                  totalTokens: newData.total_tokens || prev.totalTokens,
+                  lastModel: newData.last_model || prev.lastModel,
+                  lastSynced: newData.synced_at || prev.lastSynced,
+                } : prev);
+                setLastUpdate(new Date());
+              }
+            }
+          )
+          .subscribe((status) => {
+            setIsRealTimeConnected(status === 'SUBSCRIBED');
+          });
+
+        const tokensChannel = supabase
+          .channel('token-balance-changes')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'token_balances', filter: `user_id=eq.${user.id}` },
+            (payload) => {
+              console.log('Token balance updated:', payload);
+              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                const newData = payload.new as any;
+                setTokens(prev => prev ? {
+                  ...prev,
+                  balance: newData.balance || prev.balance,
+                  lastUpdated: newData.last_updated || prev.lastUpdated,
+                } : prev);
+                setLastUpdate(new Date());
+              }
+            }
+          )
+          .subscribe();
+
+        const transactionsChannel = supabase
+          .channel('token-transactions-changes')
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'token_transactions', filter: `user_id=eq.${user.id}` },
+            (payload) => {
+              console.log('New transaction:', payload);
+              if (payload.eventType === 'INSERT') {
+                const newTx = payload.new as any;
+                setTokens(prev => prev ? {
+                  ...prev,
+                  recentTransactions: [newTx, ...prev.recentTransactions].slice(0, 5),
+                } : prev);
+                setLastUpdate(new Date());
+              }
+            }
+          )
+          .subscribe();
+
+        const sessionsChannel = supabase
+          .channel('playground-sessions-changes')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'playground_sessions', filter: `user_id=eq.${user.id}` },
+            (payload) => {
+              console.log('Session status updated:', payload);
+              setLastUpdate(new Date());
+            }
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(usageChannel);
+          supabase.removeChannel(tokensChannel);
+          supabase.removeChannel(transactionsChannel);
+          supabase.removeChannel(sessionsChannel);
+        };
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -83,7 +232,14 @@ export default function BillingUsagePage() {
     };
 
     loadUsage();
-  }, []);
+  }, [fetchPlaygroundData]);
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    if (userId) {
+      await fetchPlaygroundData(userId);
+    }
+  };
 
   const getPercentage = (used: number, limit: number) => {
     if (limit === 0) return 0;
@@ -210,6 +366,72 @@ export default function BillingUsagePage() {
             <div 
               className="h-full bg-purple-500 rounded-full"
               style={{ width: `${getPercentage(usage?.runtimeHoursUsed || 0, usage?.runtimeHoursMonthly || 1)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Playground & Token Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+        {/* Playground Tokens */}
+        <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl p-4 border border-violet-500/20">
+          <div className="flex items-center gap-2 text-violet-400 text-sm mb-2">
+            <Gamepad2 size={14} />
+            Playground Tokens
+          </div>
+          <div className="text-2xl font-bold mb-1">
+            {formatNumber(playground?.totalTokens || 0)}
+          </div>
+          <div className="text-xs text-white/50">
+            {playground?.lastModel !== "N/A" ? `Last model: ${playground?.lastModel}` : "No activity yet"}
+          </div>
+          {playground?.lastSynced && (
+            <div className="text-xs text-white/40 mt-1">
+              Synced: {new Date(playground.lastSynced).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+
+        {/* Token Balance */}
+        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl p-4 border border-green-500/20">
+          <div className="flex items-center gap-2 text-green-400 text-sm mb-2">
+            <Bot size={14} />
+            Token Balance
+          </div>
+          <div className="text-2xl font-bold mb-1">
+            {formatNumber(tokens?.balance || 0)}
+          </div>
+          <div className="text-xs text-white/50">
+            {tokens?.lastUpdated ? `Updated: ${new Date(tokens.lastUpdated).toLocaleDateString()` : "No balance"}
+          </div>
+          {tokens?.recentTransactions && tokens.recentTransactions.length > 0 && (
+            <div className="text-xs text-white/40 mt-1">
+              Last: {tokens.recentTransactions[0].action} {formatNumber(tokens.recentTransactions[0].amount)}
+            </div>
+          )}
+        </div>
+
+        {/* Combined Usage */}
+        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 border border-blue-500/20">
+          <div className="flex items-center gap-2 text-blue-400 text-sm mb-2">
+            <BarChart3 size={14} />
+            Combined AI Usage
+          </div>
+          <div className="text-2xl font-bold mb-1">
+            {formatNumber((usage?.aiTokensUsed || 0) + (playground?.totalTokens || 0))}
+          </div>
+          <div className="text-xs text-white/50">
+            Main: {formatNumber(usage?.aiTokensUsed || 0)} + Playground: {formatNumber(playground?.totalTokens || 0)}
+          </div>
+          <div className="h-2 bg-white/10 rounded-full overflow-hidden mt-2">
+            <div 
+              className="h-full bg-gradient-to-r from-orange-500 to-violet-500 rounded-full"
+              style={{ 
+                width: `${getPercentage(
+                  (usage?.aiTokensUsed || 0) + (playground?.totalTokens || 0), 
+                  (usage?.aiTokensMonthly || 1) + (playground?.totalTokens || 1)
+                )}%` 
+              }}
             />
           </div>
         </div>
