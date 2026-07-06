@@ -4,7 +4,22 @@ import { getGit } from "../_git";
 export async function POST() {
   try {
     const { git } = getGit();
-    const res = await git.push();
+    
+    const remotes = await git.getRemotes();
+    if (!remotes.length) {
+      throw new Error("No remotes configured for this repository.");
+    }
+    const remote = remotes[0].name;
+
+    const branch = await git.branch();
+    const currentBranch = branch.current;
+    if (!currentBranch) {
+      throw new Error("Not currently on a git branch, cannot push.");
+    }
+
+    const res = await git.push(remote, currentBranch, {
+      "--set-upstream": null,
+    });
     return NextResponse.json({ ok: true, res });
   } catch (e: any) {
     return NextResponse.json(

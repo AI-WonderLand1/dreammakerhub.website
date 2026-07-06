@@ -18,8 +18,8 @@ export default function PagesHub() {
     },
     {
       name: "Playground",
-      href: "/playground",
-      description: "Test and experiment with AI models",
+      href: "/wonder-build",
+      description: "AI Module Playground — train, create, and test",
       color: "red"
     },
     {

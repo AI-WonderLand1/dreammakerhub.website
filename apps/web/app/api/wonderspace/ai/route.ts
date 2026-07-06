@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logger } from "@lib/logger";
+import { logger } from "@/lib/logger";
 import { createClient } from "@/app/utils/supabase/server";
-import { getSmokeUserIdFromRequest } from "@lib/smokeAuth";
+import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
 
 export const runtime = "nodejs";

@@ -1,43 +1,31 @@
-import "server-only"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import "server-only";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
-function requireEnv(val: string | undefined, name: string) {
-  if (!val || !String(val).trim()) throw new Error(`Missing ${name}`)
-  return val
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function createSupabaseServerClient() {
-  const cookieStore = await cookies()
+  const cookieStore = await cookies();
 
-  const supabaseUrl =
-    process.env.SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL
-
-  const supabaseAnonKey =
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  return createServerClient(
-    requireEnv(supabaseUrl, "SUPABASE_URL"),
-    requireEnv(supabaseAnonKey, "SUPABASE_ANON_KEY"),
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          cookieStore.set({ name, value, ...options })
-        },
-        remove(name: string, options: any) {
-          cookieStore.set({ name, value: "", ...options })
-        },
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          // ignore in middleware / render
+        }
+      },
+    },
+  });
 }
 
-
 export async function createClient() {
-  return createSupabaseServerClient()
+  return createSupabaseServerClient();
 }

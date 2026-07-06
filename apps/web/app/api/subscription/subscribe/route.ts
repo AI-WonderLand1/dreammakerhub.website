@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { PLANS, type PlanId } from "@lib/billing/plans";
+import { PLANS, type PlanId } from "@/lib/billing/plans";
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { plan } = body ?? {};
+    const { plan, interval } = body ?? {};
+    const isYearly = interval === "year";
 
     if (!plan || !(plan in PLANS)) {
       return NextResponse.json({ error: "Invalid plan selection" }, { status: 400 });
@@ -31,9 +32,12 @@ export async function POST(request: NextRequest) {
     }
 
     const planConfig = PLANS[plan as PlanId];
-    
-    if (!planConfig.stripePriceId) {
-      return NextResponse.json({ error: "Stripe Price ID not configured for this plan. Set STRIPE_PRICE_PRO_ID and STRIPE_PRICE_TEAM_ID in .env" }, { status: 500 });
+    const priceId = isYearly ? planConfig.stripePriceYearlyId : planConfig.stripePriceId;
+
+    if (!priceId) {
+      return NextResponse.json({
+        error: `Stripe Price ID not configured for ${plan}${isYearly ? " yearly" : ""}`
+      }, { status: 500 });
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -55,14 +59,13 @@ export async function POST(request: NextRequest) {
     const userId = userRes.user.id;
     const userEmail = userRes.user.email;
 
-    const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://dreammakerhub.website";
+    const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://ai-wonderland.app";
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [{ price: planConfig.stripePriceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer_email: userEmail || undefined,
-      metadata: { userId, plan },
-      success_url: `${baseUrl}/subscription?success=true&plan=${plan}`,
+      metadata: { userId, plan, interval: isYearly ? "year" : "month" },
+      success_url: `${baseUrl}/subscription?success=true&plan=${plan}${isYearly ? "&interval=year" : ""}`,
       cancel_url: `${baseUrl}/subscription?canceled=true`,
     });
 

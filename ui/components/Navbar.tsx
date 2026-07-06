@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@lib/supabase/auth-context";
+import { useAuth } from "@/lib/supabase/auth-context";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,8 +30,8 @@ export default function Navbar() {
       items: [
         // { name: "WonderSpace IDE", href: "/wonderspace", icon: "💻" }, // TODO: Re-enable when IDE is ready
         { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
-        { name: "Wonder Playground", href: "/playground", icon: "🎮" },
-        { name: "AI Modules", href: "/apps/ai-modules", icon: "🤖" },
+        { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
+        { name: "AI Modules", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
       ]
     },
     {
@@ -66,6 +66,7 @@ export default function Navbar() {
     { name: "Projects", href: "/dashboard/projects" },
     { name: "Subscription", href: "/subscription" },
     { name: "Settings", href: "/settings" },
+    { name: "WonderBuild", href: "/wonder-build" },
   ];
 
   const toggleMenu = (title: string) => {
@@ -75,7 +76,7 @@ export default function Navbar() {
     }));
   };
 
-  const showPublicNav = !isAppPath && !user;
+  const showPublicNav = !user;
   const showDashboardNav = Boolean(user);
 
   return (

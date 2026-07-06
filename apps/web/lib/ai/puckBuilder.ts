@@ -1,4 +1,4 @@
-import { LocalizedConfession } from "@core/ai/pipeline-v1/confessions/types";
+import { LocalizedConfession } from "@/core/ai/pipeline-v1/confessions/types";
 
 export interface PuckComponentData {
   type: string;

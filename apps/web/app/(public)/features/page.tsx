@@ -3,7 +3,7 @@
 const features = [
   {
     title: "AI Playground",
-    description: "Run tests and demos anytime. Applying changes and exports are included with your subscription.",
+    description: "Train, create, and test AI modules with WonderBuild at ai-wonderland.app.",
     included: "Personal",
   },
   {
@@ -35,7 +35,7 @@ export default function FeaturesPage() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 bg-blend-overlay animate-gradient text-white">
       <nav className="w-full px-6 py-4 bg-black/40 backdrop-blur-md flex items-center justify-between">
-        <div className="text-xl font-bold tracking-wide">Wonderland</div>
+        <div className="text-xl font-bold tracking-wide">AI Wonderland</div>
         <div className="flex gap-6 text-sm">
           <a href="/" className="hover:text-pink-300 transition">Home</a>
           <a href="/features" className="hover:text-pink-300 transition">Features</a>

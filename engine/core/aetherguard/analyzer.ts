@@ -1,7 +1,7 @@
 import { runModel } from "@core/ai/runModel";
 import { VulnerabilityRisk, AuditResult } from "./types";
 
-const DEFAULT_MODEL = "opencode/big-pickle";
+const DEFAULT_MODEL = "openrouter/meta-llama/llama-3.3-70b-instruct";
 
 const AUDIT_SYSTEM_PROMPT = `You are a code security auditor. Analyze the workspace codebase and:
 1. Identify bugs, vulnerabilities, and security risks.

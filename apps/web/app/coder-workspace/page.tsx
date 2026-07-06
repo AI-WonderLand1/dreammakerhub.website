@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@lib/supabase/auth-context';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 export default function CoderWorkspacePage() {
   const { user, subscription } = useAuth();
@@ -70,7 +70,7 @@ export default function CoderWorkspacePage() {
           {hasAccess ? (
             <div>
               <Link 
-                href="https://coder.yourdomain.com" // Replace with your Coder URL
+                href="https://coder.ai-wonderland.app"
                 className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition"
                 target="_blank"
               >

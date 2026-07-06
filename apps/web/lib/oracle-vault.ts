@@ -18,7 +18,7 @@ interface VaultSecret {
   value: string;
 }
 
-let cachedSecrets: Map<string, string> = new Map();
+const cachedSecrets: Map<string, string> = new Map();
 
 function readOCIConfigFile(): OCIConfig | null {
   try {
@@ -44,7 +44,7 @@ function readOCIConfigFile(): OCIConfig | null {
       if (key && value) config[key] = value;
     }
 
-const vaultOcid = process.env.OCI_VAULT_OCID || 'ocid1.vault.oc1.us-chicago-1.iju5tgneaagfe.abxxeljryjr66w2biptepa5gm6ms532ghm2cowsaxzp3binj6s56ceykvbya';
+const vaultOcid = process.env.OCI_VAULT_OCID;
     if (!vaultOcid) {
       return null;
     }

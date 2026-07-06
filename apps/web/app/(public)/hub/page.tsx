@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@lib/supabase/auth-context";
+import { useAuth } from "@/lib/supabase/auth-context";
 
 const WEBSITE_EXAMPLES = [
   "A dark sci-fi portfolio for a 3D artist",

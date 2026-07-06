@@ -170,8 +170,8 @@ export default function UniversalAIAssistant({
 
     try {
       // Use unified AI endpoint
-      let endpoint = '/api/unified-ai';
-      let body: any = {
+      const endpoint = '/api/unified-ai';
+      const body: any = {
         action: 'chat',
         message: input,
         agent: selectedAgent,

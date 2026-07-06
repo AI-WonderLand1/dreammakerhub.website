@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Key, Trash2, Plus } from 'lucide-react';
-import toast, { Toaster } from '@components/ui/toast';
+import toast, { Toaster } from '@/components/ui/toast';
 
 interface SSHKey {
   id: string;

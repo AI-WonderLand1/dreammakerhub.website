@@ -1,4 +1,4 @@
-import { supabaseRouteClient } from '@lib/supabase/route'
+import { supabaseRouteClient } from '@/lib/supabase/route'
 
 export type MemoryWriteInput = {
   userId: string

@@ -4,13 +4,16 @@ export type PlanDefinition = {
   id: PlanId;
   name: string;
   displayName: string;
-  price: number; // in cents
+  price: number;
   priceDisplay: string;
+  yearlyPriceDisplay: string;
   interval: "month" | "year";
   description: string;
   features: string[];
-  stripePriceId?: string; // Set this after creating prices in Stripe dashboard
+  stripePriceId?: string;
+  stripePriceYearlyId?: string;
   highlight?: boolean;
+  trialDays?: number;
 };
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
@@ -20,28 +23,34 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     displayName: "The Nomad",
     price: 0,
     priceDisplay: "$0/forever",
+    yearlyPriceDisplay: "$0/yr ($0/mo)",
     interval: "month",
     description: "Every adventure begins somewhere. Wander in, no credit card required.",
     features: [
       "1 active project",
       "Wonderbuild UI editor",
+      "1 IDE seat",
+      "10 runtime hours/month",
       "5K AI tokens/month",
       "100 API calls/month",
       "100 MB storage",
       "Community support",
-      "dreammakerhub.website subdomain",
+      "ai-wonderland.app subdomain",
     ],
   },
   pro: {
     id: "pro",
     name: "architect",
     displayName: "The Architect",
-    price: 3900, // $39/mo - reflects unique value: IDE + AI + 3D in one
+    price: 3900,
     priceDisplay: "$39/mo",
+    yearlyPriceDisplay: "$390/yr ($32.50/mo)",
     interval: "month",
     description: "For builders who are serious about shipping. Full creative power, one subscription.",
     stripePriceId: process.env.STRIPE_PRICE_PRO_ID,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_PRO_YEARLY_ID,
     highlight: true,
+    trialDays: 7,
     features: [
       "5 active projects",
       "100K AI tokens/month",
@@ -57,11 +66,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: "team",
     name: "guild",
     displayName: "The Guild",
-    price: 12900, // $129/mo - for agencies using your full platform
+    price: 12900,
     priceDisplay: "$129/mo",
+    yearlyPriceDisplay: "$1,290/yr ($107.50/mo)",
     interval: "month",
     description: "Built for agencies and studios who ship together. Collaborate, iterate, and deliver, without the chaos.",
     stripePriceId: process.env.STRIPE_PRICE_TEAM_ID,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_TEAM_YEARLY_ID,
+    trialDays: 7,
     features: [
       "10 active projects",
       "500K AI tokens/month",
@@ -80,6 +92,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     displayName: "The Architect of Worlds",
     price: 0, // Custom pricing
     priceDisplay: "Custom",
+    yearlyPriceDisplay: "Custom",
     interval: "month",
     description: "You're not building a site. You're building infrastructure. We'll build it with you.",
     features: [

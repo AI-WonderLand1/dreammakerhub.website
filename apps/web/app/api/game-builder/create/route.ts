@@ -1,42 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runModel } from "@core/ai/runModel";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { runModel } from "@/core/ai/runModel";
 
 export const dynamic = 'force-dynamic';
 export const runtime = "nodejs";
 
-const AI_PROVIDER = process.env.AI_PROVIDER || "opencode";
-
-async function callOpenCode(system: string, userPrompt: string): Promise<string> {
+async function callAI(system: string, userPrompt: string): Promise<string> {
   const result = await runModel({
-    model: "opencode/big-pickle",
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: userPrompt }
-    ]
+    model: "openrouter/meta-llama/llama-3.3-70b-instruct",
+    messages: [{ role: "user", content: userPrompt }],
+    system,
   });
-  
-  if (!result.text) throw new Error("Empty response from OpenCode");
+  if (!result.text) throw new Error("Empty AI response");
   return result.text;
-}
-
-async function callGemini(system: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY is not configured.");
-  
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-  
-  const result = await model.generateContent([
-    { text: system },
-    { text: userPrompt },
-  ]);
-  
-  const response = await result.response;
-  const text = response.text();
-  
-  if (!text) throw new Error("Empty response from Gemini");
-  return text;
 }
 
 const GAME_SCENE_SYSTEM = `You are an expert PlayCanvas 3D scene architect. Create complete 3D scene definitions for PlayCanvas engine.
@@ -102,9 +77,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sceneJson = AI_PROVIDER === "google"
-    ? await callGemini(GAME_SCENE_SYSTEM, `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`)
-    : await callOpenCode(GAME_SCENE_SYSTEM, `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`);
+    const sceneJson = await callAI(GAME_SCENE_SYSTEM, `Create a 3D scene for: "${prompt}". Make it interesting and detailed.`);
 
     let sceneData;
     try {

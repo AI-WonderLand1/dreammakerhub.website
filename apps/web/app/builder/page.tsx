@@ -19,10 +19,10 @@ function BuilderLoader() {
 
       <div className="flex flex-col items-center gap-1">
         <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/40">
-          Warming up engines
+          AI Wonderland — warming up engines
         </p>
         <div className="flex gap-1.5">
-          {['Coder', 'WebGLS', 'PlayCanvas', 'Puck'].map((name, i) => (
+          {['WonderBuild', 'WonderPlay 3D', 'WonderSpace', 'Spirit Guide'].map((name, i) => (
             <span
               key={name}
               className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white/20"

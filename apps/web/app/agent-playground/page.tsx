@@ -126,8 +126,8 @@ export default function AIPersonaPlayground() {
       <div className="mx-auto max-w-3xl space-y-4">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-2">AI Persona Playground</h1>
-          <p className="text-gray-400">Train and interact with unique AI personas</p>
+          <h1 className="text-3xl font-bold text-white mb-2">AI Wonderland Persona Playground</h1>
+          <p className="text-gray-400">Train and interact with unique AI personas from AI Wonderland</p>
         </div>
 
         {/* Persona Selector */}

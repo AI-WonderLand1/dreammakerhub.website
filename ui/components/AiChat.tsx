@@ -50,9 +50,13 @@ export default function AiChat({ embedded = false }: AiChatProps) {
              bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl
              shadow-xl animate-fadeIn`}
         >
-          <div className="p-4 border-b border-white/10 text-lg font-semibold text-white">
-            AI Assistant
-          </div>
+           <div className="p-4 border-b border-white/10 text-lg font-semibold text-white">
+             AI Assistant
+           </div>
+
+
+
+
 
           <div className="flex-1 overflow-y-auto p-3 text-gray-200 text-sm space-y-2">
             {messages.map((msg, idx) => (

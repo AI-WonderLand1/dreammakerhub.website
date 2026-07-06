@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
-import { getSmokeUserIdFromRequest } from "@lib/smokeAuth";
+import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 
 export const runtime = "nodejs";
 

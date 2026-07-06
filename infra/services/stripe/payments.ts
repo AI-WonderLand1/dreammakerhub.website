@@ -9,7 +9,7 @@ import { logger } from '../../lib/logger';
 const stripeSecret = requireEnv(env.STRIPE_SECRET_KEY, "STRIPE_SECRET_KEY");
 
 export const stripe = new Stripe(stripeSecret, {
-  apiVersion: '2024-06-20', // Use the version matching your node_modules
+  apiVersion: '2025-03-31.basil',
   typescript: true,
 });
 

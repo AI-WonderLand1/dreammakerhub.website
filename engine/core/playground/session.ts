@@ -1,6 +1,6 @@
 import { PlaygroundMessage, PlaygroundSession } from "@/types/playground";
+import crypto from "crypto";
 
-// In-memory session storage (replace with Supabase later)
 const sessions = new Map<string, PlaygroundSession>();
 
 export async function getOrCreateSession(sessionId?: string): Promise<PlaygroundSession> {

@@ -43,11 +43,11 @@ export default function GameBuilderCreatePage() {
       <div className="max-w-2xl w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-green-400 mb-2">
-            Describe Your 3D Scene
+          <h1 className="text-3xl font-bold text-violet-400 mb-2">
+            WonderBuild — Describe Your 3D Scene
           </h1>
           <p className="text-white/60">
-            Tell the AI what you want — it will create a 3D scene for you to preview and edit.
+            Tell the AI Wonderland builder what you want — it will create a 3D scene for you to preview and edit.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default function GameBuilderCreatePage() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Example: A futuristic city at night with neon lights, flying cars, and a dark sky with stars. Include a ground plane with reflective material."
-              className="w-full h-48 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-green-500/50 resize-none"
+              className="w-full h-48 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 resize-none"
             />
           </div>
 
@@ -72,7 +72,7 @@ export default function GameBuilderCreatePage() {
             <button
               type="submit"
               disabled={isGenerating || !prompt.trim()}
-              className="px-8 py-3 rounded-full bg-green-600 text-white font-semibold shadow-lg shadow-green-900/40 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 rounded-full bg-violet-600 text-white font-semibold shadow-lg shadow-violet-900/40 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isGenerating ? (
                 <>

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logger } from "@lib/logger";
+import { logger } from "@/lib/logger";
 import {
   buildRegistryAIPlan,
   evaluateAssetPresence,
   loadRegistry,
   writeRegistryLock,
-} from "@lib/wonderspace/registry";
+} from "@/lib/wonderspace/registry";
 
 export const runtime = "nodejs";
 

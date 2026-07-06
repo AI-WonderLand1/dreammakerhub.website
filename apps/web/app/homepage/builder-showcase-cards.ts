@@ -7,28 +7,22 @@ export type BuilderShowcaseCard = {
 
 export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
   {
-    title: "PlayCanvas 3D Studio",
+    title: "WonderPlay 3D Editor",
     image: "/images/screenshots/playcanvas-builder.svg",
     href: "/wonder-build/playcanvas",
-    desc: "Realtime 3D world builder with physics, materials, and scene graph.",
+    desc: "Real-time 3D world builder with physics, materials, WebGL shaders, and scene graph editing.",
   },
   {
-    title: "WebGL Studio",
-    image: "/images/screenshots/webgl-builder.svg",
-    href: "/wonder-build/playcanvas",
-    desc: "Interactive shader editor and real-time render pipeline.",
-  },
-  {
-    title: "Puck UI Builder",
+    title: "WonderBuild",
     image: "/images/screenshots/puck-builder.svg",
-    href: "/wonder-build/puck",
-    desc: "UI component builder with responsive grids and design tokens.",
+    href: "/wonder-build/ai-builder",
+    desc: "Describe what you want — three AI agents generate complete websites, games, and dashboard UIs.",
   },
   {
-    title: "WonderSpace IDE",
-    image: "/images/screenshots/theia-builder.svg",
-    href: "/ide",
-    desc: "Cloud IDE for custom coding, debugging, and deployment flows.",
+     title: "WonderSpace IDE",
+     image: "/images/screenshots/theia-builder.svg",
+     href: "/ide",
+     desc: "Cloud IDE for custom coding, debugging, and deployment flows with AI autocomplete.",
   },
 ];
 

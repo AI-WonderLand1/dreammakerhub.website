@@ -6,6 +6,7 @@ import {
   PlaygroundModuleContext,
   PlaygroundModuleId,
 } from "@/types/playground";
+import crypto from "crypto";
 
 import { playgroundModulesById } from "./modules";
 import { getOrCreateSession, appendMessageToSession } from "./session"; 

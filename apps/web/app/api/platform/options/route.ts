@@ -17,14 +17,14 @@ export async function GET() {
     ai: [
       option("ai-builder", "AI Builder", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/ai-builder"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
-      option("playground", "Playground", "Run fast prompt and model tests in the tools playground.", "/playground", "beta"),
+      option("playground", "Playground", "Train, create, and test AI modules.", "/wonder-build", "beta"),
     ],
     agents: [
       option("dashboard-agents", "Dashboard Agents", "Configure and compare agent patterns for product tasks.", "/dashboard/agents"),
       option("playcanvas-bridge", "PlayCanvas Bridge", "Use Theia handoff payloads for forked PlayCanvas editor workflows.", "/dashboard/editor-playcanvas"),
     ],
     runners: [
-      option("project-runner", "Project Runner API", "Execute sandboxed runtime actions through /api/playground/run.", "/dashboard/projects", "beta"),
+      option("project-runner", "Project Runner API", "Execute sandboxed runtime actions.", "/dashboard/projects", "beta"),
       option("collaboration", "Collaboration Runner", "Operate shared workspace actions and comments in one place.", "/dashboard/collaboration"),
     ],
     workers: [

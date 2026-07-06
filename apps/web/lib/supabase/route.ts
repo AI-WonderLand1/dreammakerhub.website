@@ -1,18 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+export { createClient as createRouteClient } from '@/app/utils/supabase/server'
 
-let serverClient: ReturnType<typeof createClient> | null = null
-
-export const createRouteClient = () => {
-  if (!serverClient) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-    serverClient = createClient(supabaseUrl, supabaseKey)
-  }
-
-  return serverClient
+export const supabaseRouteClient = async () => {
+  const { createClient } = await import('@/app/utils/supabase/server')
+  return createClient()
 }
 
-export const supabaseRouteClient = () => createRouteClient()
-
-export default createRouteClient
+export default async function createRouteClientDefault() {
+  const { createClient } = await import('@/app/utils/supabase/server')
+  return createClient()
+}
