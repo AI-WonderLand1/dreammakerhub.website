@@ -22,9 +22,9 @@ export const BUILDER_LINKS: BuilderDockLink[] = [
   },
   {
     label: "Playground",
-    href: "/playground",
+    href: "/wonder-build",
     icon: Terminal,
-    description: "Isolated API and Logic Testing",
+    description: "AI Module Playground — train, create, and test",
   },
   {
     label: "Data Vault",

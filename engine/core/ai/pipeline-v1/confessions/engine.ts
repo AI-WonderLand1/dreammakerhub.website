@@ -3,9 +3,11 @@ import {
   ConfessionType,
   ImpactLevel,
   LocalizedConfession,
+  AgentName, // Imported from your updated types file
 } from "./types";
 
 export interface ConfessionFactoryOptions {
+  agentName: AgentName; // Added to factory options
   title: string;
   detail: string;
   truth: string;
@@ -27,6 +29,7 @@ export function createConfession(
   options: ConfessionFactoryOptions
 ): Confession {
   const {
+    agentName,
     title,
     detail,
     truth,
@@ -39,6 +42,7 @@ export function createConfession(
   } = options;
 
   return {
+    agentName, // Track whether it's Alice, Simple Rick, or Spirit Guide
     type,
     title,
     detail,
@@ -76,30 +80,32 @@ function getDefaultImpactLevel(type: ConfessionType): ImpactLevel {
   }
 }
 
-export const createUncertaintyConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("UNCERTAINTY", opts);
+// Global factory helper methods
+export const createUncertaintyConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("UNCERTAINTY", opts);
+export const createRejectedActionConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("REJECTED_ACTION", opts);
+export const createRiskFlagConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("RISK_FLAG", opts);
+export const createLimitationConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("LIMITATION", opts);
+export const createCorrectionConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("CORRECTION", opts);
+export const createHallucinationConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("HALLUCINATION_DETECTED", opts);
+export const createTruthVerifiedConfession = (opts: LocalizedConfessionFactoryOptions) => createLocalizedConfession("TRUTH_VERIFIED", opts);
 
-export const createRejectedActionConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("REJECTED_ACTION", opts);
+// Outbound Webhook Stream
+export async function streamConfessionToPipeline(confession: Confession | LocalizedConfession) {
+  const pipelineWebhookUrl = process.env.NEXT_PUBLIC_PIPELINE_WEBHOOK_URL || 'YOUR_BACKEND_PIPELINE_ENDPOINT';
 
-export const createRiskFlagConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("RISK_FLAG", opts);
-
-export const createLimitationConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("LIMITATION", opts);
-
-export const createCorrectionConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("CORRECTION", opts);
-
-export const createHallucinationConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("HALLUCINATION_DETECTED", opts);
-
-export const createTruthVerifiedConfession = (
-  opts: LocalizedConfessionFactoryOptions
-) => createLocalizedConfession("TRUTH_VERIFIED", opts);
+  try {
+    const response = await fetch(pipelineWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: "execution_pipeline",
+        timestamp: new Date().toISOString(),
+        payload: confession // Now holds the agentName natively
+      })
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("[Pipeline Error] Failed to stream data:", error);
+    return false;
+  }
+}

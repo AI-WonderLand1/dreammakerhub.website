@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabase-service'
 import { provisionWorkspace, terminateWorkspace, getWorkspaceStatus, listUserWorkspaces, getWorkspaceUrls } from '@/lib/workspace'
 import type { WorkspaceType } from '@/lib/workspace'
 
-// Mark this route as dynamic to prevent static generation during build
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// Validation schemas
 const CreateEnvironmentSchema = z.object({
   projectId: z.string().max(100).optional(),
   name: z.string().min(1).max(100).optional(),
@@ -20,8 +17,13 @@ const EnvironmentIdSchema = z.object({
   id: z.string().min(1).max(100),
 })
 
-// Helper function for auth
+async function getSupabase() {
+  const { supabase } = await import('@/lib/supabase-service')
+  return supabase
+}
+
 async function authenticateUser(request: Request): Promise<{ user: any; error?: NextResponse }> {
+  const supabase = await getSupabase()
   const authHeader = request.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {
     return { user: null, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
@@ -39,10 +41,10 @@ async function authenticateUser(request: Request): Promise<{ user: any; error?: 
 
 export async function POST(request: Request) {
   try {
+    const supabase = await getSupabase()
     const { user, error: authError } = await authenticateUser(request)
     if (authError) return authError
 
-    // Validate input
     let body: z.infer<typeof CreateEnvironmentSchema>
     try {
       const jsonBody = await request.json()
@@ -64,7 +66,6 @@ export async function POST(request: Request) {
     const workspaceType: WorkspaceType = type
     const workspaceName = name || `workspace-${workspaceId.slice(-6)}`
 
-    // Check for existing environment
     const { data: existingEnv } = await supabase
       .from('user_environments')
       .select('*')
@@ -128,13 +129,13 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const supabase = await getSupabase()
     const { user, error: authError } = await authenticateUser(request)
     if (authError) return authError
 
     const { searchParams } = new URL(request.url)
     const rawId = searchParams.get('id')
 
-    // Validate environment ID
     const idResult = EnvironmentIdSchema.safeParse({ id: rawId })
     if (!idResult.success) {
       return NextResponse.json(
@@ -171,13 +172,13 @@ export async function DELETE(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const supabase = await getSupabase()
     const { user, error: authError } = await authenticateUser(request)
     if (authError) return authError
 
     const { searchParams } = new URL(request.url)
     const rawId = searchParams.get('id')
 
-    // Validate if ID is provided
     let environmentId: string | null = null
     if (rawId) {
       const idResult = EnvironmentIdSchema.safeParse({ id: rawId })
@@ -204,10 +205,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Environment not found' }, { status: 404 })
       }
 
-      return NextResponse.json({
-        environment,
-        workspace: workspaceInfo,
-      })
+      return NextResponse.json({ environment, workspace: workspaceInfo })
     }
 
     const [environments, workspaces] = await Promise.all([

@@ -1,112 +1,108 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env, requireEnv } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
- * Google AI Provider (Gemini)
- * Uses Google AI API directly for Gemini models.
- *
- * NOTE: File named openrouter.ts but implements Google AI.
- * TODO: Re-add actual OpenRouter provider routing to openrouter.ai
+ * OpenRouter Provider
+ * Routes requests to many models via openrouter.ai
+ * Uses OPENROUTER_API_KEY secret or user-provided apiKey.
  */
-export const googleProvider: AIProvider = {
-  name: "google",
+export const openrouterProvider: AIProvider = {
+  name: "openrouter",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.GOOGLE_AI_API_KEY, "GOOGLE_AI_API_KEY");
+    const apiKey = options.apiKey as string || process.env.OPENROUTER_API_KEY || '';
     const {
-      model = "gemini-2.5-flash",
+      model = "google/gemini-flash-1.5",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
 
+if (!apiKey) {
+      return {
+        text: "No API key configured. Get a free key at https://openrouter.ai/keys and set OPENROUTER_API_KEY in your environment.",
+        error: true,
+        provider: "openrouter",
+        confessions: {
+          confidence: 0,
+          reasoning: ["Missing API key"],
+          limitations: ["Get a free key at https://openrouter.ai/keys"]
+        }
+      };
+    }
+
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const messages: { role: string; content: string }[] = [];
+      if (system) messages.push({ role: "system", content: system });
+      messages.push({
+        role: "user",
+        content: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt)
+      });
 
-      const parts: { text: string }[] = [];
-      if (system) parts.push({ text: `System Instructions: ${system}` });
-      parts.push({ text: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt) });
-
-      const response = await fetch(url, {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
+          "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : "https://aiwonderland.replit.app",
+          "X-Title": "AI Wonderland",
         },
         body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: {
-            temperature,
-            maxOutputTokens: maxTokens,
-          },
+          model,
+          messages,
+          temperature,
+          max_tokens: maxTokens,
         }),
       });
 
       const data = await response.json();
 
       if (data.error) {
-        logger.error("❌ Google AI API Error", { error: data.error });
+        logger.error("OpenRouter API Error", { error: data.error });
         return {
-          text: "The Spirit Guide encountered an error with Google AI API.",
+          text: "OpenRouter encountered an error.",
           error: true,
-          provider: "google",
+          provider: "openrouter",
           model,
           confessions: {
             confidence: 0,
-            reasoning: ["Google AI API returned an error"],
+            reasoning: ["OpenRouter API returned an error"],
             limitations: [data.error.message || "Unknown error"]
           }
         };
       }
 
-      if (!data.candidates?.length) {
-        logger.error("❌ Google AI API returned no candidates", { data });
+      if (!data.choices?.length) {
         return {
-          text: "The Spirit Guide received no response from Google AI API.",
+          text: "OpenRouter returned no response.",
           error: true,
-          provider: "google",
+          provider: "openrouter",
           model,
-          confessions: {
-            confidence: 0,
-            reasoning: ["No candidates returned from Google AI API"],
-            limitations: ["Empty response"]
-          }
+          confessions: { confidence: 0, reasoning: ["No choices returned"], limitations: [] }
         };
       }
 
-      const outputText = data.candidates[0].content.parts[0].text;
-
       return {
-        text: outputText,
-        provider: "google",
-        model,
-        confessions: {
-          confidence: 0.95,
-          reasoning: ["Processed via Google AI API"],
-          limitations: ["May have usage limits"]
-        }
-      };
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "Unknown network error";
-      logger.error("✦ Spirit Guide Connection Severed (Google AI)", {
-        error: errMsg
-      });
-
-      return {
-        text: "The Spirit Guide lost connection to Google AI API.",
-        error: true,
+        text: data.choices[0].message.content,
         provider: "openrouter",
         model,
         confessions: {
-          confidence: 0,
-          reasoning: ["Network or infrastructure failure"],
-          limitations: [errMsg]
+          confidence: 0.9,
+          reasoning: ["Processed via OpenRouter"],
+          limitations: []
         }
+      };
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      logger.error("OpenRouter connection error", { error: errMsg });
+      return {
+        text: "OpenRouter connection failed.",
+        error: true,
+        provider: "openrouter",
+        model,
+        confessions: { confidence: 0, reasoning: ["Network error"], limitations: [errMsg] }
       };
     }
   },
 };
-
-export const openrouterProvider = googleProvider;
-

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { subscribeLogs } from '@lib/logStreamer';
+import { subscribeLogs } from '@/lib/logStreamer';
 
 export async function GET(req: Request) {
   const headers = new Headers({

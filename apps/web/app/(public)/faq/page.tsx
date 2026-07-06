@@ -7,21 +7,15 @@ type Faq = { question: string; answer: string; category: string };
 
 const faqs: Faq[] = [
   {
-    question: "How do I start a Playground session?",
+    question: "How do I access the Playground?",
     answer:
-      "Open /playground, pick a module, and type your prompt. Advanced parameters stay tucked away until you toggle them on.",
-    category: "Product",
-  },
-  {
-    question: "Can I undo changes applied to a project?",
-    answer:
-      "Yes. Each apply action captures a snapshot. Use the project actions drawer in Playground or the dashboard to restore.",
+      "Visit the Playground at /wonder-build to train, create, and test AI modules.",
     category: "Product",
   },
   {
     question: "How does billing work?",
     answer:
-      "Personal includes Playground, Wonder-Build, and publishing limits suitable for small teams. Enterprise unlocks unlimited modules, extensions, and domain controls.",
+      "Personal includes Wonder-Build and publishing limits suitable for small teams. Enterprise unlocks unlimited modules, extensions, and domain controls.",
     category: "Billing",
   },
   {

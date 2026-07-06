@@ -1,4 +1,4 @@
-export type ConfessionType =
+export type ConfessionType = 
   | "UNCERTAINTY"
   | "REJECTED_ACTION"
   | "RISK_FLAG"
@@ -9,7 +9,11 @@ export type ConfessionType =
 
 export type ImpactLevel = "LOW" | "MEDIUM" | "HIGH";
 
+// 1. Explicitly type your three distinct agents
+export type AgentName = "Alice" | "Simple Rick" | "Spirit Guide";
+
 export interface Confession {
+  agentName: AgentName; // 2. Required field inside the core interface
   type: ConfessionType;
   title: string;
   detail: string;

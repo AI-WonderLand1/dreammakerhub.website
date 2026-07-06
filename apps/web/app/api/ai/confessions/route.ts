@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { z } from "zod";
 import { createClient } from "@/app/utils/supabase/server";
 import {
   getUserConfessions,
   searchMem0Confessions,
   isMem0Enabled,
-} from "@lib/ai/mem0Client";
-import { getConfessionConfig } from "@lib/ai/confessionConfig";
+} from "@/lib/ai/mem0Client";
+import { getConfessionConfig } from "@/lib/ai/confessionConfig";
 
 export const runtime = "nodejs";
 

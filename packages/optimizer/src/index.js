@@ -1,10 +1,16 @@
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { NodeIO } from '@gltf-transform/core';
 import { KHRONOS_EXTENSIONS } from '@gltf-transform/extensions';
 import { draco, textureCompress, dedup, flatten, join, weld } from '@gltf-transform/functions';
 import sharp from 'sharp';
 
 const fastify = Fastify({ logger: true });
+
+await fastify.register(rateLimit, {
+  max: 100,
+  timeWindow: '1 minute',
+});
 
 const io = new NodeIO().registerExtensions(KHRONOS_EXTENSIONS);
 

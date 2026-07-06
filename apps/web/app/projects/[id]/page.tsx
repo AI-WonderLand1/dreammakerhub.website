@@ -8,6 +8,8 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const project = await prisma.projects.findUnique({
@@ -16,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 
   return {
-    title: project ? `${project.name} - DreamMakerHub` : 'Project Not Found',
+    title: project ? `${project.name} - AI Wonderland` : 'Project Not Found',
   };
 }
 
@@ -143,7 +145,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {isOwner && (
                 <>
                   <Link
-                    href={`/wonder-build/playcanvas?sceneId=${project.id}`}
+                    href={`/wonder-build/playcanvas/editor/${project.id}`}
                     className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
                     Open in Editor
@@ -155,7 +157,7 @@ export default async function ProjectPage({ params }: PageProps) {
               )}
               {!isOwner && isPublic && (
                 <Link
-                  href={`/wonder-build/playcanvas?sceneId=${project.id}`}
+                  href={`/wonder-build/playcanvas/editor/${project.id}`}
                   className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
                   Fork Project
@@ -252,7 +254,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   </div>
                   <p className="text-gray-500 text-sm">Click "Open in Editor" to view 3D scene</p>
                   <Link
-                    href={`/wonder-build/playcanvas?sceneId=${project.id}`}
+                    href={`/wonder-build/playcanvas/editor/${project.id}`}
                     className="inline-block mt-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Launch 3D Viewer
@@ -273,7 +275,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 <div>
                   <h3 className="text-xs font-medium text-gray-500 uppercase mb-1">Description</h3>
                   <p className="text-sm text-gray-700">
-                    {project.name} - A 3D project built with DreamMakerHub
+                    {project.name} - A 3D project built with AI Wonderland
                   </p>
                 </div>
 

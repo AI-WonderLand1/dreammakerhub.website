@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/client";
+import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const { sceneId } = resolvedParams;
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
     
     if (!supabase) {
       return NextResponse.json(
@@ -36,7 +36,7 @@ export async function GET(
               const fs = await import('fs');
               const path = await import('path');
               
-              const templatesDir = '/home/dreammakerhub/htdocs/dreammakerhub.website/psychic-octo-fishstick/templates/3d';
+              const templatesDir = path.join(process.cwd(), 'templates/3d');
               const templateFile = `${sceneId}.json`;
               const filePath = path.join(templatesDir, templateFile);
               

@@ -20,7 +20,7 @@ export function generateSSHKeyPair(userId: string, expiresInHours: number = 24):
 ${Buffer.from(randomBytes(256)).toString('base64')}
 -----END OPENSSH PRIVATE KEY-----`.replace(/\n/g, '');
   
-  const publicKey = `ssh-ed25519 AAAA${randomBytes(32).toString('hex').substring(0, 64)} ${userId}-${keyId}@dreammakerhub`;
+  const publicKey = `ssh-ed25519 AAAA${randomBytes(32).toString('hex').substring(0, 64)} ${userId}-${keyId}@ai-wonderland`;
   
   const fingerprint = createHash('sha256').update(publicKey).digest('hex').substring(0, 16);
   

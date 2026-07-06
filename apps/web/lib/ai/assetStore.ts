@@ -1,6 +1,15 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient();
+let _client: ReturnType<typeof createClient> | null = null;
+function sb() {
+  if (!_client) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (url && key) _client = createClient(url, key);
+  }
+  return _client;
+}
+
 const BUCKET_NAME = "ai-generated-scenes";
 
 export interface AiAssetEntry {
@@ -17,11 +26,11 @@ export interface AiAssetEntry {
 export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; contentType?: string }) {
   try {
     // Ensure bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
+    const { data: buckets } = await sb()!.storage.listBuckets();
     const bucketExists = buckets?.some(bucket => bucket.name === BUCKET_NAME);
     
     if (!bucketExists) {
-      await supabase.storage.createBucket(BUCKET_NAME, {
+      await sb()!.storage.createBucket(BUCKET_NAME, {
         public: true,
         fileSizeLimit: 1024 * 1024 * 10 // 10MB
       });
@@ -30,7 +39,7 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
     // Upload scene data to Supabase storage
     if (entry.body && entry.contentType) {
       const filePath = `scenes/${entry.id}.json`;
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await sb()!.storage
         .from(BUCKET_NAME)
         .upload(filePath, entry.body, {
           contentType: entry.contentType,
@@ -43,7 +52,7 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
       }
       
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = sb()!.storage
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
       
@@ -51,7 +60,7 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
     }
     
     // Save metadata to scenes table
-    const { error: dbError } = await supabase
+    const { error: dbError } = await sb()!
       .from("scenes")
       .upsert({
         id: entry.id,
@@ -80,7 +89,7 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
 
 export async function listAiGeneratedScenes(limit = 50) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb()!
       .from("scenes")
       .select("*")
       .eq("category", "ai-generated")

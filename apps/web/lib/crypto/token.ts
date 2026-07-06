@@ -1,42 +1,46 @@
 import crypto from 'node:crypto'
 
-/**
- * Generates a cryptographically secure random token.
- * Uses crypto.randomBytes instead of Math.random for security.
- */
+const SCRYPT_KEYLEN = 64
+const SCRYPT_N = 16384
+const SCRYPT_R = 8
+const SCRYPT_P = 1
+
 export const generateToken = (): string => {
-  // Generate 32 bytes (256 bits) of randomness, encode as base64url
   return crypto.randomBytes(32).toString('base64url')
 }
 
-/**
- * Creates a SHA-256 hash of a token for secure storage.
- * Uses HMAC with a secret derived from process.env for additional security.
- */
-export const hashToken = (token: string): string => {
-  const secret = process.env.TOKEN_HASH_SECRET || process.env.SECRETS_ENCRYPTION_KEY
-  if (!secret) {
-    throw new Error('TOKEN_HASH_SECRET or SECRETS_ENCRYPTION_KEY must be set in environment')
-  }
-  return crypto.createHmac('sha256', secret).update(token).digest('hex')
+function hashWithScrypt(input: string, salt: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(input, salt, SCRYPT_KEYLEN, { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P }, (err, key) => {
+      if (err) reject(err)
+      else resolve(key.toString('hex'))
+    })
+  })
 }
 
-export const verifyToken = (token: string, hash: string): boolean => {
-  return hashToken(token) === hash
+export const hashToken = async (token: string): Promise<string> => {
+  const salt = crypto.randomBytes(16).toString('hex')
+  const derivedKey = await hashWithScrypt(token, salt)
+  return `${salt}:${derivedKey}`
 }
 
-/**
- * Creates a new API token with its hash for storage.
- * The raw token is returned once to the user and should never be stored.
- */
-export function makeApiToken(prefix = 'wk'): { token: string; token_hash: string; prefix: string } {
+export const verifyToken = async (token: string, hash: string): Promise<boolean> => {
+  const [salt, key] = hash.split(':')
+  if (!salt || !key) return false
+  const derivedKey = await hashWithScrypt(token, salt)
+  return derivedKey === key
+}
+
+export async function makeApiToken(prefix = 'wk'): Promise<{ token: string; token_hash: string; prefix: string }> {
   const raw = generateToken()
   const token = `${prefix}_${raw}`
   return {
     token,
-    token_hash: hashToken(token),
+    token_hash: await hashToken(token),
     prefix,
   }
 }
+
+export { hashToken as createTokenHash, verifyToken as compareTokenHash }
 
 export default { generateToken, hashToken, verifyToken, makeApiToken }

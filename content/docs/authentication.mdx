@@ -1,0 +1,73 @@
+---
+title: "Authentication"
+description: "Use Supabase Auth or custom OAuth for secure access. Learn how to manage user sessions."
+---
+
+# Authentication
+
+AI Wonderland uses Supabase Auth for secure, scalable authentication.
+
+## Supported Providers
+
+- **Email/Password** - Traditional signup/login
+- **OAuth** - GitHub, Google, Discord, GitLab
+- **Magic Links** - Passwordless email login
+- **SSO/SAML** - Enterprise only
+
+## Client-Side Usage
+
+```tsx
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+
+const supabase = createClientComponentClient()
+
+// Sign up
+const { data, error } = await supabase.auth.signUp({
+  email: 'user@example.com',
+  password: 'secure-password'
+})
+
+// Sign in
+const { data, error } = await supabase.auth.signInWithPassword({
+  email: 'user@example.com',
+  password: 'secure-password'
+})
+
+// OAuth
+const { data, error } = await supabase.auth.signInWithOAuth({
+  provider: 'github'
+})
+```
+
+## Server-Side (API Routes)
+
+```ts
+import { createServerClient } from '@supabase/ssr'
+
+const supabase = createServerClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { cookies }
+)
+
+const { data: { user } } = await supabase.auth.getUser()
+```
+
+## Session Management
+
+- Sessions persist across browser tabs
+- Auto-refresh on expiry (1 hour default)
+- Use `onAuthStateChange` for real-time updates
+
+## Row Level Security (RLS)
+
+All database tables use RLS. Policies ensure users only access their own data:
+
+```sql
+CREATE POLICY "Users own projects" ON projects
+  FOR ALL USING (auth.uid() = user_id);
+```
+
+## Enterprise SSO
+
+Contact sales for SAML/OIDC configuration with custom identity providers.

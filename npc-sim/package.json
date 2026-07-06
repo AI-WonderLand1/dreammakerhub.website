@@ -1,0 +1,21 @@
+{
+  "name": "@ai-wonderland/npc-sim",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "core/tick.ts",
+  "scripts": {
+    "dev": "tsx watch core/tick.ts",
+    "api": "tsx api/server.ts"
+  },
+  "dependencies": {
+    "@ai-wonderland/db": "*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0"
+  }
+}

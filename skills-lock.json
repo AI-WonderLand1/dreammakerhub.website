@@ -4,7 +4,7 @@
     "stripe-best-practices": {
       "source": "docs.stripe.com",
       "sourceType": "well-known",
-      "computedHash": "c89653e4f3a289ecdf1a51b3696ee7b18e172131c9803a981088c8d70536c85e"
+      "computedHash": "9e89598d943c90233e1eebe6acd51e1de4a7509f6908e4dcfede944439fd6dde"
     },
     "stripe-projects": {
       "source": "docs.stripe.com",

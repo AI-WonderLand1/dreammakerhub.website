@@ -1,0 +1,20 @@
+{
+  "name": "@dreammakerhub/gesture-engine",
+  "version": "0.1.0",
+  "description": "Browser‑based gesture and face tracking system for DreamMakerHub",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@mediapipe/tasks-vision": "^0.7",
+    "@tensorflow/tfjs": "^4"
+  },
+  "devDependencies": {
+    "typescript": "^5.4",
+    "vitest": "^4.1.9",
+    "@types/node": "^26.0.1"
+  }
+}

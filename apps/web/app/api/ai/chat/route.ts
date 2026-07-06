@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { ensureDefaultProject } from '@lib/projects/storage';
-import { runAIPipeline } from '@core/ai/pipeline-v1/runtime/pipeline';
-import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@core/ai/personas';
-import { writeAiMemoryEntry } from '@lib/ai/memoryStore';
+import { ensureDefaultProject } from '@/lib/projects/storage';
+import { runAIPipeline } from '@/core/ai/pipeline-v1/runtime/pipeline';
+import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@/core/ai/personas';
+import { writeAiMemoryEntry } from '@/lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { storeConfessionToMem0, isMem0Enabled } from '@lib/ai/mem0Client';
-import { getConfessionConfig } from '@lib/ai/confessionConfig';
+import { storeConfessionToMem0, isMem0Enabled } from '@/lib/ai/mem0Client';
+import { getConfessionConfig } from '@/lib/ai/confessionConfig';
+import { searchMemories, storeMemory } from '@/lib/ai/mem0Service';
 
 export const runtime = "nodejs";
 
@@ -58,11 +59,11 @@ function detectHumanLanguage(prompt: string): string {
 }
 
 const AGENTS = {
-  "builder-default": { id: "opencode/big-pickle", provider: "opencode" },
-  "github-fast": { id: "opencode/big-pickle", provider: "opencode" },
-  "github-powerful": { id: "opencode/big-pickle", provider: "opencode" },
-  "google-vision": { id: "gemini-2.5-pro-vision", provider: "google" },
-  "openrouter-general": { id: "openrouter/auto", provider: "openrouter" },
+  "builder-default": { id: "openrouter/meta-llama/llama-3.3-70b-instruct", provider: "openrouter" },
+  "github-fast": { id: "openrouter/google/gemini-flash-1.5", provider: "openrouter" },
+  "github-powerful": { id: "openrouter/meta-llama/llama-3.3-70b-instruct", provider: "openrouter" },
+  "google-vision": { id: "google/gemini-2.5-flash", provider: "google" },
+  "openrouter-general": { id: "google/gemini-flash-1.5", provider: "openrouter" },
 };
 
 const planForRequest = (req: NextRequest) => req.headers.get("x-plan") || "free";
@@ -92,21 +93,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const plan = planForRequest(req);
-    if (plan === "free" && agent.provider === "openrouter") {
-      return NextResponse.json(
-        { ok: false, error: { code: "PLAN_RESTRICTED", message: "Upgrade required for this agent" }, traceId },
-        { status: 403 }
-      );
-    }
-
     const detectedHumanLang = targetLanguage || detectHumanLanguage(prompt);
     const detectedProgLang = detectProgrammingLanguage(prompt);
 
     const persona = getPersonaPrompt(personaId);
     const lawPrompt = buildLawPrompt();
 
-    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}`;
+    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}${memoryContext}`;
 
     const systemInstructions: string[] = [
       "AI LAWS (HIGHEST PRIORITY - ALWAYS FOLLOW):",
@@ -136,6 +129,18 @@ export async function POST(req: NextRequest) {
     const useLLMExtraction = config.mode === "paid" && config.enableMem0;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
+
+    // ── Retrieve relevant past memories ──
+    let memoryContext = "";
+    try {
+      const pastMemories = await searchMemories(prompt, paidUser.userId, 5);
+      if (pastMemories.length > 0) {
+        memoryContext = "\n\nRELEVANT PAST MEMORIES:\n" +
+          pastMemories.map((m, i) => `${i + 1}. ${m.text}`).join("\n");
+      }
+    } catch {
+      // mem0 not configured – skip
+    }
 
     const pipelineResult = await runAIPipeline({
       operationId: traceId,
@@ -167,6 +172,17 @@ export async function POST(req: NextRequest) {
     let mem0Store: { ok: boolean; stored?: number; error?: string } = { ok: false };
     if (config.enableMem0) {
       try {
+        // Store conversation as memory via mem0ai SDK
+        await storeMemory(
+          [
+            { role: "user", content: prompt },
+            { role: "assistant", content: pipelineResult.finalText },
+          ],
+          paidUser.userId,
+          { traceId, projectId: project.id, persona: persona.id }
+        );
+
+        // Also store confessions if any
         let stored = 0;
         for (const confession of pipelineResult.confessions) {
           const storedConfession = {

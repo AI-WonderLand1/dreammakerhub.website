@@ -78,8 +78,11 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
 
     async function initScene() {
       try {
-        // Load scene from API
-        const res = await fetch(`/api/scenes/${params.sceneId}`)
+        // Load scene from API with timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000)
+        const res = await fetch(`/api/scenes/${params.sceneId}`, { signal: controller.signal })
+        clearTimeout(timeoutId)
         if (!res.ok) {
           throw new Error("Scene not found")
         }
@@ -341,7 +344,7 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
               onChange={handleFileImport}
             />
             <Link
-              href={`/wonder-build/playcanvas?scene=${params.sceneId}`}
+              href={`/wonder-build/playcanvas/editor/${params.sceneId}`}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition"
             >
               ✏️ Open in Editor

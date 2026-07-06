@@ -1,8 +1,15 @@
-import { createClient } from "@/lib/supabase/client";
-// TODO: Create @wonder/perf-assets package for asset optimization
-// import { optimizeAsset } from "@wonder/perf-assets";
+import { createClient } from "@supabase/supabase-js";
+import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch";
 
-const supabase = createClient();
+let _client: ReturnType<typeof createClient> | null = null;
+function sb() {
+  if (!_client) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (url && key) _client = createClient(url, key);
+  }
+  return _client;
+}
 
 const ALLOWED_DOWNLOAD_HOSTS = [
   "playcanvas.com",
@@ -13,11 +20,7 @@ const ALLOWED_DOWNLOAD_HOSTS = [
   "dl.polyhaven.org",
 ] as const;
 
-const ALLOWED_OPTIMIZER_HOSTS = [
-  "localhost",
-] as const;
-
-const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> = {
+const SOURCE_ALLOWED_HOSTS: Record<string, readonly string[]> = {
   playcanvas: ["playcanvas.com", "cdn.playcanvas.com"],
   sketchfab: ["sketchfab.com", "media.sketchfab.com"],
   "poly-haven": ["polyhaven.com", "dl.polyhaven.org"],
@@ -25,46 +28,9 @@ const SOURCE_ALLOWED_HOSTS: Record<ExternalAsset["source"], readonly string[]> =
   user: [],
 };
 
-function isAllowedDownloadHost(hostname: string): boolean {
-  return ALLOWED_DOWNLOAD_HOSTS.some(allowed => hostname === allowed);
-}
-
 function isAllowedHostForSource(source: ExternalAsset["source"], hostname: string): boolean {
   const allowedHosts = SOURCE_ALLOWED_HOSTS[source] ?? [];
   return allowedHosts.some(allowed => hostname === allowed);
-}
-
-function isAllowedOptimizerHost(hostname: string): boolean {
-  return ALLOWED_OPTIMIZER_HOSTS.some(allowed => hostname === allowed);
-}
-
-type ValidatedExternalUrl = URL & { readonly __brand: "ValidatedExternalUrl" };
-
-function validateExternalDownloadUrl(rawUrl: string): ValidatedExternalUrl {
-  let parsed: URL;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new Error("Invalid download URL");
-  }
-
-  if (parsed.protocol !== "https:") {
-    throw new Error("Unsupported download URL protocol");
-  }
-
-  if (parsed.username || parsed.password) {
-    throw new Error("Download URL must not include credentials");
-  }
-
-  if (parsed.port && parsed.port !== "443") {
-    throw new Error("Download URL port is not allowed");
-  }
-
-  if (!isAllowedDownloadHost(parsed.hostname)) {
-    throw new Error("Download URL host is not allowed");
-  }
-
-  return parsed as ValidatedExternalUrl;
 }
 
 function getSafeOptimizerUrl(): string {
@@ -85,18 +51,11 @@ function getSafeOptimizerUrl(): string {
     throw new Error("Unsupported optimizer URL protocol");
   }
 
-  if (!isAllowedOptimizerHost(parsed.hostname)) {
+  if (parsed.hostname !== "localhost") {
     throw new Error("Optimizer URL host is not allowed");
   }
 
   return parsed.toString();
-}
-
-async function safeFetch(url: ValidatedExternalUrl, init?: RequestInit): Promise<Response> {
-  return fetch(url.toString(), {
-    redirect: "manual",
-    ...init,
-  });
 }
 
 export interface ExternalAsset {
@@ -229,7 +188,7 @@ export async function searchExternalAssets(request: AssetFetchRequest): Promise<
   const { query = "3d model", source = "all", limit = 10 } = request;
   const results: ExternalAsset[] = [];
 
-  const { data: dbAssets } = await supabase
+  const { data: dbAssets } = await sb()!
     .from("assets")
     .select("*")
     .or(`name.ilike.%${query}%,tags.cs.{${query}}`)
@@ -284,12 +243,14 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
   }
 
   try {
-    const safeDownloadUrl = validateExternalDownloadUrl(asset.downloadUrl);
-    if (!isAllowedHostForSource(asset.source, safeDownloadUrl.hostname)) {
+    const parsedUrl = new URL(asset.downloadUrl);
+    if (!isAllowedHostForSource(asset.source, parsedUrl.hostname.toLowerCase())) {
       throw new Error("Download URL host does not match asset source");
     }
 
-    const response = await safeFetch(safeDownloadUrl);
+    const response = await ssrfFetch(asset.downloadUrl, {
+      allowedHosts: ALLOWED_DOWNLOAD_HOSTS,
+    });
     if (!response.ok) {
       if (response.status >= 300 && response.status < 400) {
         throw new Error("Redirects are not allowed for asset downloads");
@@ -307,14 +268,16 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       const optimizeRes = await fetch(optimizerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetUrl: safeDownloadUrl.toString(), fileName }),
+        body: JSON.stringify({ assetUrl: asset.downloadUrl, fileName }),
       });
 
       if (optimizeRes.ok) {
         const optimizeData = await optimizeRes.json();
         if (optimizeData.optimizedUrl) {
-          const safeOptimizedUrl = validateExternalDownloadUrl(optimizeData.optimizedUrl);
-          finalBuffer = new Uint8Array((await safeFetch(safeOptimizedUrl).then(r => r.arrayBuffer())));
+          const optResp = await ssrfFetch(optimizeData.optimizedUrl, {
+            allowedHosts: ALLOWED_DOWNLOAD_HOSTS,
+          });
+          finalBuffer = new Uint8Array(await optResp.arrayBuffer());
           console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
         }
       } else {
@@ -324,7 +287,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       console.warn("[optimizer] Skipping optimization, using original:", optErr instanceof Error ? optErr.message : optErr);
     }
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await sb()!.storage
       .from("3d-assets")
       .upload(`meshes/${fileName}`, finalBuffer, {
         contentType: `model/${asset.format}`,
@@ -335,12 +298,12 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       throw error;
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = sb()!.storage
       .from("3d-assets")
       .getPublicUrl(`meshes/${fileName}`);
 
     if (userId) {
-      await supabase.from("user_assets").insert({
+      await sb()!.from("user_assets").insert({
         user_id: userId,
         asset_id: asset.id,
         name: asset.name,
@@ -350,7 +313,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
       });
     }
 
-    await supabase.from("asset_metadata").insert({
+    await sb()!.from("asset_metadata").insert({
       glb_url: publicUrl,
       format: asset.format,
       version: 1
@@ -363,7 +326,7 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
 }
 
 export async function listUserAssets(userId: string): Promise<ExternalAsset[]> {
-  const { data, error } = await supabase
+  const { data, error } = await sb()!
     .from("user_assets")
     .select("*")
     .eq("user_id", userId)

@@ -1,151 +1,70 @@
-# Ai-Wonderland (DreamMakerHub)
-AI-powered creative platform for building web experiences, 3D worlds, and interactive apps.
+# AI Wonderland
 
-# Current Status: Under Maintenance
+**Build anything. Just by describing it.**
 
-# 🌐 Visit the Site | ☕ Support the Project
- # https://www.dreammakerhub.website
+AI Wonderland is a full-stack, AI-powered creative platform where you generate websites, 3D games, and interactive experiences from natural language prompts. No coding required — but full code access when you want it.
 
-# 🛡️ Proprietary Notice & Licensing
-This project is NOT Open Source. All original components, including the AI Constitution, the Alice & Rick Personas, and the custom-merged PlayCanvas/WebGL engine logic, are Proprietary and All Rights Reserved.
+## In 30 seconds
 
-Viewing: You are welcome to review the source code for educational purposes and portfolio evaluation.
+Describe what you want → AI Architect plans it → AI Builder writes code → AI Reviewer polishes it → You publish it. Built-in 3D editor (PlayCanvas), visual page builder (Puck), cloud IDE (WonderSpace), and a persistent AI assistant (Spirit Guide).
 
-Restrictions: Unauthorized cloning, redistribution, or commercial use is strictly prohibited. See COPYRIGHT.md for full legal terms.
+## Attractions
 
-# DreamMakerHub AI Platform
-## A next-generation AI-powered creation platform built to help developers, creators, and
-innovators build intelligent applications, automate workflows, and explore advanced AI tools -
-all inside a unified, modern web experience.
-DreamMakerHub combines AI agents, 3D experiences, automation, and developer-friendly
-tools into one cohesive ecosystem.
-# Features Overview
-▪ AI Agents with Reasoning - Autonomous agents capable of planning, memory, and multi-
-step workflows.
-▪ AI Playground (WonderSpace) - Chat, test prompts, run agents, and explore models
-interactively.
-▪ 3D Engine Integration - PlayCanvas/WebGL-powered 3D editor for immersive experiences.
-▪ Full SaaS Platform - Authentication, subscriptions, dashboards, and user management.
-▪ Developer Tools - API routes, internal tooling, testing, linting, and monorepo automation.
-▪ Modern Web Stack - Next.js, React, TypeScript, Tailwind, Supabase, Stripe, Kubernetes, and
-more.
-# Tech Stack
-Frontend
-▪ Next.js (App Router)
-▪ React + TypeScript
-▪ TailwindCSS
-▪ Puck Editor
-▪ Custom UI components
+### 🤖 WonderBuild — AI App Builder
+Prompt-to-code generation with a multi-agent workflow. Pick your output: website, game, React component, 3D scene, or PlayCanvas world. Three AI agents (Architect → Builder → Reviewer) collaborate in real time.
 
-Backend / Infra
-▪ Node.js
-▪ Supabase (Auth, DB, Storage)
-▪ Prisma
-▪ REST APIs
-▪ Kubernetes (OKE)
-▪ Coder Workspaces
-▪ CI/CD automation
-AI / 3D
-▪ Custom AI reasoning engine
-▪ Multi-agent orchestration
-▪ PlayCanvas / WebGL 3D engine
-▪ Prompt builder + safety scanners
-Copilot may make mistakes 3
-Repository Structure
-``` dreammakerhub.website/
-│
-├── apps/
-│ └── web/ # Next.js frontend
-│ ├── ai-modules/ # AI tools, agents, builders
-│ ├── app/ # App Router pages
-│ ├── api/ # API routes
-│ ├── lib/ # Utilities
-│ └── services/ # Client-side services
-│
-├── engine/
-│ └── core/ # AI runtime, memory, reasoning, scanners
-│
-├── infra/ # Supabase, logging, rate limiting, integrations
-│
-├── ui/
-│ └── components/ # Reusable React components
-│
-├── docs/ # API docs, OpenAPI, typedoc
-│
-└── config/
-└── ai/ # Model configs, agent presets 
+### 🎮 WonderPlay — 3D Game Engine
+Full PlayCanvas editor embedded in the browser. Create and edit 3D scenes, games, and spatial designs with drag-and-drop or AI prompts. NPC support (Convai), glTF transform, Draco compression, mesh optimization.
+
+### 🧠 WonderSpace IDE
+Browser-based IDE with Monaco Editor, WebContainer runtime (Node.js in the browser), terminal emulation, file system, and Git integration. Build and run code without leaving your browser.
+
+### 🎨 Visual Page Builder (Puck)
+Drag-and-drop editor with 19+ blocks (Hero, Text, Image, Video, Form, Tabs, Accordion, Carousel, etc.). AI-generated output converts to Puck blocks for further editing.
+
+### 🧭 Spirit Guide AI Assistant
+Persistent AI assistant on every page. Context-aware, remembers conversations across sessions (powered by mem0). Ask questions, get suggestions, or request code changes inline.
+
+### 🌐 Cloud Workspaces (Coder + Kubernetes)
+Spin up cloud development environments on your own infrastructure (OCI, AWS, GCP) or use hosted workspaces. VS Code in the browser, or connect your local editor.
+
+### 🏪 Extensions & Asset Marketplace
+Curated extension registry (Changelog Writer, Schema Guard, Design Tokens, AI Reviewer, Deploy Runner, Semantic Search, Telemetry Lens, Content Safety). 3D asset library with search and download.
+
+### 🔐 Enterprise Features
+SSO/SCIM, custom domains, role-based access (Owner/Editor/Viewer), team collaboration, usage analytics, audit logs, AetherGuard AI safety system.
+
+## Tech Stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | Next.js 16 + React 19 + TypeScript 6 |
+| Styling | Tailwind CSS 4, shadcn/ui, Radix UI |
+| 3D | PlayCanvas, Three.js / R3F, WebGL Studio |
+| AI | OpenAI, Gemini, Groq, OpenRouter |
+| Database | PostgreSQL + Prisma + Supabase |
+| Auth | Supabase Auth (SSR) |
+| IDE | WebContainer API + Monaco + xterm.js |
+| Infra | Docker, Kubernetes (OCI OKE), Coder |
+
+## Pricing
+
+- **Nomad** — Free (public projects, community support)
+- **Architect** — $35/mo (private projects, priority AI)
+- **Guild** — $149/mo (team seats, shared assets, analytics)
+- **Enterprise** — Custom (SSO, dedicated infra, SLA)
+
+## Quick Start
+
+```bash
+nvm use           # Requires Node >= 20.19
+npm install --legacy-peer-deps
+npm run dev       # http://localhost:3000
 ```
-# Getting Started
 
-# 1. Clone the repository
-git clone https://github.com/AI-WonderLand1/dreammakerhub.website
-cd dreammakerhub.website
+## Links
 
-# 2. Install dependencies
-npm install
-
-# 3. Set environment variables
-Create a .env.local file:
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-STRIPE_SECRET_KEY=
-OPENAI_API_KEY=
-PLAYCANVAS_API_KEY=
-
-# 4. Run the development server
-npm run dev
-
-# AI Playground (WonderGround)
-WonderSpace is your Dify-style AI playground, featuring:
-▪ Multi-model chat
-▪ Agent workflows
-▪ Prompt builder
-▪ Memory + reasoning engine
-▪ Safety + moderation layer
-▪ Session history
-***
-## ⚡ Getting Started
-### **1. Clone the repository**
-git clone https://github.com/AI-WonderLand1/dreammakerhub.website cd
-dreammakerhub.website
-
-### **2. Install dependencies**
-npm install
-
-### **3. Set environment variables**
-Create a `.env.local` file:
-SUPABASE_URL= SUPABASE_ANON_KEY= STRIPE_SECRET_KEY= OPENAI_API_KEY=
-PLAYCANVAS_API_KEY=
-
-### **4. Run the development server**
-npm run dev
-Copilot may make mistakes 5
-***
-## AI Playground (WonderSpace)
-WonderSpace is your **Dify-style AI playground**, featuring:
-- Multi-model chat
-- Agent workflows
-- Prompt builder
-- Memory + reasoning engine
-- Safety + moderation layer
-- Session history
-***
-## 3D Engine Integration
-DreamMakerHub includes a full **PlayCanvas/WebGL 3D editor**:
-- Scene editor
-- Asset pipeline
-- Real-time rendering
-- Integration with AI agents for procedural generation
-***
-## Testing & Tooling
-- ESLint + Prettier
-- Type checking
-- Automated builds
-- Internal scripts for monorepo management
-***
-## Billing & Authentication
-- Supabase Auth
-- Stripe subscriptions
-- Role-based access control
-- Secure API routing
-***
+- [Homepage](https://dreammakerhub.website)
+- [Documentation](/docs)
+- [Community](/community)
+- [Status](https://dreammakerhub.website/status)

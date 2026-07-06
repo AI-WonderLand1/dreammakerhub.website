@@ -20,10 +20,10 @@ export default function HeroSection() {
     <section className="relative min-h-[60vh] flex items-center justify-center bg-black">
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
         <h1 className="mb-12">
-          <span className="block text-6xl md:text-8xl bg-gradient-to-r from-pink-300 via-purple-300 to-blue-300 bg-clip-text text-transparent font-extrabold tracking-tight">
-            AI Wonderland
-          </span>
-          <p className="mt-6 text-xl text-slate-400">Where you create a future together in AI</p>
+           <span className="block text-6xl md:text-8xl bg-gradient-to-r from-pink-300 via-purple-300 to-blue-300 bg-clip-text text-transparent font-extrabold tracking-tight">
+             Wonderland
+           </span>
+           <p className="mt-6 text-xl text-slate-400">Where you create a future together</p>
         </h1>
         
         <div className="relative group max-w-2xl mx-auto">

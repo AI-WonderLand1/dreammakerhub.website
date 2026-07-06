@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSupabase } from '@lib/supabase/auth-context';
+import { useSupabase } from '@/lib/supabase/auth-context';
 
 interface Team {
   id: string;

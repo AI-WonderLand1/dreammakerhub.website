@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto";
 
 const AI_PROVIDER = process.env.AI_PROVIDER || "opencode"
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY

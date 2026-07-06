@@ -1,23 +1,37 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env, requireEnv } from "@lib/env";
+import { env } from "@lib/env";
 import { logger } from "@lib/logger";
 
 /**
  * GitHub Models Provider (via Azure OpenAI)
- * Uses GitHub Models accessible through Azure OpenAI endpoints.
+ * Uses GITHUB_MODELS_API_KEY or user-provided apiKey.
  */
 export const githubProvider: AIProvider = {
   name: "github",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const apiKey = requireEnv(env.GITHUB_MODELS_API_KEY, "GITHUB_MODELS_API_KEY");
+    const apiKey = options.apiKey as string || process.env.GITHUB_MODELS_API_KEY || '';
     const {
       model = "gpt-4o-mini",
       system,
       temperature = 0.7,
       maxTokens = 4096
     } = options ?? {};
+
+    if (!apiKey) {
+      // No GitHub key – fall back to GROQ
+      const fallback = await import('./groq').then(m => m.groqProvider.generate(prompt, options));
+      return {
+        text: fallback.text || "Falling back to GROQ model",
+        ...fallback,
+        provider: "github",
+        confessions: {
+          ...fallback.confessions,
+          reasoning: ["Fallback to GROQ due to missing GitHub Models key"]
+        }
+      };
+    }
 
     try {
       const messages = [];

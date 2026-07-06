@@ -134,13 +134,14 @@ export async function POST(req: Request) {
       }
     `;
 
-    const aiResponse = await runModel({ 
-      system: systemPrompt, 
-      userPrompt: command, 
-      temperature: 0.7 
+    const aiResponse = await runModel({
+      model: "openrouter/meta-llama/llama-3.3-70b-instruct",
+      messages: [{ role: "user", content: command }],
+      system: systemPrompt,
+      temperature: 0.7,
     });
 
-    const manifest = JSON.parse(aiResponse || '{}');
+    const manifest = JSON.parse(aiResponse.text || '{}');
 
     // Validate AI output doesn't contain dangerous code
     if (manifest.code) {

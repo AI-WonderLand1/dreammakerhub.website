@@ -1,4 +1,4 @@
-import { readFile } from "@lib/projects/storage";
+import { readFile } from "@/lib/projects/storage";
 import { createClient } from "@/app/utils/supabase/server";
 import { injectWiringRuntime } from "@/lib/wonder-build/wiringRuntime";
 

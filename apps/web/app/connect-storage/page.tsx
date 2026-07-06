@@ -64,28 +64,40 @@ export default function ConnectCloudStoragePage() {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <BYOCExplanation />
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-50">
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="text-center mb-8">
+          <p className="text-xs uppercase tracking-[0.25em] text-slate-400 mb-1">AI WONDERLAND</p>
+          <h1 className="text-3xl font-bold">Connect Cloud Storage</h1>
+          <p className="text-slate-400 mt-2">Link your own storage to AI Wonderland projects</p>
+        </div>
 
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Connect cloud storage</h2>
-        <select value={provider} onChange={(e) => setProvider(e.target.value as Provider)} style={{ display: 'block', width: '100%', marginBottom: '10px' }}>
-          <option value="supabase">Supabase</option>
-          <option value="s3">AWS S3</option>
-          <option value="gcs">GCP Storage</option>
-        </select>
-        <input type="text" placeholder="Connection name" value={name} onChange={(e) => setName(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '10px' }} />
-        <input type="text" placeholder="Bucket name" value={bucket} onChange={(e) => setBucket(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '10px' }} />
-        <input type="text" placeholder="Region (optional for some providers)" value={region} onChange={(e) => setRegion(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '10px' }} />
-        <select value={authMode} onChange={(e) => setAuthMode(e.target.value as 'apiKey' | 'oauth')} style={{ display: 'block', width: '100%', marginBottom: '10px' }}>
-          <option value="apiKey">API key</option>
-          <option value="oauth">OAuth</option>
-        </select>
-        <input type="text" placeholder="Credential key (example: accessKeyId)" value={credentialKey} onChange={(e) => setCredentialKey(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '10px' }} />
-        <input type="password" placeholder="Credential value" value={credentialValue} onChange={(e) => setCredentialValue(e.target.value)} style={{ display: 'block', width: '100%', marginBottom: '10px' }} />
-        <textarea placeholder='OR paste credential JSON' value={credentialJson} onChange={(e) => setCredentialJson(e.target.value)} style={{ display: 'block', width: '100%', minHeight: '120px', marginBottom: '10px' }} />
-        <button onClick={() => void onConnect()} disabled={submitting}>{submitting ? 'Saving…' : 'Connect securely'}</button>
-        {message ? <p style={{ marginTop: '10px' }}>{message}</p> : null}
+        <BYOCExplanation />
+
+        <div className="rounded-xl border border-white/10 bg-slate-900/70 p-6 mt-6">
+          <h2 className="text-lg font-semibold mb-4 text-white">Connect cloud storage</h2>
+          <div className="space-y-4">
+            <select value={provider} onChange={(e) => setProvider(e.target.value as Provider)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white focus:outline-none focus:border-violet-500/50">
+              <option value="supabase">Supabase</option>
+              <option value="s3">AWS S3</option>
+              <option value="gcs">GCP Storage</option>
+            </select>
+            <input type="text" placeholder="Connection name" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50" />
+            <input type="text" placeholder="Bucket name" value={bucket} onChange={(e) => setBucket(e.target.value)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50" />
+            <input type="text" placeholder="Region (optional for some providers)" value={region} onChange={(e) => setRegion(e.target.value)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50" />
+            <select value={authMode} onChange={(e) => setAuthMode(e.target.value as 'apiKey' | 'oauth')} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white focus:outline-none focus:border-violet-500/50">
+              <option value="apiKey">API key</option>
+              <option value="oauth">OAuth</option>
+            </select>
+            <input type="text" placeholder="Credential key (example: accessKeyId)" value={credentialKey} onChange={(e) => setCredentialKey(e.target.value)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50" />
+            <input type="password" placeholder="Credential value" value={credentialValue} onChange={(e) => setCredentialValue(e.target.value)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50" />
+            <textarea placeholder="OR paste credential JSON" value={credentialJson} onChange={(e) => setCredentialJson(e.target.value)} className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50 min-h-[120px]" />
+            <button onClick={() => void onConnect()} disabled={submitting} className="w-full bg-violet-600 text-white py-3 px-4 rounded-lg hover:bg-violet-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
+              {submitting ? 'Saving…' : 'Connect securely'}
+            </button>
+            {message ? <p className="text-sm text-slate-300 mt-2">{message}</p> : null}
+          </div>
+        </div>
       </div>
     </div>
   );

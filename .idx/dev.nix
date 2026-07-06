@@ -15,7 +15,12 @@
     workspace = {
       onCreate = {
         # This installs dependencies at the root so the engine and UI are linked
-        install = "npm install";
+        install = ''
+          . "/home/user/.nvm/nvm.sh" --no-use
+          nvm install 20.11.0
+          nvm use 20.11.0
+          npm install --legacy-peer-deps
+        '';
       };
     };
     previews = {

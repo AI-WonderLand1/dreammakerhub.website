@@ -12672,7 +12672,7 @@ if (typeof exports != "undefined") {
 		if(v && v.length) //clone
 		{
 			if(!this._value)
-				this._value = new Array();
+				this._value = [];
 			this._value.length = v.length;
 			for(var i = 0; i < v.length; ++i)
 				this._value[i] = v[i];
@@ -25059,7 +25059,7 @@ vec4,vec4,float->vec4
 			}
 
 			if(!this._output)
-				this._output = new Array();
+				this._output = [];
 			if(this._output.length != input.length)
 				this._output.length = input.length;
 			for(var i = 0; i < input.length; ++i)

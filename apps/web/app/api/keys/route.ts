@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (name.length > 64) return NextResponse.json({ error: "Name too long" }, { status: 400 });
 
   const prefix = process.env.WONDER_API_KEY_PREFIX ?? "wb_live_";
-  const { token, token_hash, prefix: prefix12 } = makeApiToken(prefix);
+  const { token, token_hash, prefix: prefix12 } = await makeApiToken(prefix);
 
   const { error } = await supabase.from("api_keys").insert({
     user_id: auth.user.id,

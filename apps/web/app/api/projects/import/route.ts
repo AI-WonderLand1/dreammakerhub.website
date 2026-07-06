@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { promises as fs } from "fs";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
-import { createProject, updateProjectMetadata, writeFile, storage } from "@lib/projects/storage";
+import { createProject, updateProjectMetadata, writeFile, storage } from "@/lib/projects/storage";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import os from "os";
 import { execFile } from "child_process";

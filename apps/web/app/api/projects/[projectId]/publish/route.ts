@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
-import { getSmokeUserIdFromRequest } from "@lib/smokeAuth";
+import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
 import {
   listFiles,
   readFile,
   updateProjectMetadata,
   getProjectMetadata,
-} from "@lib/projects/storage";
+} from "@/lib/projects/storage";
 
 export const runtime = "nodejs";
 

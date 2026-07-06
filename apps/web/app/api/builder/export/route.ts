@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const escapeTemplateLiteral = (value: string) =>
-  value.replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+  value
+    .replace(/\\/g, "\\\\")
+    .replace(/`/g, "\\`")
+    .replace(/\$\{/g, "\\${")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
 
 const toComponentName = (value: string) => {
   const base = value

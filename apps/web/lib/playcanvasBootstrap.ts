@@ -11,7 +11,14 @@ export function getPlayCanvasBootstrapSrc() {
 }
 
 export function shouldUseDirectPlayCanvasMode() {
-  return true; // always direct mode — no iframes
+  if (typeof window === "undefined") return false;
+  
+  const path = window.location.pathname;
+  const needsEngine = path.startsWith('/wonder-build') || 
+    path.startsWith('/playcanvas') || 
+    path.includes('playcanvas');
+  
+  return needsEngine;
 }
 
 export function resetPlayCanvasBootstrapLoader() {

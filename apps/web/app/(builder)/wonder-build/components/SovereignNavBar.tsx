@@ -1,16 +1,21 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
 
-const MODE_TABS = [
-  { id: 'preview', label: 'Preview' },
-  { id: 'content', label: 'Edit content' },
-  { id: 'code', label: 'Code' },
-  { id: 'data', label: 'Data' },
+const NAV_LINKS = [
+  { href: '/wonder-build', label: 'Hub', icon: '🏠' },
+  { href: '/wonder-build/agent', label: 'AI Builder', icon: '🤖' },
+  { href: '/wonder-build/preview', label: 'Preview', icon: '👁️' },
+  { href: '/wonder-build/sandbox', label: 'Sandbox', icon: '📄' },
+  { href: '/wonder-build/puck', label: 'Puck', icon: '🎨' },
+  { href: '/wonder-build/playcanvas', label: '3D', icon: '🎮' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
 ] as const;
 
 export function SovereignNavBar() {
+  const pathname = usePathname();
   const { running } = useSovereignOS();
 
   return (
@@ -24,17 +29,21 @@ export function SovereignNavBar() {
       </div>
 
       <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1 md:flex">
-        {MODE_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              tab.id === 'preview' ? 'bg-white/15 text-white' : 'text-white/55 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {NAV_LINKS.map((link) => {
+          const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                isActive ? 'bg-white/15 text-white' : 'text-white/55 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <span>{link.icon}</span>
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="flex items-center gap-2">

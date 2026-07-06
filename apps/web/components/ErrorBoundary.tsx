@@ -141,7 +141,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <div className="mt-8">
             <p className="text-xs text-gray-500">
-              Need help? Contact support at support@dreammakerhub.website
+              Need help? Contact support at support@ai-wonderland.app
             </p>
           </div>
         </div>

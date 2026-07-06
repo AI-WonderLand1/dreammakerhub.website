@@ -1,59 +1,7 @@
-node_modules/
-.next/
-.pnpm-store/
-*.pack
-.vercel
-.nx/
 
-# Key files - NEVER commit secrets
-*.pem
-
-# Environment files - NEVER commit secrets
-.env
-.env.*
-.env.local
-.env*.local
-.env.production
-my-agent/.env
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-.terraform.lock.hcl
-
-# Editor temp files
-*.swp
-.*.swp
-*.swo
-.*.swo
-*~
-.*~
-
-UnrealEngine_Source/
-UE5_Source/
-Archive/
-Saved/
-Intermediate/
-DerivedDataCache/
+bin/coder
+node_modules
+*.tgz
+node-v*-linux-x64/
 agent/venv/
-__pycache__/
-*.pyc
-.aider*
-
-/lib/generated/prisma
-# --- PRISMA & DATABASE ---
-# Don't ignore the schema, but ignore SQLite files if you use them locally
-*.db
-*.db-journal
-# --- LOGS & DEBUGGING ---
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-.eslintcache
-logs
-*.log
-# --- OS FILES ---
-.DS_Store
-Thumbs.db
+.next/

@@ -1,19 +1,21 @@
-"use client";
+import PodLauncher from '@/components/engines/PodLauncher';
 
-import dynamic from 'next/dynamic';
-import { useAuth } from '@/lib/supabase/auth-context';
+export const metadata = {
+  title: 'WonderSpace IDE',
+  description: 'Launch your private cloud IDE workspace.',
+};
 
-const WonderSpaceIDE = dynamic(() => import('@/components/engines/WonderSpaceIDE'), { ssr: false });
-
-export default function IDEPage() {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div className="bg-black text-green-500 p-4">Booting environment...</div>;
-  if (!user) return <div className="bg-black text-red-500 p-4">Auth required.</div>;
-
+export default function WonderSpaceIDEPage() {
   return (
-    <div className="w-full h-screen">
-      <WonderSpaceIDE />
-    </div>
+    <PodLauncher
+      podType="ide"
+      title="WonderSpace IDE"
+      icon="&#128187;"
+      description="Your private cloud workspace with VS Code, terminal, and git — just like GitHub Codespaces."
+      templateId="wonderspace-ide"
+      accentColor="blue"
+      backHref="/wonderspace"
+      backLabel="Back to WonderSpace"
+    />
   );
 }

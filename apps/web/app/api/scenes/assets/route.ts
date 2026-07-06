@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient();
 const BUCKET_NAME = "3d-assets";
 
 export async function GET() {
   try {
-    if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ files: [] });
     }
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // List files in the 3d-assets bucket
     const { data: files, error } = await supabase.storage
       .from(BUCKET_NAME)
       .list("", {

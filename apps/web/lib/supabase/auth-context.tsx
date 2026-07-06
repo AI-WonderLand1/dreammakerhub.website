@@ -1,10 +1,11 @@
 'use client'
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClient } from './client'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { getSupabaseClient } from './client'
 
 type AuthUser = {
   id: string
   email?: string
+  name?: string
   [key: string]: any
 }
 
@@ -12,20 +13,20 @@ type AuthContextState = {
   user: AuthUser | null
   session: any | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: Error }>
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
-  signUp: (email: string, password: string) => Promise<{ error?: Error }>
-  signInWithOAuth: (provider: 'github' | 'google') => Promise<{ error?: Error }>
+  signUp: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithOAuth: (provider: 'github' | 'google', options?: { redirectTo?: string }) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextState>({
   user: null,
   session: null,
   loading: true,
-  signIn: async () => ({}),
+  signIn: async () => ({ error: null }),
   signOut: async () => {},
-  signUp: async () => ({}),
-  signInWithOAuth: async () => ({}),
+  signUp: async () => ({ error: null }),
+  signInWithOAuth: async () => ({ error: null }),
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -34,93 +35,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false;
-    const supabase = createClient()
-    
-    // Timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
-        setLoading(false)
-      }
-    }, 10000) // 10 second timeout
-
+    const supabase = getSupabaseClient()
     if (!supabase) {
-      clearTimeout(timeout);
       setLoading(false)
       return
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      clearTimeout(timeout);
-      if (!cancelled) {
-        setSession(data.session ?? null)
-        setUser(data.session?.user ?? null)
-        setLoading(false)
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (s?.user) {
+        setUser(s.user as unknown as AuthUser)
+        setSession(s)
       }
-    }).catch(() => {
-      clearTimeout(timeout);
-      if (!cancelled) {
-        setLoading(false)
-      }
+      setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (!cancelled) {
-        setSession(s ?? null)
-        setUser(s?.user ?? null)
-        setLoading(false)
+      if (s?.user) {
+        setUser(s.user as unknown as AuthUser)
+        setSession(s)
+      } else {
+        setUser(null)
+        setSession(null)
       }
+      setLoading(false)
     })
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = async (email: string, password: string): Promise<{ error?: Error }> => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
-    }
+  const signIn = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return error ? { error: new Error(error.message) } : {}
-  }
+    return { error: error ? new Error(error.message) : null }
+  }, [])
 
-
-
-  const signUp = async (email: string, password: string): Promise<{ error?: Error }> => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
-    }
+  const signUp = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signUp({ email, password })
-    return error ? { error: new Error(error.message) } : {}
-  }
+    return { error: error ? new Error(error.message) : null }
+  }, [])
 
-  const signOut = async () => {
-    const supabase = createClient()
+  const signInWithOAuth = useCallback(async (provider: 'github' | 'google', options?: { redirectTo?: string }) => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: new Error('Supabase not configured') }
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options })
+    return { error: error ? new Error(error.message) : null }
+  }, [])
+
+  const signOut = useCallback(async () => {
+    const supabase = getSupabaseClient()
     if (supabase) {
       await supabase.auth.signOut()
     }
     setUser(null)
     setSession(null)
-  }
-
-  const signInWithOAuth = async (provider: 'github' | 'google') => {
-    const supabase = createClient()
-    if (!supabase) {
-      return { error: new Error('Supabase is not configured in this environment.') }
+    if (typeof window !== 'undefined') {
+      window.location.href = '/public-pages/auth'
     }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/api/auth/callback`
-      }
-    })
-    return error ? { error: new Error(error.message) } : {}
-  }
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, signInWithOAuth }}>

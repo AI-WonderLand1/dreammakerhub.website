@@ -1,4 +1,4 @@
-import { applyArtifact } from "@core/ide/applyArtifact";
+import { applyArtifact } from "@/core/ide/applyArtifact";
 
 export async function POST(req: Request) {
   const artifact = await req.json();

@@ -1,6 +1,5 @@
-from hyperon import MeTTa
-from google import genai
 import os
+from litellm import completion
 from core.memory_bank import MemoryBank
 from core.neurolink import Neurolink
 
@@ -25,52 +24,51 @@ You have access to:
 
 Remember: The Spirit Guide does not give commands — it illuminates paths. The seeker must walk their own journey."""
 
+SPIRIT_GUIDE_MODEL = os.environ.get("SPIRIT_GUIDE_MODEL", "groq/llama-3.1-8b-instant")
+
 class SpiritGuide:
     def __init__(self, api_key: str = None, memory_db: str = "data/memory.db"):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.client = genai.Client(api_key=self.api_key) if self.api_key else None
+        self.api_key = api_key
         self.memory = MemoryBank(memory_db)
         self.neurolink = Neurolink()
         self.conversation_history = []
-    
+
     def consult(self, question: str, user_id: str = "seeker") -> str:
         context_parts = []
-        
+
         memories = self.memory.get_context_for_user(user_id, question)
         if memories:
             context_parts.append(memories)
-        
+
         related_patterns = self._find_related_patterns(question)
         if related_patterns:
             context_parts.append(f"Patterns observed across time:\n{related_patterns}")
-        
+
         full_context = "\n\n".join(context_parts) if context_parts else ""
-        
-        prompt_parts = [SPIRIT_GUIDE_PROMPT]
+
+        messages = [{"role": "system", "content": SPIRIT_GUIDE_PROMPT}]
         if full_context:
-            prompt_parts.append(f"\n\nAncient Memory flows into this moment:\n{full_context}")
-        prompt_parts.append(f"\n\nThe seeker asks: {question}")
-        
-        full_prompt = "\n".join(prompt_parts)
-        
-        if not self.client:
-            return "The veil is thin, but the connection to wisdom is not yet established. Provide the sacred API key."
-        
+            messages.append({"role": "system", "content": f"Ancient Memory flows into this moment:\n{full_context}"})
+        messages.append({"role": "user", "content": question})
+
         try:
-            response = self.client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=[full_prompt]
+            response = completion(
+                model=SPIRIT_GUIDE_MODEL,
+                messages=messages,
+                temperature=0.8,
+                max_tokens=512,
+                api_key=self.api_key,
             )
-            answer = response.text
-            
+            answer = response.choices[0].message.content
+
             self.memory.store(user_id, f"seeking: {question[:50]}", answer, importance=0.7)
             self.neurolink.add_node("vision", {"question": question, "insight": answer[:200]})
-            
+
             self.conversation_history.append({"seeker": question, "guide": answer})
             return answer
         except Exception as e:
             return f"The currents of fate stir uneasily: {str(e)}"
-    
+
     def _find_related_patterns(self, question: str) -> str:
         nodes = self.neurolink.query({"type": "vision"}, limit=3)
         patterns = []
@@ -78,6 +76,6 @@ class SpiritGuide:
             if any(word.lower() in str(node.content).lower() for word in question.split()[:5]):
                 patterns.append(f"- {node.content}")
         return "\n".join(patterns[:3]) if patterns else ""
-    
+
     def recall_vision(self, topic: str) -> dict:
         return self.neurolink.get_context(topic)

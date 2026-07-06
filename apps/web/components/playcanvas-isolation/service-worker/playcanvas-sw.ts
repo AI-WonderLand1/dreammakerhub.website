@@ -99,7 +99,7 @@ async function routeRequest(request: Request): Promise<Response> {
       method: request.method,
       headers: request.headers,
       body: request.body,
-      // @ts-ignore - duplex is needed for streaming
+      // @ts-expect-error - duplex is needed for streaming
       duplex: 'half',
     });
 

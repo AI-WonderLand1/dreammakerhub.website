@@ -14,7 +14,32 @@ const USER_FILES_PATH = process.env.USER_FILES_PATH || '/app/user-project';
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 100;
+const RATE_LIMIT_CLEANUP_MS = 5 * 60 * 1000;
 const rateLimitStore = new Map();
+
+function getClientIp(request) {
+  return request.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+         request.headers['x-real-ip'] || 
+         request.socket?.remoteAddress || 
+         'unknown';
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const record = rateLimitStore.get(ip);
+
+  if (!record || now - record.resetTime > RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+
+  record.count++;
+  if (record.count > RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count };
+}
 
 function cleanupRateLimitStore() {
   const now = Date.now();
@@ -25,35 +50,17 @@ function cleanupRateLimitStore() {
   }
 }
 
-setInterval(cleanupRateLimitStore, RATE_LIMIT_WINDOW_MS);
-
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const record = rateLimitStore.get(ip);
-  
-  if (!record || now - record.resetTime > RATE_LIMIT_WINDOW_MS) {
-    rateLimitStore.set(ip, { count: 1, resetTime: now });
-    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
-  }
-  
-  record.count++;
-  rateLimitStore.set(ip, record);
-  
-  if (record.count > RATE_LIMIT_MAX_REQUESTS) {
-    return { allowed: false, remaining: 0 };
-  }
-  
-  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count };
-}
-
-function getClientIp(request) {
-  return request.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-         request.headers['x-real-ip'] || 
-         request.socket?.remoteAddress || 
-         'unknown';
-}
+setInterval(cleanupRateLimitStore, RATE_LIMIT_CLEANUP_MS);
 
 const f = Fastify({ logger: true });
+
+f.addHook('onRequest', async (request, reply) => {
+  const ip = getClientIp(request);
+  const { allowed } = checkRateLimit(ip);
+  if (!allowed) {
+    return reply.status(429).send({ error: 'Rate limit exceeded' });
+  }
+});
 
 const io = new NodeIO().registerExtensions(KHRONOS_EXTENSIONS);
 
@@ -100,23 +107,12 @@ const CONTENT_TYPES = {
 };
 
 f.get('/health', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
   const sshKey = getSSHKey();
-  const userFiles = loadUserFiles();
   return {
     status: 'ok',
     project: PROJECT_ID,
     hasSSHKey: !!sshKey,
-    hasUserFiles: !!userFiles,
-    features: ['webglstudio', 'playcanvas', 'gltf-optimization'],
-    sshKeyPreview: sshKey ? sshKey.slice(0, 50) + '...' : null,
-    files: Object.keys(userFiles || {})
+    features: ['webglstudio', 'playcanvas', 'gltf-optimization']
   };
 });
 
@@ -126,14 +122,14 @@ function isPathSafe(basePath, requestedPath) {
   return resolvedPath.startsWith(normalizedBase) && !requestedPath.includes('..');
 }
 
-f.get('/editor/*', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.get('/editor/*', {
+  config: {
+    rateLimit: {
+      max: 100,
+      timeWindow: '1 minute',
+    },
+  },
+}, async (request, reply) => {
   const filePath = request.url.replace('/editor/', '').split('?')[0];
   
   if (!isPathSafe(WEBGLSTUDIO_PATH, filePath)) {
@@ -155,14 +151,14 @@ f.get('/editor/*', async (request, reply) => {
     .send(readFileSync(fullPath));
 });
 
-f.get('/playcanvas/*', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.get('/playcanvas/*', {
+  config: {
+    rateLimit: {
+      max: 100,
+      timeWindow: '1 minute',
+    },
+  },
+}, async (request, reply) => {
   const filePath = request.url.replace('/playcanvas/', '').split('?')[0];
   
   if (!isPathSafe(PLAYCANVAS_PATH, filePath)) {
@@ -184,14 +180,11 @@ f.get('/playcanvas/*', async (request, reply) => {
     .send(readFileSync(fullPath));
 });
 
-f.post('/optimize', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.post('/optimize', {
+  config: {
+    rateLimit: { max: 10, timeWindow: '1 minute' },
+  },
+}, async (request, reply) => {
   try {
     const buffer = await request.body;
     if (!buffer || buffer.length === 0) {
@@ -222,14 +215,11 @@ f.post('/optimize', async (request, reply) => {
   }
 });
 
-f.post('/files/save', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.post('/files/save', {
+  config: {
+    rateLimit: { max: 30, timeWindow: '1 minute' },
+  },
+}, async (request, reply) => {
   try {
     const { filename, content } = request.body || {};
     if (!filename || !content) {
@@ -262,25 +252,19 @@ f.post('/files/save', async (request, reply) => {
   }
 });
 
-f.get('/files', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.get('/files', {
+  config: {
+    rateLimit: { max: 60, timeWindow: '1 minute' },
+  },
+}, async (request, reply) => {
   return { files: loadUserFiles() || {} };
 });
 
-f.get('/files/*', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.get('/files/*', {
+  config: {
+    rateLimit: { max: 60, timeWindow: '1 minute' },
+  },
+}, async (request, reply) => {
   const fileName = request.url.replace('/files/', '');
   const fullPath = pathJoin(USER_FILES_PATH, fileName);
   
@@ -297,14 +281,11 @@ f.get('/files/*', async (request, reply) => {
     .send(readFileSync(fullPath));
 });
 
-f.get('/project/files', async (request, reply) => {
-  const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(ip);
-  
-  if (!rateCheck.allowed) {
-    return reply.status(429).send({ error: 'Rate limit exceeded' });
-  }
-  
+f.get('/project/files', {
+  config: {
+    rateLimit: { max: 60, timeWindow: '1 minute' },
+  },
+}, async (request, reply) => {
   return { projectId: PROJECT_ID, files: loadUserFiles() || {} };
 });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { runModel } from '@core/ai/runModel';
-import { buildClassificationPrompt } from '@core/ai/promptBuilder';
+import { runModel } from '@/core/ai/runModel';
+import { buildClassificationPrompt } from '@/core/ai/promptBuilder';
 
 const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
@@ -93,6 +93,21 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
   }
 
   if (!content) {
+    // Fallback to Groq
+    try {
+      const result = await runModel({
+        model: 'openrouter/meta-llama/llama-3.3-70b-instruct',
+        messages: [
+          { role: 'user', content: `${systemPrompt}\n\n${prompt}` }
+        ],
+      });
+      content = result.text || '';
+    } catch (error: any) {
+      return { error: error.message || 'All AI providers failed', success: false };
+    }
+  }
+
+  if (!content) {
     return { error: 'No AI provider configured', success: false };
   }
 
@@ -110,11 +125,29 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
 export async function POST(req: Request) {
   const { prompt, mode } = await req.json();
 
-  if (mode === 'classify') {
+ // Provider header – default "openrouter"
+ const providerHeader = req.headers.get("x-ai-provider")?.toLowerCase() || "openrouter";
+
+
+   if (mode === 'classify') {
     const classificationPrompt = buildClassificationPrompt(prompt);
-    const result = await runModel({ model: 'github/gpt-4o-mini', messages: [{ role: 'user', content: classificationPrompt }] });
     
-    // Rick: We're parsing the AI's garbage output. Better be JSON or I'm out.
+    // Map provider header to model string
+    const providerMap: Record<string, string> = {
+      openai: "openai/gpt-4o-mini",
+      gemini: "google/gemini-2.5-flash",
+      openrouter: "openrouter/google/gemini-flash-1.5",
+      github: "github/gpt-4o-mini"
+    };
+    const modelStr = providerMap[providerHeader] || providerMap["openrouter"];
+    
+    // Use user key if provided, otherwise fallback to system
+    const result = await runModel({ 
+      model: modelStr, 
+      messages: [{ role: 'user', content: classificationPrompt }],
+      userApiKey: userApiKey || undefined
+    });
+    
     try {
       const parsed = JSON.parse(result.text);
       return NextResponse.json(parsed);

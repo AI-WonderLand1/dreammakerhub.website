@@ -4,9 +4,9 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
+import { useAuth } from "@/lib/supabase/auth-context";
 
-import { useAuth } from "@lib/supabase/auth-context";
-import { PLANS, PAID_PLANS, type PlanId } from "@lib/billing/plans";
+import { PLANS, type PlanId } from "@/lib/billing/plans";
 
 const DEFAULT_REDIRECT = "/dashboard/projects";
 
@@ -34,40 +34,42 @@ function CheckoutContent() {
 
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
   const planId = parsePlan(searchParams.get("plan"));
+  const interval = searchParams.get("interval") === "year" ? "year" : "month";
 
   const plan = useMemo(() => (planId ? PLANS[planId] : null), [planId]);
 
   const completeCheckout = async () => {
-    if (!planId) return;
+    if (!planId || !plan) return;
 
     const token = session?.access_token;
     if (!token || !user) {
-      const back = `/checkout?plan=${encodeURIComponent(planId)}&redirectTo=${encodeURIComponent(redirectTo)}`;
+      const back = `/checkout?plan=${encodeURIComponent(planId)}&interval=${interval}&redirectTo=${encodeURIComponent(redirectTo)}`;
       router.push(`/public-pages/auth?redirectTo=${encodeURIComponent(back)}`);
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/subscription/subscribe", {
+      const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({
+          planId,
+          interval,
+          trialDays: plan.trialDays || 0,
+          redirectTo,
+        }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || "Subscription failed");
+      const data = await response.json();
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.error || "Checkout failed");
       }
 
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        router.push(redirectTo);
-      }
+      window.location.href = data.url;
     } catch (err) {
       console.error(err);
       alert("Checkout failed. Please try again.");
@@ -100,9 +102,9 @@ function CheckoutContent() {
           <div className="flex items-start justify-between gap-6">
             <div>
               <h2 className="text-xl font-semibold">{plan.name}</h2>
-              <p className="text-white/70 mt-1">Billed monthly. Cancel any time.</p>
+              <p className="text-white/70 mt-1">{interval === "year" ? "Billed annually" : "Billed monthly"}. Cancel any time.</p>
             </div>
-            <p className="text-2xl font-extrabold">{plan.priceDisplay}</p>
+            <p className="text-2xl font-extrabold">{interval === "year" ? plan.yearlyPriceDisplay : plan.priceDisplay}</p>
           </div>
 
           <ul className="mt-5 space-y-2 text-sm text-white/80">
@@ -113,6 +115,16 @@ function CheckoutContent() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-4 text-xs text-white/60">
+            By subscribing, you agree to our{' '}
+            <Link href="/(public)/terms" className="text-purple-300 hover:underline">Terms of Service</Link>
+            ,{' '}
+            <Link href="/(public)/privacy" className="text-purple-300 hover:underline">Privacy Policy</Link>
+            , and{' '}
+            <Link href="/(public)/refund" className="text-purple-300 hover:underline">Refund & Return Policy</Link>
+            .
+          </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <button

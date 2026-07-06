@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logger } from "@lib/logger";
+import { logger } from "@/lib/logger";
 
 const API_KEY = process.env.WONDERSPACE_API_KEY;
 

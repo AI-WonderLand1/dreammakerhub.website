@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
-import { getSmokeUserIdFromRequest } from '@lib/smokeAuth';
+import { getSmokeUserIdFromRequest } from '@/lib/smokeAuth';
 import { runAI } from '../ai-router';
 
 async function requireUser(req: NextRequest) {
