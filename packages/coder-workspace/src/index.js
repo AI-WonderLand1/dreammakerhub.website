@@ -2,6 +2,9 @@ import Fastify from 'fastify';
 import workspaceRoutes from './routes/workspaces.js';
 import templateRoutes from './routes/templates.js';
 import healthRoutes from './routes/health.js';
+import aiBridgeRoutes from './routes/ai-bridge.js';
+import aiProviderRoutes from './routes/ai-providers.js';
+import agentRoutes from './routes/agents.js';
 
 const PORT = parseInt(process.env.CODER_WORKSPACE_PORT || '3091', 10);
 const HOST = process.env.CODER_WORKSPACE_HOST || '0.0.0.0';
@@ -15,6 +18,9 @@ const fastify = Fastify({
 fastify.register(healthRoutes);
 fastify.register(workspaceRoutes, { prefix: '/api' });
 fastify.register(templateRoutes, { prefix: '/api' });
+fastify.register(aiBridgeRoutes, { prefix: '/api' });
+fastify.register(aiProviderRoutes, { prefix: '/api' });
+fastify.register(agentRoutes, { prefix: '/api' });
 
 fastify.setErrorHandler((error, request, reply) => {
   request.log.error(error);
