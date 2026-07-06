@@ -52,6 +52,12 @@ declare namespace NodeJS {
     DOCKER_SOCKET?: string;
     DOCKER_HOST?: string;
     DOCKER_PORT?: string;
+
+    // Coder workspace management service
+    CODER_API_URL?: string;
+    CODER_SESSION_TOKEN?: string;
+    CODER_WORKSPACE_URL?: string;
+    CODER_WORKSPACE_PORT?: string;
     
     // OPTIONAL (disabled infra)
     UPSTASH_REDIS_REST_URL?: string;
