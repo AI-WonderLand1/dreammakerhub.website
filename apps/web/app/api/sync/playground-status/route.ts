@@ -4,6 +4,12 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 
 export const runtime = "nodejs";
 
+// Validate UUID format
+const isValidUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+// Sanitize string inputs
+const sanitize = (val: unknown, maxLen = 100) => String(val || "").slice(0, maxLen);
+
 /**
  * POST /api/sync/playground-status
  * Real-time status sync from playground (active sessions, model usage, errors).
@@ -37,13 +43,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Missing userId or status", traceId }, { status: 400 });
     }
 
+    // Validate inputs
+    if (!isValidUUID(userId)) {
+      return NextResponse.json({ ok: false, error: "Invalid userId format", traceId }, { status: 400 });
+    }
+
+    const validStatuses = ["started", "active", "completed", "error"];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ ok: false, error: "Invalid status", traceId }, { status: 400 });
+    }
+
+    const sanitizedSessionId = sessionId ? sanitize(sessionId, 200) : null;
+    const sanitizedModel = sanitize(model, 100);
+    const sanitizedError = errorMsg ? sanitize(errorMsg, 500) : null;
+
     // Store status update
     const { error } = await supabase.from("playground_sessions").insert({
       user_id: userId,
-      status, // "started", "active", "completed", "error"
-      session_id: sessionId,
-      model: model || "unknown",
-      error_message: errorMsg || null,
+      status,
+      session_id: sanitizedSessionId,
+      model: sanitizedModel || "unknown",
+      error_message: sanitizedError,
       metadata: metadata || {},
       source: "playground",
       created_at: new Date().toISOString(),
@@ -54,12 +74,12 @@ export async function POST(req: NextRequest) {
     }
 
     // If error, log it for monitoring
-    if (status === "error" && errorMsg) {
+    if (status === "error" && sanitizedError) {
       await supabase.from("sync_log").insert({
         source: "playground",
         event_type: "error",
         user_id: userId,
-        payload: { error: errorMsg, model, sessionId },
+        payload: { error: sanitizedError, model: sanitizedModel, sessionId: sanitizedSessionId },
         created_at: new Date().toISOString(),
       });
     }
