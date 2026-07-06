@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes } from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
@@ -230,7 +230,38 @@ export async function POST(
       data: { publishId, url },
     });
 
-    return NextResponse.json({ ok: true, publishId, url, webhooks, traceId });
+    // Auto-generate API + webhook if requested
+    let autoApi: { apiKey: string; webhookUrl: string } | null = null;
+    const body = await req.json().catch(() => ({}));
+    if (body?.generateApi) {
+      const apiKey = `dmh_${randomBytes(24).toString("hex")}`;
+      const webhookSecret = randomBytes(32).toString("hex");
+      const webhookUrl = `${req.nextUrl.origin}/api/webhooks/incoming/${params.projectId}`;
+
+      await supabase.from("project_api_configs").upsert(
+        {
+          project_id: params.projectId,
+          user_id: ownerId,
+          api_key: apiKey,
+          webhook_secret: webhookSecret,
+          webhook_url: webhookUrl,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: "project_id" }
+      );
+
+      await supabase.from("api_keys").insert({
+        user_id: ownerId,
+        name: `Project: ${params.projectId}`,
+        key: apiKey,
+        project_id: params.projectId,
+        created_at: new Date().toISOString(),
+      });
+
+      autoApi = { apiKey, webhookUrl };
+    }
+
+    return NextResponse.json({ ok: true, publishId, url, webhooks, autoApi, traceId });
   } catch (err: any) {
     return NextResponse.json(
       { ok: false, error: err?.message ?? "Publish failed", traceId },

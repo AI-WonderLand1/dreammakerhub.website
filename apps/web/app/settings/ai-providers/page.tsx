@@ -24,6 +24,15 @@ interface ProviderInfo {
 
 const PROVIDERS: ProviderInfo[] = [
   {
+    id: "dreammakerhub",
+    name: "DreamMakerHub AI",
+    description: "Platform's built-in AI with multi-agent architecture",
+    apiKeyName: "DREAMMAKERHUB_API_KEY",
+    defaultModel: "dreammakerhub-default",
+    models: ["dreammakerhub-default"],
+    docsUrl: undefined,
+  },
+  {
     id: "opencode",
     name: "OpenCode",
     description: "Primary AI provider for WonderSpace (powered by OpenRouter)",
@@ -443,6 +452,9 @@ export default function AIProvidersSettingsPage() {
       <div className="rounded-xl border border-white/10 bg-white/5 p-6">
         <h3 className="font-semibold mb-3">About AI Providers</h3>
         <div className="space-y-3 text-sm text-white/60">
+          <p>
+            <strong className="text-white">DreamMakerHub AI</strong> is the platform's built-in AI with a multi-agent architecture (Architect → Builder → Reviewer). Best for generating websites, games, and components.
+          </p>
           <p>
             <strong className="text-white">OpenCode</strong> is the default provider for WonderSpace. It provides access to multiple models through a single API key, making it easy to get started.
           </p>
