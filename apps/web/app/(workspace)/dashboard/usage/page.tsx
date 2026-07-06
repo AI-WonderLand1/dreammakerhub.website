@@ -188,7 +188,7 @@ export default function BillingUsagePage() {
             .eq("user_id", user.id);
 
           if (apiTokensData) {
-            setApiTokens(apiTokensData.map(t => ({
+            setApiTokens(apiTokensData.map((t: Record<string, unknown>) => ({
               id: t.id,
               provider: t.provider,
               keyHint: t.key_hint,
@@ -220,7 +220,7 @@ export default function BillingUsagePage() {
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'playground_usage', filter: `user_id=eq.${currentUserId}` },
-              (payload) => {
+              (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return; // Extra safeguard
                 console.log('Playground usage updated:', payload.eventType);
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -235,7 +235,7 @@ export default function BillingUsagePage() {
                 }
               }
             )
-            .subscribe((status) => {
+            .subscribe((status: string) => {
               setIsRealTimeConnected(status === 'SUBSCRIBED');
             });
           channels.push(usageChannel);
@@ -249,7 +249,7 @@ export default function BillingUsagePage() {
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'token_balances', filter: `user_id=eq.${currentUserId}` },
-              (payload) => {
+              (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
                 console.log('Token balance updated:', payload.eventType);
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -275,7 +275,7 @@ export default function BillingUsagePage() {
             .on(
               'postgres_changes',
               { event: 'INSERT', schema: 'public', table: 'token_transactions', filter: `user_id=eq.${currentUserId}` },
-              (payload) => {
+              (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
                 console.log('New transaction:', payload.eventType);
                 if (payload.eventType === 'INSERT') {
@@ -301,7 +301,7 @@ export default function BillingUsagePage() {
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'usage_quotas', filter: `user_id=eq.${currentUserId}` },
-              (payload) => {
+              (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
                 console.log('usage_quota_updated:', payload.eventType);
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -329,7 +329,7 @@ export default function BillingUsagePage() {
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'user_api_tokens', filter: `user_id=eq.${currentUserId}` },
-              (payload) => {
+              (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
                 console.log('api_token_updated:', payload.eventType);
                 if (payload.eventType === 'INSERT') {
@@ -370,7 +370,7 @@ export default function BillingUsagePage() {
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'playground_sessions', filter: `user_id=eq.${currentUserId}` },
-              (payload) => {
+              (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
                 console.log('Session status updated:', payload.eventType);
                 setLastUpdate(new Date());
@@ -425,6 +425,9 @@ export default function BillingUsagePage() {
   }
 
   const planLimits = PLAN_LIMITS[usage?.plan as keyof typeof PLAN_LIMITS] || PLAN_LIMITS.free;
+  const combinedTokens = (usage?.aiTokensUsed || 0) + (playground?.totalTokens || 0);
+  const combinedLimit = (usage?.aiTokensMonthly || 1) + (playground?.totalTokens || 1);
+  const combinedPct = getPercentage(combinedTokens, combinedLimit) + "%";
 
   return (
     <div className="p-6 max-w-4xl">
@@ -498,7 +501,7 @@ export default function BillingUsagePage() {
                   ? "bg-yellow-500" 
                   : "bg-orange-500"
               }`}
-              style={{ width: `${getPercentage(usage?.aiTokensUsed || 0, usage?.aiTokensMonthly || 1)}%` }}
+              style={{ width: getPercentage(usage?.aiTokensUsed || 0, usage?.aiTokensMonthly || 1) + "%" }}
             />
           </div>
         </div>
@@ -520,7 +523,7 @@ export default function BillingUsagePage() {
                   ? "bg-yellow-500" 
                   : "bg-green-500"
               }`}
-              style={{ width: `${getPercentage(usage?.apiCallsUsed || 0, usage?.apiCallsMonthly || 1)}%` }}
+              style={{ width: getPercentage(usage?.apiCallsUsed || 0, usage?.apiCallsMonthly || 1) + "%" }}
             />
           </div>
         </div>
@@ -542,7 +545,7 @@ export default function BillingUsagePage() {
                   ? "bg-yellow-500" 
                   : "bg-blue-500"
               }`}
-              style={{ width: `${getPercentage(usage?.storageUsed || 0, usage?.storageLimit || 1)}%` }}
+              style={{ width: getPercentage(usage?.storageUsed || 0, usage?.storageLimit || 1) + "%" }}
             />
           </div>
         </div>
@@ -560,7 +563,7 @@ export default function BillingUsagePage() {
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div 
               className="h-full bg-purple-500 rounded-full"
-              style={{ width: `${getPercentage(usage?.runtimeHoursUsed || 0, usage?.runtimeHoursMonthly || 1)}%` }}
+              style={{ width: getPercentage(usage?.runtimeHoursUsed || 0, usage?.runtimeHoursMonthly || 1) + "%" }}
             />
           </div>
         </div>
@@ -578,7 +581,7 @@ export default function BillingUsagePage() {
             {formatNumber(playground?.totalTokens || 0)}
           </div>
           <div className="text-xs text-white/50">
-            {playground?.lastModel !== "N/A" ? `Last model: ${playground?.lastModel}` : "No activity yet"}
+            {playground?.lastModel !== "N/A" ? "Last model: " + playground?.lastModel : "No activity yet"}
           </div>
           {playground?.lastSynced && (
             <div className="text-xs text-white/40 mt-1">
@@ -597,7 +600,7 @@ export default function BillingUsagePage() {
             {formatNumber(tokens?.balance || 0)}
           </div>
           <div className="text-xs text-white/50">
-            {tokens?.lastUpdated ? `Updated: ${new Date(tokens.lastUpdated).toLocaleDateString()` : "No balance"}
+            {tokens?.lastUpdated ? "Updated: " + new Date(tokens.lastUpdated).toLocaleDateString() : "No balance"}
           </div>
           {tokens?.recentTransactions && tokens.recentTransactions.length > 0 && (
             <div className="text-xs text-white/40 mt-1">
@@ -619,14 +622,9 @@ export default function BillingUsagePage() {
             Main: {formatNumber(usage?.aiTokensUsed || 0)} + Playground: {formatNumber(playground?.totalTokens || 0)}
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden mt-2">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-orange-500 to-violet-500 rounded-full"
-              style={{ 
-                width: `${getPercentage(
-                  (usage?.aiTokensUsed || 0) + (playground?.totalTokens || 0), 
-                  (usage?.aiTokensMonthly || 1) + (playground?.totalTokens || 1)
-                )}%` 
-              }}
+              style={{ width: combinedPct + "%" }}
             />
           </div>
         </div>
@@ -676,12 +674,8 @@ export default function BillingUsagePage() {
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full rounded-full ${
-                    getPercentage(quota?.aiTokensUsed || 0, quota?.monthlyLimit || 1000) >= 75 
-                      ? "bg-yellow-500" 
-                      : "bg-amber-500"
-                  }`}
-                  style={{ width: `${getPercentage(quota?.aiTokensUsed || 0, quota?.monthlyLimit || 1000)}%` }}
+                  className={"h-full rounded-full " + (getPercentage(quota?.aiTokensUsed || 0, quota?.monthlyLimit || 1000) >= 75 ? "bg-yellow-500" : "bg-amber-500")}
+                  style={{ width: getPercentage(quota?.aiTokensUsed || 0, quota?.monthlyLimit || 1000) + "%" }}
                 />
               </div>
             </div>
@@ -704,17 +698,17 @@ export default function BillingUsagePage() {
             API Keys
             <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">Live</span>
           </div>
-          <div className="space-y-2">
+           <div className="space-y-2">
             {apiTokens.length === 0 ? (
               <div className="text-sm text-white/40 py-2">No API keys configured</div>
             ) : (
               apiTokens.slice(0, 4).map((token) => (
                 <div key={token.id} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${token.isActive ? 'bg-green-400' : 'bg-white/30'}`} />
+                    <div className={"w-2 h-2 rounded-full " + (token.isActive ? "bg-green-400" : "bg-white/30")} />
                     <span className="text-white/80 capitalize">{token.provider}</span>
                   </div>
-                  <span className="text-xs text-white/40 font-mono">{token.keyHint || '••••'}</span>
+                  <span className="text-xs text-white/40 font-mono">{token.keyHint || "••••"}</span>
                 </div>
               ))
             )}

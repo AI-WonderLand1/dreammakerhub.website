@@ -9,14 +9,7 @@ export const runtime = "nodejs";
  * 
  * Query params:
  *   - userId: Filter events for a specific user
- *   - events: Comma-separated event types to subscribe to (usage, tokens, status)
- * 
- * Usage:
- *   const eventSource = new EventSource('/api/sync/realtime?userId=user-123');
- *   eventSource.onmessage = (event) => {
- *     const data = JSON.parse(event.data);
- *     console.log('Real-time update:', data);
- *   };
+ *   - events: Comma-separated event types to subscribe to (usage, tokens, status, quota)
  */
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("userId");
@@ -46,179 +39,67 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Create a ReadableStream for SSE
   const stream = new ReadableStream({
     start(controller) {
-      // Send initial connection event
       controller.enqueue(`data: ${JSON.stringify({ type: "connected", userId, timestamp: new Date().toISOString() })}\n\n`);
 
-      // Set up Supabase Realtime subscriptions with user-scoped channels
       const channels: any[] = [];
 
-      // Helper: validate event belongs to the requested user
       const isValidEvent = (payload: any) => {
-        if (!userId) return true; // No filter = allow all (admin mode)
+        if (!userId) return true;
         const row = payload.new || payload.old;
         if (!row) return false;
         return row.user_id === userId;
       };
 
       if (eventTypes.includes("usage")) {
-        const usageChannel = supabase
-          .channel(`sse-usage-${userId || 'all'}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "playground_usage", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              if (!isValidEvent(payload)) return;
-              const event = {
-                type: "usage",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
+        const ch = supabase
+          .channel(`sse-usage-${userId || "all"}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "playground_usage", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
+            if (!isValidEvent(payload)) return;
+            controller.enqueue(`data: ${JSON.stringify({ type: "usage", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
+          })
           .subscribe();
-        channels.push(usageChannel);
+        channels.push(ch);
       }
 
       if (eventTypes.includes("tokens")) {
-        const tokensChannel = supabase
-          .channel(`sse-tokens-${userId || 'all'}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "token_balances", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              if (!isValidEvent(payload)) return;
-              const event = {
-                type: "tokens",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
-          .on(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "token_transactions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              if (!isValidEvent(payload)) return;
-              const event = {
-                type: "transaction",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
+        const ch = supabase
+          .channel(`sse-tokens-${userId || "all"}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "token_balances", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
+            if (!isValidEvent(payload)) return;
+            controller.enqueue(`data: ${JSON.stringify({ type: "tokens", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
+          })
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "token_transactions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
+            if (!isValidEvent(payload)) return;
+            controller.enqueue(`data: ${JSON.stringify({ type: "transaction", event: "INSERT", data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
+          })
           .subscribe();
-        channels.push(tokensChannel);
+        channels.push(ch);
       }
 
       if (eventTypes.includes("status")) {
-        const statusChannel = supabase
-          .channel(`sse-status-${userId || 'all'}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "playground_sessions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              if (!isValidEvent(payload)) return;
-              const event = {
-                type: "status",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
+        const ch = supabase
+          .channel(`sse-status-${userId || "all"}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "playground_sessions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
+            if (!isValidEvent(payload)) return;
+            controller.enqueue(`data: ${JSON.stringify({ type: "status", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
+          })
           .subscribe();
-        channels.push(statusChannel);
+        channels.push(ch);
       }
 
       if (eventTypes.includes("quota")) {
-        const quotaChannel = supabase
-          .channel(`sse-quota-${userId || 'all'}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "usage_quotas", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              if (!isValidEvent(payload)) return;
-              const event = {
-                type: "quota",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
+        const ch = supabase
+          .channel(`sse-quota-${userId || "all"}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "usage_quotas", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
+            if (!isValidEvent(payload)) return;
+            controller.enqueue(`data: ${JSON.stringify({ type: "quota", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
+          })
           .subscribe();
-        channels.push(quotaChannel);
-      }
-          )
-          .subscribe();
-        channels.push(usageChannel);
+        channels.push(ch);
       }
 
-      if (eventTypes.includes("tokens")) {
-        const tokensChannel = supabase
-          .channel("realtime-tokens")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "token_balances", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              const event = {
-                type: "tokens",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
-          .on(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "token_transactions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              const event = {
-                type: "transaction",
-                event: "INSERT",
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
-          .subscribe();
-        channels.push(tokensChannel);
-      }
-
-      if (eventTypes.includes("status")) {
-        const statusChannel = supabase
-          .channel("realtime-status")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "playground_sessions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) },
-            (payload) => {
-              const event = {
-                type: "status",
-                event: payload.eventType,
-                data: payload.new,
-                timestamp: new Date().toISOString(),
-              };
-              controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
-            }
-          )
-          .subscribe();
-        channels.push(statusChannel);
-      }
-
-      // Send heartbeat every 30 seconds
       const heartbeatInterval = setInterval(() => {
         try {
           controller.enqueue(`data: ${JSON.stringify({ type: "heartbeat", timestamp: new Date().toISOString() })}\n\n`);
@@ -227,7 +108,6 @@ export async function GET(req: NextRequest) {
         }
       }, 30000);
 
-      // Clean up on close
       req.signal.addEventListener("abort", () => {
         clearInterval(heartbeatInterval);
         channels.forEach((ch) => supabase.removeChannel(ch));
