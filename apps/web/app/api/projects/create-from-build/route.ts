@@ -31,11 +31,14 @@ export async function POST(req: NextRequest) {
     const projectName = name || (prompt ? prompt.slice(0, 50) : `AI Build ${new Date().toLocaleDateString()}`);
 
     // Provision private Coder workspace for this user
+    const { data: { session } } = await supabase.auth.getSession();
+    const coderToken = session?.access_token;
     const coder = new CoderIntegration();
     const { ideUrl } = await coder.provisionIDEForProject(
       user.id,
       projectName,
-      code
+      code,
+      coderToken
     );
 
     // Also save to Puck for fallback
