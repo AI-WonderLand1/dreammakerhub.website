@@ -6,19 +6,8 @@ export class EngineManager {
   private active: ActiveEngine | null = null;
   private initializing: string | null = null;
   private adapters = new Map<string, EngineAdapter>();
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: ReturnType<typeof createClient> | null = null;
   private pipelineSubscriptions: Record<string, any> = {};
-
-  constructor() {
-    // Use existing Supabase configuration from the project
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-      process.env.SUPABASE_SERVICE_ROLE_KEY as string
-    );
-    
-    // Initialize real-time event subscription for pipeline updates
-    this.initializePipelineListener();
-  }
 
   /**
    * Registers an engine adapter.
@@ -31,6 +20,15 @@ export class EngineManager {
    * Loads a new engine, ensuring the previous one is fully disposed.
    */
   public async loadEngine(name: string, config: EngineConfig): Promise<void> {
+    // Initialize Supabase and pipeline listener on first call
+    if (!this.supabase) {
+      this.supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+        process.env.SUPABASE_SERVICE_ROLE_KEY as string
+      );
+      await this.initializePipelineListener();
+    }
+
     if (this.initializing) {
       throw new Error(`Engine "${this.initializing}" is still initializing. Please wait.`);
     }
@@ -85,6 +83,8 @@ export class EngineManager {
    * Initialize Supabase real-time listener for pipeline updates
    */
   private async initializePipelineListener(): Promise<void> {
+    if (!this.supabase) return;
+    
     try {
       // Subscribe to pipeline execution events
       const channel = this.supabase
@@ -124,7 +124,7 @@ export class EngineManager {
    * Handle new pipeline execution
    */
   private async handlePipelineExecutionInsert(record: any): Promise<void> {
-    if (!record.pipeline_id) return;
+    if (!record.pipeline_id || !this.supabase) return;
     
     try {
       // Get pipeline configuration from storage
@@ -157,6 +157,8 @@ export class EngineManager {
    * Handle pipeline execution update
    */
   private async handlePipelineExecutionUpdate(newRecord: any, oldRecord: any): Promise<void> {
+    if (!this.supabase) return;
+    
     // Handle real-time pipeline status updates
     if (newRecord.status !== oldRecord.status && newRecord.status === 'completed') {
       // Publish engine completion event
@@ -211,6 +213,8 @@ export class EngineManager {
    * Publish engine load event
    */
   private async publishEngineLoadEvent(engineName: string, config: EngineConfig): Promise<void> {
+    if (!this.supabase) return;
+    
     try {
       await this.supabase
         .from('engine_events')
@@ -246,6 +250,8 @@ export class EngineManager {
    * Publish engine completion event
    */
   private async publishEngineCompletionEvent(pipelineId: string, result: any): Promise<void> {
+    if (!this.supabase) return;
+    
     try {
       await this.supabase
         .from('engine_events')
