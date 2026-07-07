@@ -24,5 +24,14 @@ export async function registerAllAdapters(): Promise<void> {
   } catch (e) {
     console.warn('[EngineCore] Could not register WebGL adapter');
   }
+
+  // Three.js / React Three Fiber
+  try {
+    const { ThreeJSAdapter } = await import('../adapters/threejs');
+    engineManager.registerAdapter(new ThreeJSAdapter());
+    console.log('[EngineCore] Three.js adapter registered.');
+  } catch (e) {
+    console.warn('[EngineCore] Could not register Three.js adapter');
+  }
 }
 

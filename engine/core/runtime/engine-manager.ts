@@ -1,4 +1,5 @@
-import { EngineConfig, EngineAdapter, ActiveEngine, EngineName } from './types';
+import { EngineConfig, ActiveEngine, EngineName } from './types';
+import type { EngineAdapter } from '../adapters/types';
 
 export class EngineManager {
   private active: ActiveEngine | null = null;
