@@ -1,6 +1,7 @@
 // engine/core/ai/bridge.ts
 import { writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { SecurityCore } from '../security/Sanitizer';
 
 /**
  * THE LAW OF MANIFESTATION
@@ -8,6 +9,12 @@ import { join, dirname } from 'path';
  * directly into your builder directory.
  */
 export function manifestVisualBlock(fileName: string, code: string, confession: string) {
+  // SECURITY: Validate code safety before writing to filesystem
+  const safetyCheck = SecurityCore.validateCodeSafety(code);
+  if (!safetyCheck.safe) {
+    return { status: "blocked", message: `Code blocked: ${safetyCheck.reason}` };
+  }
+
   const targetPath = join(process.cwd(), 'apps/web/app/(builder)/blocks', fileName);
   
   try {
