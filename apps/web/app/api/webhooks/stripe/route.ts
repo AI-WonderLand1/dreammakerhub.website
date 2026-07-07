@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
       }
     } else {
-      event = JSON.parse(body);
+      // SECURITY: Never accept unverified webhook events — reject instead
+      console.error("Stripe webhook received but STRIPE_WEBHOOK_SECRET is not configured or signature missing");
+      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
