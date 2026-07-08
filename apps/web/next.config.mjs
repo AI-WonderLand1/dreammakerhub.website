@@ -175,7 +175,7 @@ const nextConfig = {
             "style-src 'self' 'unsafe-inline' https://rsms.me",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data: https://rsms.me",
-            "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app https://csp-reporting.cloudflare.com https://dreammakerhub.website",
+            "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app https://csp-reporting.cloudflare.com https://dreammakerhub.website https://hhdduixckgllodixrejp.supabase.co http://212.2.240.19.nip.io",
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com https://replit.com blob: data:",
             "worker-src 'self' blob:",
             "object-src 'none'",
