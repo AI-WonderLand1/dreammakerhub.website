@@ -35,13 +35,6 @@ function PlayCanvasEditor() {
   const [bridgeFailed, setBridgeFailed] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [sceneData, setSceneData] = useState<any>(null);
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
-
-  const [assets, setAssets] = useState<ExternalAsset[]>([]);
-  const [assetSearch, setAssetSearch] = useState("");
-  const [assetSearching, setAssetSearching] = useState(false);
-  const [importingAsset, setImportingAsset] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<SceneVersion[]>([]);
   const [showVersions, setShowVersions] = useState(false);
@@ -161,10 +154,7 @@ function PlayCanvasEditor() {
     try {
       const result = await downloadAssetToStorage(asset, user.id);
       if (result.success && result.localUrl) {
-        pushToast(`Imported ${asset.name}`, "success");
-        if (editorRef.current && typeof editorRef.current.addModel === "function") {
-          editorRef.current.addModel(result.localUrl);
-        }
+        pushToast(`Imported ${asset.name} — available in Asset Manager`, "success");
       }
     } catch {
       pushToast(`Failed to import ${asset.name}`, "error");
