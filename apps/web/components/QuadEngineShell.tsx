@@ -271,8 +271,8 @@ export function QuadEngineShell() {
             
             {/* Builders */}
             <div className="flex gap-1 px-2 border-r border-white/20">
-              <Link href="/builder-ai" className="px-2 py-1 rounded hover:bg-blue-500/20 transition text-blue-300">
-                🤖 AI Builder
+              <Link href="/wonder-build" className="px-2 py-1 rounded hover:bg-blue-500/20 transition text-blue-300">
+                🤖 Wonderbuild
               </Link>
               <Link href="/builder" className="px-2 py-1 rounded hover:bg-blue-500/20 transition text-blue-300">
                 🔨 Builder

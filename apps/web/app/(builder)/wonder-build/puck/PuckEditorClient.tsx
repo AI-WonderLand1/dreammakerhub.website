@@ -764,7 +764,7 @@ export function PuckEditorClient({
                 <Sparkles className="w-12 h-12 text-violet-400/50" />
                 <p className="text-lg font-semibold text-white">Start building your page</p>
                 <p className="text-sm text-white/60 max-w-md">
-                  Use the AI Builder to generate a layout, or add elements from the sidebar.
+                  Use Wonderbuild to generate a layout, or add elements from the sidebar.
                 </p>
                 <div className="flex gap-3">
                   <button onClick={() => setShowAI(true)}

@@ -79,7 +79,7 @@ export function AgentPanel() {
 
       {/* Header */}
       <div className="shrink-0 border-b border-white/10 px-4 py-3">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-violet-400">AI Builder</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-violet-400">Wonderbuild</p>
         <p className="mt-0.5 text-[10px] text-white/30">Describe → Agents build → Code streams into editor</p>
         <div className="mt-2 flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-2 py-1.5">
           <span className="truncate text-[10px] text-white/40">Updating apps/web/src/pages/HomePage.jsx</span>

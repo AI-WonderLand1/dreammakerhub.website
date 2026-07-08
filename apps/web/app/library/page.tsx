@@ -273,13 +273,13 @@ export default function LibraryPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to create something amazing?</h2>
           <p className="text-white/60 mb-6 max-w-md mx-auto">
-            Use our AI Builder to describe what you want and watch as intelligent agents create it for you.
+            Use our Wonderbuild AI to describe what you want and watch as intelligent agents create it for you.
           </p>
           <Link 
             href="/wonder-build/ai-builder" 
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform"
           >
-            🤖 Start AI Builder
+            🤖 Start Wonderbuild
             <span className="text-lg">→</span>
           </Link>
         </div>

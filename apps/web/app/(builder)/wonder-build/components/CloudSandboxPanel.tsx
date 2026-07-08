@@ -146,7 +146,7 @@ export function CloudSandboxPanel() {
               <span className="text-4xl opacity-20">📄</span>
               <p className="text-sm font-semibold text-white/20">No code yet</p>
               <p className="text-[11px] text-white/15">
-                Describe what you want in the AI Builder panel<br />and hit Build — code streams here instantly.
+                Describe what you want in the Wonderbuild panel<br />and hit Build — code streams here instantly.
               </p>
             </div>
           )}

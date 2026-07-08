@@ -124,7 +124,7 @@ export function PuckAIPanel({
       <div className="flex items-center justify-between px-4 py-3 bg-black/40 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-violet-400" />
-          <span className="text-sm font-medium text-white">AI Builder</span>
+          <span className="text-sm font-medium text-white">Wonderbuild</span>
           <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded">
             Drag & Drop Ready
           </span>
@@ -310,7 +310,7 @@ export function PuckAIButton({ onClick }: { onClick: () => void }) {
       className="flex items-center gap-2 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 rounded-lg text-xs font-medium text-violet-300 transition-colors"
     >
       <Sparkles className="w-3.5 h-3.5" />
-      AI Builder
+      Wonderbuild
     </button>
   );
 }

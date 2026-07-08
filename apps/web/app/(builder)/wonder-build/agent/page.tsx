@@ -17,7 +17,7 @@ function AgentPage() {
         <div className="hidden lg:flex h-full flex-1 items-center justify-center border-l border-white/5">
           <div className="text-center">
             <p className="text-5xl opacity-10">🎯</p>
-            <p className="mt-4 text-sm font-semibold text-white/20">AI Builder</p>
+            <p className="mt-4 text-sm font-semibold text-white/20">Wonderbuild</p>
             <p className="mt-1 text-xs text-white/15">
               Describe what you want and AI builds it.
             </p>
@@ -30,7 +30,7 @@ function AgentPage() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-white">Loading AI Builder...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-white">Loading Wonderbuild...</div>}>
       <SovereignOSProvider>
         <AgentPage />
       </SovereignOSProvider>

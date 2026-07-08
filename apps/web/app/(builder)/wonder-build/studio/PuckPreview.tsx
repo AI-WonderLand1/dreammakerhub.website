@@ -207,7 +207,7 @@ export function FramerPreview({ data }: PuckPreviewProps) {
           <div class="glass section-padding text-center" style="max-width: 400px;">
             <div style="font-size: 4rem; margin-bottom: 16px;">🎨</div>
             <h3 style="margin-bottom: 12px;">Start Building</h3>
-            <p>Use the AI Builder or drag components from the sidebar to create your page.</p>
+            <p>Use Wonderbuild or drag components from the sidebar to create your page.</p>
           </div>
         </div>
       `;

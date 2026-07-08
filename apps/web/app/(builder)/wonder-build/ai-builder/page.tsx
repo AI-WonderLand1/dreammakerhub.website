@@ -95,7 +95,7 @@ export default function AIBuilderPage() {
       const dataKey = storePuckData(puckData);
       router.push(`/wonder-build/puck?ai_data=${dataKey}`);
     } catch (err) {
-      console.error("[AI Builder] Failed to accept to Puck:", err);
+      console.error("[Wonderbuild] Failed to accept to Puck:", err);
       alert("Failed to prepare content for Puck editor");
     }
   }, [result?.code, router]);
@@ -216,7 +216,7 @@ export default function AIBuilderPage() {
         </Link>
         <div className="w-px h-4 bg-white/20" />
         <span className="text-sm font-semibold tracking-wide">
-          <span className="text-violet-400">AI</span> Builder
+          <span className="text-violet-400">Wonder</span>build
         </span>
               <div className="ml-auto flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -384,7 +384,7 @@ export default function AIBuilderPage() {
               ) : (
                 <div className="max-w-md">
                   <div className="text-6xl mb-4">🪄</div>
-                  <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">AI Wonder Build</h2>
+                   <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">Wonderbuild</h2>
                   <p className="text-white/40 text-sm leading-relaxed mb-6">Describe what you want to build. Three AI agents will collaborate -- an Architect to plan, a Builder to code, and a Reviewer to polish -- then your creation appears live.</p>
                   <div className="grid grid-cols-3 gap-3">
                     {TYPE_OPTIONS.map((opt) => (

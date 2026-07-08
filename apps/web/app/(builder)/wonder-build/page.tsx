@@ -6,13 +6,13 @@ const TOOLS = [
   {
     href: '/wonder-build/agent',
     icon: '🤖',
-    title: 'AI Builder',
+    title: 'Wonderbuild',
     desc: 'Describe what you want — AI agents build it.',
   },
   {
     href: '/wonder-build/preview',
     icon: '👁️',
-    title: 'Live Preview',
+    title: 'Preview',
     desc: 'See your build in action.',
   },
   {
@@ -24,7 +24,7 @@ const TOOLS = [
   {
     href: '/wonder-build/puck',
     icon: '🎨',
-    title: 'Puck Editor',
+    title: 'Visual Editor',
     desc: 'Drag-and-drop visual page builder.',
   },
   {
@@ -42,7 +42,7 @@ const TOOLS = [
   {
     href: '/wonder-build/ai-builder',
     icon: '⚡',
-    title: 'AI Builder Pro',
+    title: 'Wonderbuild Pro',
     desc: 'Full build flow with asset library & download.',
   },
 ];
