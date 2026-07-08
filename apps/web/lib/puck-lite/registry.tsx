@@ -912,27 +912,33 @@ export function buildPuckConfig(): Config {
 
   components["stepProcess"] = {
     fields: {
-      steps: { type: "text", label: "Steps (comma separated)" },
+      title: { type: "text", label: "Section Title" },
+      steps: { type: "text", label: "Steps (semicolon: icon|title|desc;)" },
     },
-    defaultProps: {
-      steps: "Sign Up,Configure,Launch",
-    },
-    render: ({ steps }: any) => (
-      <div className="flex items-center gap-4 p-6">
-        {steps?.split(",").map((step: string, i: number) => (
-          <React.Fragment key={i}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-violet-600 text-white font-bold flex items-center justify-center">
-                {i + 1}
-              </div>
-              <span className="text-white/80">{step.trim()}</span>
-            </div>
-            {i < (steps?.split(",").length || 0) - 1 && (
-              <div className="flex-1 h-px bg-white/20" />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
+    defaultProps: { title: "How it works", steps: "✏️|Sign Up|Create your free account in seconds;⚙️|Configure|Set up your project with our tools;🚀|Launch|Go live and share with the world" },
+    render: ({ title, steps }: any) => (
+      <section className="py-24 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.split(";").filter(Boolean).map((step: string, i: number) => {
+              const [icon, title, desc] = step.split("|");
+              return (
+                <div key={i} className="text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-5">
+                    <span className="text-xl">{icon}</span>
+                  </div>
+                  <div className="text-[11px] text-white/20 font-semibold uppercase tracking-wider mb-2">Step {i + 1}</div>
+                  <h3 className="text-base font-semibold text-white mb-2 tracking-tight">{title}</h3>
+                  <p className="text-sm text-white/30 leading-relaxed">{desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     ),
   };
 
@@ -946,13 +952,13 @@ export function buildPuckConfig(): Config {
       content: "This is the hidden content that appears when expanded.",
     },
     render: ({ title, content }: any) => (
-      <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+      <div className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
         <details className="group">
-          <summary className="p-4 cursor-pointer text-white font-medium flex items-center justify-between">
+          <summary className="px-6 py-5 cursor-pointer text-sm font-medium text-white/70 flex items-center justify-between">
             {title}
-            <span className="text-white/40 group-open:rotate-180 transition-transform">▼</span>
+            <svg className="w-4 h-4 text-white/20 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
           </summary>
-          <div className="px-4 pb-4 text-white/60">{content}</div>
+          <div className="px-6 pb-5 text-sm text-white/35 leading-relaxed">{content}</div>
         </details>
       </div>
     ),
@@ -968,10 +974,10 @@ export function buildPuckConfig(): Config {
       content: "This content appears on hover!",
     },
     render: ({ title, content }: any) => (
-      <div className="relative group p-4 rounded-xl bg-white/5 border border-white/10">
-        <span className="text-white/80">{title}</span>
-        <div className="absolute left-0 bottom-full mb-2 w-48 p-3 rounded-lg bg-black/90 border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <p className="text-sm text-white/80">{content}</p>
+      <div className="relative group p-5 rounded-2xl border border-white/5 bg-white/[0.02] cursor-pointer" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <span className="text-sm text-white/60">{title}</span>
+        <div className="absolute left-0 bottom-full mb-2 w-56 p-4 rounded-xl bg-[#09090b] border border-white/10 shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <p className="text-[13px] text-white/50 leading-relaxed">{content}</p>
         </div>
       </div>
     ),
@@ -979,32 +985,32 @@ export function buildPuckConfig(): Config {
 
   components["tabsSystem"] = {
     fields: {
-      tabs: { type: "text", label: "Tab Labels (comma separated)" },
+      tabs: { type: "text", label: "Tab Labels (semicolon separated)" },
     },
     defaultProps: {
-      tabs: "Overview,Features,Pricing",
+      tabs: "Overview;Features;Pricing",
     },
     render: ({ tabs }: any) => {
-      const tabList = tabs?.split(",").map((t: string) => t.trim()) || [];
+      const tabList = tabs?.split(";").map((t: string) => t.trim()) || [];
       const [activeTab, setActiveTab] = React.useState(0);
       return (
-        <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
-          <div className="flex border-b border-white/10">
+        <div className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+          <div className="flex border-b border-white/5">
             {tabList.map((tab: string, i: number) => (
               <button
                 key={i}
                 onClick={() => setActiveTab(i)}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === i 
-                    ? 'text-white border-b-2 border-violet-500 bg-white/5' 
-                    : 'text-white/60 hover:text-white'
+                className={`flex-1 px-5 py-4 text-[13px] font-medium transition-colors border-b-2 ${
+                  activeTab === i
+                    ? 'text-white border-white/40 bg-white/[0.03]'
+                    : 'text-white/25 border-transparent hover:text-white/50'
                 }`}
               >
                 {tab}
               </button>
             ))}
           </div>
-          <div className="p-4 text-white/80">
+          <div className="p-8 text-sm text-white/40">
             Content for {tabList[activeTab]}
           </div>
         </div>
@@ -1367,38 +1373,39 @@ export function buildPuckConfig(): Config {
   components["contactSplit"] = {
     fields: {
       title: { type: "text", label: "Title" },
+      buttonText: { type: "text", label: "Button Text" },
     },
     defaultProps: {
-      title: "Contact Us",
+      title: "Get in Touch",
+      buttonText: "Send Message",
     },
-    render: ({ title }: any) => (
-      <div className="grid grid-cols-2 gap-8 p-8 rounded-xl bg-white/5 border border-white/10">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
-          <p className="text-white/60 mb-6">Get in touch with us</p>
-          <div className="space-y-4">
-            <input 
-              type="text" 
+    render: ({ title, buttonText }: any) => (
+      <section className="py-24 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div>
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+            <p className="text-sm text-white/30 leading-relaxed">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+          </div>
+          <div className="space-y-3">
+            <input
+              type="text"
               placeholder="Name"
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white"
+              className="w-full h-11 px-4 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.15] transition-colors"
             />
-            <input 
-              type="email" 
+            <input
+              type="email"
               placeholder="Email"
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white"
+              className="w-full h-11 px-4 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.15] transition-colors"
             />
-            <textarea 
+            <textarea
               placeholder="Message"
               rows={4}
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-white/[0.15] transition-colors"
             />
-            <button className="w-full py-3 bg-violet-600 text-white font-medium rounded-lg">
-              Send Message
-            </button>
+            <button className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors">{buttonText}</button>
           </div>
         </div>
-        <div className="bg-white/5 rounded-xl" />
-      </div>
+      </section>
     ),
   };
 
@@ -1406,18 +1413,21 @@ export function buildPuckConfig(): Config {
     fields: {
       title: { type: "text", label: "Title" },
       subtitle: { type: "text", label: "Subtitle" },
+      ctaText: { type: "text", label: "CTA Text" },
     },
     defaultProps: {
       title: "Glassmorphic Hero",
       subtitle: "Beautiful glass effect",
+      ctaText: "Get Started",
     },
-    render: ({ title, subtitle }: any) => (
-      <div className="relative p-16 rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl" />
-        <div className="absolute inset-0 border border-white/20 rounded-2xl" />
-        <div className="relative text-center">
-          <h1 className="text-5xl font-bold text-white mb-4">{title}</h1>
-          <p className="text-xl text-white/70">{subtitle}</p>
+    render: ({ title, subtitle, ctaText }: any) => (
+      <div className="relative py-32 px-6 overflow-hidden" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent" />
+        <div className="absolute inset-0 border border-white/[0.06] m-6 rounded-3xl" />
+        <div className="relative text-center max-w-3xl mx-auto">
+          <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-[-0.03em] mb-5">{title}</h1>
+          <p className="text-lg text-white/35 mb-8">{subtitle}</p>
+          <button className="px-8 py-3 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors">{ctaText}</button>
         </div>
       </div>
     ),
@@ -1426,18 +1436,22 @@ export function buildPuckConfig(): Config {
   components["parallaxSection"] = {
     fields: {
       title: { type: "text", label: "Title" },
+      subtitle: { type: "text", label: "Subtitle" },
     },
     defaultProps: {
       title: "Parallax Section",
+      subtitle: "Scroll to explore",
     },
-    render: ({ title }: any) => (
-      <div 
-        className="h-64 flex items-center justify-center rounded-xl"
+    render: ({ title, subtitle }: any) => (
+      <div
+        className="py-32 flex flex-col items-center justify-center rounded-none"
         style={{
-          backgroundImage: 'linear-gradient(45deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3))',
+          backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+          fontFamily: "Inter, system-ui, sans-serif",
         }}
       >
-        <h2 className="text-3xl font-bold text-white">{title}</h2>
+        <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-3">{title}</h2>
+        <p className="text-sm text-white/30">{subtitle}</p>
       </div>
     ),
   };
@@ -2326,14 +2340,36 @@ export function buildPuckConfig(): Config {
       title: { type: "text", label: "Title" },
       subtitle: { type: "text", label: "Subtitle" },
       ctaText: { type: "text", label: "CTA Text" },
+      ctaSecondary: { type: "text", label: "Secondary CTA" },
     },
-    defaultProps: { title: "Build something amazing", subtitle: "The modern platform for developers.", ctaText: "Get Started" },
-    render: ({ title, subtitle, ctaText }: any) => (
-      <section className="relative py-24 px-6 text-center">
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-600/10 via-transparent to-transparent pointer-events-none" />
-        <h1 className="text-5xl font-extrabold text-white tracking-tight mb-4">{title}</h1>
-        <p className="text-xl text-white/60 max-w-2xl mx-auto mb-8">{subtitle}</p>
-        <button className="px-8 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors">{ctaText}</button>
+    defaultProps: { title: "Design. Build. Ship.", subtitle: "The modern creative platform for teams who move fast.", ctaText: "Start for free", ctaSecondary: "Watch demo" },
+    render: ({ title, subtitle, ctaText, ctaSecondary }: any) => (
+      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="absolute inset-0 bg-[#09090b]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.15),transparent)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-[128px] pointer-events-none" />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs text-white/50 mb-8 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Now in public beta
+          </div>
+          <h1 className="text-6xl sm:text-7xl font-bold tracking-[-0.03em] text-white mb-6 leading-[1.1]">
+            {title}
+          </h1>
+          <p className="text-lg text-white/50 max-w-xl mx-auto mb-10 leading-relaxed" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+            {subtitle}
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <button className="px-6 py-3 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all duration-200 shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+              {ctaText}
+            </button>
+            {ctaSecondary && (
+              <button className="px-6 py-3 rounded-full border border-white/10 bg-white/5 text-white text-sm font-medium hover:bg-white/10 transition-all duration-200 backdrop-blur-sm">
+                {ctaSecondary}
+              </button>
+            )}
+          </div>
+        </div>
       </section>
     ),
   };
@@ -2341,28 +2377,31 @@ export function buildPuckConfig(): Config {
   components["featureGrid"] = {
     fields: {
       title: { type: "text", label: "Section Title" },
-      features: { type: "text", label: "Features (pipe separated: icon|title|desc)" },
+      subtitle: { type: "text", label: "Subtitle" },
+      features: { type: "text", label: "Features (pipe: icon|title|desc;)" },
     },
-    defaultProps: { title: "Features", features: "⚡|Lightning Fast|Optimized for speed|🔒|Secure|Enterprise-grade security|🎨|Beautiful|Pixel-perfect design" },
-    render: ({ title, features }: any) => (
-      <section className="py-16 px-6">
-        <h2 className="text-3xl font-bold text-white text-center mb-12">{title}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {features.split("|").reduce((acc: any[], _: any, i: number, arr: any[]) => {
-            if (i % 3 === 0) acc.push(arr.slice(i, i + 3));
-            return acc;
-          }, []).map((group: string[], gi: number) => (
-            group.map((item: string, fi: number) => {
+    defaultProps: { title: "Everything you need", subtitle: "Built for modern teams.", features: "✦|Blazing Fast|Sub-millisecond response times with edge caching worldwide.;🔒|Secure by Default|SOC 2 compliant with end-to-end encryption.;🎨|Design System|Consistent components that scale with your product.;📊|Real-time Analytics|Live dashboards with actionable insights.;🌍|Global Edge|Deploy to 50+ regions with zero configuration.;🚀|One-Click Deploy|From code to production in seconds." },
+    render: ({ title, subtitle, features }: any) => (
+      <section className="py-32 px-6 bg-[#09090b]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+            {subtitle && <p className="text-lg text-white/40 max-w-lg mx-auto">{subtitle}</p>}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden">
+            {features.split(";").filter(Boolean).map((item: string, i: number) => {
               const [icon, featTitle, desc] = item.split("|");
               return (
-                <div key={`${gi}-${fi}`} className="p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/[0.08] transition-colors">
-                  <div className="text-3xl mb-3">{icon}</div>
-                  <h3 className="font-semibold text-white mb-2">{featTitle}</h3>
-                  <p className="text-sm text-white/50">{desc}</p>
+                <div key={i} className="p-8 bg-[#09090b] hover:bg-white/[0.02] transition-colors duration-300 group">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 mb-5 group-hover:border-white/20 transition-colors">
+                    <span className="text-sm">{icon}</span>
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2 tracking-tight">{featTitle}</h3>
+                  <p className="text-sm text-white/40 leading-relaxed">{desc}</p>
                 </div>
               );
-            })
-          ))}
+            })}
+          </div>
         </div>
       </section>
     ),
@@ -2374,13 +2413,18 @@ export function buildPuckConfig(): Config {
       description: { type: "text", label: "Description" },
       buttonText: { type: "text", label: "Button Text" },
     },
-    defaultProps: { title: "Ready to get started?", description: "Join thousands of developers building the future.", buttonText: "Start Building" },
+    defaultProps: { title: "Start building today", description: "Free forever. No credit card required.", buttonText: "Get started" },
     render: ({ title, description, buttonText }: any) => (
-      <section className="py-16 px-6">
-        <div className="max-w-3xl mx-auto text-center p-12 rounded-2xl bg-gradient-to-br from-violet-600/20 to-blue-600/20 border border-violet-500/20">
-          <h2 className="text-3xl font-bold text-white mb-3">{title}</h2>
-          <p className="text-white/60 mb-6">{description}</p>
-          <button className="px-8 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors">{buttonText}</button>
+      <section className="py-32 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-4xl mx-auto relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-3xl opacity-50" />
+          <div className="relative text-center py-20 px-12 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+            <p className="text-white/40 text-lg mb-10 max-w-md mx-auto">{description}</p>
+            <button className="px-8 py-3.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all duration-200 shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+              {buttonText}
+            </button>
+          </div>
         </div>
       </section>
     ),
@@ -2389,28 +2433,57 @@ export function buildPuckConfig(): Config {
   components["pricingTable"] = {
     fields: {
       title: { type: "text", label: "Section Title" },
-      plans: { type: "text", label: "Plans (semicolon: name|price|features|cta)" },
+      subtitle: { type: "text", label: "Subtitle" },
+      plans: { type: "text", label: "Plans (semicolon: name|price|desc|features|cta)" },
     },
-    defaultProps: { title: "Simple Pricing", plans: "Free|$0|1 project, Community support|Get Started;Pro|$29|10 projects, Priority support|Start Trial;Enterprise|$99|Unlimited, Dedicated support|Contact Us" },
-    render: ({ title, plans }: any) => (
-      <section className="py-16 px-6">
-        <h2 className="text-3xl font-bold text-white text-center mb-12">{title}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {plans.split(";").map((plan: string, i: number) => {
-            const [name, price, features, cta] = plan.split("|");
-            const isPopular = i === 1;
-            return (
-              <div key={i} className={`rounded-2xl p-8 border ${isPopular ? "border-violet-500/50 bg-violet-500/10 scale-105" : "border-white/10 bg-white/5"}`}>
-                {isPopular && <span className="text-xs font-bold text-violet-400 uppercase tracking-wider">Most Popular</span>}
-                <h3 className="text-xl font-bold text-white mt-2">{name}</h3>
-                <div className="text-4xl font-extrabold text-white mt-4">{price}<span className="text-lg font-normal text-white/40">/mo</span></div>
-                <p className="text-sm text-white/50 mt-2 mb-6">{features}</p>
-                <button className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-colors ${
-                  isPopular ? "bg-violet-600 text-white hover:bg-violet-700" : "border border-white/20 text-white hover:bg-white/10"
-                }`}>{cta}</button>
-              </div>
-            );
-          })}
+    defaultProps: { title: "Simple pricing", subtitle: "No hidden fees. Cancel anytime.", plans: "Starter|$0|For individuals|1 project, Basic analytics, Community support|Get started;Pro|$29/mo|For teams|10 projects, Advanced analytics, Priority support, API access|Start trial;Enterprise|$99/mo|For organizations|Unlimited projects, Custom analytics, Dedicated support, SSO, SLA|Contact sales" },
+    render: ({ title, subtitle, plans }: any) => (
+      <section className="py-32 px-6 bg-[#09090b]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+            {subtitle && <p className="text-lg text-white/40">{subtitle}</p>}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {plans.split(";").map((plan: string, i: number) => {
+              const [name, price, desc, features, cta] = plan.split("|");
+              const isPopular = i === 1;
+              return (
+                <div key={i} className={`relative rounded-2xl p-8 border transition-all duration-300 ${
+                  isPopular
+                    ? "border-white/20 bg-white/[0.04] shadow-[0_0_80px_rgba(255,255,255,0.05)] scale-[1.02]"
+                    : "border-white/5 bg-white/[0.01] hover:border-white/10"
+                }`}>
+                  {isPopular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white text-black text-[11px] font-semibold tracking-wide">
+                      Most popular
+                    </div>
+                  )}
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-1">{name}</h3>
+                    <p className="text-sm text-white/40 mb-4">{desc}</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold text-white tracking-tight">{price.split("/")[0]}</span>
+                      {price.includes("/") && <span className="text-sm text-white/30">/{price.split("/")[1]}</span>}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {features.split(",").map((f: string, fi: number) => (
+                      <li key={fi} className="flex items-center gap-3 text-sm text-white/50">
+                        <svg className="w-4 h-4 text-white/20 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        {f.trim()}
+                      </li>
+                    ))}
+                  </ul>
+                  <button className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    isPopular
+                      ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                      : "border border-white/10 text-white hover:bg-white/5"
+                  }`}>{cta}</button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
     ),
@@ -2421,17 +2494,24 @@ export function buildPuckConfig(): Config {
       quote: { type: "text", label: "Quote" },
       author: { type: "text", label: "Author" },
       role: { type: "text", label: "Role" },
+      company: { type: "text", label: "Company" },
     },
-    defaultProps: { quote: "This tool completely changed how we build products. Highly recommended.", author: "Sarah Chen", role: "CTO at TechCorp" },
-    render: ({ quote, author, role }: any) => (
-      <div className="p-6 rounded-xl border border-white/10 bg-white/5">
-        <div className="text-2xl text-violet-400 mb-3">"</div>
-        <p className="text-white/80 leading-relaxed mb-4">{quote}</p>
+    defaultProps: { quote: "WonderBuild cut our shipping time from weeks to hours. It's the tool we always wished we had.", author: "Sarah Chen", role: "Head of Engineering", company: "Vercel" },
+    render: ({ quote, author, role, company }: any) => (
+      <div className="p-8 rounded-2xl border border-white/5 bg-white/[0.02] hover:border-white/10 transition-colors duration-300" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="flex gap-1 mb-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <svg key={i} className="w-4 h-4 text-white/30" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          ))}
+        </div>
+        <p className="text-white/70 text-base leading-relaxed mb-8">"{quote}"</p>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-300 text-sm font-bold">{author[0]}</div>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-white/60 text-sm font-semibold border border-white/10">
+            {author.split(" ").map((n: string) => n[0]).join("")}
+          </div>
           <div>
-            <div className="text-sm font-semibold text-white">{author}</div>
-            <div className="text-xs text-white/40">{role}</div>
+            <div className="text-sm font-medium text-white">{author}</div>
+            <div className="text-xs text-white/30">{role}{company ? `, ${company}` : ""}</div>
           </div>
         </div>
       </div>
@@ -2440,21 +2520,21 @@ export function buildPuckConfig(): Config {
 
   components["statsSection"] = {
     fields: {
-      stats: { type: "text", label: "Stats (pipe: value|label)" },
+      stats: { type: "text", label: "Stats (pipe: value|label;)" },
     },
-    defaultProps: { stats: "10K+|Active Users|99.9%|Uptime|500K+|Projects Built" },
+    defaultProps: { stats: "10,000+|Active developers;99.99%|Uptime SLA;500K+|Projects shipped;4.9/5|Average rating" },
     render: ({ stats }: any) => (
-      <section className="py-16 px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-          {stats.split("|").reduce((acc: any[], _: any, i: number, arr: any[]) => {
-            if (i % 2 === 0) acc.push([arr[i], arr[i + 1]]);
-            return acc;
-          }, []).map(([value, label]: [string, string], i: number) => (
-            <div key={i} className="text-center">
-              <div className="text-3xl font-extrabold text-white mb-1">{value}</div>
-              <div className="text-sm text-white/50">{label}</div>
-            </div>
-          ))}
+      <section className="py-24 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 rounded-2xl overflow-hidden max-w-5xl mx-auto">
+          {stats.split(";").filter(Boolean).map((item: string, i: number) => {
+            const [value, label] = item.split("|");
+            return (
+              <div key={i} className="p-8 bg-[#09090b] text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2">{value}</div>
+                <div className="text-sm text-white/30">{label}</div>
+              </div>
+            );
+          })}
         </div>
       </section>
     ),
@@ -2463,23 +2543,29 @@ export function buildPuckConfig(): Config {
   components["teamGrid"] = {
     fields: {
       title: { type: "text", label: "Section Title" },
-      members: { type: "text", label: "Members (pipe: name|role|avatar)" },
+      members: { type: "text", label: "Members (pipe: name|role|avatar;)" },
     },
-    defaultProps: { title: "Our Team", members: "Alex Johnson|CEO|AJ|Maria Garcia|CTO|MG|Sam Wilson|Designer|SW" },
+    defaultProps: { title: "Meet the team", members: "Alex Chen|CEO & Co-founder|AC|Maria Santos|CTO|MS|James Wilson|Head of Design|JW|Priya Patel|Head of Product|PP" },
     render: ({ title, members }: any) => (
-      <section className="py-16 px-6">
-        <h2 className="text-3xl font-bold text-white text-center mb-12">{title}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {members.split(";").map((m: string, i: number) => {
-            const [name, role, initials] = m.split("|");
-            return (
-              <div key={i} className="text-center p-6 rounded-xl border border-white/10 bg-white/5">
-                <div className="w-16 h-16 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-300 text-xl font-bold mx-auto mb-4">{initials}</div>
-                <h3 className="font-semibold text-white">{name}</h3>
-                <p className="text-sm text-white/50">{role}</p>
-              </div>
-            );
-          })}
+      <section className="py-32 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {members.split(";").filter(Boolean).map((m: string, i: number) => {
+              const [name, role, initials] = m.split("|");
+              return (
+                <div key={i} className="group text-center">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/10 flex items-center justify-center text-white/60 text-xl font-semibold mx-auto mb-4 group-hover:border-white/20 transition-colors duration-300">
+                    {initials}
+                  </div>
+                  <h3 className="text-sm font-semibold text-white mb-0.5">{name}</h3>
+                  <p className="text-xs text-white/30">{role}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
     ),
@@ -2491,11 +2577,11 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { logos: "Vercel, Next.js, Tailwind, Prisma, Supabase" },
     render: ({ logos }: any) => (
-      <section className="py-12 px-6">
-        <p className="text-center text-xs text-white/30 uppercase tracking-widest mb-8">Trusted by</p>
-        <div className="flex flex-wrap justify-center items-center gap-8 max-w-3xl mx-auto">
+      <section className="py-16 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <p className="text-center text-[11px] text-white/25 uppercase tracking-[0.2em] font-medium mb-10">Trusted by the best teams</p>
+        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-3xl mx-auto">
           {logos.split(",").map((logo: string, i: number) => (
-            <div key={i} className="text-xl font-bold text-white/20 hover:text-white/40 transition-colors">{logo.trim()}</div>
+            <div key={i} className="text-lg font-semibold text-white/15 hover:text-white/30 transition-colors duration-300 tracking-tight">{logo.trim()}</div>
           ))}
         </div>
       </section>
@@ -2513,10 +2599,10 @@ export function buildPuckConfig(): Config {
     render: ({ images, columns }: any) => {
       const imgs = images ? images.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
       return (
-        <div className={`grid gap-2 grid-cols-${columns}`}>
+        <div className={`grid gap-3 grid-cols-${columns}`}>
           {(imgs.length ? imgs : ["", "", "", "", ""]).map((src: string, i: number) => (
-            <div key={i} className={`rounded-xl border border-white/10 bg-white/5 overflow-hidden ${i % 3 === 0 ? "h-48" : "h-32"}`}>
-              {src ? <img src={src} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/10 text-xs">Image {i + 1}</div>}
+            <div key={i} className={`rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden ${i % 3 === 0 ? "h-48" : "h-32"}`}>
+              {src ? <img src={src} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/15 text-[11px]">Image {i + 1}</div>}
             </div>
           ))}
         </div>
@@ -2526,22 +2612,26 @@ export function buildPuckConfig(): Config {
 
   components["bentoGrid"] = {
     fields: {
-      items: { type: "text", label: "Items (pipe: icon|title|desc)" },
+      items: { type: "text", label: "Items (pipe: icon|title|desc;)" },
     },
-    defaultProps: { items: "🎨|Design|Beautiful interfaces|⚡|Speed|Lightning fast|🔒|Security|Enterprise grade|📊|Analytics|Real-time data|🌍|Global|CDN ready|🚀|Deploy|One-click" },
+    defaultProps: { items: "✦|Design System|Consistent, composable components|⚡|Performance|Sub-millisecond renders|🔒|Security|SOC 2 compliant|📊|Analytics|Real-time insights|🌍|Global CDN|50+ edge regions|🚀|Deploy|Zero-config shipping" },
     render: ({ items }: any) => (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-5xl mx-auto p-6">
-        {items.split(";").map((item: string, i: number) => {
-          const [icon, title, desc] = item.split("|");
-          return (
-            <div key={i} className={`p-5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/[0.08] transition-colors ${i === 0 ? "md:col-span-2" : ""}`}>
-              <div className="text-2xl mb-2">{icon}</div>
-              <h3 className="font-semibold text-white text-sm">{title}</h3>
-              <p className="text-xs text-white/40 mt-1">{desc}</p>
-            </div>
-          );
-        })}
-      </div>
+      <section className="py-24 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-5xl mx-auto">
+          {items.split(";").filter(Boolean).map((item: string, i: number) => {
+            const [icon, title, desc] = item.split("|");
+            return (
+              <div key={i} className={`group p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 ${i === 0 ? "md:col-span-2 md:p-8" : ""}`}>
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 mb-4 group-hover:border-white/20 transition-colors">
+                  <span className="text-sm">{icon}</span>
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1 tracking-tight">{title}</h3>
+                <p className="text-sm text-white/35 leading-relaxed">{desc}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     ),
   };
 
@@ -2549,32 +2639,41 @@ export function buildPuckConfig(): Config {
     fields: {
       brand: { type: "text", label: "Brand Name" },
       tagline: { type: "text", label: "Tagline" },
-      columns: { type: "text", label: "Columns (pipe: title|links)" },
+      columns: { type: "text", label: "Columns (pipe: title|links;)" },
     },
-    defaultProps: { brand: "WonderBuild", tagline: "Build the future.", columns: "Product|Features, Pricing, Docs|Company|About, Blog, Careers|Legal|Privacy, Terms" },
+    defaultProps: { brand: "WonderBuild", tagline: "Design, build, and ship — faster.", columns: "Product|Features, Pricing, Changelog, Docs, Roadmap|Company|About, Blog, Careers, Press Kit|Resources|Community, Help Center, Partners, Status|Legal|Privacy, Terms, Security, Cookies" },
     render: ({ brand, tagline, columns }: any) => (
-      <footer className="border-t border-white/10 bg-black/40 py-12 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-bold text-white mb-2">{brand}</h3>
-            <p className="text-xs text-white/40">{tagline}</p>
+      <footer className="border-t border-white/5 bg-[#09090b]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
+            <div className="col-span-2 md:col-span-1">
+              <div className="text-lg font-bold text-white tracking-tight mb-2">{brand}</div>
+              <p className="text-sm text-white/30 leading-relaxed">{tagline}</p>
+            </div>
+            {columns.split(";").filter(Boolean).map((col: string, i: number) => {
+              const [title, links] = col.split("|");
+              return (
+                <div key={i}>
+                  <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-4">{title}</h4>
+                  <ul className="space-y-2.5">
+                    {links.split(",").map((link: string, li: number) => (
+                      <li key={li}>
+                        <a className="text-sm text-white/30 hover:text-white transition-colors duration-200">{link.trim()}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
-          {columns.split(";").map((col: string, i: number) => {
-            const [title, links] = col.split("|");
-            return (
-              <div key={i}>
-                <h4 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3">{title}</h4>
-                <ul className="space-y-2">
-                  {links.split(",").map((link: string, li: number) => (
-                    <li key={li}><a className="text-sm text-white/40 hover:text-white transition-colors">{link.trim()}</a></li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-        <div className="max-w-6xl mx-auto mt-8 pt-8 border-t border-white/10 text-center text-xs text-white/20">
-          © {new Date().getFullYear()} {brand}. All rights reserved.
+          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/5">
+            <p className="text-xs text-white/20">© {new Date().getFullYear()} {brand}. All rights reserved.</p>
+            <div className="flex items-center gap-4 mt-4 md:mt-0">
+              {["GitHub", "Twitter", "Discord"].map((social) => (
+                <a key={social} className="text-xs text-white/20 hover:text-white/40 transition-colors">{social}</a>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
     ),
@@ -2586,21 +2685,33 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { posts: "Getting Started with WonderBuild|Learn the basics of our platform.|2026-01-15;Advanced AI Features|Explore powerful AI tools.|2026-02-20;3D Scene Creation|Build immersive worlds.|2026-03-10" },
     render: ({ posts }: any) => (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto p-6">
-        {posts.split(";").map((post: string, i: number) => {
-          const [title, excerpt, date] = post.split("|");
-          return (
-            <article key={i} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-white/20 transition-colors cursor-pointer">
-              <div className="h-40 bg-gradient-to-br from-violet-600/20 to-blue-600/20" />
-              <div className="p-5">
-                <p className="text-xs text-white/30 mb-2">{date}</p>
-                <h3 className="font-semibold text-white mb-2">{title}</h3>
-                <p className="text-sm text-white/50">{excerpt}</p>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <section className="py-24 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">Latest Updates</h2>
+            <p className="text-lg text-white/35">News, guides, and product updates.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {posts.split(";").filter(Boolean).map((post: string, i: number) => {
+              const [title, excerpt, date] = post.split("|");
+              return (
+                <article key={i} className="group rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden hover:border-white/10 hover:bg-white/[0.04] transition-all duration-300 cursor-pointer">
+                  <div className="h-40 bg-gradient-to-br from-white/[0.04] to-white/[0.01] border-b border-white/5" />
+                  <div className="p-6">
+                    <p className="text-[11px] text-white/25 mb-3 font-medium">{date}</p>
+                    <h3 className="text-base font-semibold text-white mb-2 tracking-tight group-hover:text-white/90 transition-colors">{title}</h3>
+                    <p className="text-sm text-white/30 leading-relaxed">{excerpt}</p>
+                    <div className="mt-4 flex items-center gap-1.5 text-[11px] text-white/25 group-hover:text-white/40 transition-colors">
+                      Read more
+                      <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" /></svg>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     ),
   };
 
@@ -2612,13 +2723,19 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { title: "Stay updated", description: "Get the latest news and updates.", buttonText: "Subscribe" },
     render: ({ title, description, buttonText }: any) => (
-      <section className="py-12 px-6 border-y border-white/10 bg-white/[0.02]">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
-          <p className="text-sm text-white/50 mb-6">{description}</p>
+      <section className="py-20 px-6 border-y border-white/5 bg-white/[0.01]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-[-0.02em] text-white mb-3">{title}</h2>
+          <p className="text-sm text-white/30 mb-8">{description}</p>
           <div className="flex gap-2 max-w-md mx-auto">
-            <input type="email" placeholder="Enter your email" className="flex-1 h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50" />
-            <button className="px-5 h-10 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition-colors">{buttonText}</button>
+            <input
+              type="email"
+              placeholder="you@email.com"
+              className="flex-1 h-11 px-4 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/[0.15] transition-colors"
+            />
+            <button className="px-6 h-11 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors">
+              {buttonText}
+            </button>
           </div>
         </div>
       </section>
@@ -2630,23 +2747,27 @@ export function buildPuckConfig(): Config {
       title: { type: "text", label: "Section Title" },
       items: { type: "text", label: "Items (pipe: question|answer;)" },
     },
-    defaultProps: { title: "FAQ", items: "What is WonderBuild?|A modern AI-powered website builder.;How much does it cost?|Plans start at $0/mo.;Can I export my code?|Yes, full HTML/CSS/JS export." },
+    defaultProps: { title: "Frequently asked questions", items: "What is WonderBuild?|A modern creative platform that helps teams design, build, and ship products faster with AI-powered tools.;Is there a free tier?|Yes! The Starter plan is free forever with no credit card required.Upgrade anytime.;Can I migrate from other tools?|Absolutely. We provide one-click migration from Figma, Webflow, and custom setups.;How does the AI assistant work?|Our AI analyzes your design intent and generates production-ready code, layouts, and components in real-time." },
     render: ({ title, items }: any) => (
-      <section className="py-16 px-6 max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold text-white text-center mb-10">{title}</h2>
-        <div className="space-y-3">
-          {items.split(";").filter(Boolean).map((item: string, i: number) => {
-            const [q, a] = item.split("|");
-            return (
-              <div key={i} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 cursor-pointer">
-                  <span className="text-sm font-medium text-white">{q}</span>
-                  <svg className="w-4 h-4 text-white/40 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      <section className="py-32 px-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.02em] text-white mb-4">{title}</h2>
+          </div>
+          <div className="space-y-2">
+            {items.split(";").filter(Boolean).map((item: string, i: number) => {
+              const [q, a] = item.split("|");
+              return (
+                <div key={i} className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden group">
+                  <div className="flex items-center justify-between px-6 py-5 cursor-pointer">
+                    <span className="text-sm font-medium text-white pr-4">{q}</span>
+                    <svg className="w-4 h-4 text-white/20 shrink-0 group-hover:text-white/40 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                  <div className="px-6 pb-5 text-sm text-white/35 leading-relaxed">{a}</div>
                 </div>
-                <div className="px-5 pb-4 text-sm text-white/50">{a}</div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </section>
     ),
@@ -2660,14 +2781,14 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { brand: "WonderBuild", links: "Features, Pricing, Docs", ctaText: "Get Started" },
     render: ({ brand, links, ctaText }: any) => (
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-black/80 backdrop-blur-xl border-b border-white/10">
-        <span className="font-bold text-white">{brand}</span>
-        <nav className="hidden md:flex items-center gap-6">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3.5 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/5" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <span className="text-base font-bold text-white tracking-tight">{brand}</span>
+        <nav className="hidden md:flex items-center gap-8">
           {links.split(",").map((link: string, i: number) => (
-            <a key={i} className="text-sm text-white/60 hover:text-white transition-colors">{link.trim()}</a>
+            <a key={i} className="text-[13px] text-white/35 hover:text-white transition-colors duration-200">{link.trim()}</a>
           ))}
         </nav>
-        <button className="px-4 py-2 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors">{ctaText}</button>
+        <button className="px-4 py-2 rounded-xl bg-white text-black text-[13px] font-semibold hover:bg-white/90 transition-colors">{ctaText}</button>
       </header>
     ),
   };
@@ -2679,22 +2800,31 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { brand: "WonderBuild", columns: "Product|Features, Pricing, Changelog;Company|About, Blog, Careers;Legal|Privacy, Terms" },
     render: ({ brand, columns }: any) => (
-      <footer className="border-t border-white/10 py-12 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div><h3 className="font-bold text-white">{brand}</h3></div>
-          {columns.split(";").filter(Boolean).map((col: string, i: number) => {
-            const [title, links] = col.split("|");
-            return (
-              <div key={i}>
-                <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">{title}</h4>
-                <ul className="space-y-2">
-                  {links.split(",").map((link: string, li: number) => (
-                    <li key={li}><a className="text-sm text-white/40 hover:text-white">{link.trim()}</a></li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+      <footer className="border-t border-white/5 bg-[#09090b]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+              <span className="text-sm font-bold text-white tracking-tight">{brand}</span>
+            </div>
+            {columns.split(";").filter(Boolean).map((col: string, i: number) => {
+              const [title, links] = col.split("|");
+              return (
+                <div key={i}>
+                  <h4 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3">{title}</h4>
+                  <ul className="space-y-2">
+                    {links.split(",").map((link: string, li: number) => (
+                      <li key={li}>
+                        <a className="text-[13px] text-white/25 hover:text-white/60 transition-colors duration-200">{link.trim()}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-10 pt-6 border-t border-white/5 text-[11px] text-white/15">
+            © {new Date().getFullYear()} {brand}. All rights reserved.
+          </div>
         </div>
       </footer>
     ),
@@ -2707,16 +2837,16 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { url: "", title: "Video" },
     render: ({ url, title }: any) => (
-      <div className="relative rounded-xl overflow-hidden bg-black border border-white/10">
+      <div className="relative rounded-2xl overflow-hidden bg-white/[0.02] border border-white/5" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
         {url ? (
           <video src={url} controls className="w-full aspect-video" title={title} />
         ) : (
           <div className="aspect-video flex flex-col items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-white/40 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+            <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-white/20 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
             </div>
-            <p className="text-sm text-white/40">{title}</p>
-            <p className="text-xs text-white/20 mt-1">Add video URL in properties</p>
+            <p className="text-sm text-white/40 font-medium">{title}</p>
+            <p className="text-[11px] text-white/20 mt-1">Add video URL in properties</p>
           </div>
         )}
       </div>
@@ -2734,19 +2864,19 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { title: "My App", navItems: "Dashboard, Projects, Settings" },
     render: ({ title, navItems }: any) => (
-      <div className="min-h-[400px] flex rounded-xl border border-white/10 overflow-hidden">
-        <div className="w-56 bg-black/40 border-r border-white/10 p-4">
-          <h3 className="font-bold text-white text-sm mb-6">{title}</h3>
-          <nav className="space-y-1">
+      <div className="min-h-[400px] flex rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="w-56 bg-white/[0.02] border-r border-white/5 p-4">
+          <h3 className="font-semibold text-white text-sm mb-6 tracking-tight">{title}</h3>
+          <nav className="space-y-0.5">
             {navItems.split(",").map((item: string, i: number) => (
-              <div key={i} className={`px-3 py-2 rounded-lg text-sm ${i === 0 ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}>{item.trim()}</div>
+              <div key={i} className={`px-3 py-2 rounded-xl text-[13px] transition-colors ${i === 0 ? "bg-white/[0.06] text-white" : "text-white/30 hover:text-white/60 hover:bg-white/[0.03]"}`}>{item.trim()}</div>
             ))}
           </nav>
         </div>
-        <div className="flex-1 p-6 bg-white/[0.02]">
-          <div className="h-6 w-48 rounded bg-white/5 mb-6" />
-          <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => <div key={i} className="h-24 rounded-xl bg-white/5 border border-white/5" />)}
+        <div className="flex-1 p-6">
+          <div className="h-5 w-48 rounded-lg bg-white/[0.04] mb-6" />
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => <div key={i} className="h-24 rounded-xl bg-white/[0.03] border border-white/[0.04]" />)}
           </div>
         </div>
       </div>
@@ -2760,15 +2890,21 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { title: "Welcome back", subtitle: "Sign in to your account" },
     render: ({ title, subtitle }: any) => (
-      <div className="w-full max-w-sm mx-auto p-8 rounded-2xl border border-white/10 bg-white/5">
-        <h2 className="text-2xl font-bold text-white text-center">{title}</h2>
-        <p className="text-sm text-white/50 text-center mt-1 mb-6">{subtitle}</p>
+      <div className="w-full max-w-sm mx-auto p-8 rounded-2xl border border-white/5 bg-white/[0.02]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <h2 className="text-2xl font-bold text-white text-center tracking-tight">{title}</h2>
+        <p className="text-sm text-white/30 text-center mt-1.5 mb-8">{subtitle}</p>
         <div className="space-y-3">
-          <div><label className="text-xs text-white/50 mb-1 block">Email</label><input type="email" className="w-full h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white" /></div>
-          <div><label className="text-xs text-white/50 mb-1 block">Password</label><input type="password" className="w-full h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white" /></div>
-          <button className="w-full py-2.5 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90">Sign In</button>
+          <div>
+            <label className="text-[11px] text-white/35 mb-1.5 block font-medium">Email</label>
+            <input type="email" className="w-full h-10 px-3.5 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-white/[0.15] transition-colors" />
+          </div>
+          <div>
+            <label className="text-[11px] text-white/35 mb-1.5 block font-medium">Password</label>
+            <input type="password" className="w-full h-10 px-3.5 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-white/[0.15] transition-colors" />
+          </div>
+          <button className="w-full py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors mt-2">Sign In</button>
         </div>
-        <p className="text-xs text-white/30 text-center mt-4">Don't have an account? <span className="text-violet-400 cursor-pointer">Sign up</span></p>
+        <p className="text-[11px] text-white/20 text-center mt-5">Don't have an account? <span className="text-white/40 hover:text-white/60 cursor-pointer transition-colors">Sign up</span></p>
       </div>
     ),
   };
@@ -2780,16 +2916,25 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { title: "Create account", subtitle: "Get started for free" },
     render: ({ title, subtitle }: any) => (
-      <div className="w-full max-w-sm mx-auto p-8 rounded-2xl border border-white/10 bg-white/5">
-        <h2 className="text-2xl font-bold text-white text-center">{title}</h2>
-        <p className="text-sm text-white/50 text-center mt-1 mb-6">{subtitle}</p>
+      <div className="w-full max-w-sm mx-auto p-8 rounded-2xl border border-white/5 bg-white/[0.02]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <h2 className="text-2xl font-bold text-white text-center tracking-tight">{title}</h2>
+        <p className="text-sm text-white/30 text-center mt-1.5 mb-8">{subtitle}</p>
         <div className="space-y-3">
-          <div><label className="text-xs text-white/50 mb-1 block">Name</label><input type="text" className="w-full h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white" /></div>
-          <div><label className="text-xs text-white/50 mb-1 block">Email</label><input type="email" className="w-full h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white" /></div>
-          <div><label className="text-xs text-white/50 mb-1 block">Password</label><input type="password" className="w-full h-10 px-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white" /></div>
-          <button className="w-full py-2.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700">Create Account</button>
+          <div>
+            <label className="text-[11px] text-white/35 mb-1.5 block font-medium">Name</label>
+            <input type="text" className="w-full h-10 px-3.5 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-white/[0.15] transition-colors" />
+          </div>
+          <div>
+            <label className="text-[11px] text-white/35 mb-1.5 block font-medium">Email</label>
+            <input type="email" className="w-full h-10 px-3.5 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-white/[0.15] transition-colors" />
+          </div>
+          <div>
+            <label className="text-[11px] text-white/35 mb-1.5 block font-medium">Password</label>
+            <input type="password" className="w-full h-10 px-3.5 rounded-xl border border-white/[0.08] bg-white/[0.04] text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-white/[0.15] transition-colors" />
+          </div>
+          <button className="w-full py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors mt-2">Create Account</button>
         </div>
-        <p className="text-xs text-white/30 text-center mt-4">Already have an account? <span className="text-violet-400 cursor-pointer">Sign in</span></p>
+        <p className="text-[11px] text-white/20 text-center mt-5">Already have an account? <span className="text-white/40 hover:text-white/60 cursor-pointer transition-colors">Sign in</span></p>
       </div>
     ),
   };
@@ -2806,14 +2951,14 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { name: "Premium Headphones", price: "$299", description: "High-fidelity wireless headphones with noise cancellation." },
     render: ({ name, price, description }: any) => (
-      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-white/20 transition-colors">
-        <div className="h-48 bg-gradient-to-br from-white/5 to-white/10" />
-        <div className="p-5">
-          <h3 className="font-semibold text-white">{name}</h3>
-          <p className="text-sm text-white/50 mt-1">{description}</p>
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-lg font-bold text-white">{price}</span>
-            <button className="px-4 py-2 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90">Add to Cart</button>
+      <div className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden hover:border-white/10 transition-all duration-300 group" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <div className="h-48 bg-gradient-to-br from-white/[0.04] to-white/[0.01]" />
+        <div className="p-6">
+          <h3 className="text-base font-semibold text-white tracking-tight">{name}</h3>
+          <p className="text-sm text-white/30 mt-1.5 leading-relaxed">{description}</p>
+          <div className="flex items-center justify-between mt-5">
+            <span className="text-lg font-bold text-white tracking-tight">{price}</span>
+            <button className="px-4 py-2 rounded-xl bg-white text-black text-[13px] font-semibold hover:bg-white/90 transition-colors">Add to Cart</button>
           </div>
         </div>
       </div>
@@ -2826,27 +2971,27 @@ export function buildPuckConfig(): Config {
     },
     defaultProps: { items: "Wireless Mouse|$29.99|1;Keyboard|$79.99|1;Monitor|$399.99|1" },
     render: ({ items }: any) => (
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-white/5 p-6">
-        <h3 className="font-semibold text-white mb-4">Shopping Cart</h3>
+      <div className="w-full max-w-md rounded-2xl border border-white/5 bg-white/[0.02] p-6" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <h3 className="text-base font-semibold text-white mb-5 tracking-tight">Shopping Cart</h3>
         <div className="space-y-3">
           {items.split(";").filter(Boolean).map((item: string, i: number) => {
             const [name, price, qty] = item.split("|");
             return (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-white/5">
+              <div key={i} className="flex items-center justify-between py-3 border-b border-white/5">
                 <div>
-                  <p className="text-sm text-white">{name}</p>
-                  <p className="text-xs text-white/40">Qty: {qty}</p>
+                  <p className="text-sm text-white/70">{name}</p>
+                  <p className="text-[11px] text-white/25 mt-0.5">Qty: {qty}</p>
                 </div>
-                <span className="text-sm font-medium text-white">{price}</span>
+                <span className="text-sm font-medium text-white/60">{price}</span>
               </div>
             );
           })}
         </div>
-        <div className="flex justify-between mt-4 pt-4 border-t border-white/10">
-          <span className="text-sm text-white/60">Total</span>
-          <span className="font-bold text-white">$509.97</span>
+        <div className="flex justify-between mt-5 pt-5 border-t border-white/5">
+          <span className="text-sm text-white/35">Total</span>
+          <span className="text-base font-bold text-white">$509.97</span>
         </div>
-        <button className="w-full mt-4 py-2.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700">Checkout</button>
+        <button className="w-full mt-5 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors">Checkout</button>
       </div>
     ),
   };

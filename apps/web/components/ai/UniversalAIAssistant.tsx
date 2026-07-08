@@ -49,104 +49,90 @@ export default function UniversalAIAssistant({
   const [showAgents, setShowAgents] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Check subscription status
+
   const { allowed: agentsAllowed, isPaid, plan, isLoading: subscriptionLoading } = useFeatureGate('agents');
   const { allowed: runnersAllowed } = useFeatureGate('runners');
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Load available agents based on subscription
   useEffect(() => {
     const loadAgents = async () => {
-      try {
-        // Always include Spirit Guide and Egyptian Voice (free tier)
-        const baseAgents: Agent[] = [
+      const baseAgents: Agent[] = [
+        {
+          id: 'spirit-guide',
+          name: 'Spirit Guide',
+          type: 'builder',
+          description: 'General assistant for platform navigation and help',
+          available: true
+        },
+        {
+          id: 'egyptian_voice',
+          name: 'Egyptian Voice',
+          type: 'builder',
+          description: 'Ancient wisdom through hieroglyphic metaphors',
+          available: true
+        }
+      ];
+
+      if (agentsAllowed && enableAgents) {
+        baseAgents.push(
           {
-            id: 'spirit-guide',
-            name: 'Spirit Guide',
+            id: 'builder',
+            name: 'Builder',
             type: 'builder',
-            description: 'General assistant for platform navigation and help',
+            description: 'Create React components and UI elements',
             available: true
           },
           {
-            id: 'egyptian_voice',
-            name: '𓂀 Egyptian Voice',
-            type: 'builder',
-            description: 'Ancient wisdom through hieroglyphic metaphors',
+            id: 'designer',
+            name: 'Designer',
+            type: 'designer',
+            description: 'Design UI/UX and visual elements',
+            available: true
+          },
+          {
+            id: 'debugger',
+            name: 'Debugger',
+            type: 'debugger',
+            description: 'Debug and fix code issues',
             available: true
           }
-        ];
+        );
+      }
 
-        // Add premium agents only for paid users
-        if (agentsAllowed && enableAgents) {
-          const premiumAgents: Agent[] = [
-            {
-              id: 'builder',
-              name: 'Builder Agent',
-              type: 'builder',
-              description: 'Create React components and UI elements',
-              available: true
-            },
-            {
-              id: 'designer',
-              name: 'Designer Agent',
-              type: 'designer',
-              description: 'Design UI/UX and visual elements',
-              available: true
-            },
-            {
-              id: 'debugger',
-              name: 'Debugger Agent',
-              type: 'debugger',
-              description: 'Debug and fix code issues',
-              available: true
-            }
-          ];
-          baseAgents.push(...premiumAgents);
-        }
+      if (runnersAllowed && enableRunners) {
+        baseAgents.push(
+          {
+            id: 'project-runner',
+            name: 'Project Runner',
+            type: 'runner',
+            description: 'Execute project builds and deployments',
+            available: true
+          },
+          {
+            id: 'data-processor',
+            name: 'Data Processor',
+            type: 'worker',
+            description: 'Process and analyze data',
+            available: true
+          }
+        );
+      }
 
-        // Add runners only for paid users
-        if (runnersAllowed && enableRunners) {
-          const runnerAgents: Agent[] = [
-            {
-              id: 'project-runner',
-              name: 'Project Runner',
-              type: 'runner',
-              description: 'Execute project builds and deployments',
-              available: true
-            },
-            {
-              id: 'data-processor',
-              name: 'Data Processor',
-              type: 'worker',
-              description: 'Process and analyze data',
-              available: true
-            }
-          ];
-          baseAgents.push(...runnerAgents);
-        }
-        
-        setAgents(baseAgents);
-        
-        // If current agent is premium but user is free, switch to spirit-guide
-        if (!agentsAllowed && selectedAgent !== 'spirit-guide') {
-          setSelectedAgent('spirit-guide');
-        }
-      } catch (error) {
-        console.error('Failed to load agents:', error);
+      setAgents(baseAgents);
+
+      if (!agentsAllowed && selectedAgent !== 'spirit-guide') {
+        setSelectedAgent('spirit-guide');
       }
     };
-    
+
     if (!subscriptionLoading) {
       loadAgents();
     }
   }, [enableAgents, enableRunners, agentsAllowed, runnersAllowed, subscriptionLoading, selectedAgent]);
 
-  // Focus input when opened
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
@@ -169,7 +155,6 @@ export default function UniversalAIAssistant({
     setIsLoading(true);
 
     try {
-      // Use unified AI endpoint
       const endpoint = '/api/unified-ai';
       const body: any = {
         action: 'chat',
@@ -182,7 +167,6 @@ export default function UniversalAIAssistant({
         history: messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
       };
 
-      // Set action based on agent type
       if (selectedAgent === 'builder' || selectedAgent === 'designer' || selectedAgent === 'debugger') {
         body.action = 'agent';
         body.agent = selectedAgent;
@@ -199,7 +183,6 @@ export default function UniversalAIAssistant({
 
       const data = await res.json();
 
-      // Extract response based on action type
       let responseContent = "I've processed your request.";
       let showDashboardLink = false;
 
@@ -207,7 +190,7 @@ export default function UniversalAIAssistant({
         if (data.response) responseContent = data.response;
         else if (data.result) responseContent = data.result;
         else if (data.data) responseContent = JSON.stringify(data.data, null, 2);
-        
+
         showDashboardLink = data.dashboard || data.suggestDashboard || false;
       } else if (data.error) {
         responseContent = `Error: ${data.error}`;
@@ -224,12 +207,11 @@ export default function UniversalAIAssistant({
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Show dashboard link if suggested
       if (showDashboardLink) {
         const dashboardMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'system',
-          content: `💡 Tip: You can manage this from the [Dashboard](${dashboardUrl})`,
+          content: `Tip: You can manage this from the [Dashboard](${dashboardUrl})`,
           timestamp: Date.now()
         };
         setMessages(prev => [...prev, dashboardMessage]);
@@ -279,100 +261,88 @@ export default function UniversalAIAssistant({
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed ${getPositionClasses()} w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-900/50 hover:shadow-purple-900/70 hover:scale-110 transition-all z-50 flex items-center justify-center`}
+        className={`fixed ${getPositionClasses()} w-12 h-12 rounded-2xl bg-white/[0.06] backdrop-blur-sm border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.1] hover:border-white/20 shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-all duration-300 z-50 flex items-center justify-center group`}
+        style={{ fontFamily: "Inter, system-ui, sans-serif" }}
         aria-label="Open AI Assistant"
       >
-        <span className="text-2xl">✦</span>
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+        </svg>
+        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-white/20 border border-white/30" />
       </button>
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className={`fixed ${getPanelPosition()} w-96 max-h-[600px] bg-black/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden`}>
+        <div
+          className={`fixed ${getPanelPosition()} w-[400px] h-[560px] bg-[#09090b] border border-white/[0.08] rounded-2xl shadow-[0_16px_64px_rgba(0,0,0,0.6)] z-50 flex flex-col overflow-hidden`}
+          style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+        >
           {/* Header */}
-          <div className="px-5 py-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                ✦ AI Assistant
-                {selectedAgent !== 'spirit-guide' && (
-                  <span className="text-xs bg-purple-600 px-2 py-0.5 rounded-full">
-                    {agents.find(a => a.id === selectedAgent)?.name || selectedAgent}
-                  </span>
-                )}
-                {!isPaid && (
-                  <span className="text-xs bg-yellow-600/50 text-yellow-200 px-2 py-0.5 rounded-full">
-                    Free
-                  </span>
-                )}
-              </h3>
-              <p className="text-xs text-purple-400">
-                {pathname === dashboardUrl ? 'Dashboard Central' : `On: ${pathname}`}
-                {!isPaid && (
-                  <span className="text-yellow-400 ml-2">
-                    (Upgrade for more features)
-                  </span>
-                )}
-              </p>
+          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white tracking-tight">AI Assistant</h3>
+                  <p className="text-[11px] text-white/25">
+                    {selectedAgent === 'spirit-guide'
+                      ? 'Spirit Guide active'
+                      : agents.find(a => a.id === selectedAgent)?.name || selectedAgent}
+                  </p>
+                </div>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              {/* Dashboard Link */}
-              <Link
-                href={dashboardUrl}
-                className="text-white/40 hover:text-white transition p-1"
-                title="Go to Dashboard"
-              >
-                🏠
-              </Link>
-              
-              {/* Agent Selector (only for paid users or show upgrade prompt) */}
+
+            <div className="flex items-center gap-1">
               {enableAgents && (
                 <button
                   onClick={() => {
                     if (isPaid) {
                       setShowAgents(!showAgents);
                     } else {
-                      // Show upgrade prompt
                       setMessages(prev => [...prev, {
                         id: Date.now().toString(),
                         role: 'system',
-                        content: '🚀 Upgrade to Pro to access specialized AI agents (Builder, Designer, Debugger) and runners.',
+                        content: 'Upgrade to Pro to access specialized AI agents (Builder, Designer, Debugger).',
                         timestamp: Date.now()
                       }]);
                     }
                   }}
-                  className={`text-white/40 hover:text-white transition p-1 ${
-                    !isPaid ? 'opacity-50' : ''
-                  }`}
-                  title={isPaid ? "Select Agent" : "Agents require Pro plan"}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-white/25 hover:text-white/50 hover:bg-white/[0.04] transition-colors ${!isPaid ? 'opacity-50' : ''}`}
+                  title={isPaid ? "Select Agent" : "Requires Pro plan"}
                 >
-                  👥
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                  </svg>
                 </button>
               )}
-              
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/40 hover:text-white transition p-1"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/25 hover:text-white/50 hover:bg-white/[0.04] transition-colors"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
 
           {/* Agent Selector Panel */}
           {showAgents && enableAgents && (
-            <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-xs text-white/60">Select Agent/Runner:</p>
+            <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+              <div className="flex justify-between items-center mb-2.5">
+                <p className="text-[11px] text-white/35 font-medium uppercase tracking-wider">Select Agent</p>
                 {!isPaid && (
-                  <Link
-                    href="/subscription"
-                    className="text-xs text-purple-400 hover:text-purple-300"
-                  >
-                    Upgrade →
+                  <Link href="/subscription" className="text-[11px] text-white/30 hover:text-white/50 transition-colors">
+                    Upgrade
                   </Link>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {agents.map(agent => (
                   <button
                     key={agent.id}
@@ -380,183 +350,142 @@ export default function UniversalAIAssistant({
                       setSelectedAgent(agent.id);
                       setShowAgents(false);
                     }}
-                    className={`text-xs px-3 py-1.5 rounded-full transition ${
+                    className={`text-[11px] px-2.5 py-1.5 rounded-lg transition-all duration-200 ${
                       selectedAgent === agent.id
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white/10 text-white/80 hover:bg-white/20'
+                        ? 'bg-white/[0.1] text-white border border-white/[0.12]'
+                        : 'text-white/35 hover:text-white/60 hover:bg-white/[0.04] border border-transparent'
                     }`}
                   >
                     {agent.name}
-                    {agent.type !== 'builder' && (
-                      <span className="ml-1 opacity-70">⚡</span>
-                    )}
                   </button>
                 ))}
-                
-                {/* Premium features placeholder for free users */}
+
                 {!isPaid && (
-                  <>
-                    <div className="w-full mt-2 pt-2 border-t border-white/10">
-                      <p className="text-xs text-yellow-400/80 mb-2">
-                        🚀 Pro features available with upgrade:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="text-xs bg-yellow-600/20 text-yellow-200/70 px-2 py-1 rounded">
-                          Builder Agent
+                  <div className="w-full mt-2 pt-2 border-t border-white/[0.06]">
+                    <p className="text-[11px] text-white/25 mb-2">Pro agents:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {["Builder", "Designer", "Debugger", "Runner"].map(name => (
+                        <span key={name} className="text-[10px] text-white/20 px-2 py-1 rounded border border-white/[0.06]">
+                          {name}
                         </span>
-                        <span className="text-xs bg-yellow-600/20 text-yellow-200/70 px-2 py-1 rounded">
-                          Designer Agent
-                        </span>
-                        <span className="text-xs bg-yellow-600/20 text-yellow-200/70 px-2 py-1 rounded">
-                          Debugger Agent
-                        </span>
-                        <span className="text-xs bg-yellow-600/20 text-yellow-200/70 px-2 py-1 rounded">
-                          Project Runner
-                        </span>
-                        <span className="text-xs bg-yellow-600/20 text-yellow-200/70 px-2 py-1 rounded">
-                          Data Processor
-                        </span>
-                      </div>
+                      ))}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           )}
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
             {messages.length === 0 && (
-              <div className="text-center text-white/40 py-8">
-                <p className="text-4xl mb-4">✦</p>
-                <p className="text-sm">Hello! I'm your AI Assistant.</p>
-                <p className="text-xs mt-2">
-                  {selectedAgent === 'spirit-guide' 
-                    ? 'Ask me anything about the platform.'
-                    : `Using ${agents.find(a => a.id === selectedAgent)?.name || selectedAgent}`}
-                </p>
-                
-                {/* Subscription status */}
-                <div className="mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className={`w-2 h-2 rounded-full ${isPaid ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                    <span className="text-xs text-white/60">
+              <div className="text-center py-12">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-white/50 mb-1">How can I help?</p>
+                <p className="text-xs text-white/25">Ask me anything about the platform.</p>
+
+                <div className="mt-6 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                  <div className="flex items-center justify-center gap-1.5 mb-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${isPaid ? 'bg-emerald-500/60' : 'bg-white/20'}`} />
+                    <span className="text-[11px] text-white/30">
                       {isPaid ? `${plan || 'Pro'} Plan` : 'Free Plan'}
                     </span>
                   </div>
-                  
                   {!isPaid && (
-                    <div className="text-xs">
-                      <p className="text-yellow-400/80 mb-2">
-                        Upgrade to Pro for:
-                      </p>
-                      <ul className="text-left text-white/60 space-y-1">
-                        <li>• Builder, Designer & Debugger agents</li>
-                        <li>• Project & Data runners</li>
-                        <li>• Unlimited AI assistance</li>
-                        <li>• Advanced features</li>
-                      </ul>
-                      <Link 
-                        href="/subscription"
-                        className="inline-block mt-3 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition text-xs"
-                      >
-                        Upgrade to Pro
-                      </Link>
-                    </div>
+                    <Link href="/subscription" className="block text-[11px] text-white/25 hover:text-white/40 transition-colors">
+                      Upgrade for Builder, Designer, Debugger agents
+                    </Link>
                   )}
                 </div>
-                
-                <p className="text-xs mt-4 text-purple-400/60">
-                  💡 Tip: Visit the Dashboard to manage your AI features.
-                </p>
               </div>
             )}
-            
+
             {messages.map(message => (
               <div
                 key={message.id}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                  className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed ${
                     message.role === 'user'
-                      ? 'bg-purple-600 text-white rounded-br-none'
+                      ? 'bg-white/[0.08] text-white/80 rounded-br-md border border-white/[0.06]'
                       : message.role === 'system'
-                      ? 'bg-blue-900/50 text-blue-200 text-sm'
-                      : 'bg-white/10 text-white rounded-bl-none'
+                      ? 'bg-white/[0.03] text-white/35 border border-white/[0.04]'
+                      : 'bg-white/[0.04] text-white/60 rounded-bl-md border border-white/[0.06]'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                   {message.agent && message.agent !== 'spirit-guide' && (
-                    <p className="text-xs text-white/40 mt-1">
+                    <p className="text-[10px] text-white/20 mt-1.5 pt-1.5 border-t border-white/[0.06]">
                       via {agents.find(a => a.id === message.agent)?.name || message.agent}
                     </p>
                   )}
                 </div>
               </div>
             ))}
-            
+
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white/10 text-white rounded-2xl rounded-bl-none px-4 py-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl rounded-bl-md px-4 py-2.5">
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                   </div>
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-white/10 bg-white/5">
-            <div className="flex gap-2">
+          <div className="px-4 pb-4 pt-2">
+            <div className="flex gap-2 items-end">
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={`Ask ${selectedAgent === 'spirit-guide' ? 'anything' : agents.find(a => a.id === selectedAgent)?.name || 'AI'}...`}
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 resize-none focus:outline-none focus:border-purple-500"
+                className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-[13px] text-white/70 placeholder-white/20 resize-none focus:outline-none focus:border-white/[0.15] transition-colors"
                 rows={1}
               />
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white transition"
+                className="w-9 h-9 rounded-xl bg-white/[0.08] border border-white/[0.08] hover:bg-white/[0.12] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0"
               >
-                Send
+                <svg className="w-4 h-4 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
               </button>
             </div>
-            
+
             {/* Quick Actions */}
-            <div className="flex gap-2 mt-3 flex-wrap">
-              <button
-                onClick={() => setInput('Help me navigate')}
-                className="text-xs bg-white/10 hover:bg-white/20 text-white/80 px-3 py-1 rounded-full transition"
-              >
-                🧭 Navigate
-              </button>
-              <button
-                onClick={() => setInput('What can I build?')}
-                className="text-xs bg-white/10 hover:bg-white/20 text-white/80 px-3 py-1 rounded-full transition"
-              >
-                🛠️ Build
-              </button>
-              <button
-                onClick={() => setInput('Show me the dashboard')}
-                className="text-xs bg-white/10 hover:bg-white/20 text-white/80 px-3 py-1 rounded-full transition"
-              >
-                📊 Dashboard
-              </button>
+            <div className="flex gap-1.5 mt-2.5 flex-wrap">
+              {[
+                { label: "Navigate", value: "Help me navigate" },
+                { label: "Build", value: "What can I build?" },
+                { label: "Dashboard", value: "Show me the dashboard" },
+              ].map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => setInput(action.value)}
+                  className="text-[11px] text-white/20 hover:text-white/40 px-2.5 py-1 rounded-md hover:bg-white/[0.04] transition-colors border border-transparent hover:border-white/[0.06]"
+                >
+                  {action.label}
+                </button>
+              ))}
               <Link
                 href={dashboardUrl}
-                className="text-xs bg-purple-600/50 hover:bg-purple-600 text-white px-3 py-1 rounded-full transition"
+                className="text-[11px] text-white/20 hover:text-white/40 px-2.5 py-1 rounded-md hover:bg-white/[0.04] transition-colors border border-transparent hover:border-white/[0.06]"
               >
-                🏠 Open Dashboard
+                Dashboard
               </Link>
             </div>
           </div>
@@ -566,5 +495,4 @@ export default function UniversalAIAssistant({
   );
 }
 
-// Export for use in layouts
 export { UniversalAIAssistant };
