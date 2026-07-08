@@ -1,5 +1,3 @@
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { CheckResult, SystemFinding } from '../types';
 
 interface MemWarning {
@@ -13,6 +11,7 @@ interface MemWarning {
 
 async function checkForMemoryPatterns(workspaceRoot: string): Promise<MemWarning[]> {
   const warnings: MemWarning[] = [];
+  const { join } = await import('path');
 
   const filesToCheck = [
     join(workspaceRoot, 'engine/core'),
@@ -20,6 +19,7 @@ async function checkForMemoryPatterns(workspaceRoot: string): Promise<MemWarning
   ];
 
   for (const dir of filesToCheck) {
+    const { existsSync, readFileSync } = await import('fs');
     if (!existsSync(dir)) continue;
     try {
       const files = await getTSFiles(dir);

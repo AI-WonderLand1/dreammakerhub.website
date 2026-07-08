@@ -57,11 +57,14 @@ export async function POST(req: Request) {
   // Generate secure 40-character API key
   const key = crypto.randomBytes(20).toString("hex");
 
+  // Hash the key for storage (never store plaintext)
+  const keyHash = crypto.createHash("sha256").update(key).digest("hex");
+
   const { data, error } = await supabase.from("api_keys").insert([
     {
       user_id: session.user.id,
       name,
-      key,
+      key_hash: keyHash,
       created_at: new Date().toISOString(),
     },
   ]);

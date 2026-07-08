@@ -20,7 +20,7 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
       <nav className={`flex gap-4 text-sm ${className}`}>
         <Link href="/" className="hover:text-cyan-400 transition">🏠 Home</Link>
         <Link href="/builder-ai" className="hover:text-cyan-400 transition">🤖 Builder</Link>
-        <Link href="/playground" className="hover:text-cyan-400 transition">🎮 Playground</Link>
+        <a href="https://playground.dreammakerhub.website/" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition">🎮 Playground</a>
         <Link href="/play" className="hover:text-cyan-400 transition">▶️ Play</Link>
         <Link href="/community" className="hover:text-cyan-400 transition">👥 Community</Link>
         <Link href="/docs" className="hover:text-cyan-400 transition">📖 Docs</Link>
@@ -34,7 +34,7 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
         <Link href="/" className="px-3 py-2 rounded hover:bg-white/10">🏠 Home</Link>
         <Link href="/builder-ai" className="px-3 py-2 rounded hover:bg-blue-500/20">🤖 AI Builder</Link>
         <Link href="/builder" className="px-3 py-2 rounded hover:bg-blue-500/20">🔨 Builder</Link>
-        <Link href="/playground" className="px-3 py-2 rounded hover:bg-green-500/20">🎮 Playground</Link>
+        <a href="https://playground.dreammakerhub.website/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded hover:bg-green-500/20">🎮 Playground</a>
         <Link href="/(workspace)/dashboard" className="px-3 py-2 rounded hover:bg-green-500/20">📊 Dashboard</Link>
         <Link href="/play" className="px-3 py-2 rounded hover:bg-green-500/20">▶️ Play</Link>
         <Link href="/marketplace" className="px-3 py-2 rounded hover:bg-purple-500/20">🛍️ Marketplace</Link>
@@ -96,14 +96,27 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
             <span className="text-xs text-white/40 font-semibold">TOOLS:</span>
             <div className="flex gap-2">
               {toolPages.slice(0, 2).map(page => (
-                <Link
-                  key={page.path}
-                  href={page.path}
-                  className="px-2 py-1 rounded text-sm hover:bg-yellow-500/20 transition text-yellow-300"
-                  title={page.description}
-                >
-                  {page.icon} {page.label}
-                </Link>
+                page.external ? (
+                  <a
+                    key={page.path}
+                    href={page.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 rounded text-sm hover:bg-yellow-500/20 transition text-yellow-300"
+                    title={page.description}
+                  >
+                    {page.icon} {page.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={page.path}
+                    href={page.path}
+                    className="px-2 py-1 rounded text-sm hover:bg-yellow-500/20 transition text-yellow-300"
+                    title={page.description}
+                  >
+                    {page.icon} {page.label}
+                  </Link>
+                )
               ))}
             </div>
           </div>

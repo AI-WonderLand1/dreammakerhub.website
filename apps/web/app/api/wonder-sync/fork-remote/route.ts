@@ -1,7 +1,49 @@
 import { NextResponse } from "next/server";
 import { getGit } from "../_git";
+import { createClient } from "@supabase/supabase-js";
+
+async function requireAuth(req: Request): Promise<string | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  const authHeader = req.headers.get("authorization");
+  const cookieHeader = req.headers.get("cookie");
+  let token: string | null = null;
+  if (authHeader?.startsWith("Bearer ")) { token = authHeader.slice(7); }
+  else if (cookieHeader) { const m = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/); if (m) { try { token = JSON.parse(decodeURIComponent(m[1])).access_token; } catch {} } }
+  if (!token) return null;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+const ALLOWED_REMOTE_PROTOCOLS = ["https://", "git@"];
+const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "metadata.google.internal"];
+
+function isSafeRemoteUrl(url: string): boolean {
+  if (!ALLOWED_REMOTE_PROTOCOLS.some(p => url.startsWith(p))) return false;
+  try {
+    if (url.startsWith("git@")) {
+      const host = url.split("@")[1]?.split(":")[0];
+      return host ? !BLOCKED_HOSTS.includes(host) : false;
+    }
+    const parsed = new URL(url);
+    if (!["https:", "http:"].includes(parsed.protocol)) return false;
+    if (BLOCKED_HOSTS.includes(parsed.hostname)) return false;
+    if (parsed.hostname === "localhost" || /^127\./.test(parsed.hostname)) return false;
+    if (/^169\.254\./.test(parsed.hostname)) return false; // link-local / cloud metadata
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
+  const userId = await requireAuth(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const url = String(body?.url ?? "").trim();
@@ -10,6 +52,13 @@ export async function POST(req: Request) {
     if (!url) {
       return NextResponse.json(
         { ok: false, error: "Remote URL is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!isSafeRemoteUrl(url)) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid or disallowed remote URL. Only HTTPS and SSH GitHub/GitLab URLs are permitted." },
         { status: 400 }
       );
     }
