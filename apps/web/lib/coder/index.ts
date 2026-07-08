@@ -8,6 +8,6 @@ export { getUserSSHKey, getUserSSHPublicKey } from './user-ssh-keys';
 export type { 
   CoderAPIConfig,
   CoderWorkspace,
-  CreateWorkspaceOptions,
+  CreateWorkspaceRequest,
   ProvisionResult 
 } from './types';
