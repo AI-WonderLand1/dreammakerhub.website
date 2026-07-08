@@ -125,7 +125,7 @@ export default function WonderSpacePage() {
         <Breadcrumbs items={[{ href: "/", label: "Home" }, { label: "WonderSpace" }]} />
         <div className="ml-auto flex items-center gap-4">
           {[
-            { href: "/wonder-build/ai-builder", label: "✨ AI Builder", color: "text-violet-400" },
+            { href: "/wonder-build/ai-builder", label: "✨ Wonderbuild", color: "text-violet-400" },
             { href: "/wonder-build/playcanvas", label: "🌐 3D Studio", color: "text-blue-400" },
             { href: "/dashboard/agents", label: "🤖 Agents", color: "text-cyan-400" },
             { href: "/wonderspace/ide", label: "🚀 Launch IDE", color: "text-emerald-400" },

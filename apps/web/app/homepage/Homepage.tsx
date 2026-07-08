@@ -72,7 +72,7 @@ const openSpiritGuide = () => {
     }
   }
   
-  // Method 3: Fallback - redirect to AI builder
+  // Method 3: Fallback - redirect to Wonderbuild
   window.location.href = '/wonder-build/ai-builder';
 };
 

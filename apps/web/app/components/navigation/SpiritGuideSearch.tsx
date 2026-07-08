@@ -32,13 +32,14 @@ const DESTINATIONS: Destination[] = [
   },
   { 
     label: "Wonderbuild", 
-    href: "/wonder-build", 
+    href: "/wonder-build/agent", 
     hints: ["builder", "ai builder", "wonderbuild"], 
     aliases: [
       "build", "builder", "ai build", "wonder", "create", "design", "make",
       "create new", "new project", "start building", "generative", "ai generate",
       "wonderbuild", "wonder build", "ai-builder", "ai builder", "website builder",
-      "ui builder", "web builder", "page builder", "visual builder"
+      "ui builder", "web builder", "page builder", "visual builder", "puck editor",
+      "live preview"
     ] 
   },
   { 

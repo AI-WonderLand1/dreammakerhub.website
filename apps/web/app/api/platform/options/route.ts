@@ -15,7 +15,7 @@ function option(id: string, name: string, summary: string, href: string, status:
 export async function GET() {
   return NextResponse.json({
     ai: [
-      option("ai-builder", "AI Builder", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/ai-builder"),
+      option("ai-builder", "Wonderbuild", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/ai-builder"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
       option("playground", "Playground", "Train, create, and test AI modules.", "/wonder-build", "beta"),
     ],

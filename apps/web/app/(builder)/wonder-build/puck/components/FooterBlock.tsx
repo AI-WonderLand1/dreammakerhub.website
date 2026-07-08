@@ -22,7 +22,7 @@ function parseColumns(raw: string): { heading: string; links: string[] }[] {
 export default function FooterBlock({
   brand = "AI Wonderland",
   tagline = "Where your imagination comes to life.",
-  columns = "Platform\nBuilder\nWebGL Studio\nAI Builder\n|\nCompany\nAbout\nPricing\nDocs\n|\nLegal\nPrivacy\nTerms",
+  columns = "Platform\nBuilder\nWebGL Studio\nWonderbuild\n|\nCompany\nAbout\nPricing\nDocs\n|\nLegal\nPrivacy\nTerms",
   copyright = `© ${new Date().getFullYear()} AI Wonderland. All rights reserved.`,
   theme = "dark",
 }: FooterBlockProps) {

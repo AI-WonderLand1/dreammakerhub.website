@@ -79,7 +79,7 @@ export function PlaygroundPanel() {
           <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
             <span className="text-5xl opacity-15">Preview</span>
             <div>
-              <p className="text-sm font-semibold text-white/20">Live Preview</p>
+              <p className="text-sm font-semibold text-white/20">Preview</p>
               <p className="mt-1 text-[11px] text-white/15 leading-relaxed">
                 Build with AI, preview opens in a new tab.
               </p>
@@ -113,7 +113,7 @@ export function PlaygroundPanel() {
         {result && !running && (
           <div className={`grid h-full gap-3 p-3 ${workspaceView === 'split' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
             <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">Live Preview</p>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">Preview</p>
               <div className="flex h-[calc(100%-1.25rem)] min-h-60 items-center justify-center rounded-lg border border-white/10 bg-black/40 p-4 text-center">
                 <div>
                   <p className="text-sm text-white/60">Build complete</p>

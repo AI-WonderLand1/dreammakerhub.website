@@ -16,11 +16,11 @@ export interface PageConfig {
 export const PAGES: PageConfig[] = [
   // Builders
   {
-    path: '/builder-ai',
-    label: 'AI Builder',
+    path: '/wonder-build',
+    label: 'Wonderbuild',
     icon: '🤖',
     category: 'builder',
-    description: 'Quad-Engine AI Builder - Full-stack development platform',
+    description: 'Wonderbuild - Full-stack AI development platform',
   },
   {
     path: '/builder',

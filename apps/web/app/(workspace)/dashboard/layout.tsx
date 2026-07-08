@@ -54,7 +54,7 @@ type Project = {
     wonderbuild_ui: { editor: "/wonder-build/puck", label: "Wonderbuild UI" },
     game: { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
     "3d_scene": { editor: "/dashboard/settings/3d-project", label: "3D Project" },
-    web_app: { editor: "/wonder-build/ai-builder", label: "AI Builder" },
+    web_app: { editor: "/wonder-build/ai-builder", label: "Wonderbuild" },
     workspace: { editor: "/wonderspace/ide", label: "IDE" },
   };
 
