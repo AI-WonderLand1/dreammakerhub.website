@@ -17,7 +17,7 @@ export default function Navbar() {
           </Link>
           
           <div className="hidden md:flex items-center gap-6">
-             <Link href="/wonder-build" className="text-white/70 hover:text-white">Builder</Link>
+             <Link href="/wonder-build/agent" className="text-white/70 hover:text-white">Builder</Link>
              <Link href="/3d-library" className="text-white/70 hover:text-white">3D Library</Link>
              <Link href="/docs" className="text-white/70 hover:text-white">Docs</Link>
              <Link href="/community" className="text-white/70 hover:text-white">Community</Link>

@@ -723,7 +723,7 @@ export function PuckEditorClient({
                     selectedId={selectedId ?? undefined}
                     onSelect={(id) => {
                       const idx = parseInt(id.replace("item-", ""), 10);
-                      if (!isNaN(idx)) handleSelectElement(idx);
+                      if (!isNaN(idx)) setSelectedIndex(idx);
                     }}
                     onDelete={handleDeleteLayer}
                   />

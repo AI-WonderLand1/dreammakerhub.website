@@ -112,7 +112,27 @@ export default function AIAssistantModal({
 
   const handleQuickPrompt = (quickPrompt: string) => {
     setPrompt(quickPrompt);
-    handleBuild();
+    // Use setTimeout to ensure state is updated before build
+    setTimeout(() => {
+      // Directly invoke build with the prompt value
+      (async () => {
+        if (!quickPrompt.trim()) return;
+        setLoading(true);
+        setError("");
+        setResponse("");
+        try {
+          const result = await sendToAIBuilder(quickPrompt, currentData || undefined);
+          setResponse(result.response);
+          if (result.puckData.content.length > 0) {
+            onApplyData(result.puckData);
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Something went wrong");
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }, 0);
   };
 
   if (!isOpen) return null;

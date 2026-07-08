@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { Suspense } from "react";
 
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { PageHeader } from "@/app/components/layout/PageHeader";
@@ -17,7 +16,7 @@ interface StudioClientProps {
 
 export default function StudioClient({ initialData }: StudioClientProps) {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
-  const [editorMode, setEditorMode] = useState('visual');
+  const [editorMode, setEditorMode] = useState<"visual" | "preview" | "code">('visual');
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [editorData, setEditorData] = useState<any>(initialData);
 

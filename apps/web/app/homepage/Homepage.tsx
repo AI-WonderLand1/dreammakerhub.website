@@ -377,7 +377,7 @@ export default function Homepage() {
               
 {/* Spirit Guide Button */}
                <a 
-href="/wonder-build"
+href="/wonder-build/agent"
                   className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative"
                 >
                   🎮 WonderBuild
