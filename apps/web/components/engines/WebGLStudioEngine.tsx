@@ -1,6 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for WebGLStudioViewer (real WebGL rendering)
+const WebGLStudioViewer = dynamic(() => import('./WebGLStudioViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-black/50">
+      <div className="text-center">
+        <div className="w-12 h-12 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-green-400 font-mono">Loading WebGL Engine...</p>
+      </div>
+    </div>
+  ),
+});
 
 interface WebGLStudioEngineProps {
   engineState?: any;
@@ -96,6 +110,7 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Shader Templates Library */}
           {activeTab === 'shaders' && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-green-400">Shader Templates Library</h2>
@@ -130,6 +145,7 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
             </div>
           )}
 
+          {/* Canvas Tools */}
           {activeTab === 'canvas' && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-blue-400">Canvas Tools</h2>
@@ -168,6 +184,7 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
             </div>
           )}
 
+          {/* Filters Library */}
           {activeTab === 'filters' && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-purple-400">Filters Library</h2>
@@ -194,6 +211,7 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
             </div>
           )}
 
+          {/* Texture Library */}
           {activeTab === 'textures' && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-yellow-400">Texture Library</h2>
@@ -211,6 +229,7 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
             </div>
           )}
 
+          {/* Visual Effects */}
           {activeTab === 'effects' && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-pink-400">Visual Effects</h2>
@@ -231,6 +250,17 @@ export default function WebGLStudioEngine({ engineState, onStateChange }: WebGLS
               </div>
             </div>
           )}
+
+          {/* WebGL Viewer Section - Real WebGL Rendering */}
+          <div className="mt-6 border border-green-500/30 rounded p-4 bg-black/30">
+            <h3 className="font-semibold text-green-300 mb-3">🔆 WebGL Render Viewport</h3>
+            <div className="h-64 bg-black/50 rounded border border-green-500/20">
+              <WebGLStudioViewer initialShader={selectedShader.template} />
+            </div>
+            <div className="mt-3 text-xs text-white/60">
+              Real WebGL rendering using EngineManager with actual shader compilation
+            </div>
+          </div>
         </div>
       </div>
     </div>

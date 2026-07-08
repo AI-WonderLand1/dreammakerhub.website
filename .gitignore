@@ -5,3 +5,10 @@ node_modules
 node-v*-linux-x64/
 agent/venv/
 .next/
+.env
+.env.*
+!.env.example
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl

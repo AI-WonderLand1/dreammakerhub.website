@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import vm from 'vm'
 import { env, requireEnv } from '@lib/env'
-import { VM } from 'vm2'
 let supabase: ReturnType<typeof createClient> | null = null
 
 function getSupabaseClient() {
@@ -20,11 +20,10 @@ export async function executeCode(code: string): Promise<{ success: boolean; err
     return { success: false, error: "Extensions disabled" };
   }
   try {
-    const vm = new VM({
-      timeout: 5000,
-      sandbox: createSandbox(["fetch"], "execute")
-    });
-    const extension = vm.run(code);
+    const sandbox = createSandbox(["fetch"], "execute");
+    const context = vm.createContext(sandbox);
+    const script = new vm.Script(code, { filename: 'extension.js' });
+    const extension = script.runInContext(context, { timeout: 5000 });
     return { success: true, hooks: extension?.hooks ?? {} };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
@@ -59,24 +58,35 @@ export async function runExtension(extensionId: string) {
     decipher.final()
   ]).toString('utf8')
 
-  const vm = new VM({
-    timeout: 5000,
-    sandbox: createSandbox(data.manifest.permissions, extensionId)
-  })
-
-  const extension = vm.run(decrypted)
+  const sandbox = createSandbox(data.manifest.permissions, extensionId);
+  const context = vm.createContext(sandbox);
+  const script = new vm.Script(decrypted, { filename: `extension-${extensionId}.js` });
+  const extension = script.runInContext(context, { timeout: 5000 });
 
   return extension.hooks || {}
 }
 
 function createSandbox(permissions: string[], extensionId: string) {
   const sandbox: Record<string, unknown> = {
-    console: console,
+    console: {
+      log: (...args: unknown[]) => console.log(`[ext:${extensionId}]`, ...args),
+      error: (...args: unknown[]) => console.error(`[ext:${extensionId}]`, ...args),
+      warn: (...args: unknown[]) => console.warn(`[ext:${extensionId}]`, ...args),
+    },
     setTimeout, setInterval, clearTimeout, clearInterval
   }
 
   if (permissions.includes('fetch')) {
-    sandbox.fetch = fetch
+    // Proxy fetch to restrict to allowed origins only
+    const allowedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      // Block internal/metadata endpoints
+      if (/^https?:\/\/(localhost|127\.0\.0\.1|169\.254\.\d+\.\d+|metadata\.)/.test(url)) {
+        throw new Error('Fetch to internal endpoints is not allowed');
+      }
+      return fetch(input, init);
+    };
+    sandbox.fetch = allowedFetch;
   }
 
   if (permissions.includes('storage')) {

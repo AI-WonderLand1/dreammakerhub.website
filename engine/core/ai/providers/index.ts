@@ -9,6 +9,7 @@ import { openaiProvider } from "./openai";
 import { anthropicProvider } from "./anthropic";
 import { customApiProvider } from "./custom-api";
 import { webhookProvider } from "./webhook";
+import { dreammakerhubProvider } from "./dreammakerhub";
 
 export const Providers = {
   google: googleProvider,
@@ -22,4 +23,5 @@ export const Providers = {
   anthropic: anthropicProvider,
   "custom-api": customApiProvider,
   webhook: webhookProvider,
+  dreammakerhub: dreammakerhubProvider,
 };

@@ -1,0 +1,37 @@
+coder:
+  env:
+    - name: CODER_ACCESS_URL
+      value: "http://212.2.240.19.nip.io"
+    - name: CODER_WILDCARD_ACCESS_URL
+      value: "*.212.2.240.19.nip.io"
+    - name: CODER_DERP_FORCE_WEBSOCKETS
+      value: "true"
+    - name: CODER_SESSION_HOST_PREFIX_COOKIES
+      value: "true"
+
+  service:
+    type: ClusterIP
+
+  ingress:
+    enable: false
+
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+provisioner:
+  fsGroup: 1000
+
+postgres:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "250m"
+      memory: "512Mi"
+  enable: true
