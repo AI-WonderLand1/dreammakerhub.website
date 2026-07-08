@@ -53,10 +53,22 @@ export function decrypt(encryptedData: string): string {
   return decrypted;
 }
 
-function formatEd25519PublicKey(pubKey: Buffer, comment: string): string {
+function formatEd25519PublicKey(spkiDer: Buffer, comment: string): string {
   const algo = "ssh-ed25519";
-  const keyBase64 = pubKey.toString('base64');
-  return `${algo} ${keyBase64} ${comment}`;
+
+  // SPKI DER for ed25519 is always: 30 2a 30 05 06 03 2b 65 70 03 21 00 <32 bytes>
+  // Extract the raw 32-byte public key (last 32 bytes of DER)
+  const rawPubKey = spkiDer.subarray(spkiDer.length - 32);
+
+  // Build SSH wire format: len("ssh-ed25519") + "ssh-ed25519" + len(key) + key
+  const algoBytes = Buffer.from(algo);
+  const wireFormat = Buffer.alloc(4 + algoBytes.length + 4 + rawPubKey.length);
+  wireFormat.writeUInt32BE(algoBytes.length, 0);
+  algoBytes.copy(wireFormat, 4);
+  wireFormat.writeUInt32BE(rawPubKey.length, 4 + algoBytes.length);
+  rawPubKey.copy(wireFormat, 8 + algoBytes.length);
+
+  return `${algo} ${wireFormat.toString('base64')} ${comment}`;
 }
 
 export function generateSSHKeyPair(comment: string): { privateKey: string; publicKey: string } {

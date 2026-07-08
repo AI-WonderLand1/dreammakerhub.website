@@ -68,7 +68,7 @@ export interface CoderWorkspace {
   
   // Resources and apps
   latest_build: CoderWorkspaceBuild;
-  latest_app_status: WorkspaceAppStatus;
+  latest_app_status: AppWorkspaceStatus;
   
   // Access and connectivity
   url: string; // Construct from CODER_ACCESS_URL + workspace name

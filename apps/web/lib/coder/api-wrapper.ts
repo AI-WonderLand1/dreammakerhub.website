@@ -3,7 +3,7 @@
 
 import crypto from 'crypto';
 import { createSupabaseClient } from './supabase-client';
-import type { CoderWorkspace, CreateWorkspaceRequest, ProvisionOptions, AppWorkspaceStatus } from './types';
+import type { CoderWorkspace, CoderWorkspaceHealth, CreateWorkspaceRequest, ProvisionOptions, AppWorkspaceStatus } from './types';
 
 export interface CoderAPIConfig {
   apiUrl: string;
