@@ -6,7 +6,20 @@ export const n8nProvider: AIProvider = {
   name: "n8n",
 
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
-    const webhookUrl = process.env.N8N_WEBHOOK_URL || "https://aiwonderland.app.n8n.cloud/webhook/user-choice";
+    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    if (!webhookUrl) {
+      return {
+        text: "n8n webhook not configured.",
+        error: true,
+        provider: "n8n",
+        model: "user-choice",
+        confessions: {
+          confidence: 0,
+          reasoning: ["N8N_WEBHOOK_URL environment variable is not set"],
+          limitations: ["n8n integration requires N8N_WEBHOOK_URL to be configured"]
+        }
+      };
+    }
     const apiKey = process.env.N8N_API_KEY || "";
     const { system, temperature = 0.7 } = options ?? {};
 
