@@ -30,20 +30,20 @@ export async function POST(req: NextRequest) {
     const projectId = `wb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const projectName = name || (prompt ? prompt.slice(0, 50) : `AI Build ${new Date().toLocaleDateString()}`);
 
-    // Provision private Coder workspace for this user
-    const { data: { session } } = await supabase.auth.getSession();
-    const coderToken = session?.access_token;
-    const coder = new CoderIntegration();
-    const { ideUrl } = await coder.provisionIDEForProject(
+    const coder = new CoderAPIWrapper({
+      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
+      apiKey: process.env.CODER_API_TOKEN,
+    });
+
+    const { ideUrl } = await coder.createWorkspaceForApp(
       user.id,
-      projectName,
-      code,
-      coderToken
+      {
+        customName: projectName,
+      }
     );
 
-    // Also save to Puck for fallback
     let content;
-    
+
     if (type === "website" || type === "component") {
       content = convertHtmlToPuck(code, prompt);
     } else {
@@ -84,10 +84,10 @@ export async function POST(req: NextRequest) {
 
     if (saveError) {
       console.error("[CreateFromBuild] Save error:", saveError);
-      
+
       return NextResponse.json({
         projectId,
-        url: ideUrl, // Redirect to Coder workspace
+        url: ideUrl,
         content,
         message: "Project created with private IDE workspace",
       });
@@ -96,14 +96,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       projectId,
-      url: ideUrl, // Redirect to Coder workspace
+      url: ideUrl,
       content,
       message: "Your private IDE workspace is ready!",
     });
   } catch (error) {
     console.error("[CreateFromBuild] Error:", error);
-    
-    // Fallback to Puck editor if Coder fails
+
     return NextResponse.json({
       projectId: `wb-${Date.now().toString(36)}`,
       url: `/wonder-build/puck?project=fallback`,
