@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { engineManager } from '@/engine/core';
-import { WebGLAdapter } from '@/engine/core/adapters/webgl/adapter';
-import { PlayCanvasAdapter } from '@/engine/core/adapters/playcanvas/adapter';
+import { engineManager } from '@engine/core';
+import { WebGLAdapter } from '@engine/core/adapters/webgl/adapter';
+import { PlayCanvasAdapter } from '@engine/core/adapters/playcanvas/adapter';
 
 export default function TestEngineSwitching() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

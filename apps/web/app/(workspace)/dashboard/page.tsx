@@ -102,6 +102,12 @@ export default function DashboardPage() {
           <div className="text-xs text-white/50">3D game engine</div>
         </a>
         
+        <a href="/wonderspace/ide" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+          <Code2 className="w-8 h-8 mb-2 text-cyan-400" />
+          <div className="font-medium">WonderSpace IDE</div>
+          <div className="text-xs text-white/50">Cloud workspace</div>
+        </a>
+        
         <a href="/dashboard/usage" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
           <BarChart3 className="w-8 h-8 mb-2 text-green-400" />
           <div className="font-medium">Usage</div>

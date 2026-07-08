@@ -29,9 +29,9 @@ resource "coder_agent" "main" {
     git clone "${var.repo_url}" /home/coder/workspace
     cd /home/coder/workspace
 
-    # start code-server
+    # start code-server (bound to localhost — Coder proxy handles auth)
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
-    /tmp/code-server/bin/code-server --auth none --port 13337 --host 0.0.0.0 &
+    /tmp/code-server/bin/code-server --auth none --port 13337 --host 127.0.0.1 &
   EOS
 }
 

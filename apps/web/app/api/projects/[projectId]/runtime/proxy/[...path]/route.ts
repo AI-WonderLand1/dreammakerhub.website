@@ -67,7 +67,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       return NextResponse.json({ error: "Runtime not found" }, { status: 404 });
     }
 
-    const targetPath = `/${path}`;
+    // SECURITY: Sanitize path to prevent SSRF
+    const safePath = path.replace(/\.\./g, '').replace(/^\/+/, '');
+    const targetPath = `/${safePath}`;
     const targetUrl = `${runtimeUrl}${targetPath}`;
 
     const response = await fetch(targetUrl, {
@@ -124,7 +126,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json({ error: "Runtime not found" }, { status: 404 });
     }
 
-    const targetPath = `/${path}`;
+    // SECURITY: Sanitize path to prevent SSRF
+    const safePath = path.replace(/\.\./g, '').replace(/^\/+/, '');
+    const targetPath = `/${safePath}`;
     const targetUrl = `${runtimeUrl}${targetPath}`;
 
     const body = await req.text();

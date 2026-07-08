@@ -183,6 +183,97 @@ export class CoderClient {
       updatedAt: data.updated_at,
     };
   }
+
+  // ── AI Bridge ──────────────────────────────────────────────
+
+  async listAIBridgeClients() {
+    return this.request('GET', '/aibridge/clients');
+  }
+
+  async listAIBridgeInterceptions(options = {}) {
+    const params = buildQueryParams(options);
+    return this.request('GET', `/aibridge/interceptions${params}`);
+  }
+
+  async listAIBridgeModels() {
+    return this.request('GET', '/aibridge/models');
+  }
+
+  async listAIBridgeSessions(options = {}) {
+    const params = buildQueryParams(options);
+    return this.request('GET', `/aibridge/sessions${params}`);
+  }
+
+  async getAIBridgeSessionThreads(sessionId, options = {}) {
+    const params = buildQueryParams(options);
+    return this.request('GET', `/aibridge/sessions/${sessionId}${params}`);
+  }
+
+  // ── AI Providers ───────────────────────────────────────────
+
+  async listAIProviders() {
+    return this.request('GET', '/ai/providers');
+  }
+
+  async createAIProvider(provider) {
+    return this.request('POST', '/ai/providers', provider);
+  }
+
+  async getAIProvider(idOrName) {
+    return this.request('GET', `/ai/providers/${encodeURIComponent(idOrName)}`);
+  }
+
+  async updateAIProvider(idOrName, updates) {
+    return this.request('PATCH', `/ai/providers/${encodeURIComponent(idOrName)}`, updates);
+  }
+
+  async deleteAIProvider(idOrName) {
+    await this.request('DELETE', `/ai/providers/${encodeURIComponent(idOrName)}`);
+    return { success: true };
+  }
+
+  // ── Agents ─────────────────────────────────────────────────
+
+  async getAgent(agentId) {
+    return this.request('GET', `/workspaceagents/${agentId}`);
+  }
+
+  async getAgentConnection(agentId) {
+    return this.request('GET', `/workspaceagents/${agentId}/connection`);
+  }
+
+  async getAgentLogs(agentId, options = {}) {
+    const params = buildQueryParams(options);
+    const url = `${this.coderUrl}${CODER_API_VERSION}/workspaceagents/${agentId}/logs${params}`;
+    const res = await fetch(url, {
+      headers: { 'Coder-Session-Token': this.sessionToken },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new CoderError(res.status, text || 'Failed to fetch agent logs', 'GET', `/workspaceagents/${agentId}/logs`);
+    }
+
+    return res.json();
+  }
+
+  async getAgentListeningPorts(agentId) {
+    return this.request('GET', `/workspaceagents/${agentId}/listening-ports`);
+  }
+
+  async getAgentContainers(agentId, label) {
+    const params = label ? `?label=${encodeURIComponent(label)}` : '';
+    return this.request('GET', `/workspaceagents/${agentId}/containers${params}`);
+  }
+
+  async getAgentGitSSHKey() {
+    return this.request('GET', '/workspaceagents/me/gitsshkey');
+  }
+
+  async patchAgentAppStatus(appStatus) {
+    return this.request('PATCH', '/workspaceagents/me/app-status', appStatus);
+  }
 }
 
 function normalizeWorkspace(ws) {
@@ -214,6 +305,16 @@ function normalizeWorkspace(ws) {
     createdAt: ws.created_at,
     updatedAt: ws.updated_at,
   };
+}
+
+function buildQueryParams(options) {
+  const parts = [];
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined && value !== null && value !== '') {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    }
+  }
+  return parts.length > 0 ? `?${parts.join('&')}` : '';
 }
 
 function sleep(ms) {

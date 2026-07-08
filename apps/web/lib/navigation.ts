@@ -9,6 +9,7 @@ export interface PageConfig {
   icon: string;
   category: 'builder' | 'workspace' | 'tools' | 'community' | 'settings' | 'docs';
   description: string;
+  external?: boolean;
 }
 
 // Comprehensive page registry
@@ -47,11 +48,12 @@ export const PAGES: PageConfig[] = [
 
   // Play & Preview
   {
-    path: '/playground',
+    path: 'https://playground.dreammakerhub.website/',
     label: 'Playground',
     icon: '🎮',
     category: 'tools',
     description: 'AI Module Playground - train, create, and test AI modules',
+    external: true,
   },
   {
     path: '/play',

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 import { convertHtmlToPuck } from "@/lib/html-to-puck";
-import { CoderIntegration } from "@/lib/coder/integration";
+import { CoderAPIWrapper } from "@/lib/coder/api-wrapper";
 
 export const runtime = "nodejs";
 

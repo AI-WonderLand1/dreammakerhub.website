@@ -44,6 +44,7 @@ export async function runModel({
   const isAnthropic = typeof model === "string" && model.startsWith("anthropic/");
   const isCustomApi = typeof model === "string" && model.startsWith("custom-api/");
   const isWebhook = typeof model === "string" && model.startsWith("webhook/");
+  const isDreammakerhub = typeof model === "string" && model.startsWith("dreammakerhub/");
 
   if (isGithub) {
     const githubModel = model.replace(/^github\//, "");
@@ -161,6 +162,14 @@ export async function runModel({
       temperature,
       apiKey: userApiKey,
       baseUrl,
+    });
+  }
+
+  if (isDreammakerhub) {
+    return Providers.dreammakerhub.generate(lastContent, {
+      system,
+      temperature,
+      maxTokens,
     });
   }
 

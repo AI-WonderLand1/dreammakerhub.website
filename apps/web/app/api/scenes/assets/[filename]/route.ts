@@ -10,6 +10,11 @@ export async function GET(
   try {
     const { filename } = params;
     
+    // SECURITY: Block path traversal attempts
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\') || filename.startsWith('.')) {
+      return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !serviceRoleKey) {
