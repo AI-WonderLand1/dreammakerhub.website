@@ -156,8 +156,8 @@ resource "coder_agent" "main" {
     # Start PlayCanvas editor
     nohup node /home/coder/wonderplay/server.js > /tmp/playcanvas.log 2>&1 &
 
-    # Start code-server for file editing
-    nohup /tmp/code-server/bin/code-server --auth none --port 13337 --host 0.0.0.0 > /tmp/code-server.log 2>&1 &
+    # Start code-server for file editing (bound to localhost — Coder proxy handles auth)
+    nohup /tmp/code-server/bin/code-server --auth none --port 13337 --host 127.0.0.1 > /tmp/code-server.log 2>&1 &
 
     # Log ready
     echo "✅ WonderPlay 3D Editor ready on port 31000, code-server on 13337"

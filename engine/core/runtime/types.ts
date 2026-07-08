@@ -1,5 +1,3 @@
-import type { EngineAdapter } from '../adapters/types';
-
 export interface EngineConfig {
   canvas: HTMLCanvasElement
   width?: number
@@ -28,5 +26,4 @@ export interface ActiveEngine {
   onFrame?: (time: number) => void
 }
 
-export type EngineName = 'playcanvas' | 'webgl' | 'puck' | 'webgpu'
-export { EngineAdapter }
+export type EngineName = 'playcanvas' | 'webgl' | 'threejs' | 'babylon' | 'webgpu' | 'custom'
