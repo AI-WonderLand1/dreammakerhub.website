@@ -81,6 +81,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { href: "/dashboard/aetherguard", label: "AetherGuard", icon: Shield },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
     { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
+    { href: "/wonderspace/ide", label: "WonderSpace IDE", icon: Code2 },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
 

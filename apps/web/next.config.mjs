@@ -9,6 +9,7 @@ const pathAliases = {
     '@builder': join(__dirname, 'app/(builder)/wonder-build'),
     '@/core': join(__dirname, '../../engine/core'),
     '@core': join(__dirname, '../../engine/core'),
+    '@engine': join(__dirname, '../../engine'),
     '@aetherguard': join(__dirname, '../../infra/aetherguard'),
     '@ai-modules': join(__dirname, 'ai-modules'),
     '@/ai-modules': join(__dirname, 'ai-modules'),
