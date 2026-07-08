@@ -1,12 +1,14 @@
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { RepairResult } from '../types';
+
+const execFileAsync = promisify(execFile);
 
 export async function updateDependencies(workspaceRoot: string): Promise<RepairResult> {
   try {
-    execSync('npm update', {
+    await execFileAsync('npm', ['update'], {
       cwd: workspaceRoot,
       timeout: 120000,
-      stdio: 'pipe',
     });
     return {
       findingId: 'npm-update',
@@ -25,10 +27,9 @@ export async function updateDependencies(workspaceRoot: string): Promise<RepairR
 
 export async function fixDepIssues(workspaceRoot: string): Promise<RepairResult> {
   try {
-    execSync('npm audit fix', {
+    await execFileAsync('npm', ['audit', 'fix'], {
       cwd: workspaceRoot,
       timeout: 60000,
-      stdio: 'pipe',
     });
     return {
       findingId: 'npm-audit-fix',

@@ -31,15 +31,14 @@ export async function POST(req: NextRequest) {
     const projectName = name || (prompt ? prompt.slice(0, 50) : `AI Build ${new Date().toLocaleDateString()}`);
 
     // Provision private Coder workspace for this user
-    const coder = new CoderAPIWrapper({
-      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
-    });
-    
-    const { ideUrl } = await coder.createWorkspaceForApp(
+    const { data: { session } } = await supabase.auth.getSession();
+    const coderToken = session?.access_token;
+    const coder = new CoderIntegration();
+    const { ideUrl } = await coder.provisionIDEForProject(
       user.id,
-      {
-        customName: projectName,
-      }
+      projectName,
+      code,
+      coderToken
     );
 
     // Also save to Puck for fallback
