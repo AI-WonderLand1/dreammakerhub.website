@@ -151,10 +151,17 @@
     links.forEach(link => {
       const href = link.getAttribute('href');
       if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-      if (href.startsWith('javascript:')) {
+      
+      // Check for dangerous protocols (case-insensitive, handle encoding)
+      const lowerHref = href.toLowerCase().trim();
+      const decodedHref = decodeURIComponent(lowerHref).toLowerCase();
+      
+      if (lowerHref.startsWith('javascript:') || decodedHref.startsWith('javascript:') ||
+          lowerHref.startsWith('data:') || decodedHref.startsWith('data:') ||
+          lowerHref.startsWith('vbscript:') || decodedHref.startsWith('vbscript:')) {
         emit('broken_link', {
           severity: 'warning',
-          message: `Potentially unsafe javascript: href on <a>`,
+          message: `Potentially unsafe protocol in href on <a>`,
           source: href,
           label: 'Unsafe Link',
         });
