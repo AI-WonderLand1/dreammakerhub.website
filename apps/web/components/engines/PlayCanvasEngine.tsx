@@ -1,20 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
-
-// Dynamic import for PlayCanvasStudioViewer (client-side only, heavy dependency)
-const PlayCanvasStudioViewer = dynamic(() => import('./PlayCanvasStudioViewer'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-black/50">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-cyan-400">Loading 3D Engine...</p>
-      </div>
-    </div>
-  ),
-});
+import PlayCanvasViewer from './PlayCanvasViewer';
 
 interface PlayCanvasEngineProps {
   engineState?: any;
