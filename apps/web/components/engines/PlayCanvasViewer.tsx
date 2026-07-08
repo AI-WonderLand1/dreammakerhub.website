@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { engineManager } from '@/engine/core';
+import { engineManager } from '@engine/core';
 
 // Dynamic import for PlayCanvas (client-side only)
 let pc: any = null;
