@@ -49,6 +49,7 @@ export async function POST(request: Request) {
 
     const coder = new CoderAPIWrapper({
       apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
+      apiKey: process.env.CODER_API_TOKEN,
     });
     
     const { workspace, ideUrl } = await coder.createWorkspaceForApp(
