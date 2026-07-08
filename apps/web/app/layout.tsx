@@ -19,34 +19,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cn("dark", "font-sans")}>
       <head>
-        <Script src="/correctai-monitor.js" strategy="beforeInteractive" />
+        <Script src="/correctai-monitor.js" strategy="afterInteractive" />
       </head>
       <body className="bg-background text-foreground antialiased">
-<AuthProvider>
-           <BuilderProvider>
-             <AccessibilityProvider>
-               <PlayCanvasBootstrapStartup />
-
-               <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>}>
-               {children}
-             </Suspense>
-               <UniversalAIAssistant
-                 position="bottom-right"
-                 theme="dark"
-                 enableAgents={true}
-                 enableRunners={true}
-                 defaultAgent="spirit-guide"
-                 dashboardUrl="/dashboard"
-               />
-               <AutoRunAI />
-               <AutoRunFromURL />
-               <AutoBuildTrigger />
-               {/* Persistent accessibility components - wrapped in client component */}
-               <ClientAccessibilityWrapper />
-               <Footer />
-             </AccessibilityProvider>
-           </BuilderProvider>
-         </AuthProvider>
+        <AuthProvider>
+          <BuilderProvider>
+            <AccessibilityProvider>
+              <PlayCanvasBootstrapStartup />
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>}>
+                {children}
+              </Suspense>
+              <UniversalAIAssistant
+                position="bottom-right"
+                theme="dark"
+                enableAgents={true}
+                enableRunners={true}
+                defaultAgent="spirit-guide"
+                dashboardUrl="/dashboard"
+              />
+              <AutoRunAI />
+              <AutoRunFromURL />
+              <AutoBuildTrigger />
+              <ClientAccessibilityWrapper />
+              <Footer />
+            </AccessibilityProvider>
+          </BuilderProvider>
+        </AuthProvider>
       </body>
     </html>
   );
