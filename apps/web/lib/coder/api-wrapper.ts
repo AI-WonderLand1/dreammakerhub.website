@@ -53,11 +53,8 @@ export class CoderAPIWrapper {
     const timestamp = Date.now();
     
     try {
-      // Make request to Coder API
-      const response = await this.makeApiRequest('/api/v2/workspaces', 'POST', options, {
-        'Coder-User-ID': userId,
-        'Content-Type': 'application/json',
-      });
+      // Make request to Coder API using user-scoped endpoint
+      const response = await this.makeApiRequest(`/api/v2/users/${userId}/workspaces`, 'POST', options);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -186,9 +183,7 @@ export class CoderAPIWrapper {
    */
   async getUserWorkspace(userId: string): Promise<CoderWorkspace | null> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces?owner=${userId}`, 'GET', undefined, {
-        'Coder-User-ID': userId,
-      });
+      const response = await this.makeApiRequest(`/api/v2/users/${userId}/workspaces`, 'GET');
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -218,9 +213,7 @@ export class CoderAPIWrapper {
    */
   async getWorkspace(userId: string, workspaceId: string): Promise<CoderWorkspace | null> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}`, 'GET', undefined, {
-        'Coder-User-ID': userId,
-      });
+      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}`, 'GET');
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -300,10 +293,7 @@ export class CoderAPIWrapper {
    */
   async startWorkspace(userId: string, workspaceId: string): Promise<CoderWorkspace> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}/start`, 'POST', undefined, {
-        'Coder-User-ID': userId,
-        'Content-Type': 'application/json',
-      });
+      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}/start`, 'POST');
       
       if (!response.ok) {
         throw new Error(`Failed to start workspace: ${response.statusText}`);
@@ -323,10 +313,7 @@ export class CoderAPIWrapper {
    */
   async stopWorkspace(userId: string, workspaceId: string): Promise<CoderWorkspace> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}/stop`, 'POST', undefined, {
-        'Coder-User-ID': userId,
-        'Content-Type': 'application/json',
-      });
+      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}/stop`, 'POST');
       
       if (!response.ok) {
         throw new Error(`Failed to stop workspace: ${response.statusText}`);
@@ -360,9 +347,7 @@ export class CoderAPIWrapper {
    */
   async getWorkspaceHealth(userId: string, workspaceId: string): Promise<CoderWorkspaceHealth | null> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}/health`, 'GET', undefined, {
-        'Coder-User-ID': userId,
-      });
+      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}/health`, 'GET');
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -383,9 +368,7 @@ export class CoderAPIWrapper {
    */
   async deleteWorkspace(userId: string, workspaceId: string): Promise<boolean> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}`, 'DELETE', undefined, {
-        'Coder-User-ID': userId,
-      });
+      const response = await this.makeApiRequest(`/api/v2/workspaces/${workspaceId}`, 'DELETE');
       
       if (!response.ok) {
         throw new Error(`Failed to delete workspace: ${response.statusText}`);
@@ -408,9 +391,7 @@ export class CoderAPIWrapper {
    */
   async listWorkspaces(userId: string): Promise<CoderWorkspace[]> {
     try {
-      const response = await this.makeApiRequest(`/api/v2/workspaces?owner=${userId}`, 'GET', undefined, {
-        'Coder-User-ID': userId,
-      });
+      const response = await this.makeApiRequest(`/api/v2/users/${userId}/workspaces`, 'GET');
       
       if (!response.ok) {
         throw new Error(`Failed to list workspaces: ${response.statusText}`);
