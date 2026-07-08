@@ -536,5 +536,6 @@ export class EngineManager {
       }
     });
   }
+}
 
 export const engineManager = new EngineManager();
