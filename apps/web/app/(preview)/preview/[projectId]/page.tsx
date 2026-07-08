@@ -5,6 +5,22 @@ import { injectWiringRuntime } from "@/lib/wonder-build/wiringRuntime";
 export const runtime = "nodejs";
 
 /**
+ * Sanitize HTML to prevent XSS — strips dangerous tags/attributes while preserving safe content.
+ * For production, use a library like DOMPurify on the client side as well.
+ */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^>]*>/gi, '')
+    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
+    .replace(/javascript\s*:/gi, '');
+}
+
+/**
  * PreviewPage
  * Secure project preview (renders stored HTML + CSS for a user project)
  */
@@ -50,10 +66,10 @@ export default async function PreviewPage({
   }
 
   // ───────────────────────────────
-  //  Render
+  //  Render (sanitize HTML to prevent XSS)
   // ───────────────────────────────
   const styleTag = css ? `<style>${css}</style>` : "";
-  const htmlWithWiring = injectWiringRuntime(styleTag + html);
+  const htmlWithWiring = injectWiringRuntime(styleTag + sanitizeHtml(html));
 
   return (
     <div className="min-h-screen bg-black text-white">

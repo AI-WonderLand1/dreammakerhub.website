@@ -23,7 +23,7 @@ export default function Footer() {
             <h3 className="text-sm font-bold text-white mb-4">Products</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/wonder-build" className="text-white/60 hover:text-white">WonderBuild</Link></li>
-              <li><Link href="/playground" className="text-white/60 hover:text-white">Playground</Link></li>
+              <li><a href="https://playground.dreammakerhub.website/" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white">Playground</a></li>
               <li><Link href="/wonder-build/playcanvas" className="text-white/60 hover:text-white">WonderPlay 3D</Link></li>
               <li><Link href="/wonderspace/ide" className="text-white/60 hover:text-white">WonderSpace IDE</Link></li>
               <li><Link href="/marketplace" className="text-white/60 hover:text-white">Marketplace</Link></li>

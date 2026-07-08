@@ -115,8 +115,8 @@ resource "coder_agent" "main" {
     # Start SSH daemon for isolated access
     service ssh start 2>/dev/null || /usr/sbin/sshd 2>/dev/null || true
 
-    # Start code-server on port 13337
-    /tmp/code-server/bin/code-server --auth none --port 13337 --host 0.0.0.0 >/tmp/code-server.log 2>&1 &
+    # Start code-server on port 13337 (bound to localhost only — Coder proxy handles auth)
+    /tmp/code-server/bin/code-server --auth none --port 13337 --host 127.0.0.1 >/tmp/code-server.log 2>&1 &
     
     # Log ready
     echo "✅ WonderSpace IDE ready with SSH access"

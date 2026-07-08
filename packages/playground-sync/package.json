@@ -1,0 +1,28 @@
+{
+  "name": "@dreammakerhub/playground-sync",
+  "version": "1.0.0",
+  "description": "Sync client for playground.dreammakerhub.website to sync data with main DreamMakerHub site",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "dreammakerhub",
+    "playground",
+    "sync",
+    "tokens",
+    "usage"
+  ],
+  "author": "DreamMakerHub",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

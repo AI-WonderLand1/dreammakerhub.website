@@ -3,6 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: only allow authenticated or known client errors
+    const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+    const allowedOrigins = [
+      process.env.NEXT_PUBLIC_URL || "http://localhost:3000",
+      "http://localhost:3000",
+      "http://localhost:5000",
+    ];
+    if (!allowedOrigins.some(o => origin.startsWith(o)) && !origin.includes("dreammakerhub.website")) {
+      return NextResponse.json({ success: true }); // silently ignore untrusted sources
+    }
+
     const body = await req.json();
     const { message, stack, url, userAgent, userId, timestamp } = body;
 

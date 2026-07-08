@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamic import for PlayCanvasStudioViewer (client-side only, heavy dependency)
-const PlayCanvasStudioViewer = dynamic(() => import('./PlayCanvasStudioViewer'), {
+// Dynamic import for PlayCanvasViewer (client-side only, heavy dependency)
+const PlayCanvasStudioViewer = dynamic(() => import('./PlayCanvasViewer'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-black/50">
