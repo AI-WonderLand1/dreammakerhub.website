@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 import { convertHtmlToPuck } from "@/lib/html-to-puck";
-import { CoderIntegration } from "@/lib/coder/integration";
+import { CoderAPIWrapper } from "@/lib/coder/api-wrapper";
 
 export const runtime = "nodejs";
 
@@ -31,11 +31,15 @@ export async function POST(req: NextRequest) {
     const projectName = name || (prompt ? prompt.slice(0, 50) : `AI Build ${new Date().toLocaleDateString()}`);
 
     // Provision private Coder workspace for this user
-    const coder = new CoderIntegration();
-    const { ideUrl } = await coder.provisionIDEForProject(
+    const coder = new CoderAPIWrapper({
+      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
+    });
+    
+    const { ideUrl } = await coder.createWorkspaceForApp(
       user.id,
-      projectName,
-      code
+      {
+        customName: projectName,
+      }
     );
 
     // Also save to Puck for fallback
