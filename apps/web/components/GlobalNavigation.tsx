@@ -32,7 +32,7 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
     return (
       <div className={`flex flex-col gap-2 text-sm ${className}`}>
         <Link href="/" className="px-3 py-2 rounded hover:bg-white/10">🏠 Home</Link>
-        <Link href="/wonder-build" className="px-3 py-2 rounded hover:bg-blue-500/20">🤖 Wonderbuild</Link>
+        <Link href="/wonder-build/agent" className="px-3 py-2 rounded hover:bg-blue-500/20">🤖 Wonderbuild</Link>
         <Link href="/builder" className="px-3 py-2 rounded hover:bg-blue-500/20">🔨 Builder</Link>
         <a href="https://playground.dreammakerhub.website/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded hover:bg-green-500/20">🎮 Playground</a>
         <Link href="/(workspace)/dashboard" className="px-3 py-2 rounded hover:bg-green-500/20">📊 Dashboard</Link>

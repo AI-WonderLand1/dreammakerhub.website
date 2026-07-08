@@ -16,7 +16,7 @@ export interface PageConfig {
 export const PAGES: PageConfig[] = [
   // Builders
   {
-    path: '/wonder-build',
+    path: '/wonder-build/agent',
     label: 'Wonderbuild',
     icon: '🤖',
     category: 'builder',

@@ -143,7 +143,7 @@ export default function DashboardRepoView() {
 
           <div className="flex items-center gap-2 md:justify-end">
             <Link
-              href="/wonder-build"
+              href="/wonder-build/agent"
               className="h-9 px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold text-white/80 inline-flex items-center"
             >
               Open Builder
@@ -213,7 +213,7 @@ export default function DashboardRepoView() {
                   </PrimaryBtn>
 
                   <Link
-                    href="/wonder-build"
+                    href="/wonder-build/agent"
                     className="h-9 px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold text-white/80 inline-flex items-center"
                   >
                     Go to Builder

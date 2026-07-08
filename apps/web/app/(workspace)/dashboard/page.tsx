@@ -90,7 +90,7 @@ export default function DashboardPage() {
           <div className="text-xs text-white/50">View & manage your projects</div>
         </a>
         
-        <a href="/wonder-build" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+        <a href="/wonder-build/agent" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
           <Pencil className="w-8 h-8 mb-2 text-purple-400" />
           <div className="font-medium">Wonderbuild</div>
           <div className="text-xs text-white/50">AI-powered builder</div>

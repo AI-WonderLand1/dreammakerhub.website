@@ -273,7 +273,7 @@ export default function ProjectsPage() {
           <Folder size={48} className="mx-auto mb-4 text-white/20" />
           <p className="text-white/50 mb-4">No projects yet</p>
           <Link
-            href="/wonder-build"
+            href="/wonder-build/agent"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white"
           >
             <Plus size={16} />

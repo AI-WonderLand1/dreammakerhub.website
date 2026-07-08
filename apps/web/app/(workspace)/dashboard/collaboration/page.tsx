@@ -91,7 +91,7 @@ export default function CollaborationPage() {
             {loading ? "Loading…" : "Load Sessions"}
           </button>
           <Link
-            href="/wonder-build"
+            href="/wonder-build/agent"
             className="inline-flex h-10 items-center rounded-lg border border-white/15 bg-white/5 px-4 text-sm font-semibold hover:bg-white/10"
           >
             Open Builder
@@ -121,7 +121,7 @@ export default function CollaborationPage() {
               description="Start collaborating in Wonder Build to see active user sessions here."
               cta={
                 <Link
-                  href="/wonder-build"
+                  href="/wonder-build/agent"
                   className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 px-4 text-sm font-bold"
                 >
                   Start a Collaboration Session
