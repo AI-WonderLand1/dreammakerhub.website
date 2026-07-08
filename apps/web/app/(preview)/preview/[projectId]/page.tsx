@@ -5,25 +5,18 @@ import { injectWiringRuntime } from "@/lib/wonder-build/wiringRuntime";
 export const runtime = "nodejs";
 
 /**
- * Sanitize HTML to prevent XSS attacks
- * Removes dangerous tags and attributes while keeping safe HTML
+ * Sanitize HTML to prevent XSS — strips dangerous tags/attributes while preserving safe content.
  */
 function sanitizeHtml(html: string): string {
-  // Remove script, iframe, object, embed, form, input, textarea, select tags
-  let sanitized = html.replace(/<(script|iframe|object|embed|form|input|textarea|select|link|style|meta)[^>]*>.*?<\/\1>/gis, '');
-  sanitized = sanitized.replace(/<(script|iframe|object|embed|form|input|textarea|select|link|style|meta)[^>]*\/?>/gi, '');
-  
-  // Remove event handlers (onclick, onerror, onload, etc.)
-  sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
-  sanitized = sanitized.replace(/\son\w+\s*=\s*[^\s>]*/gi, '');
-  
-  // Remove javascript: protocol
-  sanitized = sanitized.replace(/javascript\s*:/gi, '');
-  
-  // Remove data: protocol (except safe images)
-  sanitized = sanitized.replace(/data\s*:(?!image\/(?:png|jpg|jpeg|gif|svg\+xml))/gi, '');
-  
-  return sanitized;
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^>]*>/gi, '')
+    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
+    .replace(/javascript\s*:/gi, '');
 }
 
 /**
@@ -35,17 +28,12 @@ export default async function PreviewPage({
 }: {
   params: { projectId: string };
 }) {
-  // FIX: In Next.js SSR, the supabase client creator is often async.
-  // We must await the client itself before accessing .auth
   const supabaseClient = await createClient();
   
   const {
     data: { user },
   } = await supabaseClient.auth.getUser();
 
-  // ───────────────────────────────
-  //  Auth check
-  // ───────────────────────────────
   if (!user) {
     return (
       <div className="p-6 text-center text-red-500 font-medium bg-black min-h-screen">
@@ -54,15 +42,9 @@ export default async function PreviewPage({
     );
   }
 
-  // ───────────────────────────────
-  //  Fetch project files
-  // ───────────────────────────────
   const html = await readFile(params.projectId, user.id, "index.html");
   const css = await readFile(params.projectId, user.id, "styles.css");
 
-  // ───────────────────────────────
-  //  Missing HTML
-  // ───────────────────────────────
   if (!html) {
     return (
       <div className="p-6 text-yellow-400 font-medium bg-black min-h-screen">
@@ -71,9 +53,6 @@ export default async function PreviewPage({
     );
   }
 
-  // ───────────────────────────────
-  //  Render (sanitize HTML to prevent XSS)
-  // ───────────────────────────────
   const styleTag = css ? `<style>${css}</style>` : "";
   const htmlWithWiring = injectWiringRuntime(styleTag + sanitizeHtml(html));
 
@@ -88,7 +67,6 @@ export default async function PreviewPage({
         </div>
       </header>
 
-      {/* The actual project render area */}
       <div
         className="bg-white text-black min-h-screen"
         dangerouslySetInnerHTML={{ __html: htmlWithWiring }}

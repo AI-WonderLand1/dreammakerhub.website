@@ -265,7 +265,13 @@ f.get('/files/*', {
     rateLimit: { max: 60, timeWindow: '1 minute' },
   },
 }, async (request, reply) => {
-  const fileName = request.url.replace('/files/', '');
+  const fileName = request.url.replace('/files/', '').split('?')[0];
+  
+  // SECURITY: Validate path safety to prevent path traversal
+  if (!isPathSafe(USER_FILES_PATH, fileName)) {
+    return reply.status(403).send({ error: 'Forbidden' });
+  }
+  
   const fullPath = pathJoin(USER_FILES_PATH, fileName);
   
   if (!existsSync(fullPath)) {
