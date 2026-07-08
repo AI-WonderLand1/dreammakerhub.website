@@ -1,6 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
-import { readFileSync, unlinkSync } from "fs";
-import { execSync } from "child_process";
+import { createCipheriv, createDecipheriv, randomBytes, createHash, generateKeyPairSync } from "crypto";
 
 let _encryptionKey: string | null = null;
 
@@ -55,22 +53,19 @@ export function decrypt(encryptedData: string): string {
   return decrypted;
 }
 
+function formatEd25519PublicKey(pubKey: Buffer, comment: string): string {
+  const algo = "ssh-ed25519";
+  const keyBase64 = pubKey.toString('base64');
+  return `${algo} ${keyBase64} ${comment}`;
+}
+
 export function generateSSHKeyPair(comment: string): { privateKey: string; publicKey: string } {
-  const tempPath = `/tmp/wonder-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  
-  try {
-    execSync(`ssh-keygen -t ed25519 -f ${tempPath} -N "" -C "${comment}" -q`, {
-      stdio: 'pipe'
-    });
-    
-    const privateKey = readFileSync(tempPath, 'utf-8');
-    const publicKey = readFileSync(`${tempPath}.pub`, 'utf-8').trim();
-    
-    unlinkSync(tempPath);
-    unlinkSync(`${tempPath}.pub`);
-    
-    return { privateKey, publicKey };
-  } catch (error) {
-    throw new Error(`SSH key generation failed: ${error}`);
-  }
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519', {
+    publicKeyEncoding: { type: 'spki', format: 'der' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  });
+
+  const sshPubKey = formatEd25519PublicKey(publicKey, comment);
+
+  return { privateKey, publicKey: sshPubKey };
 }
