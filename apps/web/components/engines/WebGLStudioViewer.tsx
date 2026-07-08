@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { engineManager } from '@/engine/core';
+import { engineManager } from '@engine/core';
 
 interface WebGLStudioViewerProps {
   initialShader?: string;

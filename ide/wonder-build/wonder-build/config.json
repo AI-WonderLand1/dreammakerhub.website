@@ -1,0 +1,11 @@
+{
+	"version": "1.0",
+	"server": "/api/files/",
+	"resources": "/api/assets/",
+	"plugins": "",
+	"nocache": true,
+	"scene_url": "/api/scene",
+	"imports": [],
+	"hide_logo_imgs": true,
+	"base_url": ""
+}

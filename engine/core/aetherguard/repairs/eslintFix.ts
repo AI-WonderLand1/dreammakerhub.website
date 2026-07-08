@@ -1,12 +1,14 @@
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { RepairResult } from '../types';
+
+const execFileAsync = promisify(execFile);
 
 export async function runEslintFix(workspaceRoot: string): Promise<RepairResult> {
   try {
-    execSync('npx eslint . --fix', {
+    await execFileAsync('npx', ['eslint', '.', '--fix'], {
       cwd: workspaceRoot,
       timeout: 60000,
-      stdio: 'pipe',
     });
     return {
       findingId: 'eslint-fix-all',
@@ -25,10 +27,9 @@ export async function runEslintFix(workspaceRoot: string): Promise<RepairResult>
 
 export async function runPrettier(workspaceRoot: string): Promise<RepairResult> {
   try {
-    execSync('npx prettier --write .', {
+    await execFileAsync('npx', ['prettier', '--write', '.'], {
       cwd: workspaceRoot,
       timeout: 60000,
-      stdio: 'pipe',
     });
     return {
       findingId: 'prettier-fmt',

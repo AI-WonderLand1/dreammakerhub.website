@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
-import { CoderIntegration } from '@/lib/coder/integration';
+import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 
 export const dynamic = 'force-dynamic';
@@ -47,11 +47,12 @@ export async function POST(request: Request) {
   try {
     const sshKey = await getUserSSHKey(user.id, user.email || user.id);
 
-    const coder = new CoderIntegration();
-    const { workspace, ideUrl } = await coder.provisionIDEForProject(
+    const coder = new CoderAPIWrapper({
+      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
+    });
+    
+    const { workspace, ideUrl } = await coder.createWorkspaceForApp(
       user.id,
-      podName,
-      undefined,
       {
         customName: podName,
         sshPublicKey: sshKey.publicKey,
