@@ -235,16 +235,19 @@ export class CoderClient {
   // ── Agents ─────────────────────────────────────────────────
 
   async getAgent(agentId) {
-    return this.request('GET', `/workspaceagents/${agentId}`);
+    const encodedAgentId = encodeURIComponent(agentId);
+    return this.request('GET', `/workspaceagents/${encodedAgentId}`);
   }
 
   async getAgentConnection(agentId) {
-    return this.request('GET', `/workspaceagents/${agentId}/connection`);
+    const encodedAgentId = encodeURIComponent(agentId);
+    return this.request('GET', `/workspaceagents/${encodedAgentId}/connection`);
   }
 
   async getAgentLogs(agentId, options = {}) {
+    const encodedAgentId = encodeURIComponent(agentId);
     const params = buildQueryParams(options);
-    const url = `${this.coderUrl}${CODER_API_VERSION}/workspaceagents/${agentId}/logs${params}`;
+    const url = `${this.coderUrl}${CODER_API_VERSION}/workspaceagents/${encodedAgentId}/logs${params}`;
     const res = await fetch(url, {
       headers: { 'Coder-Session-Token': this.sessionToken },
       signal: AbortSignal.timeout(15000),
@@ -252,19 +255,21 @@ export class CoderClient {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new CoderError(res.status, text || 'Failed to fetch agent logs', 'GET', `/workspaceagents/${agentId}/logs`);
+      throw new CoderError(res.status, text || 'Failed to fetch agent logs', 'GET', `/workspaceagents/${encodedAgentId}/logs`);
     }
 
     return res.json();
   }
 
   async getAgentListeningPorts(agentId) {
-    return this.request('GET', `/workspaceagents/${agentId}/listening-ports`);
+    const encodedAgentId = encodeURIComponent(agentId);
+    return this.request('GET', `/workspaceagents/${encodedAgentId}/listening-ports`);
   }
 
   async getAgentContainers(agentId, label) {
+    const encodedAgentId = encodeURIComponent(agentId);
     const params = label ? `?label=${encodeURIComponent(label)}` : '';
-    return this.request('GET', `/workspaceagents/${agentId}/containers${params}`);
+    return this.request('GET', `/workspaceagents/${encodedAgentId}/containers${params}`);
   }
 
   async getAgentGitSSHKey() {
