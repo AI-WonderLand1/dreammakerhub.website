@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const sshKey = await getUserSSHKey(user.id, user.email || user.id);
 
     const coder = new CoderAPIWrapper({
-      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
+      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'http://212.2.240.19.nip.io/api/v2',
       apiKey: process.env.CODER_API_TOKEN,
     });
     

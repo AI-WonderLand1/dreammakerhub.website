@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const projectName = name || (prompt ? prompt.slice(0, 50) : `AI Build ${new Date().toLocaleDateString()}`);
 
     const coder = new CoderAPIWrapper({
-      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'https://coder-production-cde8.up.railway.app/api/v2',
+      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'http://212.2.240.19.nip.io/api/v2',
       apiKey: process.env.CODER_API_TOKEN,
     });
 
