@@ -12,3 +12,7 @@ agent/venv/
 *.tfstate.backup
 .terraform/
 .terraform.lock.hcl
+aws-aiwpnderland.pem
+.gitignore
+my-key.pem
+new-aws-key
