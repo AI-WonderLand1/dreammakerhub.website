@@ -13,5 +13,9 @@ function sanitizeHtml(html: string): string {
 }
 
 export default function TextBlock({ text }: { text: string }) {
-  return <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />;
+  return <div import { DOMPurify } from 'dom-purify';
+
+content = DOMPurify.sanitize(htmlContent);
+
+{dangerouslySetInnerHTML={{__html: content}}}={{ __html: sanitizeHtml(text) }} />;
 }
