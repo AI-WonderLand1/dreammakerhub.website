@@ -26,4 +26,4 @@ export interface ActiveEngine {
   onFrame?: (time: number) => void
 }
 
-export type EngineName = 'playcanvas' | 'webgl' | 'threejs' | 'babylon' | 'webgpu' | 'custom'
+export type EngineName = 'playcanvas' | 'webgl' | 'threejs' | 'babylon' | 'webgpu' | 'spatial' | 'custom'
