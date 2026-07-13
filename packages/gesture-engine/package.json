@@ -13,7 +13,7 @@
     "@tensorflow/tfjs": "^4"
   },
   "devDependencies": {
-    "typescript": "^5.4",
+    "typescript": "^7.0",
     "vitest": "^4.1.9",
     "@types/node": "^26.0.1"
   }
