@@ -33,5 +33,14 @@ export async function registerAllAdapters(): Promise<void> {
   } catch (e) {
     console.warn('[EngineCore] Could not register Three.js adapter');
   }
+
+  // DreamMakerHub Spatial Engine (Gaussian Splatting default) — additive only.
+  try {
+    const { SpatialAdapter } = await import('../adapters/spatial');
+    engineManager.registerAdapter(new SpatialAdapter());
+    console.log('[EngineCore] DreamMakerHub Spatial Engine adapter registered.');
+  } catch (e) {
+    console.warn('[EngineCore] Could not register Spatial Engine adapter');
+  }
 }
 

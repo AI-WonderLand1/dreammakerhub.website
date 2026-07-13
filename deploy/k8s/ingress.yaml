@@ -9,18 +9,14 @@ metadata:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
+  # Civo Kubernetes serves ONLY the Coder IDE.
+  #   - Main website (dreammakerhub.website / www / ai.) -> AWS EC2  (deploy/deploy.sh)
+  #   - 3D engine (play. / wonderplay. / playcanvas.)    -> LightningAI (proxied by AWS nginx)
+  # See deploy/README.md for the full topology.
   tls:
   - hosts:
-    - dreammakerhub.website
-    - www.dreammakerhub.website
-    secretName: wonder-web-tls
-  - hosts:
-    - play.dreammakerhub.website
-    - wonderplay.dreammakerhub.website
-    secretName: wonderplay-tls
-  - hosts:
-    - ai.dreammakerhub.website
-    secretName: ai-playground-tls
+    - ide.dreammakerhub.website
+    secretName: ide-tls
   rules:
   - host: ide.dreammakerhub.website
     http:
@@ -30,66 +26,5 @@ spec:
         backend:
           service:
             name: coder-ide
-            port:
-              number: 80
-  - host: playcanvas.dreammakerhub.website
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: playcanvas-webgl
-            port:
-              number: 80
-  - host: wonderplay.dreammakerhub.website
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: wonderplay-service
-            port:
-              number: 3090
-  - host: play.dreammakerhub.website
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: wonderplay-service
-            port:
-              number: 3090
-  - host: ai.dreammakerhub.website
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: wonder-web
-            port:
-              number: 80
-
-  - host: dreammakerhub.website
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: wonder-web
-            port:
-              number: 80
-  - host: www.dreammakerhub.website
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: wonder-web
             port:
               number: 80
