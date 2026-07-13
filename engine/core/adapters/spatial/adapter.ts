@@ -1,5 +1,4 @@
 import type { EngineAdapter, EngineConfig, EngineInstance } from '../types'
-import { AssetManager } from './assetManager'
 import { WorldLoader, type SpatialWorld } from './worldLoader'
 import { SplatRenderer } from './splatRenderer'
 import { ThreeRenderer } from './threeRenderer'
