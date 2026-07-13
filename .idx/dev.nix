@@ -5,7 +5,13 @@
     pkgs.nodePackages.pnpm
     pkgs.nano
     pkgs.git
+    pkgs.docker
+    pkgs.docker-compose
+    pkgs.openssh
+    pkgs.awscli
   ];
+  # Run the Docker daemon inside the workspace so `docker ps`, `docker logs`, etc. work
+  services.docker.enable = true;
   idx = {
     extensions = [
       "dsznajder.es7-react-js-snippets"

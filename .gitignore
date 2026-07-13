@@ -12,7 +12,17 @@ agent/venv/
 *.tfstate.backup
 .terraform/
 .terraform.lock.hcl
+
+# Private keys / credentials — never commit
+*.pem
+*.key
+*_rsa
+*_ed25519
 aws-aiwpnderland.pem
-.gitignore
 my-key.pem
 new-aws-key
+new-aws-key.pub
+mobile_oci_key*.pem
+
+# Runtime artifacts / local secret stores
+agent/data/*.db
