@@ -20,6 +20,7 @@ export class ThreeRenderer {
   private onFrame?: (time: number) => void
   private animationId = 0
   private clock = new THREE.Clock()
+  private resizeHandler?: () => void
 
   constructor(opts: {
     canvas: HTMLCanvasElement
@@ -73,6 +74,7 @@ export class ThreeRenderer {
       this.camera.updateProjectionMatrix()
       this.renderer.setSize(w, h)
     }
+    this.resizeHandler = resize
     window.addEventListener('resize', resize)
     resize()
 
@@ -130,7 +132,7 @@ export class ThreeRenderer {
 
   async destroy(): Promise<void> {
     cancelAnimationFrame(this.animationId)
-    window.removeEventListener('resize', () => {})
+    if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler)
     this.renderer?.dispose()
     this.scene?.clear()
   }
