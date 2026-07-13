@@ -10,13 +10,23 @@ export class Orchestrator {
   async generateAndSaveProject(input: Record<string, unknown>) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
+    // Phase 4: Default to spatial engine when no engine type is specified.
+    // Never overwrite an existing project's engine.
+    const buildType = (input.type as string) || 'spatial';
+    const prompt = (input.prompt as string) || (input.description as string) || '';
+
+    if (!prompt) {
+      throw new Error('Orchestrator: prompt is required but was not provided.');
+    }
+
     const runnerResponse = await fetch(`${baseUrl}/api/build/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        type: 'AGENT_BUILD',
-        payload: input,
-        agentId: 'WonderBuild-Prime',
+        type: buildType,
+        prompt,
+        save: input.save ?? false,
+        fileName: input.fileName,
       }),
     });
 

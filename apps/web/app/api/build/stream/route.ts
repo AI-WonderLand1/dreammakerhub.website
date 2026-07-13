@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 const BuildRequestSchema = z.object({
   prompt: z.string().min(1),
-  type: z.enum(["website", "game", "component", "playcanvas", "wonderspace", "3d-assets"]).default("website"),
+  type: z.enum(["website", "game", "component", "playcanvas", "wonderspace", "3d-assets", "spatial"]).default("website"),
   save: z.boolean().default(false),
   fileName: z.string().optional(),
 });
@@ -82,6 +82,23 @@ Rules:
 
 Start your output with <!DOCTYPE html>`;
 
+const SPATIAL_SYSTEM = `You are an expert spatial world designer for the DreamMakerHub Spatial Engine.
+Build a complete SpatialWorld JSON definition that can be rendered with Gaussian Splatting and Three.js.
+Rules:
+- Output a valid SpatialWorld JSON object (no markdown fences, no explanation)
+- Include a "version" field (number, use 1)
+- Include an "assets" array with at least one asset (kind: "splat", "model", or "texture")
+- Include a "nodes" array describing the scene graph (position, rotation, scale, children)
+- Include "environment" settings (background color, ground plane)
+- Include "settings" with "defaultRenderer" set to "splat" or "three"
+- Make the world visually interesting: use lights, proper camera positioning, ground grid
+- Each asset needs: id, kind, url (use placeholder URLs like "/assets/splat-1.ply")
+- Each node needs: id, type ("mesh", "light", "group"), position as [x,y,z]
+- Output ONLY the raw JSON object — no markdown fences, no explanation
+
+Format:
+{"version":1,"name":"World Name","assets":[...],"nodes":[...],"environment":{...},"settings":{...}}`;
+
 async function callAI(system: string, userPrompt: string, isPaid?: boolean): Promise<string> {
    const result = await runModel({
       model: isPaid ? "openrouter/meta-llama/llama-3.3-70b-instruct" : "openrouter/google/gemini-flash-1.5",
@@ -116,6 +133,7 @@ function getSystemPrompt(type: string): string {
     case "playcanvas": return PLAYCANVAS_SYSTEM;
     case "wonderspace": return WONDERSPACE_SYSTEM;
     case "3d-assets":  return ASSETS3D_SYSTEM;
+    case "spatial":    return SPATIAL_SYSTEM;
     default:           return WEBSITE_SYSTEM;
   }
 }
@@ -127,6 +145,7 @@ function getTypeLabel(type: string): string {
     case "playcanvas": return "PlayCanvas script";
     case "wonderspace": return "WonderSpace module";
     case "3d-assets":  return "website with 3D assets";
+    case "spatial":    return "spatial world";
     default:           return "website";
   }
 }
@@ -135,12 +154,16 @@ function getReviewerSystem(type: string): string {
   switch (type) {
     case "game":
       return "You are a senior game developer. Review this HTML5 game. Fix bugs, improve game feel, ensure all input works. Return ONLY the complete improved HTML starting with <!DOCTYPE html>.";
+    case "component":
+      return "You are a senior React UI engineer. Review this React component. Fix prop types, improve accessibility, ensure interactivity works. Return ONLY the complete improved HTML starting with <!DOCTYPE html>.";
     case "playcanvas":
       return "You are a PlayCanvas expert. Review this pc.Script. Fix any bugs, ensure proper API usage, improve performance. Return ONLY the corrected JavaScript code.";
     case "wonderspace":
       return "You are a senior TypeScript/React engineer. Review this code. Fix type errors, improve patterns, ensure it works. Return ONLY the corrected code.";
     case "3d-assets":
       return "You are a senior web developer specializing in 3D integration. Review this website with 3D assets. Fix Three.js integration, improve performance, ensure smooth animations. Return ONLY the complete improved HTML starting with <!DOCTYPE html>.";
+    case "spatial":
+      return "You are a spatial world designer. Review this SpatialWorld JSON. Fix any structural issues, ensure valid node hierarchy, verify asset references are consistent, improve the scene composition. Return ONLY the corrected SpatialWorld JSON object.";
     default:
       return "You are a senior frontend engineer. Review this HTML file. Fix issues, enhance visual quality, ensure all interactions work. Return ONLY the complete improved HTML starting with <!DOCTYPE html>.";
   }
@@ -228,7 +251,7 @@ export async function POST(req: NextRequest) {
         if (save) {
           send("agent", { stage: "runner", status: "running", label: "Runner Agent", message: "Saving to blocks directory…" });
           
-          const ext = type === "playcanvas" ? "js" : type === "wonderspace" ? "tsx" : "html";
+          const ext = type === "playcanvas" ? "js" : type === "wonderspace" ? "tsx" : type === "spatial" ? "json" : "html";
           const safeName = (fileName ?? `${type}-${Date.now()}`).replace(/[^a-z0-9-_]/gi, "-");
           const result = manifestVisualBlock(`${safeName}.${ext}`, finalCode, `AI-generated ${typeLabel} — prompt: "${prompt.slice(0, 80)}"`);
           savedPath = result.path;
