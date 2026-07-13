@@ -1,5 +1,5 @@
 // apps/web/types/db.ts
-export type EngineType = "puck" | "playcanvas" | "3d" | "unreal" | "ai";
+export type EngineType = "puck" | "playcanvas" | "3d" | "unreal" | "ai" | "spatial";
 
 export interface Profile {
   id: string;

@@ -4,7 +4,7 @@
  * PlayCanvas 3D, WebGL Shaders, Puck UI
  */
 
-export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia';
+export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia' | 'spatial';
 
 export interface RunnerContext {
   projectId: string;
