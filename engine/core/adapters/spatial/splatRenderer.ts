@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import type { AssetManager } from './assetManager'
 import type { SpatialWorld } from './worldLoader'
 
@@ -47,10 +46,9 @@ export class SplatRenderer {
       'ignoreDevicePixelRatio': false,
       'gpuAcceleratedSort': true,
     })
-
-    // Apply environment background if provided (best-effort; Viewer manages its own scene).
-    const bg = this.world.environment?.background
-    if (bg && viewer.setBackground) viewer.setBackground(new THREE.Color(bg).getHex())
+    // Assign immediately so a failure during scene loading still disposes the
+    // Viewer (and its appended canvas) when the adapter falls back to Three.js.
+    this.viewer = viewer
 
     for (const splat of splats) {
       await viewer.addSplatScene(this.assets.resolveUrl(splat.id), {
@@ -74,7 +72,6 @@ export class SplatRenderer {
     }
 
     await viewer.start()
-    this.viewer = viewer
 
     const context = (viewer.renderer?.getContext?.() ??
       this.canvas.getContext('webgl2') ??
