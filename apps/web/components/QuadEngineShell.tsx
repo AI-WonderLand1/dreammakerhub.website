@@ -29,7 +29,12 @@ const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), {
   loading: () => <EngineLoader engine="Puck" />,
 });
 
-type EngineType = 'playcanvas' | 'webgl' | 'puck';
+const SpatialEngine = dynamic(() => import('./engines/SpatialEngine'), {
+  ssr: false,
+  loading: () => <EngineLoader engine="Spatial" />,
+});
+
+type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'spatial';
 
 interface EngineConfig {
   id: EngineType;
@@ -40,6 +45,13 @@ interface EngineConfig {
 }
 
 const ENGINES: EngineConfig[] = [
+  {
+    id: 'spatial',
+    label: 'Spatial Engine',
+    color: '#00e5ff',
+    icon: '🌌',
+    component: SpatialEngine,
+  },
   {
     id: 'playcanvas',
     label: 'PlayCanvas 3D',
@@ -75,13 +87,14 @@ function EngineLoader({ engine }: { engine: string }) {
 }
 
 export function QuadEngineShell() {
-  const [activeEngine, setActiveEngine] = useState<EngineType>('playcanvas');
+  const [activeEngine, setActiveEngine] = useState<EngineType>('spatial');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [storageMode, setStorageMode] = useState<'supabase' | 'byoc' | 'hybrid'>('supabase');
   const [engineStates, setEngineStates] = useState<Record<EngineType, any>>({
     playcanvas: null,
     webgl: null,
     puck: null,
+    spatial: null,
   });
   const [isInitializing, setIsInitializing] = useState(false);
 
