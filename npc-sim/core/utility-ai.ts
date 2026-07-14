@@ -1,5 +1,4 @@
-import type { NpcState, ActionType, DecidedAction, SimEvent } from './types';
-import { decideAction } from './utility-ai';
+import type { NpcState, ActionType, DecidedAction } from './types';
 
 const CANDIDATE_ACTIONS: ActionType[] = ['eat', 'socialize', 'rest', 'work', 'flee'];
 
