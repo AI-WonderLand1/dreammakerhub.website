@@ -1,14 +1,16 @@
 module.exports = {
   apps: [{
-    name: 'wonderspace-web',
-    cwd: '/home/b116197696/psychic-octo-fishstick/apps/web',
+    name: 'dreammaker-web',
+    cwd: '/home/user/dreammakerhub.website/apps/web',
     script: 'npx',
-    args: 'next start --webpack -p 5000',
+    args: 'next start -p ${PORT:-5000} -H 0.0.0.0',
     interpreter: 'none',
     env: {
       NODE_ENV: 'production',
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     },
+    max_memory_restart: '1G',
+    instances: 1,
+    autorestart: true,
+    watch: false,
   }]
 };

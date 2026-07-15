@@ -8,6 +8,7 @@ agent/venv/
 .env
 .env.*
 !.env.example
+apps/web/.env.production
 *.tfstate
 *.tfstate.backup
 .terraform/
