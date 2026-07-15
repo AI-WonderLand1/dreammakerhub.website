@@ -116,12 +116,21 @@ export async function GET(req: NextRequest) {
     },
   });
 
+  const allowedOrigins = [
+    "https://playground.dreammakerhub.website",
+    "https://dreammakerhub.website",
+    "http://localhost:3000",
+    "http://localhost:3001",
+  ];
+  const origin = req.headers.get("origin") || "";
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": corsOrigin,
     },
   });
 }
