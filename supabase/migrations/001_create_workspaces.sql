@@ -21,7 +21,7 @@ CREATE POLICY "Users can view their workspaces" ON workspaces
   FOR SELECT USING (auth.uid()::text = owner_id OR owner_id IS NULL);
 
 CREATE POLICY "Users can create workspaces" ON workspaces
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.uid()::text = owner_id OR owner_id IS NULL);
 
 CREATE POLICY "Users can update their workspaces" ON workspaces
   FOR UPDATE USING (auth.uid()::text = owner_id);

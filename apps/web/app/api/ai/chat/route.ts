@@ -66,8 +66,6 @@ const AGENTS = {
   "openrouter-general": { id: "google/gemini-flash-1.5", provider: "openrouter" },
 };
 
-const planForRequest = (req: NextRequest) => req.headers.get("x-plan") || "free";
-
 export async function POST(req: NextRequest) {
   const traceId = crypto.randomUUID();
 
@@ -99,8 +97,6 @@ export async function POST(req: NextRequest) {
     const persona = getPersonaPrompt(personaId);
     const lawPrompt = buildLawPrompt();
 
-    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}${memoryContext}`;
-
     const systemInstructions: string[] = [
       "AI LAWS (HIGHEST PRIORITY - ALWAYS FOLLOW):",
       lawPrompt,
@@ -112,10 +108,6 @@ export async function POST(req: NextRequest) {
       systemInstructions.push(`LANGUAGE REQUIREMENT: Respond in ${lang?.name || 'English'} and maintain that language.`);
     }
 
-    if (detectedProgLang) {
-      enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
-    }
-
     if (outputFormat === "puck") {
       const componentsList = existingComponents?.map(c => c.type).join(", ") || "none";
       systemInstructions.push(
@@ -124,11 +116,6 @@ export async function POST(req: NextRequest) {
         `Respond with the component names you would use and describe their properties.`
       );
     }
-
-    const config = getConfessionConfig(plan, isMem0Enabled());
-    const useLLMExtraction = config.mode === "paid" && config.enableMem0;
-
-    const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
     // ── Retrieve relevant past memories ──
     let memoryContext = "";
@@ -141,6 +128,18 @@ export async function POST(req: NextRequest) {
     } catch {
       // mem0 not configured – skip
     }
+
+    let enhancedPrompt = `${persona.prompt}\n\nAI LAWS:\n${lawPrompt}\n\n${prompt}${memoryContext}`;
+
+    if (detectedProgLang) {
+      enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
+    }
+
+    const plan = req.headers.get("x-plan") || "free";
+    const config = getConfessionConfig(plan, isMem0Enabled());
+    const useLLMExtraction = config.mode === "paid" && config.enableMem0;
+
+    const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
     const pipelineResult = await runAIPipeline({
       operationId: traceId,

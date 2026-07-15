@@ -1,9 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getProjectSSHKey } from "@/lib/workspace/provisioner";
+import { requirePaidAIUser } from "@/app/api/ai/auth";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const authResult = await requirePaidAIUser(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   const { searchParams } = new URL(request.url);
   const environmentId = searchParams.get('id');
   
@@ -11,7 +15,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Environment ID required' }, { status: 400 });
   }
 
-  // TODO: Add authentication check - ensure user owns this environment
   const privateKey = await getProjectSSHKey(environmentId);
   
   if (!privateKey) {

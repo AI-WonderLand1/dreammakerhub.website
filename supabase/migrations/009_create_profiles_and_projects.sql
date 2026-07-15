@@ -175,8 +175,8 @@ CREATE POLICY "Users can create tickets" ON support_tickets
 ALTER TABLE client_error_logs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can insert error logs" ON client_error_logs;
-CREATE POLICY "Anyone can insert error logs" ON client_error_logs
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authenticated users can insert error logs" ON client_error_logs
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "Users can view own error logs" ON client_error_logs;
 CREATE POLICY "Users can view own error logs" ON client_error_logs
