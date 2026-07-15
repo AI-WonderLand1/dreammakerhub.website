@@ -93,6 +93,23 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = await createSupabaseServerClient();
+
+    const apiKey = req.headers.get("x-sync-key") || req.headers.get("authorization")?.replace("Bearer ", "");
+    if (!apiKey) {
+      return NextResponse.json({ ok: false, error: "Missing sync key", traceId }, { status: 401 });
+    }
+
+    const { data: validKey } = await supabase
+      .from("sync_keys")
+      .select("id")
+      .eq("key", apiKey)
+      .eq("active", true)
+      .single();
+
+    if (!validKey) {
+      return NextResponse.json({ ok: false, error: "Invalid sync key", traceId }, { status: 401 });
+    }
+
     const userId = req.nextUrl.searchParams.get("userId");
 
     if (!userId) {
