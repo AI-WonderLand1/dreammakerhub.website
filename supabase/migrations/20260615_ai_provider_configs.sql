@@ -23,25 +23,25 @@ DROP POLICY IF EXISTS "ai_provider_configs_select_own" ON public.ai_provider_con
 CREATE POLICY "ai_provider_configs_select_own"
   ON public.ai_provider_configs
   FOR SELECT
-  USING (auth.uid() IS NOT NULL);
+  USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "ai_provider_configs_insert_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_insert_own"
   ON public.ai_provider_configs
   FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL);
+  WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "ai_provider_configs_update_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_update_own"
   ON public.ai_provider_configs
   FOR UPDATE
-  USING (auth.uid() IS NOT NULL);
+  USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "ai_provider_configs_delete_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_delete_own"
   ON public.ai_provider_configs
   FOR DELETE
-  USING (auth.uid() IS NOT NULL);
+  USING (auth.uid() = user_id);
 
 CREATE INDEX IF NOT EXISTS ai_provider_configs_user_provider_idx ON public.ai_provider_configs(user_id, provider);
 CREATE INDEX IF NOT EXISTS ai_provider_configs_active_idx ON public.ai_provider_configs(user_id) WHERE is_active;

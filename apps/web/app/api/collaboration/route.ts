@@ -10,6 +10,11 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const { data, error } = await supabase
     .from('collaboration_sessions')
@@ -25,14 +30,20 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { projectId, userId, cursorPosition } = await req.json()
+  const { projectId, cursorPosition } = await req.json()
+
   const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const { error } = await supabase
     .from('collaboration_sessions')
     .upsert({
       project_id: projectId,
-      user_id: userId,
+      user_id: user.id,
       cursor_position: cursorPosition,
       is_active: true,
       last_seen: new Date().toISOString(),

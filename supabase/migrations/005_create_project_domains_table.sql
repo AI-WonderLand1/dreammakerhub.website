@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS project_domains (
   project_id TEXT NOT NULL,
   publish_id TEXT NOT NULL,
   custom_domain TEXT NOT NULL UNIQUE,
+  verification_token TEXT NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
   is_active BOOLEAN NOT NULL DEFAULT true,
   verified_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -46,7 +47,7 @@ CREATE POLICY "Public can view active verified domains"
   ON project_domains FOR SELECT 
   USING (is_active = true AND verified_at IS NOT NULL);
 
--- Function to verify domain ownership (simplified - in production you'd want DNS verification)
+-- Function to verify domain ownership via verification_token
 CREATE OR REPLACE FUNCTION verify_project_domain(
   domain_id UUID,
   verification_token TEXT
@@ -54,17 +55,25 @@ CREATE OR REPLACE FUNCTION verify_project_domain(
 DECLARE
   domain_record RECORD;
 BEGIN
-  -- In production, you would:
-  -- 1. Check DNS records for verification_token
-  -- 2. Make HTTP request to verify TXT record
-  -- For now, we'll simulate successful verification
-  UPDATE project_domains
-  SET verified_at = NOW(),
-      updated_at = NOW()
+  SELECT id, verification_token INTO domain_record
+  FROM project_domains
   WHERE id = domain_id
     AND is_active = true
     AND verified_at IS NULL;
-  
-  RETURN FOUND;
+
+  IF NOT FOUND THEN
+    RETURN FALSE;
+  END IF;
+
+  IF domain_record.verification_token IS DISTINCT FROM verification_token THEN
+    RAISE EXCEPTION 'Invalid verification token';
+  END IF;
+
+  UPDATE project_domains
+  SET verified_at = NOW(),
+      updated_at = NOW()
+  WHERE id = domain_id;
+
+  RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
