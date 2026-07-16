@@ -15,7 +15,7 @@ import {
   ShoppingBag, ShoppingCart, Briefcase, Calendar, FileText,
   AlertCircle, Info, HelpCircle, XCircle, CheckCircle,
   Eye, EyeOff, Copy, Trash2, Plus, Settings, Lock,
-  Unlock, Download, Upload, RefreshCw, Zap, Heart,
+  Unlock, Download, Upload, RefreshCw, Zap, Heart, BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
