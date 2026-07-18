@@ -25,6 +25,11 @@ export default function HomePage() {
       <header className="border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-[var(--accent)]">Spatial Platform</h1>
         <div className="flex items-center gap-4">
+          {user.role === 'admin' && (
+            <a href="/admin" className="text-sm px-3 py-1.5 rounded bg-[var(--muted)] hover:text-[var(--accent)] transition-colors">
+              Admin
+            </a>
+          )}
           <span className="text-sm text-[var(--foreground)]">{user.username}</span>
           <button
             onClick={logout}

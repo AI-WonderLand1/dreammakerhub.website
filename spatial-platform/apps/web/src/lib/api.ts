@@ -77,4 +77,60 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<{ user: Record<string, unknown>; token: string }>('POST', '/api/auth/login', data),
   me: () => request<Record<string, unknown>>('GET', '/api/auth/me'),
+
+  // Admin
+  admin: {
+    stats: () => request<Record<string, number>>('GET', '/api/admin/stats'),
+
+    users: (params?: { page?: number; pageSize?: number; search?: string }) => {
+      const sp = new URLSearchParams()
+      if (params?.page) sp.set('page', String(params.page))
+      if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
+      if (params?.search) sp.set('search', params.search)
+      const qs = sp.toString()
+      return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
+        'GET', `/api/admin/users${qs ? `?${qs}` : ''}`
+      )
+    },
+
+    updateUser: (id: string, data: { role?: string }) =>
+      request<Record<string, unknown>>('PATCH', `/api/admin/users/${id}`, data),
+
+    assets: (params?: { page?: number; pageSize?: number; type?: string }) => {
+      const sp = new URLSearchParams()
+      if (params?.page) sp.set('page', String(params.page))
+      if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
+      if (params?.type) sp.set('type', params.type)
+      const qs = sp.toString()
+      return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
+        'GET', `/api/admin/assets${qs ? `?${qs}` : ''}`
+      )
+    },
+
+    deleteAsset: (id: string) => request<void>('DELETE', `/api/admin/assets/${id}`),
+
+    worlds: (params?: { page?: number; pageSize?: number }) => {
+      const sp = new URLSearchParams()
+      if (params?.page) sp.set('page', String(params.page))
+      if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
+      const qs = sp.toString()
+      return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
+        'GET', `/api/admin/worlds${qs ? `?${qs}` : ''}`
+      )
+    },
+
+    deleteWorld: (id: string) => request<void>('DELETE', `/api/admin/worlds/${id}`),
+
+    listings: (params?: { page?: number; pageSize?: number }) => {
+      const sp = new URLSearchParams()
+      if (params?.page) sp.set('page', String(params.page))
+      if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
+      const qs = sp.toString()
+      return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
+        'GET', `/api/admin/listings${qs ? `?${qs}` : ''}`
+      )
+    },
+
+    deleteListing: (id: string) => request<void>('DELETE', `/api/admin/listings/${id}`),
+  },
 }
