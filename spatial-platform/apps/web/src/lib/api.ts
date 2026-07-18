@@ -159,5 +159,25 @@ export const api = {
         'GET', `/api/admin/logs${qs ? `?${qs}` : ''}`
       )
     },
+
+    applications: (params?: { page?: number; pageSize?: number; status?: string }) => {
+      const sp = new URLSearchParams()
+      if (params?.page) sp.set('page', String(params.page))
+      if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
+      if (params?.status) sp.set('status', params.status)
+      const qs = sp.toString()
+      return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
+        'GET', `/api/admin/applications${qs ? `?${qs}` : ''}`
+      )
+    },
+
+    updateApplication: (id: string, data: { status: string }) =>
+      request<Record<string, unknown>>('PATCH', `/api/admin/applications/${id}`, data),
+  },
+
+  // Careers
+  careers: {
+    apply: (data: { name: string; email: string; position: string; portfolioUrl?: string; message?: string }) =>
+      request<Record<string, unknown>>('POST', '/api/careers/apply', data),
   },
 }
