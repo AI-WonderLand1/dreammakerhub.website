@@ -137,6 +137,28 @@ CREATE INDEX IF NOT EXISTS idx_purchases_buyer ON purchases(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_npcs_world ON npcs(world_id);
 CREATE INDEX IF NOT EXISTS idx_videos_user ON videos(user_id);
 CREATE INDEX IF NOT EXISTS idx_plugins_engine ON plugins(engine);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id TEXT PRIMARY KEY,
+  actor_id TEXT NOT NULL REFERENCES users(id),
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  metadata JSONB DEFAULT '{}',
+  ip_address TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_by TEXT REFERENCES users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
 `
 
 export async function runMigrations(): Promise<void> {
