@@ -63,6 +63,13 @@ export default function HomePage() {
             <h2 className="text-lg font-semibold mb-2">Studio</h2>
             <p className="text-sm text-gray-400">Build worlds with Babylon.js</p>
           </a>
+          <a
+            href="/careers"
+            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
+          >
+            <h2 className="text-lg font-semibold mb-2">Careers</h2>
+            <p className="text-sm text-gray-400">Join the team</p>
+          </a>
         </div>
       </main>
     </div>

@@ -18,6 +18,7 @@ import { aiNPCRoutes } from './routes/ai-npc.js'
 import { streamingRoutes } from './routes/streaming.js'
 import { pluginRoutes } from './routes/plugins.js'
 import { adminRoutes } from './routes/admin.js'
+import { careerRoutes } from './routes/careers.js'
 
 const app = Fastify({
   logger: config.nodeEnv === 'development',
@@ -60,6 +61,7 @@ async function start(): Promise<void> {
   await app.register(streamingRoutes)
   await app.register(pluginRoutes)
   await app.register(adminRoutes)
+  await app.register(careerRoutes)
 
   // Health
   app.get('/api/health', async () => {

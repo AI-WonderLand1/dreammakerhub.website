@@ -387,4 +387,70 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       pageSize,
     }
   })
+
+  app.get('/api/admin/applications', { preHandler: [requireAdmin] }, async (req) => {
+    const q = req.query as { page?: string; pageSize?: string; status?: string }
+    const page = parseInt(q.page ?? '1', 10)
+    const pageSize = parseInt(q.pageSize ?? '20', 10)
+    const offset = (page - 1) * pageSize
+
+    let sql = 'SELECT * FROM job_applications WHERE 1=1'
+    const params: unknown[] = []
+    let idx = 1
+
+    if (q.status) {
+      sql += ` AND status = $${idx}`
+      params.push(q.status)
+      idx++
+    }
+
+    sql += ` ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`
+    params.push(pageSize, offset)
+
+    const apps = await query<Record<string, unknown>>(sql, params)
+    const total = await queryOne<{ count: string }>('SELECT COUNT(*) as count FROM job_applications')
+
+    return {
+      data: apps.map(a => ({
+        id: a.id,
+        name: a.name,
+        email: a.email,
+        position: a.position,
+        portfolioUrl: a.portfolio_url,
+        message: a.message,
+        resumeUrl: a.resume_url,
+        status: a.status,
+        createdAt: a.created_at,
+      })),
+      total: parseInt(total?.count ?? '0', 10),
+      page,
+      pageSize,
+    }
+  })
+
+  app.patch<{ Params: { id: string }; Body: { status: string } }>('/api/admin/applications/:id', {
+    preHandler: [requireAdmin],
+  }, async (req, reply) => {
+    const { id } = req.params
+    const { status } = req.body
+    if (!['new', 'reviewed', 'contacted', 'rejected', 'accepted'].includes(status)) {
+      return reply.status(400).send({ error: 'Invalid status' })
+    }
+    const updated = await queryOne(
+      `UPDATE job_applications SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, id]
+    )
+    if (!updated) return reply.status(404).send({ error: 'Application not found' })
+    return {
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      position: updated.position,
+      portfolioUrl: updated.portfolio_url,
+      message: updated.message,
+      resumeUrl: updated.resume_url,
+      status: updated.status,
+      createdAt: updated.created_at,
+    }
+  })
 }

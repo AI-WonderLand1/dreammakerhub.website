@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/admin/worlds', label: 'Worlds', icon: '🌍' },
   { href: '/admin/assets', label: 'Assets', icon: '📦' },
   { href: '/admin/listings', label: 'Listings', icon: '🏪' },
+  { href: '/admin/applications', label: 'Applications', icon: '📄' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙' },
   { href: '/admin/logs', label: 'Audit Logs', icon: '📋' },
 ]
