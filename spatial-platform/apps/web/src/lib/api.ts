@@ -82,16 +82,24 @@ export const api = {
   admin: {
     stats: () => request<Record<string, number>>('GET', '/api/admin/stats'),
 
-    users: (params?: { page?: number; pageSize?: number; search?: string }) => {
+    statsTimeline: () => request<{ usersByDay: { date: string; count: string }[]; worldsByDay: { date: string; count: string }[] }>(
+      'GET', '/api/admin/stats/timeline'
+    ),
+
+    users: (params?: { page?: number; pageSize?: number; search?: string; role?: string }) => {
       const sp = new URLSearchParams()
       if (params?.page) sp.set('page', String(params.page))
       if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
       if (params?.search) sp.set('search', params.search)
+      if (params?.role) sp.set('role', params.role)
       const qs = sp.toString()
       return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
         'GET', `/api/admin/users${qs ? `?${qs}` : ''}`
       )
     },
+
+    user: (id: string) =>
+      request<Record<string, unknown>>('GET', `/api/admin/users/${id}`),
 
     updateUser: (id: string, data: { role?: string }) =>
       request<Record<string, unknown>>('PATCH', `/api/admin/users/${id}`, data),
@@ -132,5 +140,24 @@ export const api = {
     },
 
     deleteListing: (id: string) => request<void>('DELETE', `/api/admin/listings/${id}`),
+
+    settings: {
+      list: () => request<{ data: { key: string; value: Record<string, unknown>; updatedAt: string; updatedBy: string | null }[] }>(
+        'GET', '/api/admin/settings'
+      ),
+      update: (key: string, value: Record<string, unknown>) =>
+        request<{ key: string; value: Record<string, unknown> }>('PUT', '/api/admin/settings', { key, value }),
+    },
+
+    logs: (params?: { page?: number; pageSize?: number; action?: string }) => {
+      const sp = new URLSearchParams()
+      if (params?.page) sp.set('page', String(params.page))
+      if (params?.pageSize) sp.set('pageSize', String(params.pageSize))
+      if (params?.action) sp.set('action', params.action)
+      const qs = sp.toString()
+      return request<{ data: Record<string, unknown>[]; total: number; page: number; pageSize: number }>(
+        'GET', `/api/admin/logs${qs ? `?${qs}` : ''}`
+      )
+    },
   },
 }
