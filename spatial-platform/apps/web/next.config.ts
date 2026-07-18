@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     '@spatial/marketplace',
     '@spatial/multiplayer',
     '@spatial/video-streaming',
+    '@dreammakerhub/gesture-engine',
   ],
   experimental: {
     serverActions: {

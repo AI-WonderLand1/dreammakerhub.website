@@ -24,6 +24,7 @@
     "@spatial/marketplace": "workspace:*",
     "@spatial/multiplayer": "workspace:*",
     "@spatial/video-streaming": "workspace:*",
+    "@dreammakerhub/gesture-engine": "workspace:*",
     "clsx": "^2.1.0",
     "lucide-react": "^0.460.0"
   },
