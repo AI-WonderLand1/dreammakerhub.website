@@ -43,6 +43,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     const token = app.jwt.sign({ id: user!.id, username: user!.username })
 
+    reply.setCookie('spatial_token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+    })
+
     return reply.status(201).send({
       user: { id: user!.id, username: user!.username, email: user!.email },
       token,
@@ -72,6 +79,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const token = app.jwt.sign({ id: user.id, username: user.username })
+
+    reply.setCookie('spatial_token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+    })
 
     return reply.send({
       user: { id: user.id, username: user.username, email: user.email, role: user.role },
