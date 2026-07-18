@@ -111,10 +111,12 @@ export class HookSystem {
     return this.register(manifest, handlers, baseUrl, token)
   }
 
-  clear(): void {
+  async clear(): Promise<void> {
+    const results = []
     for (const instance of this.plugins.values()) {
-      instance.deactivate()
+      results.push(instance.deactivate().catch(() => {}))
     }
+    await Promise.allSettled(results)
     this.plugins.clear()
     for (const [, set] of this.registry) {
       set.clear()

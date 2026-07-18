@@ -36,10 +36,11 @@ export async function streamingRoutes(app: FastifyInstance): Promise<void> {
     const data = await req.file()
     if (!data) return reply.status(400).send({ error: 'No chunk provided' })
 
-    const uploadId = String(data.fields.uploadId ?? 'unknown')
-    const chunkIndex = String(data.fields.chunkIndex ?? '0')
-    const totalChunks = String(data.fields.totalChunks ?? '1')
-    const filename = String(data.fields.filename ?? 'video.mp4')
+    const rawUploadId = String(data.fields.uploadId?.value ?? 'unknown')
+    const uploadId = rawUploadId.replace(/[^a-zA-Z0-9_-]/g, '')
+    const chunkIndex = String(data.fields.chunkIndex?.value ?? '0')
+    const totalChunks = String(data.fields.totalChunks?.value ?? '1')
+    const filename = String(data.fields.filename?.value ?? 'video.mp4')
 
     const chunkDir = path.join(UPLOAD_DIR, 'chunks', uploadId)
     await fs.mkdir(chunkDir, { recursive: true })
@@ -56,9 +57,15 @@ export async function streamingRoutes(app: FastifyInstance): Promise<void> {
   }, async (req, reply) => {
     const { id: userId } = req.user as { id: string }
     const { uploadId, filename } = req.body as { uploadId: string; filename: string }
+    const safeId = uploadId.replace(/[^a-zA-Z0-9_-]/g, '')
 
-    const chunkDir = path.join(UPLOAD_DIR, 'chunks', uploadId)
-    const files = await fs.readdir(chunkDir)
+    const chunkDir = path.join(UPLOAD_DIR, 'chunks', safeId)
+    let files: string[]
+    try {
+      files = await fs.readdir(chunkDir)
+    } catch {
+      return reply.status(400).send({ error: 'No chunks found for this upload. Did you upload any chunks?' })
+    }
     files.sort((a, b) => {
       const ai = parseInt(a.split('_')[1], 10)
       const bi = parseInt(b.split('_')[1], 10)

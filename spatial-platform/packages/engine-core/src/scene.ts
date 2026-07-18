@@ -1,5 +1,5 @@
 import { Scene } from '@babylonjs/core/scene'
-import { Color4 } from '@babylonjs/core/Maths/math.color'
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
@@ -27,7 +27,7 @@ export class SceneManager {
   addGround(width = 50, height = 50): void {
     const ground = MeshBuilder.CreateGround('ground', { width, height }, this.scene)
     const mat = new StandardMaterial('groundMat', this.scene)
-    mat.diffuseColor = new Color4(0.2, 0.2, 0.25)
+    mat.diffuseColor = new Color3(0.2, 0.2, 0.25)
     mat.backFaceCulling = false
     ground.material = mat
     ground.receiveShadows = true
@@ -42,11 +42,11 @@ export class SceneManager {
     if (sky?.cubemapUrl) {
       mat.reflectionTexture = new Texture(sky.cubemapUrl, this.scene)
       mat.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE
-      mat.diffuseColor = new Color4(0, 0, 0)
-      mat.specularColor = new Color4(0, 0, 0)
+      mat.diffuseColor = new Color3(0, 0, 0)
+      mat.specularColor = new Color3(0, 0, 0)
     } else {
       const c = sky?.color ?? [0.4, 0.6, 0.9]
-      mat.diffuseColor = new Color4(c[0], c[1], c[2])
+      mat.diffuseColor = new Color3(c[0], c[1], c[2])
     }
     box.infiniteDistance = true
     this.meshes.set('skybox', box)
@@ -82,11 +82,11 @@ export class SceneManager {
 
   private applyMaterial(mesh: Mesh, props: MaterialProps): void {
     const mat = new StandardMaterial(`mat_${mesh.id}`, this.scene)
-    mat.diffuseColor = new Color4(props.color[0], props.color[1], props.color[2])
+    mat.diffuseColor = new Color3(props.color[0], props.color[1], props.color[2])
     mat.metallic = props.metallic
     mat.roughness = props.roughness
     if (props.emissive) {
-      mat.emissiveColor = new Color4(props.emissive[0], props.emissive[1], props.emissive[2])
+      mat.emissiveColor = new Color3(props.emissive[0], props.emissive[1], props.emissive[2])
     }
     mat.alpha = props.opacity
     mesh.material = mat

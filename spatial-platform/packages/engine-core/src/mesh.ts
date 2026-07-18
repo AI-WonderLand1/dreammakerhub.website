@@ -1,6 +1,6 @@
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
-import { Color4 } from '@babylonjs/core/Maths/math.color'
+import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { Scene } from '@babylonjs/core/scene'
@@ -41,7 +41,7 @@ export function createMesh(obj: SceneObject, scene: Scene): Mesh {
 
   if (obj.material) {
     const mat = new StandardMaterial(`mat_${obj.id}`, scene)
-    mat.diffuseColor = new Color4(
+    mat.diffuseColor = new Color3(
       obj.material.color[0],
       obj.material.color[1],
       obj.material.color[2]
@@ -49,7 +49,7 @@ export function createMesh(obj: SceneObject, scene: Scene): Mesh {
     mat.metallic = obj.material.metallic
     mat.roughness = obj.material.roughness
     if (obj.material.emissive) {
-      mat.emissiveColor = new Color4(
+      mat.emissiveColor = new Color3(
         obj.material.emissive[0],
         obj.material.emissive[1],
         obj.material.emissive[2]

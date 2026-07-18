@@ -29,6 +29,11 @@ export class NPCBrain {
     this.memory = new NPCMemory(config.memorySize)
   }
 
+  setApiKey(key: string): void {
+    this.llm.setApiKey(key)
+    this.config.llm.apiKey = key
+  }
+
   async think(
     perception: string,
     nearbyPlayers: string[],

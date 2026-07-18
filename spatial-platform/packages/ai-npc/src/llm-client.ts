@@ -35,6 +35,10 @@ export class LLMClient {
     this.config = config
   }
 
+  setApiKey(key: string): void {
+    this.config.apiKey = key
+  }
+
   async chat(messages: LLMMessage[], maxTokens = 512): Promise<LLMResponse> {
     const baseUrl = this.config.baseUrl ?? PROVIDER_URLS[this.config.provider]
     const url = `${baseUrl}/chat/completions`

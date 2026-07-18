@@ -77,9 +77,7 @@ export class SpatialNPC {
   }
 
   setApiKey(key: string): void {
-    const cfg = this.brain.configData
-    cfg.llm.apiKey = key
-    this.brain = new NPCBrain(cfg)
+    this.brain.setApiKey(key)
   }
 
   async tick(
