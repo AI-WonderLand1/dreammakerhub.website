@@ -39,7 +39,7 @@ IDE templates are located in `infra/coder/templates/`:
 
 - `node-ide/main.tf` — Node.js/JavaScript IDE template
 - `python-ide/main.tf` — Python IDE template
-- `playcanvas-3d/main.tf` — PlayCanvas 3D editor template (deployed to LightningAI)
+- `playcanvas-3d/main.tf` — PlayCanvas 3D editor template
 
 ## Secrets
 
