@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { FastifyInstance } from 'fastify'
 import type { WebSocket } from 'ws'
 
@@ -28,7 +29,7 @@ export async function multiplayerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/ws/room/:worldId', { websocket: true }, (socket, req) => {
     const { worldId } = req.params as { worldId: string }
     const url = new URL(req.url, `http://${req.headers.host}`)
-    const userId = url.searchParams.get('userId') ?? crypto.randomUUID()
+    const userId = url.searchParams.get('userId') ?? randomUUID()
     const username = url.searchParams.get('username') ?? 'Anonymous'
 
     const room = getOrCreateRoom(worldId)

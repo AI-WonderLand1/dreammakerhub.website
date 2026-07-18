@@ -37,7 +37,7 @@ export async function worldRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/worlds', async (req) => {
-    const query_params = req.query as { page?: string; pageSize?: string }
+    const queryParams = req.query as { page?: string; pageSize?: string }
     const page = parseInt(query_params.page ?? '1', 10)
     const pageSize = parseInt(query_params.pageSize ?? '20', 10)
     const offset = (page - 1) * pageSize
@@ -80,7 +80,19 @@ export async function worldRoutes(app: FastifyInstance): Promise<void> {
     if (!world) {
       return reply.status(404).send({ error: 'World not found' })
     }
-    return world
+    return {
+      id: world.id,
+      name: world.name,
+      description: world.description,
+      ownerId: world.owner_id,
+      organizationId: world.organization_id,
+      visibility: world.visibility,
+      thumbnailUrl: world.thumbnail_url,
+      sceneData: world.scene_data,
+      settings: world.settings,
+      createdAt: world.created_at,
+      updatedAt: world.updated_at,
+    }
   })
 
   app.put<{ Params: { id: string }; Body: UpdateWorldBody }>('/api/worlds/:id', {
@@ -114,11 +126,24 @@ export async function worldRoutes(app: FastifyInstance): Promise<void> {
     updates.push(`updated_at = NOW()`)
     values.push(req.params.id)
 
-    const updated = await queryOne(
+    const updated = await queryOne<Record<string, unknown>>(
       `UPDATE worlds SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
       values
     )
-    return updated
+    if (!updated) return reply.status(404).send({ error: 'World not found' })
+    return {
+      id: updated.id,
+      name: updated.name,
+      description: updated.description,
+      ownerId: updated.owner_id,
+      organizationId: updated.organization_id,
+      visibility: updated.visibility,
+      thumbnailUrl: updated.thumbnail_url,
+      sceneData: updated.scene_data,
+      settings: updated.settings,
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at,
+    }
   })
 
   app.delete<{ Params: { id: string } }>('/api/worlds/:id', {

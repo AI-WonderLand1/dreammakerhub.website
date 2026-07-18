@@ -19,7 +19,8 @@
   "dependencies": {
     "@babylonjs/core": "^7.50.0",
     "@babylonjs/materials": "^7.50.0",
-    "@babylonjs/loaders": "^7.50.0"
+    "@babylonjs/loaders": "^7.50.0",
+    "@spatial/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

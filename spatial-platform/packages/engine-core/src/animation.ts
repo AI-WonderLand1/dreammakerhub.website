@@ -91,15 +91,11 @@ export function playClip(
   fps = 30,
   speed = 1
 ): Animation {
-  const animType = clip.property.includes('rotation')
-    ? Animation.ANIMATIONTYPE_VECTOR3
-    : Animation.ANIMATIONTYPE_VECTOR3
-
   const anim = new Animation(
     clip.name,
     clip.property,
     fps,
-    animType,
+    Animation.ANIMATIONTYPE_VECTOR3,
     clip.loopMode ?? Animation.ANIMATIONLOOPMODE_CYCLE
   )
   const keys = clip.frames.map(f => ({

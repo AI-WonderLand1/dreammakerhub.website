@@ -72,12 +72,16 @@ export async function aiNPCRoutes(app: FastifyInstance): Promise<void> {
     const values: unknown[] = []
     let idx = 1
 
-    const fields = ['name', 'personality', 'system_prompt', 'llm_provider', 'llm_model',
-      'memory_size', 'interaction_radius', 'voice_enabled', 'model_url']
-    for (const field of fields) {
-      if (body[field] !== undefined) {
-        updates.push(`${field} = $${idx++}`)
-        values.push(body[field])
+    const fieldMap: Record<string, string> = {
+      name: 'name', personality: 'personality', llmProvider: 'llm_provider',
+      llmModel: 'llm_model', systemPrompt: 'system_prompt', memorySize: 'memory_size',
+      interactionRadius: 'interaction_radius', voiceEnabled: 'voice_enabled',
+      modelUrl: 'model_url',
+    }
+    for (const [camel, snake] of Object.entries(fieldMap)) {
+      if (body[camel] !== undefined) {
+        updates.push(`${snake} = $${idx++}`)
+        values.push(body[camel])
       }
     }
     if (body.position) {
