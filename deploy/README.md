@@ -7,7 +7,6 @@ origin. Cloudflare (orange-cloud proxy) sits in front of all of them.
 
 | Component Type        | Provider        | Domain / subdomain                         | Deploy Script/Manifests                     |
 | --------------------- | --------------- | ------------------------------------------ | ------------------------------------------- |
-| **3D Software**       | **LightningAI** | `play.`, `wonderplay.`, `playcanvas.`      | `deploy/lightningai/`                       |
 | **IDEs**              | **Civo**        | `ide.dreammakerhub.website`                | `deploy/civo/`                              |
 | **IDEs (Coder)**      | **Civo**        | `*.coder.dreammakerhub.website`            | `deploy/civo/`                              |
 | **Main Website**      | **AWS**         | `dreammakerhub.website`, `www`             | `deploy/aws/`                               |
@@ -16,20 +15,7 @@ origin. Cloudflare (orange-cloud proxy) sits in front of all of them.
 
 ## Detailed Provider Breakdown
 
-### 1. LightningAI — 3D Software
-
-All 3D rendering engines and editors deploy to LightningAI:
-
-- **PlayCanvas Engine** — 3D editor with orbit controls, lighting, scene management
-- **WebGLStudio Engine** — Custom WebGL shader editor and renderer
-- **WonderRuntime** — 3D runtime environment for user projects
-
-DNS records (`play.`, `wonderplay.`, `playcanvas.`) point to LightningAI ingress.
-
-The main site's nginx reverse-proxies `/webglstudio/` and `/playcanvas/` paths
-to LightningAI via `LIGHTNING_3D_URL` (see `deploy/deploy.sh`).
-
-### 2. Civo — IDEs
+### 1. Civo — IDEs
 
 All development environments and IDE services deploy to Civo Kubernetes:
 
@@ -54,14 +40,10 @@ DNS records (`dreammakerhub.website`, `www`, `ai.`) point to EC2 public IP.
 ## Quick Reference — Deploy Commands
 
 ```bash
-# Deploy 3D software to LightningAI
-./deploy/lightningai/deploy.sh apply
-
 # Deploy IDEs to Civo
 ./deploy/civo/deploy.sh apply
 
 # Deploy main website to AWS (run on EC2)
-LIGHTNING_3D_URL=https://<lightning-ingress> \
 ENABLE_TLS=true \
 EMAIL=aiwonderland111@gmail.com \
 ./deploy/aws/deploy.sh
@@ -69,24 +51,7 @@ EMAIL=aiwonderland111@gmail.com \
 
 ## Detailed Provider Instructions
 
-### 1. LightningAI — 3D Software
-
-See `deploy/lightningai/README.md` for full details.
-
-```bash
-# Deploy all 3D software
-./deploy/lightningai/deploy.sh apply
-
-# Check status
-./deploy/lightningai/deploy.sh status
-```
-
-DNS records to configure:
-- `play.dreammakerhub.website` -> LightningAI ingress IP
-- `wonderplay.dreammakerhub.website` -> LightningAI ingress IP
-- `playcanvas.dreammakerhub.website` -> LightningAI ingress IP
-
-### 2. Civo — IDEs
+### 1. Civo — IDEs
 
 See `deploy/civo/README.md` for full details.
 
@@ -102,13 +67,12 @@ DNS records to configure:
 - `ide.dreammakerhub.website` -> Civo LoadBalancer IP
 - `*.coder.dreammakerhub.website` -> Civo LoadBalancer IP
 
-### 3. AWS — Main Website & Services
+### 2. AWS — Main Website & Services
 
 See `deploy/aws/README.md` for full details.
 
 ```bash
 # On EC2 instance
-LIGHTNING_3D_URL=https://<lightning-ingress> \
 ENABLE_TLS=true \
 EMAIL=aiwonderland111@gmail.com \
 ./deploy/aws/deploy.sh
