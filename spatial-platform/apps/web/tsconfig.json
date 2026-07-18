@@ -15,7 +15,10 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@spatial/engine-core": ["./src/stubs/engine-core.ts"],
+      "@spatial/core": ["./src/stubs/core.ts"],
+      "@dreammakerhub/gesture-engine": ["./src/stubs/gesture-engine.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

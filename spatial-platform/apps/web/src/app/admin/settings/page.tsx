@@ -27,10 +27,11 @@ export default function AdminSettingsPage() {
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
-  const getValue = (key: string, fallback: boolean | number) => {
+  const getValue = (key: string, fallback: boolean | number): boolean | number => {
     const s = settings[key]
     if (!s) return fallback
-    return s.value?.value ?? fallback
+    const v = (s.value as Record<string, unknown>)?.value
+    return (v as boolean | number) ?? fallback
   }
 
   const toggle = async (key: string, currentValue: boolean | number) => {

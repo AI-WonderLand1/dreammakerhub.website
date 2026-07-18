@@ -3,8 +3,8 @@
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 
-export default function HomePage() {
-  const { user, logout, loading } = useAuth()
+export default function LandingPage() {
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   if (loading) {
@@ -15,63 +15,54 @@ export default function HomePage() {
     )
   }
 
-  if (!user) {
-    router.replace('/login')
+  if (user) {
+    router.replace('/dashboard')
     return null
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[var(--accent)]">Spatial Platform</h1>
-        <div className="flex items-center gap-4">
-          {user.role === 'admin' && (
-            <a href="/admin" className="text-sm px-3 py-1.5 rounded bg-[var(--muted)] hover:text-[var(--accent)] transition-colors">
-              Admin
-            </a>
-          )}
-          <span className="text-sm text-[var(--foreground)]">{user.username}</span>
-          <button
-            onClick={logout}
-            className="text-sm px-3 py-1.5 rounded bg-[var(--muted)] hover:bg-red-900 transition-colors"
+        <span className="text-lg font-bold text-[var(--accent)]">Spatial Platform</span>
+        <div className="flex items-center gap-3">
+          <a href="/careers" className="text-sm text-gray-400 hover:text-white transition-colors">Careers</a>
+          <a
+            href="/login"
+            className="text-sm px-4 py-1.5 rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors"
           >
-            Logout
-          </button>
+            Sign In
+          </a>
         </div>
       </header>
 
-      <main className="flex-1 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold max-w-2xl leading-tight">
+          Build, explore, and share
+          <span className="text-[var(--accent)]"> 3D worlds</span>
+        </h1>
+        <p className="text-gray-400 mt-4 max-w-lg text-sm sm:text-base">
+          A spatial computing platform with a built-in Babylon.js editor, AI-powered NPCs,
+          multiplayer, and a marketplace for 3D assets.
+        </p>
+        <div className="flex items-center gap-3 mt-8">
           <a
-            href="/worlds"
-            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
+            href="/login"
+            className="px-6 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded font-medium transition-colors"
           >
-            <h2 className="text-lg font-semibold mb-2">Worlds</h2>
-            <p className="text-sm text-gray-400">Explore and create 3D worlds</p>
-          </a>
-          <a
-            href="/marketplace"
-            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
-          >
-            <h2 className="text-lg font-semibold mb-2">Marketplace</h2>
-            <p className="text-sm text-gray-400">Browse and sell assets</p>
-          </a>
-          <a
-            href="/studio/new"
-            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
-          >
-            <h2 className="text-lg font-semibold mb-2">Studio</h2>
-            <p className="text-sm text-gray-400">Build worlds with Babylon.js</p>
+            Get Started
           </a>
           <a
             href="/careers"
-            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
+            className="px-6 py-2.5 border border-[var(--border)] hover:border-[var(--accent)] rounded font-medium transition-colors"
           >
-            <h2 className="text-lg font-semibold mb-2">Careers</h2>
-            <p className="text-sm text-gray-400">Join the team</p>
+            We&apos;re Hiring
           </a>
         </div>
       </main>
+
+      <footer className="border-t border-[var(--border)] px-6 py-4 text-center text-xs text-gray-500">
+        &copy; {new Date().getFullYear()} Spatial Platform. All rights reserved.
+      </footer>
     </div>
   )
 }

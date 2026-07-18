@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -17,14 +17,6 @@
     "@babylonjs/core": "^7.50.0",
     "@babylonjs/materials": "^7.50.0",
     "@babylonjs/loaders": "^7.50.0",
-    "@spatial/core": "workspace:*",
-    "@spatial/engine-core": "workspace:*",
-    "@spatial/plugin-sdk": "workspace:*",
-    "@spatial/ai-npc": "workspace:*",
-    "@spatial/marketplace": "workspace:*",
-    "@spatial/multiplayer": "workspace:*",
-    "@spatial/video-streaming": "workspace:*",
-    "@dreammakerhub/gesture-engine": "workspace:*",
     "clsx": "^2.1.0",
     "lucide-react": "^0.460.0"
   },

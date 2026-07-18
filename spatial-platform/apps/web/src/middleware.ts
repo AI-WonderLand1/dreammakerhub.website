@@ -16,7 +16,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const protectedRoutes = ['/worlds', '/editor', '/studio', '/marketplace', '/admin']
+  const protectedRoutes = ['/dashboard', '/worlds', '/editor', '/studio', '/marketplace', '/admin']
 
   if (protectedRoutes.some(route => pathname.startsWith(route)) && !token) {
     return NextResponse.redirect(new URL('/login', req.url))

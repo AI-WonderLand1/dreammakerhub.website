@@ -71,13 +71,13 @@ export default function AdminApplicationsPage() {
                   <span>{a.email as string}</span>
                   <span className="text-[var(--accent)]">{a.position as string}</span>
                 </div>
-                {a.portfolioUrl && (
+                {!!a.portfolioUrl && (
                   <a href={a.portfolioUrl as string} target="_blank" rel="noreferrer"
                      className="text-xs text-[var(--accent)] hover:underline mt-1 inline-block">
                     Portfolio &rarr;
                   </a>
                 )}
-                {a.message && (
+                {!!a.message && (
                   <p className="text-xs text-gray-500 mt-2 line-clamp-2">{(a.message as string).slice(0, 200)}</p>
                 )}
                 <div className="text-[10px] text-gray-600 mt-2">

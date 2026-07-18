@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false)
 
   if (user) {
-    router.replace('/')
+    router.replace('/dashboard')
     return null
   }
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
       } else {
         await login(email, password)
       }
-      router.push('/')
+      router.push('/dashboard')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed')
     } finally {
