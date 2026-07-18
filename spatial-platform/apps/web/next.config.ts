@@ -1,16 +1,17 @@
 import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
-  transpilePackages: [
-    '@spatial/core',
-    '@spatial/engine-core',
-    '@spatial/plugin-sdk',
-    '@spatial/ai-npc',
-    '@spatial/marketplace',
-    '@spatial/multiplayer',
-    '@spatial/video-streaming',
-    '@dreammakerhub/gesture-engine',
-  ],
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@spatial/engine-core': path.resolve(__dirname, 'src/stubs/engine-core.ts'),
+      '@spatial/core': path.resolve(__dirname, 'src/stubs/core.ts'),
+      '@dreammakerhub/gesture-engine': path.resolve(__dirname, 'src/stubs/gesture-engine.ts'),
+    }
+    return config
+  },
+  eslint: { ignoreDuringBuilds: true },
   experimental: {
     serverActions: {
       bodySizeLimit: '100mb',

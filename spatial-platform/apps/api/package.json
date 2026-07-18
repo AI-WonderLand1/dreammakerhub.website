@@ -22,12 +22,7 @@
     "pg": "^8.13.0",
     "ioredis": "^5.4.0",
     "minio": "^8.0.0",
-    "bcryptjs": "^2.4.3",
-    "@spatial/core": "workspace:*",
-    "@spatial/marketplace": "workspace:*",
-    "@spatial/ai-npc": "workspace:*",
-    "@spatial/multiplayer": "workspace:*",
-    "@spatial/video-streaming": "workspace:*"
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

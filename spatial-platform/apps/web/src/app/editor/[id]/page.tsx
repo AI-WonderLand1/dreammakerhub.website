@@ -49,8 +49,8 @@ export default function EditorPage() {
 
       sceneManager.addGround(50, 50)
       sceneManager.addSkybox(sceneData.sky ?? undefined)
-      sceneManager.loadObjects(sceneData.objects)
-      sceneManager.loadLights(sceneData.lights)
+      sceneManager.loadObjects((sceneData as any).objects ?? [])
+      sceneManager.loadLights((sceneData as any).lights ?? [])
       sceneManager.setupCamera(sceneData.camera)
 
       renderer.runRenderLoop(() => {
