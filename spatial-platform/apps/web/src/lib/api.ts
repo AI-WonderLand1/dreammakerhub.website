@@ -52,6 +52,9 @@ async function request<T = unknown>(
   })
 
   if (!res.ok) {
+    if (res.status === 401) {
+      setAuthToken(null)
+    }
     const err = await res.text()
     throw new Error(`API error ${res.status}: ${err}`)
   }

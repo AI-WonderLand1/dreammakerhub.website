@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import websocket from '@fastify/websocket'
 import multipart from '@fastify/multipart'
+import cookie from '@fastify/cookie'
 import rateLimit from '@fastify/rate-limit'
 import { config } from './config.js'
 import { healthCheck } from './db.js'
@@ -40,6 +41,7 @@ declare module 'fastify' {
 async function start(): Promise<void> {
   await app.register(cors, { origin: config.cors.origin })
   await app.register(jwt, { secret: config.jwtSecret })
+  await app.register(cookie)
   await app.register(websocket)
   await app.register(multipart, { limits: { fileSize: 500 * 1024 * 1024 } })
   await app.register(rateLimit, {
