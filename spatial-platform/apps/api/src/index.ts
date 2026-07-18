@@ -17,6 +17,7 @@ import { multiplayerRoutes } from './routes/multiplayer.js'
 import { aiNPCRoutes } from './routes/ai-npc.js'
 import { streamingRoutes } from './routes/streaming.js'
 import { pluginRoutes } from './routes/plugins.js'
+import { adminRoutes } from './routes/admin.js'
 
 const app = Fastify({
   logger: config.nodeEnv === 'development',
@@ -58,6 +59,7 @@ async function start(): Promise<void> {
   await app.register(aiNPCRoutes)
   await app.register(streamingRoutes)
   await app.register(pluginRoutes)
+  await app.register(adminRoutes)
 
   // Health
   app.get('/api/health', async () => {
