@@ -1,48 +1,95 @@
-interface SpatialAPI {
-  // Map 2D gestures to 3D space transformations
-  mapGestureTo3D(gesturePattern: Waveform): SpatialTransformation;
-  
-  // Handle depth perception adjustments
-  adjustDepth(mapper: DepthMapper, currentDepth: number): SpatialMap;
-  
-  // Coordinate system normalization
-  normalizeXYZ(coordinates: [number, number, number]): [number, number, number];
-  
-  // Orientation calculation
-  calculateOrientation(vector: [number, number, number]): Quaternion[];
+import type { MotionSample } from './intent'
+import type { LateralGesture } from './patterns'
+
+export interface Vec3 {
+  x: number
+  y: number
+  z: number
 }
 
-// Implement spatial API methods
-export class SpatialAdapter implements SpatialAPI {
-  // Implementation that connects gesture patterns to 3D space
-  mapGestureTo3D(pattern: Waveform) {
-    // Convert gesture waveform to 3D transformation matrix
-    return new SpatialTransformation({
-      translation: computeTranslation(pattern),
-      rotation: computeRotation(pattern),
-      scale: computeScale(pattern)
-    });
+export interface SpatialTransform {
+  position: Vec3
+  rotation: Vec3
+  scale: Vec3
+}
+
+export interface SpatialGesture {
+  gesture: LateralGesture
+  transform: SpatialTransform
+  confidence: number
+}
+
+function normalizeCoord(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+function depthFromVelocity(velocity: number): number {
+  const clamped = Math.min(1, velocity / 2)
+  return 0.3 + clamped * 0.7
+}
+
+export function motionSampleToVec3(sample: MotionSample): Vec3 {
+  return {
+    x: normalizeCoord(sample.wrist.x),
+    y: normalizeCoord(sample.wrist.y),
+    z: depthFromVelocity(sample.velocity)
+  }
+}
+
+export function computeSpatialTransform(
+  samples: MotionSample[],
+  gesture: LateralGesture
+): SpatialTransform {
+  if (samples.length === 0) {
+    return { position: { x: 0.5, y: 0.5, z: 0.5 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 } }
   }
 
-  // Depth calibration logic
-  adjustDepth(mapper: DepthMapper, currentDepth: number) {
-    const depthShift = currentDepth - 1.0;
-    return {
-      ...mapper,
-      depth: Mathf.Clamp(mapper.depth + depthShift, 0.1, 10)
-    };
+  const latest = samples[samples.length - 1]
+  const pos = motionSampleToVec3(latest)
+
+  let rotX = 0, rotY = 0, rotZ = 0
+  let scaleX = 1, scaleY = 1, scaleZ = 1
+
+  if (gesture === 'swipe' && samples.length >= 2) {
+    const dx = samples[samples.length - 1].wrist.x - samples[0].wrist.x
+    const dy = samples[samples.length - 1].wrist.y - samples[0].wrist.y
+    rotZ = dx * 90
+    rotX = dy * 90
+    scaleX = 1 + Math.abs(dx)
+    scaleY = 1 + Math.abs(dy)
   }
 
-  // Normalize input space
-  normalizeXYZ(coordinates) {
-    return coordinates.map(c => Mathf.Bound(0, 1, c));
+  if (gesture === 'wave') {
+    const amplitude = samples.reduce((max, s) => Math.max(max, Math.abs(s.wrist.x - 0.5)), 0)
+    rotZ = amplitude * 180
+    scaleX = 1 + amplitude
+    scaleY = 1 - amplitude * 0.3
   }
 
-  positionTo3DDistance(position: {x, y}) {
-    return Math.sqrt(
-      position.x * position.x +
-      position.y * position.y +
-      1 * 1  // Fixed depth for current rendering
-    );
+  return {
+    position: pos,
+    rotation: { x: rotX, y: rotY, z: rotZ },
+    scale: { x: scaleX, y: scaleY, z: scaleZ }
+  }
+}
+
+export function classifySpatialGesture(
+  samples: MotionSample[],
+  lateralGesture: LateralGesture
+): SpatialGesture {
+  const transform = computeSpatialTransform(samples, lateralGesture)
+  const confidence = lateralGesture !== 'none' ? Math.min(1, samples.length / 10) : 0
+
+  return { gesture: lateralGesture, transform, confidence }
+}
+
+export function normalizeSpatialCoordinates(
+  coords: { x: number; y: number; z: number },
+  frame: { width: number; height: number; depth?: number }
+): Vec3 {
+  return {
+    x: coords.x / frame.width,
+    y: coords.y / frame.height,
+    z: frame.depth ? coords.z / frame.depth : coords.z
   }
 }

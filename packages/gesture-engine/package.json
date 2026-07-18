@@ -4,6 +4,16 @@
   "description": "Browser‑based gesture and face tracking system for DreamMakerHub",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./bridge/playcanvas": {
+      "types": "./dist/bridge/playcanvas-bridge.d.ts",
+      "import": "./dist/bridge/playcanvas-bridge.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run"

@@ -1,0 +1,27 @@
+{
+  "name": "@spatial/engine-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^7.50.0",
+    "@babylonjs/materials": "^7.50.0",
+    "@babylonjs/loaders": "^7.50.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
