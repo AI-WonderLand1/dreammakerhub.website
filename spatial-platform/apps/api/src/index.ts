@@ -7,6 +7,7 @@ import rateLimit from '@fastify/rate-limit'
 import { config } from './config.js'
 import { healthCheck } from './db.js'
 import { ensureBucket } from './storage.js'
+import { runMigrations } from './migrate.js'
 import { authRoutes } from './routes/auth.js'
 import { worldRoutes } from './routes/worlds.js'
 import { assetRoutes } from './routes/assets.js'
@@ -64,6 +65,13 @@ async function start(): Promise<void> {
       timestamp: new Date().toISOString(),
     }
   })
+
+  // Run migrations
+  try {
+    await runMigrations()
+  } catch (err) {
+    app.log.error('Migration failed, server may not function correctly')
+  }
 
   // Init storage bucket
   try {
