@@ -13,7 +13,6 @@
 #
 # Usage:
 #   On EC2 instance:
-#   LIGHTNING_3D_URL=https://<lightning-ingress> \
 #   ENABLE_TLS=true \
 #   EMAIL=aiwonderland111@gmail.com \
 #   ./deploy/aws/deploy.sh
@@ -29,7 +28,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export DEBIAN_FRONTEND=noninteractive
 
 DOMAIN="${DOMAIN:-dreammakerhub.website}"
-LIGHTNING_3D_URL="${LIGHTNING_3D_URL:-}"
 ENABLE_TLS="${ENABLE_TLS:-false}"
 EMAIL="${EMAIL:-aiwonderland111@gmail.com}"
 
@@ -53,16 +51,6 @@ fi
 # Ensure NEXTAUTH_SECRET exists
 if ! grep -q '^NEXTAUTH_SECRET=' "$WEB_ENV"; then
   printf 'NEXTAUTH_SECRET=%s\n' "$(openssl rand -base64 32)" >> "$WEB_ENV"
-fi
-
-# Record LightningAI 3D engine URL
-if [ -n "$LIGHTNING_3D_URL" ]; then
-  LIGHTNING_3D_URL="${LIGHTNING_3D_URL%/}"
-  if grep -q '^NEXT_PUBLIC_3D_ENGINE_URL=' "$WEB_ENV"; then
-    sed -i "s#^NEXT_PUBLIC_3D_ENGINE_URL=.*#NEXT_PUBLIC_3D_ENGINE_URL=$LIGHTNING_3D_URL#" "$WEB_ENV"
-  else
-    printf 'NEXT_PUBLIC_3D_ENGINE_URL=%s\n' "$LIGHTNING_3D_URL" >> "$WEB_ENV"
-  fi
 fi
 
 # 4. Start app with pm2
@@ -101,28 +89,6 @@ NG=/etc/nginx/sites-available/dreammakerhub
     echo ""
   fi
 
-  # Proxy 3D engine to LightningAI
-  if [ -n "$LIGHTNING_3D_URL" ]; then
-    echo "    # 3D engine served from LightningAI"
-    echo "    location /webglstudio/ {"
-    echo "        proxy_pass $LIGHTNING_3D_URL/webglstudio/;"
-    echo "        proxy_http_version 1.1;"
-    echo "        proxy_set_header Host \$host;"
-    echo "        proxy_set_header X-Real-IP \$remote_addr;"
-    echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
-    echo "        proxy_set_header X-Forwarded-Proto \$scheme;"
-    echo "    }"
-    echo "    location /playcanvas/ {"
-    echo "        proxy_pass $LIGHTNING_3D_URL/playcanvas/;"
-    echo "        proxy_http_version 1.1;"
-    echo "        proxy_set_header Host \$host;"
-    echo "        proxy_set_header X-Real-IP \$remote_addr;"
-    echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
-    echo "        proxy_set_header X-Forwarded-Proto \$scheme;"
-    echo "    }"
-    echo ""
-  fi
-
   # Main website
   echo "    location / {"
   echo "        proxy_pass http://127.0.0.1:5000;"
@@ -152,6 +118,5 @@ sudo nginx -t && sudo systemctl enable --now nginx && sudo systemctl reload ngin
 echo "=== Local checks ==="
 curl -sS -o /dev/null -w "app :5000 -> %{http_code}\n" http://127.0.0.1:5000 || true
 curl -sS -o /dev/null -w "nginx :80 -> %{http_code}\n" http://127.0.0.1:80 || true
-[ -n "$LIGHTNING_3D_URL" ] && curl -sS -o /dev/null -w "3d proxy -> %{http_code}\n" "http://127.0.0.1/webglstudio/direct-bootstrap.js" || true
 
 echo "=== AWS deployment done (log: $LOG) ==="
