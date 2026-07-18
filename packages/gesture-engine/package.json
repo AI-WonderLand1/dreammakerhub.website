@@ -12,6 +12,10 @@
     "./bridge/playcanvas": {
       "types": "./dist/bridge/playcanvas-bridge.d.ts",
       "import": "./dist/bridge/playcanvas-bridge.js"
+    },
+    "./bridge/babylon": {
+      "types": "./dist/bridge/babylon-bridge.d.ts",
+      "import": "./dist/bridge/babylon-bridge.js"
     }
   },
   "scripts": {

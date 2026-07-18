@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Renderer, SceneManager, createMesh, type AnimationClip, playClip } from '@spatial/engine-core'
-import type { SceneObject, SceneLight } from '@spatial/core'
+import { Renderer, SceneManager } from '@spatial/engine-core'
+import type { SceneObject } from '@spatial/core'
+import { useBabylonGesture } from '@/hooks/useBabylonGesture'
 
 const PRIMITIVES = ['box', 'sphere', 'plane', 'cylinder', 'torus', 'capsule'] as const
 
@@ -73,6 +74,13 @@ export default function StudioPage() {
     sceneManager.loadObjects(objects)
   }, [objects, sceneManager])
 
+  const gesture = useBabylonGesture(
+    canvasRef,
+    sceneManager,
+    selectedObject,
+    { targetType: selectedObject ? 'mesh' : 'camera' }
+  )
+
   return (
     <div className="h-screen flex">
       {showPanel && (
@@ -114,19 +122,68 @@ export default function StudioPage() {
               </div>
             )}
           </div>
+
+          <div className="p-4 border-t border-[var(--border)] space-y-3">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase">Gesture</h3>
+
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={gesture.settings.enabled}
+                onChange={e => gesture.updateSettings({ enabled: e.target.checked })}
+                className="accent-[var(--accent)]"
+              />
+              Enabled
+            </label>
+
+            <div>
+              <label className="text-[10px] text-gray-500">Sensitivity: {gesture.settings.sensitivity.toFixed(1)}</label>
+              <input
+                type="range"
+                min="0.2"
+                max="3"
+                step="0.1"
+                value={gesture.settings.sensitivity}
+                onChange={e => gesture.updateSettings({ sensitivity: parseFloat(e.target.value) })}
+                className="w-full accent-[var(--accent)]"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] text-gray-500">Smoothing: {gesture.settings.smoothing.toFixed(2)}</label>
+              <input
+                type="range"
+                min="0"
+                max="0.99"
+                step="0.01"
+                value={gesture.settings.smoothing}
+                onChange={e => gesture.updateSettings({ smoothing: parseFloat(e.target.value) })}
+                className="w-full accent-[var(--accent)]"
+              />
+            </div>
+
+            <div className="text-[10px] text-gray-500">
+              Target: {selectedObject ? 'selected mesh' : 'camera'}
+            </div>
+          </div>
         </aside>
       )}
 
       <div className="flex-1 relative">
         <canvas ref={canvasRef} className="w-full h-full outline-none" />
 
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 flex items-center gap-2">
           <button
             onClick={() => setShowPanel(!showPanel)}
             className="px-3 py-1.5 text-xs bg-[var(--muted)] hover:bg-[var(--accent)] rounded transition-colors"
           >
             {showPanel ? 'Hide Panel' : 'Show Panel'}
           </button>
+          <div className={`px-2 py-1 text-[10px] rounded ${
+            gesture.connected ? (gesture.active ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-400') : 'bg-red-900 text-red-300'
+          }`}>
+            {gesture.connected ? (gesture.active ? `${gesture.gesture} (${(gesture.confidence * 100).toFixed(0)}%)` : 'idle') : 'no gesture'}
+          </div>
         </div>
       </div>
     </div>
