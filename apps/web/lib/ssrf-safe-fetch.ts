@@ -4,6 +4,22 @@ const METADATA_HOSTNAMES = [
   '100.100.100.200',
 ]
 
+const PRIVATE_PATTERNS = [
+  /^0\./,
+  /^127\./,
+  /^10\./,
+  /^169\.254\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^100\.(6[4-9]|\d{2,3})\./,
+  /^198\.1[89]\./,
+  /^::$/,
+  /^::1$/,
+  /^fc/i,
+  /^fd/i,
+  /^fe80:/i,
+]
+
 export class SsrfError extends Error {
   constructor(message: string) {
     super(message)
@@ -11,146 +27,110 @@ export class SsrfError extends Error {
   }
 }
 
-function isPrivateIpv4(ip: string): boolean {
-  const parts = ip.split('.').map(Number)
-  if (parts.length !== 4 || parts.some(p => Number.isNaN(p) || p < 0 || p > 255)) {
-    return true
-  }
-  const [a, b] = parts
-  return (
-    a === 0 ||
-    a === 10 ||
-    a === 127 ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    (a === 198 && (b === 18 || b === 19))
-  )
-}
-
-function isPrivateIpv6(ip: string): boolean {
-  const normalized = ip.toLowerCase()
-  return (
-    normalized === '::' ||
-    normalized === '::1' ||
-    normalized.startsWith('fc') ||
-    normalized.startsWith('fd') ||
-    normalized.startsWith('fe80:')
-  )
-}
-
-function isUnsafeResolvedIp(ip: string): boolean {
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) return isPrivateIpv4(ip)
-  if (ip.includes(':')) return isPrivateIpv6(ip)
-  return true
-}
-
-function isLocalHostname(hostname: string): boolean {
-  const host = hostname.toLowerCase().trim()
-  return (
-    host === 'localhost' ||
-    host === '127.0.0.1' ||
-    host === '::1' ||
-    host === '0.0.0.0' ||
-    host.startsWith('[::') ||
-    host.startsWith('::ffff:')
-  )
-}
-
-function isIpFormat(hostname: string): boolean {
-  return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':')
-}
-
-function isMetadataHostname(hostname: string): boolean {
-  const host = hostname.toLowerCase().trim()
-  return METADATA_HOSTNAMES.some(m => host === m || host.endsWith(`.${m}`))
-}
-
 function normalizeHostname(hostname: string): string {
   return hostname.trim().toLowerCase().replace(/\.+$/, '')
 }
 
+function isUnsafeHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim()
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4Match) {
+    const parts = ipvMatch.slice(1).map(Number)
+    if (parts.some(p => p > 255)) return true
+    const addr = parts.join('.')
+    return PRIVATE_PATTERNS.some(p => p.test(addr))
+  }
+  if (host.includes(':')) {
+    return PRIVATE_PATTERNS.some(p => p.test(host))
+  }
+  return (
+    host === 'localhost' ||
+    host === '0.0.0.0' ||
+    host.startsWith('[::') ||
+    host.startsWith('::ffff:') ||
+    METADATA_HOSTNAMES.some(m => host === m || host.endsWith(`.${m}`))
+  )
+}
+
 export interface SsrfFetchOptions extends RequestInit {
   allowedHosts?: readonly string[]
-  blockLocalhost?: boolean
 }
 
-async function validateUrl(url: string, options: SsrfFetchOptions): Promise<string> {
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
-    throw new SsrfError('Invalid URL')
+function describeUrl(url: string): { protocol: string; hostname: string; hasCredentials: boolean } {
+  const anchor = document.createElement('a')
+  anchor.href = url
+  return {
+    protocol: anchor.protocol,
+    hostname: anchor.hostname,
+    hasCredentials: !!anchor.username || !!anchor.password,
   }
-
-  if (parsed.protocol !== 'https:') {
-    throw new SsrfError('Only HTTPS URLs are allowed')
-  }
-
-  if (parsed.username || parsed.password) {
-    throw new SsrfError('URL must not include credentials')
-  }
-
-  const hostname = normalizeHostname(parsed.hostname)
-
-  if (isLocalHostname(hostname)) {
-    if (options.blockLocalhost !== false) {
-      throw new SsrfError('Localhost URLs are not allowed')
-    }
-  }
-
-  if (isMetadataHostname(hostname)) {
-    throw new SsrfError('Metadata endpoints are not allowed')
-  }
-
-  if (isIpFormat(hostname)) {
-    if (isUnsafeResolvedIp(hostname)) {
-      throw new SsrfError('Direct IP to a disallowed address')
-    }
-  }
-
-  if (options.allowedHosts && options.allowedHosts.length > 0) {
-    const normalizedAllowedHosts = options.allowedHosts.map(allowed => normalizeHostname(allowed))
-    const isAllowed = normalizedAllowedHosts.some(
-      allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
-    )
-    if (!isAllowed) {
-      throw new SsrfError('Host is not in the allowed list')
-    }
-  }
-
-  return parsed.toString()
-}
-
-async function validateRedirect(response: Response, options: SsrfFetchOptions): Promise<Response> {
-  if (!response.status || response.status < 300 || response.status >= 400) {
-    return response
-  }
-  const location = response.headers.get('location')
-  if (!location) {
-    return response
-  }
-  const resolvedUrl = new URL(location, response.url).toString()
-  const validatedRedirectUrl = await validateUrl(resolvedUrl, options)
-  const redirectResponse = await fetch(validatedRedirectUrl, { ...options, redirect: 'manual' })
-  return validateRedirect(redirectResponse, options)
 }
 
 export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
-  const validatedUrl = await validateUrl(url, options)
+  if (!options.allowedHosts || options.allowedHosts.length === 0) {
+    throw new SsrfError('allowedHosts must be provided and non-empty')
+  }
 
-  // The URL has been validated to be:
-  // 1. HTTPS-only (line 87-89)
-  // 2. No credentials (line 91-93)
-  // 3. Not localhost/private IP (lines 97-111)
-  // 4. Not a metadata endpoint (lines 103-105)
-  // 5. In allowedHosts whitelist if provided (lines 113-121)
-  // CodeQL false positive: URL is fully validated before use
-  const response = await fetch(validatedUrl, { // lgtm[js/request-forgery]
-    redirect: 'manual',
-    ...options,
-  })
+  const { protocol, hostname, hasCredentials } = describeUrl(url)
 
-  return validateRedirect(response, options)
+  if (protocol !== 'https:') {
+    throw new SsrfError('Only HTTPS URLs are allowed')
+  }
+  if (hasCredentials) {
+    throw new SsrfError('URL must not include credentials')
+  }
+
+  const normalized = normalizeHostname(hostname)
+  if (isUnsafeHostname(normalized)) {
+    throw new SsrfError('URL points to a disallowed network address')
+  }
+
+  const normalizedAllowedHosts = options.allowedHosts.map(allowed => normalizeHostname(allowed))
+  const isAllowed = normalizedAllowedHosts.some(
+    allowed => normalized === allowed || normalized.endsWith(`.${allowed}`)
+  )
+  if (!isAllowed) {
+    throw new SsrfError('Host is not in the allowed list')
+  }
+
+  const init: RequestInit = { redirect: 'manual' }
+  if (options.method) init.method = options.method
+  if (options.headers) init.headers = options.headers
+  if (options.body) init.body = options.body
+  if (options.signal) init.signal = options.signal
+
+  const response = await fetch(url, init)
+
+  for (let i = 0; i < 5; i++) {
+    if (!response.status || response.status < 300 || response.status >= 400) {
+      return response
+    }
+    const location = response.headers.get('location')
+    if (!location) return response
+
+    const nextUrl = new URL(location, url).toString()
+    const { protocol: nextProtocol, hostname: nextHostname, hasCredentials: nextHasCreds } = describeUrl(nextUrl)
+    if (nextProtocol !== 'https:') throw new SsrfError('Redirect target must use HTTPS')
+    if (nextHasCreds) throw new SsrfError('Redirect target must not include credentials')
+
+    const nextNormalized = normalizeHostname(nextHostname)
+    const nextIsAllowed = normalizedAllowedHosts.some(
+      allowed => nextNormalized === allowed || nextNormalized.endsWith(`.${allowed}`)
+    )
+    if (!nextIsAllowed) throw new SsrfError('Redirect target is not in the allowed list')
+
+    if (isUnsafeHostname(nextNormalized)) {
+      throw new SsrfError('Redirect target points to a disallowed network address')
+    }
+
+    url = nextUrl
+    const nextInit: RequestInit = { redirect: 'manual' }
+    if (options.method) nextInit.method = options.method
+    if (options.headers) nextInit.headers = options.headers
+    if (options.body) nextInit.body = options.body
+    if (options.signal) nextInit.signal = options.signal
+    response = await fetch(url, nextInit)
+  }
+
+  throw new SsrfError('Too many redirects')
 }
