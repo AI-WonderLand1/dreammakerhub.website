@@ -137,7 +137,18 @@ export class CoderClient {
   }
 
   async uploadFile(workspaceId, filePath, content) {
-    const url = `${this.coderUrl}${CODER_API_VERSION}/workspaces/${workspaceId}/files/${encodeURIComponent(filePath)}`;
+    if (typeof filePath !== 'string' || filePath.length === 0) {
+      throw new CoderError(400, 'Invalid file path', 'PUT', 'upload');
+    }
+    if (filePath.includes('..') || filePath.startsWith('/') || filePath.startsWith('\\')) {
+      throw new CoderError(400, 'Path traversal is not allowed', 'PUT', 'upload');
+    }
+    if (/[<>:"|?*]/.test(filePath)) {
+      throw new CoderError(400, 'File path contains invalid characters', 'PUT', 'upload');
+    }
+
+    const safePath = encodeURIComponent(filePath);
+    const url = `${this.coderUrl}${CODER_API_VERSION}/workspaces/${workspaceId}/files/${safePath}`;
     const res = await fetch(url, {
       method: 'PUT',
       headers: {
@@ -150,7 +161,7 @@ export class CoderClient {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new CoderError(res.status, `File upload failed: ${text}`, 'PUT', `/workspaces/${workspaceId}/files/${filePath}`);
+      throw new CoderError(res.status, `File upload failed: ${text}`, 'PUT', `/workspaces/${workspaceId}/files/${safePath}`);
     }
 
     return { success: true };

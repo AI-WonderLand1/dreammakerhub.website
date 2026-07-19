@@ -1,11 +1,10 @@
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
+import https from 'node:https'
 
 const METADATA_HOSTNAMES = [
   '169.254.169.254',
   'metadata.google.internal',
-  'metadata.google.internal.',
-  '100.100.100.200',
   '100.100.100.200',
 ]
 
@@ -82,29 +81,89 @@ export interface SsrfFetchOptions extends RequestInit {
   blockLocalhost?: boolean
 }
 
-function buildSafeFetchInit(options: SsrfFetchOptions): RequestInit {
-  const init: RequestInit = {
-    redirect: 'manual',
-  }
-
-  if (options.method !== undefined) init.method = options.method
-  if (options.headers !== undefined) init.headers = options.headers
-  if (options.body !== undefined) init.body = options.body
-  if (options.signal !== undefined) init.signal = options.signal
-  if (options.cache !== undefined) init.cache = options.cache
-  if (options.credentials !== undefined) init.credentials = options.credentials
-  if (options.integrity !== undefined) init.integrity = options.integrity
-  if (options.keepalive !== undefined) init.keepalive = options.keepalive
-  if (options.mode !== undefined) init.mode = options.mode
-  if (options.priority !== undefined) init.priority = options.priority
-  if (options.referrer !== undefined) init.referrer = options.referrer
-  if (options.referrerPolicy !== undefined) init.referrerPolicy = options.referrerPolicy
-  if (options.duplex !== undefined) init.duplex = options.duplex
-
-  return init
+interface ResolvedAddress {
+  address: string
+  family: number
 }
 
-async function validateUrl(url: string, options: SsrfFetchOptions): Promise<string> {
+async function resolveSafe(
+  hostname: string,
+  options: SsrfFetchOptions
+): Promise<{ hostname: string; address: ResolvedAddress }> {
+  if (isIpFormat(hostname)) {
+    if (isUnsafeResolvedIp(hostname)) {
+      throw new SsrfError('Direct IP to a disallowed address')
+    }
+    const family = isIP(hostname)
+    return { hostname, address: { address: hostname, family: family === 6 ? 6 : 4 } }
+  }
+
+  const records = await lookup(hostname, { all: true, verbatim: true })
+  if (!records.length) {
+    throw new SsrfError('Could not resolve hostname')
+  }
+  for (const record of records) {
+    if (isUnsafeResolvedIp(record.address)) {
+      throw new SsrfError('URL resolves to a disallowed network address')
+    }
+  }
+  return { hostname, address: records[0] }
+}
+
+async function httpsFetch(
+  url: string,
+  hostname: string,
+  address: ResolvedAddress,
+  options: SsrfFetchOptions
+): Promise<Response> {
+  const parsed = new URL(url)
+  const port = parsed.port ? parseInt(parsed.port, 10) : 443
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: address.address,
+        port,
+        path: parsed.pathname + parsed.search,
+        method: options.method || 'GET',
+        headers: {
+          ...(options.headers as Record<string, string>),
+          Host: hostname,
+          ...(parsed.port ? {} : {}),
+        },
+        servername: hostname,
+        rejectUnauthorized: true,
+        signal: options.signal as AbortSignal | undefined,
+        timeout: 30000,
+      },
+      (res) => {
+        const chunks: Buffer[] = []
+        res.on('data', (chunk: Buffer) => chunks.push(chunk))
+        res.on('end', () => {
+          const body = Buffer.concat(chunks)
+          resolve(new Response(body, {
+            status: res.statusCode,
+            statusText: res.statusMessage,
+            headers: new Headers(res.headers as Record<string, string>),
+          }))
+        })
+      }
+    )
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new SsrfError('Request timed out')) })
+
+    if (options.body) {
+      req.write(options.body)
+    }
+    req.end()
+  })
+}
+
+export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
+  if (!options.allowedHosts || options.allowedHosts.length === 0) {
+    throw new SsrfError('allowedHosts must be provided and non-empty')
+  }
+
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -132,12 +191,6 @@ async function validateUrl(url: string, options: SsrfFetchOptions): Promise<stri
     throw new SsrfError('Metadata endpoints are not allowed')
   }
 
-  if (isIpFormat(hostname)) {
-    if (isUnsafeResolvedIp(hostname)) {
-      throw new SsrfError('Direct IP to a disallowed address')
-    }
-  }
-
   if (options.allowedHosts && options.allowedHosts.length > 0) {
     const normalizedAllowedHosts = options.allowedHosts.map(allowed => normalizeHostname(allowed))
     const isAllowed = normalizedAllowedHosts.some(
@@ -148,51 +201,35 @@ async function validateUrl(url: string, options: SsrfFetchOptions): Promise<stri
     }
   }
 
-  const records = await lookup(hostname, { all: true, verbatim: true })
-  if (!records.length || records.some(record => isUnsafeResolvedIp(record.address))) {
-    throw new SsrfError('URL resolves to a disallowed network address')
+  const { address } = await resolveSafe(hostname, options)
+
+  let response = await httpsFetch(url, hostname, address, options)
+
+  for (let i = 0; i < 5; i++) {
+    if (!response.status || response.status < 300 || response.status >= 400) {
+      return response
+    }
+    const location = response.headers.get('location')
+    if (!location) break
+
+    const resolvedUrl = new URL(location, url).toString()
+    const redirectParsed = new URL(resolvedUrl)
+    const redirectHostname = normalizeHostname(redirectParsed.hostname)
+
+    if (redirectParsed.protocol !== 'https:') {
+      throw new SsrfError('Redirect target must use HTTPS')
+    }
+    if (isMetadataHostname(redirectHostname)) {
+      throw new SsrfError('Redirect to metadata endpoint is not allowed')
+    }
+
+    const { address: redirectAddress } = await resolveSafe(redirectHostname, options)
+    response = await httpsFetch(resolvedUrl, redirectHostname, redirectAddress, options)
   }
 
-  return parsed.toString()
-}
-
-async function validateRedirect(
-  response: Response,
-  options: SsrfFetchOptions,
-  remainingRedirects: number = 5
-): Promise<Response> {
-  if (!response.status || response.status < 300 || response.status >= 400) {
-    return response
-  }
-  if (remainingRedirects <= 0) {
+  if (response.status >= 300 && response.status < 400) {
     throw new SsrfError('Too many redirects')
   }
-  const location = response.headers.get('location')
-  if (!location) {
-    return response
-  }
-  const resolvedUrl = new URL(location, response.url).toString()
-  const validatedRedirectUrl = await validateUrl(resolvedUrl, options)
-  const redirectResponse = await fetch(validatedRedirectUrl, buildSafeFetchInit(options))
-  return validateRedirect(redirectResponse, options, remainingRedirects - 1)
-}
 
-export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Promise<Response> {
-  if (!options.allowedHosts || options.allowedHosts.length === 0) {
-    throw new SsrfError('allowedHosts must be provided and non-empty')
-  }
-
-  const validatedUrl = await validateUrl(url, options)
-
-  // The URL has been validated to be:
-  // 1. HTTPS-only (line 115-117)
-  // 2. No credentials (line 119-121)
-  // 3. Not localhost/private IP (lines 125-139)
-  // 4. Not a metadata endpoint (lines 131-133)
-  // 5. DNS resolves to safe IP (lines 151-154)
-  // 6. In allowedHosts whitelist if provided (lines 141-149)
-  // CodeQL false positive: URL is fully validated before use
-  const response = await fetch(validatedUrl, buildSafeFetchInit(options)) // lgtm[js/request-forgery]
-
-  return validateRedirect(response, options)
+  return response
 }
