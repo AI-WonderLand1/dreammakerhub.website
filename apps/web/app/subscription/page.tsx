@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/supabase/auth-context";
 import {
   Check, Sparkles, ChevronDown, ChevronUp,
@@ -62,6 +62,13 @@ function SubscriptionContent() {
   const successPlan = success ? searchParams.get("plan") : null;
   const successPlanName = successPlan && PLANS[successPlan as keyof typeof PLANS] ? PLANS[successPlan as keyof typeof PLANS].displayName : null;
   const [dismissBanner, setDismissBanner] = useState(false);
+
+  useEffect(() => {
+    if (success === "true") {
+      const t = setTimeout(() => router.push(redirectTo), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [success, redirectTo, router]);
 
   const { user, session, loading: authLoading } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);

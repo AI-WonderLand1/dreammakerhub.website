@@ -50,17 +50,15 @@ function CheckoutContent() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const response = await fetch("/api/subscription/subscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          planId,
+          plan: planId,
           interval,
-          trialDays: plan.trialDays || 0,
-          redirectTo,
         }),
       });
 

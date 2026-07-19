@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: userEmail || undefined,
       metadata: { userId, plan, interval: isYearly ? "year" : "month" },
-      success_url: `${baseUrl}/subscription?success=true&plan=${plan}${isYearly ? "&interval=year" : ""}`,
+      success_url: `${baseUrl}/subscription/success`,
       cancel_url: `${baseUrl}/subscription?canceled=true`,
     });
 
