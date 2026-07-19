@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dreammaker-web
+  namespace: coder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dreammaker-web
+  template:
+    metadata:
+      labels:
+        app: dreammaker-web
+    spec:
+      containers:
+      - name: web
+        image: node:22-alpine
+        workingDir: /app
+        command: ["sh", "-c"]
+        args:
+        - >
+          apk add --no-cache git curl &&
+          git clone https://github.com/AI-WonderLand1/dreammakerhub.website.git /app &&
+          cd /app &&
+          npm install --legacy-peer-deps &&
+          npm run build --workspace=ai-wonder-web &&
+          cd apps/web &&
+          NEXT_TYPESCRIPT_IGNORE_BUILD_ERRORS=1 npm run start
+        ports:
+        - containerPort: 5000
+        env:
+        - name: ALICE_API_KEY
+          value: "dummy"
+        - name: PORT
+          value: "5000"
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dreammaker-web
+  namespace: coder
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 5000
+  selector:
+    app: dreammaker-web
