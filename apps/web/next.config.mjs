@@ -153,10 +153,22 @@ const nextConfig = {
       };
     }
 
+    config.parallelism = 1;
+
     config.resolve.alias = {
       ...config.resolve.alias,
       ...pathAliases,
     };
+
+    config.resolve.extensions = [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.mjs',
+      '.json',
+      ...(config.resolve.extensions || []),
+    ];
 
     config.module.rules.push({
       test: /\.(glsl|vs|fs)$/,

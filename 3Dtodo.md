@@ -94,7 +94,7 @@ Get actual WebGL shader rendering working.
 ### 3D. Wire into EngineManager
 - [ ] Modify `QuadEngineShell.tsx` — WebGL tab uses EngineManager
 - [ ] Test: PlayCanvas → WebGL switch, verify PlayCanvas disposed
-- [ ] Test: WebGL → PlayCanvas switch, verify WebGL disposed
+- [ ] Test: WebGL → PlGL → PlayCanvas switch, verify WebGL disposed
 
 ### 3E. Verify WebGL End-to-End
 - [ ] Navigate to WebGL tab, canvas renders
