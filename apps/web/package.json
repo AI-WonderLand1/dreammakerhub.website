@@ -51,7 +51,7 @@
     "@wonderspace/ide-engine": "*",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "ai": "^7.0.4",
+    "ai": "^7.0.31",
     "autoprefixer": "^10.5.0",
     "axios": "^1.16.1",
     "class-variance-authority": "^0.7.1",
