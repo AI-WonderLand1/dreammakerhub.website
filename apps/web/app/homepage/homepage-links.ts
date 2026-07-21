@@ -1,4 +1,3 @@
-import { logger } from '@/lib/logger';
 export type HomepageSignLink = {
   label: string;
   href: string;
