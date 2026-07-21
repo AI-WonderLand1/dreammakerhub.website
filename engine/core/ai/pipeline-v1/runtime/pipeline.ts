@@ -19,6 +19,8 @@ interface PipelineOptions {
   language: string;
   model: string;
   useLLMExtraction?: boolean;
+  userApiKey?: string;
+  baseUrl?: string;
 }
 
 export interface PipelineResult {
@@ -119,7 +121,7 @@ Respond in JSON format:
 }
 
 export async function runAIPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { operationId, userPrompt, systemPrompt, language, model, useLLMExtraction = false } = options;
+  const { operationId, userPrompt, systemPrompt, language, model, useLLMExtraction = false, userApiKey, baseUrl } = options;
   const confessions: LocalizedConfession[] = [];
 
   try {
@@ -137,6 +139,8 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       model,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
+      userApiKey,
+      baseUrl,
     });
 
     const text =
