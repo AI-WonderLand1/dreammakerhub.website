@@ -146,6 +146,9 @@ export class CoderClient {
     if (/[<>:"|?*]/.test(filePath)) {
       throw new CoderError(400, 'File path contains invalid characters', 'PUT', 'upload');
     }
+    if (typeof workspaceId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(workspaceId)) {
+      throw new CoderError(400, 'Invalid workspace ID', 'PUT', 'upload');
+    }
 
     const safePath = encodeURIComponent(filePath);
     const url = `${this.coderUrl}${CODER_API_VERSION}/workspaces/${workspaceId}/files/${safePath}`;
