@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 import { convertHtmlToPuck } from "@/lib/html-to-puck";
 import { CoderAPIWrapper } from "@/lib/coder/api-wrapper";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (saveError) {
-      console.error("[CreateFromBuild] Save error:", saveError);
+      logger.error("[CreateFromBuild] Save error:", saveError);
 
       return NextResponse.json({
         projectId,
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
       message: "Your private IDE workspace is ready!",
     });
   } catch (error) {
-    console.error("[CreateFromBuild] Error:", error);
+    logger.error("[CreateFromBuild] Error:", error);
 
     return NextResponse.json({
       projectId: `wb-${Date.now().toString(36)}`,

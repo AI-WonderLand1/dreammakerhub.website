@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { logger } from '@/lib/logger';
 
 interface UserAsset {
   id: string;
@@ -32,7 +33,7 @@ export function UserAssetLibrary({ onSelect }: UserAssetLibraryProps) {
         const data = await res.json();
         setAssets(data.assets || []);
       } catch (err) {
-        console.error('Failed to fetch user assets:', err);
+        logger.error('Failed to fetch user assets:', err);
       } finally {
         setLoading(false);
       }

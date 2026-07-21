@@ -2,6 +2,7 @@
 
 import { Plug, ShieldCheck, Sparkles, Package, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { logger } from '@/lib/logger';
 
 type Extension = {
   name: string;

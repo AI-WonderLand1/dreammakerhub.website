@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSovereignOS, type BuildType } from '../context/SovereignOSContext';
+import { logger } from '@/lib/logger';
 
 /**
  * Drop this component anywhere inside SovereignOSProvider.

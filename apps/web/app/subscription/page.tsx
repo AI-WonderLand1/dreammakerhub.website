@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { PLANS } from "@/lib/billing/plans";
+import { logger } from '@/lib/logger';
 type Plan = {
   id: "free" | "pro" | "team" | "enterprise";
   name: string;
@@ -139,7 +140,7 @@ function SubscriptionContent() {
 
       router.push(redirectTo);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert("Could not enable Free plan. Check console + API logs.");
       setLoadingPlan(null);
     }

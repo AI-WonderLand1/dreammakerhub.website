@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { logger } from '@/lib/logger';
 
 type PuckData = {
   content: Array<{ type: string; props: Record<string, unknown> }>;

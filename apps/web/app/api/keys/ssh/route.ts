@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 /**
  * API: /api/keys/ssh

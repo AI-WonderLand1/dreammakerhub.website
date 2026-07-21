@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConvaiCredentials } from '@/lib/oracle-vault';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -17,7 +18,7 @@ export async function GET() {
       characterId: credentials.characterId
     });
   } catch (error) {
-    console.error('Error fetching vault credentials:', error);
+    logger.error('Error fetching vault credentials:', error);
     return NextResponse.json(
       { error: 'Failed to fetch credentials' },
       { status: 500 }

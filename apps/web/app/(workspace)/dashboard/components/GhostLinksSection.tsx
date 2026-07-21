@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 
 type GhostLink = {
   id: string;

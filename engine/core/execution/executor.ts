@@ -1,4 +1,5 @@
 import { ExecutionGraph, ExecutionNode, ExecutionResult, ExecutionContext } from './types';
+import { logger } from '@lib/logger';
 
 export interface NodeRunner {
   run(node: ExecutionNode, context: ExecutionContext): Promise<Record<string, unknown>>;
@@ -22,7 +23,7 @@ export class GraphExecutor {
     for (const node of sortedNodes) {
       // Check dependencies
       if (!node.deps.every(depId => completedNodes.has(depId))) {
-        console.warn(`[GraphExecutor] Skipping node ${node.id} because dependencies are not met.`);
+        logger.warn(`[GraphExecutor] Skipping node ${node.id} because dependencies are not met.`);
         continue;
       }
 

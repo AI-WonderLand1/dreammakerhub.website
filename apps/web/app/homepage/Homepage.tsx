@@ -13,6 +13,7 @@ import InteractiveSignpost from "./InteractiveSignpost";
 import ShowcaseSection from "./ShowcaseSection";
 import AIDiagram from "./AIDiagram";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 const menuItems = [
   {

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // GitHub Models, GROQ and Google AI model strings
 export type ModelName =
   | 'gpt-4o'

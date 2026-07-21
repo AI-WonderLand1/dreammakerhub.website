@@ -1,6 +1,7 @@
 "use client";
 
 import { DirectPlayCanvasHost } from "@/components/DirectPlayCanvasHost";
+import { logger } from '@/lib/logger';
 
 export type PlayCanvasHostStatus = "bootstrapping" | "mounting" | "ready" | "failed";
 

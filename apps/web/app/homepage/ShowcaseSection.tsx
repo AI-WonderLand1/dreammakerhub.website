@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 type ShowcaseItem = {
   id: string;

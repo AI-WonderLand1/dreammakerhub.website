@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
 import { AssetLibrary } from "@/components/ai/AssetLibrary";
+import { logger } from '@/lib/logger';
 
 type BuildType = "website" | "game" | "component" | "3d-assets" | "playcanvas";
 type AgentStage = "architect" | "builder" | "reviewer";
@@ -95,7 +96,7 @@ export default function AIBuilderPage() {
       const dataKey = storePuckData(puckData);
       router.push(`/wonder-build/puck?ai_data=${dataKey}`);
     } catch (err) {
-      console.error("[Wonderbuild] Failed to accept to Puck:", err);
+      logger.error("[Wonderbuild] Failed to accept to Puck:", err);
       alert("Failed to prepare content for Puck editor");
     }
   }, [result?.code, router]);
@@ -199,7 +200,7 @@ export default function AIBuilderPage() {
         router.push(`/wonder-build/puck?project=${data.projectId}`);
       }
     } catch (err) {
-      console.error("Failed to save project:", err);
+      logger.error("Failed to save project:", err);
       alert("Failed to save project. Please try again.");
     } finally { setSaving(false); }
   }, [result, buildType, prompt, router, saving]);

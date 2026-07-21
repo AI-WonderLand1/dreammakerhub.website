@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
+import { logger } from '@/lib/logger';
 
 type SessionUser = {
   id?: string;

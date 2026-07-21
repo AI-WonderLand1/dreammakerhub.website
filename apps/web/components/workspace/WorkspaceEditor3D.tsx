@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { logger } from '@/lib/logger';
 
 type SceneObject = {
   id: string

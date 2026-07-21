@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 const MEM0_API_KEY = process.env.MEM0AI_API_KEY || "";
 
 let mem0Client: any = null;
@@ -21,7 +22,7 @@ export async function storeMemory(
     await client.add(messages, { user_id: userId, metadata });
     return true;
   } catch (error) {
-    console.error("[Mem0AI] storeMemory failed:", error);
+    logger.error("[Mem0AI] storeMemory failed:", error);
     return false;
   }
 }
@@ -43,7 +44,7 @@ export async function searchMemories(
       score: r.score,
     }));
   } catch (error) {
-    console.error("[Mem0AI] searchMemories failed:", error);
+    logger.error("[Mem0AI] searchMemories failed:", error);
     return [];
   }
 }
@@ -54,7 +55,7 @@ export async function deleteUserMemories(userId: string): Promise<boolean> {
     await client.deleteAll({ user_id: userId });
     return true;
   } catch (error) {
-    console.error("[Mem0AI] deleteUserMemories failed:", error);
+    logger.error("[Mem0AI] deleteUserMemories failed:", error);
     return false;
   }
 }

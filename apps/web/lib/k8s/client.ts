@@ -1,4 +1,5 @@
 import { CoreV1Api, AppsV1Api, NetworkingV1Api, KubeConfig } from '@kubernetes/client-node';
+import { logger } from '@/lib/logger';
 
 let coreApi: CoreV1Api | null = null;
 let appsApi: AppsV1Api | null = null;
@@ -58,7 +59,7 @@ async function createProjectSecret(
     if (error.response?.body?.reason === 'AlreadyExists') {
       return true;
     }
-    console.error('Secret creation failed:', error.message);
+    logger.error('Secret creation failed:', error.message);
     return false;
   }
 }
@@ -137,7 +138,7 @@ async function createProjectDeployment(
     if (error.response?.body?.reason === 'AlreadyExists') {
       return true;
     }
-    console.error('Deployment creation failed:', error.message);
+    logger.error('Deployment creation failed:', error.message);
     return false;
   }
 }
@@ -174,7 +175,7 @@ async function createProjectService(projectId: string): Promise<boolean> {
     if (error.response?.body?.reason === 'AlreadyExists') {
       return true;
     }
-    console.error('Service creation failed:', error.message);
+    logger.error('Service creation failed:', error.message);
     return false;
   }
 }
@@ -213,7 +214,7 @@ async function createNetworkPolicy(projectId: string): Promise<boolean> {
     if (error.response?.body?.reason === 'AlreadyExists') {
       return true;
     }
-    console.error('Network policy failed:', error.message);
+    logger.error('Network policy failed:', error.message);
     return false;
   }
 }
@@ -232,7 +233,7 @@ async function deleteProjectResources(projectId: string): Promise<boolean> {
     
     return true;
   } catch (error) {
-    console.error('Delete failed:', error);
+    logger.error('Delete failed:', error);
     return false;
   }
 }

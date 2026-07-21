@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { logger } from '@/lib/logger';
 
 type BuilderContextValue = {
   mode: 'puck' | 'ide';

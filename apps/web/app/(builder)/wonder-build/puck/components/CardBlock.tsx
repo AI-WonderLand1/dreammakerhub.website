@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { logger } from '@/lib/logger';
 
 export type CardBlockProps = {
   title: string;

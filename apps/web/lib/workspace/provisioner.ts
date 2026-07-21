@@ -9,6 +9,7 @@ import {
 } from "@/lib/k8s/client";
 import * as k8s from "@kubernetes/client-node";
 import { generateKeyPairSync } from "crypto";
+import { logger } from '@/lib/logger';
 
 export async function getProjectSSHKey(projectId: string): Promise<string | null> {
   const { data, error } = await supabaseServer
@@ -18,14 +19,14 @@ export async function getProjectSSHKey(projectId: string): Promise<string | null
     .single();
 
   if (error || !data) {
-    console.error("Failed to get SSH key:", error);
+    logger.error("Failed to get SSH key:", error);
     return null;
   }
 
   try {
     return decrypt(data.private_key_encrypted);
   } catch (e) {
-    console.error("SSH key decryption failed:", e);
+    logger.error("SSH key decryption failed:", e);
     return null;
   }
 }
@@ -71,7 +72,7 @@ export async function createProjectPVC(projectId: string, size: string = "1Gi"):
     if (error.response?.body?.reason === 'AlreadyExists') {
       return true;
     }
-    console.error('PVC creation failed:', error.message);
+    logger.error('PVC creation failed:', error.message);
     return false;
   }
 }
@@ -119,7 +120,7 @@ export async function createProjectRuntime(
 
     return { success: true, url: runtimeUrl };
   } catch (error: any) {
-    console.error("Runtime provisioning failed:", error);
+    logger.error("Runtime provisioning failed:", error);
     return { success: false, error: error.message };
   }
 }

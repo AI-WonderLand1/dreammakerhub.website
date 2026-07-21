@@ -1,4 +1,5 @@
 import StudioClient from "./StudioClient";
+import { logger } from '@/lib/logger';
 
 async function getData() {
   return {

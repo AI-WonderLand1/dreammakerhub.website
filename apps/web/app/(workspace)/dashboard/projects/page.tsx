@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getUserLimits, formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
 import { Plus, Folder, Pencil, Play, Code2, ExternalLink, Trash2, MoreVertical, Gamepad2, Globe, Box, Sparkles, X } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Project = {
   id: string;

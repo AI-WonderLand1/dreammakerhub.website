@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
+import { logger } from '@/lib/logger';
 
 const NAV_LINKS = [
   { href: '/wonder-build', label: 'Hub', icon: '🏠' },

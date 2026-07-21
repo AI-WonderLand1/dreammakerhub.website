@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { listUserScenes } from "@/lib/scene/supabase-store";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ scenes });
   } catch (error: any) {
-    console.error("Failed to list user scenes:", error);
+    logger.error("Failed to list user scenes:", error);
     return NextResponse.json(
       { error: error.message || "Failed to load scenes" },
       { status: 500 }

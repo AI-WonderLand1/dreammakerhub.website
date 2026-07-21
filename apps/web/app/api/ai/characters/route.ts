@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { opencodeProvider } from "@/core/ai/providers/opencode";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
       style,
     });
   } catch (error) {
-    console.error("Character AI error:", error);
+    logger.error("Character AI error:", error);
     return NextResponse.json(
       { error: "Failed to generate character" },
       { status: 500 }

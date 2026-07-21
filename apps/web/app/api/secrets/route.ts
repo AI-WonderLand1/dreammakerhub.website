@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseRouteClient } from "@/lib/supabase/route";
 import { encryptSecret } from "@/lib/crypto/secrets";
+import { logger } from '@/lib/logger';
 
 function last4(secret: string) {
   const s = secret.trim();

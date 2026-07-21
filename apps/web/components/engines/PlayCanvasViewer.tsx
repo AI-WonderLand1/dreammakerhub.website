@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { engineManager } from '@engine/core';
+import { logger } from '@/lib/logger';
 
 // Dynamic import for PlayCanvas (client-side only)
 let pc: any = null;
@@ -105,11 +106,11 @@ export default function PlayCanvasViewer({
         });
 
         if (!mounted) return;
-        console.log('[PlayCanvasViewer] Engine initialized via EngineManager');
+        logger.info('[PlayCanvasViewer] Engine initialized via EngineManager');
 
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Failed to initialize PlayCanvas';
-        console.error('[PlayCanvasViewer] Error:', errorMsg);
+        logger.error('[PlayCanvasViewer] Error:', errorMsg);
         if (mounted) {
           setError(errorMsg);
         }

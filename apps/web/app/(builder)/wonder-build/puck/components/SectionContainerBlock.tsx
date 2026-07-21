@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { logger } from '@/lib/logger';
 
 export type SectionContainerBlockProps = {
   title: string;

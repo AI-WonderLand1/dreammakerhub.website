@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { logger } from '@/lib/logger';
 
 const TabsContext = React.createContext<{ value: string; setValue: (value: string) => void } | null>(null);
 
