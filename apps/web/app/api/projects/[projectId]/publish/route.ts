@@ -243,11 +243,13 @@ export async function POST(
       const webhookSecret = randomBytes(32).toString("hex");
       const webhookUrl = `${req.nextUrl.origin}/api/webhooks/incoming/${params.projectId}`;
 
+      const keyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
+
       await supabase.from("project_api_configs").upsert(
         {
           project_id: params.projectId,
           user_id: ownerId,
-          api_key: apiKey,
+          api_key_hash: keyHash,
           webhook_secret: webhookSecret,
           webhook_url: webhookUrl,
           created_at: new Date().toISOString(),
@@ -258,7 +260,7 @@ export async function POST(
       await supabase.from("api_keys").insert({
         user_id: ownerId,
         name: `Project: ${params.projectId}`,
-        key: apiKey,
+        key_hash: keyHash,
         project_id: params.projectId,
         created_at: new Date().toISOString(),
       });

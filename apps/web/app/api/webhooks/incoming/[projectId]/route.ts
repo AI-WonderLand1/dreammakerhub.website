@@ -32,12 +32,13 @@ export async function POST(
 
     const supabase = await createSupabaseServerClient();
 
-    // Verify API key
+    // Verify API key (hashed comparison)
+    const apiKeyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
     const { data: config, error: configError } = await supabase
       .from("project_api_configs")
       .select("user_id, webhook_secret")
       .eq("project_id", projectId)
-      .eq("api_key", apiKey)
+      .eq("api_key_hash", apiKeyHash)
       .single();
 
     if (configError || !config) {
@@ -131,12 +132,13 @@ export async function GET(
     const supabase = await createSupabaseServerClient();
     const { projectId } = params;
 
-    // Verify API key
+    // Verify API key (hashed comparison)
+    const apiKeyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
     const { data: config } = await supabase
       .from("project_api_configs")
       .select("user_id")
       .eq("project_id", projectId)
-      .eq("api_key", apiKey)
+      .eq("api_key_hash", apiKeyHash)
       .single();
 
     if (!config) {
