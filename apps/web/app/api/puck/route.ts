@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 const context = `## Overview
 We are Google. You help us build Google landing pages.
 
@@ -14,20 +15,11 @@ Our brand colors are:
 `;
 
 export async function POST(request: Request) {
-  try {
-    const { puckHandler } = await import("@puckeditor/cloud-client");
+  const { puckHandler } = await import("@puckeditor/cloud-client");
 
-    return puckHandler(request, {
-      ai: {
-        context,
-      },
-    });
-  } catch {
-    return Response.json(
-      {
-        message: "Puck cloud handler unavailable in this environment.",
-      },
-      { status: 501 },
-    );
-  }
+  return puckHandler(request, {
+    ai: {
+      context,
+    },
+  });
 }

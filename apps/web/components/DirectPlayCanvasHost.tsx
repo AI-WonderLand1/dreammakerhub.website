@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { PlayCanvasHostProps } from "@/components/PlayCanvasEditorHost";
 import { ensurePlayCanvasBootstrapLoaded, resetPlayCanvasBootstrapLoader } from "@/lib/playcanvasBootstrap";
+import { logger } from '@/lib/logger';
 
 export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: PlayCanvasHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,7 +75,7 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
         
         // Check if mount returned a cleanup object with destroy method
         if (!cleanup || typeof cleanup.destroy !== "function") {
-          console.warn("PlayCanvas mount did not return a cleanup object with destroy method. Memory leaks may occur.");
+          logger.warn("PlayCanvas mount did not return a cleanup object with destroy method. Memory leaks may occur.");
         }
         
         onStatusRef.current?.("ready");

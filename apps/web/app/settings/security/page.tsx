@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 interface DeviceSession {
   sessionId: string;
@@ -123,7 +124,7 @@ export default function SecuritySettingsPage() {
           }));
         }
       } catch (dbError) {
-        console.log('Sessions table not available in public schema');
+        logger.info('Sessions table not available in public schema');
       }
 
       // If no database sessions, create a mock "current device" session
@@ -143,7 +144,7 @@ export default function SecuritySettingsPage() {
 
       setSessions(dbSessions);
     } catch (err) {
-      console.error('Error fetching sessions:', err);
+      logger.error('Error fetching sessions:', err);
       // Create fallback session
       setSessions([{
         sessionId: 'current',

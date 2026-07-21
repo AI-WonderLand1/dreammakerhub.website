@@ -1,4 +1,5 @@
 import { supabaseRouteClient } from "../supabase/route";
+import { logger } from '@/lib/logger';
 
 // ── Old: Supabase-based "mem0" (kept for backwards compat) ────────
 
@@ -61,7 +62,7 @@ export async function storeConfessionToMem0(
       });
 
     if (error) {
-      console.log("[Mem0] Storage upload failed, trying to create bucket:", error.message);
+      logger.info("[Mem0] Storage upload failed, trying to create bucket:", error.message);
       await supabase.storage.createBucket(bucket, {
         public: false,
         fileSizeLimit: 5242880,
@@ -73,13 +74,13 @@ export async function storeConfessionToMem0(
           upsert: true,
         });
       if (retryError) {
-        console.error("[Mem0] Failed to store confession:", retryError);
+        logger.error("[Mem0] Failed to store confession:", retryError);
         return false;
       }
     }
     return true;
   } catch (error) {
-    console.error("[Mem0] Failed to store confession:", error);
+    logger.error("[Mem0] Failed to store confession:", error);
     return false;
   }
 }
@@ -96,7 +97,7 @@ export async function searchMem0Confessions(
       .from(bucket)
       .list(`users/${userId}/`, { limit });
     if (error || !files) {
-      console.log("[Mem0] No confessions found:", error?.message);
+      logger.info("[Mem0] No confessions found:", error?.message);
       return [];
     }
     const confessions: StoredConfession[] = [];
@@ -129,13 +130,13 @@ export async function searchMem0Confessions(
             });
           }
         } catch (e) {
-          console.log("[Mem0] Failed to parse confession file:", e);
+          logger.info("[Mem0] Failed to parse confession file:", e);
         }
       }
     }
     return confessions;
   } catch (error) {
-    console.error("[Mem0] Failed to search confessions:", error);
+    logger.error("[Mem0] Failed to search confessions:", error);
     return [];
   }
 }
@@ -155,7 +156,7 @@ export async function getUserConfessions(
       .from(bucket)
       .list(prefix, { limit: limit * 10 });
     if (error || !files) {
-      console.log("[Mem0] No confessions found:", error?.message);
+      logger.info("[Mem0] No confessions found:", error?.message);
       return [];
     }
     const confessions: StoredConfession[] = [];
@@ -184,7 +185,7 @@ export async function getUserConfessions(
             createdAt: record.created_at,
           });
         } catch (e) {
-          console.log("[Mem0] Failed to parse confession file:", e);
+          logger.info("[Mem0] Failed to parse confession file:", e);
         }
       }
     }
@@ -192,7 +193,7 @@ export async function getUserConfessions(
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   } catch (error) {
-    console.error("[Mem0] Failed to get user confessions:", error);
+    logger.error("[Mem0] Failed to get user confessions:", error);
     return [];
   }
 }

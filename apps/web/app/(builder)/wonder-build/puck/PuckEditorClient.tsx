@@ -28,6 +28,7 @@ import { BreakpointSwitcher, breakpointDimensions, type Breakpoint } from "./Bre
 import { BlocksLibrary } from "./BlocksLibrary";
 import { AssetManager } from "./AssetManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { logger } from '@/lib/logger';
 
 type EditorStatus = "loading" | "loaded" | "empty" | "error" | "saving" | "saved";
 

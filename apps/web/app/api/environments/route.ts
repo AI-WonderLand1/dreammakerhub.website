@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { provisionWorkspace, terminateWorkspace, getWorkspaceStatus, listUserWorkspaces, getWorkspaceUrls } from '@/lib/workspace'
 import type { WorkspaceType } from '@/lib/workspace'
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -119,7 +120,7 @@ export async function POST(request: Request) {
       message: 'Workspace provisioned',
     })
   } catch (error) {
-    console.error('Environment provisioning error:', error)
+    logger.error('Environment provisioning error:', error)
     return NextResponse.json(
       { error: 'Failed to provision environment' },
       { status: 500 }
@@ -165,7 +166,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ message: 'Environment terminated' })
   } catch (error) {
-    console.error('Environment termination error:', error)
+    logger.error('Environment termination error:', error)
     return NextResponse.json({ error: 'Failed to terminate environment' }, { status: 500 })
   }
 }
@@ -223,7 +224,7 @@ export async function GET(request: Request) {
       workspaces,
     })
   } catch (error) {
-    console.error('Environment fetch error:', error)
+    logger.error('Environment fetch error:', error)
     return NextResponse.json({ error: 'Failed to fetch environments' }, { status: 500 })
   }
 }

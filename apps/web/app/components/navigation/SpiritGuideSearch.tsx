@@ -3,6 +3,7 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Mic, MicOff } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Destination = {
   label: string;
@@ -323,7 +324,7 @@ export function SpiritGuideSearch() {
     };
 
     recognition.onerror = (event: any) => {
-      console.log("Speech recognition error:", event.error);
+      logger.info("Speech recognition error:", event.error);
       setIsListening(false);
       if (event.error === "not-allowed") {
         alert("Please allow microphone access to use voice search.");

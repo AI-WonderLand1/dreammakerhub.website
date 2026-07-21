@@ -1,5 +1,6 @@
 import { EngineConfig, ActiveEngine, EngineName } from './types';
 import type { EngineAdapter } from '../adapters/types';
+import { logger } from '@lib/logger';
 
 export class EngineManager {
   private active: ActiveEngine | null = null;
@@ -69,9 +70,9 @@ export class EngineManager {
       // 6. Publish real-time event for pipeline updates
       await this.publishEngineLoadEvent(name, config);
 
-      console.log(`[EngineManager] Successfully loaded engine: ${name}`);
+      logger.info(`[EngineManager] Successfully loaded engine: ${name}`);
     } catch (error) {
-      console.error(`[EngineManager] Failed to load engine ${name}:`, error);
+      logger.error(`[EngineManager] Failed to load engine ${name}:`, error);
       throw error;
     } finally {
       this.initializing = null;
@@ -98,9 +99,9 @@ export class EngineManager {
         .subscribe();
       
       this.pipelineSubscriptions.engineUpdates = channel;
-      console.log('[EngineManager] Initialized pipeline real-time listener');
+      logger.info('[EngineManager] Initialized pipeline real-time listener');
     } catch (error) {
-      console.error('[EngineManager] Failed to initialize pipeline listener:', error);
+      logger.error('[EngineManager] Failed to initialize pipeline listener:', error);
     }
   }
 
@@ -148,7 +149,7 @@ export class EngineManager {
         .eq('id', record.id);
         
     } catch (error) {
-      console.error('[EngineManager] Error handling pipeline execution insert:', error);
+      logger.error('[EngineManager] Error handling pipeline execution insert:', error);
     }
   }
 
@@ -241,7 +242,7 @@ export class EngineManager {
           });
       }
     } catch (error) {
-      console.error('[EngineManager] Failed to publish engine load event:', error);
+      logger.error('[EngineManager] Failed to publish engine load event:', error);
     }
   }
 
@@ -263,7 +264,7 @@ export class EngineManager {
           source: 'pipeline_execution',
         });
     } catch (error) {
-      console.error('[EngineManager] Failed to publish engine completion event:', error);
+      logger.error('[EngineManager] Failed to publish engine completion event:', error);
     }
   }
 
@@ -284,7 +285,7 @@ export class EngineManager {
   public async dispose(): Promise<void> {
     if (!this.active) return;
 
-    console.log(`[EngineManager] Disposing active engine: ${this.active.name}`);
+    logger.info(`[EngineManager] Disposing active engine: ${this.active.name}`);
 
     // 1. Stop the RAF loop
     if (this.active.rafId !== null) {
@@ -296,7 +297,7 @@ export class EngineManager {
     try {
       await this.active.destroy();
     } catch (err) {
-      console.error(`[EngineManager] Error during engine destruction:`, err);
+      logger.error(`[EngineManager] Error during engine destruction:`, err);
     }
 
     // 3. Clear canvas context (attempt to release GPU memory)
@@ -362,9 +363,9 @@ export class EngineManager {
         .subscribe();
       
       this.pipelineSubscriptions.engineUpdates = channel;
-      console.log('[EngineManager] Initialized pipeline real-time listener');
+      logger.info('[EngineManager] Initialized pipeline real-time listener');
     } catch (error) {
-      console.error('[EngineManager] Failed to initialize pipeline listener:', error);
+      logger.error('[EngineManager] Failed to initialize pipeline listener:', error);
     }
   }
 
@@ -412,7 +413,7 @@ export class EngineManager {
         .eq('id', record.id);
         
     } catch (error) {
-      console.error('[EngineManager] Error handling pipeline execution insert:', error);
+      logger.error('[EngineManager] Error handling pipeline execution insert:', error);
     }
   }
 
@@ -501,7 +502,7 @@ export class EngineManager {
           });
       }
     } catch (error) {
-      console.error('[EngineManager] Failed to publish engine load event:', error);
+      logger.error('[EngineManager] Failed to publish engine load event:', error);
     }
   }
 
@@ -521,7 +522,7 @@ export class EngineManager {
           source: 'pipeline_execution',
         });
     } catch (error) {
-      console.error('[EngineManager] Failed to publish engine completion event:', error);
+      logger.error('[EngineManager] Failed to publish engine completion event:', error);
     }
   }
 

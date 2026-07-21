@@ -5,6 +5,7 @@
 
 import { StorageManager } from "@/lib/storage/StorageManager";
 import { BYOCConfig } from "@/lib/storage/types";
+import { logger } from '@/lib/logger';
 
 export interface PuckProjectData {
   content: Array<{ type: string; props: Record<string, unknown> }>;
@@ -52,7 +53,7 @@ export async function savePuckProject(
 
     return { success: true, url: result.url };
   } catch (error) {
-    console.error("[PuckSave] Failed to save:", error);
+    logger.error("[PuckSave] Failed to save:", error);
     return { success: false, error: String(error) };
   }
 }
@@ -75,7 +76,7 @@ export async function loadPuckProject(
 
     return { success: true, data: result as PuckProjectData };
   } catch (error) {
-    console.error("[PuckSave] Failed to load:", error);
+    logger.error("[PuckSave] Failed to load:", error);
     return { success: false, error: String(error) };
   }
 }
@@ -93,7 +94,7 @@ export async function deletePuckProject(
     await storage.deleteProject(projectId, userId);
     return { success: true };
   } catch (error) {
-    console.error("[PuckSave] Failed to delete:", error);
+    logger.error("[PuckSave] Failed to delete:", error);
     return { success: false, error: String(error) };
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@lib/logger';
 /**
  * Canvas Tracker
  * Ensures only one WebGL/WebGPU canvas context is active at a time.
@@ -9,7 +10,7 @@ export class CanvasTracker {
 
   public static register(canvas: HTMLCanvasElement): void {
     if (this.activeContexts.size >= 1 && !this.activeContexts.has(canvas)) {
-      console.warn(
+      logger.warn(
         `[CanvasTracker] WARNING: Multiple canvas contexts detected! 
          Active contexts: ${this.activeContexts.size}. 
          Adding new canvas:`,

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useFeatureGate } from '@/lib/useSubscription';
+import { logger } from '@/lib/logger';
 
 type Message = {
   id: string;

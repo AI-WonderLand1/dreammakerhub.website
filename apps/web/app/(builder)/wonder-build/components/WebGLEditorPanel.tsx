@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { logger } from '@/lib/logger';
 
 const WebGLStudioHost = dynamic(() => import('../../../../components/WebGLStudioHost'), { ssr: false });
 

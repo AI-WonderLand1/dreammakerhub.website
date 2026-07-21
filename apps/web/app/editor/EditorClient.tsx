@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
+import { logger } from '@/lib/logger';
 
 // PlayCanvas loaded from CDN
 let pc: any = null;
@@ -38,7 +39,7 @@ export default function EditorPage() {
         // Get pc from window (loaded by CDN)
         pc = (window as any).pc;
         if (!pc) {
-          console.error('PlayCanvas not loaded');
+          logger.error('PlayCanvas not loaded');
           setIsLoading(false);
           return;
         }
@@ -72,7 +73,7 @@ export default function EditorPage() {
           if (cleanupScene) cleanupScene();
         };
       } catch (err) {
-        console.error('Failed to init PlayCanvas:', err);
+        logger.error('Failed to init PlayCanvas:', err);
         setIsLoading(false);
       }
     };

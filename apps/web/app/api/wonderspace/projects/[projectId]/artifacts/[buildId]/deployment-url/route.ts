@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArtifactMetadata } from "../../_utils";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

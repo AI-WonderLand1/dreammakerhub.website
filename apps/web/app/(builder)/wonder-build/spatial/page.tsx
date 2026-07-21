@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { logger } from '@/lib/logger';
 
 const SPATIAL_CLOUD_URL = process.env.NEXT_PUBLIC_SPATIAL_CLOUD_URL || "https://spatial.ai-wonderland.app";
 

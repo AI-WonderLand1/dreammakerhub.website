@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { logger } from '@/lib/logger';
 
 type BackButtonProps = {
   fallbackHref?: string;

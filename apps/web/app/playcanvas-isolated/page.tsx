@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { IsolatedPlayCanvas } from '@/components/playcanvas-isolation';
 import { getCurrentUserSession } from '@/components/playcanvas-isolation/utils/auth';
+import { logger } from '@/lib/logger';
 
 export default function PlayCanvasIsolatedPage() {
   const [userId, setUserId] = useState<string>('');
@@ -19,12 +20,10 @@ export default function PlayCanvasIsolatedPage() {
           setUserId(userSession.userId);
           setSession(userSession);
         } else {
-          // For demo, use a mock user ID
-          setUserId('demo-user-123');
+          setError('Authentication required — please log in.');
         }
       } catch (err) {
         setError('Failed to load user session');
-        setUserId('demo-user-123'); // Fallback for demo
       } finally {
         setIsLoading(false);
       }
@@ -34,15 +33,15 @@ export default function PlayCanvasIsolatedPage() {
   }, []);
 
   const handleStatusChange = (status: string) => {
-    console.log('[PlayCanvas Status]', status);
+    logger.info('[PlayCanvas Status]', status);
   };
 
   const handleReady = () => {
-    console.log('[PlayCanvas] Editor is ready');
+    logger.info('[PlayCanvas] Editor is ready');
   };
 
   const handleError = (error: Error) => {
-    console.error('[PlayCanvas] Error:', error);
+    logger.error('[PlayCanvas] Error:', error);
     // Only set error if it's not a WebContainer availability issue
     if (!error.message.includes('WebContainer') && !error.message.includes('SharedArrayBuffer')) {
       setError(error.message);

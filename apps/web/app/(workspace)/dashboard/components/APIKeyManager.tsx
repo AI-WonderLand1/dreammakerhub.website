@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Trash2, Plus } from 'lucide-react';
 import toast, { Toaster } from '@/components/ui/toast';
+import { logger } from '@/lib/logger';
 
 interface APIKey {
   id: string;

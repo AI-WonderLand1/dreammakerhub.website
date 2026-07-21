@@ -1,4 +1,5 @@
 import { requireEnv } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

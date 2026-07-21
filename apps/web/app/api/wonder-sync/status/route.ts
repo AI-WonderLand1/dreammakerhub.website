@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGit } from "../_git";
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {

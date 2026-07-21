@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import templates from "@/data/templates"
+import { logger } from '@/lib/logger';
 
 export async function GET(
   req: Request,

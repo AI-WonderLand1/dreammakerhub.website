@@ -3,6 +3,7 @@
 import { useAccessibility } from '@/lib/accessibility-context';
 import { useState } from 'react';
 import SpiritGuideChat from '@/app/components/SpiritGuideChat';
+import { logger } from '@/lib/logger';
 
 export function SpiritGuide() {
   const {

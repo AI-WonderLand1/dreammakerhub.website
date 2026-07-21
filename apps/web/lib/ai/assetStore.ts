@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 let _client: ReturnType<typeof createClient> | null = null;
 function sb() {
@@ -47,7 +48,7 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
         });
       
       if (uploadError) {
-        console.error("Failed to upload scene to Supabase:", uploadError);
+        logger.error("Failed to upload scene to Supabase:", uploadError);
         throw uploadError;
       }
       
@@ -75,14 +76,14 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
       }, { onConflict: "id" });
     
     if (dbError) {
-      console.error("Failed to save scene metadata:", dbError);
+      logger.error("Failed to save scene metadata:", dbError);
       throw dbError;
     }
     
     return { success: true, entry, publicUrl: entry.path };
     
   } catch (error) {
-    console.error("Failed to upload AI asset:", error);
+    logger.error("Failed to upload AI asset:", error);
     return { success: false, error };
   }
 }
@@ -97,13 +98,13 @@ export async function listAiGeneratedScenes(limit = 50) {
       .limit(limit);
     
     if (error) {
-      console.error("Failed to list AI scenes:", error);
+      logger.error("Failed to list AI scenes:", error);
       return [];
     }
     
     return data || [];
   } catch (error) {
-    console.error("Failed to fetch AI scenes:", error);
+    logger.error("Failed to fetch AI scenes:", error);
     return [];
   }
 }

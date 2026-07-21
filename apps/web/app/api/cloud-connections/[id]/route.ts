@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
+import { logger } from '@/lib/logger';
 
 type PatchAction = "disconnect" | "reconnect";
 

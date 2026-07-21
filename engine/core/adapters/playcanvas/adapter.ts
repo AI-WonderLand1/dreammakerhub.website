@@ -1,17 +1,18 @@
 import type { EngineAdapter, EngineConfig, EngineInstance } from '../types';
+import { logger } from '@lib/logger';
 
 export class PlayCanvasAdapter implements EngineAdapter {
   public name = 'playcanvas';
 
   public async create(config: EngineConfig): Promise<EngineInstance> {
-    console.log('[PlayCanvasAdapter] Creating engine instance...');
+    logger.info('[PlayCanvasAdapter] Creating engine instance...');
     
     let pc: any;
     try {
       // Dynamic import to handle environment differences
       pc = await import('playcanvas');
     } catch (e) {
-      console.error('[PlayCanvasAdapter] Failed to load playcanvas library. Is it installed?', e);
+      logger.error('[PlayCanvasAdapter] Failed to load playcanvas library. Is it installed?', e);
       throw e;
     }
 
@@ -39,7 +40,7 @@ export class PlayCanvasAdapter implements EngineAdapter {
     try {
       gltfTransform = await import('@gltf-transform/core');
     } catch (e) {
-      console.warn('[PlayCanvasAdapter] GLTF support not available');
+      logger.warn('[PlayCanvasAdapter] GLTF support not available');
     }
 
     return {
@@ -48,7 +49,7 @@ export class PlayCanvasAdapter implements EngineAdapter {
       context: app.graphicsDevice.getContext(),
       device: null, // WebGL doesn't have a WebGPU device
       destroy: async () => {
-        console.log('[PlayCanvasAdapter] Destroying instance');
+        logger.info('[PlayCanvasAdapter] Destroying instance');
         window.removeEventListener('resize', resize);
         app.destroy();
         if (gltfTransform) {
