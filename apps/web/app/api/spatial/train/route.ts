@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { createJob, updateJobStatus } from "@/lib/spatial/splatJobs";
 import type { TrainRequest } from "@/lib/spatial/types";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
       message: 'Training job dispatched. Poll /api/spatial/jobs/[jobId] for status.',
     });
   } catch (error: any) {
-    console.error("Splat train error:", error.message);
+    logger.error("Splat train error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -108,7 +109,7 @@ async function dispatchTraining(
   } else {
     // No external worker configured — simulate training for development.
     // In production, remove this branch and require SPLAT_TRAINING_WEBHOOK.
-    console.warn(
+    logger.warn(
       `[SplatTrain] No SPLAT_TRAINING_WEBHOOK configured. ` +
       `Job ${jobId} created but training will not run. ` +
       `Set SPLAT_TRAINING_WEBHOOK to an endpoint that accepts POST with {jobId, sourceUrls, format, quality}.`

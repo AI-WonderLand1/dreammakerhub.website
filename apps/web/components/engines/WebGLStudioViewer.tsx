@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { engineManager } from '@engine/core';
+import { logger } from '@/lib/logger';
 
 interface WebGLStudioViewerProps {
   initialShader?: string;
@@ -38,7 +39,7 @@ export default function WebGLStudioViewer({
 
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Failed to initialize WebGL';
-        console.error('[WebGLStudioViewer] Error:', errorMsg);
+        logger.error('[WebGLStudioViewer] Error:', errorMsg);
         if (mounted) {
           setError(errorMsg);
           onError?.(errorMsg);

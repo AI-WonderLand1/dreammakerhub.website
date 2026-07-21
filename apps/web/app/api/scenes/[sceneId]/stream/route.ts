@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -96,7 +97,7 @@ export async function GET(
                 return;
               }
             } catch (localError) {
-              console.log("Local template not available:", localError.message);
+              logger.info("Local template not available:", localError.message);
             }
             
             controller.enqueue(new TextEncoder().encode(
@@ -201,7 +202,7 @@ export async function GET(
           controller.close();
           
         } catch (error) {
-          console.error("Stream error:", error);
+          logger.error("Stream error:", error);
           controller.enqueue(new TextEncoder().encode(
             JSON.stringify({ error: "Stream failed" })
           ));
@@ -220,7 +221,7 @@ export async function GET(
     });
 
   } catch (error: any) {
-    console.error("Scene stream error:", error);
+    logger.error("Scene stream error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to stream scene" },
       { status: 500 }

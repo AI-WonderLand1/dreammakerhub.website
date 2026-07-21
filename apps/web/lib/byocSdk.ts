@@ -1,4 +1,5 @@
 import { Client } from "colyseus.js";
+import { logger } from '@/lib/logger';
 
 export type CloudProvider = "aws" | "gcp" | "azure";
 

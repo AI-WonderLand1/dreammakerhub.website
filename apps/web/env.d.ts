@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // apps/web/env.d.ts
 // NOTE: Do NOT prefix sensitive API keys with NEXT_PUBLIC_ - that exposes them to the client bundle.
 

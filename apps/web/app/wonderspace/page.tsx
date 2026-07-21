@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { GATEWAY_LAUNCH_MATRIX, resolveGatewayExperience } from "@/lib/gatewayLaunchMatrix";
+import { logger } from '@/lib/logger';
 
 type BuildMode = "wonderspace" | "component" | "website" | "game";
 type AgentStage = "architect" | "builder" | "reviewer" | "runner";

@@ -1,6 +1,7 @@
 "use client";
 
 import { Briefcase, MapPin, CheckCircle, Rocket, Mail } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Role = {
   title: string;

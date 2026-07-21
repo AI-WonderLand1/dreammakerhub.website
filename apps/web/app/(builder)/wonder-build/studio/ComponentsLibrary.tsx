@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
+import { logger } from '@/lib/logger';
   LayoutGrid, Columns3, Rows3, Square, Type, AlignLeft, Quote, 
   Image as ImageIcon, Video, UserCircle, CheckSquare, 
   MousePointer2, ChevronDown, Menu, Link as LinkIcon, Table, 

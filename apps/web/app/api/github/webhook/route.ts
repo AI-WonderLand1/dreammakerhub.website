@@ -1,6 +1,7 @@
 // app/api/github/webhook/route.ts
 import { createHmac, timingSafeEqual } from 'crypto';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 function verifySignature(rawBody: string, signatureHeader: string | null) {
   if (!signatureHeader) return false;

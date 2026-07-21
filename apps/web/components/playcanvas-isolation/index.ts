@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // Main component
 export { IsolatedPlayCanvas, useIsolatedPlayCanvas } from './client/IsolatedPlayCanvas';
 export type { IsolatedPlayCanvasProps } from './client/IsolatedPlayCanvas';

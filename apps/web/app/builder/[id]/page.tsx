@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 export default function BuilderPage() {
   const params = useParams();

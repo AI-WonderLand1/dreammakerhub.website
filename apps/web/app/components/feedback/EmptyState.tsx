@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { logger } from '@/lib/logger';
 
 export function EmptyState({ title, description, cta }: { title: string; description: string; cta?: ReactNode }) {
   return (

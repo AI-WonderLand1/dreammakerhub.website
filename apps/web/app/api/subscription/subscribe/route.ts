@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { logger } from '@/lib/logger';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, url: session.url });
   } catch (err: any) {
-    console.error("Stripe checkout error:", err);
+    logger.error("Stripe checkout error:", err);
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
   }
 }

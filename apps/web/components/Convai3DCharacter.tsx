@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { logger } from '@/lib/logger';
 
 declare global {
   interface Window {
@@ -78,7 +79,7 @@ export default function Convai3DCharacter({
           background: "transparent",
           onStart: () => {
             setIsLoading(false);
-            console.log("Convai character started");
+            logger.info("Convai character started");
           },
           onResponse: (response: string) => {
             if (onResponse) {
@@ -86,13 +87,13 @@ export default function Convai3DCharacter({
             }
           },
           onError: (err: string) => {
-            console.error("Convai error:", err);
+            logger.error("Convai error:", err);
             setError(err);
           }
         });
 
       } catch (err) {
-        console.error("Failed to initialize Convai player:", err);
+        logger.error("Failed to initialize Convai player:", err);
         setError(String(err));
         setIsLoading(false);
       }

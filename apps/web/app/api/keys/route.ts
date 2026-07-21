@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseRouteClient } from "@/lib/supabase/route";
 import { makeApiToken } from "@/lib/crypto/token";
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   const supabase = supabaseRouteClient();

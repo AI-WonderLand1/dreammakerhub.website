@@ -2,6 +2,7 @@
 
 import { lazy, Suspense } from "react";
 import type { AiNpcProvider } from "@/lib/ai/convaiNpcProvider";
+import { logger } from '@/lib/logger';
 
 type SafeNpcPanelProps = {
   provider: AiNpcProvider;

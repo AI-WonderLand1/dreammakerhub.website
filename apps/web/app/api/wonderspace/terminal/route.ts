@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runAI } from "../../wonder-build/ai-router";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 async function requireAuth(req: Request): Promise<string | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       output: aiResponse,
     });
   } catch (err: any) {
-    console.error("❌ WonderSpace terminal error:", err);
+    logger.error("❌ WonderSpace terminal error:", err);
     return NextResponse.json(
       { error: "Failed to execute terminal command" },
       { status: 500 }

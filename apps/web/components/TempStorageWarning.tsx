@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AlertTriangle, Clock, Cloud, CreditCard, Download, X, ArrowRight } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface TempStorageWarningProps {
   isOpen: boolean;

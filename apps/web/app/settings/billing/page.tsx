@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export default function BillingSettingsPage() {
   return (
     <section>

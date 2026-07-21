@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { WebContainerManager, TerminalEmulator, type FileNode } from "@wonderspace/ide-engine";
 import "@xterm/xterm/css/xterm.css";
+import { logger } from '@/lib/logger';
 
 const wcManager = new WebContainerManager();
 
@@ -30,7 +31,7 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
       setActiveFile(filePath);
       setFileContent(content);
     } catch (err) {
-      console.error("Failed to read file:", err);
+      logger.error("Failed to read file:", err);
     }
   }, []);
 

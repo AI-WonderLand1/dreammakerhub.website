@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 const BUCKET_NAME = "3d-assets";
 
@@ -27,7 +28,7 @@ export async function GET(
       .download(filename);
 
     if (error) {
-      console.error("Download error:", error);
+      logger.error("Download error:", error);
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
@@ -40,7 +41,7 @@ export async function GET(
     });
 
   } catch (error: any) {
-    console.error("Failed to download asset:", error);
+    logger.error("Failed to download asset:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

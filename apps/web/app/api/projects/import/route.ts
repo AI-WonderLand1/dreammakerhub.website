@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
    
     const script = `
 import zipfile, sys, os
+import { logger } from '@/lib/logger';
 
 src = sys.argv[1]
 dst = sys.argv[2]
@@ -122,7 +123,7 @@ with zipfile.ZipFile(src, 'r') as z:
           try {
             importedMeta = JSON.parse(content);
           } catch(e) {
-            console.warn("could not parse wonderbuild.json", e);
+            logger.warn("could not parse wonderbuild.json", e);
           }
         } else if (safe.startsWith("files/")) {
           const relFile = safe.replace(/^files\//, "");
@@ -153,7 +154,7 @@ with zipfile.ZipFile(src, 'r') as z:
     
     return NextResponse.json({ ok: true, projectId: project.id, importedFiles, importedBinaryFiles, skippedBinaryFiles });
   } catch (error: any) {
-    console.error("Failed to import project", error);
+    logger.error("Failed to import project", error);
     return NextResponse.json({ error: "Failed to import project" }, { status: 500 });
   } finally {
     await fs.rm(tmp, { recursive: true, force: true });

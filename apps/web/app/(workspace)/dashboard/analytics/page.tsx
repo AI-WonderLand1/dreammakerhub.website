@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { logger } from '@/lib/logger';
 
 export default function AnalyticsPage() {
   const router = useRouter();

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calendar, Filter, Search, Tag } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Post = {
   title: string;

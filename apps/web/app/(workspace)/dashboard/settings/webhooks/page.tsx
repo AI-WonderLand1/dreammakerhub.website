@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from '@/lib/logger';
 
 type Hook = {
   id: string;
