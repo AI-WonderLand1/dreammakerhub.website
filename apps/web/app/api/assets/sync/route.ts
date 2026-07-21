@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
       totalSynced: results.reduce((sum, r) => sum + r.synced, 0)
     });
   } catch (error: any) {
-    console.error("Asset sync error:", error);
+    logger.error("Asset sync error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

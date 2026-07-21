@@ -3,6 +3,7 @@ import { checkEslint } from '@/core/aetherguard/checks/eslint';
 import { checkTypeScript } from '@/core/aetherguard/checks/typecheck';
 import { checkDeps } from '@/core/aetherguard/checks/deps';
 import { checkDeadCode } from '@/core/aetherguard/checks/deadcode';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   const cwd = process.cwd();

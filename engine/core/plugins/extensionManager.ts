@@ -1,4 +1,4 @@
-import { VM } from 'vm2'
+import vm from 'vm'
 import { logger } from '../../lib/logger'
 
 export interface Extension {
@@ -28,16 +28,14 @@ export class ExtensionManager {
       throw new Error(`Extension validation failed: ${validation.error}`)
     }
 
-    // 2. Safe to run in vm2 because validator already scanned it
-    const vm = new VM({
-      timeout: 5000,
-      sandbox: this.createSandbox(manifest.permissions)
-    })
-
-    const extension = vm.run(code)
+    // 2. Run in isolated Node.js vm context
+    const sandbox = this.createSandbox(manifest.permissions as string[]);
+    const context = vm.createContext(sandbox);
+    const script = new vm.Script(code, { filename: 'extension.js' });
+    const extension = script.runInContext(context, { timeout: 5000 });
 
     // 3. Register hooks
-      for (const [, handler] of Object.entries(extension.hooks || {})) {
+    for (const [hookName, handler] of Object.entries(extension.hooks || {})) {
       if (!this.hooks.has(hookName)) {
         this.hooks.set(hookName, [])
       }
@@ -71,22 +69,28 @@ export class ExtensionManager {
   }
 
   private createSandbox(permissions: string[]) {
-      const sandbox: Record<string, unknown> = {
-        console: console,
+    const sandbox: Record<string, unknown> = {
+      console,
       setTimeout, setInterval, clearTimeout, clearInterval
     }
 
     if (permissions.includes('fetch')) {
-      sandbox.fetch = fetch
+      sandbox.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (/^https?:\/\/(localhost|127\.0\.0\.1|169\.254\.\d+\.\d+|metadata\.)/.test(url)) {
+          throw new Error('Fetch to internal endpoints is not allowed');
+        }
+        return fetch(input, init);
+      };
     }
 
     if (permissions.includes('storage')) {
       sandbox.storage = {
         get: async (_key: string) => {
-          // Implement storage
+          return null;
         },
         set: async (_key: string, _value: unknown) => {
-          // Implement storage
+          // no-op
         }
       }
     }

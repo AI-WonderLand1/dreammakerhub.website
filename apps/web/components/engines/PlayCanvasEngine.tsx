@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { logger } from '@/lib/logger';
 
 // Dynamic import for PlayCanvasViewer (client-side only, heavy dependency)
 const PlayCanvasStudioViewer = dynamic(() => import('./PlayCanvasViewer'), {

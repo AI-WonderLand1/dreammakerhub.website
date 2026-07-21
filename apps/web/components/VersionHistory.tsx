@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { History, RotateCcw, Clock, Trash2, X } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface Version {
   id: string;
@@ -36,7 +37,7 @@ export function VersionHistory({ projectId, onRestore, onClose }: VersionHistory
         setVersions(data.versions || []);
       }
     } catch (err) {
-      console.error("Failed to load versions:", err);
+      logger.error("Failed to load versions:", err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export function VersionHistory({ projectId, onRestore, onClose }: VersionHistory
         alert("Failed to restore version");
       }
     } catch (err) {
-      console.error("Restore error:", err);
+      logger.error("Restore error:", err);
       alert("Failed to restore version");
     } finally {
       setRestoring(null);
@@ -79,7 +80,7 @@ export function VersionHistory({ projectId, onRestore, onClose }: VersionHistory
       await fetch(`/api/versions?versionId=${versionId}`, { method: "DELETE" });
       setVersions(versions.filter(v => v.id !== versionId));
     } catch (err) {
-      console.error("Delete error:", err);
+      logger.error("Delete error:", err);
     }
   }
 
@@ -233,7 +234,7 @@ export function useAutoSave(projectId: string | null, content: any, delayMs = 30
       });
       setLastSaved(new Date());
     } catch (err) {
-      console.error("Auto-save failed:", err);
+      logger.error("Auto-save failed:", err);
     } finally {
       setSaving(false);
     }

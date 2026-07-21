@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 export default function GitHubStyleLayout({ children }: { children: React.ReactNode }) {
   return (

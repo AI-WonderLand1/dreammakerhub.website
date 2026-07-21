@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export async function runEslintFix() {
   return { fixed: 0 };
 }

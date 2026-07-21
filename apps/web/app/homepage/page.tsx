@@ -15,6 +15,7 @@ export const metadata = {
 };
 
 import Homepage from "./Homepage";
+import { logger } from '@/lib/logger';
 
 export default function HomepagePage() {
   return <Homepage />;

@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/rest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '../../utils/supabase/server'
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

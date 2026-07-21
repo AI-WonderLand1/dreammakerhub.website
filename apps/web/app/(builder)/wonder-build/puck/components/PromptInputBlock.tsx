@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 
 export type PromptInputBlockProps = {
   placeholder?: string;
@@ -57,9 +58,9 @@ export default function PromptInputBlock({
         });
         const data = await res.json();
         // Could emit event or callback with result
-        console.log("AI response:", data);
+        logger.info("AI response:", data);
       } catch (e) {
-        console.error("AI request failed:", e);
+        logger.error("AI request failed:", e);
       }
     }
     setLoading(false);

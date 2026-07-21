@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { encryptByocCredentials, type ByocCredentialPayload } from "@/lib/crypto/byoc";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

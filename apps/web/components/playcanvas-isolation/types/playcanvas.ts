@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export interface PlayCanvasScene {
   name: string;
   version: string;

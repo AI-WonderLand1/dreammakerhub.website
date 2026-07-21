@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadSceneFromSupabase } from "@/lib/scene/supabase-store";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -27,16 +28,16 @@ export async function GET(
       const templateFile = `${sceneId}.json`;
       const filePath = path.join(templatesDir, templateFile);
       
-      console.log('Looking for scene file:', filePath);
-      console.log('File exists:', fs.existsSync(filePath));
+      logger.info('Looking for scene file:', filePath);
+      logger.info('File exists:', fs.existsSync(filePath));
       
       if (fs.existsSync(filePath)) {
         const sceneData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        console.log('Loaded scene data successfully');
+        logger.info('Loaded scene data successfully');
         return NextResponse.json(sceneData);
       }
     } catch (error) {
-      console.log("Local template not available:", error.message);
+      logger.info("Local template not available:", error.message);
     }
     
     // Fallback to Supabase (will likely fail due to connection issues)
@@ -52,7 +53,7 @@ export async function GET(
     return NextResponse.json(scene);
 
   } catch (error: any) {
-    console.error("Load scene error:", error);
+    logger.error("Load scene error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to load scene" },
       { status: 500 }

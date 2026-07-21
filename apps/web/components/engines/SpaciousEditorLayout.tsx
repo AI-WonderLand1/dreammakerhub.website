@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { UserAssetLibrary } from './UserAssetLibrary';
 import { AIAssistantPanel } from './AIAssistantPanel';
+import { logger } from '@/lib/logger';
 
 // Dynamic import for heavy 3D engine
 const PlayCanvasViewer = dynamic(() => import('./PlayCanvasViewer'), {
@@ -85,7 +86,7 @@ export default function SpaciousEditorLayout() {
         <main className="flex-1 relative overflow-hidden">
           <PlayCanvasViewer 
             onSceneReady={setPlayCanvasApp}
-            onEntitySelect={(entity) => console.log('Selected:', entity)}
+            onEntitySelect={(entity) => logger.info('Selected:', entity)}
           />
           
           {/* Overlay instructions */}

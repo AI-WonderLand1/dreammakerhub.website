@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/lib/logger';
 
 export default function DevelopersPage() {
   return (

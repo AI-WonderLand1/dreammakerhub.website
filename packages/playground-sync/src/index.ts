@@ -28,6 +28,8 @@
  *   });
  */
 
+import { logger } from '../../../lib/logger';
+
 export interface PlaygroundSyncConfig {
   apiUrl: string;
   syncKey: string;
@@ -291,12 +293,12 @@ export class PlaygroundSync {
         const data = JSON.parse(event.data) as RealtimeEvent;
         callback(data);
       } catch (e) {
-        console.error('Failed to parse realtime event:', e);
+        logger.error('Failed to parse realtime event:', e);
       }
     };
 
     eventSource.onerror = (error) => {
-      console.error('Realtime connection error:', error);
+      logger.error('Realtime connection error:', error);
       callback({ type: 'heartbeat', timestamp: new Date().toISOString() });
     };
 
@@ -314,7 +316,7 @@ export class PlaygroundSync {
     events: string[] = ['usage', 'tokens', 'status']
   ): EventSource | null {
     if (typeof EventSource === 'undefined') {
-      console.warn('EventSource not supported in this environment');
+      logger.warn('EventSource not supported in this environment');
       return null;
     }
 

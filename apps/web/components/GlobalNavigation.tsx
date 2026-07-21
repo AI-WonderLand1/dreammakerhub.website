@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { PAGES } from '../lib/navigation';
+import { logger } from '@/lib/logger';
 
 interface GlobalNavigationProps {
   className?: string;

@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from '@/lib/logger';
 
 export function FooterBlock({ content, children }: { content?: any; children?: React.ReactNode }) {
   const links: string[] = Array.isArray(content?.links) ? content.links : [];

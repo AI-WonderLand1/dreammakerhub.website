@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,7 +70,7 @@ export async function GET() {
     checks.details.responseTime = Date.now() - startTime;
     
     // Log the health check
-    console.log('Health check completed:', {
+    logger.info('Health check completed:', {
       status: checks.status,
       responseTime: checks.details.responseTime,
       services: checks.services,
@@ -86,7 +87,7 @@ export async function GET() {
     });
     
   } catch (error) {
-    console.error('Health check failed:', error);
+    logger.error('Health check failed:', error);
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { logger } from '@/lib/logger';
 
 type PageHeaderProps = {
   lead: ReactNode;

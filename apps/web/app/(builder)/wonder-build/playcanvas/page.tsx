@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
+import { logger } from '@/lib/logger';
 
 type SceneTemplate = {
   id: string;

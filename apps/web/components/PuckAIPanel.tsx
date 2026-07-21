@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Sparkles, Send, X, Loader2, RefreshCw, Wand2, Plus, Layers, ArrowRight } from "lucide-react";
 import { sendToAIBuilder, PuckData } from "@/lib/ai/puckBuilder";
+import { logger } from '@/lib/logger';
 
 interface PuckAIPanelProps {
   currentData: PuckData | null;

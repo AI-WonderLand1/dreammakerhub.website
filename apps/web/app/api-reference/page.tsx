@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search, BookOpen, Code, Server, Link as LinkIcon } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Endpoint = {
   method: "GET" | "POST" | "DELETE";

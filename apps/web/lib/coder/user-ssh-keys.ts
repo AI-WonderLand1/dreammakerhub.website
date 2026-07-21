@@ -1,5 +1,6 @@
 import { supabaseServer } from "@/lib/supabaseServer";
 import { encrypt, decrypt, generateSSHKeyPair } from "@/lib/security/crypto";
+import { logger } from '@/lib/logger';
 
 export interface UserSSHKey {
   publicKey: string;

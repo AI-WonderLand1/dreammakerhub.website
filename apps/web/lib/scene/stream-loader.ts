@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export interface StreamSceneOptions {
   onMetadata?: (metadata: any) => void;
   onEntity?: (entity: any, index: number, total: number) => void;
@@ -59,7 +60,7 @@ export class SceneStreamLoader {
       this.options.onComplete?.(completeScene);
       
     } catch (error) {
-      console.error("Scene streaming error:", error);
+      logger.error("Scene streaming error:", error);
       this.options.onError?.(error instanceof Error ? error.message : "Unknown error");
     }
   }
@@ -130,11 +131,11 @@ export class SceneStreamLoader {
           break;
           
         default:
-          console.warn("Unknown stream type:", data.type);
+          logger.warn("Unknown stream type:", data.type);
       }
       
     } catch (error) {
-      console.error("Error processing stream line:", error);
+      logger.error("Error processing stream line:", error);
     }
   }
 

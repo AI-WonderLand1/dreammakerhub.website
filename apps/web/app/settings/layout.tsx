@@ -7,6 +7,7 @@ import { TopNav } from "@/app/components/navigation/TopNav";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { BackButton } from "@/app/components/navigation/BackButton";
 import { PageHeader } from "@/app/components/layout/PageHeader";
+import { logger } from '@/lib/logger';
 
 const SETTINGS_NAV_ITEMS = [
   { href: "/settings/account", label: "Account" },

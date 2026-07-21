@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { logger } from '@/lib/logger';
 
 const WEBSITE_EXAMPLES = [
   "A dark sci-fi portfolio for a 3D artist",
@@ -62,7 +63,7 @@ export default function HubPage() {
         setProjects(data.projects || []);
       }
     } catch (err) {
-      console.error("Failed to load projects:", err);
+      logger.error("Failed to load projects:", err);
     }
   }
 

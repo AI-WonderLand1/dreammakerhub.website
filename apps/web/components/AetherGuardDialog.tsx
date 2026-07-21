@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Shield, RefreshCw, CheckCircle, XCircle, ExternalLink, X } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface DaemonStats {
   uptime: number;

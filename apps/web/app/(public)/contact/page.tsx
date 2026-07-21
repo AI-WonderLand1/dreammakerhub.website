@@ -1,6 +1,7 @@
 "use client";
 
 import { Mail, MessageCircle, ShieldCheck, Sparkles, Headphones } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 export default function ContactPage() {
   return (
