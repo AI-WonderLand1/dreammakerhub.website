@@ -4,8 +4,10 @@ import { type NextRequest, NextResponse } from "next/server";
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5000",
-  "https://my-app.com",
-  "https://www.my-app.com",
+  "https://dreammakerhub.website",
+  "https://www.dreammakerhub.website",
+  "https://ai-wonderland.dreammakerhub.website",
+  "https://playground.dreammakerhub.website",
 ];
 
 export function middleware(request: NextRequest) {
