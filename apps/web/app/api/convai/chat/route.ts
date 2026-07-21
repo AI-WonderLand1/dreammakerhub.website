@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { groqProvider } from '@/core/ai/providers/groq';
 import { openrouterProvider } from '@/core/ai/providers/openrouter';
+import { logger } from '@/lib/logger';
 
 interface NpcRequest {
   sessionId: string;
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ text: npcText, timestamp: Date.now(), provider: providerType });
   } catch (error) {
-    console.error('Error calling AI provider:', error);
+    logger.error('Error calling AI provider:', error);
     return NextResponse.json({ error: 'Failed to generate NPC response', details: String(error) }, { status: 500 });
   }
 }

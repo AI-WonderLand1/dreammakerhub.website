@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Hash a user ID for filesystem isolation
  * Uses a simple hash function for browser compatibility

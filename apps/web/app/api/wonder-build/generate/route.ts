@@ -3,6 +3,7 @@ import { createRootNode, createNode } from '@builder/builder/engine/LayoutTree'
 import { createSupabaseServerClient } from '@/app/utils/supabase/server'
 import { getSmokeUserIdFromRequest } from '@/lib/smokeAuth'
 import type { WonderBuildStatePayload } from '@/lib/wonder-build/masterSchemaContract'
+import { logger } from '@/lib/logger';
 
 const DEFAULT_THEME: Record<string, string> = {
   '--wb-bg': '#0b0b10',
@@ -185,7 +186,7 @@ export async function POST(request: NextRequest) {
     root.children.push(heroNode, featuresNode, footerNode)
     return NextResponse.json({ success: true, root, wonderBuildState })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 })
   }
 }

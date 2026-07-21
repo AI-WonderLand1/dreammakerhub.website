@@ -1,4 +1,5 @@
 import { LocalizedConfession } from "@/core/ai/pipeline-v1/confessions/types";
+import { logger } from '@/lib/logger';
 
 export interface PuckComponentData {
   type: string;

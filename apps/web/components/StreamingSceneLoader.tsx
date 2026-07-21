@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { SceneStreamLoader } from '@/lib/scene/stream-loader';
+import { logger } from '@/lib/logger';
 
 export function StreamingSceneLoader() {
   const [loading, setLoading] = useState(false);
@@ -18,16 +19,16 @@ export function StreamingSceneLoader() {
     try {
       await SceneStreamLoader.streamScene(sceneId, {
         onMetadata: (metadata) => {
-          console.log('Scene metadata:', metadata);
+          logger.info('Scene metadata:', metadata);
         },
         onEntity: (entity, index, total) => {
-          console.log(`Loaded entity ${index + 1}/${total}:`, entity.name);
+          logger.info(`Loaded entity ${index + 1}/${total}:`, entity.name);
         },
         onEnvironment: (environment) => {
-          console.log('Environment loaded:', environment);
+          logger.info('Environment loaded:', environment);
         },
         onLight: (light, index, total) => {
-          console.log(`Loaded light ${index + 1}/${total}:`, light.type);
+          logger.info(`Loaded light ${index + 1}/${total}:`, light.type);
         },
         onProgress: (progress) => {
           setProgress(progress);
@@ -35,7 +36,7 @@ export function StreamingSceneLoader() {
         onComplete: (completeScene) => {
           setScene(completeScene);
           setLoading(false);
-          console.log('Scene loading complete:', completeScene);
+          logger.info('Scene loading complete:', completeScene);
         },
         onError: (error) => {
           setError(error);

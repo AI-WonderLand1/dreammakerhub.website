@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import type { ConfessionEntry } from '../components/ConfessionsDrawer';
+import { logger } from '@/lib/logger';
 
 export const CONFESSIONS_STORAGE_KEY = 'sovereign_os:confessions';
 

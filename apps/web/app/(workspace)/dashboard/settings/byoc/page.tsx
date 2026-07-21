@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
+import { logger } from '@/lib/logger';
 
 type CloudProvider = "s3" | "gcs" | "azure" | "r2" | "supabase";
 type AuthMode = "apiKey" | "oauth";

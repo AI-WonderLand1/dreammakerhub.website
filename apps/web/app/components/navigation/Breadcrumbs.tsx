@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 type Crumb = {
   href?: string;

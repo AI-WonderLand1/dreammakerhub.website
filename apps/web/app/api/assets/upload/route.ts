@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (insertError) {
-      console.warn("Failed to record asset in database:", insertError);
+      logger.warn("Failed to record asset in database:", insertError);
     }
 
     return NextResponse.json({
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
       format: ext,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    logger.error("Upload error:", error);
     return NextResponse.json(
       { error: "Failed to upload asset" },
       { status: 500 }

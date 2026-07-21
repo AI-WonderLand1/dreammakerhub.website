@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Info, Lightbulb, X } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface Confession {
   message: string;

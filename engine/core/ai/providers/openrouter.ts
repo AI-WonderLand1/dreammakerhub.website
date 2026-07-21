@@ -45,8 +45,8 @@ if (!apiKey) {
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : "https://aiwonderland.replit.app",
-          "X-Title": "AI Wonderland",
+          "HTTP-Referer": process.env.SITE_URL || process.env.NEXT_PUBLIC_URL || "https://dreammakerhub.website",
+          "X-Title": "DreamMaker Hub",
         },
         body: JSON.stringify({
           model,

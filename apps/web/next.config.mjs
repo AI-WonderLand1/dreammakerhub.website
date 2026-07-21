@@ -115,7 +115,7 @@ const nextConfig = {
   },
 
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   webpack: (config, { isServer }) => {

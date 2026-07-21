@@ -1,6 +1,7 @@
 // app/api/notifications/route.ts
 import { createClient } from '../../utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

@@ -5,6 +5,7 @@ import type { EngineType } from "@/types/db";
 import { randomUUID } from "crypto";
  // @ts-expect-error - crypto functions from path alias
 import { generateSSHKeyPair, encrypt } from "@/lib/security/crypto";
+import { logger } from '@/lib/logger';
 
 export async function createProject(
   userId: string,
@@ -33,7 +34,7 @@ export async function createProject(
     .single();
   
   if (projectError) {
-    console.error("Project creation failed:", projectError);
+    logger.error("Project creation failed:", projectError);
     throw new Error(projectError.message);
   }
   
@@ -47,7 +48,7 @@ export async function createProject(
     });
   
   if (keyError) {
-    console.error("SSH key storage failed:", keyError);
+    logger.error("SSH key storage failed:", keyError);
     throw new Error(keyError.message);
   }
   

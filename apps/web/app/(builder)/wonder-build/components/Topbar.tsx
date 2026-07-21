@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 export default function Topbar() {
   const router = useRouter();

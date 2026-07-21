@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 let _client: ReturnType<typeof createClient> | null = null;
 function sb() {
@@ -12,7 +13,7 @@ function sb() {
 
 export async function saveSceneToSupabase(sceneId: string, sceneData: object, userId?: string): Promise<{ success: boolean; path?: string }> {
   if (!sb()) {
-    console.warn("Supabase not configured, falling back to memory");
+    logger.warn("Supabase not configured, falling back to memory");
     const { saveSceneToMemory } = await import("./memory-store");
     await saveSceneToMemory(sceneId, sceneData);
     return { success: true };
@@ -39,7 +40,7 @@ export async function saveSceneToSupabase(sceneId: string, sceneData: object, us
       path: `scenes/${sceneId}`
     };
   } catch (error) {
-    console.error("Failed to save to Supabase:", error);
+    logger.error("Failed to save to Supabase:", error);
     const { saveSceneToMemory } = await import("./memory-store");
     await saveSceneToMemory(sceneId, sceneData);
     return { success: true };
@@ -62,7 +63,7 @@ export async function loadSceneFromSupabase(sceneId: string): Promise<object | n
     if (error) throw error;
     return data?.data || null;
   } catch (error) {
-    console.error("Failed to load from Supabase:", error);
+    logger.error("Failed to load from Supabase:", error);
     const { loadSceneFromMemory } = await import("./memory-store");
     return loadSceneFromMemory(sceneId);
   }
@@ -83,7 +84,7 @@ export async function listUserScenes(userId: string): Promise<any[]> {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error("Failed to list scenes:", error);
+    logger.error("Failed to list scenes:", error);
     return [];
   }
 }
@@ -104,7 +105,7 @@ export async function listPublicScenes(limit = 20): Promise<any[]> {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error("Failed to list public scenes:", error);
+    logger.error("Failed to list public scenes:", error);
     return [];
   }
 }
@@ -125,7 +126,7 @@ export async function deleteSceneFromSupabase(sceneId: string): Promise<boolean>
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error("Failed to delete from Supabase:", error);
+    logger.error("Failed to delete from Supabase:", error);
     return false;
   }
 }

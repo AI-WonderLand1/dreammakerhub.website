@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import UniversalAIAssistant from "@/components/ai/UniversalAIAssistant";
 import { AutoRunAI, AutoRunFromURL, AutoBuildTrigger } from "@/components/ai/AutoRunAI";
 import Footer from "@/components/Footer";
+import { logger } from '@/lib/logger';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

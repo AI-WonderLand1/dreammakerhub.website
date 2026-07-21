@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import JSZip from "jszip";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       }
     });
   } catch (error: any) {
-    console.error("Export error:", error.message);
+    logger.error("Export error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

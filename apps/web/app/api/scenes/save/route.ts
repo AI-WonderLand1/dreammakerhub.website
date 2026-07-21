@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { saveSceneToSupabase } from "@/lib/scene/supabase-store";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("Save scene error:", error);
+    logger.error("Save scene error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to save scene" },
       { status: 500 }

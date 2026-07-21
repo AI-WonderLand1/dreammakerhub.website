@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signUpUser, loginUser, subscribeToPlan, supabase } from '@/lib/supabase-service';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 
 export default function AuthForm() {
   const [mode, setMode] = useState<'login' | 'signup' | 'subscribe'>('login');

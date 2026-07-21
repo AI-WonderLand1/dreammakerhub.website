@@ -2,6 +2,7 @@ import * as pc from "playcanvas"
 import { SceneFile } from "./schema"
 import { loadSceneFromSupabase } from "./supabase-store"
 import { startProfiling, stopProfiling } from "@wonder/perf-assets"
+import { logger } from '@/lib/logger';
 
 async function loadGlbModel(app: pc.Application, meshUrl: string): Promise<pc.Entity | null> {
   return new Promise((resolve) => {
@@ -18,7 +19,7 @@ async function loadGlbModel(app: pc.Application, meshUrl: string): Promise<pc.En
       type: 'container',
     }, (err: Error | null, asset: pc.Asset) => {
       if (err) {
-        console.error('Failed to load GLB:', err);
+        logger.error('Failed to load GLB:', err);
         resolve(null);
         return;
       }
@@ -38,7 +39,7 @@ export async function loadScene(app: pc.Application, sceneOrId: SceneFile | stri
   } finally {
     stopProfiling(app);
     const loadTime = performance.now() - loadStart;
-    console.debug(`[perf] Scene loaded in ${loadTime.toFixed(0)}ms`);
+    logger.debug(`[perf] Scene loaded in ${loadTime.toFixed(0)}ms`);
   }
 }
 
@@ -49,7 +50,7 @@ async function loadSceneImpl(app: pc.Application, sceneOrId: SceneFile | string)
   if (typeof sceneOrId === "string") {
     const loaded = await loadSceneFromSupabase(sceneOrId);
     if (!loaded) {
-      console.error("Scene not found:", sceneOrId);
+      logger.error("Scene not found:", sceneOrId);
       return;
     }
     scene = loaded;
@@ -82,7 +83,7 @@ async function loadSceneImpl(app: pc.Application, sceneOrId: SceneFile | string)
       if (obj.meshUrl && (obj.meshUrl.endsWith('.glb') || obj.meshUrl.endsWith('.gltf'))) {
         const loaded = await loadGlbModel(app, obj.meshUrl);
         if (!loaded) {
-          console.warn('Failed to load GLB:', obj.meshUrl);
+          logger.warn('Failed to load GLB:', obj.meshUrl);
           continue;
         }
         entity = loaded;

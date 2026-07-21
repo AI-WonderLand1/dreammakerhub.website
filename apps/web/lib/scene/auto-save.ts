@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { saveSceneToSupabase } from './supabase-store';
+import { logger } from '@/lib/logger';
 
 export interface UseAutoSaveOptions {
   intervalMs?: number;
@@ -33,7 +34,7 @@ export function useAutoSave(
     const result = await saveSceneToSupabase(sceneId, sceneData, userId);
     if (result.success) {
       lastSavedRef.current = serialized;
-      console.log('[AutoSave] Saved:', sceneId);
+      logger.info('[AutoSave] Saved:', sceneId);
     }
     return result.success;
   }, [sceneId, sceneData, userId]);

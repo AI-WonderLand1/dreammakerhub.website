@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { BYOCConfig, BYOCCredentials, CustomEndpoints } from '@/lib/storage/types';
+import { logger } from '@/lib/logger';
 
 export function BYOCSettings() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +29,7 @@ export function BYOCSettings() {
         setCredentials(config.credentials || {});
         setEndpoints(config.endpoints || {});
       } catch (e) {
-        console.error('Failed to load BYOC config:', e);
+        logger.error('Failed to load BYOC config:', e);
       }
     }
   }, []);
@@ -78,7 +79,7 @@ export function BYOCSettings() {
       setTimeout(() => setValidationStatus('idle'), 3000);
     } catch (error) {
       setValidationStatus('error');
-      console.error('BYOC validation error:', error);
+      logger.error('BYOC validation error:', error);
     } finally {
       setIsValidating(false);
     }

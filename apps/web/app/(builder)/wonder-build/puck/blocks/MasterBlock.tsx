@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export type MasterBlockProps = {
   title: string;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 /**
  * API: /api/keys/api

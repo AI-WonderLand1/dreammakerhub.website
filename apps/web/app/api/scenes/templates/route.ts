@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listPublicScenes } from "@/lib/scene/supabase-store";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -81,7 +82,7 @@ export async function GET() {
         }
       }
     } catch (e) {
-      console.log("3d-assets bucket error:", e);
+      logger.info("3d-assets bucket error:", e);
     }
     
     // Try to load local template files
@@ -90,15 +91,15 @@ export async function GET() {
       const path = await import('path');
       
       const templatesDir = path.join(process.cwd(), 'templates/3d');
-      console.log('Looking for templates in:', templatesDir);
+      logger.info('Looking for templates in:', templatesDir);
       
       if (!fs.existsSync(templatesDir)) {
-        console.log('Templates directory does not exist');
+        logger.info('Templates directory does not exist');
         throw new Error('Templates directory not found');
       }
       
       const templateFiles = fs.readdirSync(templatesDir).filter(file => file.endsWith('.json'));
-      console.log('Found template files:', templateFiles);
+      logger.info('Found template files:', templateFiles);
       
       const localTemplates = templateFiles.map(file => {
         const filePath = path.join(templatesDir, file);
@@ -114,11 +115,11 @@ export async function GET() {
       });
       
       if (localTemplates.length > 0) {
-        console.log('Returning local templates:', localTemplates.length);
+        logger.info('Returning local templates:', localTemplates.length);
         return NextResponse.json({ templates: localTemplates });
       }
     } catch (error) {
-      console.log("Local templates not available:", error.message);
+      logger.info("Local templates not available:", error.message);
     }
     
     // Fallback to hardcoded templates
@@ -198,7 +199,7 @@ export async function GET() {
     return NextResponse.json({ templates: defaultTemplates });
     
   } catch (error) {
-    console.error("Failed to load templates:", error);
+    logger.error("Failed to load templates:", error);
     return NextResponse.json(
       { error: "Failed to load templates" },
       { status: 500 }

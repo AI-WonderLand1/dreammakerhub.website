@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 type PresenceUser = {
   userId: string;

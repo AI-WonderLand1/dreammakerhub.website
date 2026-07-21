@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 type Message = {
   id: string;

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { saveSceneToSupabase, loadSceneFromSupabase, listUserScenes } from '@/lib/scene/supabase-store';
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from '@/lib/ai/assetLibrary';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { logger } from '@/lib/logger';
 
 const BASE = '/webglstudio/webglstudio.js-master/editor';
 

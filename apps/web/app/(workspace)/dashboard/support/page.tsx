@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { MessageCircle, Bug, Gift, ExternalLink, X, Send } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 export default function SupportPage() {
   const [submitted, setSubmitted] = useState(false);

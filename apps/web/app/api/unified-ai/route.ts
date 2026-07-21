@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/app/utils/supabase/server';
 import { getSmokeUserIdFromRequest } from '@/lib/smokeAuth';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const UnifiedAIRequestSchema = z.object({
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
     }
 
   } catch (error) {
-    console.error('[Unified AI API] Error:', error);
+    logger.error('[Unified AI API] Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -170,7 +171,7 @@ async function handleAgentRequest(agent: string, command: string, context?: any,
     });
 
   } catch (error) {
-    console.error(`[Unified AI] Agent ${agent} error:`, error);
+    logger.error(`[Unified AI] Agent ${agent} error:`, error);
     return NextResponse.json(
       { error: `Agent ${agent} unavailable` },
       { status: 503 }
@@ -234,7 +235,7 @@ async function handleRunnerRequest(runner: string, task: string, context?: any, 
     });
 
   } catch (error) {
-    console.error(`[Unified AI] Runner ${runner} error:`, error);
+    logger.error(`[Unified AI] Runner ${runner} error:`, error);
     return NextResponse.json(
       { error: `Runner ${runner} unavailable` },
       { status: 503 }
@@ -287,7 +288,7 @@ async function handleDashboardRequest(action: string, context?: any, req?: Reque
     });
 
   } catch (error) {
-    console.error('[Unified AI] Dashboard request error:', error);
+    logger.error('[Unified AI] Dashboard request error:', error);
     return NextResponse.json(
       { error: 'Dashboard unavailable' },
       { status: 503 }
@@ -339,7 +340,7 @@ async function handleChatRequest(message: string, agent: string = 'spirit-guide'
     });
 
   } catch (error) {
-    console.error('[Unified AI] Chat error:', error);
+    logger.error('[Unified AI] Chat error:', error);
     return NextResponse.json(
       { error: 'Chat service unavailable' },
       { status: 503 }
