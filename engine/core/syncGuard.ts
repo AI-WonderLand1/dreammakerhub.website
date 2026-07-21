@@ -5,7 +5,7 @@
 
 import { localMemory, PendingChange } from "./local-memory";
 import { alice } from "./alice-proxy";
-import { logger } from "../../lib/logger";
+import { logger } from "@lib/logger";
 
 export interface SyncGuardConfig {
   batchSize: number;        // Sync when this many items accumulate
