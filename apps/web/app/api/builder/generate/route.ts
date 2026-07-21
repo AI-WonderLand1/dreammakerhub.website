@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { runModel } from "@/core/ai/runModel";
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(aiContent);
   } catch (error) {
-    console.error("AI Route Error:", error);
+    logger.error("AI Route Error:", error);
     return NextResponse.json({ error: "Failed to generate layout" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/supabase/auth-context'
+import { logger } from '@/lib/logger';
 
 type Workspace = {
   id: string

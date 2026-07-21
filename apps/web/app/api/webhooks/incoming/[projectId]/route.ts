@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import crypto from "crypto";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -78,7 +79,7 @@ export async function POST(
     });
 
     if (eventError) {
-      console.error("Failed to store webhook event:", eventError);
+      logger.error("Failed to store webhook event:", eventError);
     }
 
     // Process event (extend as needed)

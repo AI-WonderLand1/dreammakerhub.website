@@ -11,6 +11,7 @@ import { storeConfessionToMem0, isMem0Enabled } from '@/lib/ai/mem0Client';
 import { getConfessionConfig } from '@/lib/ai/confessionConfig';
 import { searchMemories, storeMemory } from '@/lib/ai/mem0Service';
 import { decryptSecret } from '@/lib/crypto/secrets';
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -285,7 +286,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Chat error:', error);
+    logger.error('Chat error:', error);
     return NextResponse.json(
       { ok: false, error: { code: "SERVER_ERROR", message: error.message || "Internal server error" }, traceId },
       { status: 500 }

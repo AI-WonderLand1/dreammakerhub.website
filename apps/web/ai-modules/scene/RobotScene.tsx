@@ -4,6 +4,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Float, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '../utils';
+import { logger } from '@/lib/logger';
 
 interface RobotProps {
   position: [number, number, number];

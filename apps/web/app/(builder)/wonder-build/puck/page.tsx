@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { PageHeader } from "@/app/components/layout/PageHeader";
 import Topbar from "../components/Topbar";
 import { PuckEditorClient } from "./PuckEditorClient";
+import { logger } from '@/lib/logger';
 
 async function getData() {
   return {

@@ -1,6 +1,7 @@
 import type { UserSession } from '../types/isolation';
 import { hashForIsolation } from './hashing';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 export async function getCurrentUserSession(): Promise<UserSession | null> {
   if (typeof window === 'undefined') {
@@ -28,7 +29,7 @@ export async function getCurrentUserSession(): Promise<UserSession | null> {
       expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now() + 3600000,
     };
   } catch (error) {
-    console.error('[Auth] Failed to get user session:', error);
+    logger.error('[Auth] Failed to get user session:', error);
     return null;
   }
 }
@@ -44,7 +45,7 @@ export function validateUserSession(session: UserSession): boolean {
 
   // Check expiration
   if (Date.now() > session.expiresAt) {
-    console.warn('[Auth] User session expired');
+    logger.warn('[Auth] User session expired');
     return false;
   }
 
@@ -68,7 +69,7 @@ export async function extractUserIdFromToken(token: string): Promise<string | nu
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.sub || payload.userId || payload.id || null;
   } catch (error) {
-    console.error('[Auth] Failed to extract user ID from token:', error);
+    logger.error('[Auth] Failed to extract user ID from token:', error);
     return null;
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Component Exports
  * Central export point to avoid "Module not found" errors

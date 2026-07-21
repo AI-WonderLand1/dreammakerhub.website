@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   const { tempPath, finalPath } = await req.json()
@@ -15,9 +16,9 @@ export async function POST(req: Request) {
 
 // --- helpers ---
 async function copyFile(from: string, to: string) {
-  console.log("COPY:", from, "→", to)
+  logger.info("COPY:", from, "→", to)
 }
 
 async function deleteFile(path: string) {
-  console.log("DELETE TEMP:", path)
+  logger.info("DELETE TEMP:", path)
 }

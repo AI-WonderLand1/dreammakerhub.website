@@ -1,10 +1,11 @@
 import type { EngineAdapter, EngineConfig, EngineInstance } from '../types';
+import { logger } from '@lib/logger';
 
 export class ThreeJSAdapter implements EngineAdapter {
   public name = 'threejs';
 
   public async create(config: EngineConfig): Promise<EngineInstance> {
-    console.log('[ThreeJSAdapter] Creating engine instance...');
+    logger.info('[ThreeJSAdapter] Creating engine instance...');
 
     const THREE = await import('three');
 
@@ -71,7 +72,7 @@ export class ThreeJSAdapter implements EngineAdapter {
       config.onReady();
     }
 
-    console.log('[ThreeJSAdapter] Engine instance created successfully');
+    logger.info('[ThreeJSAdapter] Engine instance created successfully');
 
     return {
       name: this.name,
@@ -79,7 +80,7 @@ export class ThreeJSAdapter implements EngineAdapter {
       context: renderer.getContext() as any,
       device: null,
       destroy: async () => {
-        console.log('[ThreeJSAdapter] Destroying instance');
+        logger.info('[ThreeJSAdapter] Destroying instance');
         cancelAnimationFrame(animationId);
         window.removeEventListener('resize', resize);
         renderer.dispose();

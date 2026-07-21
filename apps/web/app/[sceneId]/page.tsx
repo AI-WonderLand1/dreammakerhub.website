@@ -7,6 +7,7 @@ import { IsolatedPlayCanvas } from "@/components/playcanvas-isolation";
 import { getCurrentUserSession } from "@/components/playcanvas-isolation/utils/auth";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import NpcPanel from "@/components/NpcPanel";
+import { logger } from '@/lib/logger';
 
 function makeToastId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -69,7 +70,7 @@ function ScenePageInner() {
   }, [pushToast]);
 
   const handleStatusChange = useCallback((status: string) => {
-    console.log("[Editor Status]", status);
+    logger.info("[Editor Status]", status);
   }, []);
 
   if (loading) {

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export const callOpenRouter = async (config: PlaygroundConfig, prompt: string, onDelta: (chunk: string) => void) => {
   const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
     method: "POST",

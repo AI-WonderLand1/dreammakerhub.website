@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export interface Viseme {
   mouth: number;
   jaw: number;

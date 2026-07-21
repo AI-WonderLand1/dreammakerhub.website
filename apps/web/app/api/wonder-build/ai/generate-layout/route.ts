@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WonderBuildEngine } from "@/lib/3dWonderBuildEngine";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    console.error("Layout generation error:", error);
+    logger.error("Layout generation error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

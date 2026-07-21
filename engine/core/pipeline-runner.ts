@@ -1,4 +1,5 @@
 import { PipelineToEngineCompiler } from './engine/core/pipelines';
+import { logger } from '@lib/logger';
 
 // Initialize pipeline compiler as a singleton
 const pipelineCompiler = new PipelineToEngineCompiler();
@@ -47,7 +48,7 @@ export async function loadPipelineFromTemplate(templateId: string): Promise<void
       });
     
   } catch (error) {
-    console.error('Failed to load AI-PLAYGROUND pipeline template:', error);
+    logger.error('Failed to load AI-PLAYGROUND pipeline template:', error);
     throw error;
   }
 }
@@ -146,7 +147,7 @@ export async function compilePipelineToEngine(pipelineId: string, userId?: strin
     };
     
   } catch (error) {
-    console.error('Pipeline compilation failed:', error);
+    logger.error('Pipeline compilation failed:', error);
     
     // Register compilation failure for analytics
     await supabase.from('pipeline_compilations').insert({
@@ -228,7 +229,7 @@ export async function saveCompiledEngine(pipelineId: string, engineConfig: any, 
     }
     
   } catch (error) {
-    console.error('Failed to save compiled engine:', error);
+    logger.error('Failed to save compiled engine:', error);
     throw error;
   }
 }
@@ -303,7 +304,7 @@ export async function getAvailablePipelines(userId?: string, filters?: any): Pro
     return availablePipelines || [];
     
   } catch (error) {
-    console.error('Failed to get available pipelines:', error);
+    logger.error('Failed to get available pipelines:', error);
     throw error;
   }
 }

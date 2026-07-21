@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ suggestions }, { status: 200 });
   } catch (err) {
-    console.error("Error in AI suggestions:", err);
+    logger.error("Error in AI suggestions:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -140,7 +141,7 @@ async function generateSuggestions(
     try {
       text = await callCerebras(userPrompt);
     } catch (err: any) {
-      console.error("Cerebras failed for suggestions:", err.message);
+      logger.error("Cerebras failed for suggestions:", err.message);
     }
   }
 
@@ -148,7 +149,7 @@ async function generateSuggestions(
     try {
       text = await callHuggingFace(userPrompt);
     } catch (err: any) {
-      console.error("HuggingFace failed for suggestions:", err.message);
+      logger.error("HuggingFace failed for suggestions:", err.message);
     }
   }
 

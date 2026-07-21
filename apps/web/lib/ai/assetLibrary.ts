@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch";
+import { logger } from '@/lib/logger';
 
 let _client: ReturnType<typeof createClient> | null = null;
 function sb() {
@@ -108,7 +109,7 @@ async function fetchOpenSource3DAssets(query: string, limit = 10): Promise<Exter
       });
     }
   } catch (err) {
-    console.error("Open Source 3D Assets fetch error:", err);
+    logger.error("Open Source 3D Assets fetch error:", err);
   }
 
   return assets;
@@ -140,7 +141,7 @@ async function fetchPolyHavenAssets(query: string, limit = 10): Promise<External
       }
     }
   } catch (err) {
-    console.error("Poly Haven fetch error:", err);
+    logger.error("Poly Haven fetch error:", err);
   }
 
   return assets;
@@ -178,7 +179,7 @@ async function fetchSketchfabAssets(query: string, limit = 10): Promise<External
       }
     }
   } catch (err) {
-    console.error("Sketchfab fetch error:", err);
+    logger.error("Sketchfab fetch error:", err);
   }
 
   return assets;
@@ -278,13 +279,13 @@ export async function downloadAssetToStorage(asset: ExternalAsset, userId?: stri
             allowedHosts: ALLOWED_DOWNLOAD_HOSTS,
           });
           finalBuffer = new Uint8Array(await optResp.arrayBuffer());
-          console.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
+          logger.debug(`[perf] Asset optimized, saved ${optimizeData.savings}`);
         }
       } else {
-        console.warn("[optimizer] Using unoptimized asset");
+        logger.warn("[optimizer] Using unoptimized asset");
       }
     } catch (optErr) {
-      console.warn("[optimizer] Skipping optimization, using original:", optErr instanceof Error ? optErr.message : optErr);
+      logger.warn("[optimizer] Skipping optimization, using original:", optErr instanceof Error ? optErr.message : optErr);
     }
 
     const { data, error } = await sb()!.storage

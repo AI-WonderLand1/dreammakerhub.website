@@ -3,6 +3,7 @@ import type { UserSession, UserIsolation } from '../types/isolation';
 import { PlayCanvasContainerManager } from '../webcontainer/PlayCanvasContainer';
 import { hashForIsolation } from '../utils/hashing';
 import type { SSHKeyPair } from '../utils/ssh-keys';
+import { logger } from '@/lib/logger';
 
 export interface PlayCanvasClientConfig {
   userId: string;
@@ -39,7 +40,7 @@ export class PlayCanvasClient {
   }
 
   private updateStatus(status: string): void {
-    console.log(`[PlayCanvasClient] ${status}`);
+    logger.info(`[PlayCanvasClient] ${status}`);
     this.onStatus?.(status);
   }
 
@@ -87,7 +88,7 @@ export class PlayCanvasClient {
           });
           this.updateStatus('SSH key injected');
         } catch (sshError) {
-          console.warn('[SSH] Key injection failed:', sshError);
+          logger.warn('[SSH] Key injection failed:', sshError);
         }
       }
 
@@ -265,8 +266,8 @@ export async function createPlayCanvasClient(
     userId,
     sceneId,
     containerManager,
-    onReady: () => console.log('[PlayCanvas] Client ready'),
-    onError: (error) => console.error('[PlayCanvas] Client error:', error),
+    onReady: () => logger.info('[PlayCanvas] Client ready'),
+    onError: (error) => logger.error('[PlayCanvas] Client error:', error),
   });
 
   await client.initialize();

@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { logger } from '@/lib/logger';
 
 export type BadgeBlockProps = {
   label: string;

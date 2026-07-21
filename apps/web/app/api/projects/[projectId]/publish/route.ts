@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
 import {
+import { logger } from '@/lib/logger';
   listFiles,
   readFile,
   updateProjectMetadata,

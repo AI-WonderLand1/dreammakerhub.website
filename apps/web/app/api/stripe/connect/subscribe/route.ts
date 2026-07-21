@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { logger } from '@/lib/logger';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
         : null,
     });
   } catch (err: any) {
-    console.error("Stripe subscription binding error:", err);
+    logger.error("Stripe subscription binding error:", err);
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
   }
 }

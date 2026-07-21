@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Error in AI chat:", err);
+    logger.error("Error in AI chat:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -157,7 +158,7 @@ async function generateAIResponse(
     try {
       text = await callCerebras(userMessage, history);
     } catch (err: any) {
-      console.error("Cerebras failed, falling back:", err.message);
+      logger.error("Cerebras failed, falling back:", err.message);
     }
   }
 
@@ -165,7 +166,7 @@ async function generateAIResponse(
     try {
       text = await callHuggingFace(userMessage);
     } catch (err: any) {
-      console.error("HuggingFace also failed:", err.message);
+      logger.error("HuggingFace also failed:", err.message);
     }
   }
 

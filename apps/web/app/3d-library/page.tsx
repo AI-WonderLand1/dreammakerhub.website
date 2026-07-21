@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { LibraryAsset } from '@/lib/library/types';
+import { logger } from '@/lib/logger';
 
 const ASSETS: LibraryAsset[] = [
   {

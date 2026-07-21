@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import EditorClient from './EditorClient';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 

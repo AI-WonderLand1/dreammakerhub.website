@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { promoteTempScene } from '@/infra/services/storage/promoteTempScene'
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs'
 

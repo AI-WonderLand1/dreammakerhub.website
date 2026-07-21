@@ -2,6 +2,7 @@
 
 import { useAccessibility } from '@/lib/accessibility-context';
 import { useEffect, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 export function VisualTranscript() {
   const { transcript, transcriptEnabled, currentEngine } = useAccessibility();

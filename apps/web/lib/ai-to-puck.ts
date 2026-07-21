@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Converts AI-generated HTML into Puck editor data structure
  */
@@ -46,7 +47,7 @@ export async function htmlToPuckBlocks(htmlString: string): Promise<PuckData> {
       }
     }
   } catch (error) {
-    console.error("[AI to Puck] Parse error:", error);
+    logger.error("[AI to Puck] Parse error:", error);
     // Fallback: create a single text block with the HTML
     return {
       content: [

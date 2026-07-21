@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePaidAIUser } from '@/app/api/ai/auth'
 import { uploadAiAssetEntry } from '@/lib/ai/assetStore'
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs'
 

@@ -4,6 +4,7 @@ import { SovereignOSProvider } from '../context/SovereignOSContext';
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import { AgentPanel } from '../components/AgentPanel';
 import { AutoStartFromURL } from '../components/AutoStartFromURL';
+import { logger } from '@/lib/logger';
 
 function AgentPage() {
   return (

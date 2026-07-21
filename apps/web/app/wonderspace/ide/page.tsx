@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import GitHubStyleLayout from "@/app/components/layouts/GitHubStyleLayout";
+import { logger } from '@/lib/logger';
 
 type Platform = "web" | "ios" | "android" | "multi";
 

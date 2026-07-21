@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY

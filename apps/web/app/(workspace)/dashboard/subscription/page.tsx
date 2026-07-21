@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
 
 import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { logger } from '@/lib/logger';
 export default function SubscriptionPage() {
   const { user, session } = useAuth();
   const [loading, setLoading] = React.useState(false);

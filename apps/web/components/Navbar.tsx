@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { logger } from '@/lib/logger';
 
 export default function Navbar() {
   const pathname = usePathname();

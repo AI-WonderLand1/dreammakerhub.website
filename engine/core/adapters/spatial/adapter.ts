@@ -2,6 +2,7 @@ import type { EngineAdapter, EngineConfig, EngineInstance } from '../types'
 import { WorldLoader, type SpatialWorld } from './worldLoader'
 import { SplatRenderer } from './splatRenderer'
 import { ThreeRenderer } from './threeRenderer'
+import { logger } from '@lib/logger';
 
 /**
  * DreamMakerHub Spatial Engine adapter.
@@ -16,7 +17,7 @@ export class SpatialAdapter implements EngineAdapter {
   public name = 'spatial'
 
   public async create(config: EngineConfig): Promise<EngineInstance> {
-    console.log('[SpatialAdapter] Creating DreamMakerHub Spatial Engine instance...')
+    logger.info('[SpatialAdapter] Creating DreamMakerHub Spatial Engine instance...')
 
     const worldSource =
       (config.world as SpatialWorld | string | Record<string, unknown> | undefined) ?? EMPTY_WORLD
@@ -35,9 +36,9 @@ export class SpatialAdapter implements EngineAdapter {
         const res = await splat.init()
         context = res.context
         destroy = () => splat.destroy()
-        console.log('[SpatialAdapter] Active renderer: Gaussian Splatting')
+        logger.info('[SpatialAdapter] Active renderer: Gaussian Splatting')
       } catch (err) {
-        console.warn(
+        logger.warn(
           '[SpatialAdapter] Splat renderer unavailable, falling back to Three.js:',
           (err as Error).message
         )
@@ -51,12 +52,12 @@ export class SpatialAdapter implements EngineAdapter {
       const res = await three.init()
       context = res.context
       destroy = () => three.destroy()
-      console.log('[SpatialAdapter] Active renderer: Three.js')
+      logger.info('[SpatialAdapter] Active renderer: Three.js')
     }
 
     if (config.onReady) config.onReady()
 
-    console.log('[SpatialAdapter] Engine instance created successfully')
+    logger.info('[SpatialAdapter] Engine instance created successfully')
 
     return {
       name: this.name,
