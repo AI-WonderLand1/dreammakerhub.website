@@ -6,6 +6,30 @@ import { uploadFile } from '../storage.js'
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
+const ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/
+
+const RATE_LIMIT_MAP = new Map<string, { count: number; resetAt: number }>()
+
+function rateLimit(key: string, maxRequests: number, windowMs: number): void {
+  const now = Date.now()
+  const entry = RATE_LIMIT_MAP.get(key)
+  if (!entry || now > entry.resetAt) {
+    RATE_LIMIT_MAP.set(key, { count: 1, resetAt: now + windowMs })
+    return
+  }
+  if (entry.count >= maxRequests) {
+    throw Object.assign(new Error('Too many requests'), { statusCode: 429 })
+  }
+  entry.count++
+}
+
+function validateUploadId(id: string, field: string): string {
+  if (!ID_REGEX.test(id)) {
+    throw Object.assign(new Error(`Invalid ${field}: must be 1-64 alphanumeric, hyphen, or underscore`), { statusCode: 400 })
+  }
+  return id
+}
+
 export async function streamingRoutes(app: FastifyInstance): Promise<void> {
   await fs.mkdir(UPLOAD_DIR, { recursive: true })
 
@@ -15,6 +39,8 @@ export async function streamingRoutes(app: FastifyInstance): Promise<void> {
     const { id: userId } = req.user as { id: string }
     const data = await req.file()
     if (!data) return reply.status(400).send({ error: 'No file provided' })
+
+    rateLimit(`upload:${userId}`, 10, 60_000)
 
     const buffer = await data.toBuffer()
     const key = `videos/${userId}/${Date.now()}_${data.filename}`
@@ -33,14 +59,19 @@ export async function streamingRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/video/upload/chunk', {
     preHandler: [app.authenticate],
   }, async (req, reply) => {
+    const { id: userId } = req.user as { id: string }
     const data = await req.file()
     if (!data) return reply.status(400).send({ error: 'No chunk provided' })
 
-    const rawUploadId = String(data.fields.uploadId?.value ?? 'unknown')
-    const uploadId = rawUploadId.replace(/[^a-zA-Z0-9_-]/g, '')
-    const chunkIndex = String(data.fields.chunkIndex?.value ?? '0')
-    const totalChunks = String(data.fields.totalChunks?.value ?? '1')
-    const filename = String(data.fields.filename?.value ?? 'video.mp4')
+    rateLimit(`chunk:${userId}`, 100, 60_000)
+
+    const rawUploadId = String(data.fields.uploadId?.value ?? '')
+    const uploadId = validateUploadId(rawUploadId, 'uploadId')
+    const rawChunkIndex = String(data.fields.chunkIndex?.value ?? '')
+    if (!/^\d+$/.test(rawChunkIndex)) {
+      return reply.status(400).send({ error: 'Invalid chunkIndex' })
+    }
+    const chunkIndex = parseInt(rawChunkIndex, 10)
 
     const chunkDir = path.join(UPLOAD_DIR, 'chunks', uploadId)
     await fs.mkdir(chunkDir, { recursive: true })
@@ -49,34 +80,38 @@ export async function streamingRoutes(app: FastifyInstance): Promise<void> {
     const chunkPath = path.join(chunkDir, `chunk_${chunkIndex}`)
     await fs.writeFile(chunkPath, buffer)
 
-    return { received: parseInt(chunkIndex, 10), total: parseInt(totalChunks, 10), filename }
+    return { received: chunkIndex, total: parseInt(String(data.fields.totalChunks?.value ?? '1'), 10) }
   })
 
   app.post('/api/video/upload/complete', {
     preHandler: [app.authenticate],
   }, async (req, reply) => {
     const { id: userId } = req.user as { id: string }
-    const { uploadId, filename } = req.body as { uploadId: string; filename: string }
-    const safeId = uploadId.replace(/[^a-zA-Z0-9_-]/g, '')
+    const body = req.body as Record<string, unknown>
+    const uploadId = validateUploadId(String(body.uploadId ?? ''), 'uploadId')
 
-    const chunkDir = path.join(UPLOAD_DIR, 'chunks', safeId)
+    rateLimit(`complete:${userId}`, 10, 60_000)
+
+    const chunkDir = path.join(UPLOAD_DIR, 'chunks', uploadId)
     let files: string[]
     try {
       files = await fs.readdir(chunkDir)
     } catch {
       return reply.status(400).send({ error: 'No chunks found for this upload. Did you upload any chunks?' })
     }
-    files.sort((a, b) => {
+    const chunkFiles = files.filter(f => /^chunk_\d+$/.test(f))
+    chunkFiles.sort((a, b) => {
       const ai = parseInt(a.split('_')[1], 10)
       const bi = parseInt(b.split('_')[1], 10)
       return ai - bi
     })
 
     const chunks = await Promise.all(
-      files.map(f => fs.readFile(path.join(chunkDir, f)))
+      chunkFiles.map(f => fs.readFile(path.join(chunkDir, f)))
     )
     const buffer = Buffer.concat(chunks)
 
+    const filename = String(body.filename ?? 'video.mp4').replace(/[/\\]/g, '_')
     const key = `videos/${userId}/${Date.now()}_${filename}`
     const url = await uploadFile(key, buffer, 'video/mp4')
 
