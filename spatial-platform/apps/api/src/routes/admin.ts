@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { query, queryOne } from '../db.js'
 
+const RATE_LIMIT_MAP = new Map<string, { count: number; resetAt: number }>()
+
 async function requireAdmin(req: any, reply: any): Promise<void> {
   try {
     await req.jwtVerify()
@@ -12,6 +14,21 @@ async function requireAdmin(req: any, reply: any): Promise<void> {
   }
 }
 
+function rateLimitAdmin(req: any, reply: any): void {
+  const key = `admin:${req.user.id}`
+  const now = Date.now()
+  const entry = RATE_LIMIT_MAP.get(key)
+  if (!entry || now > entry.resetAt) {
+    RATE_LIMIT_MAP.set(key, { count: 1, resetAt: now + 60_000 })
+    return
+  }
+  if (entry.count >= 30) {
+    reply.status(429).send({ error: 'Too many requests' })
+    return
+  }
+  entry.count++
+}
+
 async function audit(actorId: string, action: string, entityType: string, entityId?: string, metadata?: Record<string, unknown>, ip?: string): Promise<void> {
   await query(
     `INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, metadata, ip_address)
@@ -21,7 +38,7 @@ async function audit(actorId: string, action: string, entityType: string, entity
 }
 
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
-  app.get('/api/admin/stats', { preHandler: [requireAdmin] }, async () => {
+  app.get('/api/admin/stats', { preHandler: [requireAdmin, rateLimitAdmin] }, async () => {
     const users = await queryOne<{ count: string }>('SELECT COUNT(*) as count FROM users')
     const worlds = await queryOne<{ count: string }>('SELECT COUNT(*) as count FROM worlds')
     const assets = await queryOne<{ count: string }>('SELECT COUNT(*) as count FROM assets')
@@ -44,7 +61,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.get('/api/admin/stats/timeline', { preHandler: [requireAdmin] }, async () => {
+  app.get('/api/admin/stats/timeline', { preHandler: [requireAdmin, rateLimitAdmin] }, async () => {
     const usersByDay = await query<{ date: string; count: string }>(
       `SELECT DATE(created_at) as date, COUNT(*)::text as count
        FROM users WHERE created_at >= NOW() - INTERVAL '30 days'
@@ -58,7 +75,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return { usersByDay, worldsByDay }
   })
 
-  app.get('/api/admin/users', { preHandler: [requireAdmin] }, async (req) => {
+  app.get('/api/admin/users', { preHandler: [requireAdmin, rateLimitAdmin] }, async (req) => {
     const q = req.query as { page?: string; pageSize?: string; search?: string; role?: string }
     const page = parseInt(q.page ?? '1', 10)
     const pageSize = parseInt(q.pageSize ?? '20', 10)
@@ -163,7 +180,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.get('/api/admin/assets', { preHandler: [requireAdmin] }, async (req) => {
+  app.get('/api/admin/assets', { preHandler: [requireAdmin, rateLimitAdmin] }, async (req) => {
     const q = req.query as { page?: string; pageSize?: string; type?: string }
     const page = parseInt(q.page ?? '1', 10)
     const pageSize = parseInt(q.pageSize ?? '20', 10)
@@ -218,7 +235,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send()
   })
 
-  app.get('/api/admin/worlds', { preHandler: [requireAdmin] }, async (req) => {
+  app.get('/api/admin/worlds', { preHandler: [requireAdmin, rateLimitAdmin] }, async (req) => {
     const q = req.query as { page?: string; pageSize?: string }
     const page = parseInt(q.page ?? '1', 10)
     const pageSize = parseInt(q.pageSize ?? '20', 10)
@@ -264,7 +281,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send()
   })
 
-  app.get('/api/admin/listings', { preHandler: [requireAdmin] }, async (req) => {
+  app.get('/api/admin/listings', { preHandler: [requireAdmin, rateLimitAdmin] }, async (req) => {
     const q = req.query as { page?: string; pageSize?: string }
     const page = parseInt(q.page ?? '1', 10)
     const pageSize = parseInt(q.pageSize ?? '20', 10)
@@ -313,7 +330,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send()
   })
 
-  app.get('/api/admin/settings', { preHandler: [requireAdmin] }, async () => {
+  app.get('/api/admin/settings', { preHandler: [requireAdmin, rateLimitAdmin] }, async () => {
     const settings = await query<{ key: string; value: Record<string, unknown>; updated_at: string; updated_by: string | null }>(
       'SELECT key, value, updated_at, updated_by FROM settings ORDER BY key'
     )
@@ -345,7 +362,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return { key, value }
   })
 
-  app.get('/api/admin/logs', { preHandler: [requireAdmin] }, async (req) => {
+  app.get('/api/admin/logs', { preHandler: [requireAdmin, rateLimitAdmin] }, async (req) => {
     const q = req.query as { page?: string; pageSize?: string; action?: string }
     const page = parseInt(q.page ?? '1', 10)
     const pageSize = parseInt(q.pageSize ?? '50', 10)
@@ -388,7 +405,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.get('/api/admin/applications', { preHandler: [requireAdmin] }, async (req) => {
+  app.get('/api/admin/applications', { preHandler: [requireAdmin, rateLimitAdmin] }, async (req) => {
     const q = req.query as { page?: string; pageSize?: string; status?: string }
     const page = parseInt(q.page ?? '1', 10)
     const pageSize = parseInt(q.pageSize ?? '20', 10)
