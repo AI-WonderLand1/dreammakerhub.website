@@ -18,17 +18,34 @@ export function BuilderAccessDock() {
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Builder access</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {BUILDER_LINKS.map((item) => {
-          const isActive = pathname === item.href;
+          const isExternal = item.href.startsWith("http");
+          const isActive = !isExternal && pathname === item.href;
+          const classes = `inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
+            isActive
+              ? "border-cyan-300/80 bg-cyan-500/20 text-cyan-100"
+              : "border-white/20 bg-white/5 text-white/85 hover:bg-white/10"
+          }`;
+
+          if (isExternal) {
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={classes}
+              >
+                {item.label}
+              </a>
+            );
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
-                isActive
-                  ? "border-cyan-300/80 bg-cyan-500/20 text-cyan-100"
-                  : "border-white/20 bg-white/5 text-white/85 hover:bg-white/10"
-              }`}
+              className={classes}
             >
               {item.label}
             </Link>
