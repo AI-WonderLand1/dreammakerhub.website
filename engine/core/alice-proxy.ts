@@ -3,7 +3,7 @@
  * Acts as "Remote Brain" interface for Next.js frontend
  */
 
-import { logger } from "../../lib/logger";
+import { logger } from "@lib/logger";
 
 const API_BASE = process.env.AGENT_API_URL || "http://localhost:8000";
 const API_KEY = process.env.ALICE_API_KEY || "";
