@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSovereignOS, STAGE_ORDER, STAGE_INFO, type BuildType } from '../context/SovereignOSContext';
 import { htmlToPuckBlocks, storePuckData } from '@/lib/ai-to-puck';
+import { logger } from '@/lib/logger';
 
 const TYPE_OPTIONS: { value: BuildType; icon: string; label: string }[] = [
   { value: 'website',   icon: '🌐', label: 'Website'   },

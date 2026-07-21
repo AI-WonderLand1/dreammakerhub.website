@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { logger } from '@/lib/logger';
 
 export default function EgyptianModule() {
   const [input, setInput] = useState("");

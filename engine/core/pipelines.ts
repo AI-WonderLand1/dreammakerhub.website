@@ -130,7 +130,7 @@ function createEdgeFunctions(): Record<string, any> {
       source: `createFunction('savePipeline', async (event) => {
         const pipeline = event.body;
         
-        const encryptedConfig = await encryptPipelineConfig(pipeline.config);
+        const encryptedConfig = await encodePipelineConfig(pipeline.config);
         
         const { data, error } = await supabase
           .from('pipeline_templates')
@@ -254,8 +254,7 @@ async function evaluateExpression(expression: string, context: any): any {
  * @param config - Node configuration
  * @returns Encrypted configuration
  */
-async function encryptPipelineConfig(config: any): Promise<string> {
-  // Simple encryption for now - would use proper encryption in production
+async function encodePipelineConfig(config: any): Promise<string> {
   return Buffer.from(JSON.stringify(config)).toString('base64');
 }
 
@@ -292,7 +291,7 @@ async function compilePipelineToGraph(pipeline: any, inputs: any, trigger: any):
       status: 'pending',
       metadata: {
         category: node.category,
-        config: await encryptNodeConfig(node.config),
+        config: await encodeNodeConfig(node.config),
         pipelineNodeId: node.id,
       },
       retryPolicy: {
@@ -340,7 +339,7 @@ function mapNodeType(pipelineNodeType: string): NodeType {
  * @param config - Node configuration
  * @returns Promise<string>
  */
-async function encryptNodeConfig(config: any): Promise<string> {
+async function encodeNodeConfig(config: any): Promise<string> {
   return Buffer.from(JSON.stringify(config)).toString('base64');
 }
 

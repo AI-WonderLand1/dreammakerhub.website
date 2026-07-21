@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 interface WebGPUEngineProps {
   // You might pass configuration or state down from a parent
@@ -92,7 +93,7 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
 
           // Submit the command buffer to the GPU
           device.queue.submit([commandEncoder.finish()]);
-          console.log('Basic WebGPU render pass executed.');
+          logger.info('Basic WebGPU render pass executed.');
         }
         // --- End Basic Rendering Setup ---
 
@@ -101,7 +102,7 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
         const errorMsg = `WebGPU initialization failed: ${error.message}`;
         setMessage(errorMsg);
         onInitializationError?.(errorMsg);
-        console.error('WebGPU Error:', error);
+        logger.error('WebGPU Error:', error);
       }
     };
 
@@ -113,7 +114,7 @@ const WebGPUEngine: React.FC<WebGPUEngineProps> = ({
       if (deviceRef.current) {
         deviceRef.current.destroy(); // Release GPU resources
         deviceRef.current = null;
-        console.log('WebGPU device destroyed.');
+        logger.info('WebGPU device destroyed.');
       }
     };
   }, [onInitializationSuccess, onInitializationError]); // Dependencies for the effect

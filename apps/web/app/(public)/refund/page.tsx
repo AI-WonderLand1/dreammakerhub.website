@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // app/refund/page.tsx
 export default function RefundPage() {
   return (

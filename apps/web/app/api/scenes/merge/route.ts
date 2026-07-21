@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch.node";
+import { logger } from '@/lib/logger';
 
 const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
 
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
     if (optimizeRes.ok) {
       finalBuffer = await optimizeRes.arrayBuffer();
     } else {
-      console.warn("Optimization failed, using unoptimized merge");
+      logger.warn("Optimization failed, using unoptimized merge");
       finalBuffer = mergedBuffer;
     }
 
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest) {
       mergedSize: finalBuffer.byteLength,
     });
   } catch (error) {
-    console.error("Scene merge error:", error);
+    logger.error("Scene merge error:", error);
     return NextResponse.json(
       { error: "Failed to merge scenes" },
       { status: 500 }

@@ -14,6 +14,7 @@ import { useAutoSave, cleanSceneData } from "@/lib/scene/auto-save";
 import { saveSceneToSupabase } from "@/lib/scene/supabase-store";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { logger } from '@/lib/logger';
 
 type SceneVersion = {
   id: string;
@@ -91,7 +92,7 @@ function PlayCanvasEditor() {
           pushToast("Scene loaded and cleaned", "success");
         }
       } catch (err) {
-        console.error("Failed to load scene:", err);
+        logger.error("Failed to load scene:", err);
       }
     }
 

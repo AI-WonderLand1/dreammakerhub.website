@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { logger } from '@/lib/logger';
 
 type ProjectStatus = {
   projectId: string;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getUserLimits, formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
 import { 
+import { logger } from '@/lib/logger';
   BarChart3, 
   Zap, 
   Database, 
@@ -97,7 +98,7 @@ export default function BillingUsagePage() {
         });
       }
     } catch (e) {
-      console.error("Failed to fetch playground usage:", e);
+      logger.error("Failed to fetch playground usage:", e);
     }
 
     try {
@@ -111,7 +112,7 @@ export default function BillingUsagePage() {
         });
       }
     } catch (e) {
-      console.error("Failed to fetch token balance:", e);
+      logger.error("Failed to fetch token balance:", e);
     }
 
     setLastUpdate(new Date());
@@ -177,7 +178,7 @@ export default function BillingUsagePage() {
             });
           }
         } catch (e) {
-          console.log("usage_quotas table not found, skipping");
+          logger.info("usage_quotas table not found, skipping");
         }
 
         // Fetch user_api_tokens (safe - won't crash if table doesn't exist)
@@ -197,7 +198,7 @@ export default function BillingUsagePage() {
             })));
           }
         } catch (e) {
-          console.log("user_api_tokens table not found, skipping");
+          logger.info("user_api_tokens table not found, skipping");
         }
 
         // Initial fetch of playground data
@@ -222,7 +223,7 @@ export default function BillingUsagePage() {
               { event: '*', schema: 'public', table: 'playground_usage', filter: `user_id=eq.${currentUserId}` },
               (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return; // Extra safeguard
-                console.log('Playground usage updated:', payload.eventType);
+                logger.info('Playground usage updated:', payload.eventType);
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                   const newData = payload.new as any;
                   setPlayground(prev => prev ? {
@@ -240,7 +241,7 @@ export default function BillingUsagePage() {
             });
           channels.push(usageChannel);
         } catch (e) {
-          console.log("Failed to subscribe to playground_usage:", e);
+          logger.info("Failed to subscribe to playground_usage:", e);
         }
 
         try {
@@ -251,7 +252,7 @@ export default function BillingUsagePage() {
               { event: '*', schema: 'public', table: 'token_balances', filter: `user_id=eq.${currentUserId}` },
               (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
-                console.log('Token balance updated:', payload.eventType);
+                logger.info('Token balance updated:', payload.eventType);
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                   const newData = payload.new as any;
                   setTokens(prev => prev ? {
@@ -266,7 +267,7 @@ export default function BillingUsagePage() {
             .subscribe();
           channels.push(tokensChannel);
         } catch (e) {
-          console.log("Failed to subscribe to token_balances:", e);
+          logger.info("Failed to subscribe to token_balances:", e);
         }
 
         try {
@@ -277,7 +278,7 @@ export default function BillingUsagePage() {
               { event: 'INSERT', schema: 'public', table: 'token_transactions', filter: `user_id=eq.${currentUserId}` },
               (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
-                console.log('New transaction:', payload.eventType);
+                logger.info('New transaction:', payload.eventType);
                 if (payload.eventType === 'INSERT') {
                   const newTx = payload.new as any;
                   setTokens(prev => prev ? {
@@ -291,7 +292,7 @@ export default function BillingUsagePage() {
             .subscribe();
           channels.push(transactionsChannel);
         } catch (e) {
-          console.log("Failed to subscribe to token_transactions:", e);
+          logger.info("Failed to subscribe to token_transactions:", e);
         }
 
         // Real-time: usage_quotas
@@ -303,7 +304,7 @@ export default function BillingUsagePage() {
               { event: '*', schema: 'public', table: 'usage_quotas', filter: `user_id=eq.${currentUserId}` },
               (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
-                console.log('usage_quota_updated:', payload.eventType);
+                logger.info('usage_quota_updated:', payload.eventType);
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                   const newData = payload.new as any;
                   setQuota({
@@ -319,7 +320,7 @@ export default function BillingUsagePage() {
             .subscribe();
           channels.push(quotaChannel);
         } catch (e) {
-          console.log("Failed to subscribe to usage_quotas:", e);
+          logger.info("Failed to subscribe to usage_quotas:", e);
         }
 
         // Real-time: user_api_tokens
@@ -331,7 +332,7 @@ export default function BillingUsagePage() {
               { event: '*', schema: 'public', table: 'user_api_tokens', filter: `user_id=eq.${currentUserId}` },
               (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
-                console.log('api_token_updated:', payload.eventType);
+                logger.info('api_token_updated:', payload.eventType);
                 if (payload.eventType === 'INSERT') {
                   const newData = payload.new as any;
                   setApiTokens(prev => [...prev, {
@@ -360,7 +361,7 @@ export default function BillingUsagePage() {
             .subscribe();
           channels.push(apiTokensChannel);
         } catch (e) {
-          console.log("Failed to subscribe to user_api_tokens:", e);
+          logger.info("Failed to subscribe to user_api_tokens:", e);
         }
 
         // Real-time: playground_sessions
@@ -372,14 +373,14 @@ export default function BillingUsagePage() {
               { event: '*', schema: 'public', table: 'playground_sessions', filter: `user_id=eq.${currentUserId}` },
               (payload: { eventType: string; new: Record<string, unknown> }) => {
                 if (!isValidEvent(payload)) return;
-                console.log('Session status updated:', payload.eventType);
+                logger.info('Session status updated:', payload.eventType);
                 setLastUpdate(new Date());
               }
             )
             .subscribe();
           channels.push(sessionsChannel);
         } catch (e) {
-          console.log("Failed to subscribe to playground_sessions:", e);
+          logger.info("Failed to subscribe to playground_sessions:", e);
         }
 
       } catch (err: any) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Shield, RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock, Bug } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface DaemonStats {
   uptime: number;

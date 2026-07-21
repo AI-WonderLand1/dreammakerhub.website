@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-service';
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Workspace creation error:', error);
+      logger.error('Workspace creation error:', error);
       // Return success anyway for fallback
       return NextResponse.json({
         status: 'provisioned',
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Workspace provision error:', error);
+    logger.error('Workspace provision error:', error);
     // Allow fallback
     return NextResponse.json({
       status: 'provisioned',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 
 interface ExternalAsset {
   id: string;
@@ -36,13 +37,13 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
         `/api/assets/search?q=${encodeURIComponent(query)}&source=${selectedSource}&limit=12`
       );
       const data = await res.json();
-      console.log('[AssetPicker] Search results:', data);
+      logger.info('[AssetPicker] Search results:', data);
       setAssets(data.assets || []);
       if (data.error) {
-        console.error('[AssetPicker] API error:', data.error);
+        logger.error('[AssetPicker] API error:', data.error);
       }
     } catch (err) {
-      console.error('[AssetPicker] Search failed:', err);
+      logger.error('[AssetPicker] Search failed:', err);
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export function AssetPicker({ onSelect, onDownload }: AssetPickerProps) {
         }
       }
     } catch (err) {
-      console.error('Download failed:', err);
+      logger.error('Download failed:', err);
     } finally {
       setDownloadingId(null);
     }

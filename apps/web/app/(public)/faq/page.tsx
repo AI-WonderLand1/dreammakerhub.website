@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { HelpCircle, Search, Filter, Sparkles } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Faq = { question: string; answer: string; category: string };
 

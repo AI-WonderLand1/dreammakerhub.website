@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import crypto from "crypto";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -32,12 +33,13 @@ export async function POST(
 
     const supabase = await createSupabaseServerClient();
 
-    // Verify API key
+    // Verify API key (hashed comparison)
+    const apiKeyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
     const { data: config, error: configError } = await supabase
       .from("project_api_configs")
       .select("user_id, webhook_secret")
       .eq("project_id", projectId)
-      .eq("api_key", apiKey)
+      .eq("api_key_hash", apiKeyHash)
       .single();
 
     if (configError || !config) {
@@ -77,7 +79,7 @@ export async function POST(
     });
 
     if (eventError) {
-      console.error("Failed to store webhook event:", eventError);
+      logger.error("Failed to store webhook event:", eventError);
     }
 
     // Process event (extend as needed)
@@ -131,12 +133,13 @@ export async function GET(
     const supabase = await createSupabaseServerClient();
     const { projectId } = params;
 
-    // Verify API key
+    // Verify API key (hashed comparison)
+    const apiKeyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
     const { data: config } = await supabase
       .from("project_api_configs")
       .select("user_id")
       .eq("project_id", projectId)
-      .eq("api_key", apiKey)
+      .eq("api_key_hash", apiKeyHash)
       .single();
 
     if (!config) {

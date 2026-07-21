@@ -14,7 +14,7 @@
     "start": "npm run setup && npm run seed && npm run api"
   },
   "dependencies": {
-    "@libsql/client": "^0.14.0",
+    "@libsql/client": "^0.17.4",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.0.0",
     "@hono/node-server": "^2.0.8"

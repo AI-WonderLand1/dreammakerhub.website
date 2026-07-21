@@ -1,3 +1,4 @@
+import { logger } from '../../../lib/logger';
 const handleRestore = async (id: string) => {
   setIsRestoring(true);
   try {
@@ -13,7 +14,7 @@ const handleRestore = async (id: string) => {
       alert("Snapshot successfully restored!");
     }
   } catch (err) {
-    console.error("Restore failed", err);
+    logger.error("Restore failed", err);
   } finally {
     setIsRestoring(false);
   }

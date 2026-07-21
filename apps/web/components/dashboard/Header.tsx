@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Coins, Plus, Gift } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface StatusBadgeProps {
   count: number;

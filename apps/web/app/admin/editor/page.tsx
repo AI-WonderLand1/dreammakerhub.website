@@ -6,6 +6,7 @@ import "@puckeditor/core/puck.css";
 import EgyptianVoiceModule from "@/ai-modules/EgyptianVoiceModule";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { logger } from '@/lib/logger';
 
 type Props = {
   EgyptianAI: { title: string; defaultText: string };

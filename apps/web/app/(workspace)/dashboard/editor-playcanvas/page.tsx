@@ -14,6 +14,7 @@ import { setupTheatreBridge } from "@/lib/theatreBridgeSetup";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { buildPlayCanvasEditorUrl, getPlayCanvasMode } from "@/lib/playcanvas";
 import type { ArtifactMetadata } from "@/lib/wonderspace/artifacts";
+import { logger } from '@/lib/logger';
 
 function makeToastId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;

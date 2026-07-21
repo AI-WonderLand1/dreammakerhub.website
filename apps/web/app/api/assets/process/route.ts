@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { ssrfFetch, SsrfError } from "@/lib/ssrf-safe-fetch.node";
+import { logger } from '@/lib/logger';
 
 const OPTIMIZER_URL = process.env.OPTIMIZER_SERVICE_URL || "http://localhost:3090";
 
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest) {
 
     if (!optimizeResponse.ok) {
       const errorText = await optimizeResponse.text();
-      console.error("Optimizer error:", optimizeResponse.status, errorText);
+      logger.error("Optimizer error:", optimizeResponse.status, errorText);
       return NextResponse.json(
         { error: "Optimization failed", details: errorText },
         { status: optimizeResponse.status }
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
       savings: savings + "%",
     });
   } catch (error) {
-    console.error("Asset processing error:", error);
+    logger.error("Asset processing error:", error);
     return NextResponse.json(
       { error: "Failed to process asset" },
       { status: 500 }

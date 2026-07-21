@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getJob, listJobsForProject } from "@/lib/spatial/splatJobs";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -17,7 +18,7 @@ export async function GET(
 
     return NextResponse.json({ job });
   } catch (error: any) {
-    console.error("Splat job status error:", error.message);
+    logger.error("Splat job status error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -45,7 +46,7 @@ export async function PATCH(
 
     return NextResponse.json({ job });
   } catch (error: any) {
-    console.error("Splat job update error:", error.message);
+    logger.error("Splat job update error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

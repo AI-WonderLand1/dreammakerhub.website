@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { logger } from '@/lib/logger';
 
 interface OCIConfig {
   region: string;
@@ -25,12 +26,12 @@ function readOCIConfigFile(): OCIConfig | null {
     const configPath = path.join(os.homedir(), '.oci', 'config');
     const keyPath = path.join(os.homedir(), '.oci', 'oci_api_key.pem');
 
-    console.log('[OracleVault] Checking paths:', configPath, keyPath);
-    console.log('[OracleVault] Config exists:', fs.existsSync(configPath));
-    console.log('[OracleVault] Key exists:', fs.existsSync(keyPath));
+    logger.info('[OracleVault] Checking paths:', configPath, keyPath);
+    logger.info('[OracleVault] Config exists:', fs.existsSync(configPath));
+    logger.info('[OracleVault] Key exists:', fs.existsSync(keyPath));
 
     if (!fs.existsSync(configPath) || !fs.existsSync(keyPath)) {
-      console.log('[OracleVault] Files not found, returning null');
+      logger.info('[OracleVault] Files not found, returning null');
       return null;
     }
 
@@ -59,7 +60,7 @@ const vaultOcid = process.env.OCI_VAULT_OCID;
       compartmentId: config.tenancy
     };
   } catch (error) {
-    console.error('[OracleVault] Failed to read OCI config file:', error);
+    logger.error('[OracleVault] Failed to read OCI config file:', error);
     return null;
   }
 }
@@ -117,8 +118,8 @@ async function makeOCISignedRequest(
 
   const authHeader = `Signature version="1",keyId="${config.tenancyId}/${config.userId}/${config.keyFingerprint}",algorithm="RSA-SHA256",headers="(request-target) host date",signature="${signatureBase64}"`;
 
-  console.log('[OracleVault] Making request to:', `https://${host}${path}`);
-  console.log('[OracleVault] Auth header:', authHeader.substring(0, 50) + '...');
+  logger.info('[OracleVault] Making request to:', `https://${host}${path}`);
+  logger.info('[OracleVault] Auth header:', authHeader.substring(0, 50) + '...');
   
   const response = await fetch(`https://${host}${path}`, {
     method,
@@ -133,7 +134,7 @@ async function makeOCISignedRequest(
 
   if (!response.ok) {
     const text = await response.text();
-    console.log('[OracleVault] API response:', response.status, text);
+    logger.info('[OracleVault] API response:', response.status, text);
     throw new Error(`OCI API error: ${response.status} ${response.statusText}`);
   }
 
@@ -147,7 +148,7 @@ export async function getSecretFromVault(secretName: string): Promise<string | n
 
   const config = getOCIConfig();
   if (!config) {
-    console.warn('[OracleVault] OCI config not available, falling back to env vars');
+    logger.warn('[OracleVault] OCI config not available, falling back to env vars');
     return process.env[secretName] || null;
   }
 
@@ -165,7 +166,7 @@ export async function getSecretFromVault(secretName: string): Promise<string | n
     
     return secretValue;
   } catch (error) {
-    console.error(`[OracleVault] Failed to fetch secret ${secretName}:`, error);
+    logger.error(`[OracleVault] Failed to fetch secret ${secretName}:`, error);
     return process.env[secretName] || null;
   }
 }

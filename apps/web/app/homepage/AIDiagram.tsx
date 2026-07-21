@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export default function AIDiagram() {
   const nodeClass = "rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm p-4 text-center transition hover:border-purple-500/30";
 

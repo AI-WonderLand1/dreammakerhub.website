@@ -12,6 +12,7 @@ import Link from 'next/link';
 import '../styles/tie-dye-neon.css';
 import { PAGES, getPagesByCategory } from '../lib/navigation';
 import { engineManager, registerAllAdapters } from '@engine/core';
+import { logger } from '@/lib/logger';
 
 // Dynamically import engines with ssr: false to prevent server-side issues
 const PlayCanvasEngine = dynamic(() => import('./engines/PlayCanvasEngine'), {
@@ -118,7 +119,7 @@ export function QuadEngineShell() {
       // 3. Update React state to reflect the new engine
       setActiveEngine(engineId);
     } catch (err) {
-      console.error('Engine switch failed:', err);
+      logger.error('Engine switch failed:', err);
     } finally {
       setIsInitializing(false);
     }

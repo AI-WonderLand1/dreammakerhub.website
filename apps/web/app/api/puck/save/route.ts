@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[PuckSave] Supabase error:", error);
+      logger.error("[PuckSave] Supabase error:", error);
       return NextResponse.json(
         { ok: false, error: error.message },
         { status: 500 }
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       url: `/wonder-build/puck?project=${projectId}`,
     });
   } catch (error) {
-    console.error("[PuckSave] Error:", error);
+    logger.error("[PuckSave] Error:", error);
     return NextResponse.json(
       { ok: false, error: String(error) },
       { status: 500 }
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ ok: true, projects: data || [] });
   } catch (error) {
-    console.error("[PuckLoad] Error:", error);
+    logger.error("[PuckLoad] Error:", error);
     return NextResponse.json(
       { ok: false, error: String(error) },
       { status: 500 }
@@ -168,7 +169,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("[PuckDelete] Error:", error);
+    logger.error("[PuckDelete] Error:", error);
     return NextResponse.json(
       { ok: false, error: String(error) },
       { status: 500 }
@@ -221,7 +222,7 @@ export async function PATCH(req: NextRequest) {
       .eq("user_id", user.id);
 
     if (error) {
-      console.error("[PuckUpdateStorage] Error:", error);
+      logger.error("[PuckUpdateStorage] Error:", error);
       return NextResponse.json(
         { ok: false, error: error.message },
         { status: 500 }
@@ -236,7 +237,7 @@ export async function PATCH(req: NextRequest) {
         : "Project linked to your cloud"
     });
   } catch (error) {
-    console.error("[PuckUpdateStorage] Error:", error);
+    logger.error("[PuckUpdateStorage] Error:", error);
     return NextResponse.json(
       { ok: false, error: String(error) },
       { status: 500 }

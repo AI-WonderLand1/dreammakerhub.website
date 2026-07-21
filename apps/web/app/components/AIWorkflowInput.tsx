@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 const EXAMPLES = [
   'A dark sci-fi portfolio for a 3D artist with animated hero and project gallery',

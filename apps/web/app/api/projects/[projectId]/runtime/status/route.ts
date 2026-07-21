@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { KubeConfig, CoreV1Api, AppsV1Api } from "@kubernetes/client-node";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
         status = "stopped";
       } else {
         status = "error";
-        console.error("Status check error:", error.message);
+        logger.error("Status check error:", error.message);
       }
     }
 
@@ -101,7 +102,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       updatedAt: project.updated_at
     });
   } catch (error: any) {
-    console.error("Runtime status error:", error.message);
+    logger.error("Runtime status error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
 
     return NextResponse.json({ error: "Invalid action. Use action: 'start' or 'stop'" }, { status: 400 });
   } catch (error: any) {
-    console.error("Runtime action error:", error.message);
+    logger.error("Runtime action error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

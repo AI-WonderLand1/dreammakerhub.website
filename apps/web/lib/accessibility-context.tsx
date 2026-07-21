@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { screenReader } from './screen-reader';
+import { logger } from '@/lib/logger';
 
 export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder' | 'theia' | 'spatial';
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Upload, ChevronDown } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Persona = "spirit_guide" | "website_builder" | "game_builder" | "rick";
 

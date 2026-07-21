@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { logger } from '@/lib/logger';
 
 export default function GlobalError({
   error,
@@ -12,8 +13,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Application error:", error);
-    console.log("%c Fixed: Something went wrong while loading this page. Try refreshing or go back home.", "background: #22c55e; color: white; padding: 4px 8px; border-radius: 4px;");
+    logger.error("Application error:", error);
+    logger.info("%c Fixed: Something went wrong while loading this page. Try refreshing or go back home.", "background: #22c55e; color: white; padding: 4px 8px; border-radius: 4px;");
   }, [error]);
 
   return (

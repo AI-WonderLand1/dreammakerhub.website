@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { logger } from '@/lib/logger';
 
 export type AlertBlockProps = {
   title: string;

@@ -1,4 +1,5 @@
 import {
+import { logger } from '@lib/logger';
   Confession,
   ConfessionType,
   ImpactLevel,
@@ -105,7 +106,7 @@ export async function streamConfessionToPipeline(confession: Confession | Locali
     });
     return response.ok;
   } catch (error) {
-    console.error("[Pipeline Error] Failed to stream data:", error);
+    logger.error("[Pipeline Error] Failed to stream data:", error);
     return false;
   }
 }

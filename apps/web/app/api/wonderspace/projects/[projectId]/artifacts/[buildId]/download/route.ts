@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readArtifactZip } from "../../_utils";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

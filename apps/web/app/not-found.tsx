@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export default function Custom404() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
