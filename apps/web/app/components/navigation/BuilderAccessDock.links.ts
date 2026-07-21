@@ -13,7 +13,7 @@ export const BUILDER_LINKS: BuilderDockLink[] = [
     label: "Wonder-Build",
     href: "/wonder-build",
     icon: Layout,
-    description: "Visual 3D Canvas Editor",
+    description: "AI-powered website builder",
   },
   {
     label: "Cloud IDE",
@@ -22,10 +22,10 @@ export const BUILDER_LINKS: BuilderDockLink[] = [
     description: "Full cloud-based development environment (code-server)",
   },
   {
-    label: "Playground",
-    href: "/wonder-build",
+    label: "AI Playground",
+    href: "https://playground.dreammakerhub.website/",
     icon: Terminal,
-    description: "AI Module Playground — train, create, and test",
+    description: "Chat with models, test prompts, and run agent workflows",
   },
   {
     label: "Data Vault",
