@@ -23,14 +23,39 @@ function structuredArgs(level: LogLevel, namespace: string, message: string, dat
   return { level, namespace, message, data, timestamp: new Date().toISOString() };
 }
 
+function sanitizeForLog(input: string): string {
+  return input.replace(/[\n\r\t\0\b\f\v\\"]/g, (ch) => {
+    switch (ch) {
+      case '\n': return '\\n';
+      case '\r': return '\\r';
+      case '\t': return '\\t';
+      case '\0': return '\\0';
+      case '\b': return '\\b';
+      case '\f': return '\\f';
+      case '\v': return '\\v';
+      case '\\': return '\\\\';
+      case '"': return '\\"';
+      default: return ch;
+    }
+  });
+}
+
 function formatOutput(args: NonNullable<ReturnType<typeof structuredArgs>>) {
   const { level, namespace, message, data, timestamp } = args;
-  const prefix = `[${timestamp}] [${level.toUpperCase()}] [${namespace}]`;
+  const prefix = `[${timestamp}] [${level.toUpperCase()}] [${sanitizeForLog(namespace)}]`;
   if (data !== undefined) {
-    const dataStr = typeof data === 'object' ? JSON.stringify(data) : String(data);
-    return `${prefix} ${message} ${dataStr}`;
+    let dataStr: string;
+    try {
+      dataStr = JSON.stringify(data, (_key, value) => {
+        if (typeof value === 'string') return sanitizeForLog(value);
+        return value;
+      });
+    } catch {
+      dataStr = String(data);
+    }
+    return `${prefix} ${sanitizeForLog(message)} ${dataStr}`;
   }
-  return `${prefix} ${message}`;
+  return `${prefix} ${sanitizeForLog(message)}`;
 }
 
 function log(level: LogLevel, namespace: string, message: string, data?: unknown) {

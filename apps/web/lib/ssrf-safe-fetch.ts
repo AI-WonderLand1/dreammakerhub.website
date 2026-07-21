@@ -35,7 +35,7 @@ function isUnsafeHostname(hostname: string): boolean {
   const host = hostname.toLowerCase().trim()
   const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
   if (ipv4Match) {
-    const parts = ipvMatch.slice(1).map(Number)
+    const parts = ipv4Match.slice(1).map(Number)
     if (parts.some(p => p > 255)) return true
     const addr = parts.join('.')
     return PRIVATE_PATTERNS.some(p => p.test(addr))
@@ -57,12 +57,26 @@ export interface SsrfFetchOptions extends RequestInit {
 }
 
 function describeUrl(url: string): { protocol: string; hostname: string; hasCredentials: boolean } {
-  const anchor = document.createElement('a')
-  anchor.href = url
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { protocol: '', hostname: '', hasCredentials: false };
+  }
   return {
-    protocol: anchor.protocol,
-    hostname: anchor.hostname,
-    hasCredentials: !!anchor.username || !!anchor.password,
+    protocol: parsed.protocol,
+    hostname: parsed.hostname,
+    hasCredentials: !!parsed.username || !!parsed.password,
+  }
+}
+
+function cloneInit(init: RequestInit): RequestInit {
+  return {
+    method: init.method,
+    headers: init.headers,
+    body: init.body,
+    signal: init.signal,
+    redirect: 'manual',
   }
 }
 
@@ -93,22 +107,19 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
     throw new SsrfError('Host is not in the allowed list')
   }
 
-  const init: RequestInit = { redirect: 'manual' }
-  if (options.method) init.method = options.method
-  if (options.headers) init.headers = options.headers
-  if (options.body) init.body = options.body
-  if (options.signal) init.signal = options.signal
-
-  const response = await fetch(url, init)
+  let currentUrl = url;
+  const init = cloneInit(options);
 
   for (let i = 0; i < 5; i++) {
+    const response = await fetch(currentUrl, init)
+
     if (!response.status || response.status < 300 || response.status >= 400) {
       return response
     }
     const location = response.headers.get('location')
     if (!location) return response
 
-    const nextUrl = new URL(location, url).toString()
+    const nextUrl = new URL(location, currentUrl).toString()
     const { protocol: nextProtocol, hostname: nextHostname, hasCredentials: nextHasCreds } = describeUrl(nextUrl)
     if (nextProtocol !== 'https:') throw new SsrfError('Redirect target must use HTTPS')
     if (nextHasCreds) throw new SsrfError('Redirect target must not include credentials')
@@ -123,13 +134,7 @@ export async function ssrfFetch(url: string, options: SsrfFetchOptions = {}): Pr
       throw new SsrfError('Redirect target points to a disallowed network address')
     }
 
-    url = nextUrl
-    const nextInit: RequestInit = { redirect: 'manual' }
-    if (options.method) nextInit.method = options.method
-    if (options.headers) nextInit.headers = options.headers
-    if (options.body) nextInit.body = options.body
-    if (options.signal) nextInit.signal = options.signal
-    response = await fetch(url, nextInit)
+    currentUrl = nextUrl
   }
 
   throw new SsrfError('Too many redirects')
