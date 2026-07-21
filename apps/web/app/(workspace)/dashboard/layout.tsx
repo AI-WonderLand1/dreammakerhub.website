@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/supabase/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import AetherGuardDialog from "@/components/AetherGuardDialog";
 import { 
+import { logger } from '@/lib/logger';
   LayoutDashboard, 
   Folder,
   Pencil, 
@@ -132,7 +133,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           if (current) setCurrentProject(current);
         }
       } catch (err) {
-        console.error("Failed to load projects:", err);
+        logger.error("Failed to load projects:", err);
       } finally {
         setLoadingProjects(false);
       }

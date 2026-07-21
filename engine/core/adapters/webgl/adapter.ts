@@ -1,10 +1,11 @@
 import type { EngineAdapter, EngineConfig, EngineInstance, WebGLShader } from '../types';
+import { logger } from '@lib/logger';
 
 export class WebGLAdapter implements EngineAdapter {
   public name = 'webgl';
 
   public async create(config: EngineConfig): Promise<EngineInstance> {
-    console.log('[WebGLAdapter] Creating engine instance...');
+    logger.info('[WebGLAdapter] Creating engine instance...');
     
     const canvas = config.canvas;
     const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -89,7 +90,7 @@ export class WebGLAdapter implements EngineAdapter {
       context: gl as any,
       device: null,
       destroy: async () => {
-        console.log('[WebGLAdapter] Destroying instance');
+        logger.info('[WebGLAdapter] Destroying instance');
         cancelAnimationFrame(animationId);
         gl.deleteProgram(program);
         gl.deleteBuffer(positionBuffer);

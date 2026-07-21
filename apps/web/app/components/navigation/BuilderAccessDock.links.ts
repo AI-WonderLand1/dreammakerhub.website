@@ -1,4 +1,5 @@
 import { Layout, Code, Terminal, Database } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 export type BuilderDockLink = {
   label: string;

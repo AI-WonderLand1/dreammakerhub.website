@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { SpatialAdapter } from '@engine/core/adapters/spatial/adapter';
 import type { SpatialWorld } from '@engine/core/adapters/spatial/worldLoader';
 import type { EngineInstance } from '@engine/core/adapters/types';
+import { logger } from '@/lib/logger';
 
 interface SpatialEngineProps {
   engineState?: any;

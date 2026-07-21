@@ -7,6 +7,7 @@ import { AssetPicker } from "@/components/engines/AssetPicker";
 import { UserAssetLibrary } from "@/components/engines/UserAssetLibrary";
 import { CharacterGenerator } from "@/components/ai/CharacterGenerator";
 import { GLTFUploader } from "@/components/ai/GLTFUploader";
+import { logger } from '@/lib/logger';
 
 interface Scene {
   id: string;
@@ -57,7 +58,7 @@ export default function LibraryPage() {
         setScenes(filteredScenes);
       }
     } catch (error) {
-      console.error("Failed to fetch scenes:", error);
+      logger.error("Failed to fetch scenes:", error);
     } finally {
       setLoading(false);
     }
@@ -186,7 +187,7 @@ export default function LibraryPage() {
 
         {filter === "all" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <CharacterGenerator onGenerate={(desc) => console.log("Generated:", desc)} />
+            <CharacterGenerator onGenerate={(desc) => logger.info("Generated:", desc)} />
             <GLTFUploader onUpload={(url, name) => setUploadedUrl(url)} />
           </div>
         )}

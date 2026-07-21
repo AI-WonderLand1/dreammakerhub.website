@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 type ResolveHomepageLinkArgs = {
   href: string;
   requiresAuth?: boolean;

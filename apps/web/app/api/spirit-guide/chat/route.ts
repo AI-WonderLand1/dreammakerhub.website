@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { runModel } from "@/core/ai/runModel";
 import { supabaseRouteClient } from "@/lib/supabase/route";
 import { decryptSecret } from "@/lib/crypto/secrets";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
         try {
           userApiKey = decryptSecret(config.api_key_encrypted, config.api_key_iv, config.api_key_tag);
         } catch (e) {
-          console.error("Failed to decrypt API key:", e);
+          logger.error("Failed to decrypt API key:", e);
         }
       }
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     if (result.error) {
       const detail = result.confessions?.limitations?.[0];
-      console.error("[Spirit Guide] AI provider error:", {
+      logger.error("[Spirit Guide] AI provider error:", {
         provider: result.provider,
         model: result.model,
         detail,
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Spirit Guide error:", errMsg);
+    logger.error("Spirit Guide error:", errMsg);
     return NextResponse.json(
       { error: errMsg || "Spirit Guide is resting. Try again shortly." },
       { status: 500 }

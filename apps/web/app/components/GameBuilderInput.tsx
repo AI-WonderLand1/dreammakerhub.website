@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 
 const EXAMPLES = [
   'A futuristic city at night with neon lights and flying cars',

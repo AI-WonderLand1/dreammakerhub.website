@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ versions: data || [] });
   } catch (error) {
-    console.error("[SceneVersions] Error:", error);
+    logger.error("[SceneVersions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (versionError) {
-      console.error("[SceneVersions] Insert error:", versionError);
+      logger.error("[SceneVersions] Insert error:", versionError);
     }
 
     // Keep only last 50 versions
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       message: "Scene version saved"
     });
   } catch (error) {
-    console.error("[SceneVersions] Error:", error);
+    logger.error("[SceneVersions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -165,7 +166,7 @@ export async function PUT(req: NextRequest) {
       message: "Scene version restored"
     });
   } catch (error) {
-    console.error("[SceneVersions] Error:", error);
+    logger.error("[SceneVersions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -198,7 +199,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("[SceneVersions] Error:", error);
+    logger.error("[SceneVersions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,15 +33,15 @@ export async function POST(req: NextRequest) {
       const supabase = createClient(supabaseUrl, serviceRoleKey);
       const { error } = await supabase.from("client_error_logs").insert(errorEntry);
       if (error) {
-        console.error("Failed to log error:", error);
+        logger.error("Failed to log error:", error);
       }
     }
 
-    console.error("[CLIENT ERROR]", errorEntry);
+    logger.error("[CLIENT ERROR]", errorEntry);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error logging endpoint:", error);
+    logger.error("Error logging endpoint:", error);
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -22,12 +23,12 @@ export async function POST(request: NextRequest) {
       try {
         event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
       } catch (err: any) {
-        console.error("Webhook signature verification failed:", err.message);
+        logger.error("Webhook signature verification failed:", err.message);
         return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
       }
     } else {
       // SECURITY: Never accept unverified webhook events — reject instead
-      console.error("Stripe webhook received but STRIPE_WEBHOOK_SECRET is not configured or signature missing");
+      logger.error("Stripe webhook received but STRIPE_WEBHOOK_SECRET is not configured or signature missing");
       return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
     }
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (err: any) {
-    console.error("Webhook error:", err);
+    logger.error("Webhook error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

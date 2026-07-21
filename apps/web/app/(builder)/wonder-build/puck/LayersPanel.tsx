@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+import { logger } from '@/lib/logger';
   Layers, Eye, EyeOff, Trash2, ChevronRight, ChevronDown,
 } from "lucide-react";
 

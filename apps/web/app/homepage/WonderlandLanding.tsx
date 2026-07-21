@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 
 const PRODUCTS = [
   { icon: "⌘", title: "WonderBuild", desc: "Describe an app or workflow in plain language and get a working build — frontend, backend, and database wired together automatically.", href: "/wonder-build" },

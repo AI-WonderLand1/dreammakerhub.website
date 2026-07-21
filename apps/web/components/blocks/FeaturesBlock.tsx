@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from '@/lib/logger';
 
 export function FeaturesBlock({ content, children }: { content?: any; children?: React.ReactNode }) {
   const items: string[] = Array.isArray(content?.items) ? content.items : [];

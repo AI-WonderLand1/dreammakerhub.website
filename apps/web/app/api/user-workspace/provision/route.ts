@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       podType,
     });
   } catch (error: any) {
-    console.error('Pod provisioning failed:', error);
+    logger.error('Pod provisioning failed:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to provision pod' },
       { status: 500 }

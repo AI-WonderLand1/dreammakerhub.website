@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getProjectFiles } from "@/lib/storage/projectFiles";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       });
 
     if (uploadError) {
-      console.error("Auto-save upload failed:", uploadError);
+      logger.error("Auto-save upload failed:", uploadError);
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       sizeBytes: fileSize
     });
   } catch (error: any) {
-    console.error("Auto-save error:", error.message);
+    logger.error("Auto-save error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -110,7 +111,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       if (downloadError.message.includes('Not found')) {
         return NextResponse.json({ files: null, savedAt: null });
       }
-      console.error("Auto-save download failed:", downloadError);
+      logger.error("Auto-save download failed:", downloadError);
       return NextResponse.json({ error: downloadError.message }, { status: 500 });
     }
 
@@ -123,7 +124,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       fileCount: Object.keys(files || {}).length
     });
   } catch (error: any) {
-    console.error("Auto-load error:", error.message);
+    logger.error("Auto-load error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

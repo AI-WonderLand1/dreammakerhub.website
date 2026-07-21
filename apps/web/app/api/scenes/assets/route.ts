@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 const BUCKET_NAME = "3d-assets";
 
@@ -20,7 +21,7 @@ export async function GET() {
       });
 
     if (error) {
-      console.error("Supabase storage error:", error);
+      logger.error("Supabase storage error:", error);
       return NextResponse.json({ files: [], error: error.message });
     }
 
@@ -63,7 +64,7 @@ export async function GET() {
     return NextResponse.json({ files: scenes });
 
   } catch (error: any) {
-    console.error("Failed to list 3D assets:", error);
+    logger.error("Failed to list 3D assets:", error);
     return NextResponse.json({ files: [], error: error.message }, { status: 500 });
   }
 }

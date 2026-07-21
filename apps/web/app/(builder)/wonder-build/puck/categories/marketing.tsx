@@ -1,4 +1,5 @@
 import { MasterBlock } from "../blocks/MasterBlock";
+import { logger } from '@/lib/logger';
 
 export const marketingConfig = {
   PricingCard: {

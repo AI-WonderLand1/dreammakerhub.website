@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { createHook, listHooks } from "@/lib/webhooks/store";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

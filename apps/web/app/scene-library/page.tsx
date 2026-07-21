@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense, useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 
 type SceneTemplate = {
   id: string;

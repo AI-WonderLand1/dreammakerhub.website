@@ -1,4 +1,5 @@
 import { SkeletonGrid } from "@/app/components/feedback/EmptyState";
+import { logger } from '@/lib/logger';
 
 export default function CollaborationLoading() {
   return (

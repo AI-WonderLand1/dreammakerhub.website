@@ -7,6 +7,7 @@ import { Suspense, useMemo, useState } from "react";
 import { useAuth } from "@/lib/supabase/auth-context";
 
 import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { logger } from '@/lib/logger';
 
 const DEFAULT_REDIRECT = "/dashboard/projects";
 
@@ -69,7 +70,7 @@ function CheckoutContent() {
 
       window.location.href = data.url;
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert("Checkout failed. Please try again.");
       setSubmitting(false);
     }

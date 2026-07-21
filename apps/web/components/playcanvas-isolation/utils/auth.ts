@@ -1,5 +1,7 @@
 import type { UserSession } from '../types/isolation';
 import { hashForIsolation } from './hashing';
+import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 export async function getCurrentUserSession(): Promise<UserSession | null> {
   if (typeof window === 'undefined') {
@@ -7,20 +9,27 @@ export async function getCurrentUserSession(): Promise<UserSession | null> {
   }
 
   try {
-    // For demo purposes, return a mock user session
-    // In production, integrate with your authentication system
-    const mockUserId = 'demo-user-' + Date.now();
-    const hashedId = hashUserId(mockUserId);
+    const supabaseUrl = (window as any).__NEXT_DATA__?.runtimeConfig?.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = (window as any).__NEXT_DATA__?.runtimeConfig?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) return null;
+
+    const hashedId = hashUserId(session.user.id);
 
     return {
-      userId: mockUserId,
-      email: 'demo@example.com',
+      userId: session.user.id,
+      email: session.user.email || '',
       hashedId,
-      token: '', // Would need to get session token
-      expiresAt: Date.now() + (60 * 60 * 1000), // 1 hour
+      token: session.access_token,
+      expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now() + 3600000,
     };
   } catch (error) {
-    console.error('[Auth] Failed to get user session:', error);
+    logger.error('[Auth] Failed to get user session:', error);
     return null;
   }
 }
@@ -36,7 +45,7 @@ export function validateUserSession(session: UserSession): boolean {
 
   // Check expiration
   if (Date.now() > session.expiresAt) {
-    console.warn('[Auth] User session expired');
+    logger.warn('[Auth] User session expired');
     return false;
   }
 
@@ -60,7 +69,7 @@ export async function extractUserIdFromToken(token: string): Promise<string | nu
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.sub || payload.userId || payload.id || null;
   } catch (error) {
-    console.error('[Auth] Failed to extract user ID from token:', error);
+    logger.error('[Auth] Failed to extract user ID from token:', error);
     return null;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSovereignOS } from '../context/SovereignOSContext';
+import { logger } from '@/lib/logger';
 
 export function PlaygroundPanel() {
   const { result, editorCode, running, playgroundPlaying, togglePlayground, confessions } = useSovereignOS();

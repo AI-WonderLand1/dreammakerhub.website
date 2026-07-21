@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { BackButton } from "@/app/components/navigation/BackButton";
 
 import { BUILDER_DOCK_FOOTER_LINKS, BUILDER_LINKS } from "./BuilderAccessDock.links";
+import { logger } from '@/lib/logger';
 
 export function BuilderAccessDock() {
   const pathname = usePathname();
