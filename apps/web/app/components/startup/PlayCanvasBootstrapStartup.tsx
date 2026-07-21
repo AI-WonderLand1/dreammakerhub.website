@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ensurePlayCanvasBootstrapLoaded, shouldUseDirectPlayCanvasMode } from "@/lib/playcanvasBootstrap";
+import { logger } from '@/lib/logger';
 
 export function PlayCanvasBootstrapStartup() {
   useEffect(() => {
@@ -10,7 +11,7 @@ export function PlayCanvasBootstrapStartup() {
     }
 
     void ensurePlayCanvasBootstrapLoaded().catch((error) => {
-      console.error("PlayCanvas bootstrap preload failed", error);
+      logger.error("PlayCanvas bootstrap preload failed", error);
     });
   }, []);
 

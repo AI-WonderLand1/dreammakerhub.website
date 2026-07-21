@@ -6,6 +6,7 @@ import { PlayCanvasContainerManager } from '../webcontainer/PlayCanvasContainer'
 import { registerPlayCanvasServiceWorker, registerContainer } from '../service-worker/playcanvas-sw';
 import { getOrCreateSSHKey, validateSSHKey } from '../utils/ssh-keys';
 import type { UserSession } from '../types/isolation';
+import { logger } from '@/lib/logger';
 
 export interface IsolatedPlayCanvasProps {
   userId: string;
@@ -32,9 +33,9 @@ async function signalContainerReady(userId: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, ready: true }),
     });
-    console.log('[IsolatedPlayCanvas] Sent ready signal to server');
+    logger.info('[IsolatedPlayCanvas] Sent ready signal to server');
   } catch (err) {
-    console.error('Failed to signal ready:', err);
+    logger.error('Failed to signal ready:', err);
   }
 }
 

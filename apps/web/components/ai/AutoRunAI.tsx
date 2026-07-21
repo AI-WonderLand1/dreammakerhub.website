@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 const AUTO_RUN_KEY = 'ai-wonderland:auto-run-seen';
 const WELCOME_DELAY = 2000;

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSupabase } from '@/lib/supabase/auth-context';
+import { logger } from '@/lib/logger';
 
 interface Team {
   id: string;

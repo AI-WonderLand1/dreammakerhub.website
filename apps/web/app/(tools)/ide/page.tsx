@@ -1,4 +1,5 @@
 import PodLauncher from '@/components/engines/PodLauncher';
+import { logger } from '@/lib/logger';
 
 export const metadata = {
   title: 'WonderSpace IDE',

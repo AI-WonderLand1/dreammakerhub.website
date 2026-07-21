@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import { createClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
+import { logger } from '@/lib/logger';
 
 const DATA_ROOT = path.join(process.cwd(), ".data", "projects");
 

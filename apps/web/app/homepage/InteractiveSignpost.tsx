@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 
 type Sign = {
   text: string;

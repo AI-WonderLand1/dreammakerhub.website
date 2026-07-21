@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type TopNavItem = {
   href: string;

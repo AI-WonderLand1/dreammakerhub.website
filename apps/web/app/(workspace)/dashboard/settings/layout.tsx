@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { BackButton } from "@/app/components/navigation/BackButton";
 import { PageHeader } from "@/app/components/layout/PageHeader";
+import { logger } from '@/lib/logger';
 
 function cx(...xs: Array<string | false | undefined | null>) {
   return xs.filter(Boolean).join(" ");

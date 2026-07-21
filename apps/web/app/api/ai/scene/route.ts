@@ -4,6 +4,7 @@ import { SceneFile } from "@/lib/scene/schema"
 import { requirePaidAIUser } from '@/app/api/ai/auth'
 import { uploadAiAssetEntry } from '@/lib/ai/assetStore'
 import { generate3DSceneDraft } from '@/lib/ai/threeDGenerator'
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs'
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuthUser } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 type SubscriptionStatus = {
   isPaid: boolean;
@@ -42,7 +43,7 @@ export function useSubscription(): SubscriptionStatus {
         });
 
       } catch (error) {
-        console.error('Failed to check subscription:', error);
+        logger.error('Failed to check subscription:', error);
         setStatus({
           isPaid: false,
           plan: null,

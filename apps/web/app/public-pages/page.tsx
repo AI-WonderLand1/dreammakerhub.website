@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 export default function PagesHub() {
   // This page serves as the bridge between homepage and PlayCanvas

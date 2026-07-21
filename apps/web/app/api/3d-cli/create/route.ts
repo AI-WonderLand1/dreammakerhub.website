@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 interface CreateProjectRequest {
   projectName: string;
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       template: templateMap[projectType],
     });
   } catch (error) {
-    console.error('Error creating 3D project:', error);
+    logger.error('Error creating 3D project:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

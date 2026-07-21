@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSovereignOS } from '../context/SovereignOSContext';
+import { logger } from '@/lib/logger';
 
 type CloudProvider = 's3' | 'gcs' | 'azure' | 'r2' | 'supabase';
 type CloudStatus = 'connected' | 'disconnected';

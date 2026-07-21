@@ -8,6 +8,7 @@ import {
   isMem0Enabled,
 } from "@/lib/ai/mem0Client";
 import { getConfessionConfig } from "@/lib/ai/confessionConfig";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
       mode: config.mode,
     });
   } catch (error: any) {
-    console.error("Confessions fetch error:", error);
+    logger.error("Confessions fetch error:", error);
     return NextResponse.json(
       { ok: false, error: { code: "SERVER_ERROR", message: error.message || "Internal error" }, traceId },
       { status: 500 }

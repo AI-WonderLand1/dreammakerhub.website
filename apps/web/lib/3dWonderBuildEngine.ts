@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export interface GeneratedContent {
   message: string;
   html: string;

@@ -27,11 +27,11 @@ CREATE INDEX IF NOT EXISTS extension_storage_extension_id_idx ON public.extensio
 
 ALTER TABLE public.extensions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "extensions_select_all" ON public.extensions;
-CREATE POLICY "extensions_select_all"
+DROP POLICY IF EXISTS "extensions_select_own" ON public.extensions;
+CREATE POLICY "extensions_select_own"
   ON public.extensions
   FOR SELECT
-  USING (true);
+  USING (created_by = auth.uid());
 
 DROP POLICY IF EXISTS "extensions_insert_authenticated" ON public.extensions;
 CREATE POLICY "extensions_insert_authenticated"

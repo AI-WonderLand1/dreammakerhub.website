@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { createProjectRuntime, getRuntimeStatus } from "@/lib/workspace/provisioner";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error("Runtime creation error:", error.message);
+    logger.error("Runtime creation error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(status);
   } catch (error: any) {
-    console.error("Runtime status error:", error.message);
+    logger.error("Runtime status error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

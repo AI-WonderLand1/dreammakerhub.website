@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateJobStatus } from "@/lib/spatial/splatJobs";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ job });
   } catch (error: any) {
-    console.error("Splat callback error:", error.message);
+    logger.error("Splat callback error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

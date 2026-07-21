@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { createServer } from "http";
 import { parse } from "url";
 import { KubeConfig, CoreV1Api } from "@kubernetes/client-node";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -94,7 +95,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
 
     return new NextResponse(data, { status: response.status, headers });
   } catch (error: any) {
-    console.error("Proxy error:", error.message);
+    logger.error("Proxy error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
 
     return new NextResponse(data, { status: response.status, headers });
   } catch (error: any) {
-    console.error("Proxy POST error:", error.message);
+    logger.error("Proxy POST error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -176,7 +177,7 @@ async function handleWebSocket(req: NextRequest, projectId: string, userId: stri
       hint: "WebSocket connections should be made directly to the runtime service, not through the API gateway"
     }, { status: 400 });
   } catch (error: any) {
-    console.error("WebSocket error:", error.message);
+    logger.error("WebSocket error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

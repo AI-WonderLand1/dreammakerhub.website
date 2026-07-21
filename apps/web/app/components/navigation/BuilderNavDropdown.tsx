@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
 import { BUILDER_LINKS } from "./BuilderAccessDock.links";
+import { logger } from '@/lib/logger';
 
 const ChevronDown = ({ open }: { open: boolean }) => (
   <svg

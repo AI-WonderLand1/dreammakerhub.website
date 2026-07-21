@@ -1,6 +1,7 @@
 "use client";
 
 import { PlayCircle, Timer, Sparkles, BookOpen } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 type Tutorial = {
   title: string;

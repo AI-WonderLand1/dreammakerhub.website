@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useFeatureGate } from '@/lib/useSubscription';
+import { logger } from '@/lib/logger';
 
 type DashboardAIProps = {
   className?: string;

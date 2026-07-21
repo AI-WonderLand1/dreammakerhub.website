@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { logger } from '@/lib/logger';
 
 type ImportResult = {
   ok: boolean;
@@ -61,7 +62,7 @@ export default function ProjectImportExport({
         setStatus("Imported ✅");
         onImported?.({ ok: true, ...json });
       } catch (e: any) {
-        console.error(e);
+        logger.error(e);
         const msg = e?.message ?? "Unknown error";
         setStatus(`Import failed: ${msg}`);
         onImported?.({ ok: false, message: msg });

@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { createProject } from "@/lib/projects/createProject";
 import { listProjects } from "@/lib/projects/listProjects";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ project });
   } catch (error: any) {
-    console.error("Critical API Error:", error.message);
+    logger.error("Critical API Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

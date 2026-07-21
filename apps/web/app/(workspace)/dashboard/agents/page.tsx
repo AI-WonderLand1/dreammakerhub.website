@@ -6,6 +6,7 @@ import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import DashboardAI from "@/components/ai/DashboardAI";
+import { logger } from '@/lib/logger';
 
 type Option = {
   id: string;

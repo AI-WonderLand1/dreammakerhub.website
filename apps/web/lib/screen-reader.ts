@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Screen Reader Service
  * Web Speech API wrapper for text-to-speech narration
@@ -39,7 +40,7 @@ class ScreenReaderService {
   speak(text: string, options: SpeechOptions = {}): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.isSupported || !this.enabled) {
-        console.warn('Screen Reader not supported or disabled');
+        logger.warn('Screen Reader not supported or disabled');
         resolve();
         return;
       }
@@ -59,7 +60,7 @@ class ScreenReaderService {
         // Event handlers
         utterance.onstart = () => {
           this.isSpeaking = true;
-          console.log('[TTS] Speaking:', text);
+          logger.info('[TTS] Speaking:', text);
         };
 
         utterance.onend = () => {
@@ -79,7 +80,7 @@ class ScreenReaderService {
 
         utterance.onerror = (event) => {
           this.isSpeaking = false;
-          console.error('[TTS] Error:', event.error);
+          logger.error('[TTS] Error:', event.error);
           reject(new Error(`Speech error: ${event.error}`));
         };
 

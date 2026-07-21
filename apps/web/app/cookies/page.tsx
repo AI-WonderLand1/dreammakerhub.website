@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck, Cookie, BarChart3, ToggleLeft } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 export default function CookiesPage() {
   return (

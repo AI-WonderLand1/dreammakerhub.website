@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import * as pc from "playcanvas"
 import Link from "next/link"
 import { History, RotateCcw } from "lucide-react"
+import { logger } from '@/lib/logger';
 
 interface Version {
   id: string
@@ -111,7 +112,7 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
 
         setLoading(false)
       } catch (err: any) {
-        console.error("Failed to load scene:", err)
+        logger.error("Failed to load scene:", err)
         setError(err.message || "Failed to load scene")
         setLoading(false)
       }

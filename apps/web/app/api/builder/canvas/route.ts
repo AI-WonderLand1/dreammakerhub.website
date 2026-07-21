@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/infra/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error("Canvas Save Error:", error.message);
+    logger.error("Canvas Save Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

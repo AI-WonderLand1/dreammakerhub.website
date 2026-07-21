@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 
 interface GLTFUploaderProps {
   onUpload?: (url: string, name: string) => void;
