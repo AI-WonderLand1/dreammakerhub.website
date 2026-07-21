@@ -31,7 +31,7 @@ export class Orchestrator {
     });
 
     if (!runnerResponse.ok) {
-      throw new Error('Runner failed. Probably because it sensed your incompetence.');
+      throw new Error(`Runner failed with status ${runnerResponse.status}.`);
     }
 
     return runnerResponse.json();
