@@ -1,6 +1,7 @@
 'use client';
 
 import { Layout, Book, HelpCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 // This interface explicitly defines 'onSelect' so the build passes
 interface BlueprintProps {

@@ -1,4 +1,5 @@
 import { randomBytes, createHash } from 'crypto';
+import { logger } from '@/lib/logger';
 
 export interface SSHKeyPair {
   publicKey: string;

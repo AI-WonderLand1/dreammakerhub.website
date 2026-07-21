@@ -1,4 +1,5 @@
 import type { SceneCamera, SceneLight, SceneMaterial, SceneObject, SceneSkybox } from '@/lib/scene/schema'
+import { logger } from '@/lib/logger';
 
 type GeneratedSceneDraft = {
   objects: SceneObject[]

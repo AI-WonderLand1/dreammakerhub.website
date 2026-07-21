@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
 import {
+import { logger } from '@/lib/logger';
   listFiles,
   readFile,
   updateProjectMetadata,
@@ -18,25 +19,30 @@ const BUCKET = "published";
  * Very simple WonderBuild -> HTML renderer fallback
  * Used only if index.html is missing.
  */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function renderWonderbuild(json: any) {
   const blocks = Array.isArray(json?.blocks) ? json.blocks : [];
   const body = blocks
     .map((block: any) => {
       if (block.type === "text") {
-        return `<p style="color:${block.color ?? "#fff"};text-align:${block.align ?? "left"};font-size:${block.size ?? 16}px;">${
-          block.text ?? ""
+        return `<p style="color:${escapeHtml(block.color ?? "#fff")};text-align:${escapeHtml(block.align ?? "left")};font-size:${escapeHtml(String(block.size ?? 16))}px;">${
+          escapeHtml(block.text ?? "")
         }</p>`;
       }
       if (block.type === "image") {
-        return `<img src="${block.src ?? ""}" alt="${block.alt ?? ""}" style="max-width:100%;" />`;
+        return `<img src="${escapeHtml(block.src ?? "")}" alt="${escapeHtml(block.alt ?? "")}" style="max-width:100%;" />`;
       }
       if (block.type === "button") {
-        return `<a href="${block.href ?? "#"}" style="display:inline-block;padding:12px 18px;background:${block.bgColor ?? "#a855f7"};color:${block.color ?? "#000"};border-radius:12px;text-decoration:none;">${
-          block.text ?? "Click"
+        return `<a href="${escapeHtml(block.href ?? "#")}" style="display:inline-block;padding:12px 18px;background:${escapeHtml(block.bgColor ?? "#a855f7")};color:${escapeHtml(block.color ?? "#000")};border-radius:12px;text-decoration:none;">${
+          escapeHtml(block.text ?? "Click")
         }</a>`;
       }
       if (block.type === "video") {
-        return `<video src="${block.src ?? ""}" controls style="max-width:100%;"></video>`;
+        return `<video src="${escapeHtml(block.src ?? "")}" controls style="max-width:100%;"></video>`;
       }
       return "";
     })
@@ -238,11 +244,13 @@ export async function POST(
       const webhookSecret = randomBytes(32).toString("hex");
       const webhookUrl = `${req.nextUrl.origin}/api/webhooks/incoming/${params.projectId}`;
 
+      const keyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
+
       await supabase.from("project_api_configs").upsert(
         {
           project_id: params.projectId,
           user_id: ownerId,
-          api_key: apiKey,
+          api_key_hash: keyHash,
           webhook_secret: webhookSecret,
           webhook_url: webhookUrl,
           created_at: new Date().toISOString(),
@@ -253,7 +261,7 @@ export async function POST(
       await supabase.from("api_keys").insert({
         user_id: ownerId,
         name: `Project: ${params.projectId}`,
-        key: apiKey,
+        key_hash: keyHash,
         project_id: params.projectId,
         created_at: new Date().toISOString(),
       });

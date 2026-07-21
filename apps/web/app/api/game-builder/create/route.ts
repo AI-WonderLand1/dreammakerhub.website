@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runModel } from "@/core/ai/runModel";
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = "nodejs";
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("Game builder error:", error);
+    logger.error("Game builder error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to generate scene" },
       { status: 500 }

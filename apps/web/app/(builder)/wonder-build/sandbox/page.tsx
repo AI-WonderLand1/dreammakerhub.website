@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { SovereignOSProvider } from '../context/SovereignOSContext';
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
+import { logger } from '@/lib/logger';
 
 function SandboxPage() {
   return (

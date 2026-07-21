@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { logger } from '@/lib/logger';
 
 export type ErrorLog = {
   message: string;
@@ -9,12 +10,12 @@ export type ErrorLog = {
 };
 
 export async function logError(error: ErrorLog) {
-  console.error("[ERROR]", error.message, error.stack);
+  logger.error("[ERROR]", { message: error.message, stack: error.stack });
 
   try {
     const supabase = createClient();
     if (!supabase) {
-      console.log("[ERROR LOG] Supabase not configured, logging to console only");
+      logger.info("[ERROR LOG] Supabase not configured, logging to console only");
       return;
     }
 
@@ -35,7 +36,7 @@ export async function logError(error: ErrorLog) {
       }),
     }).catch(() => {});
   } catch (e) {
-    console.error("[ERROR LOG] Failed to log error:", e);
+    logger.error("[ERROR LOG] Failed to log error:", e);
   }
 }
 

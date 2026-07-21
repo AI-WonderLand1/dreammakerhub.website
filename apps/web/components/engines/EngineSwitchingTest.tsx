@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { engineManager } from '@engine/core';
 import { WebGLAdapter } from '@engine/core/adapters/webgl/adapter';
 import { PlayCanvasAdapter } from '@engine/core/adapters/playcanvas/adapter';
+import { logger } from '@/lib/logger';
 
 export default function TestEngineSwitching() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -12,7 +13,7 @@ export default function TestEngineSwitching() {
 
   const addLog = (message: string) => {
     setLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
-    console.log(message);
+    logger.info(message);
   };
 
   const runEngineSwitchTest = async () => {
@@ -109,7 +110,7 @@ export default function TestEngineSwitching() {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       addLog(`❌ Test failed: ${errorMsg}`);
-      console.error(error);
+      logger.error(error);
     } finally {
       setIsRunning(false);
     }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export default function AccessibilitySettingsPage() {
   return (
     <section>

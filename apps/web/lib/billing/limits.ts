@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { logger } from '@/lib/logger';
 
 export type SubscriptionPlan = "free" | "pro" | "team" | "enterprise";
 

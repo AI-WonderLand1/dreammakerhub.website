@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { logger } from '@/lib/logger';
 
 export default function CoderWorkspacePage() {
   const { user, subscription } = useAuth();

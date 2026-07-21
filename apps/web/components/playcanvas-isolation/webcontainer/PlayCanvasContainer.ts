@@ -1,6 +1,7 @@
 import { WebContainer, type FileSystemTree } from '@webcontainer/api';
 import type { UserSession, WebContainerInstance } from '../types/isolation';
 import { hashForIsolation } from '../utils/hashing';
+import { logger } from '@/lib/logger';
 
 // Default PlayCanvas project structure
 const DEFAULT_PLAYCANVAS_PROJECT: FileSystemTree = {
@@ -491,7 +492,7 @@ export class PlayCanvasContainerManager {
     const containerId = this.generateContainerId(userId);
     const hashedId = this.hashUserId(userId);
     
-    console.log(`[PlayCanvasContainer] Booting new container for user ${userId.substring(0, 8)}...`);
+    logger.info(`[PlayCanvasContainer] Booting new container for user ${userId.substring(0, 8)}...`);
     
     const container = await WebContainer.boot({
       workdirName: `playcanvas-${hashedId}`,
@@ -507,7 +508,7 @@ export class PlayCanvasContainerManager {
     let serverUrl = '';
     container.on('server-ready', (port, url) => {
       serverUrl = url;
-      console.log(`[PlayCanvasContainer] Server ready at: ${url}`);
+      logger.info(`[PlayCanvasContainer] Server ready at: ${url}`);
     });
 
     const instance: WebContainerInstance = {
@@ -557,9 +558,9 @@ export class PlayCanvasContainerManager {
         instance.container.teardown();
         this.instances.delete(containerId);
         this.userContainerMap.delete(instance.userId);
-        console.log('[PlayCanvasContainer] Destroyed container', containerId);
+        logger.info('[PlayCanvasContainer] Destroyed container', containerId);
       } catch (error) {
-        console.error('[PlayCanvasContainer] Error destroying container', containerId, error);
+        logger.error('[PlayCanvasContainer] Error destroying container', containerId, error);
       }
     }
   }
@@ -606,7 +607,7 @@ export class PlayCanvasContainerManager {
     }
 
     if (toDestroy.length > 0) {
-      console.log(`[PlayCanvasContainer] Cleaned up ${toDestroy.length} inactive instances`);
+      logger.info(`[PlayCanvasContainer] Cleaned up ${toDestroy.length} inactive instances`);
     }
   }
 
@@ -636,7 +637,7 @@ export class PlayCanvasContainerManager {
     }
 
     if (cleaned > 0) {
-      console.log(`[PlayCanvasContainer] Cron cleanup: removed ${cleaned} stuck containers`);
+      logger.info(`[PlayCanvasContainer] Cron cleanup: removed ${cleaned} stuck containers`);
     }
 
     return cleaned;

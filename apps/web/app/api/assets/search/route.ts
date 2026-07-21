@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchExternalAssets, downloadAssetToStorage } from "@/lib/ai/assetLibrary";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ assets });
   } catch (error: any) {
-    console.error("Asset search error:", error);
+    logger.error("Asset search error:", error);
     return NextResponse.json(
       { error: error.message || "Search failed" },
       { status: 500 }
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, localUrl: result.localUrl });
   } catch (error: any) {
-    console.error("Asset download error:", error);
+    logger.error("Asset download error:", error);
     return NextResponse.json(
       { error: error.message || "Download failed" },
       { status: 500 }

@@ -18,6 +18,7 @@ import {
   Unlock, Download, Upload, RefreshCw, Zap, Heart, BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { logger } from '@/lib/logger';
 
 const iconMap: Record<string, React.ElementType> = {
   Accordion: Menu, Alert: AlertCircle, AlertDialog: AlertTriangle,

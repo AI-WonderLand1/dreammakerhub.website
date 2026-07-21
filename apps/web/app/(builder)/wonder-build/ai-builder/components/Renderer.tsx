@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Puck, Data } from "@puckeditor/core";
+import { logger } from '@/lib/logger';
 
 interface JSONRendererProps {
   puckData: Data;

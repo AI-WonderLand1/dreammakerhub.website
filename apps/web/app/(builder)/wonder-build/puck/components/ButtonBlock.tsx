@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { logger } from '@/lib/logger';
 
 export type ButtonBlockProps = {
   label: string;

@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { CloudUpload, GitPullRequest, Plus, Save, Search, Settings, User } from "lucide-react";
 import toast, { Toaster } from "@/components/ui/toast";
+import { logger } from '@/lib/logger';
 
 function cx(...xs: Array<string | false | undefined | null>) {
   return xs.filter(Boolean).join(" ");

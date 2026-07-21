@@ -9,6 +9,7 @@ import { PuckEditorClient } from "../puck/PuckEditorClient";
 import ComponentsLibrary from "./ComponentsLibrary";
 import { BottomBar } from "./BottomBar";
 import AIAssistantModal from "./AIAssistantModal";
+import { logger } from '@/lib/logger';
 
 interface StudioClientProps {
   initialData: any;

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export async function GET() {
   return Response.json({ status: 'ok', path: '/health' });
 }

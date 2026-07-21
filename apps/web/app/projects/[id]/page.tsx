@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 interface PageProps {
   params: Promise<{ id: string }>;

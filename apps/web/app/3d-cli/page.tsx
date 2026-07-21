@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 
 type ProjectType = 'webgl' | 'playcanvas' | 'custom';
 

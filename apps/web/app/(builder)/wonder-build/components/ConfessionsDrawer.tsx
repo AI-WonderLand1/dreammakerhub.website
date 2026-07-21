@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 
 export interface ConfessionEntry {
   label: string;
