@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import vm from 'vm'
 import { env, requireEnv } from '@lib/env'
+import { logger } from '@lib/logger'
 let supabase: ReturnType<typeof createClient> | null = null
 
 function getSupabaseClient() {
@@ -69,9 +70,9 @@ export async function runExtension(extensionId: string) {
 function createSandbox(permissions: string[], extensionId: string) {
   const sandbox: Record<string, unknown> = {
     console: {
-      log: (...args: unknown[]) => console.log(`[ext:${extensionId}]`, ...args),
-      error: (...args: unknown[]) => console.error(`[ext:${extensionId}]`, ...args),
-      warn: (...args: unknown[]) => console.warn(`[ext:${extensionId}]`, ...args),
+      log: (...args: unknown[]) => logger.info(`[ext:${extensionId}]`, ...args),
+      error: (...args: unknown[]) => logger.error(`[ext:${extensionId}]`, ...args),
+      warn: (...args: unknown[]) => logger.warn(`[ext:${extensionId}]`, ...args),
     },
     setTimeout, setInterval, clearTimeout, clearInterval
   }
