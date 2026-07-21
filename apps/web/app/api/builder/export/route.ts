@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
 
     const pageTsx = `import React from "react";
 import "./style.css";
+import { logger } from '@/lib/logger';
 
 const markup = \`${pageMarkup}\`;
 
@@ -73,7 +74,7 @@ export default function ${componentName}() {
       },
     });
   } catch (error) {
-    console.error("Failed to export builder bundle", error);
+    logger.error("Failed to export builder bundle", error);
     return NextResponse.json(
       { error: "Failed to export builder bundle" },
       { status: 500 }

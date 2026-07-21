@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { logger } from '../../../lib/logger';
 
 export type ToastId = string;
 export type ToastOptions = { id?: ToastId };
@@ -36,7 +37,7 @@ const toast = ((message: string) => {
   const id = makeId();
   store.set(id, { message, type: 'default' });
   notify();
-  console.log('[toast]', message);
+  logger.info('[toast]', message);
   return id;
 }) as ToastFunction;
 
@@ -44,7 +45,7 @@ toast.loading = (message, opts) => {
   const id = opts?.id ?? makeId();
   store.set(id, { message, type: 'loading' });
   notify();
-  console.log('[toast:loading]', message);
+  logger.info('[toast:loading]', message);
   return id;
 };
 
@@ -52,7 +53,7 @@ toast.success = (message, opts) => {
   const id = opts?.id ?? makeId();
   store.set(id, { message, type: 'success' });
   notify();
-  console.log('[toast:success]', message);
+  logger.info('[toast:success]', message);
   return id;
 };
 
@@ -60,7 +61,7 @@ toast.error = (message, opts) => {
   const id = opts?.id ?? makeId();
   store.set(id, { message, type: 'error' });
   notify();
-  console.log('[toast:error]', message);
+  logger.info('[toast:error]', message);
   return id;
 };
 

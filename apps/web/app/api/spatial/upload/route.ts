@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error: any) {
-    console.error("Splat upload error:", error.message);
+    logger.error("Splat upload error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

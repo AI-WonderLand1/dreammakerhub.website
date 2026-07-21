@@ -2,6 +2,24 @@ import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
 import { logger } from "@lib/logger";
 
+const BLOCKED_HOSTNAMES = [
+  'localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254',
+  'metadata.google.internal', 'metadata.internal',
+];
+const BLOCKED_CIDR = [/^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./];
+
+function isInternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname;
+    if (BLOCKED_HOSTNAMES.includes(host)) return true;
+    if (BLOCKED_CIDR.some(r => r.test(host))) return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 export const webhookProvider: AIProvider = {
   name: "webhook",
 
@@ -21,6 +39,20 @@ export const webhookProvider: AIProvider = {
           confidence: 0,
           reasoning: ["Webhook URL missing"],
           limitations: ["Set a webhook URL in Settings → AI Providers"]
+        }
+      };
+    }
+
+    if (isInternalUrl(webhookUrl)) {
+      return {
+        text: "Webhook URL points to an internal or restricted network — not allowed.",
+        error: true,
+        provider: "webhook",
+        model,
+        confessions: {
+          confidence: 0,
+          reasoning: ["SSRF blocked: internal URL detected"],
+          limitations: ["Internal/private network URLs are not allowed"]
         }
       };
     }

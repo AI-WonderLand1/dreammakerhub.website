@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { logger } from '@/lib/logger';
 
 interface TTSRequest {
   text?: string;
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("ElevenLabs API error:", response.status, errorText);
+      logger.error("ElevenLabs API error:", response.status, errorText);
       return NextResponse.json(
         { error: "ElevenLabs API error", details: errorText },
         { status: response.status }
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
       duration: Math.round(audioBuffer.byteLength / 1000),
     });
   } catch (error) {
-    console.error("Error calling ElevenLabs:", error);
+    logger.error("Error calling ElevenLabs:", error);
     return NextResponse.json(
       { error: "Failed to generate speech" },
       { status: 500 }

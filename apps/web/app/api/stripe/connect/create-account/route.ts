@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { logger } from '@/lib/logger';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, accountId: account.id });
   } catch (err: any) {
-    console.error("Stripe Connect account creation error:", err);
+    logger.error("Stripe Connect account creation error:", err);
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
   }
 }

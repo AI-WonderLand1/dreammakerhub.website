@@ -1,5 +1,6 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
+import { logger } from '@/lib/logger';
 
 export default function PublicLayout({
   children,

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 "use client";
 
 export type NavigationBlockProps = {

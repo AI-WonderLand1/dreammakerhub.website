@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ projects });
   } catch (error: any) {
-    console.error("Error fetching projects:", error);
+    logger.error("Error fetching projects:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ versions: data || [] });
   } catch (error) {
-    console.error("[Versions] Error:", error);
+    logger.error("[Versions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (versionError) {
-      console.error("[Versions] Insert error:", versionError);
+      logger.error("[Versions] Insert error:", versionError);
       // Continue even if version save fails
     }
 
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       message: "Version saved"
     });
   } catch (error) {
-    console.error("[Versions] Error:", error);
+    logger.error("[Versions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -168,7 +169,7 @@ export async function PUT(req: NextRequest) {
       message: "Version restored"
     });
   } catch (error) {
-    console.error("[Versions] Error:", error);
+    logger.error("[Versions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -201,7 +202,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("[Versions] Error:", error);
+    logger.error("[Versions] Error:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

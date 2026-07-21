@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { logger } from '@/lib/logger';
 
 export type DataBindingSupabaseAssetsBlockProps = {
   title: string;

@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { publicAiModules } from "@/core/ai/modules/registry";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -59,7 +60,7 @@ async function fetchGithubModules(): Promise<RegistryModule[]> {
 
     return models;
   } catch (error) {
-    console.error("GitHub Models fetch errored", error);
+    logger.error("GitHub Models fetch errored", error);
     return [];
   }
 }

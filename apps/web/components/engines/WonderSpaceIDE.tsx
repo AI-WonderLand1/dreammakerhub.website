@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { logger } from '@/lib/logger';
 
 type ProvisionState = 'form' | 'provisioning' | 'ready' | 'error';
 

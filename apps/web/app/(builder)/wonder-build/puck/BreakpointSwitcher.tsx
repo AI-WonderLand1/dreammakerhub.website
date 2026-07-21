@@ -1,6 +1,7 @@
 "use client";
 
 import { Monitor, Tablet, Smartphone, Maximize2 } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 export type Breakpoint = "desktop" | "tablet" | "mobile";
 

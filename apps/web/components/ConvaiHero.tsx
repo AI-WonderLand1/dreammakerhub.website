@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
+import { logger } from '@/lib/logger';
 
 type ConvaiHeroProps = {
   characterId?: string;
