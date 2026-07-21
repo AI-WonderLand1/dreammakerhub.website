@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
+import { logger } from '@/lib/logger';
 
 type WorkspaceType = "full" | "ide" | "playcanvas";
 type WorkspaceStatus = "idle" | "provisioning" | "running" | "stopped" | "error";

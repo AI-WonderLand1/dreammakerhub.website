@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // Coder API Type Definitions
 // Matches official codersdk.Workspace interface with simplified fields
 

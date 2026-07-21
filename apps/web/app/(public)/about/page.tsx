@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles, Target, Users, Rocket, Compass, ShieldCheck, HeartHandshake } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 const values = [
   {

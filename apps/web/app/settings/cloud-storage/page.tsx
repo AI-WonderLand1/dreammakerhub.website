@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 const PROVIDERS = [
   { name: "Supabase Storage", desc: "Connect your Supabase project for file storage" },

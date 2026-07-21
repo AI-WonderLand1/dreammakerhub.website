@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import type { AiNpcProvider, NpcResponse } from "@/lib/aiNpcProvider";
+import { logger } from '@/lib/logger';
 
 type NpcPanelProps = {
   provider: AiNpcProvider;

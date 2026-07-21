@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export interface AuthUser {
   id: string;
   email?: string;

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export interface UserSession {
   userId: string;
   email?: string;

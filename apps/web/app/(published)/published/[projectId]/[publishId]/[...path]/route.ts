@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { injectWiringRuntime } from "@/lib/wonder-build/wiringRuntime";
+import { logger } from '@/lib/logger';
 
 const BUCKET = "published";
 

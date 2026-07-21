@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { IsolatedPlayCanvas } from '@/components/playcanvas-isolation';
 import { getCurrentUserSession } from '@/components/playcanvas-isolation/utils/auth';
+import { logger } from '@/lib/logger';
 
 export default function PlayCanvasIsolatedPage() {
   const [userId, setUserId] = useState<string>('');
@@ -32,15 +33,15 @@ export default function PlayCanvasIsolatedPage() {
   }, []);
 
   const handleStatusChange = (status: string) => {
-    console.log('[PlayCanvas Status]', status);
+    logger.info('[PlayCanvas Status]', status);
   };
 
   const handleReady = () => {
-    console.log('[PlayCanvas] Editor is ready');
+    logger.info('[PlayCanvas] Editor is ready');
   };
 
   const handleError = (error: Error) => {
-    console.error('[PlayCanvas] Error:', error);
+    logger.error('[PlayCanvas] Error:', error);
     // Only set error if it's not a WebContainer availability issue
     if (!error.message.includes('WebContainer') && !error.message.includes('SharedArrayBuffer')) {
       setError(error.message);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { manifestVisualBlock } from "@/core/ai/bridge";
 import { getAuthUser, AuthUser } from "@/lib/auth";
 import { runModel } from "@/core/ai/runModel";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

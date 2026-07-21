@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 
 type Engine = 'webgls' | '3d' | 'ui';
 

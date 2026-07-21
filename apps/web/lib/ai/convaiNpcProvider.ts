@@ -1,4 +1,5 @@
 import { AiNpcProvider, type NpcResponse, NpcProviderError, type NpcSession } from "@/lib/aiNpcProvider";
+import { logger } from '@/lib/logger';
 
 type ProviderEnv = {
   NEXT_PUBLIC_ENABLE_CONVAI_NPC?: string;
@@ -77,7 +78,7 @@ export class ConvaiNpcProvider implements AiNpcProvider {
 
       listeners.forEach((listener) => listener(npcResponse));
     } catch (error) {
-      console.error("Error calling Convai:", error);
+      logger.error("Error calling Convai:", error);
       
       // Fallback to placeholder for development
       const fallbackResponse: NpcResponse = {

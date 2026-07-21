@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export type PlanId = "free" | "pro" | "team" | "enterprise";
 
 export type PlanDefinition = {

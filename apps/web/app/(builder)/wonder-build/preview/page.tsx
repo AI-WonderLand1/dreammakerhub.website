@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { SovereignOSProvider } from '../context/SovereignOSContext';
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import { PlaygroundPanel } from '../components/PlaygroundPanel';
+import { logger } from '@/lib/logger';
 
 function PreviewPage() {
   return (

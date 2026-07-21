@@ -1,6 +1,7 @@
 import { MasterBlock } from "../blocks/MasterBlock";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { logger } from '@/lib/logger';
 
 export const layoutConfig = {
   Accordion: {

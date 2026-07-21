@@ -4,6 +4,7 @@
 import crypto from 'crypto';
 import { createSupabaseClient } from './supabase-client';
 import type { CoderWorkspace, CoderWorkspaceHealth, CreateWorkspaceRequest, ProvisionOptions, AppWorkspaceStatus } from './types';
+import { logger } from '@/lib/logger';
 
 export interface CoderAPIConfig {
   apiUrl: string;
@@ -39,8 +40,8 @@ export class CoderAPIWrapper {
     // Initialize Supabase for workspace persistence
     this.supabase = createSupabaseClient();
     
-    console.log(`[CoderAPIWrapper] Initialized with baseUrl: ${this.baseApiUrl}`);
-    console.log(`[CoderAPIWrapper] CODER_ACCESS_URL: ${this.CODER_ACCESS_URL}`);
+    logger.info(`[CoderAPIWrapper] Initialized with baseUrl: ${this.baseApiUrl}`);
+    logger.info(`[CoderAPIWrapper] CODER_ACCESS_URL: ${this.CODER_ACCESS_URL}`);
   }
 
   /**
@@ -106,11 +107,11 @@ export class CoderAPIWrapper {
       workspaceData.updated_at = new Date().toISOString();
       await this.updateWorkspace(userId, workspaceData);
       
-      console.log(`[CoderAPIWrapper] Workspace created successfully: ${options.name} (${workspaceId})`);
+      logger.info(`[CoderAPIWrapper] Workspace created successfully: ${options.name} (${workspaceId})`);
       return workspaceData;
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to create workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to create workspace:`, error);
       
       // Store error state
       await this.storeWorkspace(userId, {
@@ -157,7 +158,7 @@ export class CoderAPIWrapper {
         const workspace = await this.getWorkspace(userId, workspaceId);
         
         if (workspace.status === 'running') {
-          console.log(`[CoderAPIWrapper] Workspace ready: ${workspaceId}`);
+          logger.info(`[CoderAPIWrapper] Workspace ready: ${workspaceId}`);
           return;
         }
         
@@ -170,7 +171,7 @@ export class CoderAPIWrapper {
         
       } catch (error) {
         // Continue polling unless it's an unrecoverable error
-        console.warn(`[CoderAPIWrapper] Error checking workspace status:`, error);
+        logger.warn(`[CoderAPIWrapper] Error checking workspace status:`, error);
         await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
     }
@@ -203,7 +204,7 @@ export class CoderAPIWrapper {
       return this.parseWorkspaceResponse(ws, userId);
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to get user workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to get user workspace:`, error);
       return null;
     }
   }
@@ -227,7 +228,7 @@ export class CoderAPIWrapper {
       return this.parseWorkspaceResponse(data, userId);
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to get workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to get workspace:`, error);
       return null;
     }
   }
@@ -303,7 +304,7 @@ export class CoderAPIWrapper {
       return this.parseWorkspaceResponse(updatedWorkspace, userId);
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to start workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to start workspace:`, error);
       throw error;
     }
   }
@@ -323,7 +324,7 @@ export class CoderAPIWrapper {
       return this.parseWorkspaceResponse(updatedWorkspace, userId);
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to stop workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to stop workspace:`, error);
       throw error;
     }
   }
@@ -337,7 +338,7 @@ export class CoderAPIWrapper {
       const stopped = await this.stopWorkspace(userId, workspaceId);
       return await this.startWorkspace(userId, workspaceId);
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to restart workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to restart workspace:`, error);
       throw error;
     }
   }
@@ -358,7 +359,7 @@ export class CoderAPIWrapper {
       
       return await response.json();
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to get workspace health:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to get workspace health:`, error);
       return null;
     }
   }
@@ -377,11 +378,11 @@ export class CoderAPIWrapper {
       // Remove from Supabase
       await this.deleteWorkspaceFromStorage(userId, workspaceId);
       
-      console.log(`[CoderAPIWrapper] Workspace deleted: ${workspaceId}`);
+      logger.info(`[CoderAPIWrapper] Workspace deleted: ${workspaceId}`);
       return true;
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to delete workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to delete workspace:`, error);
       return false;
     }
   }
@@ -403,7 +404,7 @@ export class CoderAPIWrapper {
       return workspaces.map((ws: any) => this.parseWorkspaceResponse(ws, userId));
       
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to list workspaces:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to list workspaces:`, error);
       return [];
     }
   }
@@ -457,7 +458,7 @@ export class CoderAPIWrapper {
           }
         });
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to store workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to store workspace:`, error);
     }
   }
 
@@ -486,7 +487,7 @@ export class CoderAPIWrapper {
           }
         });
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to update workspace:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to update workspace:`, error);
     }
   }
 
@@ -501,7 +502,7 @@ export class CoderAPIWrapper {
         .eq('user_id', userId)
         .eq('workspace_id', workspaceId);
     } catch (error) {
-      console.error(`[CoderAPIWrapper] Failed to delete workspace from storage:`, error);
+      logger.error(`[CoderAPIWrapper] Failed to delete workspace from storage:`, error);
     }
   }
 

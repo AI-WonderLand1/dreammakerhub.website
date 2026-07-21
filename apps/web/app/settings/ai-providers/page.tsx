@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Key, Check, AlertCircle, ChevronDown, ExternalLink } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface AIProviderConfig {
   provider: string;
@@ -169,7 +170,7 @@ export default function AIProvidersSettingsPage() {
         }
       }
     } catch (err) {
-      console.error("Failed to fetch AI configs:", err);
+      logger.error("Failed to fetch AI configs:", err);
     } finally {
       setLoading(false);
     }

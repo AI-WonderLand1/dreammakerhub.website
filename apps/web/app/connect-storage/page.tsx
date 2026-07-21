@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import BYOCExplanation from './BYOCExplanation';
+import { logger } from '@/lib/logger';
 
 type Provider = 'supabase' | 's3' | 'gcs';
 

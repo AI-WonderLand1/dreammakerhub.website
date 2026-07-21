@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from '@/lib/logger';
 
 export function HeroBlock({ content, children }: { content?: any; children?: React.ReactNode }) {
   return (

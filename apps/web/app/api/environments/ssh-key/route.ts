@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProjectSSHKey } from "@/lib/workspace/provisioner";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 

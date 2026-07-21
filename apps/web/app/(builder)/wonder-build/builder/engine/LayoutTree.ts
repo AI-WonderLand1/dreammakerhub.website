@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export type LayoutNode = {
   id: string;
   type: string;

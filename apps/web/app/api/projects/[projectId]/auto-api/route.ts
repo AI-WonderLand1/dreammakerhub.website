@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID, randomBytes } from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import { getSmokeUserIdFromRequest } from "@/lib/smokeAuth";
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

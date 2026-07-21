@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { logger } from '@/lib/logger';
 
 function cx(...xs: Array<string | false | undefined | null>) {
   return xs.filter(Boolean).join(" ");

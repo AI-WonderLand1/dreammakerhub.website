@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { runModel } from '@/core/ai/runModel';
 import { buildClassificationPrompt } from '@/core/ai/promptBuilder';
+import { logger } from '@/lib/logger';
 
 const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
@@ -80,7 +81,7 @@ export async function runAI(mode: string, prompt: string): Promise<any> {
     try {
       content = await callCerebras(prompt, systemPrompt);
     } catch (error: any) {
-      console.error('Cerebras failed, falling back to HuggingFace:', error.message);
+      logger.error('Cerebras failed, falling back to HuggingFace:', error.message);
     }
   }
 

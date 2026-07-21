@@ -181,6 +181,7 @@ body{background:#0a0a0f;color:#fff;font-family:system-ui,sans-serif;overflow:hid
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { logger } from '@/lib/logger';
 
 const sceneData = ${JSON.stringify(sceneData)};
 
@@ -267,7 +268,7 @@ if (sceneData.objects && sceneData.objects.length > 0) {
       mesh.receiveShadow = true;
       mesh.userData.name = obj.name || 'Object';
       scene.add(mesh);
-    } catch(e) { console.warn('Failed to load object:', obj.name, e); }
+    } catch(e) { logger.warn('Failed to load object:', obj.name, e); }
   }
 }
 

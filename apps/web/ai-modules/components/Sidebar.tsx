@@ -2,6 +2,7 @@
 import React from "react";
 import { Plus, Trash2, Layout, Database, Ghost, Mic, Eye, Zap, HardDrive, Settings2 } from "lucide-react";
 import { cn } from "../utils"; // Assuming you have a class-merge utility
+import { logger } from '@/lib/logger';
 
 interface SidebarProps {
   modules: any[];

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Wand2, ArrowRight } from 'lucide-react';
 import ImageSlider from './ImageSlider';
+import { logger } from '@/lib/logger';
 
 const HeroBanner = () => {
   // Placeholder URLs for demonstration

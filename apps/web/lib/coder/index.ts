@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // Coder Integration Module Exports
 
 export { default as CoderAPIWrapper } from './api-wrapper';

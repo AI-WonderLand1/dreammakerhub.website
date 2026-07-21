@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getStorageManager } from "@/lib/storage/StorageManager"
 import { createClient } from "@supabase/supabase-js"
+import { logger } from '@/lib/logger';
 
 async function requireAuth(req: Request): Promise<string | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

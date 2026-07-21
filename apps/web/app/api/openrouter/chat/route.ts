@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 interface OpenRouterRequest {
   model: string;
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
-    console.error('OPENROUTER_API_KEY is not configured');
+    logger.error('OPENROUTER_API_KEY is not configured');
     return NextResponse.json(
       { error: 'OpenRouter API key is not configured' },
       { status: 500 }
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
+      logger.error('OpenRouter API error:', response.status, errorText);
       return NextResponse.json(
         { error: 'OpenRouter API error', details: errorText },
         { status: response.status }
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data);
     
   } catch (error) {
-    console.error('Error calling OpenRouter:', error);
+    logger.error('Error calling OpenRouter:', error);
     return NextResponse.json(
       { error: 'Failed to call OpenRouter API' },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { createClient } from '../../../utils/supabase/server';
+import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 

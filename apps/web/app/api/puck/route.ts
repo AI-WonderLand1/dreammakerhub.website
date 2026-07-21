@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 const context = `## Overview
 We are Google. You help us build Google landing pages.
 
