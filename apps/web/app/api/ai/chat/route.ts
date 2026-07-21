@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 import { ensureDefaultProject } from '@/lib/projects/storage';
 import { runAIPipeline } from '@/core/ai/pipeline-v1/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@/core/ai/personas';
@@ -9,12 +10,15 @@ import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { storeConfessionToMem0, isMem0Enabled } from '@/lib/ai/mem0Client';
 import { getConfessionConfig } from '@/lib/ai/confessionConfig';
 import { searchMemories, storeMemory } from '@/lib/ai/mem0Service';
+import { decryptSecret } from '@/lib/crypto/secrets';
 
 export const runtime = "nodejs";
 
 const requestSchema = z.object({
   prompt: z.string().trim().min(1, "Prompt required"),
   agentId: z.string().trim().min(1, "Agent required"),
+  provider: z.string().optional(),
+  model: z.string().optional(),
   targetLanguage: z.string().optional(),
   personaId: z.string().optional(),
   temperature: z.number().min(0).max(1).optional(),
@@ -58,13 +62,29 @@ function detectHumanLanguage(prompt: string): string {
   return 'en';
 }
 
-const AGENTS = {
-  "builder-default": { id: "openrouter/meta-llama/llama-3.3-70b-instruct", provider: "openrouter" },
-  "github-fast": { id: "openrouter/google/gemini-flash-1.5", provider: "openrouter" },
-  "github-powerful": { id: "openrouter/meta-llama/llama-3.3-70b-instruct", provider: "openrouter" },
-  "google-vision": { id: "google/gemini-2.5-flash", provider: "google" },
-  "openrouter-general": { id: "google/gemini-flash-1.5", provider: "openrouter" },
+const PROVIDER_MODEL_MAP: Record<string, { model: string; providerName: string }> = {
+  "builder-default": { model: "openrouter/meta-llama/llama-3.3-70b-instruct", providerName: "openrouter" },
+  "github-fast": { model: "openrouter/google/gemini-flash-1.5", providerName: "openrouter" },
+  "github-powerful": { model: "openrouter/meta-llama/llama-3.3-70b-instruct", providerName: "openrouter" },
+  "google-vision": { model: "google/gemini-2.5-flash", providerName: "google" },
+  "openrouter-general": { model: "google/gemini-flash-1.5", providerName: "openrouter" },
 };
+
+async function getUserProviderConfig(userId: string, providerName: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } },
+  });
+  const { data } = await supabase
+    .from("ai_provider_configs")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("provider", providerName)
+    .maybeSingle();
+  return data;
+}
 
 export async function POST(req: NextRequest) {
   const traceId = crypto.randomUUID();
@@ -81,14 +101,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt, agentId, targetLanguage, personaId, outputFormat, existingComponents } = body.data;
+    const { prompt, agentId, provider: reqProvider, model: reqModel, targetLanguage, personaId, outputFormat, existingComponents } = body.data;
 
-    const agent = (AGENTS as any)[agentId];
-    if (!agent) {
-      return NextResponse.json(
-        { ok: false, error: { code: "AGENT_NOT_FOUND", message: "Agent not available" }, traceId },
-        { status: 403 }
-      );
+    // Resolve model: either explicit provider/model pair, or from the agent map
+    let modelId: string;
+    let userApiKey: string | undefined;
+    let baseUrl: string | undefined;
+
+    if (reqProvider && reqModel) {
+      modelId = `${reqProvider}/${reqModel}`;
+      const userConfig = await getUserProviderConfig(paidUser.userId, reqProvider);
+      if (userConfig?.api_key_encrypted && userConfig?.api_key_iv && userConfig?.api_key_tag) {
+        try {
+          userApiKey = decryptSecret(userConfig.api_key_encrypted, userConfig.api_key_iv, userConfig.api_key_tag);
+        } catch {
+          // decryption failed, fall back to env-based
+        }
+      }
+      if (userConfig?.base_url) {
+        baseUrl = userConfig.base_url;
+      }
+    } else {
+      const entry = PROVIDER_MODEL_MAP[agentId];
+      if (!entry) {
+        return NextResponse.json(
+          { ok: false, error: { code: "AGENT_NOT_FOUND", message: "Agent not available" }, traceId },
+          { status: 403 }
+        );
+      }
+      modelId = entry.model;
+      const userConfig = await getUserProviderConfig(paidUser.userId, entry.providerName);
+      if (userConfig?.api_key_encrypted && userConfig?.api_key_iv && userConfig?.api_key_tag) {
+        try {
+          userApiKey = decryptSecret(userConfig.api_key_encrypted, userConfig.api_key_iv, userConfig.api_key_tag);
+        } catch {
+          // fall back to env-based
+        }
+      }
+      if (userConfig?.base_url) {
+        baseUrl = userConfig.base_url;
+      }
     }
 
     const detectedHumanLang = targetLanguage || detectHumanLanguage(prompt);
@@ -146,8 +198,10 @@ export async function POST(req: NextRequest) {
       userPrompt: enhancedPrompt,
       systemPrompt: systemInstructions.join('\n\n'),
       language: detectedHumanLang,
-      model: agent.id,
+      model: modelId,
       useLLMExtraction,
+      userApiKey,
+      baseUrl,
     });
 
     let memoryStore: { ok: boolean; bucket?: string; path?: string; error?: string } = { ok: true };

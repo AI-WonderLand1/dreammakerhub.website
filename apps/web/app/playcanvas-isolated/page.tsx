@@ -19,12 +19,10 @@ export default function PlayCanvasIsolatedPage() {
           setUserId(userSession.userId);
           setSession(userSession);
         } else {
-          // For demo, use a mock user ID
-          setUserId('demo-user-123');
+          setError('Authentication required — please log in.');
         }
       } catch (err) {
         setError('Failed to load user session');
-        setUserId('demo-user-123'); // Fallback for demo
       } finally {
         setIsLoading(false);
       }
