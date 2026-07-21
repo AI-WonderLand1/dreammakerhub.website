@@ -8,15 +8,23 @@ export const runtime = "nodejs";
  * Sanitize HTML to prevent XSS — strips dangerous tags/attributes while preserving safe content.
  */
 function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
-    .replace(/<embed\b[^>]*>/gi, '')
-    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
-    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
-    .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
-    .replace(/javascript\s*:/gi, '');
+  let s = html;
+  // Strip all event handlers (onclick, onerror, onload, etc.)
+  s = s.replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '');
+  // Strip dangerous protocol URIs
+  s = s.replace(/(?:href|src|action|data|codebase|formaction)\s*=\s*(?:"[^"]*"|'[^']*')/gi, (m) => {
+    if (/javascript|data:text\/html|vbscript|file:/i.test(m)) {
+      return m.replace(/=.*/, '=""');
+    }
+    return m;
+  });
+  // Strip dangerous tags and their content
+  const DANGEROUS_TAGS = ['script', 'iframe', 'object', 'embed', 'form', 'svg', 'math', 'link', 'base', 'meta', 'style'];
+  for (const tag of DANGEROUS_TAGS) {
+    const regex = new RegExp(`<${tag}\\b[^<]*(?:(?!<\\/${tag}>)<[^<]*)*<\\/${tag}>|<${tag}\\b[^>]*\\/?>`, 'gi');
+    s = s.replace(regex, '');
+  }
+  return s;
 }
 
 /**
