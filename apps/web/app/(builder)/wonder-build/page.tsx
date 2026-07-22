@@ -5,28 +5,11 @@ import { logger } from '@/lib/logger';
 
 const TOOLS = [
   {
-    href: '/wonder-build/agent',
-    icon: '🤖',
-    title: 'Wonderbuild',
-    desc: 'Describe what you want — AI agents build it.',
-  },
-  {
-    href: '/wonder-build/preview',
-    icon: '👁️',
-    title: 'Preview',
-    desc: 'See your build in action.',
-  },
-  {
-    href: '/wonder-build/sandbox',
-    icon: '📄',
-    title: 'Code Sandbox',
-    desc: 'Edit code and sync to cloud storage.',
-  },
-  {
-    href: '/wonder-build/puck',
+    href: '/wonder-build/builder',
     icon: '🎨',
-    title: 'Visual Editor',
-    desc: 'Drag-and-drop visual page builder.',
+    title: 'Visual Builder',
+    desc: 'Build apps and websites with drag-and-drop, code editing, and live preview.',
+    highlight: true,
   },
   {
     href: '/wonder-build/playcanvas',
@@ -40,12 +23,6 @@ const TOOLS = [
     title: 'Spatial Designer',
     desc: 'Design in 3D space.',
   },
-  {
-    href: '/wonder-build/ai-builder',
-    icon: '⚡',
-    title: 'Wonderbuild Pro',
-    desc: 'Full build flow with asset library & download.',
-  },
 ];
 
 export default function WonderBuildHub() {
@@ -55,14 +32,18 @@ export default function WonderBuildHub() {
         <div className="mb-8 text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-violet-400">AI Wonderland</p>
           <h1 className="mt-3 text-3xl font-bold">Wonder Build</h1>
-          <p className="mt-2 text-sm text-white/40">Choose a tool to get started.</p>
+          <p className="mt-2 text-sm text-white/40">Pick a tool to get started.</p>
         </div>
         <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
           {TOOLS.map((t) => (
             <Link
               key={t.href}
               href={t.href}
-              className="group rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-violet-500/40 hover:bg-violet-500/10"
+              className={`group rounded-xl border p-5 transition-all ${
+                t.highlight
+                  ? 'border-violet-500/40 bg-violet-500/10 hover:border-violet-400 hover:bg-violet-500/20'
+                  : 'border-white/10 bg-white/5 hover:border-violet-500/40 hover:bg-violet-500/10'
+              }`}
             >
               <span className="text-2xl">{t.icon}</span>
               <p className="mt-2 text-sm font-semibold text-white/80 group-hover:text-white">{t.title}</p>

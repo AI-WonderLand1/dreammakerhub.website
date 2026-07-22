@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { htmlToPuckBlocks, storePuckData } from "@/lib/ai-to-puck";
 import { AssetLibrary } from "@/components/ai/AssetLibrary";
 import { logger } from '@/lib/logger';
 
@@ -88,18 +87,6 @@ export default function AIBuilderPage() {
     // Add the asset to the current prompt
     setPrompt(prev => `${prev} Include ${asset.name} ${asset.type}`);
   }, []);
-
-  const acceptToPuck = useCallback(async () => {
-    if (!result?.code) return;
-    try {
-      const puckData = await htmlToPuckBlocks(result.code);
-      const dataKey = storePuckData(puckData);
-      router.push(`/wonder-build/puck?ai_data=${dataKey}`);
-    } catch (err) {
-      logger.error("[Wonderbuild] Failed to accept to Puck:", err);
-      alert("Failed to prepare content for Puck editor");
-    }
-  }, [result?.code, router]);
 
   useEffect(() => {
     if (!result?.code) {
@@ -197,11 +184,12 @@ export default function AIBuilderPage() {
       if (data.url) { router.push(data.url); }
       else {
         alert("Project saved! Redirecting to editor...");
-        router.push(`/wonder-build/puck?project=${data.projectId}`);
+        router.push(`/wonder-build/builder?project=${data.projectId}`);
       }
     } catch (err) {
       logger.error("Failed to save project:", err);
       alert("Failed to save project. Please try again.");
+      return;
     } finally { setSaving(false); }
   }, [result, buildType, prompt, router, saving]);
 
@@ -345,7 +333,6 @@ export default function AIBuilderPage() {
                   {result?.type === "playcanvas" && (
                     <button onClick={() => router.push("/wonder-build/playcanvas")} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors shadow-lg shadow-cyan-600/50 flex items-center gap-2">Open in PlayCanvas</button>
                   )}
-                  <button onClick={acceptToPuck} className="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-lg shadow-emerald-600/50 flex items-center gap-2">Accept & Continue</button>
                   <button onClick={() => { setResult(null); setAgents({}); setError(null); }} className="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors">Build again</button>
                 </div>
               </div>
