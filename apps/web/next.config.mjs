@@ -59,8 +59,6 @@ const pathAliases = {
     '@/infra/services/storage/provider': join(__dirname, '../../infra/services/storage/provider'),
     '@/runners/aetherguardWorker': join(__dirname, '../../runners/aetherguardWorker'),
     '@/runners/registry.worker': join(__dirname, '../../runners/registry.worker'),
-    '@/styles/puck-dark-fix.css': join(__dirname, 'styles/puck-dark-fix.css'),
-    '@/styles/puck-framer-theme.css': join(__dirname, 'styles/puck-framer-theme.css'),
   };
 
 const nextConfig = {
@@ -80,11 +78,6 @@ const nextConfig = {
       },
       {
         source: '/wonder-build/agent',
-        destination: '/wonder-build/studio',
-        permanent: true,
-      },
-      {
-        source: '/wonder-build/puck',
         destination: '/wonder-build/studio',
         permanent: true,
       },

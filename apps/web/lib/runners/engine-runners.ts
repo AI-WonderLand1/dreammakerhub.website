@@ -1,10 +1,10 @@
 /**
  * Custom Runner Factory
  * Generates specialized code for each engine type
- * PlayCanvas 3D, WebGL Shaders, Puck UI
+ * PlayCanvas 3D, WebGL Shaders
  */
 
-export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'theia' | 'spatial';
+export type EngineType = 'playcanvas' | 'webgl' | 'theia' | 'spatial';
 
 export interface RunnerContext {
   projectId: string;
@@ -179,90 +179,6 @@ void main() {
   };
 }
 
-// Puck UI Builder Runner
-export function createPuckUILayout(context: RunnerContext): RunnerResult {
-  const { projectName } = context;
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  const code = `
-import { Puck } from '@puckeditor/core';
-import '@puckeditor/core/puck.css';
-
-// Define component library
-const config = {
-  components: {
-    HeadingBlock: {
-      fields: {
-        title: { type: 'text' },
-        level: { type: 'select', options: [
-          { label: 'H1', value: 'h1' },
-          { label: 'H2', value: 'h2' },
-          { label: 'H3', value: 'h3' },
-        ]},
-      },
-      defaultProps: {
-        title: 'Welcome to ${projectName}',
-        level: 'h1',
-      },
-      render: ({ title, level }) => {
-        const Tag = level;
-        return <Tag>{title}</Tag>;
-      },
-    },
-    ButtonBlock: {
-      fields: {
-        text: { type: 'text' },
-        variant: { type: 'select', options: [
-          { label: 'Primary', value: 'primary' },
-          { label: 'Secondary', value: 'secondary' },
-          { label: 'Danger', value: 'danger' },
-        ]},
-      },
-      render: ({ text, variant }) => (
-        <button className={\`btn-\${variant}\`}>{text}</button>
-      ),
-    },
-    GridBlock: {
-      fields: {
-        columns: { type: 'number' },
-      },
-      render: ({ columns }) => (
-        <div style={{ display: 'grid', gridTemplateColumns: \`repeat(\${columns}, 1fr)\` }}>
-          {/* Grid content */}
-        </div>
-      ),
-    },
-  },
-};
-
-// Initial page structure
-const initialData = {
-  root: {
-    type: 'HeadingBlock',
-    props: { title: '${projectName}', level: 'h1' },
-  },
-};
-
-export default function Editor() {
-  return (
-    <Puck config={config} data={initialData} />
-  );
-}
-`;
-
-  return {
-    code,
-    language: 'typescript',
-    imports: [
-      "import { Puck } from '@puckeditor/core';",
-      "import PuckUIEngine from '@/components/engines/PuckUIEngine';",
-    ],
-    errors,
-    warnings,
-  };
-}
-
 // Main Runner Factory
 export function runnerFactory(context: RunnerContext): RunnerResult {
   switch (context.engineType) {
@@ -270,8 +186,6 @@ export function runnerFactory(context: RunnerContext): RunnerResult {
       return createPlayCanvasScene(context);
     case 'webgl':
       return createWebGLShader(context);
-    case 'puck':
-      return createPuckUILayout(context);
     default:
       return {
         code: '',

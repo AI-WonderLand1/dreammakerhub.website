@@ -5,7 +5,6 @@ import Link from "next/link";
 
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { PageHeader } from "@/app/components/layout/PageHeader";
-import { PuckEditorClient } from "../puck/PuckEditorClient";
 import ComponentsLibrary from "./ComponentsLibrary";
 import { BottomBar } from "./BottomBar";
 import AIAssistantModal from "./AIAssistantModal";
@@ -95,11 +94,25 @@ export default function StudioClient({ initialData }: StudioClientProps) {
               style={{ height: 'calc(100% - 2rem)' }}
             >
               <Suspense fallback={<div className="text-white/50 text-center py-8">Loading studio...</div>}>
-                <PuckEditorClient 
-                  initialData={editorData} 
-                  viewMode={editorMode} 
-                  onDataChange={(newData) => setEditorData(newData)}
-                />
+                {editorMode === 'visual' && (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-4xl mb-4">🖌️</p>
+                      <p className="text-white/70 font-semibold">Visual Editor</p>
+                      <p className="text-white/40 text-sm mt-1">Coming soon — the new AI Wonderland visual builder is being built.</p>
+                    </div>
+                  </div>
+                )}
+                {editorMode === 'preview' && (
+                  <div className="flex h-full items-center justify-center bg-white/5">
+                    <p className="text-white/40">Preview mode — content will render here.</p>
+                  </div>
+                )}
+                {editorMode === 'code' && (
+                  <div className="flex h-full items-center justify-center bg-white/5">
+                    <p className="text-white/40">Code editor — content will render here.</p>
+                  </div>
+                )}
               </Suspense>
             </div>
           </div>

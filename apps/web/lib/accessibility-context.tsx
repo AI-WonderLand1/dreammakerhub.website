@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { screenReader } from './screen-reader';
 import { logger } from '@/lib/logger';
 
-export type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'coder' | 'theia' | 'spatial';
+export type EngineType = 'playcanvas' | 'webgl' | 'coder' | 'theia' | 'spatial';
 
 export interface TranscriptItem {
   id: string;
@@ -80,7 +80,6 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
         const contextPrefix = {
           playcanvas: 'In PlayCanvas: ',
           webgl: 'In WebGL Studio: ',
-          puck: 'In Puck UI: ',
           coder: 'In Coder IDE: ',
           theia: 'In Coder IDE: ',
         };
