@@ -1,13 +1,12 @@
 "use client";
 
-
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
-import { useAuth } from "@/lib/supabase/auth-context";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useMemo } from "react";
 
 import { PLANS, type PlanId } from "@/lib/billing/plans";
-import { logger } from '@/lib/logger';
+
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/8x2dR8cmZ54dbWlfky8so00";
 
 const DEFAULT_REDIRECT = "/dashboard/projects";
 
@@ -27,54 +26,12 @@ function parsePlan(raw: string | null): PlanId | null {
 }
 
 function CheckoutContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { session, user } = useAuth();
-
-  const [submitting, setSubmitting] = useState(false);
 
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
   const planId = parsePlan(searchParams.get("plan"));
-  const interval = searchParams.get("interval") === "year" ? "year" : "month";
 
   const plan = useMemo(() => (planId ? PLANS[planId] : null), [planId]);
-
-  const completeCheckout = async () => {
-    if (!planId || !plan) return;
-
-    const token = session?.access_token;
-    if (!token || !user) {
-      const back = `/checkout?plan=${encodeURIComponent(planId)}&interval=${interval}&redirectTo=${encodeURIComponent(redirectTo)}`;
-      router.push(`/public-pages/auth?redirectTo=${encodeURIComponent(back)}`);
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const response = await fetch("/api/subscription/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          plan: planId,
-          interval,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data?.url) {
-        throw new Error(data?.error || "Checkout failed");
-      }
-
-      window.location.href = data.url;
-    } catch (err) {
-      logger.error(err);
-      alert("Checkout failed. Please try again.");
-      setSubmitting(false);
-    }
-  };
 
   if (!plan) {
     return (
@@ -101,9 +58,9 @@ function CheckoutContent() {
           <div className="flex items-start justify-between gap-6">
             <div>
               <h2 className="text-xl font-semibold">{plan.name}</h2>
-              <p className="text-white/70 mt-1">{interval === "year" ? "Billed annually" : "Billed monthly"}. Cancel any time.</p>
+              <p className="text-white/70 mt-1">Cancel any time.</p>
             </div>
-            <p className="text-2xl font-extrabold">{interval === "year" ? plan.yearlyPriceDisplay : plan.priceDisplay}</p>
+            <p className="text-2xl font-extrabold">{plan.priceDisplay}</p>
           </div>
 
           <ul className="mt-5 space-y-2 text-sm text-white/80">
@@ -126,17 +83,18 @@ function CheckoutContent() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              onClick={completeCheckout}
-              disabled={submitting}
-              className="rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            <a
+              href={STRIPE_PAYMENT_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white"
             >
-              {submitting ? "Completing checkout..." : `Subscribe to ${plan.name}`}
-            </button>
+              Subscribe to {plan.name}
+            </a>
 
             <Link
               href={`/subscription?redirectTo=${encodeURIComponent(redirectTo)}`}
-              className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10"
+              className="inline-block rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10"
             >
               Change plan
             </Link>
