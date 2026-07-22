@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { loadConfig } from '../core/config';
+import { loadConfig } from '../core/config.js';
 
 export function registerBuildCommand(program: Command) {
   program

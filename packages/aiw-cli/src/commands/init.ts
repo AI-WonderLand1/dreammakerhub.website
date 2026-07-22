@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
-import { saveConfig, Config } from '../core/config';
+import { saveConfig, Config } from '../core/config.js';
 import ora from 'ora';
 
 export function registerInitCommand(program: Command) {

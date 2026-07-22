@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 import ora from 'ora';
-import { saveConfig } from '../core/config';
+import { saveConfig } from '../core/config.js';
 
 export function registerNewCommand(program: Command) {
   program
