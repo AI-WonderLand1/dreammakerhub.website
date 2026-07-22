@@ -95,7 +95,7 @@ export default function Homepage() {
             <p className="text-white/70 mb-6 max-w-md mx-auto">
               Start building your 3D world in seconds. No experience needed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <Link href="/template_futuristic_city"
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform shadow-lg shadow-purple-900/30 group relative">
                 🏙️ Start with Futuristic City
