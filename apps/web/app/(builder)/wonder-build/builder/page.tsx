@@ -22,6 +22,7 @@ const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/Ke
 const AccessibilityCheckerPanel = dynamic(() => import('@/lib/builder/components/AccessibilityCheckerPanel'), { ssr: false });
 const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
 const BuilderRealtimePipeline = dynamic(() => import('@/lib/builder/components/BuilderRealtimePipeline'), { ssr: false });
+const PipelineIndicator = dynamic(() => import('@/lib/builder/components/PipelineIndicator'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
 
@@ -292,7 +293,7 @@ function BuilderContent() {
                     </button>
                   )}
                   <span className="text-white/20 mx-1" aria-hidden="true">|</span>
-                  <BuilderRealtimePipeline />
+                  <PipelineIndicator />
                 </div>
               </nav>
 
