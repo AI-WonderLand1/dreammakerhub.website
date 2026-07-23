@@ -29,6 +29,30 @@ const LIBRARY_BLOCKS: Array<{ name: string; icon: string; defaultProps: Record<s
     defaultProps: { title: 'Core Features' },
     defaultStyles: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' },
   },
+  {
+    name: 'WordPress Post',
+    icon: '📝',
+    defaultProps: { title: 'New Post', content: 'Post content goes here...', wpPostType: 'post' },
+    defaultStyles: { padding: '1.5rem', backgroundColor: '#ffffff', color: '#1a1a1a', borderRadius: '0.5rem' },
+  },
+  {
+    name: 'WP Page',
+    icon: '📄',
+    defaultProps: { title: 'Page Title', content: 'Page content...', wpPostType: 'page' },
+    defaultStyles: { padding: '2rem', maxWidth: '1200px', margin: '0 auto' },
+  },
+  {
+    name: 'WP Columns',
+    icon: '🔲',
+    defaultProps: { columns: 2, content: 'Column content' },
+    defaultStyles: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' },
+  },
+  {
+    name: 'WP Cover',
+    icon: '🖼️',
+    defaultProps: { title: 'Cover Section', overlay: 'rgba(0,0,0,0.4)', minHeight: '400px' },
+    defaultStyles: { backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '3rem', borderRadius: '0.5rem', color: '#ffffff', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  },
 ];
 
 export default function ComponentLibrary() {

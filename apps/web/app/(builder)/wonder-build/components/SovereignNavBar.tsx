@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
+import { PublishModal } from './PublishModal';
 import { logger } from '@/lib/logger';
 
 const NAV_LINKS = [
@@ -18,6 +20,7 @@ const NAV_LINKS = [
 export function SovereignNavBar() {
   const pathname = usePathname();
   const { running } = useSovereignOS();
+  const [publishOpen, setPublishOpen] = useState(false);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-white/10 bg-[#0b0b0d]/95 px-4 backdrop-blur-xl">
@@ -55,11 +58,14 @@ export function SovereignNavBar() {
         )}
         <button
           type="button"
+          onClick={() => setPublishOpen(true)}
           className="rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-violet-900/30 hover:opacity-90"
         >
           Publish
         </button>
       </div>
+
+      <PublishModal isOpen={publishOpen} onClose={() => setPublishOpen(false)} />
     </header>
   );
 }
