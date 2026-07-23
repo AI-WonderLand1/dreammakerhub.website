@@ -97,8 +97,9 @@ export class FileFolderManager {
   }
 
   private findFilePathForElement(elementId: string): string | null {
-    for (const [path] of this.cachedFiles) {
-      if (path.includes(elementId)) return path;
+    const needle = `id="${elementId}"`;
+    for (const [path, content] of this.cachedFiles) {
+      if (content.includes(needle)) return path;
     }
     return null;
   }

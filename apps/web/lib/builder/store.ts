@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { BuilderState, CanvasElement, Breakpoint, BuilderTheme, LeftPanelTab, RightPanelTab } from './types';
 import { getEventBus } from './pipeline/EventBus';
+import { EventNames } from './pipeline/types';
 
 interface BuilderStore extends BuilderState {
   projectId: string;
@@ -165,11 +166,11 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
 
   undo: () => {
-    getEventBus().emit('history:undo' as any, { elements: [] });
+    getEventBus().emit(EventNames.HISTORY_UNDO, { elements: [] });
   },
 
   redo: () => {
-    getEventBus().emit('history:redo' as any, { elements: [] });
+    getEventBus().emit(EventNames.HISTORY_REDO, { elements: [] });
   },
 
   leftPanelTab: 'blocks',

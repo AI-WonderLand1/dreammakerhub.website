@@ -3,8 +3,6 @@ import {
   EventPayload, Unsubscribe, Transaction, EventNames,
 } from './types';
 
-const WILDCARD = '*' as EventName & 'WILDCARD';
-
 export class EventBus {
   private handlers = new Map<EventName, Set<EventHandler<any>>>();
   private wildcardHandlers = new Set<WildcardHandler>();

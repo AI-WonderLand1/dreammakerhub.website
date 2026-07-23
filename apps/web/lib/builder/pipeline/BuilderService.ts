@@ -56,11 +56,14 @@ export class BuilderService {
   }
 
   async removeElement(elementId: string): Promise<void> {
-    const el = useBuilderStore.getState().elements.find((e) => e.id === elementId);
+    const elements = useBuilderStore.getState().elements;
+    const el = elements.find((e) => e.id === elementId);
     if (!el) return;
+    const originalIndex = elements.findIndex((e) => e.id === elementId);
     await transactionManager.run(async (txId) => {
       transactionManager.addRollback(() => {
-        useBuilderStore.getState().addElement(el);
+        const restored = JSON.parse(JSON.stringify(el));
+        useBuilderStore.getState().addElement(restored);
       });
       this.bus.emit(EventNames.ELEMENT_REMOVED, { elementId, element: el }, { transactionId: txId });
     });

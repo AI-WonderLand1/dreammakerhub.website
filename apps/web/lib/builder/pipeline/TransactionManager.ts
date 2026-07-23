@@ -5,7 +5,6 @@ import { useBuilderStore } from '../store';
 export class TransactionManager {
   private activeTxId: string | null = null;
   private depth = 0;
-  private pendingRollbacks: Array<() => void> = [];
 
   begin(): string {
     this.depth++;
@@ -59,7 +58,7 @@ export class TransactionManager {
   }
 
   snapshotBeforeMutate(): void {
-    const current = useBuilderStore.getState().elements;
+    const current = JSON.parse(JSON.stringify(useBuilderStore.getState().elements));
     this.addRollback(() => {
       useBuilderStore.getState().setElements(current);
     });
