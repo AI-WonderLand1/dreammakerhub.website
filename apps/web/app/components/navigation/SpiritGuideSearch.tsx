@@ -56,13 +56,13 @@ const DESTINATIONS: Destination[] = [
   },
   { 
     label: "Wonderbuild UI", 
-    href: "/wonder-build/puck", 
+    href: "/wonder-build/builder", 
     hints: ["ui", "design", "blocks", "wonderbuild"], 
     aliases: [
-      "puck", "ui builder", "blocks", "drag drop", "drag and drop", "web builder", "page builder",
+      "builder", "ui builder", "blocks", "drag drop", "drag and drop", "web builder", "page builder",
       "visual builder", "no code", "nocode", "low code", "website builder", "website creator",
       "landing page", "website editor", "webpage builder", "layout", "components",
-      "drag-and-drop", "blocks editor", "puck editor", "ui design", "wonderbuild"
+      "drag-and-drop", "blocks editor", "ui design", "wonderbuild"
     ] 
   },
   { 

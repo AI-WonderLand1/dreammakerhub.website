@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSovereignOS, STAGE_ORDER, STAGE_INFO, type BuildType } from '../context/SovereignOSContext';
-import { htmlToPuckBlocks, storePuckData } from '@/lib/ai-to-puck';
 import { logger } from '@/lib/logger';
 
 const TYPE_OPTIONS: { value: BuildType; icon: string; label: string }[] = [
@@ -65,12 +64,11 @@ export function AgentPanel() {
     });
   }, []);
 
-  const acceptToPuck = useCallback(async () => {
-    if (!result?.code) return;
-    const puckData = await htmlToPuckBlocks(result.code);
-    const dataKey = storePuckData(puckData);
-    router.push(`/wonder-build/puck?ai_data=${dataKey}`);
-  }, [result?.code, router]);
+const handleAccept = useCallback(() => {
+     if (!result?.code) return;
+     sessionStorage.setItem('pendingBuilderCode', result.code);
+     router.push('/wonder-build/builder');
+   }, [result?.code, router]);
 
   const hasActivity = agentLog.length > 0;
   const latestConfession = confessions[confessions.length - 1];
@@ -289,12 +287,12 @@ export function AgentPanel() {
                   >
                     🎉 Build complete — view preview
                   </button>
-                  <button
-                    onClick={acceptToPuck}
-                    className="w-full rounded-lg bg-emerald-600 px-2.5 py-2 text-[10px] font-semibold text-white transition-colors hover:bg-emerald-500"
-                  >
-                    ✨ Accept to Puck
-                  </button>
+<button
+                     onClick={handleAccept}
+                     className="w-full rounded-lg bg-emerald-600 px-2.5 py-2 text-[10px] font-semibold text-white transition-colors hover:bg-emerald-500"
+                   >
+                     ✨ Send to Builder
+                   </button>
                 </div>
               )}
               <div ref={logBottomRef} />
