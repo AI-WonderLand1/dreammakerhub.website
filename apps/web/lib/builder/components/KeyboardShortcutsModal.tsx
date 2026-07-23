@@ -11,6 +11,8 @@ const SHORTCUTS = [
   { keys: 'Delete / Backspace', label: 'Remove selected element' },
   { keys: 'Escape', label: 'Deselect element / Close panel' },
   { keys: 'Tab', label: 'Navigate between panels' },
+  { keys: 'Arrow keys', label: 'Nudge selected element' },
+  { keys: 'Shift+Arrow', label: 'Nudge by 10px' },
   { keys: 'Ctrl+Shift+G', label: 'Toggle grid' },
   { keys: 'Ctrl+Shift+S', label: 'Toggle snap to grid' },
   { keys: 'Ctrl+Plus / Ctrl+Minus', label: 'Zoom in / out' },

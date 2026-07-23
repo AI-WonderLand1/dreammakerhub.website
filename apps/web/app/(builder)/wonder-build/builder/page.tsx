@@ -21,6 +21,7 @@ const AccessibilityBar = dynamic(() => import('@/lib/builder/components/Accessib
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
 const AccessibilityCheckerPanel = dynamic(() => import('@/lib/builder/components/AccessibilityCheckerPanel'), { ssr: false });
 const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
+const BuilderRealtimePipeline = dynamic(() => import('@/lib/builder/components/BuilderRealtimePipeline'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
 
@@ -34,6 +35,12 @@ function BuilderContent() {
   } = useBuilderStore();
   const [tab, setTab] = useState<BuilderTab>('design');
   const [imported, setImported] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   useEffect(() => {
     const pendingCode = sessionStorage.getItem('pendingBuilderCode');
@@ -93,7 +100,11 @@ function BuilderContent() {
         switch (e.key.toLowerCase()) {
           case 'z': e.preventDefault(); undo(); break;
           case 'y': e.preventDefault(); redo(); break;
-          case 's': e.preventDefault(); logger.info('Save triggered'); break;
+          case 's':
+            e.preventDefault();
+            useBuilderStore.getState().setElements(useBuilderStore.getState().elements);
+            showToast('✅ Project saved');
+            break;
           case 'd':
             if (selectedId) {
               e.preventDefault();
@@ -124,12 +135,28 @@ function BuilderContent() {
               selectElement(null);
             }
             break;
+          case 'ArrowUp':
+          case 'ArrowDown':
+          case 'ArrowLeft':
+          case 'ArrowRight':
+            if (selectedId) {
+              e.preventDefault();
+              const step = e.shiftKey ? 10 : 1;
+              const dir = e.key.replace('Arrow', '').toLowerCase();
+              const props: Record<string, string> = {};
+              if (dir === 'up') props.marginTop = `${(parseInt(useBuilderStore.getState().elements.find((x) => x.id === selectedId)?.styles?.marginTop || '0')) - step}px`;
+              // Use transform translate for nudge
+              useBuilderStore.getState().updateElementStyles(selectedId, {
+                transform: `translate(${dir === 'left' ? -step : dir === 'right' ? step : 0}px, ${dir === 'up' ? -step : dir === 'down' ? step : 0}px)`,
+              });
+            }
+            break;
         }
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoom, shortcutsModalOpen, setShortcutsModalOpen]);
+  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoom, shortcutsModalOpen, setShortcutsModalOpen, showToast]);
 
   const handleImportToCanvas = useCallback(() => {
     if (!editorCode) return;
@@ -229,6 +256,19 @@ function BuilderContent() {
                   >
                     Snap
                   </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Clear all elements? This cannot be undone.')) {
+                        useBuilderStore.getState().setElements([]);
+                        showToast('🗑️ Canvas cleared');
+                      }
+                    }}
+                    className="px-1.5 py-1 rounded text-[10px] text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title="Clear canvas"
+                    aria-label="Clear all elements"
+                  >
+                    🗑️
+                  </button>
                   <span className="text-white/20 mx-1" aria-hidden="true">|</span>
                   <AccessibilityCheckerPanel />
                 </div>
@@ -251,6 +291,8 @@ function BuilderContent() {
                       Import code →
                     </button>
                   )}
+                  <span className="text-white/20 mx-1" aria-hidden="true">|</span>
+                  <BuilderRealtimePipeline />
                 </div>
               </nav>
 
@@ -306,6 +348,17 @@ function BuilderContent() {
       </div>
 
       <KeyboardShortcutsModal />
+
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] rounded-lg bg-purple-600/90 text-white px-4 py-2 text-xs font-semibold shadow-xl shadow-purple-900/30 backdrop-blur-sm transition-all duration-300"
+          role="status"
+          aria-live="polite"
+        >
+          {toast}
+        </div>
+      )}
     </>
   );
 }
