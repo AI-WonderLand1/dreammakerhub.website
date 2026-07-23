@@ -158,7 +158,7 @@ export default function AccessibilityCheckerPanel() {
           <h2 className="text-sm font-bold">♿️ Accessibility Checker</h2>
           <p className="text-[10px] text-white/40">
             {errorCount > 0 || warningCount > 0
-              ? `${errorCount} error${errorCount !== 1 ? 's' : '}, ${warningCount} warning${warningCount !== 1 ? 's' : '} found`
+              ? `${errorCount} error${errorCount !== 1 ? 's' : ''}, ${warningCount} warning${warningCount !== 1 ? 's' : ''} found`
               : 'No issues found — great job!'}
           </p>
         </div>

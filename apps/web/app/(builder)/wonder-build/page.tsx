@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Suspense } from 'react';
 import { logger } from '@/lib/logger';
 
@@ -34,6 +35,22 @@ export default function WonderBuildHub() {
           <h1 className="mt-3 text-3xl font-bold">Wonder Build</h1>
           <p className="mt-2 text-sm text-white/40">Pick a tool to get started.</p>
         </div>
+        
+        {/* Featured Preview Card */}
+        <section className="mb-6 w-full max-w-2xl">
+          <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-6">
+            <div className="flex items-center gap-6">
+              <div className="flex-shrink-0 w-48 h-32">
+                <Image src="/images/screenshots/playcanvas-builder.svg" alt="WonderBuild preview" fill className="object-cover rounded-lg" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Featured Preview</h3>
+                <p className="mt-2 text-sm text-white/70">Experience the future of website building with AI-powered WonderBuild.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
         <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
           {TOOLS.map((t) => (
             <Link

@@ -5,7 +5,6 @@ import { Sidebar } from "./components/Sidebar";
 import EgyptianModule from "./EgyptianModule";
 import EgyptianVoiceModule from "./EgyptianVoiceModule";
 import {
-import { logger } from '@/lib/logger';
   Scale,
   Zap,
   Volume2,
@@ -19,6 +18,8 @@ import { logger } from '@/lib/logger';
   Loader2,
   BrainCircuit,
 } from "lucide-react";
+
+import { logger } from '@/lib/logger';
 
 const RobotScene = lazy(() =>
   import("./scene/RobotScene").then((m) => ({ default: m.RobotScene }))
