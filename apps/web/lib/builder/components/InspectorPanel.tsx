@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useBuilderStore } from '../store';
 import { Breakpoint } from '../types';
+import { extractHeadings, checkHeadingHierarchy, checkFormLabels, getContrastRatio, getContrastGrade } from '../a11y-utils';
 
 function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
   return (
@@ -101,6 +102,15 @@ export default function InspectorPanel() {
   } = useBuilderStore();
   const [sections, setSections] = useState<Set<string>>(new Set(['content', 'layout', 'style']));
   const selectedElement = elements.find((el) => el.id === selectedId);
+
+  const headingIssues = useMemo(() => {
+    const headings = extractHeadings(elements);
+    return checkHeadingHierarchy(headings);
+  }, [elements]);
+
+  const missingFormLabels = useMemo(() => {
+    return checkFormLabels(elements).filter((f) => !f.hasLabel);
+  }, [elements]);
 
   const toggleSection = (name: string) => {
     setSections((prev) => {
@@ -289,6 +299,22 @@ export default function InspectorPanel() {
             <ColorRow label="Text Color" value={getStyle('color')} onChange={(v) => setStyle('color', v)} />
             <ColorRow label="Background" value={getStyle('backgroundColor')} onChange={(v) => setStyle('backgroundColor', v)} />
             <ColorRow label="Border Color" value={getStyle('borderColor')} onChange={(v) => setStyle('borderColor', v)} />
+            {/* Color contrast checker */}
+            {(() => {
+              const fg = getStyle('color');
+              const bg = getStyle('backgroundColor');
+              if (!fg || !bg || fg === 'transparent' || bg === 'transparent') return null;
+              const ratio = getContrastRatio(fg, bg);
+              const grade = getContrastGrade(ratio);
+              const colors = { 'pass-aaa': 'text-green-300 bg-green-500/10', 'pass-aa': 'text-emerald-300 bg-emerald-500/10', 'fail': 'text-red-300 bg-red-500/10' };
+              const labels = { 'pass-aaa': 'AAA Pass', 'pass-aa': 'AA Pass', 'fail': 'Fail' };
+              return (
+                <div className={`text-[10px] px-2 py-1 rounded ${colors[grade]}`}>
+                  Contrast: {ratio.toFixed(1)}:1 — {labels[grade]}
+                  {grade === 'fail' && ' (needs 4.5:1 for normal text)'}
+                </div>
+              );
+            })()}
 
             <div className="border-t border-white/5 pt-2">
               <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Typography</p>
@@ -491,9 +517,33 @@ export default function InspectorPanel() {
         <SectionHeader label="Accessibility & SEO" open={isOpen('accessibility')} onToggle={() => toggleSection('accessibility')} />
         {isOpen('accessibility') && (
           <div className="px-3 py-2 space-y-2 border-b border-white/5">
-            <InputRow label="Alt Text" value={getProp('alt') || ''} onChange={(v) => setProp('alt', v)} placeholder="Describe the image" />
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="text-[10px] text-white/50">Alt Text</label>
+                {selectedElement?.type === 'image' && !getProp('alt') && (
+                  <button
+                    onClick={() => setProp('alt', 'AI-generated description of this image.')}
+                    className="text-[9px] text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    ✨ Generate with AI
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={getProp('alt') || ''}
+                onChange={(e) => setProp('alt', e.target.value)}
+                placeholder="Describe the image"
+                className="w-full rounded border border-white/10 bg-black/40 px-2 py-1 text-xs text-white outline-none focus:border-purple-500 placeholder:text-white/20"
+              />
+              {selectedElement?.type === 'image' && !getProp('alt') && (
+                <p className="text-[9px] text-yellow-400/70 mt-0.5">⚠️ Missing alt text — required for accessibility</p>
+              )}
+            </div>
             <InputRow label="ARIA Label" value={getProp('ariaLabel') || getProp('aria-label') || ''} onChange={(v) => setProp('aria-label', v)} placeholder="Screen reader text" />
-            <SelectRow label="Heading Level" value={getProp('level') || ''} onChange={(v) => setProp('level', v)} options={['h1', 'h2', 'h3', 'h4', 'h5', 'h6']} />
+            {selectedElement?.type === 'heading' && (
+              <SelectRow label="Heading Level" value={getProp('level') || ''} onChange={(v) => setProp('level', v)} options={['h1', 'h2', 'h3', 'h4', 'h5', 'h6']} />
+            )}
             <div>
               <label className="text-[10px] text-white/50 block mb-0.5">Schema / Structured Data</label>
               <select
@@ -512,6 +562,38 @@ export default function InspectorPanel() {
                 <option value="Event">Event</option>
               </select>
             </div>
+
+            {/* Heading hierarchy checker */}
+            {headingIssues.length > 0 && (
+              <div className="border-t border-white/5 pt-2">
+                <p className="text-[9px] text-white/30 font-semibold uppercase tracking-wider mb-1">
+                  ⚠️ Heading Hierarchy Issues
+                </p>
+                <div className="space-y-1">
+                  {headingIssues.map((issue) => (
+                    <div key={issue.id} className={`text-[10px] px-2 py-1 rounded ${issue.severity === 'error' ? 'bg-red-500/10 text-red-300' : 'bg-yellow-500/10 text-yellow-300'}`}>
+                      {issue.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Form label checker */}
+            {missingFormLabels.length > 0 && (
+              <div className="border-t border-white/5 pt-2">
+                <p className="text-[9px] text-white/30 font-semibold uppercase tracking-wider mb-1">
+                  ⚠️ Missing Form Labels
+                </p>
+                <div className="space-y-1">
+                  {missingFormLabels.map((f) => (
+                    <div key={f.id} className="text-[10px] px-2 py-1 rounded bg-red-500/10 text-red-300">
+                      {f.name} ({f.type}) — no label or aria-label found.
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

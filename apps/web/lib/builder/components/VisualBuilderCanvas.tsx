@@ -4,6 +4,76 @@ import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { useBuilderStore } from '../store';
 import { CanvasElement, BlockDefinition } from '../types';
 
+function AccordionItem({ title, content }: { title: string; content: string }) {
+  const [open, setOpen] = useState(false);
+  const panelId = `acc-panel-${Math.random().toString(36).slice(2, 6)}`;
+  const headerId = `acc-hdr-${Math.random().toString(36).slice(2, 6)}`;
+  return (
+    <div className="border-b border-white/10">
+      <button
+        id={headerId}
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className="flex items-center justify-between w-full px-3 py-2 text-xs font-medium text-white/80 hover:text-white transition-colors"
+      >
+        {title}
+        <span className={`transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+      <div
+        id={panelId}
+        role="region"
+        aria-labelledby={headerId}
+        hidden={!open}
+        className="px-3 pb-2 text-[11px] text-white/50"
+      >
+        {content}
+      </div>
+    </div>
+  );
+}
+
+function TabsContainer({ tabs, ...baseProps }: { tabs: { label: string; content: string }[]; [key: string]: any }) {
+  const [active, setActive] = useState(0);
+  const tabListId = `tablist-${Math.random().toString(36).slice(2, 6)}`;
+  return (
+    <div {...baseProps}>
+      <div role="tablist" aria-label="Content tabs" className="flex border-b border-white/10">
+        {tabs.map((tab, i) => (
+          <button
+            key={i}
+            role="tab"
+            aria-selected={active === i}
+            aria-controls={`${tabListId}-panel-${i}`}
+            onClick={(e) => { e.stopPropagation(); setActive(i); }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') { e.preventDefault(); setActive((i + 1) % tabs.length); }
+              if (e.key === 'ArrowLeft') { e.preventDefault(); setActive((i - 1 + tabs.length) % tabs.length); }
+            }}
+            className={`px-3 py-1.5 text-[10px] font-semibold transition-colors ${
+              active === i ? 'border-b-2 border-purple-500 text-purple-300' : 'text-white/40 hover:text-white/70'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {tabs.map((tab, i) => (
+        <div
+          key={i}
+          id={`${tabListId}-panel-${i}`}
+          role="tabpanel"
+          aria-labelledby={`${tabListId}-tab-${i}`}
+          hidden={active !== i}
+          className="px-3 py-2 text-xs text-white/60"
+        >
+          {tab.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function renderElement(el: CanvasElement, selectedId: string | null, selectElement: (id: string | null) => void): React.ReactNode {
   const isSelected = selectedId === el.id;
   const style: React.CSSProperties = {
@@ -114,6 +184,54 @@ function renderElement(el: CanvasElement, selectedId: string | null, selectEleme
       return <div {...baseProps} style={{ ...style, fontSize: el.props.size || '2rem' }}>{el.props.icon || '✨'}{children}</div>;
     case 'custom-html':
       return <div {...baseProps} dangerouslySetInnerHTML={{ __html: el.props.html || '' }} />;
+    case 'accordion':
+    case 'faq':
+      const accItems = (el.props.items as any[]) || [];
+      return (
+        <div {...baseProps} role="region" aria-label={el.props.title || 'Accordion'}>
+          {accItems.map((item: any, i: number) => (
+            <AccordionItem key={i} title={item.q || item.title} content={item.a || item.content} />
+          ))}
+        </div>
+      );
+    case 'tabs':
+      const tabItems = (el.props.tabs as any[]) || [];
+      return <TabsContainer {...baseProps} tabs={tabItems} />;
+    case 'modal':
+      return (
+        <div {...baseProps}>
+          <button
+            className="rounded bg-purple-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-purple-500 transition-colors"
+            onClick={(e: React.MouseEvent) => { e.stopPropagation(); const d = document.getElementById(`modal-${el.id}`); if (d) d.style.display = 'flex'; }}
+            aria-haspopup="dialog"
+          >
+            {el.props.triggerText || 'Open Modal'}
+          </button>
+          <div
+            id={`modal-${el.id}`}
+            style={{ display: 'none' }}
+            className="fixed inset-0 z-50 items-center justify-center bg-black/70"
+            role="dialog"
+            aria-modal="true"
+            aria-label={el.props.title}
+            onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Escape') { (e.target as HTMLElement).style.display = 'none'; } }}
+          >
+            <div className="bg-[#1e293b] rounded-xl p-6 max-w-md w-full mx-4 border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-white">{el.props.title}</h3>
+                <button onClick={() => { const d = document.getElementById(`modal-${el.id}`); if (d) d.style.display = 'none'; }} className="text-white/40 hover:text-white/80 text-xs px-1" aria-label="Close modal">✕</button>
+              </div>
+              <p className="text-xs text-white/70">{el.props.content}</p>
+            </div>
+          </div>
+        </div>
+      );
+    case 'skip-to-content':
+      return (
+        <a {...baseProps} href={el.props.target || '#main-content'} style={{ ...style, position: 'absolute', left: '-9999px', zIndex: 50 }} className="builder-element skip-link">
+          {el.props.label || 'Skip to content'}
+        </a>
+      );
     default:
       return (
         <div {...baseProps}>
@@ -125,13 +243,38 @@ function renderElement(el: CanvasElement, selectedId: string | null, selectEleme
   }
 }
 
+const BREAKPOINT_WIDTHS: Record<string, string> = {
+  mobile: '375px',
+  tablet: '768px',
+  desktop: '100%',
+  wide: '100%',
+};
+
+const CONTAINER_TYPES = ['group', 'columns', 'row', 'grid', 'flex', 'section', 'container', 'card'];
+
+function findDropContainer(elements: CanvasElement[], x: number, y: number): { parentId?: string; element?: CanvasElement } {
+  for (const el of elements) {
+    if (CONTAINER_TYPES.includes(el.type) && el.children) {
+      return { parentId: el.id, element: el };
+    }
+  }
+  for (const el of elements) {
+    if (el.children && el.children.length > 0) {
+      const nested = findDropContainer(el.children, x, y);
+      if (nested.parentId) return nested;
+    }
+  }
+  return {};
+}
+
 export default function VisualBuilderCanvas() {
-  const { elements, selectedId, selectElement, zoom, pan, setPan, setZoom, addElement, showGrid, snapToGrid } = useBuilderStore();
+  const { elements, selectedId, selectElement, zoom, pan, setPan, setZoom, addElement, showGrid, snapToGrid, activeBreakpoint } = useBuilderStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const dragCounter = useRef(0);
 
   const handleCanvasClick = useCallback(() => selectElement(null), [selectElement]);
@@ -173,15 +316,23 @@ export default function VisualBuilderCanvas() {
     setDragging(true);
     const rect = canvasRef.current?.getBoundingClientRect();
     if (rect) {
-      setDragPos({ x: (e.clientX - rect.left - pan.x) / zoom, y: (e.clientY - rect.top - pan.y) / zoom });
+      const canvasX = (e.clientX - rect.left - pan.x) / zoom;
+      const canvasY = (e.clientY - rect.top - pan.y) / zoom;
+      setDragPos({ x: canvasX, y: canvasY });
+      // Find nearest container for nesting
+      if (elements.length > 0) {
+        const container = findDropContainer(elements, canvasX, canvasY);
+        setDropTarget(container.parentId || null);
+      }
     }
-  }, [pan, zoom]);
+  }, [pan, zoom, elements]);
 
   const handleDragLeave = useCallback(() => {
     dragCounter.current -= 1;
     if (dragCounter.current <= 0) {
       dragCounter.current = 0;
       setDragging(false);
+      setDropTarget(null);
     }
   }, []);
 
@@ -192,6 +343,7 @@ export default function VisualBuilderCanvas() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
+    setDropTarget(null);
     dragCounter.current = 0;
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain')) as BlockDefinition;
@@ -203,9 +355,9 @@ export default function VisualBuilderCanvas() {
         props: { ...data.defaultProps },
         styles: { ...data.defaultStyles },
       };
-      addElement(el);
+      addElement(el, dropTarget || undefined);
     } catch { /* ignore */ }
-  }, [addElement]);
+  }, [addElement, dropTarget]);
 
   return (
     <div
@@ -229,18 +381,37 @@ export default function VisualBuilderCanvas() {
     >
       {/* Drop indicator */}
       {dragging && (
-        <div
-          className="absolute z-20 pointer-events-none"
-          style={{
-            left: dragPos.x * zoom + pan.x,
-            top: dragPos.y * zoom + pan.y,
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <div className="bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg shadow-purple-900/50">
-            + Drop here
+        <>
+          {dropTarget && (
+            <div
+              className="absolute z-20 pointer-events-none border-2 border-dashed border-purple-500/50 rounded-lg"
+              style={{
+                left: pan.x,
+                top: pan.y,
+                width: '200px',
+                height: '60px',
+                transform: `scale(${zoom})`,
+                transformOrigin: '0 0',
+              }}
+            >
+              <span className="absolute -top-4 left-2 bg-purple-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
+                Drop into container
+              </span>
+            </div>
+          )}
+          <div
+            className="absolute z-20 pointer-events-none"
+            style={{
+              left: dragPos.x * zoom + pan.x,
+              top: dragPos.y * zoom + pan.y,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <div className="bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg shadow-purple-900/50">
+              {dropTarget ? '+ Nest' : '+ Drop here'}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Transformed canvas */}
@@ -262,7 +433,17 @@ export default function VisualBuilderCanvas() {
           </div>
         ) : (
           <div className="p-8 min-h-full min-w-full" style={{ width: '4000px', height: '4000px' }}>
-            <div className="max-w-4xl mx-auto">
+            <div
+              className="mx-auto transition-all duration-200"
+              style={{
+                maxWidth: BREAKPOINT_WIDTHS[activeBreakpoint] || '100%',
+                width: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? BREAKPOINT_WIDTHS[activeBreakpoint] : '100%',
+                boxShadow: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? '0 0 0 1px rgba(255,255,255,0.1), 0 8px 32px rgba(0,0,0,0.4)' : 'none',
+                borderRadius: activeBreakpoint === 'mobile' ? '24px' : activeBreakpoint === 'tablet' ? '12px' : '0',
+                backgroundColor: 'var(--builder-bg, transparent)',
+                padding: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? '16px' : '0',
+              }}
+            >
               {elements.map((el) => renderElement(el, selectedId, selectElement))}
             </div>
           </div>

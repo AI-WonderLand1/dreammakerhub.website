@@ -18,6 +18,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
   const [target, setTarget] = useState<'wordpress' | 'html'>('wordpress');
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   if (!isOpen) return null;
 
@@ -91,9 +92,28 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
                 className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-violet-500"
               />
             </div>
-            <p className="text-[10px] text-white/30">
-              Install the AI Wonderland plugin on your WordPress site and generate an API key from Settings → AI Wonderland.
-            </p>
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              {showGuide ? '▾ Hide installation guide' : '▸ Need the plugin? Installation guide'}
+            </button>
+            {showGuide && (
+              <div className="rounded-lg border border-white/10 bg-black/30 p-3 space-y-2 text-[10px] text-white/60">
+                <p className="font-semibold text-white/80">📦 AI Wonderland WordPress Plugin</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Download the plugin from <span className="text-purple-400">Settings → Plugins</span> in your builder dashboard.</li>
+                  <li>Go to your WordPress admin: <span className="text-purple-400">Plugins → Add New → Upload Plugin</span>.</li>
+                  <li>Upload the <code className="text-[9px] bg-black/40 px-1 py-0.5 rounded text-purple-300">ai-wonderland.zip</code> file and activate it.</li>
+                  <li>Go to <span className="text-purple-400">Settings → AI Wonderland</span> and click <span className="text-purple-400">Generate API Key</span>.</li>
+                  <li>Copy the key and paste it in the field above.</li>
+                  <li>Click publish — your builder content will sync as a WordPress page!</li>
+                </ol>
+                <p className="text-[9px] text-white/30 pt-1 border-t border-white/5">
+                  The plugin registers the <code className="text-[9px] bg-black/40 px-0.5 rounded">wp-json/aiw/v1/pages</code> REST endpoint automatically.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

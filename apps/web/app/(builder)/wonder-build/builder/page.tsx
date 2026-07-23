@@ -8,6 +8,7 @@ import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
 import { PlaygroundPanel } from '../components/PlaygroundPanel';
 import { useBuilderStore } from '@/lib/builder/store';
 import type { CanvasElement } from '@/lib/builder/types';
+import { parseHtmlToElements, isHtmlString } from '@/lib/builder/html-parser';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
@@ -18,6 +19,8 @@ const LayersPanel = dynamic(() => import('@/lib/builder/components/LayersPanel')
 const ResponsiveControls = dynamic(() => import('@/lib/builder/components/ResponsiveControls'), { ssr: false });
 const AccessibilityBar = dynamic(() => import('@/lib/builder/components/AccessibilityBar'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
+const AccessibilityCheckerPanel = dynamic(() => import('@/lib/builder/components/AccessibilityCheckerPanel'), { ssr: false });
+const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
 
@@ -40,6 +43,40 @@ function BuilderContent() {
       setImported(true);
     }
   }, [setEditorCode]);
+
+  // Persist to localStorage
+  useEffect(() => {
+    const unsub = useBuilderStore.subscribe((state) => {
+      try {
+        localStorage.setItem('aiw-builder-state', JSON.stringify({
+          elements: state.elements,
+          zoom: state.zoom,
+          pan: state.pan,
+          showGrid: state.showGrid,
+          snapToGrid: state.snapToGrid,
+        }));
+      } catch {}
+    });
+    return unsub;
+  }, []);
+
+  // Save before unload
+  useEffect(() => {
+    const handler = () => {
+      const s = useBuilderStore.getState();
+      try {
+        localStorage.setItem('aiw-builder-state', JSON.stringify({
+          elements: s.elements,
+          zoom: s.zoom,
+          pan: s.pan,
+          showGrid: s.showGrid,
+          snapToGrid: s.snapToGrid,
+        }));
+      } catch {}
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -67,9 +104,9 @@ function BuilderContent() {
               }
             }
             break;
-          case '0': e.preventDefault(); setZoomRaw(1); break;
-          case '=': case '+': e.preventDefault(); setZoomRaw(Math.min(3, zoom + 0.1)); break;
-          case '-': e.preventDefault(); setZoomRaw(Math.max(0.1, zoom - 0.1)); break;
+          case '0': e.preventDefault(); setZoom(1); break;
+          case '=': case '+': e.preventDefault(); setZoom(Math.min(3, zoom + 0.1)); break;
+          case '-': e.preventDefault(); setZoom(Math.max(0.1, zoom - 0.1)); break;
         }
       } else {
         switch (e.key) {
@@ -92,10 +129,18 @@ function BuilderContent() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoomRaw, shortcutsModalOpen, setShortcutsModalOpen]);
+  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoom, shortcutsModalOpen, setShortcutsModalOpen]);
 
   const handleImportToCanvas = useCallback(() => {
     if (!editorCode) return;
+    if (isHtmlString(editorCode)) {
+      const parsed = parseHtmlToElements(editorCode);
+      if (parsed.length > 0) {
+        setElements(parsed);
+        logger.info(`Parsed ${parsed.length} blocks from HTML`);
+        return;
+      }
+    }
     const el: CanvasElement = {
       id: `imported-${Date.now()}`,
       type: 'custom-html',
@@ -184,6 +229,8 @@ function BuilderContent() {
                   >
                     Snap
                   </button>
+                  <span className="text-white/20 mx-1" aria-hidden="true">|</span>
+                  <AccessibilityCheckerPanel />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono text-white/30">{Math.round(zoom * 100)}%</span>
@@ -230,11 +277,7 @@ function BuilderContent() {
                     <div role="tabpanel">
                       {leftPanelTab === 'blocks' && <ComponentLibrary />}
                       {leftPanelTab === 'layers' && <LayersPanel />}
-                      {leftPanelTab === 'templates' && (
-                        <div className="w-72 h-full bg-[#0b0f19] p-4 text-center text-xs text-white/30 flex items-center justify-center">
-                          Template library coming soon.
-                        </div>
-                      )}
+                      {leftPanelTab === 'templates' && <TemplatesPanel />}
                     </div>
                   </aside>
                 )}
@@ -270,58 +313,21 @@ function BuilderContent() {
 export default function BuilderPage() {
   return (
     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-white">Loading Builder...</div>}>
-      <div className="flex h-screen flex-col overflow-hidden bg-[#0a0a0a] text-white">
-        <style jsx global>{`
-          *:focus-visible {
-            outline: 2px solid #7c3aed !important;
-            outline-offset: 2px !important;
-            border-radius: 4px;
-          }
-          .high-contrast * {
-            --bg: #000 !important;
-            --text: #fff !important;
-            border-color: #fff !important;
-          }
-          .high-contrast .builder-element.selected {
-            outline: 3px solid #ff0 !important;
-          }
-          .theme-light {
-            --bg-primary: #ffffff;
-            --text-primary: #0f172a;
-          }
-          .theme-light body,
-          .theme-light .bg-\\[\\#0a0a0a\\],
-          .theme-light .bg-\\[\\#0b0f19\\],
-          .theme-light .bg-\\[\\#0c101d\\],
-          .theme-light .bg-\\[\\#090d16\\],
-          .theme-light .bg-black\\/60,
-          .theme-light .bg-black\\/40 {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
-          }
-          .theme-light .text-white,
-          .theme-light .text-white\\/80,
-          .theme-light .text-white\\/50,
-          .theme-light .text-white\\/40,
-          .theme-light .text-white\\/30,
-          .theme-light .text-white\\/20 {
-            color: #0f172a !important;
-          }
-          .theme-light .border-white\\/10,
-          .theme-light .border-white\\/5 {
-            border-color: rgba(0,0,0,0.1) !important;
-          }
-          .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0,0,0,0);
-            white-space: nowrap;
-            border-width: 0;
-          }
+      <div
+        className="flex h-screen flex-col overflow-hidden"
+        style={{
+          backgroundColor: 'var(--builder-bg, #0a0a0a)',
+          color: 'var(--builder-text, #ffffff)',
+        }}
+      >
+        <style>{`
+          *:focus-visible { outline: 2px solid #7c3aed !important; outline-offset: 2px !important; border-radius: 4px; }
+          .high-contrast { --builder-bg: #000; --builder-text: #fff; }
+          .high-contrast .builder-element.selected { outline: 3px solid #ff0 !important; }
+          .high-contrast input, .high-contrast select, .high-contrast textarea { border-color: #fff !important; background: #000 !important; color: #fff !important; }
+          .theme-light { --builder-bg: #f8fafc; --builder-text: #0f172a; --builder-border: rgba(0,0,0,0.1); }
+          .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+          .sr-only:focus { position: fixed; width: auto; height: auto; padding: 8px 16px; margin: 8px; overflow: visible; clip: auto; white-space: normal; border-width: 2px; z-index: 999; background: #7c3aed; color: #fff; border-radius: 8px; font-size: 12px; font-weight: 600; }
         `}</style>
         <SovereignOSProvider>
           <BuilderContent />
