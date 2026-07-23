@@ -90,7 +90,7 @@ function SubscriptionContent() {
         mode: p.price === 0 ? "free" : "paid",
         icon: p.id === "free" ? "🌿" : p.id === "pro" ? "⭐" : p.id === "team" ? "🏢" : "🌐",
         highlight: p.highlight ?? false,
-        href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : undefined,
+        href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : "https://buy.stripe.com/8x2dR8cmZ54dbWlfky8so00",
         monthlyPrice: p.price / 100,
       })),
     [isYearly]

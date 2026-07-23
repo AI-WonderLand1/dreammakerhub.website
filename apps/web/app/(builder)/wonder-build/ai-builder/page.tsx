@@ -225,7 +225,7 @@ export default function AIBuilderPage() {
               </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
         <div className="w-[380px] min-w-[320px] border-r border-white/10 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 flex flex-col gap-6">

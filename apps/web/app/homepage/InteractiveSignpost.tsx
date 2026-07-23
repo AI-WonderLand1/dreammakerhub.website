@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 
 type Sign = {
@@ -36,6 +36,16 @@ interface InteractiveSignpostProps {
 
 export default function InteractiveSignpost({ iframeLabel, heroMode = false }: InteractiveSignpostProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const overlays = SIGNS.map((sign, i) => {
     const isHovered = hoveredIndex === i;
@@ -138,30 +148,147 @@ export default function InteractiveSignpost({ iframeLabel, heroMode = false }: I
     );
   });
 
-if (heroMode) {
+  if (heroMode) {
     const router = useRouter();
     return (
       <div className="absolute inset-0" aria-label={iframeLabel}>
-<div className="pointer-events-none absolute inset-0 z-10 md:z-20">
-        {SIGNS.map((sign, i) => (
-<Link
-              key={sign.href}
-              href={sign.href}
-              onClick={() => {
-                setHoveredIndex(i);
-                router.push(sign.href);
-              }}
-              aria-label={`${sign.text} – ${sign.destination}`}
-              className="transition duration-200 hover:bg-[${sign.color}50] text-[${sign.color}] font-semibold rounded-full w-full h-full"
-              style={{ top: sign.top, left: sign.left, width: sign.width, height: sign.height, zIndex: 20, clipPath: 'polygon(8% 0%, 100% 0%, 100% 100%, 8% 100%, 0% 50%)' }}
-            >
-              {sign.destination}
-            </Link>
-        ))}
-      </div>
-        <p className="pointer-events-none absolute bottom-24 left-1/2 z-20 -translate-x-1/2 rounded-full border border-white/10 bg-black/50 px-4 py-1.5 text-xs text-white/50 backdrop-blur-md">
-          Click a sign to explore
+        {/* On Desktop */}
+        <div className="hidden md:block absolute inset-0 z-20 pointer-events-none">
+          {SIGNS.map((sign, i) => {
+            const isHovered = hoveredIndex === i;
+            return (
+              <div key={sign.href} className="absolute inset-0 pointer-events-none">
+                <Link
+                  href={sign.href}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push(sign.href);
+                  }}
+                  aria-label={`${sign.text} – ${sign.destination}`}
+                  className="pointer-events-auto transition duration-200 cursor-pointer"
+                  style={{
+                    position: 'absolute',
+                    top: sign.top,
+                    left: sign.left,
+                    width: sign.width,
+                    height: sign.height,
+                    zIndex: 30,
+                    clipPath: 'polygon(8% 0%, 100% 0%, 100% 100%, 8% 100%, 0% 50%)',
+                    backgroundColor: isHovered ? `${sign.color}35` : 'transparent',
+                    border: isHovered ? `1px solid ${sign.color}80` : 'none',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {isHovered && (
+                    <span
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider white-space-nowrap z-40 backdrop-blur-md"
+                      style={{
+                        borderColor: sign.color,
+                        color: sign.color,
+                        backgroundColor: 'rgba(0,0,0,0.9)',
+                      }}
+                    >
+                      {sign.destination}
+                    </span>
+                  )}
+                </Link>
+
+                {isHovered && sign.preview && (
+                  <div
+                    className="absolute z-50 pointer-events-none rounded-xl border p-2 shadow-2xl backdrop-blur-md"
+                    style={{
+                      top: `calc(${sign.top} - 100px)`,
+                      left: `calc(${sign.left} + ${sign.width} + 20px)`,
+                      width: '280px',
+                      height: '180px',
+                      borderColor: sign.color,
+                      backgroundColor: 'rgba(0,0,0,0.92)',
+                    }}
+                  >
+                    <div className="relative w-full h-full rounded-lg overflow-hidden">
+                      <Image
+                        src={sign.preview}
+                        alt={`Preview of ${sign.destination}`}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute bottom-2 inset-x-2 bg-black/80 text-white p-1.5 rounded text-xs font-bold text-center">
+                        {sign.destination}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* On Mobile */}
+        <div className="block md:hidden absolute inset-x-0 bottom-6 z-30 px-4 pointer-events-auto">
+          <div className="rounded-2xl border border-white/10 bg-black/85 p-4 shadow-2xl backdrop-blur-lg">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-purple-400 mb-3 text-center">
+              ✨ Discover Wonderland
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {SIGNS.map((sign) => (
+                <Link
+                  key={sign.href}
+                  href={sign.href}
+                  className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs font-bold text-white/90 active:bg-white/10 transition-all border-l-4 hover:border-l-purple-400"
+                  style={{ borderLeftColor: sign.color }}
+                >
+                  <span className="text-sm">
+                    {sign.text.toLowerCase().includes('this') ? '📚' :
+                     sign.text.toLowerCase().includes('that') ? '📖' :
+                     sign.text.toLowerCase().includes('wrong') ? '👥' :
+                     sign.text.toLowerCase().includes('tea') ? '🔮' :
+                     sign.text.toLowerCase().includes('down') ? '🎨' :
+                     sign.text.toLowerCase().includes('yonder') ? '🌌' : '💻'}
+                  </span>
+                  <span className="truncate">{sign.destination}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <p className="pointer-events-none hidden md:block absolute bottom-24 left-1/2 z-20 -translate-x-1/2 rounded-full border border-white/10 bg-black/50 px-4 py-1.5 text-xs text-white/50 backdrop-blur-md">
+          Hover and click a sign to explore
         </p>
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="w-full px-4 py-6" aria-label={iframeLabel}>
+        <div className="rounded-2xl border border-white/10 bg-black/85 p-5 shadow-2xl backdrop-blur-lg">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-purple-400 mb-4 text-center">
+            ✨ Discover Wonderland
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {SIGNS.map((sign) => (
+              <Link
+                key={sign.href}
+                href={sign.href}
+                className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] p-2.5 text-xs font-bold text-white/90 active:bg-white/10 transition-all border-l-4"
+                style={{ borderLeftColor: sign.color }}
+              >
+                <span className="text-sm">
+                  {sign.text.toLowerCase().includes('this') ? '📚' :
+                   sign.text.toLowerCase().includes('that') ? '📖' :
+                   sign.text.toLowerCase().includes('wrong') ? '👥' :
+                   sign.text.toLowerCase().includes('tea') ? '🔮' :
+                   sign.text.toLowerCase().includes('down') ? '🎨' :
+                   sign.text.toLowerCase().includes('yonder') ? '🌌' : '💻'}
+                </span>
+                <span className="truncate">{sign.destination}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

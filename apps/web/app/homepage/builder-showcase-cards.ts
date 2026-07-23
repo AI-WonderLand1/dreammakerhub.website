@@ -1,4 +1,3 @@
-import { logger } from '@/lib/logger';
 export type BuilderShowcaseCard = {
   title: string;
   image: string;

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Upload, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { logger } from '@/lib/logger';
 
 type Persona = "spirit_guide" | "website_builder" | "game_builder" | "rick";
@@ -429,20 +430,20 @@ export default function AIChat({ compact = false }: AIChatProps) {
 
       {/* Input Area with Dropdown and Upload */}
       <div className="relative">
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {/* Model Selector Dropdown */}
-          <div className="relative">
+          <div className="relative flex">
             <button
               onClick={() => setShowModelDropdown(!showModelDropdown)}
-              className="flex items-center gap-2 rounded-l-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
+              className="flex items-center gap-2 rounded-l-xl border border-white/20 bg-white/10 px-3 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
             >
               <span>{MODEL_INFO[selectedModel].icon}</span>
-              <span className={MODEL_INFO[selectedModel].color}>{MODEL_INFO[selectedModel].name}</span>
+              <span className={cn(MODEL_INFO[selectedModel].color, "hidden sm:inline")}>{MODEL_INFO[selectedModel].name}</span>
               <ChevronDown size={16} />
             </button>
             
             {showModelDropdown && (
-              <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-white/20 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-50">
+              <div className="absolute bottom-full left-0 mb-2 w-full sm:w-64 rounded-xl border border-white/20 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-50">
                 {Object.entries(MODEL_INFO).map(([key, model]) => (
                   <button
                     key={key}
@@ -475,14 +476,14 @@ export default function AIChat({ compact = false }: AIChatProps) {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
+              className="flex items-center gap-2 border border-white/20 bg-white/10 px-3 sm:px-4 py-3 text-sm font-medium text-white hover:bg-white/20 transition"
             >
               <ChevronDown size={16} />
-              <span>Options</span>
+              <span className="hidden sm:inline">Options</span>
             </button>
             
             {showDropdown && (
-              <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl border border-white/20 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-50">
+              <div className="absolute bottom-full left-0 mb-2 w-full sm:w-56 rounded-xl border border-white/20 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-50">
                 {DROPDOWN_OPTIONS.map((option) => (
                   <button
                     key={option.label}
@@ -521,10 +522,10 @@ export default function AIChat({ compact = false }: AIChatProps) {
           <div className="relative">
             <button
               onClick={() => setShowFileUpload(!showFileUpload)}
-              className="flex items-center gap-2 rounded-r-xl border border-white/20 bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3 text-sm font-medium text-white hover:from-green-500 hover:to-emerald-500 transition"
+              className="flex items-center gap-2 rounded-r-xl sm:rounded-r-xl border border-white/20 bg-gradient-to-r from-green-600 to-emerald-600 px-3 sm:px-4 py-3 text-sm font-medium text-white hover:from-green-500 hover:to-emerald-500 transition"
             >
               <Upload size={16} />
-              <span>Import</span>
+              <span className="hidden sm:inline">Import</span>
             </button>
             
             {showFileUpload && (
