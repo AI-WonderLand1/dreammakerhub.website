@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BuilderState, CanvasElement, Breakpoint, BuilderTheme } from './types';
+import { BuilderState, CanvasElement, Breakpoint, BuilderTheme, LeftPanelTab, RightPanelTab } from './types';
 
 interface BuilderStore extends BuilderState {
   setElements: (elements: CanvasElement[]) => void;
@@ -11,8 +11,19 @@ interface BuilderStore extends BuilderState {
   setBreakpoint: (breakpoint: Breakpoint) => void;
   setZoom: (zoom: number) => void;
   setPan: (pan: { x: number; y: number }) => void;
+  setShowGrid: (show: boolean) => void;
+  setSnapToGrid: (snap: boolean) => void;
   undo: () => void;
   redo: () => void;
+  // Panels
+  leftPanelTab: LeftPanelTab;
+  setLeftPanelTab: (tab: LeftPanelTab) => void;
+  leftPanelOpen: boolean;
+  setLeftPanelOpen: (open: boolean) => void;
+  rightPanelTab: RightPanelTab;
+  setRightPanelTab: (tab: RightPanelTab) => void;
+  rightPanelOpen: boolean;
+  setRightPanelOpen: (open: boolean) => void;
 }
 
 const initialTheme: BuilderTheme = {
@@ -44,8 +55,18 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   activeBreakpoint: 'desktop',
   zoom: 1,
   pan: { x: 0, y: 0 },
+  showGrid: true,
+  snapToGrid: true,
   theme: initialTheme,
   history: { past: [], future: [] },
+  leftPanelTab: 'blocks',
+  setLeftPanelTab: (tab) => set({ leftPanelTab: tab }),
+  leftPanelOpen: true,
+  setLeftPanelOpen: (open) => set({ leftPanelOpen: open }),
+  rightPanelTab: 'style',
+  setRightPanelTab: (tab) => set({ rightPanelTab: tab }),
+  rightPanelOpen: true,
+  setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
 
   setElements: (elements) => {
     const { elements: current, history } = get();
@@ -57,18 +78,34 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 
   addElement: (element, parentId) => {
     const { elements, history } = get();
-    const newElements = [...elements, element];
-    set({
-      elements: newElements,
-      history: { past: [...history.past, elements], future: [] },
-    });
+    if (parentId) {
+      const newElements = elements.map((el) => {
+        if (el.id === parentId) {
+          return { ...el, children: [...(el.children || []), element] };
+        }
+        return el;
+      });
+      set({
+        elements: newElements,
+        history: { past: [...history.past, elements], future: [] },
+      });
+    } else {
+      set({
+        elements: [...elements, element],
+        history: { past: [...history.past, elements], future: [] },
+      });
+    }
   },
 
   removeElement: (id) => {
     const { elements, history } = get();
-    const newElements = elements.filter((el) => el.id !== id);
+    const removeRecursive = (els: CanvasElement[]): CanvasElement[] =>
+      els.filter((el) => el.id !== id).map((el) => ({
+        ...el,
+        children: el.children ? removeRecursive(el.children) : undefined,
+      }));
     set({
-      elements: newElements,
+      elements: removeRecursive(elements),
       selectedId: get().selectedId === id ? null : get().selectedId,
       history: { past: [...history.past, elements], future: [] },
     });
@@ -78,21 +115,31 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 
   updateElementProps: (id, props) => {
     const { elements } = get();
-    set({
-      elements: elements.map((el) => (el.id === id ? { ...el, props: { ...el.props, ...props } } : el)),
-    });
+    const updateRecursive = (els: CanvasElement[]): CanvasElement[] =>
+      els.map((el) => {
+        if (el.id === id) return { ...el, props: { ...el.props, ...props } };
+        if (el.children) return { ...el, children: updateRecursive(el.children) };
+        return el;
+      });
+    set({ elements: updateRecursive(elements) });
   },
 
   updateElementStyles: (id, styles) => {
     const { elements } = get();
-    set({
-      elements: elements.map((el) => (el.id === id ? { ...el, styles: { ...el.styles, ...styles } } : el)),
-    });
+    const updateRecursive = (els: CanvasElement[]): CanvasElement[] =>
+      els.map((el) => {
+        if (el.id === id) return { ...el, styles: { ...el.styles, ...styles } };
+        if (el.children) return { ...el, children: updateRecursive(el.children) };
+        return el;
+      });
+    set({ elements: updateRecursive(elements) });
   },
 
   setBreakpoint: (breakpoint) => set({ activeBreakpoint: breakpoint }),
-  setZoom: (zoom) => set({ zoom }),
+  setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(3, zoom)) }),
   setPan: (pan) => set({ pan }),
+  setShowGrid: (show) => set({ showGrid: show }),
+  setSnapToGrid: (snap) => set({ snapToGrid: snap }),
 
   undo: () => {
     const { history, elements } = get();

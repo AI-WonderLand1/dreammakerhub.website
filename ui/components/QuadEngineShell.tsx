@@ -2,7 +2,7 @@
 
 /**
  * QuadEngineShell - Main Component for AI-WONDERLAND
- * Manages 3 engines: PlayCanvas (3D), WebGL Studio (Shaders), Puck (UI)
+ * Manages engines: PlayCanvas (3D), WebGL Studio (Shaders)
  * Uses next/dynamic with ssr: false for optimal performance
  */
 
@@ -23,12 +23,7 @@ const WebGLStudioEngine = dynamic(() => import('./engines/WebGLStudioEngine'), {
   loading: () => <EngineLoader engine="WebGL Studio" />,
 });
 
-const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), {
-  ssr: false,
-  loading: () => <EngineLoader engine="Puck" />,
-});
-
-type EngineType = 'playcanvas' | 'webgl' | 'puck';
+type EngineType = 'playcanvas' | 'webgl';
 
 interface EngineConfig {
   id: EngineType;
@@ -53,13 +48,6 @@ const ENGINES: EngineConfig[] = [
     icon: '✨',
     component: WebGLStudioEngine,
   },
-  {
-    id: 'puck',
-    label: 'Puck UI',
-    color: '#ff00ff',
-    icon: '📐',
-    component: PuckUIEngine,
-  },
 ];
 
 function EngineLoader({ engine }: { engine: string }) {
@@ -80,7 +68,6 @@ export function QuadEngineShell() {
   const [engineStates, setEngineStates] = useState<Record<EngineType, any>>({
     playcanvas: null,
     webgl: null,
-    puck: null,
   });
 
   const currentEngine = ENGINES.find((e) => e.id === activeEngine)!;
@@ -95,7 +82,6 @@ export function QuadEngineShell() {
   }, []);
 
   useEffect(() => {
-    // Keyboard shortcut to toggle sidebar
     const handleKeyPress = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
         e.preventDefault();
@@ -109,13 +95,11 @@ export function QuadEngineShell() {
 
   return (
     <div className="flex h-screen bg-black overflow-hidden">
-      {/* Sidebar */}
       <nav
         className={`sidebar-container transition-all duration-300 ${
           isSidebarOpen ? 'w-64' : 'w-20'
         } flex flex-col border-r-2 border-blue-500/50`}
       >
-        {/* Header */}
         <div className="p-4 border-b-2 border-blue-500/30">
           <h1
             className={`cyberpunk-text text-sm ${
@@ -129,7 +113,6 @@ export function QuadEngineShell() {
           </div>
         </div>
 
-        {/* Engine List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {ENGINES.map((engine) => (
             <button
@@ -148,7 +131,6 @@ export function QuadEngineShell() {
           ))}
         </div>
 
-        {/* Storage Mode Indicator */}
         <div
           className={`p-3 border-t-2 border-blue-500/30 text-xs font-mono ${
             storageMode === 'supabase'
@@ -176,7 +158,6 @@ export function QuadEngineShell() {
           )}
         </div>
 
-        {/* Sidebar Toggle */}
         <button
           onClick={() => setSidebarOpen(!isSidebarOpen)}
           className="w-full p-3 border-t-2 border-blue-500/30 text-cyan-400 hover:text-cyan-300 transition-colors"
@@ -185,11 +166,8 @@ export function QuadEngineShell() {
         </button>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-black via-black to-black">
-        {/* Global Navigation Header */}
         <header className="border-b-4 border-cyan-500/50 bg-black/90 backdrop-blur">
-          {/* Top Navigation Bar */}
           <div className="p-3 flex items-center justify-between border-b border-blue-500/30 bg-black/50">
             <div className="flex items-center gap-3">
               <div
@@ -238,21 +216,18 @@ export function QuadEngineShell() {
             </div>
           </div>
 
-          {/* Quick Navigation Tabs */}
           <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto bg-black/30 text-xs border-b border-blue-500/20">
             <span className="text-white/50 font-semibold">Navigate:</span>
-            
-            {/* Builders */}
+
             <div className="flex gap-1 px-2 border-r border-white/20">
               <Link href="/wonder-build/agent" className="px-2 py-1 rounded hover:bg-blue-500/20 transition text-blue-300">
                 🤖 Wonderbuild
               </Link>
-              <Link href="/builder" className="px-2 py-1 rounded hover:bg-blue-500/20 transition text-blue-300">
+              <Link href="/wonder-build/builder" className="px-2 py-1 rounded hover:bg-blue-500/20 transition text-blue-300">
                 🔨 Builder
               </Link>
             </div>
 
-            {/* Workspaces */}
             <div className="flex gap-1 px-2 border-r border-white/20">
               <a href="/(workspace)/dashboard" className="px-2 py-1 rounded hover:bg-green-500/20 transition text-green-300">
                 📊 Dashboard
@@ -262,7 +237,6 @@ export function QuadEngineShell() {
               </a>
             </div>
 
-            {/* Tools */}
             <div className="flex gap-1 px-2 border-r border-white/20">
               <a href="/settings" className="px-2 py-1 rounded hover:bg-yellow-500/20 transition text-yellow-300">
                 ⚡ Settings
@@ -272,7 +246,6 @@ export function QuadEngineShell() {
               </a>
             </div>
 
-            {/* Learning */}
             <div className="flex gap-1 px-2">
               <a href="/tutorials" className="px-2 py-1 rounded hover:bg-purple-500/20 transition text-purple-300">
                 📚 Tutorials
@@ -284,7 +257,6 @@ export function QuadEngineShell() {
           </div>
         </header>
 
-        {/* Engine Container */}
         <div className="flex-1 overflow-hidden engine-container active m-2 rounded-lg">
           <CurrentEngineComponent
             engineState={engineStates[activeEngine]}
@@ -292,7 +264,6 @@ export function QuadEngineShell() {
           />
         </div>
 
-        {/* Status Bar */}
         <footer className="border-t-2 border-blue-500/30 bg-black/80 px-4 py-2 text-xs font-mono text-white/50 flex justify-between">
           <span>🟢 All Engines Ready</span>
           <span>WebGL Memory: 256MB / 512MB</span>

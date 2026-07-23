@@ -1,14 +1,93 @@
 export type Breakpoint = 'mobile' | 'tablet' | 'desktop' | 'wide';
 
+export interface CanvasElementStyles {
+  // Layout
+  width?: string;
+  height?: string;
+  minHeight?: string;
+  maxWidth?: string;
+  padding?: string;
+  paddingTop?: string;
+  paddingRight?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  margin?: string;
+  marginTop?: string;
+  marginRight?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  display?: string;
+  flexDirection?: string;
+  alignItems?: string;
+  justifyContent?: string;
+  gap?: string;
+  gridTemplateColumns?: string;
+  // Typography
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  lineHeight?: string;
+  letterSpacing?: string;
+  textAlign?: string;
+  textTransform?: string;
+  textDecoration?: string;
+  // Color
+  color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  // Border
+  border?: string;
+  borderWidth?: string;
+  borderStyle?: string;
+  borderRadius?: string;
+  // Effects
+  opacity?: string;
+  boxShadow?: string;
+  backgroundImage?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
+  // Position
+  position?: string;
+  top?: string;
+  right?: string;
+  bottom?: string;
+  left?: string;
+  zIndex?: string;
+  overflow?: string;
+}
+
 export interface CanvasElement {
   id: string;
   type: string;
   name: string;
+  icon?: string;
   props: Record<string, any>;
-  styles: Record<string, any>;
+  styles: CanvasElementStyles;
+  responsiveStyles?: Partial<Record<Breakpoint, CanvasElementStyles>>;
   children?: CanvasElement[];
   locked?: boolean;
   hidden?: boolean;
+}
+
+export interface BlockDefinition {
+  name: string;
+  type: string;
+  icon: string;
+  category: BlockCategory;
+  description: string;
+  defaultProps: Record<string, any>;
+  defaultStyles: CanvasElementStyles;
+  editableProps: EditableProp[];
+}
+
+export type BlockCategory = 'text' | 'media' | 'layout' | 'wordpress' | 'content' | 'embed' | 'design';
+
+export interface EditableProp {
+  key: string;
+  label: string;
+  type: 'text' | 'textarea' | 'color' | 'number' | 'select' | 'image' | 'video' | 'font' | 'range' | 'toggle';
+  options?: { label: string; value: string }[];
 }
 
 export interface BuilderTheme {
@@ -24,6 +103,8 @@ export interface BuilderState {
   activeBreakpoint: Breakpoint;
   zoom: number;
   pan: { x: number; y: number };
+  showGrid: boolean;
+  snapToGrid: boolean;
   theme: BuilderTheme;
   history: {
     past: CanvasElement[][];
@@ -38,3 +119,6 @@ export interface Extension {
   components?: Record<string, React.ComponentType<any>>;
   initialize?: (store: any) => void;
 }
+
+export type LeftPanelTab = 'blocks' | 'layers' | 'templates';
+export type RightPanelTab = 'style' | 'typography' | 'color' | 'media';
