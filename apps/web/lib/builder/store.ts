@@ -1,13 +1,18 @@
 import { create } from 'zustand';
 import { BuilderState, CanvasElement, Breakpoint, BuilderTheme, LeftPanelTab, RightPanelTab } from './types';
+import { getEventBus } from './pipeline/EventBus';
 
 interface BuilderStore extends BuilderState {
+  projectId: string;
+  setProjectId: (id: string) => void;
   setElements: (elements: CanvasElement[]) => void;
   addElement: (element: CanvasElement, parentId?: string) => void;
   removeElement: (id: string) => void;
   selectElement: (id: string | null) => void;
   updateElementProps: (id: string, props: Record<string, any>) => void;
   updateElementStyles: (id: string, styles: Record<string, any>) => void;
+  duplicateElement: (id: string) => void;
+  clearElements: () => void;
   setBreakpoint: (breakpoint: Breakpoint) => void;
   setZoom: (zoom: number) => void;
   setPan: (pan: { x: number; y: number }) => void;
@@ -15,7 +20,6 @@ interface BuilderStore extends BuilderState {
   setSnapToGrid: (snap: boolean) => void;
   undo: () => void;
   redo: () => void;
-  // Panels
   leftPanelTab: LeftPanelTab;
   setLeftPanelTab: (tab: LeftPanelTab) => void;
   leftPanelOpen: boolean;
@@ -24,7 +28,6 @@ interface BuilderStore extends BuilderState {
   setRightPanelTab: (tab: RightPanelTab) => void;
   rightPanelOpen: boolean;
   setRightPanelOpen: (open: boolean) => void;
-  // Accessibility & Theme
   highContrast: boolean;
   setHighContrast: (v: boolean) => void;
   uiScale: number;
@@ -35,6 +38,8 @@ interface BuilderStore extends BuilderState {
   setVoiceInputEnabled: (v: boolean) => void;
   shortcutsModalOpen: boolean;
   setShortcutsModalOpen: (v: boolean) => void;
+  previewMode: boolean;
+  setPreviewMode: (v: boolean) => void;
 }
 
 const initialTheme: BuilderTheme = {
@@ -44,25 +49,14 @@ const initialTheme: BuilderTheme = {
     background: '#0f172a',
     text: '#f8fafc',
   },
-  fonts: {
-    heading: 'Inter, sans-serif',
-    body: 'Inter, sans-serif',
-  },
-  spacing: {
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '2rem',
-  },
-  borderRadius: {
-    sm: '0.25rem',
-    md: '0.5rem',
-    lg: '1rem',
-  },
+  fonts: { heading: 'Inter, sans-serif', body: 'Inter, sans-serif' },
+  spacing: { sm: '0.5rem', md: '1rem', lg: '2rem' },
+  borderRadius: { sm: '0.25rem', md: '0.5rem', lg: '1rem' },
 };
 
 const STORAGE_KEY = 'aiw-builder-state';
 
-function loadPersistedState(): Partial<BuilderState> {
+function loadPersistedState(): Partial<BuilderState & { projectId?: string }> {
   if (typeof window === 'undefined') return {};
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -74,6 +68,7 @@ function loadPersistedState(): Partial<BuilderState> {
         pan: parsed.pan ?? { x: 0, y: 0 },
         showGrid: parsed.showGrid ?? true,
         snapToGrid: parsed.snapToGrid ?? true,
+        projectId: parsed.projectId || '',
       };
     }
   } catch {}
@@ -83,6 +78,8 @@ function loadPersistedState(): Partial<BuilderState> {
 const persisted = loadPersistedState();
 
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
+  projectId: persisted.projectId || '',
+  setProjectId: (id) => set({ projectId: id }),
   elements: persisted.elements || [],
   selectedId: null,
   activeBreakpoint: 'desktop',
@@ -92,35 +89,11 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   snapToGrid: persisted.snapToGrid ?? true,
   theme: initialTheme,
   history: { past: [], future: [] },
-  leftPanelTab: 'blocks',
-  setLeftPanelTab: (tab) => set({ leftPanelTab: tab }),
-  leftPanelOpen: true,
-  setLeftPanelOpen: (open) => set({ leftPanelOpen: open }),
-  rightPanelTab: 'content',
-  setRightPanelTab: (tab) => set({ rightPanelTab: tab }),
-  rightPanelOpen: true,
-  setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
-  highContrast: false,
-  setHighContrast: (v) => set({ highContrast: v }),
-  uiScale: 100,
-  setUiScale: (v) => set({ uiScale: Math.max(75, Math.min(150, v)) }),
-  themeMode: 'dark',
-  setThemeMode: (v) => set({ themeMode: v }),
-  voiceInputEnabled: false,
-  setVoiceInputEnabled: (v) => set({ voiceInputEnabled: v }),
-  shortcutsModalOpen: false,
-  setShortcutsModalOpen: (v) => set({ shortcutsModalOpen: v }),
 
-  setElements: (elements) => {
-    const { elements: current, history } = get();
-    set({
-      elements,
-      history: { past: [...history.past, current], future: [] },
-    });
-  },
+  setElements: (elements) => set({ elements }),
 
   addElement: (element, parentId) => {
-    const { elements, history } = get();
+    const { elements } = get();
     if (parentId) {
       const newElements = elements.map((el) => {
         if (el.id === parentId) {
@@ -128,20 +101,14 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
         }
         return el;
       });
-      set({
-        elements: newElements,
-        history: { past: [...history.past, elements], future: [] },
-      });
+      set({ elements: newElements });
     } else {
-      set({
-        elements: [...elements, element],
-        history: { past: [...history.past, elements], future: [] },
-      });
+      set({ elements: [...elements, element] });
     }
   },
 
   removeElement: (id) => {
-    const { elements, history } = get();
+    const { elements } = get();
     const removeRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.filter((el) => el.id !== id).map((el) => ({
         ...el,
@@ -150,7 +117,6 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     set({
       elements: removeRecursive(elements),
       selectedId: get().selectedId === id ? null : get().selectedId,
-      history: { past: [...history.past, elements], future: [] },
     });
   },
 
@@ -178,6 +144,20 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     set({ elements: updateRecursive(elements) });
   },
 
+  duplicateElement: (id) => {
+    const { elements } = get();
+    const el = elements.find((e) => e.id === id);
+    if (!el) return;
+    const dup: CanvasElement = {
+      ...el,
+      id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name: `${el.name} (copy)`,
+    };
+    set({ elements: [...elements, dup] });
+  },
+
+  clearElements: () => set({ elements: [] }),
+
   setBreakpoint: (breakpoint) => set({ activeBreakpoint: breakpoint }),
   setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(3, zoom)) }),
   setPan: (pan) => set({ pan }),
@@ -185,24 +165,31 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
 
   undo: () => {
-    const { history, elements } = get();
-    if (history.past.length === 0) return;
-    const previous = history.past[history.past.length - 1];
-    const newPast = history.past.slice(0, history.past.length - 1);
-    set({
-      elements: previous,
-      history: { past: newPast, future: [elements, ...history.future] },
-    });
+    getEventBus().emit('history:undo' as any, { elements: [] });
   },
 
   redo: () => {
-    const { history, elements } = get();
-    if (history.future.length === 0) return;
-    const next = history.future[0];
-    const newFuture = history.future.slice(1);
-    set({
-      elements: next,
-      history: { past: [...history.past, elements], future: newFuture },
-    });
+    getEventBus().emit('history:redo' as any, { elements: [] });
   },
+
+  leftPanelTab: 'blocks',
+  setLeftPanelTab: (tab) => set({ leftPanelTab: tab }),
+  leftPanelOpen: true,
+  setLeftPanelOpen: (open) => set({ leftPanelOpen: open }),
+  rightPanelTab: 'content',
+  setRightPanelTab: (tab) => set({ rightPanelTab: tab }),
+  rightPanelOpen: true,
+  setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
+  highContrast: false,
+  setHighContrast: (v) => set({ highContrast: v }),
+  uiScale: 100,
+  setUiScale: (v) => set({ uiScale: Math.max(75, Math.min(150, v)) }),
+  themeMode: 'dark',
+  setThemeMode: (v) => set({ themeMode: v }),
+  voiceInputEnabled: false,
+  setVoiceInputEnabled: (v) => set({ voiceInputEnabled: v }),
+  shortcutsModalOpen: false,
+  setShortcutsModalOpen: (v) => set({ shortcutsModalOpen: v }),
+  previewMode: false,
+  setPreviewMode: (v) => set({ previewMode: v }),
 }));

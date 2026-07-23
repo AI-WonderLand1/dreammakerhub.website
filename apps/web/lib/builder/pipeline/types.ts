@@ -1,8 +1,6 @@
 import type { CanvasElement, CanvasElementStyles } from '../types';
 
-// ─── Event Names ────────────────────────────────────────────────
 export const EventNames = {
-  // Builder element events
   ELEMENT_ADDED: 'builder:element:added',
   ELEMENT_REMOVED: 'builder:element:removed',
   ELEMENT_UPDATED: 'builder:element:updated',
@@ -12,51 +10,43 @@ export const EventNames = {
   ELEMENT_MOVED: 'builder:element:moved',
   ELEMENTS_REORDERED: 'builder:elements:reordered',
   ELEMENTS_CLEARED: 'builder:elements:cleared',
-
-  // Project state
   PROJECT_STATE_CHANGED: 'project:state-changed',
   PROJECT_METADATA_UPDATED: 'project:metadata-updated',
   PROJECT_LOADED: 'project:loaded',
-
-  // File and folder operations
   FILE_CREATED: 'file:created',
   FILE_UPDATED: 'file:updated',
   FILE_DELETED: 'file:deleted',
   FILE_RENAMED: 'file:renamed',
   FOLDER_CREATED: 'folder:created',
   FOLDER_DELETED: 'folder:deleted',
-
-  // Code generation
   CODE_GENERATED: 'code:generated',
   CODE_GENERATION_STARTED: 'code:generation:started',
   CODE_GENERATION_FAILED: 'code:generation:failed',
-
-  // Validation
   VALIDATION_STARTED: 'validation:started',
   VALIDATION_COMPLETED: 'validation:completed',
   VALIDATION_FAILED: 'validation:failed',
   VALIDATION_ISSUE: 'validation:issue',
-
-  // Preview
   PREVIEW_UPDATED: 'preview:updated',
   PREVIEW_RELOAD: 'preview:reload',
-
-  // Dashboard
   DASHBOARD_STATS_UPDATED: 'dashboard:stats-updated',
   DASHBOARD_SYNC: 'dashboard:sync',
-
-  // AI
   AI_ACTIVITY: 'ai:activity',
   AI_GENERATION_STARTED: 'ai:generation:started',
   AI_GENERATION_COMPLETED: 'ai:generation:completed',
-
-  // Storage
   STORAGE_SAVING: 'storage:saving',
   STORAGE_SAVED: 'storage:saved',
   STORAGE_LOADED: 'storage:loaded',
   STORAGE_ERROR: 'storage:error',
-
-  // System
+  HISTORY_UNDO: 'history:undo',
+  HISTORY_REDO: 'history:redo',
+  HISTORY_SNAPSHOT: 'history:snapshot',
+  HISTORY_CLEAR: 'history:clear',
+  ANALYTICS_TRACK: 'analytics:track',
+  ANALYTICS_FLUSH: 'analytics:flush',
+  PRESENCE_JOINED: 'presence:joined',
+  PRESENCE_LEFT: 'presence:left',
+  PRESENCE_UPDATE: 'presence:update',
+  PRESENCE_SYNC: 'presence:sync',
   SYSTEM_ERROR: 'system:error',
   SYSTEM_WARNING: 'system:warning',
   SYSTEM_INFO: 'system:info',
@@ -64,7 +54,6 @@ export const EventNames = {
 
 export type EventName = (typeof EventNames)[keyof typeof EventNames];
 
-// ─── Event Payloads ─────────────────────────────────────────────
 export interface ElementAddedPayload {
   element: CanvasElement;
   parentId?: string;
@@ -174,7 +163,28 @@ export interface AIActivityPayload {
   ts: number;
 }
 
-// ─── Unified Event Payload ──────────────────────────────────────
+export interface HistorySnapshotPayload {
+  elements: CanvasElement[];
+  label?: string;
+}
+
+export interface PresenceUserPayload {
+  userId: string;
+  userName: string;
+  color: string;
+  cursor?: { x: number; y: number };
+  selectedElementId?: string | null;
+  lastActivity: number;
+}
+
+export interface AnalyticsEventPayload {
+  action: string;
+  category: string;
+  label?: string;
+  value?: number;
+  metadata?: Record<string, any>;
+}
+
 export type EventPayloadMap = {
   [EventNames.ELEMENT_ADDED]: ElementAddedPayload;
   [EventNames.ELEMENT_REMOVED]: ElementRemovedPayload;
@@ -212,6 +222,16 @@ export type EventPayloadMap = {
   [EventNames.STORAGE_SAVED]: { projectId: string; timestamp: number };
   [EventNames.STORAGE_LOADED]: { projectId: string; elements: CanvasElement[] };
   [EventNames.STORAGE_ERROR]: { projectId: string; error: string };
+  [EventNames.HISTORY_UNDO]: { elements: CanvasElement[] };
+  [EventNames.HISTORY_REDO]: { elements: CanvasElement[] };
+  [EventNames.HISTORY_SNAPSHOT]: HistorySnapshotPayload;
+  [EventNames.HISTORY_CLEAR]: {};
+  [EventNames.ANALYTICS_TRACK]: AnalyticsEventPayload;
+  [EventNames.ANALYTICS_FLUSH]: { events: AnalyticsEventPayload[] };
+  [EventNames.PRESENCE_JOINED]: PresenceUserPayload;
+  [EventNames.PRESENCE_LEFT]: { userId: string };
+  [EventNames.PRESENCE_UPDATE]: PresenceUserPayload;
+  [EventNames.PRESENCE_SYNC]: { users: PresenceUserPayload[] };
   [EventNames.SYSTEM_ERROR]: { message: string; context?: any };
   [EventNames.SYSTEM_WARNING]: { message: string; context?: any };
   [EventNames.SYSTEM_INFO]: { message: string; context?: any };
@@ -219,7 +239,6 @@ export type EventPayloadMap = {
 
 export type EventPayload<N extends EventName> = N extends keyof EventPayloadMap ? EventPayloadMap[N] : never;
 
-// ─── Event Envelope ─────────────────────────────────────────────
 export interface EventEnvelope<N extends EventName = EventName> {
   name: N;
   payload: EventPayload<N>;
@@ -228,11 +247,10 @@ export interface EventEnvelope<N extends EventName = EventName> {
   source: string;
 }
 
-// ─── Subscription ───────────────────────────────────────────────
 export type EventHandler<N extends EventName> = (event: EventEnvelope<N>) => void;
+export type WildcardHandler = (event: EventEnvelope) => void;
 export type Unsubscribe = () => void;
 
-// ─── Transaction ────────────────────────────────────────────────
 export interface Transaction {
   id: string;
   events: EventEnvelope[];

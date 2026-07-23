@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
 import { SovereignOSProvider } from '../context/SovereignOSContext';
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
-import { PlaygroundPanel } from '../components/PlaygroundPanel';
 import { useBuilderStore } from '@/lib/builder/store';
 import type { CanvasElement } from '@/lib/builder/types';
 import { parseHtmlToElements, isHtmlString } from '@/lib/builder/html-parser';
+import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
+import { storageService } from '@/lib/builder/pipeline/StorageService';
+import { livePreviewService } from '@/lib/builder/pipeline/LivePreviewService';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
@@ -16,27 +19,51 @@ const VisualBuilderCanvas = dynamic(() => import('@/lib/builder/components/Visua
 const ComponentLibrary = dynamic(() => import('@/lib/builder/components/ComponentLibrary'), { ssr: false });
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
 const LayersPanel = dynamic(() => import('@/lib/builder/components/LayersPanel'), { ssr: false });
-const ResponsiveControls = dynamic(() => import('@/lib/builder/components/ResponsiveControls'), { ssr: false });
 const AccessibilityBar = dynamic(() => import('@/lib/builder/components/AccessibilityBar'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
 const AccessibilityCheckerPanel = dynamic(() => import('@/lib/builder/components/AccessibilityCheckerPanel'), { ssr: false });
 const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
-const BuilderRealtimePipeline = dynamic(() => import('@/lib/builder/components/BuilderRealtimePipeline'), { ssr: false });
 const PipelineIndicator = dynamic(() => import('@/lib/builder/components/PipelineIndicator'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
 
 function BuilderContent() {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get('projectId') || '';
   const { editorCode, setEditorCode } = useSovereignOS();
+
+  const store = useBuilderStore();
   const {
     setElements, leftPanelOpen, setLeftPanelOpen, leftPanelTab, setLeftPanelTab,
     rightPanelOpen, setRightPanelOpen, showGrid, setShowGrid, snapToGrid, setSnapToGrid,
     undo, redo, zoom, setZoom, selectedId, elements, removeElement, selectElement,
-    setShortcutsModalOpen, shortcutsModalOpen,
-  } = useBuilderStore();
+    setShortcutsModalOpen, shortcutsModalOpen, setProjectId,
+  } = store;
+
   const [tab, setTab] = useState<BuilderTab>('design');
   const [imported, setImported] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const previewRef = useRef<HTMLIFrameElement>(null);
+
+  // Initialize pipeline with project ID
+  useEffect(() => {
+    if (projectId) {
+      setProjectId(projectId);
+      storageService.setProjectId(projectId);
+    }
+    const pipe = getPipeline({ projectId: projectId || undefined });
+    if (!pipe.isRunning()) {
+      pipe.start();
+    }
+    return () => {};
+  }, [projectId, setProjectId]);
+
+  // Wire preview iframe
+  useEffect(() => {
+    if (previewRef.current) {
+      livePreviewService.setIframe(previewRef.current);
+    }
+  }, [tab]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -51,40 +78,6 @@ function BuilderContent() {
       setImported(true);
     }
   }, [setEditorCode]);
-
-  // Persist to localStorage
-  useEffect(() => {
-    const unsub = useBuilderStore.subscribe((state) => {
-      try {
-        localStorage.setItem('aiw-builder-state', JSON.stringify({
-          elements: state.elements,
-          zoom: state.zoom,
-          pan: state.pan,
-          showGrid: state.showGrid,
-          snapToGrid: state.snapToGrid,
-        }));
-      } catch {}
-    });
-    return unsub;
-  }, []);
-
-  // Save before unload
-  useEffect(() => {
-    const handler = () => {
-      const s = useBuilderStore.getState();
-      try {
-        localStorage.setItem('aiw-builder-state', JSON.stringify({
-          elements: s.elements,
-          zoom: s.zoom,
-          pan: s.pan,
-          showGrid: s.showGrid,
-          snapToGrid: s.snapToGrid,
-        }));
-      } catch {}
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, []);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -103,8 +96,10 @@ function BuilderContent() {
           case 'y': e.preventDefault(); redo(); break;
           case 's':
             e.preventDefault();
-            useBuilderStore.getState().setElements(useBuilderStore.getState().elements);
-            showToast('✅ Project saved');
+            if (projectId) {
+              storageService.saveToProject();
+            }
+            showToast('✅ Saved');
             break;
           case 'd':
             if (selectedId) {
@@ -122,42 +117,19 @@ function BuilderContent() {
         }
       } else {
         switch (e.key) {
-          case 'Delete':
-          case 'Backspace':
-            if (selectedId) {
-              e.preventDefault();
-              removeElement(selectedId);
-            }
+          case 'Delete': case 'Backspace':
+            if (selectedId) { e.preventDefault(); removeElement(selectedId); }
             break;
           case 'Escape':
-            if (shortcutsModalOpen) {
-              setShortcutsModalOpen(false);
-            } else if (selectedId) {
-              selectElement(null);
-            }
-            break;
-          case 'ArrowUp':
-          case 'ArrowDown':
-          case 'ArrowLeft':
-          case 'ArrowRight':
-            if (selectedId) {
-              e.preventDefault();
-              const step = e.shiftKey ? 10 : 1;
-              const dir = e.key.replace('Arrow', '').toLowerCase();
-              const props: Record<string, string> = {};
-              if (dir === 'up') props.marginTop = `${(parseInt(useBuilderStore.getState().elements.find((x) => x.id === selectedId)?.styles?.marginTop || '0')) - step}px`;
-              // Use transform translate for nudge
-              useBuilderStore.getState().updateElementStyles(selectedId, {
-                transform: `translate(${dir === 'left' ? -step : dir === 'right' ? step : 0}px, ${dir === 'up' ? -step : dir === 'down' ? step : 0}px)`,
-              });
-            }
+            if (shortcutsModalOpen) setShortcutsModalOpen(false);
+            else if (selectedId) selectElement(null);
             break;
         }
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoom, shortcutsModalOpen, setShortcutsModalOpen, showToast]);
+  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoom, shortcutsModalOpen, setShortcutsModalOpen, showToast, projectId]);
 
   const handleImportToCanvas = useCallback(() => {
     if (!editorCode) return;
@@ -182,7 +154,6 @@ function BuilderContent() {
 
   return (
     <>
-      {/* Skip-to-content link */}
       <a
         href="#builder-canvas"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:bg-purple-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-xs focus:font-semibold focus:outline-none focus:ring-2 focus:ring-purple-400"
@@ -190,12 +161,14 @@ function BuilderContent() {
         Skip to canvas content
       </a>
 
-      {/* Top bar */}
       <header role="banner" className="flex items-center justify-between border-b border-white/10 bg-black/60 px-4 py-2 shrink-0">
         <div className="flex items-center gap-2">
           <a href="/wonder-build" className="text-xs text-white/40 hover:text-white transition-colors">← Hub</a>
           <span className="text-white/20">/</span>
           <span className="text-xs font-semibold text-white/80">Builder</span>
+          {projectId && (
+            <span className="text-[9px] font-mono text-white/20 ml-2">ID: {projectId.slice(0, 8)}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <AccessibilityBar />
@@ -227,7 +200,6 @@ function BuilderContent() {
 
           {tab === 'design' && (
             <div className="flex h-full flex-col" role="tabpanel" aria-label="Design canvas">
-              {/* Secondary toolbar */}
               <nav aria-label="Canvas toolbar" className="shrink-0 flex items-center justify-between border-b border-white/10 bg-[#0b0f19] px-3 py-1.5">
                 <div className="flex items-center gap-1">
                   <button
@@ -297,9 +269,7 @@ function BuilderContent() {
                 </div>
               </nav>
 
-              {/* Main canvas area with drawers */}
               <div className="flex flex-1 overflow-hidden relative">
-                {/* Left drawer */}
                 {leftPanelOpen && (
                   <aside aria-label="Block library and layers" className="shrink-0 border-r border-white/10">
                     <nav aria-label="Panel tabs" className="flex border-b border-white/10">
@@ -325,12 +295,10 @@ function BuilderContent() {
                   </aside>
                 )}
 
-                {/* Canvas */}
                 <div id="builder-canvas" className="flex-1 overflow-hidden relative" role="main" aria-label="Design canvas">
                   <VisualBuilderCanvas />
                 </div>
 
-                {/* Right drawer */}
                 {rightPanelOpen && (
                   <aside aria-label="Element inspector" className="shrink-0">
                     <InspectorPanel />
@@ -341,8 +309,25 @@ function BuilderContent() {
           )}
 
           {tab === 'preview' && (
-            <div role="tabpanel" aria-label="Preview">
-              <PlaygroundPanel />
+            <div role="tabpanel" aria-label="Preview" className="h-full flex flex-col">
+              <div className="shrink-0 flex items-center gap-2 border-b border-white/10 bg-[#0b0f19] px-3 py-1.5">
+                <span className="text-[10px] font-semibold text-white/50">LIVE PREVIEW</span>
+                <span className="text-[9px] text-white/20">auto-refreshes on validation pass</span>
+                <button
+                  onClick={() => livePreviewService.setIframe(previewRef.current)}
+                  className="ml-auto px-2 py-0.5 rounded text-[9px] bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  Refresh
+                </button>
+              </div>
+              <div className="flex-1 bg-white">
+                <iframe
+                  ref={previewRef}
+                  className="w-full h-full border-0"
+                  title="Live Preview"
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -350,7 +335,6 @@ function BuilderContent() {
 
       <KeyboardShortcutsModal />
 
-      {/* Toast notification */}
       {toast && (
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] rounded-lg bg-purple-600/90 text-white px-4 py-2 text-xs font-semibold shadow-xl shadow-purple-900/30 backdrop-blur-sm transition-all duration-300"

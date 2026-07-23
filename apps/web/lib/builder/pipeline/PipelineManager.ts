@@ -8,6 +8,9 @@ import { validationService } from './ValidationService';
 import { livePreviewService } from './LivePreviewService';
 import { dashboardService } from './DashboardService';
 import { storageService } from './StorageService';
+import { historyService } from './HistoryService';
+import { analyticsService } from './AnalyticsService';
+import { presenceService } from './PresenceService';
 import { logger } from '@/lib/logger';
 
 export interface PipelineConfig {
@@ -17,19 +20,26 @@ export interface PipelineConfig {
   enableDashboard?: boolean;
   enablePreview?: boolean;
   enableStorage?: boolean;
+  enableHistory?: boolean;
+  enableAnalytics?: boolean;
+  enablePresence?: boolean;
 }
 
 export class PipelineManager {
   private started = false;
-  private config: PipelineConfig;
+  private config: Required<PipelineConfig>;
 
   constructor(config: PipelineConfig = {}) {
     this.config = {
-      autoStart: true,
-      enableDashboard: true,
-      enablePreview: true,
-      enableStorage: true,
-      ...config,
+      projectId: config.projectId || '',
+      ownerId: config.ownerId || '',
+      autoStart: config.autoStart ?? true,
+      enableDashboard: config.enableDashboard ?? true,
+      enablePreview: config.enablePreview ?? true,
+      enableStorage: config.enableStorage ?? true,
+      enableHistory: config.enableHistory ?? true,
+      enableAnalytics: config.enableAnalytics ?? true,
+      enablePresence: config.enablePresence ?? true,
     };
   }
 
@@ -37,7 +47,6 @@ export class PipelineManager {
     if (this.started) return;
     const bus = getEventBus();
 
-    // Configure project IDs
     if (this.config.projectId) {
       projectStateManager.setProjectId(this.config.projectId);
       fileFolderManager.setProjectId(this.config.projectId);
@@ -45,45 +54,41 @@ export class PipelineManager {
       storageService.setProjectId(this.config.projectId);
     }
     if (this.config.ownerId) {
-      storageService.setOwnerId(this.config.ownerId);
+      // StorageService uses ownerId via environment; set if needed
     }
 
-    // Start all services (order matters)
     projectStateManager.start();
     fileFolderManager.start();
     builderService.start();
+    historyService.start();
     codeGenerationService.start();
     validationService.start();
 
-    if (this.config.enablePreview) {
-      livePreviewService.start();
-    }
-    if (this.config.enableDashboard) {
-      dashboardService.start();
-    }
-    if (this.config.enableStorage) {
-      storageService.start();
-    }
+    if (this.config.enablePreview) livePreviewService.start();
+    if (this.config.enableDashboard) dashboardService.start();
+    if (this.config.enableStorage) storageService.start();
+    if (this.config.enableAnalytics) analyticsService.start();
 
     this.started = true;
-
     logger.info('[Pipeline] All services started');
     bus.emit(EventNames.SYSTEM_INFO, {
-      message: 'Pipeline initialized with all services',
+      message: 'Pipeline initialized',
       context: { config: this.config },
     });
   }
 
   stop(): void {
     if (!this.started) return;
-    builderService.stop();
-    projectStateManager.stop();
-    fileFolderManager.stop();
-    codeGenerationService.stop();
-    validationService.stop();
-    livePreviewService.stop();
-    dashboardService.stop();
+    analyticsService.stop();
     storageService.stop();
+    dashboardService.stop();
+    livePreviewService.stop();
+    validationService.stop();
+    codeGenerationService.stop();
+    historyService.stop();
+    builderService.stop();
+    fileFolderManager.stop();
+    projectStateManager.stop();
     this.started = false;
     logger.info('[Pipeline] All services stopped');
   }
@@ -103,20 +108,30 @@ export class PipelineManager {
       livePreviewService,
       dashboardService,
       storageService,
+      historyService,
+      analyticsService,
+      presenceService,
     };
   }
 
   isRunning(): boolean {
     return this.started;
   }
+
+  getProjectId(): string {
+    return this.config.projectId;
+  }
 }
 
-// Singleton
 let globalPipeline: PipelineManager | null = null;
 
 export function getPipeline(config?: PipelineConfig): PipelineManager {
   if (!globalPipeline) {
     globalPipeline = new PipelineManager(config);
+  } else if (config?.projectId && globalPipeline.getProjectId() !== config.projectId) {
+    globalPipeline.stop();
+    globalPipeline = new PipelineManager(config);
+    if (config.autoStart !== false) globalPipeline.start();
   }
   return globalPipeline;
 }
@@ -129,7 +144,6 @@ export function resetPipeline(): void {
   resetEventBus();
 }
 
-// React hook
 export function usePipeline(config?: PipelineConfig): PipelineManager {
   if (typeof window !== 'undefined') {
     const pipeline = getPipeline(config);
@@ -138,5 +152,5 @@ export function usePipeline(config?: PipelineConfig): PipelineManager {
     }
     return pipeline;
   }
-  return new PipelineManager(config);
+  return new PipelineManager(config || { autoStart: false });
 }

@@ -1,24 +1,34 @@
 import { getEventBus } from './EventBus';
 import { EventNames } from './types';
+import { useBuilderStore } from '../store';
 
 export class TransactionManager {
   private activeTxId: string | null = null;
+  private depth = 0;
+  private pendingRollbacks: Array<() => void> = [];
 
   begin(): string {
-    const bus = getEventBus();
-    const id = bus.beginTransaction();
-    this.activeTxId = id;
-    return id;
+    this.depth++;
+    if (this.depth === 1) {
+      const bus = getEventBus();
+      const id = bus.beginTransaction();
+      this.activeTxId = id;
+      return id;
+    }
+    return this.activeTxId!;
   }
 
   commit(): void {
-    if (!this.activeTxId) return;
-    const bus = getEventBus();
-    bus.commitTransaction(this.activeTxId);
-    this.activeTxId = null;
+    this.depth--;
+    if (this.depth === 0 && this.activeTxId) {
+      const bus = getEventBus();
+      bus.commitTransaction(this.activeTxId);
+      this.activeTxId = null;
+    }
   }
 
   rollback(): void {
+    this.depth = 0;
     if (!this.activeTxId) return;
     const bus = getEventBus();
     bus.rollbackTransaction(this.activeTxId);
@@ -31,7 +41,7 @@ export class TransactionManager {
     bus.addRollbackAction(this.activeTxId, action);
   }
 
-  async run<T>(fn: (tx: string) => Promise<T>): Promise<T> {
+  async run<T>(fn: (txId: string) => Promise<T>): Promise<T> {
     const id = this.begin();
     try {
       const result = await fn(id);
@@ -46,6 +56,13 @@ export class TransactionManager {
       });
       throw err;
     }
+  }
+
+  snapshotBeforeMutate(): void {
+    const current = useBuilderStore.getState().elements;
+    this.addRollback(() => {
+      useBuilderStore.getState().setElements(current);
+    });
   }
 
   get currentTransactionId(): string | null {
