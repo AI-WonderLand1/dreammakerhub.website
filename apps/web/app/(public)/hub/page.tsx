@@ -57,7 +57,7 @@ export default function HubPage() {
 
   async function loadUserProjects() {
     try {
-      const res = await fetch("/api/puck/save");
+      const res = await fetch("/api/builder/projects");
       if (res.ok) {
         const data = await res.json();
         setProjects(data.projects || []);
@@ -77,7 +77,7 @@ export default function HubPage() {
   }
 
   function handleBlankWebsite() {
-    router.push("/wonder-build/puck");
+    router.push("/wonder-build/builder");
   }
 
   function handleBlankGame() {
@@ -230,7 +230,7 @@ export default function HubPage() {
               projects.slice(0, 8).map((project) => (
                 <Link
                   key={project.id}
-                  href={`/wonder-build/puck?project=${project.id}`}
+                  href={`/wonder-build/builder?project=${project.id}`}
                   className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] transition-all hover:border-white/20"
                 >
                   <div className="aspect-video bg-gradient-to-br from-violet-900/20 to-black flex items-center justify-center">
