@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import {
-import { logger } from '@/lib/logger';
   Users, MessageSquare, Flame, Filter, Search, PlusCircle,
   ThumbsUp, MessageCircle, Share2, Tag, User, X,
   GitFork, Play
