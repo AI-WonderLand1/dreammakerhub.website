@@ -54,7 +54,7 @@ export class PipelineManager {
       storageService.setProjectId(this.config.projectId);
     }
     if (this.config.ownerId) {
-      // StorageService uses ownerId via environment; set if needed
+      storageService.setOwnerId(this.config.ownerId);
     }
 
     projectStateManager.start();
@@ -68,6 +68,19 @@ export class PipelineManager {
     if (this.config.enableDashboard) dashboardService.start();
     if (this.config.enableStorage) storageService.start();
     if (this.config.enableAnalytics) analyticsService.start();
+    if (this.config.enablePresence && this.config.projectId) {
+      try {
+        presenceService.start({
+          projectId: this.config.projectId,
+          userId: this.config.ownerId || 'anonymous',
+          userName: this.config.ownerId ? `User ${this.config.ownerId.slice(0, 4)}` : 'Anonymous',
+          color: '#7c3aed',
+          enabled: true,
+        });
+      } catch (err) {
+        logger.warn('[Pipeline] Presence start failed:', err);
+      }
+    }
 
     this.started = true;
     logger.info('[Pipeline] All services started');
@@ -79,6 +92,7 @@ export class PipelineManager {
 
   stop(): void {
     if (!this.started) return;
+    presenceService.stop();
     analyticsService.stop();
     storageService.stop();
     dashboardService.stop();

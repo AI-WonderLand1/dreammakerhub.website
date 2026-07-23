@@ -51,8 +51,11 @@ export class AnalyticsService {
     }, this.flushIntervalMs);
   }
 
+  private isFlushing = false;
+
   private flush(): void {
-    if (this.eventQueue.length === 0) return;
+    if (this.isFlushing || this.eventQueue.length === 0) return;
+    this.isFlushing = true;
     if (this.flushTimeout) {
       clearTimeout(this.flushTimeout);
       this.flushTimeout = null;
@@ -70,8 +73,8 @@ export class AnalyticsService {
       }
     } catch {}
 
-    this.bus.emit(EventNames.ANALYTICS_FLUSH, { events: batch });
     logger.info(`[Analytics] Flushed ${batch.length} events`);
+    this.isFlushing = false;
   }
 
   track(action: string, category: string, label?: string, value?: number, metadata?: Record<string, any>): void {
