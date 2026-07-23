@@ -1,5 +1,5 @@
 import { getEventBus } from './EventBus';
-import { EventNames, EventPayload } from './types';
+import { EventNames } from './types';
 import { useBuilderStore } from '../store';
 import type { CanvasElement } from '../types';
 import { transactionManager } from './TransactionManager';
@@ -9,59 +9,42 @@ export class BuilderService {
   private unsubs: Array<() => void> = [];
 
   start(): void {
-    // Subscribe to element events and apply to store
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENT_ADDED, (event) => {
-        const { element, parentId } = event.payload as EventPayload<typeof EventNames.ELEMENT_ADDED>;
+        const { element, parentId } = event.payload;
         useBuilderStore.getState().addElement(element, parentId);
       })
     );
-
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENT_REMOVED, (event) => {
-        const { elementId } = event.payload as EventPayload<typeof EventNames.ELEMENT_REMOVED>;
+        const { elementId } = event.payload;
         useBuilderStore.getState().removeElement(elementId);
       })
     );
-
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENT_UPDATED, (event) => {
-        const { elementId, props } = event.payload as EventPayload<typeof EventNames.ELEMENT_UPDATED>;
+        const { elementId, props } = event.payload;
         useBuilderStore.getState().updateElementProps(elementId, props);
       })
     );
-
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENT_STYLES_CHANGED, (event) => {
-        const { elementId, styles } = event.payload as EventPayload<typeof EventNames.ELEMENT_STYLES_CHANGED>;
+        const { elementId, styles } = event.payload;
         useBuilderStore.getState().updateElementStyles(elementId, styles);
       })
     );
-
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENT_SELECTED, (event) => {
-        const { elementId } = event.payload as EventPayload<typeof EventNames.ELEMENT_SELECTED>;
+        const { elementId } = event.payload;
         useBuilderStore.getState().selectElement(elementId);
       })
     );
-
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENTS_CLEARED, () => {
         useBuilderStore.getState().setElements([]);
       })
     );
-
-    // Subscribe to store changes and emit events
-    this.unsubs.push(
-      useBuilderStore.subscribe((state, prev) => {
-        if (state.selectedId !== prev.selectedId) {
-          this.bus.emit(EventNames.ELEMENT_SELECTED, { elementId: state.selectedId });
-        }
-      })
-    );
   }
-
-  // ─── Actions that emit events ─────────────────────────────
 
   async addElement(element: CanvasElement, parentId?: string): Promise<void> {
     await transactionManager.run(async (txId) => {
@@ -94,7 +77,8 @@ export class BuilderService {
   }
 
   async updateElementStyles(elementId: string, styles: Record<string, any>): Promise<void> {
-    const prev = useBuilderStore.getState().elements.find((e) => e.id === elementId)?.styles || {};
+    const el = useBuilderStore.getState().elements.find((e) => e.id === elementId);
+    const prev = { ...(el?.styles || {}) };
     await transactionManager.run(async (txId) => {
       transactionManager.addRollback(() => {
         useBuilderStore.getState().updateElementStyles(elementId, prev);
@@ -121,6 +105,14 @@ export class BuilderService {
       });
       this.bus.emit(EventNames.ELEMENT_DUPLICATED, { originalId: elementId, newElement: dup }, { transactionId: txId });
       this.bus.emit(EventNames.ELEMENT_ADDED, { element: dup }, { transactionId: txId });
+    });
+  }
+
+  async clearElements(): Promise<void> {
+    const prevCount = useBuilderStore.getState().elements.length;
+    await transactionManager.run(async (txId) => {
+      transactionManager.snapshotBeforeMutate();
+      this.bus.emit(EventNames.ELEMENTS_CLEARED, { previousCount: prevCount }, { transactionId: txId });
     });
   }
 
