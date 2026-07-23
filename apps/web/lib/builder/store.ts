@@ -60,14 +60,36 @@ const initialTheme: BuilderTheme = {
   },
 };
 
+const STORAGE_KEY = 'aiw-builder-state';
+
+function loadPersistedState(): Partial<BuilderState> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        elements: parsed.elements || [],
+        zoom: parsed.zoom ?? 1,
+        pan: parsed.pan ?? { x: 0, y: 0 },
+        showGrid: parsed.showGrid ?? true,
+        snapToGrid: parsed.snapToGrid ?? true,
+      };
+    }
+  } catch {}
+  return {};
+}
+
+const persisted = loadPersistedState();
+
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
-  elements: [],
+  elements: persisted.elements || [],
   selectedId: null,
   activeBreakpoint: 'desktop',
-  zoom: 1,
-  pan: { x: 0, y: 0 },
-  showGrid: true,
-  snapToGrid: true,
+  zoom: persisted.zoom ?? 1,
+  pan: persisted.pan ?? { x: 0, y: 0 },
+  showGrid: persisted.showGrid ?? true,
+  snapToGrid: persisted.snapToGrid ?? true,
   theme: initialTheme,
   history: { past: [], future: [] },
   leftPanelTab: 'blocks',
