@@ -16,6 +16,8 @@ const ComponentLibrary = dynamic(() => import('@/lib/builder/components/Componen
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
 const LayersPanel = dynamic(() => import('@/lib/builder/components/LayersPanel'), { ssr: false });
 const ResponsiveControls = dynamic(() => import('@/lib/builder/components/ResponsiveControls'), { ssr: false });
+const AccessibilityBar = dynamic(() => import('@/lib/builder/components/AccessibilityBar'), { ssr: false });
+const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
 
@@ -24,7 +26,8 @@ function BuilderContent() {
   const {
     setElements, leftPanelOpen, setLeftPanelOpen, leftPanelTab, setLeftPanelTab,
     rightPanelOpen, setRightPanelOpen, showGrid, setShowGrid, snapToGrid, setSnapToGrid,
-    undo, redo, zoom, setZoom,
+    undo, redo, zoom, setZoom, selectedId, elements, removeElement, selectElement,
+    setShortcutsModalOpen, shortcutsModalOpen,
   } = useBuilderStore();
   const [tab, setTab] = useState<BuilderTab>('design');
   const [imported, setImported] = useState(false);
@@ -37,6 +40,59 @@ function BuilderContent() {
       setImported(true);
     }
   }, [setEditorCode]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
+      if (e.key === '?' && !isInput) {
+        e.preventDefault();
+        setShortcutsModalOpen(!shortcutsModalOpen);
+        return;
+      }
+      if (isInput) return;
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'z': e.preventDefault(); undo(); break;
+          case 'y': e.preventDefault(); redo(); break;
+          case 's': e.preventDefault(); logger.info('Save triggered'); break;
+          case 'd':
+            if (selectedId) {
+              e.preventDefault();
+              const el = elements.find((x) => x.id === selectedId);
+              if (el) {
+                const dup: CanvasElement = { ...el, id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: `${el.name} (copy)` };
+                useBuilderStore.getState().addElement(dup);
+              }
+            }
+            break;
+          case '0': e.preventDefault(); setZoomRaw(1); break;
+          case '=': case '+': e.preventDefault(); setZoomRaw(Math.min(3, zoom + 0.1)); break;
+          case '-': e.preventDefault(); setZoomRaw(Math.max(0.1, zoom - 0.1)); break;
+        }
+      } else {
+        switch (e.key) {
+          case 'Delete':
+          case 'Backspace':
+            if (selectedId) {
+              e.preventDefault();
+              removeElement(selectedId);
+            }
+            break;
+          case 'Escape':
+            if (shortcutsModalOpen) {
+              setShortcutsModalOpen(false);
+            } else if (selectedId) {
+              selectElement(null);
+            }
+            break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoomRaw, shortcutsModalOpen, setShortcutsModalOpen]);
 
   const handleImportToCanvas = useCallback(() => {
     if (!editorCode) return;
@@ -53,62 +109,78 @@ function BuilderContent() {
 
   return (
     <>
+      {/* Skip-to-content link */}
+      <a
+        href="#builder-canvas"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:bg-purple-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-xs focus:font-semibold focus:outline-none focus:ring-2 focus:ring-purple-400"
+      >
+        Skip to canvas content
+      </a>
+
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-white/10 bg-black/60 px-4 py-2 shrink-0">
+      <header role="banner" className="flex items-center justify-between border-b border-white/10 bg-black/60 px-4 py-2 shrink-0">
         <div className="flex items-center gap-2">
           <a href="/wonder-build" className="text-xs text-white/40 hover:text-white transition-colors">← Hub</a>
           <span className="text-white/20">/</span>
           <span className="text-xs font-semibold text-white/80">Builder</span>
         </div>
-        <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
-          <button onClick={() => setTab('code')}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'code' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
-            💻 Code
-          </button>
-          <button onClick={() => setTab('design')}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'design' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
-            🎨 Design
-          </button>
-          <button onClick={() => setTab('preview')}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'preview' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
-            👁️ Preview
-          </button>
+        <div className="flex items-center gap-2">
+          <AccessibilityBar />
+          <div className="flex items-center rounded-lg border border-white/10 overflow-hidden" role="tablist" aria-label="View mode">
+            <button onClick={() => setTab('code')} role="tab" aria-selected={tab === 'code'}
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'code' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
+              💻 Code
+            </button>
+            <button onClick={() => setTab('design')} role="tab" aria-selected={tab === 'design'}
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'design' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
+              🎨 Design
+            </button>
+            <button onClick={() => setTab('preview')} role="tab" aria-selected={tab === 'preview'}
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'preview' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
+              👁️ Preview
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
       <div className="flex-1 overflow-hidden">
         <SovereignNavBar />
         <div className="h-full" style={{ paddingTop: '48px' }}>
           {tab === 'code' && (
-            <div className="h-full max-w-[48rem] mx-auto">
+            <div className="h-full max-w-[48rem] mx-auto" role="tabpanel" aria-label="Code editor">
               <CloudSandboxPanel />
             </div>
           )}
 
           {tab === 'design' && (
-            <div className="flex h-full flex-col">
+            <div className="flex h-full flex-col" role="tabpanel" aria-label="Design canvas">
               {/* Secondary toolbar */}
-              <div className="shrink-0 flex items-center justify-between border-b border-white/10 bg-[#0b0f19] px-3 py-1.5">
+              <nav aria-label="Canvas toolbar" className="shrink-0 flex items-center justify-between border-b border-white/10 bg-[#0b0f19] px-3 py-1.5">
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setLeftPanelOpen(!leftPanelOpen)}
                     className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${leftPanelOpen ? 'bg-purple-600/20 text-purple-300' : 'text-white/40 hover:text-white'}`}
+                    aria-label={leftPanelOpen ? 'Hide left panel' : 'Show blocks panel'}
                   >
                     {leftPanelOpen ? '◀ Hide' : '▶ Blocks'}
                   </button>
-                  <span className="text-white/20 mx-1">|</span>
-                  <button onClick={undo} className="px-1.5 py-1 rounded text-xs text-white/40 hover:text-white hover:bg-white/5" title="Undo">↩</button>
-                  <button onClick={redo} className="px-1.5 py-1 rounded text-xs text-white/40 hover:text-white hover:bg-white/5" title="Redo">↪</button>
-                  <span className="text-white/20 mx-1">|</span>
+                  <span className="text-white/20 mx-1" aria-hidden="true">|</span>
+                  <button onClick={undo} className="px-1.5 py-1 rounded text-xs text-white/40 hover:text-white hover:bg-white/5" title="Undo" aria-label="Undo">↩</button>
+                  <button onClick={redo} className="px-1.5 py-1 rounded text-xs text-white/40 hover:text-white hover:bg-white/5" title="Redo" aria-label="Redo">↪</button>
+                  <span className="text-white/20 mx-1" aria-hidden="true">|</span>
                   <button
                     onClick={() => setShowGrid(!showGrid)}
                     className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${showGrid ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
+                    aria-pressed={showGrid}
+                    aria-label="Toggle grid overlay"
                   >
                     Grid
                   </button>
                   <button
                     onClick={() => setSnapToGrid(!snapToGrid)}
                     className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${snapToGrid ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
+                    aria-pressed={snapToGrid}
+                    aria-label="Toggle snap to grid"
                   >
                     Snap
                   </button>
@@ -122,6 +194,7 @@ function BuilderContent() {
                     value={Math.round(zoom * 100)}
                     onChange={(e) => setZoom(Number(e.target.value) / 100)}
                     className="w-20 h-1 accent-purple-500"
+                    aria-label="Zoom level"
                   />
                   {imported && (
                     <button
@@ -132,18 +205,20 @@ function BuilderContent() {
                     </button>
                   )}
                 </div>
-              </div>
+              </nav>
 
               {/* Main canvas area with drawers */}
               <div className="flex flex-1 overflow-hidden relative">
                 {/* Left drawer */}
                 {leftPanelOpen && (
-                  <div className="shrink-0 border-r border-white/10">
-                    <div className="flex border-b border-white/10">
+                  <aside aria-label="Block library and layers" className="shrink-0 border-r border-white/10">
+                    <nav aria-label="Panel tabs" className="flex border-b border-white/10">
                       {(['blocks', 'layers', 'templates'] as const).map((tabName) => (
                         <button
                           key={tabName}
                           onClick={() => setLeftPanelTab(tabName)}
+                          role="tab"
+                          aria-selected={leftPanelTab === tabName}
                           className={`flex-1 px-3 py-1.5 text-[10px] font-semibold transition-colors ${
                             leftPanelTab === tabName ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500' : 'text-white/40 hover:text-white/70'
                           }`}
@@ -151,33 +226,43 @@ function BuilderContent() {
                           {tabName === 'blocks' ? '🧱 Blocks' : tabName === 'layers' ? '📋 Layers' : '📄 Templates'}
                         </button>
                       ))}
+                    </nav>
+                    <div role="tabpanel">
+                      {leftPanelTab === 'blocks' && <ComponentLibrary />}
+                      {leftPanelTab === 'layers' && <LayersPanel />}
+                      {leftPanelTab === 'templates' && (
+                        <div className="w-72 h-full bg-[#0b0f19] p-4 text-center text-xs text-white/30 flex items-center justify-center">
+                          Template library coming soon.
+                        </div>
+                      )}
                     </div>
-                    {leftPanelTab === 'blocks' && <ComponentLibrary />}
-                    {leftPanelTab === 'layers' && <LayersPanel />}
-                    {leftPanelTab === 'templates' && (
-                      <div className="w-72 h-full bg-[#0b0f19] p-4 text-center text-xs text-white/30 flex items-center justify-center">
-                        Template library coming soon.
-                      </div>
-                    )}
-                  </div>
+                  </aside>
                 )}
 
                 {/* Canvas */}
-                <div className="flex-1 overflow-hidden relative">
+                <div id="builder-canvas" className="flex-1 overflow-hidden relative" role="main" aria-label="Design canvas">
                   <VisualBuilderCanvas />
                 </div>
 
                 {/* Right drawer */}
-                {rightPanelOpen && <InspectorPanel />}
+                {rightPanelOpen && (
+                  <aside aria-label="Element inspector" className="shrink-0">
+                    <InspectorPanel />
+                  </aside>
+                )}
               </div>
             </div>
           )}
 
           {tab === 'preview' && (
-            <PlaygroundPanel />
+            <div role="tabpanel" aria-label="Preview">
+              <PlaygroundPanel />
+            </div>
           )}
         </div>
       </div>
+
+      <KeyboardShortcutsModal />
     </>
   );
 }
@@ -186,6 +271,58 @@ export default function BuilderPage() {
   return (
     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-white">Loading Builder...</div>}>
       <div className="flex h-screen flex-col overflow-hidden bg-[#0a0a0a] text-white">
+        <style jsx global>{`
+          *:focus-visible {
+            outline: 2px solid #7c3aed !important;
+            outline-offset: 2px !important;
+            border-radius: 4px;
+          }
+          .high-contrast * {
+            --bg: #000 !important;
+            --text: #fff !important;
+            border-color: #fff !important;
+          }
+          .high-contrast .builder-element.selected {
+            outline: 3px solid #ff0 !important;
+          }
+          .theme-light {
+            --bg-primary: #ffffff;
+            --text-primary: #0f172a;
+          }
+          .theme-light body,
+          .theme-light .bg-\\[\\#0a0a0a\\],
+          .theme-light .bg-\\[\\#0b0f19\\],
+          .theme-light .bg-\\[\\#0c101d\\],
+          .theme-light .bg-\\[\\#090d16\\],
+          .theme-light .bg-black\\/60,
+          .theme-light .bg-black\\/40 {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+          }
+          .theme-light .text-white,
+          .theme-light .text-white\\/80,
+          .theme-light .text-white\\/50,
+          .theme-light .text-white\\/40,
+          .theme-light .text-white\\/30,
+          .theme-light .text-white\\/20 {
+            color: #0f172a !important;
+          }
+          .theme-light .border-white\\/10,
+          .theme-light .border-white\\/5 {
+            border-color: rgba(0,0,0,0.1) !important;
+          }
+          .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border-width: 0;
+          }
+        `}</style>
         <SovereignOSProvider>
           <BuilderContent />
         </SovereignOSProvider>

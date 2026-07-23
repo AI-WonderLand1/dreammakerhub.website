@@ -17,6 +17,16 @@ function renderElement(el: CanvasElement, selectedId: string | null, selectEleme
   const baseProps = {
     key: el.id,
     onClick: (e: React.MouseEvent) => { e.stopPropagation(); selectElement(el.id); },
+    onFocus: () => selectElement(el.id),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.stopPropagation();
+        selectElement(el.id);
+      }
+    },
+    tabIndex: 0,
+    role: 'group',
+    'aria-label': `${el.name} element${el.props?.alt ? `: ${el.props.alt}` : ''}${el.props?.content ? `: ${typeof el.props.content === 'string' ? el.props.content.slice(0, 50) : ''}` : ''}`,
     style,
     className: `builder-element ${isSelected ? 'selected' : ''}`,
   };

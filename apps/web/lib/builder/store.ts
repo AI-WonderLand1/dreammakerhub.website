@@ -24,6 +24,17 @@ interface BuilderStore extends BuilderState {
   setRightPanelTab: (tab: RightPanelTab) => void;
   rightPanelOpen: boolean;
   setRightPanelOpen: (open: boolean) => void;
+  // Accessibility & Theme
+  highContrast: boolean;
+  setHighContrast: (v: boolean) => void;
+  uiScale: number;
+  setUiScale: (v: number) => void;
+  themeMode: 'dark' | 'light';
+  setThemeMode: (v: 'dark' | 'light') => void;
+  voiceInputEnabled: boolean;
+  setVoiceInputEnabled: (v: boolean) => void;
+  shortcutsModalOpen: boolean;
+  setShortcutsModalOpen: (v: boolean) => void;
 }
 
 const initialTheme: BuilderTheme = {
@@ -63,10 +74,20 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   setLeftPanelTab: (tab) => set({ leftPanelTab: tab }),
   leftPanelOpen: true,
   setLeftPanelOpen: (open) => set({ leftPanelOpen: open }),
-  rightPanelTab: 'style',
+  rightPanelTab: 'content',
   setRightPanelTab: (tab) => set({ rightPanelTab: tab }),
   rightPanelOpen: true,
   setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
+  highContrast: false,
+  setHighContrast: (v) => set({ highContrast: v }),
+  uiScale: 100,
+  setUiScale: (v) => set({ uiScale: Math.max(75, Math.min(150, v)) }),
+  themeMode: 'dark',
+  setThemeMode: (v) => set({ themeMode: v }),
+  voiceInputEnabled: false,
+  setVoiceInputEnabled: (v) => set({ voiceInputEnabled: v }),
+  shortcutsModalOpen: false,
+  setShortcutsModalOpen: (v) => set({ shortcutsModalOpen: v }),
 
   setElements: (elements) => {
     const { elements: current, history } = get();

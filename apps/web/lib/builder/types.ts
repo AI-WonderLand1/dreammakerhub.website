@@ -81,7 +81,7 @@ export interface BlockDefinition {
   editableProps: EditableProp[];
 }
 
-export type BlockCategory = 'text' | 'media' | 'layout' | 'wordpress' | 'content' | 'embed' | 'design';
+export type BlockCategory = 'forms' | 'typography' | 'media' | 'navigation' | 'marketing' | 'blog' | 'commerce' | 'utility' | 'layout';
 
 export interface EditableProp {
   key: string;
@@ -121,4 +121,4 @@ export interface Extension {
 }
 
 export type LeftPanelTab = 'blocks' | 'layers' | 'templates';
-export type RightPanelTab = 'style' | 'typography' | 'color' | 'media';
+export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility';
