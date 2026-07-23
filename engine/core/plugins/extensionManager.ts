@@ -1,5 +1,5 @@
 import vm from 'vm'
-import { logger } from '../../lib/logger'
+import { logger } from '@lib/logger'
 
 export interface Extension {
   id: string
