@@ -23,6 +23,7 @@
     "README.md"
   ],
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
   }
 }

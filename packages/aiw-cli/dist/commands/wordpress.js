@@ -102,4 +102,102 @@ export function registerWPCommands(program) {
         console.log(chalk.green('  ✔ CLI Version: ') + '1.0.0');
         console.log(chalk.green('  ✔ Project Config: ') + (fs.existsSync('aiw.config.yaml') || fs.existsSync('aiw.config.json') ? 'Valid' : 'Not initialized'));
     });
+    program
+        .command('puck <action>')
+        .description('Manage Puck visual builder components. Actions: init, add <component>, sync')
+        .action(async (action, ...args) => {
+        if (action === 'init') {
+            const spinner = ora('Initializing Puck visual builder...').start();
+            // Creates puck.config.ts and a root component
+            const config = `import type { Config } from "@measured/puck";
+export const config: Config = {
+  root: { render: ({ children }) => <div>{children}</div> },
+  categories: { layout: { title: "Layout" }, content: { title: "Content" } },
+};
+`;
+            fs.writeFileSync('puck.config.ts', config);
+            spinner.succeed(chalk.green('Puck config created at puck.config.ts'));
+            console.log(chalk.gray('  Run: npx puck-edit to launch the Puck editor\n'));
+        }
+        else if (action === 'add') {
+            const componentName = args[0] || 'custom-block';
+            const spinner = ora(`Adding Puck component '${componentName}'...`).start();
+            const dir = path.join('src', 'puck', 'components');
+            fs.mkdirSync(dir, { recursive: true });
+            const component = `import React from "react";
+import type { ComponentConfig } from "@measured/puck";
+
+export const ${componentName}: ComponentConfig = {
+  fields: { title: { type: "text" } },
+  render: ({ title }) => <div className="p-4 bg-white/5 rounded">{title || "${componentName}"}</div>,
+};
+`;
+            fs.writeFileSync(path.join(dir, `${componentName}.tsx`), component);
+            spinner.succeed(chalk.green(`Puck component added at src/puck/components/${componentName}.tsx`));
+        }
+        else if (action === 'sync') {
+            const spinner = ora('Syncing Puck layouts to WordPress...').start();
+            const client = new WPAPIClient({ baseUrl: process.env.WP_URL || 'http://localhost:8080' });
+            await client.installPackage('block', 'puck-layouts');
+            spinner.succeed(chalk.green('Puck layouts synced to WordPress via aiw/v1 blocks'));
+        }
+        else {
+            console.log(chalk.yellow('Usage: aiw puck <init|add|sync>'));
+        }
+    });
+    program
+        .command('shadcn <action>')
+        .description('Manage shadcn/ui components. Actions: init, add <component>, list')
+        .action(async (action, ...args) => {
+        if (action === 'init') {
+            const spinner = ora('Initializing shadcn/ui...').start();
+            const config = `{
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "app/globals.css",
+    "baseColor": "slate",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils"
+  }
+}
+`;
+            fs.writeFileSync('components.json', config);
+            fs.mkdirSync(path.join('lib'), { recursive: true });
+            fs.writeFileSync(path.join('lib', 'utils.ts'), `import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
+`);
+            spinner.succeed(chalk.green('shadcn/ui initialized (components.json + lib/utils.ts)'));
+        }
+        else if (action === 'add') {
+            const component = args[0] || 'button';
+            const spinner = ora(`Adding shadcn/ui '${component}' component...`).start();
+            const dir = path.join('src', 'components', 'ui');
+            fs.mkdirSync(dir, { recursive: true });
+            const componentContent = `import * as React from "react";
+import { cn } from "@/lib/utils";
+// Placeholder for shadcn/ui ${component} — run 'npx shadcn add ${component}' for full code
+export function ${component.charAt(0).toUpperCase() + component.slice(1)}({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn(className)} {...props} />;
+}
+`;
+            fs.writeFileSync(path.join(dir, `${component}.tsx`), componentContent);
+            spinner.succeed(chalk.green(`shadcn/ui '${component}' stubbed at src/components/ui/${component}.tsx`));
+            console.log(chalk.gray(`  Run: npx shadcn add ${component} for the full implementation\n`));
+        }
+        else if (action === 'list') {
+            const available = ['button', 'card', 'input', 'dialog', 'dropdown-menu', 'tabs', 'badge', 'avatar', 'alert', 'sheet', 'toast'];
+            console.log(chalk.bold('\n📦 Available shadcn/ui components:'));
+            available.forEach((c) => console.log(chalk.gray(`  • ${c}`)));
+        }
+        else {
+            console.log(chalk.yellow('Usage: aiw shadcn <init|add|list>'));
+        }
+    });
 }
