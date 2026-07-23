@@ -6,8 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import AetherGuardDialog from "@/components/AetherGuardDialog";
-import { 
 import { logger } from '@/lib/logger';
+import { 
   LayoutDashboard, 
   Folder,
   Pencil, 

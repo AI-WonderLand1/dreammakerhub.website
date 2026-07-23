@@ -1,6 +1,5 @@
 import { storageProvider } from "@/infra/services/storage/provider";
 import {
-import { logger } from '@/lib/logger';
   artifactMetadataPath,
   artifactMetadataPrefix,
   artifactZipPath,
