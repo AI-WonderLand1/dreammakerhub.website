@@ -170,34 +170,4 @@ export const ${componentName}: ComponentConfig = {
             fs.writeFileSync('components.json', config);
             fs.mkdirSync(path.join('lib'), { recursive: true });
             fs.writeFileSync(path.join('lib', 'utils.ts'), `import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
-`);
-            spinner.succeed(chalk.green('shadcn/ui initialized (components.json + lib/utils.ts)'));
-        }
-        else if (action === 'add') {
-            const component = args[0] || 'button';
-            const spinner = ora(`Adding shadcn/ui '${component}' component...`).start();
-            const dir = path.join('src', 'components', 'ui');
-            fs.mkdirSync(dir, { recursive: true });
-            const componentContent = `import * as React from "react";
-import { cn } from "@/lib/utils";
-// Placeholder for shadcn/ui ${component} — run 'npx shadcn add ${component}' for full code
-export function ${component.charAt(0).toUpperCase() + component.slice(1)}({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn(className)} {...props} />;
-}
-`;
-            fs.writeFileSync(path.join(dir, `${component}.tsx`), componentContent);
-            spinner.succeed(chalk.green(`shadcn/ui '${component}' stubbed at src/components/ui/${component}.tsx`));
-            console.log(chalk.gray(`  Run: npx shadcn add ${component} for the full implementation\n`));
-        }
-        else if (action === 'list') {
-            const available = ['button', 'card', 'input', 'dialog', 'dropdown-menu', 'tabs', 'badge', 'avatar', 'alert', 'sheet', 'toast'];
-            console.log(chalk.bold('\n📦 Available shadcn/ui components:'));
-            available.forEach((c) => console.log(chalk.gray(`  • ${c}`)));
-        }
-        else {
-            console.log(chalk.yellow('Usage: aiw shadcn <init|add|list>'));
-        }
-    });
-}
+import
