@@ -18,6 +18,8 @@ import { logger } from '@/lib/logger';
 const VisualBuilderCanvas = dynamic(() => import('@/lib/builder/components/VisualBuilderCanvas'), { ssr: false });
 const ComponentLibrary = dynamic(() => import('@/lib/builder/components/ComponentLibrary'), { ssr: false });
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
+const AIAssistantPanel = dynamic(() => import('@/lib/builder/components/AIAssistantPanel'), { ssr: false });
+const ImportExportPanel = dynamic(() => import('@/lib/builder/components/ImportExportPanel'), { ssr: false });
 const LayersPanel = dynamic(() => import('@/lib/builder/components/LayersPanel'), { ssr: false });
 const AccessibilityBar = dynamic(() => import('@/lib/builder/components/AccessibilityBar'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
@@ -35,7 +37,7 @@ function BuilderContent() {
   const store = useBuilderStore();
   const {
     setElements, leftPanelOpen, setLeftPanelOpen, leftPanelTab, setLeftPanelTab,
-    rightPanelOpen, setRightPanelOpen, showGrid, setShowGrid, snapToGrid, setSnapToGrid,
+    rightPanelOpen, setRightPanelOpen, rightPanelTab, setRightPanelTab, showGrid, setShowGrid, snapToGrid, setSnapToGrid,
     undo, redo, zoom, setZoom, selectedId, elements, removeElement, selectElement,
     setShortcutsModalOpen, shortcutsModalOpen, setProjectId,
   } = store;
@@ -300,8 +302,27 @@ function BuilderContent() {
                 </div>
 
                 {rightPanelOpen && (
-                  <aside aria-label="Element inspector" className="shrink-0">
-                    <InspectorPanel />
+                  <aside aria-label="Element inspector" className="shrink-0 w-80 border-l border-white/10 flex flex-col">
+                    <nav aria-label="Right panel tabs" className="flex border-b border-white/10 bg-[#0c101d]">
+                      {(['content', 'ai', 'import-export'] as const).map((tabName) => (
+                        <button
+                          key={tabName}
+                          onClick={() => setRightPanelTab(tabName)}
+                          role="tab"
+                          aria-selected={rightPanelTab === tabName}
+                          className={`flex-1 px-2 py-1.5 text-[10px] font-semibold transition-colors ${
+                            rightPanelTab === tabName ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500' : 'text-white/40 hover:text-white/70'
+                          }`}
+                        >
+                          {tabName === 'content' ? '🔧 Inspector' : tabName === 'ai' ? '🤖 AI' : '📦 Import/Export'}
+                        </button>
+                      ))}
+                    </nav>
+                    <div className="flex-1 overflow-hidden">
+                      {rightPanelTab === 'content' && <InspectorPanel />}
+                      {rightPanelTab === 'ai' && <AIAssistantPanel />}
+                      {rightPanelTab === 'import-export' && <ImportExportPanel />}
+                    </div>
                   </aside>
                 )}
               </div>

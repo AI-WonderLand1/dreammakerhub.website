@@ -134,7 +134,7 @@ export default function InspectorPanel() {
 
   if (!selectedElement) {
     return (
-      <div className="w-80 border-l border-white/10 bg-[#0c101d] text-white/40 text-xs flex items-center justify-center text-center p-4">
+      <div className="w-full bg-[#0c101d] text-white/40 text-xs flex items-center justify-center text-center p-4">
         Select an element on the canvas to edit its properties.
       </div>
     );
@@ -143,7 +143,7 @@ export default function InspectorPanel() {
   const isOpen = (name: string) => sections.has(name);
 
   return (
-    <div className="w-80 border-l border-white/10 bg-[#0c101d] text-white flex flex-col overflow-hidden">
+    <div className="w-full bg-[#0c101d] text-white flex flex-col overflow-hidden">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-white/10 p-2">
         <div className="flex items-center gap-1.5 min-w-0">
@@ -236,6 +236,160 @@ export default function InspectorPanel() {
               );
             })}
           </div>
+        )}
+
+        {/* ── Image Editor ── */}
+        {['image', 'ai-image', 'avatar', 'image-hotspot', 'image-carousel', 'image-compare', 'gallery'].includes(selectedElement.type) && (
+          <>
+            <SectionHeader label="Image" open={isOpen('image')} onToggle={() => toggleSection('image')} />
+            {isOpen('image') && (
+              <div className="px-3 py-2 space-y-2 border-b border-white/5">
+                <p className="text-[9px] text-white/30 font-semibold uppercase tracking-wider">Transform</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <NumberRow label="Width" value={parseInt(getStyle('width')) || 0} onChange={(v) => setStyle('width', v ? `${v}px` : '')} />
+                  <NumberRow label="Height" value={parseInt(getStyle('height')) || 0} onChange={(v) => setStyle('height', v ? `${v}px` : '')} />
+                </div>
+                <SelectRow label="Object Fit" value={getStyle('objectFit') || ''} onChange={(v) => setStyle('objectFit', v)} options={['cover', 'contain', 'fill', 'none', 'scale-down']} />
+                <SelectRow label="Object Position" value={getStyle('objectPosition') || ''} onChange={(v) => setStyle('objectPosition', v)} options={['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right']} />
+                {(() => {
+                  const currentFilter = getStyle('filter') || '';
+                  const parseFilter = (fn: string): number => {
+                    const m = currentFilter.match(new RegExp(`${fn}\\(([\\d.]+)`));
+                    return m ? parseFloat(m[1]) : (fn === 'blur' ? 0 : 100);
+                  };
+                  const composeFilter = (fn: string, val: number): string => {
+                    const parts: string[] = [];
+                    const filters: [string, string, number][] = [
+                      ['brightness', 'brightness', parseFilter('brightness')],
+                      ['contrast', 'contrast', parseFilter('contrast')],
+                      ['saturate', 'saturate', parseFilter('saturate')],
+                      ['blur', 'blur', parseFilter('blur')],
+                    ];
+                    for (const [key, name, existing] of filters) {
+                      const v = key === fn ? val : existing;
+                      if (key === 'blur' && v > 0) parts.push(`blur(${v}px)`);
+                      else if (key !== 'blur' && v !== 100) parts.push(`${name}(${v}%)`);
+                    }
+                    return parts.join(' ');
+                  };
+                  return (
+                    <div className="border-t border-white/5 pt-2">
+                      <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Filters</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <NumberRow label="Brightness (%)" value={parseFilter('brightness')} min={0} max={200} onChange={(v) => setStyle('filter', composeFilter('brightness', v))} />
+                        <NumberRow label="Contrast (%)" value={parseFilter('contrast')} min={0} max={200} onChange={(v) => setStyle('filter', composeFilter('contrast', v))} />
+                        <NumberRow label="Saturate (%)" value={parseFilter('saturate')} min={0} max={300} onChange={(v) => setStyle('filter', composeFilter('saturate', v))} />
+                        <NumberRow label="Blur (px)" value={parseFilter('blur')} min={0} max={20} onChange={(v) => setStyle('filter', composeFilter('blur', v))} />
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="border-t border-white/5 pt-2">
+                  <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Preset Filters</p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { label: 'Normal', value: '' },
+                      { label: 'Grayscale', value: 'grayscale(100%)' },
+                      { label: 'Sepia', value: 'sepia(80%)' },
+                      { label: 'Invert', value: 'invert(100%)' },
+                      { label: 'Vintage', value: 'sepia(50%) contrast(110%) brightness(90%)' },
+                      { label: 'Cool', value: 'saturate(120%) hue-rotate(20deg) brightness(105%)' },
+                      { label: 'Warm', value: 'saturate(130%) hue-rotate(-10deg) brightness(105%)' },
+                      { label: 'Dramatic', value: 'contrast(130%) brightness(90%) saturate(110%)' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => setStyle('filter', preset.value)}
+                        className={`text-[9px] px-1 py-1.5 rounded transition-colors ${getStyle('filter') === preset.value ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50' : 'bg-white/5 text-white/40 hover:text-white/70 hover:bg-white/10 border border-transparent'}`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-white/5 pt-2">
+                  <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Border & Radius</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <InputRow label="Radius" value={getStyle('borderRadius')} onChange={(v) => setStyle('borderRadius', v)} placeholder="0.5rem" />
+                    <SelectRow label="Radius Preset" value={getStyle('borderRadius')} onChange={(v) => setStyle('borderRadius', v)} options={['0', '0.25rem', '0.5rem', '0.75rem', '1rem', '9999px']} />
+                  </div>
+                  <SelectRow label="Border Style" value={getStyle('borderStyle') || ''} onChange={(v) => setStyle('borderStyle', v)} options={['none', 'solid', 'dashed', 'dotted', 'double']} />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Video Editor ── */}
+        {['video', 'video-bg', 'ai-tts'].includes(selectedElement.type) && (
+          <>
+            <SectionHeader label="Video" open={isOpen('video')} onToggle={() => toggleSection('video')} />
+            {isOpen('video') && (
+              <div className="px-3 py-2 space-y-2 border-b border-white/5">
+                <p className="text-[9px] text-white/30 font-semibold uppercase tracking-wider">Source</p>
+                <InputRow label="Video URL" value={getProp('src') || getProp('url') || ''} onChange={(v) => { setProp('src', v); setProp('url', v); }} placeholder="https://..." />
+                <InputRow label="Poster Image" value={getProp('poster') || ''} onChange={(v) => setProp('poster', v)} placeholder="Thumbnail URL" />
+                <div className="grid grid-cols-2 gap-2">
+                  <SelectRow label="Platform" value={getProp('platform') || ''} onChange={(v) => setProp('platform', v)} options={['youtube', 'vimeo', 'self', 'dailymotion', 'twitch']} />
+                  <SelectRow label="Quality" value={getProp('quality') || ''} onChange={(v) => setProp('quality', v)} options={['auto', '1080p', '720p', '480p', '360p']} />
+                </div>
+                <div className="border-t border-white/5 pt-2">
+                  <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Playback</p>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-white/50">Autoplay</label>
+                    <button
+                      onClick={() => setProp('autoplay', !selectedElement.props?.autoplay)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${selectedElement.props?.autoplay ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/50'}`}
+                    >
+                      {selectedElement.props?.autoplay ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <label className="text-[10px] text-white/50">Loop</label>
+                    <button
+                      onClick={() => setProp('loop', !selectedElement.props?.loop)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${selectedElement.props?.loop ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/50'}`}
+                    >
+                      {selectedElement.props?.loop ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <label className="text-[10px] text-white/50">Muted</label>
+                    <button
+                      onClick={() => setProp('muted', !selectedElement.props?.muted)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${selectedElement.props?.muted ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/50'}`}
+                    >
+                      {selectedElement.props?.muted ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <label className="text-[10px] text-white/50">Controls</label>
+                    <button
+                      onClick={() => setProp('controls', !selectedElement.props?.controls)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${selectedElement.props?.controls !== false ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/50'}`}
+                    >
+                      {selectedElement.props?.controls !== false ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                </div>
+                <div className="border-t border-white/5 pt-2">
+                  <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Trim</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberRow label="Start (s)" value={parseInt(getProp('startTime')) || 0} min={0} onChange={(v) => setProp('startTime', v)} />
+                    <NumberRow label="End (s)" value={parseInt(getProp('endTime')) || 0} min={0} onChange={(v) => setProp('endTime', v)} />
+                  </div>
+                </div>
+                <div className="border-t border-white/5 pt-2">
+                  <p className="text-[9px] text-white/30 mb-1.5 font-semibold uppercase tracking-wider">Dimensions</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <InputRow label="Width" value={getStyle('width')} onChange={(v) => setStyle('width', v)} placeholder="100%" />
+                    <InputRow label="Height" value={getStyle('height')} onChange={(v) => setStyle('height', v)} placeholder="auto" />
+                    <SelectRow label="Aspect Ratio" value={getStyle('aspectRatio') || ''} onChange={(v) => setStyle('aspectRatio', v)} options={['16/9', '4/3', '1/1', '9/16', '3/4', '21/9']} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* ── Layout ── */}
