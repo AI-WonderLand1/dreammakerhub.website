@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { logger } from '../../../lib/logger';
+import { logger } from '@/lib/logger';
 
 export type ToastId = string;
 export type ToastOptions = { id?: ToastId };
