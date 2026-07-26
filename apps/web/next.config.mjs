@@ -59,9 +59,9 @@ const pathAliases = {
     '@/infra/services/storage/provider': join(__dirname, '../../infra/services/storage/provider'),
     '@/runners/aetherguardWorker': join(__dirname, '../../runners/aetherguardWorker'),
     '@/runners/registry.worker': join(__dirname, '../../runners/registry.worker'),
-    '@/styles/puck-dark-fix.css': join(__dirname, 'styles/puck-dark-fix.css'),
-    '@/styles/puck-framer-theme.css': join(__dirname, 'styles/puck-framer-theme.css'),
   };
+
+const appUrl = process.env.NEXT_PUBLIC_URL || 'https://dreammakerhub.website';
 
 const nextConfig = {
   reactStrictMode: true,
@@ -80,11 +80,6 @@ const nextConfig = {
       },
       {
         source: '/wonder-build/agent',
-        destination: '/wonder-build/studio',
-        permanent: true,
-      },
-      {
-        source: '/wonder-build/puck',
         destination: '/wonder-build/studio',
         permanent: true,
       },
@@ -195,7 +190,7 @@ const nextConfig = {
             "style-src 'self' 'unsafe-inline' https://rsms.me",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data: https://rsms.me",
-            "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app https://csp-reporting.cloudflare.com https://dreammakerhub.website https://hhdduixckgllodixrejp.supabase.co",
+            `connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app https://csp-reporting.cloudflare.com ${appUrl} https://*.supabase.co`,
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com https://replit.com blob: data:",
             "worker-src 'self' blob:",
             "object-src 'none'",

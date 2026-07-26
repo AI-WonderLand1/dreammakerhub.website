@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, Suspense, lazy, useCallback } from "react";
 import {
-import { logger } from '@/lib/logger';
   Search,
   Key,
   BrainCircuit,

@@ -19,7 +19,6 @@ interface EngineConfig {
 
 const WebGLStudioHost = dynamic(() => import('../components/WebGLStudioHost'), { ssr: false });
 const PlayCanvasViewer = dynamic(() => import('../components/engines/PlayCanvasViewer'), { ssr: false });
-const PuckUIEngine = dynamic(() => import('../components/engines/PuckUIEngine'), { ssr: false });
 
 const ENGINES: EngineConfig[] = [
   {
@@ -55,7 +54,7 @@ const ENGINES: EngineConfig[] = [
   {
     id: 'ui',
     label: 'UI / Page Builder',
-    shortLabel: 'Puck',
+    shortLabel: 'Wonderbuild',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <rect x="3" y="3" width="8" height="8" rx="1"/>
@@ -64,7 +63,7 @@ const ENGINES: EngineConfig[] = [
         <rect x="13" y="13" width="8" height="8" rx="1"/>
       </svg>
     ),
-    hint: 'Puck · Shadon · React blocks · drag & drop',
+    hint: 'Wonderbuild · drag & drop · AI-generated pages',
     accentClass: 'text-violet-400',
     accentBorder: 'border-violet-500/50 bg-violet-500/10',
   },
@@ -174,8 +173,8 @@ export function TriEngineShell() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/wonder-build/puck" className="hidden sm:inline-flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/40 hover:text-white/70 transition-colors">
-              Puck Editor
+            <Link href="/wonder-build/builder" className="hidden sm:inline-flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/40 hover:text-white/70 transition-colors">
+              Visual Builder
             </Link>
             <Link href="/wonder-build/playcanvas" className="hidden sm:inline-flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/40 hover:text-white/70 transition-colors">
               Full 3D
@@ -204,9 +203,25 @@ export function TriEngineShell() {
             />
           </div>
 
-          {/* Puck UI Builder */}
+          {/* UI Builder (placeholder) */}
           <div className={`absolute inset-0 transition-opacity duration-150 ${active === 'ui' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <PuckUIEngine />
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-black via-[#0a0a0a] to-black text-white">
+              <div className="text-center max-w-md">
+                <p className="text-5xl mb-4">🖌️</p>
+                <h2 className="text-xl font-semibold mb-2 text-violet-300">Wonderbuild UI</h2>
+                <p className="text-white/40 text-sm leading-relaxed">
+                  The new visual page builder is being built. Use the AI builder or code editor in the meantime.
+                </p>
+                <div className="mt-6 flex gap-3 justify-center">
+                  <Link href="/wonder-build/builder" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
+                    Open Builder
+                  </Link>
+                  <Link href="/wonder-build/ai-builder" className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/20 transition-colors">
+                    AI Builder
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
