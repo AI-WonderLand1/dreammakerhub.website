@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { WPAPIClient } from '../core/api-client.js';
 
 export function registerWPCommands(program: Command) {
@@ -28,7 +29,7 @@ export function registerWPCommands(program: Command) {
           name: site,
           version: '1.0.0',
           wpUrl: 'http://localhost:8080',
-          apiKey: 'aiw_' + Math.random().toString(36).substring(2, 15),
+          apiKey: 'aiw_' + crypto.randomBytes(16).toString('hex'),
         };
 
         fs.writeFileSync(path.join(sitePath, 'aiw.config.json'), JSON.stringify(config, null, 2));
