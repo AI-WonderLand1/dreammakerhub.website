@@ -33,7 +33,6 @@ type ProjectTemplate = {
 
 const PROJECT_TEMPLATES: ProjectTemplate[] = [
   { id: "wonderbuild", name: "Wonderbuild AI", description: "AI-powered website builder", icon: Sparkles, color: "border-l-purple-500" },
-  { id: "wonderbuild_ui", name: "Wonderbuild UI", description: "Visual drag-and-drop editor", icon: Pencil, color: "border-l-orange-500" },
   { id: "game", name: "Game Project", description: "Interactive game with WonderPlay 3D", icon: Gamepad2, color: "border-l-pink-500" },
   { id: "3d_scene", name: "3D Scene", description: "3D environment with WonderPlay 3D", icon: Box, color: "border-l-blue-500" },
   { id: "web_app", name: "Web App", description: "Code-first web application", icon: Globe, color: "border-l-green-500" },
@@ -43,13 +42,11 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
 const getProjectIcon = (type: string) => {
   const mapping: Record<string, React.ElementType> = {
     wonderbuild: Sparkles,
-    wonderbuild_ui: Pencil,
     game: Gamepad2,
     "3d_scene": Box,
     web_app: Globe,
     workspace: Code2,
     playcanvas: Play,
-    puck: Pencil,
   };
   return mapping[type] || Pencil;
 };
@@ -57,13 +54,11 @@ const getProjectIcon = (type: string) => {
 const getProjectColor = (type: string) => {
   const colors: Record<string, string> = {
     wonderbuild: "border-l-purple-500",
-    wonderbuild_ui: "border-l-orange-500",
     game: "border-l-pink-500",
     "3d_scene": "border-l-blue-500",
     web_app: "border-l-green-500",
     workspace: "border-l-cyan-500",
     playcanvas: "border-l-blue-500",
-    puck: "border-l-orange-500",
   };
   return colors[type] || "border-l-gray-500";
 };
@@ -71,13 +66,11 @@ const getProjectColor = (type: string) => {
 const getEditorUrl = (project: Project): string => {
   const mapping: Record<string, string> = {
     wonderbuild: "/wonder-build",
-    wonderbuild_ui: "/wonder-build/puck",
     game: "/wonder-build/playcanvas",
     "3d_scene": "/wonder-build/playcanvas",
     web_app: "/wonder-build/ai-builder",
     workspace: "/wonderspace/ide",
     playcanvas: "/wonder-build/playcanvas",
-    puck: "/wonder-build/puck",
   };
   return `${mapping[project.type] || "/wonder-build"}?projectId=${project.id}`;
 };
@@ -93,7 +86,7 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectType, setNewProjectType] = useState<"wonderbuild" | "playcanvas" | "puck">("wonderbuild");
+  const [newProjectType, setNewProjectType] = useState<"wonderbuild" | "playcanvas">("wonderbuild");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -236,7 +229,7 @@ export default function ProjectsPage() {
               className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-orange-500"
             />
             <div className="flex gap-2">
-              {(["wonderbuild", "playcanvas", "puck"] as const).map((type) => (
+              {(["wonderbuild", "playcanvas"] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setNewProjectType(type)}
@@ -246,7 +239,7 @@ export default function ProjectsPage() {
                       : "bg-white/10 text-white/70 hover:bg-white/20"
                   }`}
                 >
-                  {type === "wonderbuild" ? "Wonderbuild" : type === "playcanvas" ? "Wonderplay" : "Wonderbuild UI"}
+                  {type === "wonderbuild" ? "Wonderbuild" : "Wonderplay"}
                 </button>
               ))}
             </div>

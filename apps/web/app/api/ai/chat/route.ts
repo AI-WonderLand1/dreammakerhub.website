@@ -24,7 +24,7 @@ const requestSchema = z.object({
   personaId: z.string().optional(),
   temperature: z.number().min(0).max(1).optional(),
   maxTokens: z.number().int().positive().optional(),
-  outputFormat: z.enum(["text", "puck"]).optional().default("text"),
+  outputFormat: z.enum(["text"]).optional().default("text"),
   existingComponents: z.array(z.object({
     type: z.string(),
     props: z.record(z.unknown()),
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt, agentId, provider: reqProvider, model: reqModel, targetLanguage, personaId, outputFormat, existingComponents } = body.data;
+    const { prompt, agentId, provider: reqProvider, model: reqModel, targetLanguage, personaId, outputFormat } = body.data;
 
     // Resolve model: either explicit provider/model pair, or from the agent map
     let modelId: string;
@@ -159,15 +159,6 @@ export async function POST(req: NextRequest) {
     if (detectedHumanLang !== 'en') {
       const lang = HUMAN_LANGUAGES.find(l => l.code === detectedHumanLang);
       systemInstructions.push(`LANGUAGE REQUIREMENT: Respond in ${lang?.name || 'English'} and maintain that language.`);
-    }
-
-    if (outputFormat === "puck") {
-      const componentsList = existingComponents?.map(c => c.type).join(", ") || "none";
-      systemInstructions.push(
-        `OUTPUT FORMAT: Generate a website layout using these Puck components: button, input, heading, typography, cardHover, splitHero, centerHero, pricingTable, featureGrid, logoCloud, testimonialCard, stepProcess, glassAccordion, tabsSystem, ctaBox, accordionFAQ, blogPreviewGrid, teamGrid, statsSection, stickyHeader, multiColumnFooter, newsletterStrip, contactSplit.`,
-        `Current page has: ${componentsList}`,
-        `Respond with the component names you would use and describe their properties.`
-      );
     }
 
     // ── Retrieve relevant past memories ──
@@ -278,10 +269,6 @@ export async function POST(req: NextRequest) {
         mem0Store,
         confessionMode: config.mode,
         outputFormat,
-        puckData: outputFormat === "puck" ? {
-          content: existingComponents || [],
-          root: { type: "Fragment", props: {} },
-        } : null,
       }
     });
 
