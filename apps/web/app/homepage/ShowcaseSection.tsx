@@ -17,7 +17,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: "wonderbuild",
     title: "WonderBuild",
     description: "Describe what you want in plain English. Three AI agents — Architect, Builder, and Reviewer — collaborate to generate complete websites, games, and UI dashboards in under a minute.",
-    image: "/images/screenshots/puck-builder.svg",
+    image: "/images/screenshots/wonder-build.svg",
     href: "/wonder-build/ai-builder",
     gradient: "from-violet-600/20 to-fuchsia-600/10",
     badge: "AI Agent Trio",

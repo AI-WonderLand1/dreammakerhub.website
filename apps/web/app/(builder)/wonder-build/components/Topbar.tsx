@@ -11,10 +11,10 @@ export default function Topbar() {
       <p className="text-sm font-semibold text-white">Wonder Build</p>
       <button
         type="button"
-        onClick={() => router.push('/wonder-build/puck')}
+        onClick={() => router.push('/wonder-build/builder')}
         className="inline-flex h-9 items-center rounded-lg bg-cyan-500 px-3 text-xs font-bold text-black"
       >
-        Open Puck Layouts
+        Open Builder
       </button>
     </div>
   );

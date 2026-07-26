@@ -6,8 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import AetherGuardDialog from "@/components/AetherGuardDialog";
-import { 
 import { logger } from '@/lib/logger';
+import { 
   LayoutDashboard, 
   Folder,
   Pencil, 
@@ -52,7 +52,6 @@ type Project = {
 
   const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
     wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
-    wonderbuild_ui: { editor: "/wonder-build/puck", label: "Wonderbuild UI" },
     game: { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
     "3d_scene": { editor: "/dashboard/settings/3d-project", label: "3D Project" },
     web_app: { editor: "/wonder-build/ai-builder", label: "Wonderbuild" },

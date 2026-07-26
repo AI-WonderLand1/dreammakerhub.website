@@ -277,7 +277,7 @@ export default function WonderSpacePage() {
             </div>
             {[
               { href: "/wonder-build/ai-builder",       label: "Wonderbuild AI" },
-              { href: "/wonder-build/puck",              label: "Wonderbuild UI" },
+              { href: "/wonder-build/builder",              label: "Wonderbuild UI" },
               { href: "/wonder-build/playcanvas",            label: "Wonderplay 3D" },
               { href: "/dashboard/editor-playcanvas",    label: "PlayCanvas Bridge" },
               { href: "/dashboard/agents",               label: "Agent Dashboard" },
