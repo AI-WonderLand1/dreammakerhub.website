@@ -2,7 +2,7 @@
 
 /**
  * QuadEngineShell - Main Component for AI-WONDERLAND
- * Manages 3 engines: PlayCanvas (3D), WebGL Studio (Shaders), Puck (UI)
+ * Manages 3 engines: PlayCanvas (3D), WebGL Studio (Shaders)
  * Uses next/dynamic with ssr: false for optimal performance
  */
 
@@ -25,17 +25,12 @@ const WebGLStudioEngine = dynamic(() => import('./engines/WebGLStudioEngine'), {
   loading: () => <EngineLoader engine="WebGL Studio" />,
 });
 
-const PuckUIEngine = dynamic(() => import('./engines/PuckUIEngine'), {
-  ssr: false,
-  loading: () => <EngineLoader engine="Puck" />,
-});
-
 const SpatialEngine = dynamic(() => import('./engines/SpatialEngine'), {
   ssr: false,
   loading: () => <EngineLoader engine="Spatial" />,
 });
 
-type EngineType = 'playcanvas' | 'webgl' | 'puck' | 'spatial';
+type EngineType = 'playcanvas' | 'webgl' | 'spatial';
 
 interface EngineConfig {
   id: EngineType;
@@ -67,13 +62,6 @@ const ENGINES: EngineConfig[] = [
     icon: '✨',
     component: WebGLStudioEngine,
   },
-  {
-    id: 'puck',
-    label: 'Puck UI',
-    color: '#ff00ff',
-    icon: '📐',
-    component: PuckUIEngine,
-  },
 ];
 
 function EngineLoader({ engine }: { engine: string }) {
@@ -94,7 +82,6 @@ export function QuadEngineShell() {
   const [engineStates, setEngineStates] = useState<Record<EngineType, any>>({
     playcanvas: null,
     webgl: null,
-    puck: null,
     spatial: null,
   });
   const [isInitializing, setIsInitializing] = useState(false);

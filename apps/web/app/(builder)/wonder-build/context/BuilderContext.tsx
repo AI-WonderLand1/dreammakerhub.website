@@ -4,15 +4,13 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import { logger } from '@/lib/logger';
 
 type BuilderContextValue = {
-  mode: 'puck' | 'ide';
-  setMode: (mode: 'puck' | 'ide') => void;
+  mode: 'ide';
 };
 
 const BuilderContext = createContext<BuilderContextValue | undefined>(undefined);
 
 export function BuilderProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<'puck' | 'ide'>('puck');
-  const value = useMemo(() => ({ mode, setMode }), [mode]);
+  const value = useMemo<BuilderContextValue>(() => ({ mode: 'ide' }), []);
 
   return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;
 }

@@ -61,7 +61,7 @@ const PERSONA_INFO = {
 
 const DROPDOWN_OPTIONS = [
   { label: "📚 Browse Templates", href: "/library", color: "text-blue-400" },
-  { label: "🌐 Create Website", href: "/wonder-build/puck", color: "text-green-400" },
+  { label: "🌐 Create Website", href: "/wonder-build/builder", color: "text-green-400" },
   { label: "🎮 Create Game", href: "/wonder-build/playcanvas", color: "text-purple-400" },
 ];
 
