@@ -83,8 +83,8 @@ export function VisualTranscript() {
                 >
                   {latestItem.engineContext === 'playcanvas' && '🎮 PlayCanvas'}
                   {latestItem.engineContext === 'webgl' && '✨ WebGL'}
-                  {latestItem.engineContext === 'puck' && '📐 Puck'}
                   {(latestItem.engineContext === 'coder' || latestItem.engineContext === 'theia') && '💻 Coder IDE'}
+                  {latestItem.engineContext === 'spatial' && '🌌 Spatial'}
                 </span>
               )}
             </div>

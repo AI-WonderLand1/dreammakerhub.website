@@ -1,5 +1,5 @@
-import {
 import { logger } from '@lib/logger';
+import {
   Confession,
   ConfessionType,
   ImpactLevel,

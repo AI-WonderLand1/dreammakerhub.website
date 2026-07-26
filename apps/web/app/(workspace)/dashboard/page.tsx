@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { 
-import { logger } from '@/lib/logger';
   LayoutDashboard, 
   Folder, 
   Pencil, 

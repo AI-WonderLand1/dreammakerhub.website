@@ -1,6 +1,6 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { getSupabaseClient } from './client'
+import { getSupabaseClient, ensureSupabaseConfig } from './client'
 
 type AuthUser = {
   id: string
@@ -35,32 +35,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = getSupabaseClient()
-    if (!supabase) {
+    let subscription: { unsubscribe: () => void } | undefined
+    
+    const init = async () => {
+      await ensureSupabaseConfig()
+      const supabase = getSupabaseClient()
+      
+      if (!supabase) {
+        setLoading(false)
+        return
+      }
+
+      const { data: { session: s } } = await supabase.auth.getSession()
+      if (s?.user) {
+        setUser(s.user as unknown as AuthUser)
+        setSession(s)
+      }
       setLoading(false)
-      return
+
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((_event, s) => {
+        if (s?.user) {
+          setUser(s.user as unknown as AuthUser)
+          setSession(s)
+        } else {
+          setUser(null)
+          setSession(null)
+        }
+        setLoading(false)
+      })
+      
+      subscription = sub
     }
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (s?.user) {
-        setUser(s.user as unknown as AuthUser)
-        setSession(s)
-      }
-      setLoading(false)
-    })
+    init()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (s?.user) {
-        setUser(s.user as unknown as AuthUser)
-        setSession(s)
-      } else {
-        setUser(null)
-        setSession(null)
-      }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    return () => {
+      if (subscription) subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
