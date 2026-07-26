@@ -9,6 +9,10 @@
         "--only",
         "auth,firestore"
       ]
+    },
+    "WONDEERLAND": {
+      "command": "",
+      "args": []
     }
   }
 }

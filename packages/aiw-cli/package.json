@@ -1,0 +1,27 @@
+{
+  "name": "aiw-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "aiw": "./bin/aiw.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "inquirer": "^12.4.1",
+    "js-yaml": "^4.1.0",
+    "ora": "^8.2.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.13.1",
+    "tsx": "^4.23.1",
+    "typescript": "^5.7.3"
+  }
+}

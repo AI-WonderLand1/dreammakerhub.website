@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Puck, type Config } from "@puckeditor/core";
-import "@puckeditor/core/puck.css";
+
 import EgyptianVoiceModule from "@/ai-modules/EgyptianVoiceModule";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
