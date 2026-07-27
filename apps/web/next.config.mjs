@@ -100,6 +100,7 @@ const nextConfig = {
 
   experimental: {
     externalDir: true,
+    useTypeScriptCli: true,
   },
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
