@@ -56,7 +56,7 @@
     "colyseus.js": "^0.16.22",
     "groq-sdk": "^1.1.2",
     "http-proxy": "^1.18.1",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
     "motion": "^12.40.0",
