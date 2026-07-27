@@ -34,7 +34,7 @@
   },
 "devDependencies": {
     "@eslint/js": "^10.0.0",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/pg": "8.20.0",
     "eslint": "^10.3.0",
@@ -57,7 +57,7 @@
     "dotenv": "^17.4.2",
     "mem0ai": "^3.0.9",
     "pg": "^8.20.0",
-    "react": "^19.2.5",
+    "react": "^19.2.8",
     "react-dom": "^19.2.6"
   },
   "type": "module"
