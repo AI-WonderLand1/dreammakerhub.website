@@ -445,6 +445,7 @@ model users {
   mfa_factors                 mfa_factors[]
   oauth_authorizations        oauth_authorizations[]
   oauth_consents              oauth_consents[]
+  pages                       pages[]
   one_time_tokens             one_time_tokens[]
   sessions                    sessions[]
   webauthn_challenges         webauthn_challenges[]
