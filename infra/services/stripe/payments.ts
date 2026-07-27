@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { env, requireEnv } from '../../lib/env';
-import { logger } from '../../lib/logger';
+import { logger } from '@/lib/logger';
 
 /** * STRIPE SERVICE
  * Production-ready singleton for managing subscriptions and checkouts.

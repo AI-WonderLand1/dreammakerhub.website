@@ -37,7 +37,8 @@
       "@/types/*": ["../../types/*"],
       "@/ai-modules/*": ["./ai-modules/*"],
       "@/styles/*": ["./styles/*"],
-      "@/data/*": ["./data/*"]
+      "@/data/*": ["./data/*"],
+      "@/lib/*": ["./lib/*"]
     },
     "skipLibCheck": true,
     "incremental": true,

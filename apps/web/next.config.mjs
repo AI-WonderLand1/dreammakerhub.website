@@ -29,6 +29,8 @@ const pathAliases = {
     '@services': join(__dirname, '../../infra/services'),
     '@lib': join(__dirname, './lib'),
     '@lib/*': join(__dirname, './lib/*'),
+    '@/lib': join(__dirname, './lib'),
+    '@/lib/*': join(__dirname, './lib/*'),
     '@types': join(__dirname, '../../types'),
     '@/ai-modules/EgyptianVoiceModule': join(__dirname, 'ai-modules/EgyptianVoiceModule'),
     '@/engine/core': join(__dirname, '../../engine/core'),
@@ -98,6 +100,7 @@ const nextConfig = {
 
   experimental: {
     externalDir: true,
+    useTypeScriptCli: true,
   },
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],

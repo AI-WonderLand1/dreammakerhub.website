@@ -1,7 +1,6 @@
-FROM node:20.20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy all workspace package files for proper npm ci resolution
 COPY package*.json ./
 COPY apps/web/package*.json ./apps/web/
 COPY packages/ide-engine/package*.json ./packages/ide-engine/
@@ -9,17 +8,13 @@ COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
 
-# Copy prisma files for generation
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-# Copy ide-engine source for build
 COPY packages/ide-engine/src ./packages/ide-engine/src/
 
-# Install dependencies (this step is cached if package.json files don't change)
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
 
-# Copy the rest of the source code
 COPY engine ./engine
 COPY infra ./infra
 COPY runners ./runners
@@ -34,7 +29,6 @@ COPY apps/web/tsconfig.json ./apps/web/
 COPY apps/web/next.config.mjs ./apps/web/
 COPY apps/web ./apps/web
 
-# Build Next.js app
 WORKDIR /app/apps/web
 ENV NEXT_TURBOPACK=disable
 ENV ALICE_API_KEY=dummy
@@ -44,22 +38,18 @@ ENV MONGODB_URI=dummy
 ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 RUN npm run build
 
-# Production image
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy built app artifacts
 COPY --from=builder /app/apps/web/.next ./.next
 COPY --from=builder /app/apps/web/public ./public
 COPY --from=builder /app/apps/web/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/apps/web/package.json ./package.json
 
-# Copy workspace structure so @wonderspace/ide-engine resolves at runtime
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps ./apps
 
-# Copy engine, infra, runners, ui, types for monorepo imports at runtime
 COPY --from=builder /app/engine ./engine
 COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners

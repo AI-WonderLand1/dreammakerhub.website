@@ -675,10 +675,20 @@ model oauth_apps {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model pages {
-  id         String    @id
-  content    Json
-  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  title           String    @default("Untitled Page")
+  slug            String    @unique
+  body_html       String    @default("")
+  cover_image_url String?
+  content         Json
+  published       Boolean   @default(false)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([slug])
+  @@index([user_id])
   @@schema("public")
 }
 

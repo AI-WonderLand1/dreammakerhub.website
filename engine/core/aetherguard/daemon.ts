@@ -1,4 +1,4 @@
-import { logger } from '@infra/lib/logger';
+import { logger } from '@/lib/logger';
 import { setupFileWatcher, closeFileWatcher } from './watcher';
 import { runEslintFix, runPrettier, updateDependencies, fixDepIssues } from './repairs';
 import {
