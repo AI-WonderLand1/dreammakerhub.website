@@ -62,7 +62,7 @@
     "motion": "^12.40.0",
     "playcanvas": "^2.19.7",
     "postcss": "^8.5.20",
-    "react": "^19.2.5",
+    "react": "^19.2.8",
     "react-dom": "^19.2.6",
     "react-use": "^17.6.1",
     "server-only": "^0.0.1",
