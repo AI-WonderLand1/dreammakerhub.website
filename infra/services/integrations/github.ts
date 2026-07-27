@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { env, requireEnv } from "../../lib/env";
-import { logger } from "../../lib/logger";
+import { logger } from '@/lib/logger';
 
 export class GithubSync {
   private static octokit = new Octokit({ auth: env.GITHUB_TOKEN });

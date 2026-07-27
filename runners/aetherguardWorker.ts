@@ -1,5 +1,5 @@
 import 'server-only';
-import { logger } from '@infra/lib/logger';
+import { logger } from '@/lib/logger';
 import { startDaemon, stopDaemon, getStats, isDaemonRunning } from '@core/aetherguard/daemon';
 
 let started = false;

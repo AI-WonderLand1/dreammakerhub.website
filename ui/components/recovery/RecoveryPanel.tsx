@@ -1,4 +1,4 @@
-import { logger } from '../../../lib/logger';
+import { logger } from '@/lib/logger';
 const handleRestore = async (id: string) => {
   setIsRestoring(true);
   try {
