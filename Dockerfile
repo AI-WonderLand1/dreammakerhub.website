@@ -13,7 +13,7 @@ COPY prisma.config.ts ./
 
 COPY packages/ide-engine/src ./packages/ide-engine/src/
 
-RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
+RUN rm -f package-lock.json && DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
 
 COPY engine ./engine
 COPY infra ./infra
