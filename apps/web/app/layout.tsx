@@ -1,13 +1,11 @@
 import "./globals.css";
 import "./(builder)/wonder-build/wonder-build.css";
 
-import { Suspense, usePathname } from "react";
+import { Suspense } from "react";
 import Script from "next/script";
 import { AuthProvider } from "@/lib/supabase/auth-context";
 import { BuilderProvider } from "@/app/(builder)/wonder-build/context/BuilderContext";
 import { AccessibilityProvider } from "@/lib/accessibility-context";
-
-
 import { PlayCanvasBootstrapStartup } from "@/app/components/startup/PlayCanvasBootstrapStartup";
 import { ClientAccessibilityWrapper } from "@/components/ClientAccessibilityWrapper";
 import { cn } from "@/lib/utils";
@@ -17,9 +15,6 @@ import Footer from "@/components/Footer";
 import { logger } from '@/lib/logger';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isBuilderPage = pathname.startsWith("/wonder-build/builder");
-  
   return (
     <html lang="en" className={cn("dark", "font-sans")}>
       <head>
@@ -44,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AutoRunAI />
               <AutoRunFromURL />
               <AutoBuildTrigger />
-              {!isBuilderPage && <ClientAccessibilityWrapper />}
+              <ClientAccessibilityWrapper />
               <Footer />
             </AccessibilityProvider>
           </BuilderProvider>
