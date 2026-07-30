@@ -1,22 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGit } from "../_git";
-import { createClient } from "@supabase/supabase-js";
+import { requireUserId } from "@/lib/auth";
 import { logger } from '@/lib/logger';
-
-async function requireAuth(req: Request): Promise<string | null> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-  const authHeader = req.headers.get("authorization");
-  const cookieHeader = req.headers.get("cookie");
-  let token: string | null = null;
-  if (authHeader?.startsWith("Bearer ")) { token = authHeader.slice(7); }
-  else if (cookieHeader) { const m = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/); if (m) { try { token = JSON.parse(decodeURIComponent(m[1])).access_token; } catch {} } }
-  if (!token) return null;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? null;
-}
 
 const ALLOWED_REMOTE_PROTOCOLS = ["https://", "git@"];
 const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "metadata.google.internal"];
@@ -40,7 +25,7 @@ function isSafeRemoteUrl(url: string): boolean {
 }
 
 export async function POST(req: Request) {
-  const userId = await requireAuth(req);
+  const userId = await requireUserId(req);
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

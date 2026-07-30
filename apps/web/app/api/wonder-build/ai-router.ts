@@ -143,10 +143,11 @@ export async function POST(req: Request) {
     const modelStr = providerMap[providerHeader] || providerMap["openrouter"];
     
     // Use user key if provided, otherwise fallback to system
+    const userApiKey = req.headers.get("x-user-api-key") || undefined;
     const result = await runModel({ 
       model: modelStr, 
       messages: [{ role: 'user', content: classificationPrompt }],
-      userApiKey: userApiKey || undefined
+      userApiKey
     });
     
     try {

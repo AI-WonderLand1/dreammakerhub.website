@@ -52,17 +52,9 @@ export function middleware(request: NextRequest) {
       if (apiKey !== expectedKey) {
         return NextResponse.json({ error: "Invalid or missing API key" }, { status: 401 });
       }
-    } else {
-      // In development, allow requests when key is not configured (for ease of testing)
-      // In production, this would be a configuration error - but we'll fail open for safety
-      // Production systems should always have N8N_API_KEY set
-      if (process.env.NODE_ENV !== "production") {
-        if (!apiKey) {
-          console.warn("[Middleware] N8N_API_KEY not set - allowing request without authentication (DEVELOPMENT ONLY)");
-        }
-      }
-      // Note: In production with unset N8N_API_KEY, we allow the request through
-      // This prevents accidental lockouts while encouraging proper configuration
+    } else if (process.env.NODE_ENV === "production") {
+      // Production without N8N_API_KEY is a config error — reject to prevent open access
+      return NextResponse.json({ error: "API key not configured on server" }, { status: 500 });
     }
   }
 

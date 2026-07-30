@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
 import { logger } from '@/lib/logger';
-
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
-const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+import { stripe } from "@/lib/stripe";
 
 export async function POST(request: NextRequest) {
   try {
