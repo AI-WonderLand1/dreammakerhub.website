@@ -185,6 +185,34 @@ export async function deleteFile(projectId: string, ownerId: string, filePath: s
   await db.query(`DELETE FROM _project_files WHERE project_id=$1 AND file_path=$2`, [projectId, normalized]);
 }
 
+export async function renameFile(projectId: string, ownerId: string, oldPath: string, newPath: string): Promise<void> {
+  await assertOwner(projectId, ownerId);
+  const oldNormalized = normalizeFilePath(oldPath);
+  const newNormalized = normalizeFilePath(newPath);
+  await ensureTables();
+  const db = getDb();
+
+  const result = await db.query(
+    `SELECT content FROM _project_files WHERE project_id=$1 AND file_path=$2`,
+    [projectId, oldNormalized]
+  );
+  const content = result.rows[0]?.content ?? '';
+
+  await db.query(`DELETE FROM _project_files WHERE project_id=$1 AND file_path=$2`, [projectId, oldNormalized]);
+  await db.query(`
+    INSERT INTO _project_files (project_id, file_path, content, updated_at)
+    VALUES ($1,$2,$3,NOW())
+    ON CONFLICT (project_id, file_path) DO UPDATE SET content=EXCLUDED.content, updated_at=NOW()
+  `, [projectId, newNormalized, content]);
+}
+
+export async function moveFile(projectId: string, ownerId: string, oldPath: string, newDir: string): Promise<void> {
+  const oldNormalized = normalizeFilePath(oldPath);
+  const fileName = oldNormalized.split('/').pop() || '';
+  const newNormalized = normalizeFilePath(`${newDir}/${fileName}`);
+  await renameFile(projectId, ownerId, oldNormalized, newNormalized);
+}
+
 export async function deleteProject(projectId: string, ownerId: string): Promise<void> {
   await assertOwner(projectId, ownerId);
   const db = getDb();
