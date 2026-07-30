@@ -38,7 +38,7 @@ export default function CommunityPage() {
       },
       title: 'Announcing WonderBuild v2.4 — Multi-Agent Wonderbuild Now Live!',
       category: 'announcements',
-      preview: 'We are thrilled to launch the latest update to WonderBuild featuring three new AI agents (Architect, Builder, Reviewer) that collaborate in real-time, GPU-accelerated PlayCanvas shaders, and a revamped Puck drag-and-drop editor with 19+ blocks.',
+      preview: 'We are thrilled to launch the latest update to WonderBuild featuring three new AI agents (Architect, Builder, Reviewer) that collaborate in real-time, GPU-accelerated PlayCanvas shaders, and a revamped drag-and-drop editor with 200+ blocks.',
       tags: ['WonderBuild', 'Release', 'AI Agents'],
       upvotes: 142,
       commentsCount: 38,

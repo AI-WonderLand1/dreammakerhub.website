@@ -6,7 +6,7 @@
     "sandbox_execution_required": true
   },
   "capabilities": {
-    "build_scope": ["puck_blocks", "playcanvas_scenes", "webgl_components", "ui_kits"],
+    "build_scope": ["playcanvas_scenes", "webgl_components", "ui_kits"],
     "allowed_tools": ["filesystem_write", "component_lookup", "schema_validation"]
   },
   "constraints": [

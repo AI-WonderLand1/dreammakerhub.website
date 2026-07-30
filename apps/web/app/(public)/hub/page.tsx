@@ -171,7 +171,7 @@ export default function HubPage() {
           >
             <div className="text-5xl">🌐</div>
             <h3 className="text-lg font-semibold text-white">Blank Website</h3>
-            <p className="text-white/40 text-sm">Start fresh in Puck Editor</p>
+            <p className="text-white/40 text-sm">Start fresh in WonderBuild Editor</p>
           </button>
 
           <button
