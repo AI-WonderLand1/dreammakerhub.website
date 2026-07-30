@@ -120,5 +120,5 @@ export interface Extension {
   initialize?: (store: any) => void;
 }
 
-export type LeftPanelTab = 'blocks' | 'layers' | 'templates';
+export type LeftPanelTab = 'blocks' | 'layers' | 'templates' | 'files';
 export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility' | 'ai' | 'import-export';

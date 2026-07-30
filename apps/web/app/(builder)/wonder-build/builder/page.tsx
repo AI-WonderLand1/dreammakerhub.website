@@ -26,6 +26,7 @@ const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/Ke
 const AccessibilityCheckerPanel = dynamic(() => import('@/lib/builder/components/AccessibilityCheckerPanel'), { ssr: false });
 const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
 const PipelineIndicator = dynamic(() => import('@/lib/builder/components/PipelineIndicator'), { ssr: false });
+const FileManagerPanel = dynamic(() => import('@/components/file-manager/FileManagerPanel'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
 
@@ -275,7 +276,7 @@ function BuilderContent() {
                 {leftPanelOpen && (
                   <aside aria-label="Block library and layers" className="shrink-0 border-r border-white/10">
                     <nav aria-label="Panel tabs" className="flex border-b border-white/10">
-                      {(['blocks', 'layers', 'templates'] as const).map((tabName) => (
+                      {(['blocks', 'layers', 'templates', 'files'] as const).map((tabName) => (
                         <button
                           key={tabName}
                           onClick={() => setLeftPanelTab(tabName)}
@@ -285,7 +286,7 @@ function BuilderContent() {
                             leftPanelTab === tabName ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500' : 'text-white/40 hover:text-white/70'
                           }`}
                         >
-                          {tabName === 'blocks' ? '🧱 Blocks' : tabName === 'layers' ? '📋 Layers' : '📄 Templates'}
+                          {tabName === 'blocks' ? '🧱 Blocks' : tabName === 'layers' ? '📋 Layers' : tabName === 'templates' ? '📄 Templates' : '📁 Files'}
                         </button>
                       ))}
                     </nav>
@@ -293,6 +294,7 @@ function BuilderContent() {
                       {leftPanelTab === 'blocks' && <ComponentLibrary />}
                       {leftPanelTab === 'layers' && <LayersPanel />}
                       {leftPanelTab === 'templates' && <TemplatesPanel />}
+                      {leftPanelTab === 'files' && <FileManagerPanel projectId={projectId} />}
                     </div>
                   </aside>
                 )}
