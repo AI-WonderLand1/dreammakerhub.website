@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signUpUser, loginUser, subscribeToPlan, supabase } from '@/lib/supabase-service';
+import { signUpUser, loginUser, subscribeToPlan, getClient } from '@/lib/supabase-service';
 import Link from 'next/link';
 import { logger } from '@/lib/logger';
 
@@ -56,7 +56,7 @@ export default function AuthForm() {
     setError('');
 
     // Get user ID from session
-    const { data } = await supabase.auth.getUser();
+    const { data } = await getClient().auth.getUser();
     if (!data.user) {
       setError('Please sign up first');
       setMode('signup');
