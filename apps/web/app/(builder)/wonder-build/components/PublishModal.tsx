@@ -26,6 +26,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
   const { editorCode } = useSovereignOS();
   const { elements } = useBuilderStore();
   const [target, setTarget] = useState<'site' | 'html' | 'json'>('site');
+  const [title, setTitle] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -56,6 +57,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           target: 'site',
+          title: title || 'Untitled Page',
           code: editorCode || '',
           elements,
         }),
@@ -82,6 +84,19 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0c101d] p-6 text-white shadow-2xl">
         <h2 className="text-lg font-bold">Publish</h2>
         <p className="mt-1 text-sm text-white/50">Publish to your site or export your project as HTML or JSON.</p>
+
+        {target === 'site' && (
+          <div className="mt-4">
+            <label className="text-xs text-white/70 block mb-1">Page Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="My Page"
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-violet-500"
+            />
+          </div>
+        )}
 
         <div className="mt-4 flex gap-2 rounded-lg border border-white/10 p-1">
           {([

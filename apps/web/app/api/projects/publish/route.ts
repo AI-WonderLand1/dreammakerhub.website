@@ -20,18 +20,18 @@ export async function POST(req: NextRequest) {
   const userId = (auth as { userId: string }).userId;
 
   try {
-    const { target, code, elements } = await req.json();
+    const { target, code, elements, title } = await req.json();
 
     if (target === 'site') {
       const supabase = createClient();
-      const title = 'Untitled Page';
-      const slug = slugify(title);
+      const pageTitle = title || 'Untitled Page';
+      const slug = slugify(pageTitle);
 
       const { data, error } = await supabase
         .from('pages')
         .insert({
           user_id: userId,
-          title,
+          title: pageTitle,
           slug,
           body_html: code || '',
           content: elements || [],

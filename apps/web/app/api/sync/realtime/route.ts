@@ -1,137 +1,78 @@
-import { NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/app/utils/supabase/server";
-import { logger } from '@/lib/logger';
+import { NextRequest } from 'next/server';
 
-export const runtime = "nodejs";
+const clients = new Map<string, Set<ReadableStreamDefaultController>>();
 
-/**
- * GET /api/sync/realtime
- * Server-Sent Events endpoint for real-time playground updates.
- * 
- * Query params:
- *   - userId: Filter events for a specific user
- *   - events: Comma-separated event types to subscribe to (usage, tokens, status, quota)
- */
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get("userId");
-  const eventTypes = req.nextUrl.searchParams.get("events")?.split(",") || ["usage", "tokens", "status"];
+  const { searchParams } = new URL(req.url);
+  const projectId = searchParams.get('projectId');
+  const source = searchParams.get('source') || 'unknown';
 
-  // Verify API key
-  const apiKey = req.headers.get("x-sync-key") || req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Missing sync key" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data: validKey } = await supabase
-    .from("sync_keys")
-    .select("id")
-    .eq("key", apiKey)
-    .eq("active", true)
-    .single();
-
-  if (!validKey) {
-    return new Response(JSON.stringify({ error: "Invalid sync key" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+  if (!projectId) {
+    return new Response('Missing projectId', { status: 400 });
   }
 
   const stream = new ReadableStream({
     start(controller) {
-      controller.enqueue(`data: ${JSON.stringify({ type: "connected", userId, timestamp: new Date().toISOString() })}\n\n`);
+      const clientId = `${source}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      const channels: any[] = [];
+      if (!clients.has(projectId)) {
+        clients.set(projectId, new Set());
+      }
+      clients.get(projectId)!.add(controller);
 
-      const isValidEvent = (payload: any) => {
-        if (!userId) return true;
-        const row = payload.new || payload.old;
-        if (!row) return false;
-        return row.user_id === userId;
+      const sendEvent = (data: object) => {
+        controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
       };
 
-      if (eventTypes.includes("usage")) {
-        const ch = supabase
-          .channel(`sse-usage-${userId || "all"}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "playground_usage", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
-            if (!isValidEvent(payload)) return;
-            controller.enqueue(`data: ${JSON.stringify({ type: "usage", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
-          })
-          .subscribe();
-        channels.push(ch);
-      }
+      sendEvent({ type: 'connected', clientId, projectId, source });
 
-      if (eventTypes.includes("tokens")) {
-        const ch = supabase
-          .channel(`sse-tokens-${userId || "all"}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "token_balances", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
-            if (!isValidEvent(payload)) return;
-            controller.enqueue(`data: ${JSON.stringify({ type: "tokens", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
-          })
-          .on("postgres_changes", { event: "INSERT", schema: "public", table: "token_transactions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
-            if (!isValidEvent(payload)) return;
-            controller.enqueue(`data: ${JSON.stringify({ type: "transaction", event: "INSERT", data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
-          })
-          .subscribe();
-        channels.push(ch);
-      }
-
-      if (eventTypes.includes("status")) {
-        const ch = supabase
-          .channel(`sse-status-${userId || "all"}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "playground_sessions", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
-            if (!isValidEvent(payload)) return;
-            controller.enqueue(`data: ${JSON.stringify({ type: "status", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
-          })
-          .subscribe();
-        channels.push(ch);
-      }
-
-      if (eventTypes.includes("quota")) {
-        const ch = supabase
-          .channel(`sse-quota-${userId || "all"}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "usage_quotas", ...(userId ? { filter: `user_id=eq.${userId}` } : {}) }, (payload) => {
-            if (!isValidEvent(payload)) return;
-            controller.enqueue(`data: ${JSON.stringify({ type: "quota", event: payload.eventType, data: payload.new, timestamp: new Date().toISOString() })}\n\n`);
-          })
-          .subscribe();
-        channels.push(ch);
-      }
-
-      const heartbeatInterval = setInterval(() => {
-        try {
-          controller.enqueue(`data: ${JSON.stringify({ type: "heartbeat", timestamp: new Date().toISOString() })}\n\n`);
-        } catch {
-          clearInterval(heartbeatInterval);
-        }
+      const heartbeat = setInterval(() => {
+        sendEvent({ type: 'heartbeat', ts: Date.now() });
       }, 30000);
 
-      req.signal.addEventListener("abort", () => {
-        clearInterval(heartbeatInterval);
-        channels.forEach((ch) => supabase.removeChannel(ch));
-        controller.close();
+      req.signal.addEventListener('abort', () => {
+        clearInterval(heartbeat);
+        clients.get(projectId)?.delete(controller);
+        if (clients.get(projectId)?.size === 0) {
+          clients.delete(projectId);
+        }
+        try { controller.close(); } catch {}
       });
     },
   });
 
-  const allowedOrigins = [
-    "https://playground.dreammakerhub.website",
-    "https://dreammakerhub.website",
-    "http://localhost:3000",
-    "http://localhost:3001",
-  ];
-  const origin = req.headers.get("origin") || "";
-  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-      "Access-Control-Allow-Origin": corsOrigin,
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
     },
   });
+}
+
+export async function POST(req: NextRequest) {
+  const { projectId, event, data } = await req.json();
+
+  if (!projectId || !event) {
+    return Response.json({ ok: false, message: 'Missing projectId or event' }, { status: 400 });
+  }
+
+  const projectClients = clients.get(projectId);
+  if (!projectClients || projectClients.size === 0) {
+    return Response.json({ ok: true, message: 'No clients connected', delivered: 0 });
+  }
+
+  let delivered = 0;
+  const payload = `data: ${JSON.stringify({ event, data, ts: Date.now() })}\n\n`;
+
+  for (const controller of projectClients) {
+    try {
+      controller.enqueue(payload);
+      delivered++;
+    } catch {
+      projectClients.delete(controller);
+    }
+  }
+
+  return Response.json({ ok: true, delivered });
 }
