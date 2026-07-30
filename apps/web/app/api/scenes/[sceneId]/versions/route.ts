@@ -14,7 +14,7 @@ export async function GET(
   const { sceneId } = resolvedParams;
 
   try {
-    // For now, generate mock versions based on sceneId pattern
+    // Generate initial version entry if none exist for this scene
     const versions = sceneVersions[sceneId] || (sceneId.includes("_v") ? [] : [
       { id: sceneId, version: 1, created_at: new Date().toISOString() },
     ]);

@@ -162,7 +162,7 @@ export default function NpcPanel({ provider, onProviderError }: NpcPanelProps) {
             <input
               value={utterance}
               onChange={(event) => setUtterance(event.target.value)}
-              placeholder="Ask the NPC (placeholder)"
+              placeholder="Ask the NPC..."
               className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white"
             />
             <button
