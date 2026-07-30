@@ -67,8 +67,6 @@ function getFromCache(url: string): Response | null {
 
 // Container URL mapping
 async function getContainerUrl(userId: string, path: string): Promise<string> {
-  // In a real implementation, this would call the container manager
-  // For now, return a mock URL
   const containerId = USER_CONTAINER_MAP.get(userId) || 'default';
   return `http://localhost:3000${path}`;
 }

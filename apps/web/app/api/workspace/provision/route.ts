@@ -61,12 +61,10 @@ export async function POST(request: Request) {
 
     if (error) {
       logger.error('Workspace creation error:', error);
-      // Return success anyway for fallback
-      return NextResponse.json({
-        status: 'provisioned',
-        workspaceId: sceneId,
-        message: 'Workspace provisioned (fallback)'
-      });
+      return NextResponse.json(
+        { error: 'Failed to create workspace record', details: error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -77,12 +75,10 @@ export async function POST(request: Request) {
 
   } catch (error) {
     logger.error('Workspace provision error:', error);
-    // Allow fallback
-    return NextResponse.json({
-      status: 'provisioned',
-      workspaceId: 'fallback',
-      message: 'Workspace provisioned (error fallback)'
-    });
+    return NextResponse.json(
+      { error: 'Workspace provisioning failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
 

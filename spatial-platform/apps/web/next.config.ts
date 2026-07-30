@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@spatial/engine-core': path.resolve(__dirname, 'src/stubs/engine-core.ts'),
-      '@spatial/core': path.resolve(__dirname, 'src/stubs/core.ts'),
-      '@dreammakerhub/gesture-engine': path.resolve(__dirname, 'src/stubs/gesture-engine.ts'),
+      '@spatial/engine-core': path.resolve(__dirname, '../../packages/engine-core/src/index.ts'),
+      '@spatial/core': path.resolve(__dirname, '../../packages/core/src/index.ts'),
+      '@dreammakerhub/gesture-engine': path.resolve(__dirname, '../../../packages/gesture-engine/src/index.ts'),
     }
     return config
   },

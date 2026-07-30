@@ -108,7 +108,7 @@ app.post('/playcanvas/api/ssh/inject', (req, res) => {
   res.json({ success: true, message: 'SSH key injected' });
 });
 
-// Get desired state from Supabase (placeholder - would connect to Supabase in production)
+// Get desired scene state — reads from local filesystem inside the WebContainer sandbox
 app.get('/playcanvas/api/state/:sceneId', (req, res) => {
   const scenePath = join('./scenes', req.params.sceneId + '.json');
   if (existsSync(scenePath)) {

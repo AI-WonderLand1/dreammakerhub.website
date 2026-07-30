@@ -79,14 +79,9 @@ export class ConvaiNpcProvider implements AiNpcProvider {
       listeners.forEach((listener) => listener(npcResponse));
     } catch (error) {
       logger.error("Error calling Convai:", error);
-      
-      // Fallback to placeholder for development
-      const fallbackResponse: NpcResponse = {
-        id: `${sessionId}-${Date.now().toString(36)}`,
-        text: `[Fallback] Convai response: ${trimmed}`,
-      };
-      
-      listeners.forEach((listener) => listener(fallbackResponse));
+      throw new NpcProviderError(
+        `Convai API request failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }
 
