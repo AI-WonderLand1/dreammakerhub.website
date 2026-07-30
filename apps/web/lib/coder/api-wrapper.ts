@@ -2,7 +2,7 @@
 // Unified interface to Coder API with proper error handling and URL construction
 
 import crypto from 'crypto';
-import { createSupabaseClient } from './supabase-client';
+import { getClient } from '@/lib/supabase-service';
 import type { CoderWorkspace, CoderWorkspaceHealth, CreateWorkspaceRequest, ProvisionOptions, AppWorkspaceStatus } from './types';
 import { logger } from '@/lib/logger';
 
@@ -23,7 +23,7 @@ export interface ProvisionResult {
 
 export class CoderAPIWrapper {
   private config: CoderAPIConfig;
-  private supabase: ReturnType<typeof createSupabaseClient>;
+  private supabase: ReturnType<typeof getClient>;
   private baseApiUrl: string;
   private CODER_ACCESS_URL: string;
   private CODER_WILDCARD_ACCESS_URL: string;
@@ -38,7 +38,7 @@ export class CoderAPIWrapper {
       this.CODER_ACCESS_URL.replace(/\/api\/v2$/, '');
     
     // Initialize Supabase for workspace persistence
-    this.supabase = createSupabaseClient();
+    this.supabase = getClient();
     
     logger.info(`[CoderAPIWrapper] Initialized with baseUrl: ${this.baseApiUrl}`);
     logger.info(`[CoderAPIWrapper] CODER_ACCESS_URL: ${this.CODER_ACCESS_URL}`);

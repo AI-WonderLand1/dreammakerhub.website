@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { logger } from '@/lib/logger';
 
+const memoryStore = new Map<string, object>();
+
 let _client: ReturnType<typeof createClient> | null = null;
 function sb() {
   if (!_client) {
@@ -14,8 +16,7 @@ function sb() {
 export async function saveSceneToSupabase(sceneId: string, sceneData: object, userId?: string): Promise<{ success: boolean; path?: string }> {
   if (!sb()) {
     logger.warn("Supabase not configured, falling back to memory");
-    const { saveSceneToMemory } = await import("./memory-store");
-    await saveSceneToMemory(sceneId, sceneData);
+    memoryStore.set(sceneId, sceneData);
     return { success: true };
   }
 
@@ -41,16 +42,14 @@ export async function saveSceneToSupabase(sceneId: string, sceneData: object, us
     };
   } catch (error) {
     logger.error("Failed to save to Supabase:", error);
-    const { saveSceneToMemory } = await import("./memory-store");
-    await saveSceneToMemory(sceneId, sceneData);
+    memoryStore.set(sceneId, sceneData);
     return { success: true };
   }
 }
 
 export async function loadSceneFromSupabase(sceneId: string): Promise<object | null> {
   if (!sb()) {
-    const { loadSceneFromMemory } = await import("./memory-store");
-    return loadSceneFromMemory(sceneId);
+    return memoryStore.get(sceneId) || null;
   }
 
   try {
@@ -64,8 +63,7 @@ export async function loadSceneFromSupabase(sceneId: string): Promise<object | n
     return data?.data || null;
   } catch (error) {
     logger.error("Failed to load from Supabase:", error);
-    const { loadSceneFromMemory } = await import("./memory-store");
-    return loadSceneFromMemory(sceneId);
+    return memoryStore.get(sceneId) || null;
   }
 }
 
@@ -112,8 +110,7 @@ export async function listPublicScenes(limit = 20): Promise<any[]> {
 
 export async function deleteSceneFromSupabase(sceneId: string): Promise<boolean> {
   if (!sb()) {
-    const { deleteSceneFromMemory } = await import("./memory-store");
-    deleteSceneFromMemory(sceneId);
+    memoryStore.delete(sceneId);
     return true;
   }
 
