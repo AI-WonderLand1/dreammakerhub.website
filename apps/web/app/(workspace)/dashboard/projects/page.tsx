@@ -328,6 +328,20 @@ export default function ProjectsPage() {
                         >
                           <Pencil size={14} />
                         </Link>
+                        <Link
+                          href={`/dashboard/projects/${project.id}/files`}
+                          className="p-2 rounded hover:bg-white/10"
+                          title="File Manager"
+                        >
+                          <Folder size={14} />
+                        </Link>
+                        <Link
+                          href={`/dashboard/projects/${project.id}/pages`}
+                          className="p-2 rounded hover:bg-white/10"
+                          title="Published Pages"
+                        >
+                          <Globe size={14} />
+                        </Link>
                         <button
                           onClick={() => handleDelete(project.id)}
                           className="p-2 rounded hover:bg-white/10 text-red-400"
