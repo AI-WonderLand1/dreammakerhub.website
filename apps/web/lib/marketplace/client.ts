@@ -3,19 +3,6 @@ import { MarketplaceItem, MarketplaceCategory } from './types';
 export class MarketplaceClient {
   private items: MarketplaceItem[] = [
     {
-      id: 'mp_1',
-      name: 'SEO Suite Extension',
-      slug: 'seo-suite',
-      version: '1.2.0',
-      category: 'plugin',
-      description: 'Automated meta tags, sitemaps, and Schema.org markup generation for WordPress.',
-      author: 'AI Wonderland Team',
-      rating: 4.9,
-      downloads: 12400,
-      price: 0,
-      downloadUrl: '/api/marketplace/download/seo-suite.zip',
-    },
-    {
       id: 'mp_2',
       name: 'Cyberpunk Theme',
       slug: 'cyberpunk-theme',
@@ -42,20 +29,6 @@ export class MarketplaceClient {
       downloadUrl: '/api/marketplace/download/3d-canvas-block.zip',
     },
     {
-      id: 'mp_4',
-      name: 'Puck CLI',
-      slug: 'puck-cli',
-      version: '0.2.0',
-      category: 'integration',
-      description: 'Visual drag-and-drop page builder framework CLI. Generates Puck component configs, scaffolds custom blocks, and syncs layouts to WordPress via aiw/v1 endpoints.',
-      author: 'Measured / AI Wonderland',
-      rating: 4.7,
-      downloads: 3200,
-      price: 0,
-      downloadUrl: '/api/marketplace/download/puck-cli.zip',
-      dependencies: ['@measured/puck'],
-    },
-    {
       id: 'mp_5',
       name: 'shadcn/ui CLI',
       slug: 'shadcn-cli',
@@ -78,21 +51,10 @@ export class MarketplaceClient {
     return this.items;
   }
 
-  public async installItem(slug: string, targetWpUrl?: string): Promise<{ success: boolean; message: string }> {
+  public async installItem(slug: string): Promise<{ success: boolean; message: string }> {
     const item = this.items.find((i) => i.slug === slug);
     if (!item) {
       throw new Error(`Item ${slug} not found in Marketplace.`);
-    }
-
-    if (targetWpUrl) {
-      const res = await fetch(`${targetWpUrl}/wp-json/aiw/v1/marketplace/install`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: item.category, name: item.slug }),
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to install on WordPress target: ${res.statusText}`);
-      }
     }
 
     return { success: true, message: `Successfully installed ${item.name} v${item.version}` };

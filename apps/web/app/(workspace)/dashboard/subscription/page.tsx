@@ -161,7 +161,7 @@ export default function SubscriptionPage() {
                   <td className="py-2">—</td>
                 </tr>
                 <tr>
-                  <td className="py-2">Visual Editor (Puck)</td>
+                  <td className="py-2">Visual Editor (WonderBuild)</td>
                   <td className="py-2 text-green-400">✓</td>
                   <td className="py-2">—</td>
                   <td className="py-2">—</td>
