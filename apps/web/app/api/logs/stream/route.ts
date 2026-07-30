@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
-import { subscribeLogs } from '@/lib/logStreamer';
 import { logger } from '@/lib/logger';
+
+const subscribers = new Set<(msg: string) => void>();
+
+export function broadcastLog(message: string) {
+  subscribers.forEach((send) => send(message));
+}
+
+export function subscribeLogs(send: (msg: string) => void): () => void {
+  subscribers.add(send);
+  return () => subscribers.delete(send);
+}
 
 export async function GET(req: Request) {
   const headers = new Headers({

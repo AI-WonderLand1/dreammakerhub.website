@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { screenReader } from './screen-reader';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
+
+const browserSpeechSynthesis = typeof window !== 'undefined' ? window.speechSynthesis : null;
 
 export type EngineType = 'playcanvas' | 'webgl' | 'coder' | 'theia' | 'spatial';
 
@@ -56,7 +57,6 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       if ((e.ctrlKey || e.metaKey) && e.altKey && e.key === 'v') {
         e.preventDefault();
         setVoiceEnabled((prev) => !prev);
-        screenReader.setEnabled(!voiceEnabled);
       }
 
       // Ctrl + Alt + C to toggle captions
@@ -72,27 +72,25 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
 
   const speak = useCallback(
     (text: string, context?: EngineType) => {
-      if (!voiceEnabled || !screenReader.isAvailable()) return;
+      if (!voiceEnabled || !browserSpeechSynthesis) return;
 
-      // Add engine context to speech
       let fullText = text;
       if (context) {
-        const contextPrefix = {
+        const contextPrefix: Record<string, string> = {
           playcanvas: 'In PlayCanvas: ',
           webgl: 'In WebGL Studio: ',
           coder: 'In Coder IDE: ',
           theia: 'In Coder IDE: ',
         };
-        fullText = contextPrefix[context] + text;
+        fullText = (contextPrefix[context] || '') + text;
       }
 
-      // Speak with configured rate and pitch
-      screenReader.speak(fullText, {
-        rate: speechRate,
-        pitch: voicePitch,
-      });
+      browserSpeechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(fullText);
+      utterance.rate = speechRate;
+      utterance.pitch = voicePitch;
+      browserSpeechSynthesis.speak(utterance);
 
-      // Add to transcript
       if (transcriptEnabled) {
         addTranscript({
           text: fullText,
@@ -105,7 +103,7 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   );
 
   const stopSpeaking = useCallback(() => {
-    screenReader.stop();
+    browserSpeechSynthesis?.cancel();
   }, []);
 
   const addTranscript = useCallback((item: Omit<TranscriptItem, 'id' | 'timestamp'>) => {
@@ -130,7 +128,6 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     voiceEnabled,
     setVoiceEnabled: (enabled) => {
       setVoiceEnabled(enabled);
-      screenReader.setEnabled(enabled);
     },
     speak,
     stopSpeaking,
