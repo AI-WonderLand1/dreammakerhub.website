@@ -25,7 +25,18 @@ export async function POST(req: NextRequest) {
     if (target === 'site') {
       const supabase = createClient();
       const pageTitle = title || 'Untitled Page';
-      const slug = slugify(pageTitle);
+      let slug = slugify(pageTitle);
+
+      // Handle duplicate slugs by appending timestamp
+      const { data: existing } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('slug', slug)
+        .single();
+
+      if (existing) {
+        slug = `${slug}-${Date.now()}`;
+      }
 
       const { data, error } = await supabase
         .from('pages')
@@ -40,15 +51,7 @@ export async function POST(req: NextRequest) {
         .select()
         .single();
 
-      if (error) {
-        if (error.code === '23505') {
-          return NextResponse.json(
-            { ok: false, message: `Slug "${slug}" already exists` },
-            { status: 409 }
-          );
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       return NextResponse.json({
         ok: true,
