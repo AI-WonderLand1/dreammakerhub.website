@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase-service';
+import { getClient } from '@/lib/supabase-service';
 import { requireUserId } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     // Check if workspace already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await getClient()
       .from('workspaces')
       .select('id, status')
       .eq('scene_id', sceneId)
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     // Create new workspace record
-    const { data: workspace, error } = await supabase
+    const { data: workspace, error } = await getClient()
       .from('workspaces')
       .insert({
         scene_id: sceneId,
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'sceneId required' }, { status: 400 });
   }
 
-  const { data: workspace } = await supabase
+  const { data: workspace } = await getClient()
     .from('workspaces')
     .select('*')
     .eq('scene_id', sceneId)

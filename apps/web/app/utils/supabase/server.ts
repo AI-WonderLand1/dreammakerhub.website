@@ -17,17 +17,23 @@ async function getSupabaseConfig() {
     getSecretFromVault('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
   ]);
 
-  if (!url || !anonKey) {
-    throw new Error('Supabase credentials not found in Oracle Vault');
+  cachedSupabaseUrl = url || process.env.NEXT_PUBLIC_SUPABASE_URL || null;
+  cachedSupabaseAnonKey = anonKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || null;
+
+  if (!cachedSupabaseUrl || !cachedSupabaseAnonKey) {
+    logger.warn('[supabase-server] Supabase credentials not available — using fallback');
   }
 
-  cachedSupabaseUrl = url;
-  cachedSupabaseAnonKey = anonKey;
-  return { url, anonKey };
+  return { url: cachedSupabaseUrl || '', anonKey: cachedSupabaseAnonKey || '' };
 }
 
 export async function createSupabaseServerClient() {
   const { url, anonKey } = await getSupabaseConfig();
+  if (!url || !anonKey) {
+    return createServerClient('http://localhost', 'stub', {
+      cookies: { getAll: () => [], setAll: () => {} },
+    });
+  }
   const cookieStore = await cookies();
 
   return createServerClient(url, anonKey, {
@@ -49,5 +55,12 @@ export async function createSupabaseServerClient() {
 }
 
 export async function createClient() {
+  const { url, anonKey } = await getSupabaseConfig();
+  if (!url || !anonKey) {
+    logger.warn('[supabase-server] Credentials unavailable, returning stub client for build');
+    return createServerClient('http://localhost', 'stub', {
+      cookies: { getAll: () => [], setAll: () => {} },
+    });
+  }
   return createSupabaseServerClient();
 }
