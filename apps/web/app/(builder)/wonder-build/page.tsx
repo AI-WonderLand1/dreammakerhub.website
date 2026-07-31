@@ -6,6 +6,13 @@ import { logger } from '@/lib/logger';
 
 const TOOLS = [
   {
+    href: '/wonder-build/wp-editor',
+    icon: '📝',
+    title: 'WordPress Editor',
+    desc: 'Gutenberg-style block canvas that publishes directly to WordPress via the AI Wonderland plugin.',
+    highlight: true,
+  },
+  {
     href: '/wonder-build/builder',
     icon: '🎨',
     title: 'Visual Builder',

@@ -55,6 +55,7 @@ export interface CanvasElementStyles {
   left?: string;
   zIndex?: string;
   overflow?: string;
+  [key: string]: any;
 }
 
 export interface CanvasElement {

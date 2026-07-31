@@ -47,8 +47,7 @@
     "plugins": [
       { "name": "next" }
     ],
-    "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "6.0"
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "next-env.d.ts",
