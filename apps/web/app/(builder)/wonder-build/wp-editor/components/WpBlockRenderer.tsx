@@ -6,7 +6,7 @@ function renderBlockContent(el: CanvasElement): React.ReactNode {
   const p = el.props || {};
   switch (el.type) {
     case 'heading': {
-      const Tag = (p.level || 'h2') as keyof JSX.IntrinsicElements;
+      const Tag = (p.level || 'h2') as keyof React.JSX.IntrinsicElements;
       return <Tag>{p.content || 'Heading'}</Tag>;
     }
     case 'paragraph':
@@ -212,7 +212,7 @@ const inputStyle: React.CSSProperties = {
 
 export function WpBlockRenderer({ element }: { element: CanvasElement }) {
   const style: React.CSSProperties = {
-    ...(element.styles || {}),
+    ...(element.styles || {}) as React.CSSProperties,
     position: 'relative',
     pointerEvents: 'none',
   };
