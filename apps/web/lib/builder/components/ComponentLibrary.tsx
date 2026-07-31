@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { useBuilderStore } from '../store';
 import { CanvasElement, BlockDefinition, BlockCategory } from '../types';
 
-const BLOCKS: BlockDefinition[] = [
+export const BLOCKS: BlockDefinition[] = [
   // ═══════════════════════════════════════
   // FORMS — inputs, buttons, contacts
   // ═══════════════════════════════════════
@@ -292,7 +292,7 @@ const BLOCKS: BlockDefinition[] = [
   { name: 'OAuth Buttons', type: 'oauth-buttons', icon: '🔗', category: 'auth', description: 'Social login OAuth buttons', defaultProps: { providers: ['google', 'github', 'facebook'], layout: 'row', size: 'md', showDivider: true, dividerText: 'or continue with' }, defaultStyles: { display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 0' }, editableProps: [{ key: 'layout', label: 'Layout', type: 'select', options: [{ label: 'Row', value: 'row' }, { label: 'Column', value: 'column' }] }, { key: 'size', label: 'Size', type: 'select', options: [{ label: 'Small', value: 'sm' }, { label: 'Medium', value: 'md' }, { label: 'Large', value: 'lg' }] }, { key: 'showDivider', label: 'Show Divider', type: 'toggle' }, { key: 'dividerText', label: 'Divider Text', type: 'text' }] },
 ];
 
-const BLOCK_CATEGORIES: { key: BlockCategory; label: string; icon: string }[] = [
+export const BLOCK_CATEGORIES: { key: BlockCategory; label: string; icon: string }[] = [
   { key: 'forms', label: 'Forms', icon: '📋' },
   { key: 'typography', label: 'Typography', icon: '🔤' },
   { key: 'media', label: 'Media', icon: '🎬' },
