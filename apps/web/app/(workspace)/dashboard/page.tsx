@@ -51,20 +51,7 @@ export default function DashboardPage() {
         return;
       }
       setUserEmail(user?.email || null);
-
-      const { data: projects } = await supabase
-        .from("projects")
-        .select("id, name, type, updated_at")
-        .eq("owner_id", user.id)
-        .eq("status", "active")
-        .order("updated_at", { ascending: false })
-        .limit(5);
-
-      if (!projects || projects.length === 0) {
-        router.replace("/dashboard/projects");
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
     }
 
     load();

@@ -1,43 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getUserLimits, formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
-import { Plus, Folder, Pencil, Play, Code2, ExternalLink, Trash2, MoreVertical, Gamepad2, Globe, Box, Sparkles, X } from "lucide-react";
-import { logger } from '@/lib/logger';
+import { Plus, Folder, Pencil, Play, Code2, Trash2, Gamepad2, Globe, Box, Sparkles } from "lucide-react";
 
 type Project = {
   id: string;
   name: string;
-  description: string | null;
-  type: string;
-  status: string;
-  is_current: boolean;
-  created_at: string;
-  updated_at: string;
+  tool?: string | null;
+  updatedAt: string;
 };
 
 type Profile = {
   projects_limit: number;
 };
-
-type ProjectTemplate = {
-  id: string;
-  name: string;
-  description: string;
-  icon: React.ElementType;
-  color: string;
-};
-
-const PROJECT_TEMPLATES: ProjectTemplate[] = [
-  { id: "wonderbuild", name: "Wonderbuild AI", description: "AI-powered website builder", icon: Sparkles, color: "border-l-purple-500" },
-  { id: "game", name: "Game Project", description: "Interactive game with WonderPlay 3D", icon: Gamepad2, color: "border-l-pink-500" },
-  { id: "3d_scene", name: "3D Scene", description: "3D environment with WonderPlay 3D", icon: Box, color: "border-l-blue-500" },
-  { id: "web_app", name: "Web App", description: "Code-first web application", icon: Globe, color: "border-l-green-500" },
-  { id: "workspace", name: "Code Workspace", description: "WonderSpace IDE", icon: Code2, color: "border-l-cyan-500" },
-];
 
 const getProjectIcon = (type: string) => {
   const mapping: Record<string, React.ElementType> = {
@@ -63,19 +40,8 @@ const getProjectColor = (type: string) => {
   return colors[type] || "border-l-gray-500";
 };
 
-const getEditorUrl = (project: Project): string => {
-  const mapping: Record<string, string> = {
-    wonderbuild: "/wonder-build",
-    game: "/wonder-build/playcanvas",
-    "3d_scene": "/wonder-build/playcanvas",
-    web_app: "/wonder-build/ai-builder",
-    workspace: "/wonderspace/ide",
-    playcanvas: "/wonder-build/playcanvas",
-  };
-  return `${mapping[project.type] || "/wonder-build"}?projectId=${project.id}`;
-};
-
 const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
@@ -89,31 +55,32 @@ export default function ProjectsPage() {
   const [newProjectType, setNewProjectType] = useState<"wonderbuild" | "playcanvas">("wonderbuild");
   const [creating, setCreating] = useState(false);
 
+  const loadProjects = useCallback(async () => {
+    const res = await fetch("/api/projects");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || `Request failed (${res.status})`);
+    }
+    const data = await res.json();
+    return data.projects as Project[];
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
-      const supabase = createClient();
-      if (!supabase) {
-        setError("Supabase not configured");
-        setLoading(false);
-        return;
-      }
-
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setError("Not authenticated");
-          setLoading(false);
-          return;
+        const supabase = createClient();
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            setError("Not authenticated");
+            setLoading(false);
+            return;
+          }
+          const profileRes = await supabase.from("user_profiles").select("projects_limit").eq("id", user.id).single();
+          if (profileRes.data) setProfile(profileRes.data);
         }
-
-        const [projectsRes, profileRes] = await Promise.all([
-          supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(50),
-          supabase.from("user_profiles").select("projects_limit").eq("id", user.id).single(),
-        ]);
-
-        if (projectsRes.data) setProjects(projectsRes.data);
-        if (profileRes.data) setProfile(profileRes.data);
-        if (projectsRes.error) throw projectsRes.error;
+        const list = await loadProjects();
+        setProjects(list);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -122,37 +89,28 @@ export default function ProjectsPage() {
     };
 
     loadData();
-  }, []);
+  }, [loadProjects]);
 
   const handleCreate = async () => {
     if (!newProjectName.trim()) return;
-    
-    const supabase = createClient();
-    if (!supabase) return;
 
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       if (profile && projects.length >= profile.projects_limit) {
         setError(`Project limit reached (${profile.projects_limit}). Upgrade to create more.`);
         setCreating(false);
         return;
       }
 
-      const { error } = await supabase.from("projects").insert({
-        owner_id: user.id,
-        name: newProjectName.trim(),
-        type: newProjectType,
-        status: "active",
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newProjectName.trim(), tool: newProjectType }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to create project");
 
-      if (error) throw error;
-
-      const { data } = await supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(50);
-      if (data) setProjects(data);
-      
+      setProjects((prev) => [data.project, ...prev]);
       setShowCreate(false);
       setNewProjectName("");
     } catch (err: any) {
@@ -164,24 +122,17 @@ export default function ProjectsPage() {
 
   const handleDelete = async (projectId: string) => {
     if (!confirm("Delete this project?")) return;
-    
-    const supabase = createClient();
-    if (!supabase) return;
 
     try {
-      await supabase.from("projects").delete().eq("id", projectId);
-      setProjects(projects.filter(p => p.id !== projectId));
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || "Failed to delete project");
+      }
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
     } catch (err: any) {
       setError(err.message);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   if (loading) {
@@ -198,12 +149,12 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-2xl font-bold">Projects</h1>
           <p className="text-sm text-white/50">
-            {projects.length} / {profile?.projects_limit || 1} projects used
+            {projects.length} {profile ? `/ ${profile.projects_limit}` : ""} projects
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          disabled={profile && projects.length >= profile.projects_limit}
+          disabled={profile !== null && projects.length >= profile.projects_limit}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={16} />
@@ -266,13 +217,13 @@ export default function ProjectsPage() {
         <div className="text-center py-12">
           <Folder size={48} className="mx-auto mb-4 text-white/20" />
           <p className="text-white/50 mb-4">No projects yet</p>
-          <Link
-            href="/wonder-build/agent"
+          <button
+            onClick={() => setShowCreate(true)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white"
           >
             <Plus size={16} />
             Create your first project
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="border border-white/10 rounded-xl overflow-hidden">
@@ -281,43 +232,28 @@ export default function ProjectsPage() {
               <tr className="text-left text-xs text-white/50 uppercase">
                 <th className="px-4 py-3">Project</th>
                 <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Updated</th>
                 <th className="px-4 py-3 w-20"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {projects.map((project) => {
-                const Icon = getProjectIcon(project.type);
+                const Icon = getProjectIcon(project.tool || "wonderbuild");
                 return (
                   <tr key={project.id} className="hover:bg-white/5">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border-l-2 ${getProjectColor(project.type)}`}>
+                        <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border-l-2 ${getProjectColor(project.tool || "wonderbuild")}`}>
                           <Icon size={14} />
                         </div>
-                        <div>
-                          <div className="font-medium">{project.name}</div>
-                          {project.description && (
-                            <div className="text-xs text-white/40">{project.description}</div>
-                          )}
-                        </div>
+                        <div className="font-medium">{project.name}</div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-white/60 capitalize">{project.type}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        project.status === "active" 
-                          ? "bg-green-500/20 text-green-400" 
-                          : "bg-white/10 text-white/40"
-                      }`}>
-                        {project.status}
-                      </span>
+                      <span className="text-sm text-white/60 capitalize">{project.tool || "wonderbuild"}</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-white/50">
-                      {formatDate(project.updated_at)}
+                      {formatDate(project.updatedAt)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
