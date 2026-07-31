@@ -185,6 +185,50 @@ export async function deleteFile(projectId: string, ownerId: string, filePath: s
   await db.query(`DELETE FROM _project_files WHERE project_id=$1 AND file_path=$2`, [projectId, normalized]);
 }
 
+export async function deletePath(projectId: string, ownerId: string, path: string): Promise<number> {
+  await assertOwner(projectId, ownerId);
+  const normalized = normalizeFilePath(path);
+  await ensureTables();
+  const db = getDb();
+  const result = await db.query(
+    `DELETE FROM _project_files
+     WHERE project_id=$1 AND (file_path=$2 OR file_path LIKE $3)`,
+    [projectId, normalized, `${normalized}/%`]
+  );
+  return result.rowCount ?? 0;
+}
+
+export async function renamePath(projectId: string, ownerId: string, oldPath: string, newPath: string): Promise<number> {
+  await assertOwner(projectId, ownerId);
+  const oldNormalized = normalizeFilePath(oldPath);
+  const newNormalized = normalizeFilePath(newPath);
+  await ensureTables();
+  const db = getDb();
+
+  const result = await db.query(
+    `SELECT file_path, content FROM _project_files
+     WHERE project_id=$1 AND (file_path=$2 OR file_path LIKE $3)`,
+    [projectId, oldNormalized, `${oldNormalized}/%`]
+  );
+
+  for (const row of result.rows as Array<{ file_path: string; content: string }>) {
+    const relative = row.file_path.slice(oldNormalized.length);
+    const dest = `${newNormalized}${relative}`;
+    await db.query(
+      `INSERT INTO _project_files (project_id, file_path, content, updated_at)
+       VALUES ($1,$2,$3,NOW())
+       ON CONFLICT (project_id, file_path) DO UPDATE SET content=EXCLUDED.content, updated_at=NOW()`,
+      [projectId, dest, row.content]
+    );
+    await db.query(
+      `DELETE FROM _project_files WHERE project_id=$1 AND file_path=$2`,
+      [projectId, row.file_path]
+    );
+  }
+
+  return result.rowCount ?? 0;
+}
+
 export async function renameFile(projectId: string, ownerId: string, oldPath: string, newPath: string): Promise<void> {
   await assertOwner(projectId, ownerId);
   const oldNormalized = normalizeFilePath(oldPath);

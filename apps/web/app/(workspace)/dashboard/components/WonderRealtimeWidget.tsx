@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
 type PresenceUser = {
@@ -32,9 +33,28 @@ export default function WonderRealtimeWidget(props: {
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   const me = useMemo<PresenceUser>(() => {
-    // If you have auth later, replace this with real user id + name.
+    // Default: anonymous guest (replaced with the signed-in user once loaded).
     const id = `guest-${crypto.randomUUID().slice(0, 8)}`;
     return { userId: id, name: "Guest" };
+  }, []);
+
+  const [meState, setMeState] = useState<PresenceUser>(me);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const sb = getSupabaseClient();
+        if (!sb) return;
+        const { data: { user } } = await sb.auth.getUser();
+        if (user?.id) {
+          const name = user.email?.split("@")[0] || user.user_metadata?.full_name || "User";
+          setMeState({ userId: user.id, name });
+        }
+      } catch (err) {
+        logger.warn("[Realtime] Failed to resolve user:", err);
+      }
+    };
+    loadUser();
   }, []);
 
   useEffect(() => {
@@ -60,7 +80,7 @@ export default function WonderRealtimeWidget(props: {
 
     const channel = supabase.channel(room, {
       config: {
-        presence: { key: me.userId },
+        presence: { key: meState.userId },
         broadcast: { self: false, ack: false },
       },
     });
@@ -105,12 +125,12 @@ export default function WonderRealtimeWidget(props: {
     channel.subscribe(async (s) => {
       if (s === "SUBSCRIBED") {
         setStatus("live");
-        await channel.track(me);
+        await channel.track(meState);
         // Announce join
         await channel.send({
           type: "broadcast",
           event: "wb",
-          payload: { type: "presence", message: `${me.name ?? me.userId} joined`, from: me.userId },
+          payload: { type: "presence", message: `${meState.name ?? meState.userId} joined`, from: meState.userId },
         });
       } else if (s === "CHANNEL_ERROR") {
         setStatus("error");
@@ -125,14 +145,14 @@ export default function WonderRealtimeWidget(props: {
         channelRef.current = null;
       }
     };
-  }, [projectId, me.userId]);
+  }, [projectId, meState.userId]);
 
   const sendTest = async () => {
     if (!channelRef.current) return;
     await channelRef.current.send({
       type: "broadcast",
       event: "wb",
-      payload: { type: "ping", message: "Hello from dashboard", from: me.userId },
+      payload: { type: "ping", message: "Hello from dashboard", from: meState.userId },
     });
   };
 

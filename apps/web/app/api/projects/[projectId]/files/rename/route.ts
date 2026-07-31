@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { renameFile } from '@/lib/projects/storage';
+import { renamePath } from '@/lib/projects/storage';
 import { logger } from '@/lib/logger';
 
 export async function POST(
@@ -22,9 +22,9 @@ export async function POST(
       );
     }
 
-    await renameFile(projectId, userId, oldPath, newPath);
+    const moved = await renamePath(projectId, userId, oldPath, newPath);
 
-    return NextResponse.json({ ok: true, message: `Renamed ${oldPath} → ${newPath}` });
+    return NextResponse.json({ ok: true, message: `Renamed ${oldPath} → ${newPath}`, moved });
   } catch (err: any) {
     logger.error('Rename file error:', err);
     return NextResponse.json(

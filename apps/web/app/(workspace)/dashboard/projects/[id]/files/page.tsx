@@ -6,6 +6,8 @@ import { FileTree, FileNode, buildTree } from '@/components/file-manager/FileTre
 import { CodeEditor } from '@/components/file-manager/CodeEditor';
 import { FileManagerToolbar } from '@/components/file-manager/FileManagerToolbar';
 import { BreadcrumbBar } from '@/components/file-manager/BreadcrumbBar';
+import { ImportModal } from '@/components/file-manager/ImportModal';
+import { broadcastFileEvent } from '@/lib/realtime/events';
 
 export default function FileManagerPage() {
   const params = useParams();
@@ -16,6 +18,7 @@ export default function FileManagerPage() {
   const [fileContent, setFileContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const loadFiles = useCallback(async () => {
     try {
@@ -52,6 +55,7 @@ export default function FileManagerPage() {
         body: JSON.stringify({ files: { [selectedPath]: fileContent } }),
       });
       setFiles((prev) => ({ ...prev, [selectedPath]: fileContent }));
+      broadcastFileEvent(projectId, { type: 'file:save', message: `saved ${selectedPath}` });
     } catch (err) {
       console.error('Failed to save:', err);
     } finally {
@@ -72,6 +76,7 @@ export default function FileManagerPage() {
       setFiles((prev) => ({ ...prev, [path]: '' }));
       setSelectedPath(path);
       setFileContent('');
+      broadcastFileEvent(projectId, { type: 'file:create', message: `created ${path}` });
     } catch (err) {
       console.error('Failed to create file:', err);
     }
@@ -101,16 +106,21 @@ export default function FileManagerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldPath, newPath }),
       });
-      const content = files[oldPath] || '';
       setFiles((prev) => {
-        const next = { ...prev };
-        delete next[oldPath];
-        next[newPath] = content;
+        const next: Record<string, string> = {};
+        for (const [key, value] of Object.entries(prev)) {
+          if (key === oldPath || key.startsWith(`${oldPath}/`)) {
+            next[`${newPath}${key.slice(oldPath.length)}`] = value;
+          } else {
+            next[key] = value;
+          }
+        }
         return next;
       });
-      if (selectedPath === oldPath) {
-        setSelectedPath(newPath);
+      if (selectedPath === oldPath || selectedPath?.startsWith(`${oldPath}/`)) {
+        setSelectedPath(`${newPath}${(selectedPath || '').slice(oldPath.length)}`);
       }
+      broadcastFileEvent(projectId, { type: 'file:rename', message: `renamed ${oldPath} → ${newPath}` });
     } catch (err) {
       console.error('Failed to rename:', err);
     }
@@ -123,17 +133,46 @@ export default function FileManagerPage() {
         method: 'DELETE',
       });
       setFiles((prev) => {
-        const next = { ...prev };
-        delete next[path];
+        const next: Record<string, string> = {};
+        for (const [key, value] of Object.entries(prev)) {
+          if (key === path || key.startsWith(`${path}/`)) continue;
+          next[key] = value;
+        }
         return next;
       });
-      if (selectedPath === path) {
+      if (selectedPath === path || selectedPath?.startsWith(`${path}/`)) {
         setSelectedPath(null);
         setFileContent('');
       }
+      broadcastFileEvent(projectId, { type: 'file:delete', message: `deleted ${path}` });
     } catch (err) {
       console.error('Failed to delete:', err);
     }
+  };
+
+  const handleImport = async (imported: Record<string, string>) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: imported }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || 'Import failed');
+      }
+      setFiles((prev) => ({ ...prev, ...imported }));
+      broadcastFileEvent(projectId, {
+        type: 'file:import',
+        message: `imported ${Object.keys(imported).length} file${Object.keys(imported).length === 1 ? '' : 's'}`,
+      });
+    } catch (err: any) {
+      alert(err?.message || 'Import failed');
+    }
+  };
+
+  const handleDownloadZip = () => {
+    window.location.href = `/api/projects/${projectId}/export?format=zip`;
   };
 
   if (loading) {
@@ -152,6 +191,8 @@ export default function FileManagerPage() {
           onNewFile={() => handleNewFile()}
           onNewFolder={() => handleNewFolder()}
           onDeleteSelected={() => selectedPath && handleDelete(selectedPath)}
+          onImport={() => setImportOpen(true)}
+          onDownloadZip={handleDownloadZip}
           selectedPath={selectedPath}
         />
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 37px)' }}>
@@ -185,6 +226,12 @@ export default function FileManagerPage() {
           )}
         </div>
       </div>
+
+      <ImportModal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImport}
+      />
     </div>
   );
 }
