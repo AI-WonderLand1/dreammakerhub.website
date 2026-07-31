@@ -118,6 +118,20 @@ class AIW_REST_Router {
             'permission_callback' => $auth_callback,
         ]);
 
+        // Gutenberg page save API — preserves block markup verbatim
+        register_rest_route($this->namespace, '/gutenberg', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => [$this, 'save_gutenberg_page'],
+            'permission_callback' => $auth_callback,
+            'args' => [
+                'title' => ['type' => 'string', 'required' => true],
+                'content' => ['type' => 'string', 'required' => false, 'default' => ''],
+                'status' => ['type' => 'string', 'enum' => ['publish', 'draft', 'pending', 'private'], 'default' => 'publish'],
+                'post_id' => ['type' => 'integer', 'required' => false],
+                'slug' => ['type' => 'string', 'required' => false],
+            ],
+        ]);
+
         // AI Generation API
         register_rest_route($this->namespace, '/ai/generate', [
             'methods' => WP_REST_Server::CREATABLE,
@@ -427,6 +441,68 @@ class AIW_REST_Router {
             'title' => $post_data['post_title'],
             'slug' => isset($post_data['post_name']) ? $post_data['post_name'] : '',
             'content' => $post_data['post_content'],
+            'message' => __('Page created successfully.', 'ai-wonderland'),
+        ], 201);
+    }
+
+    public function save_gutenberg_page(WP_REST_Request $request): WP_REST_Response {
+        $params = $request->get_json_params() ?? $request->get_params();
+
+        $post_id   = !empty($params['post_id']) ? (int) $params['post_id'] : 0;
+        $title     = sanitize_text_field($params['title'] ?? __('New Page', 'ai-wonderland'));
+        $content   = $params['content'] ?? '';
+        $status    = $params['status'] ?? 'publish';
+
+        if ($post_id) {
+            $existing = get_post($post_id);
+            if (!$existing || !in_array($existing->post_type, ['page', 'aiw_project', 'post'], true)) {
+                return new WP_REST_Response(['error' => __('Page not found.', 'ai-wonderland')], 404);
+            }
+
+            $post_data = [
+                'ID' => $post_id,
+                'post_title' => $title,
+                'post_content' => $content,
+                'post_status' => $status,
+            ];
+
+            $result = wp_update_post(wp_slash($post_data), true);
+
+            if (is_wp_error($result)) {
+                return new WP_REST_Response(['error' => $result->get_error_message()], 400);
+            }
+
+            return new WP_REST_Response([
+                'id' => $result,
+                'title' => $title,
+                'content' => $content,
+                'message' => __('Page updated successfully.', 'ai-wonderland'),
+            ], 200);
+        }
+
+        $post_data = [
+            'post_title' => $title,
+            'post_content' => $content,
+            'post_status' => $status,
+            'post_type' => 'page',
+            'post_author' => get_current_user_id(),
+        ];
+
+        if (!empty($params['slug'])) {
+            $post_data['post_name'] = sanitize_title($params['slug']);
+        }
+
+        $created = wp_insert_post(wp_slash($post_data), true);
+
+        if (is_wp_error($created)) {
+            return new WP_REST_Response(['error' => $created->get_error_message()], 400);
+        }
+
+        return new WP_REST_Response([
+            'id' => $created,
+            'title' => $title,
+            'content' => $content,
+            'link' => get_permalink($created),
             'message' => __('Page created successfully.', 'ai-wonderland'),
         ], 201);
     }
