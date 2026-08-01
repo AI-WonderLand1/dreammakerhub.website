@@ -6,6 +6,7 @@ export interface RendererCtx {
   selectedId: string | null;
   selectElement: (id: string | null) => void;
   baseProps: Record<string, any>;
+  style: Record<string, any>;
   children: ReactNode;
 }
 

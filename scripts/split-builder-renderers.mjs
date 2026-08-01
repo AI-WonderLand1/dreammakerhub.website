@@ -26,8 +26,13 @@ for (let i = si + 1; i < lines.length; i++) {
   const caseAll = [...l.matchAll(/case '([^']+)':/g)].map((m) => m[1]);
   const isDefault = depth === 1 && l.trim().startsWith('default:');
   if (depth === 1 && (caseAll.length > 0 || isDefault)) {
-    if (cur) groups.push(cur);
-    cur = isDefault ? { labels: ['__default'], body: [] } : { labels: caseAll, body: [] };
+    // Consecutive case labels sharing one body merge into a single group.
+    if (cur && cur.body.length === 0 && !cur.labels.includes('__default')) {
+      cur.labels.push(...caseAll);
+    } else {
+      if (cur) groups.push(cur);
+      cur = isDefault ? { labels: ['__default'], body: [] } : { labels: caseAll, body: [] };
+    }
   } else if (cur) {
     cur.body.push(l);
   }
@@ -85,7 +90,7 @@ for (const g of miscGroups) console.log('  -', g.labels.join(','));
 fs.mkdirSync(RENDERERS_DIR, { recursive: true });
 fs.writeFileSync(
   path.join(RENDERERS_DIR, 'types.ts'),
-  `import type { ReactNode } from 'react';
+      `import type { ReactNode } from 'react';
 import type { CanvasElement } from '../types';
 
 export interface RendererCtx {
@@ -93,6 +98,7 @@ export interface RendererCtx {
   selectedId: string | null;
   selectElement: (id: string | null) => void;
   baseProps: Record<string, any>;
+  style: Record<string, any>;
   children: ReactNode;
 }
 
@@ -105,7 +111,7 @@ const emitEntries = (groupList) =>
   groupList
     .map((g) => {
       const body = g.body.join('\n');
-      return `  ${g.labels.map((t) => `'${t}'`).join(', ')}: ({ el, selectedId, selectElement, baseProps, children }) => {
+      return `  ${g.labels.map((t) => `'${t}'`).join(', ')}: ({ el, selectedId, selectElement, baseProps, style, children }) => {
 ${body}
   },`;
     })
