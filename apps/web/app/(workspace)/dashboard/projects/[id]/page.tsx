@@ -26,6 +26,11 @@ const getProjectIcon = (tool?: string | null) => {
   return mapping[tool || "wonderbuild"] || Sparkles;
 };
 
+const is3dType = (tool?: string | null) => {
+  const t = tool || "wonderbuild";
+  return t === "game" || t === "3d_scene" || t === "playcanvas";
+};
+
 export default function ProjectHubPage() {
   const params = useParams();
   const router = useRouter();
@@ -110,10 +115,10 @@ export default function ProjectHubPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href={`/wonder-build?projectId=${project.id}`}
+            href={is3dType(project.tool) ? `/dashboard/3dhub?projectId=${project.id}` : `/wonder-build?projectId=${project.id}`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-3 py-2 text-xs font-bold text-white shadow-lg hover:opacity-90"
           >
-            <Pencil size={14} /> Open in Builder
+            <Pencil size={14} /> Open in {is3dType(project.tool) ? "3DHub" : "Builder"}
           </Link>
           <button
             onClick={handleDownloadZip}
@@ -149,14 +154,25 @@ export default function ProjectHubPage() {
           </div>
         </Link>
 
-        <Link
-          href={`/dashboard/projects/${project.id}/pages`}
-          className="block rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition"
-        >
-          <Globe className="w-8 h-8 mb-2 text-emerald-400" />
-          <div className="font-medium">Pages</div>
-          <div className="text-xs text-white/50">Published pages for this project — view, toggle live/draft, and delete.</div>
-        </Link>
+        {is3dType(project.tool) ? (
+          <Link
+            href={`/dashboard/3dhub?projectId=${project.id}`}
+            className="block rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition"
+          >
+            <Box className="w-8 h-8 mb-2 text-cyan-400" />
+            <div className="font-medium">3DHub Studio</div>
+            <div className="text-xs text-white/50">AI 3D Factory, 360 views, game levels, cinematic timelines, and NPC simulation.</div>
+          </Link>
+        ) : (
+          <Link
+            href={`/dashboard/projects/${project.id}/pages`}
+            className="block rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition"
+          >
+            <Globe className="w-8 h-8 mb-2 text-emerald-400" />
+            <div className="font-medium">Pages</div>
+            <div className="text-xs text-white/50">Published pages for this project — view, toggle live/draft, and delete.</div>
+          </Link>
+        )}
       </div>
 
       <div className="mt-4">

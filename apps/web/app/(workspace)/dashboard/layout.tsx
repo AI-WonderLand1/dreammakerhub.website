@@ -30,7 +30,8 @@ import {
   Bug,
   Bot,
   Database,
-  Shield
+  Shield,
+  Boxes
 } from "lucide-react";
 
 type SidebarItem = {
@@ -52,8 +53,8 @@ type Project = {
 
   const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
     wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
-    game: { editor: "/wonder-build/playcanvas", label: "WonderPlay 3D" },
-    "3d_scene": { editor: "/dashboard/settings/3d-project", label: "3D Project" },
+    game: { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
+    "3d_scene": { editor: "/dashboard/3dhub", label: "3D Project" },
     web_app: { editor: "/wonder-build/ai-builder", label: "Wonderbuild" },
     workspace: { editor: "/wonderspace/ide", label: "IDE" },
   };
@@ -80,6 +81,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { href: "/dashboard/agents", label: "Agents", icon: Bot },
     { href: "/dashboard/aetherguard", label: "AetherGuard", icon: Shield },
     { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
+    { href: "/dashboard/3dhub", label: "3DHub Studio", icon: Boxes },
     { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
     { href: "/wonderspace/ide", label: "WonderSpace IDE", icon: Code2 },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
@@ -337,6 +339,7 @@ function VoiceSearchButton() {
       if (final) {
         const lower = final.toLowerCase();
         if (lower.includes("wonderbuild")) router.push("/wonder-build");
+        else if (lower.includes("3d") || lower.includes("studio")) router.push("/dashboard/3dhub");
         else if (lower.includes("wonderplay") || lower.includes("playcanvas")) router.push("/wonder-build/playcanvas");
         else if (lower.includes("project")) router.push("/dashboard/projects");
         else if (lower.includes("ide") || lower.includes("code")) router.push("/wonderspace/ide");

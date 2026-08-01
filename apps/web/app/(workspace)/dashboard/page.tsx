@@ -13,7 +13,8 @@ import {
   Zap,
   BarChart3,
   Users,
-  HelpCircle
+  HelpCircle,
+  Boxes
 } from "lucide-react";
 
 type Project = {
@@ -87,6 +88,12 @@ export default function DashboardPage() {
           <Play className="w-8 h-8 mb-2 text-pink-400" />
           <div className="font-medium">Wonderplay</div>
           <div className="text-xs text-white/50">3D game engine</div>
+        </a>
+        
+        <a href="/dashboard/3dhub" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+          <Boxes className="w-8 h-8 mb-2 text-cyan-400" />
+          <div className="font-medium">3DHub Studio</div>
+          <div className="text-xs text-white/50">AI 3D factory, 360 view & more</div>
         </a>
         
         <a href="/wonderspace/ide" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
