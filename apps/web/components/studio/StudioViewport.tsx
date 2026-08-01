@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 
 export type StudioSelection = { name: string; id: string; entityId?: number };
 
+export type ViewportStats = { fps: number; entities: number; frames: number };
+
 export type StudioViewportHandle = {
   renderScene: (scene: GeneratedScene) => void;
   clearScene: () => void;
@@ -19,11 +21,27 @@ export type StudioViewportHandle = {
   setFov: (fov: number) => void;
   placeActor: (opts: { name: string; type: string; x: number; y: number }) => void;
   clearActors: () => void;
-  animateCameraPath: (opts: { enabled: boolean; speed?: number; radius?: number; targetY?: number }) => void;
+  animateCameraPath: (opts: CameraPathOpts) => void;
   highlightEntity: (id: string | null) => void;
+  captureSnapshot: () => string | null;
+  setWireframe: (enabled: boolean) => void;
+  setShadows: (enabled: boolean) => void;
+  setAmbient: (color: [number, number, number], intensity?: number) => void;
+  focusOn: (id: string | null) => void;
+  getStats: () => ViewportStats;
+  setShowGrid: (enabled: boolean) => void;
 };
 
 export type ToneMappingMode = "ACES" | "Filmic" | "HEJL" | "Linear" | "Neutral";
+
+export type CameraPathOpts = {
+  enabled: boolean;
+  speed?: number;
+  radius?: number;
+  targetY?: number;
+  lookAt?: [number, number, number];
+  ease?: boolean;
+};
 
 export type PanoramaOpts = {
   exposure?: number;
@@ -33,6 +51,7 @@ export type PanoramaOpts = {
   horizonColor?: [number, number, number];
   hotspotCount?: number;
   hotspotRadius?: number;
+  skyboxUrl?: string;
 };
 
 export type StudioViewportProps = {
@@ -40,9 +59,10 @@ export type StudioViewportProps = {
   onEntityCreated?: (entity: { name: string; id: string }) => void;
   className?: string;
   showGizmo?: boolean;
+  showGrid?: boolean;
+  showStats?: boolean;
+  showFps?: boolean;
 };
-
-const LOOK_AT = [0, 1, 0] as const;
 
 const TONE_MAPPING_CONSTANTS: Record<ToneMappingMode, string> = {
   ACES: "TONEMAP_ACES",
@@ -61,6 +81,10 @@ function seededRandom(seed: number) {
   };
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
 // Build an equirectangular gradient texture on a 2D canvas
 function buildEquirectTexture(
   base: [number, number, number],
@@ -76,7 +100,6 @@ function buildEquirectTexture(
   const img = ctx.createImageData(width, height);
   const data = img.data;
 
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   const lerpRgb = (a: [number, number, number], b: [number, number, number], t: number): [number, number, number] => [
     lerp(a[0], b[0], t) * 255,
     lerp(a[1], b[1], t) * 255,
@@ -85,7 +108,6 @@ function buildEquirectTexture(
 
   for (let y = 0; y < height; y++) {
     const v = y / height;
-    // -1 at bottom, +1 at top
     const nv = v * 2 - 1;
     for (let x = 0; x < width; x++) {
       const u = x / width;
@@ -130,6 +152,41 @@ function buildEquirectTexture(
   return canvas;
 }
 
+// Build a subtle grid texture for the ground helper
+function buildGridTexture(size = 512, divisions = 16, tint = [56, 189, 248]) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, size, size);
+  ctx.strokeStyle = "rgba(148,163,184,0.14)";
+  ctx.lineWidth = 1;
+  const cell = size / divisions;
+  for (let i = 0; i <= divisions; i++) {
+    const p = i * cell;
+    ctx.beginPath();
+    ctx.moveTo(p, 0);
+    ctx.lineTo(p, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, p);
+    ctx.lineTo(size, p);
+    ctx.stroke();
+  }
+  // Major axes tinted
+  ctx.strokeStyle = `rgba(${tint[0]},${tint[1]},${tint[2]},0.45)`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(size / 2, 0);
+  ctx.lineTo(size / 2, size);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, size / 2);
+  ctx.lineTo(size, size / 2);
+  ctx.stroke();
+  return canvas;
+}
+
 function materialFromSpec(pc: any, mat: GeneratedSceneMaterial): any {
   const m = new pc.StandardMaterial();
   if (mat.color) m.diffuse = new pc.Color(mat.color[0], mat.color[1], mat.color[2]);
@@ -151,8 +208,32 @@ const PRIMITIVE_TYPES: Record<string, string> = {
   torus: "torus",
 };
 
+// Shape-accurate collision from primitive type + scale
+function collisionForType(pc: any, type: string, scale?: [number, number, number]) {
+  const [sx, sy, sz] = scale ?? [1, 1, 1];
+  switch (type) {
+    case "sphere":
+      return { type: "sphere", radius: Math.max(sx, sy, sz) / 2 };
+    case "capsule":
+      return { type: "capsule", radius: Math.max(sx, sz) / 2, height: sy };
+    case "cylinder":
+      return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+    case "plane":
+      return { type: "plane" };
+    case "cone":
+      // No native cone collision; approximate with a cylinder
+      return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+    case "box":
+    default:
+      return { type: "box", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+  }
+}
+
 const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
-  function StudioViewport({ onSelect, onEntityCreated, className = "", showGizmo = true }, ref) {
+  function StudioViewport(
+    { onSelect, onEntityCreated, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
+    ref,
+  ) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const appRef = useRef<any>(null);
@@ -161,25 +242,48 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const selectedEntityRef = useRef<any>(null);
     const highlightIdRef = useRef<string | null>(null);
     const orbitRef = useRef({ dist: 9, az: 40, el: 30 });
-    const cameraPathRef = useRef<{ enabled: boolean; speed: number; radius: number; targetY: number; t: number }>({
+    const orbitTargetRef = useRef({ x: 0, y: 1, z: 0 });
+    const cameraPathRef = useRef<{ enabled: boolean; speed: number; radius: number; targetY: number; lookAt: [number, number, number]; ease: boolean; t: number }>({
       enabled: false,
       speed: 1,
       radius: 9,
       targetY: 1,
+      lookAt: [0, 1, 0],
+      ease: false,
       t: 0,
     });
+    const baseLightsRef = useRef<any[]>([]);
     const groundRef = useRef<any>(null);
+    const gridRef = useRef<any>(null);
     const sceneRootRef = useRef<any>(null);
     const actorRootRef = useRef<any>(null);
+    const wireframeRef = useRef(false);
+    const shadowsRef = useRef(true);
+    const statsRef = useRef({ fps: 0, entities: 0, frames: 0, lastTime: 0 });
     const [error, setError] = useState<string | null>(null);
     const [ready, setReady] = useState(false);
+    const [stats, setStats] = useState<ViewportStats>({ fps: 0, entities: 0, frames: 0 });
     const onSelectRef = useRef(onSelect);
     const onEntityCreatedRef = useRef(onEntityCreated);
+    const showGridRef = useRef(showGridProp);
+    const showStatsRef = useRef(showStats);
 
     useEffect(() => {
       onSelectRef.current = onSelect;
       onEntityCreatedRef.current = onEntityCreated;
     }, [onSelect, onEntityCreated]);
+
+    useEffect(() => {
+      showGridRef.current = showGridProp;
+    }, [showGridProp]);
+
+    const forEachEntity = useCallback((root: any, fn: (e: any) => void) => {
+      const walk = (ent: any) => {
+        fn(ent);
+        for (const c of ent.children ?? []) walk(c);
+      };
+      walk(root);
+    }, []);
 
     const setupRaycastSelection = useCallback((app: any, cameraEntity: any) => {
       if (!app.mouse) return;
@@ -188,7 +292,6 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       app.mouse.on(pc.EVENT_MOUSEDOWN, (event: any) => {
         if (event.button !== 0) return;
 
-        // Only pick if we're not dragging (check if pointer moved enough)
         const startX = event.x;
         const startY = event.y;
 
@@ -255,14 +358,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       const applyCamera = () => {
         const o = orbitRef.current;
+        const t = orbitTargetRef.current;
         const rad = (d: number) => d * 0.0174533;
         const phi = rad(o.el);
         const theta = rad(o.az);
-        const x = o.dist * Math.sin(phi) * Math.sin(theta) + LOOK_AT[0];
-        const y = o.dist * Math.cos(phi) + LOOK_AT[1];
-        const z = o.dist * Math.sin(phi) * Math.cos(theta) + LOOK_AT[2];
+        const x = o.dist * Math.sin(phi) * Math.sin(theta) + t.x;
+        const y = o.dist * Math.cos(phi) + t.y;
+        const z = o.dist * Math.sin(phi) * Math.cos(theta) + t.z;
         camera.setPosition(x, y, z);
-        camera.lookAt(LOOK_AT[0], LOOK_AT[1], LOOK_AT[2]);
+        camera.lookAt(t.x, t.y, t.z);
       };
 
       app.mouse.on(pc.EVENT_MOUSEDOWN, (e: any) => {
@@ -310,7 +414,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           const x = path.radius * Math.sin(theta);
           const z = path.radius * Math.cos(theta);
           camera.setPosition(x, path.targetY, z);
-          camera.lookAt(0, 1, 0);
+          camera.lookAt(path.lookAt[0], path.lookAt[1], path.lookAt[2]);
         } else {
           applyCamera();
         }
@@ -338,6 +442,46 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       return ground;
     }, []);
 
+    const setupGrid = useCallback((app: any, enabled: boolean) => {
+      const pc = app.constructor;
+      if (gridRef.current) {
+        gridRef.current.enabled = enabled;
+        return gridRef.current;
+      }
+      const grid = new pc.Entity("GridHelper");
+      grid.addComponent("render", { type: "plane" });
+      grid.setLocalScale(20, 20, 1);
+      grid.setPosition(0, 0.005, 0);
+      grid.render.castShadows = false;
+      grid.render.receiveShadows = false;
+      const texture = new pc.Texture(app.graphicsDevice, {
+        width: 512,
+        height: 512,
+        format: pc.PIXELFORMAT_R8_G8_B8_A8,
+        mipmaps: true,
+      });
+      texture.setSource(buildGridTexture());
+      texture.addressU = pc.ADDRESS_REPEAT;
+      texture.addressV = pc.ADDRESS_REPEAT;
+      texture.minFilter = pc.FILTER_LINEAR_MIPMAP_LINEAR;
+      texture.magFilter = pc.FILTER_LINEAR;
+      const gm = new pc.StandardMaterial();
+      gm.diffuseMap = texture;
+      gm.diffuse = new pc.Color(1, 1, 1);
+      gm.emissive = new pc.Color(1, 1, 1);
+      gm.emissiveMap = texture;
+      gm.emissiveIntensity = 0.9;
+      gm.opacity = 0.9;
+      gm.blendType = pc.BLEND_NORMAL;
+      gm.depthWrite = false;
+      gm.update();
+      grid.render.material = gm;
+      app.root.addChild(grid);
+      grid.enabled = enabled;
+      gridRef.current = grid;
+      return grid;
+    }, []);
+
     const setupLights = useCallback((app: any) => {
       const pc = app.constructor;
       const dir = new pc.Entity("DirLight");
@@ -353,6 +497,69 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       rim.addComponent("light", { type: "directional", color: new pc.Color(0.2, 0.4, 0.7), intensity: 0.4 });
       rim.setEulerAngles(-30, -120, 0);
       app.root.addChild(rim);
+
+      baseLightsRef.current = [dir, amb, rim];
+    }, []);
+
+    // Apply scene-authored lights under the scene root; disable base lights when present
+    const applySceneLights = useCallback(
+      (scene: GeneratedScene, root: any) => {
+        const app = appRef.current;
+        const pc = pcRef.current;
+        if (!app || !pc || !root) return;
+
+        const lights = scene.lights ?? [];
+        for (const light of baseLightsRef.current) {
+          light.enabled = lights.length === 0;
+        }
+        if (lights.length === 0) return;
+
+        for (const light of lights) {
+          const entity = new pc.Entity(light.id || "SceneLight");
+          const isDir = light.type === "directional";
+          entity.addComponent("light", {
+            type: light.type,
+            color: new pc.Color(light.color[0], light.color[1], light.color[2]),
+            intensity: light.intensity ?? 1,
+            castShadows: isDir && shadowsRef.current,
+          });
+
+          if (isDir) {
+            const d = light.direction ?? [0, -1, 0];
+            // Directional lights shine toward -Z; orient so the light points along `d`
+            entity.lookAt(-d[0] * 10, -d[1] * 10, -d[2] * 10);
+          } else {
+            if (light.position) entity.setPosition(light.position[0], light.position[1], light.position[2]);
+          }
+          root.addChild(entity);
+        }
+      },
+      [],
+    );
+
+    const setupStatsLoop = useCallback((app: any) => {
+      const now = performance.now();
+      statsRef.current.lastTime = now;
+      app.on("update", () => {
+        statsRef.current.frames++;
+        const t = performance.now();
+        if (t - statsRef.current.lastTime >= 1000) {
+          statsRef.current.fps = statsRef.current.frames;
+          statsRef.current.frames = 0;
+          statsRef.current.lastTime = t;
+
+          let count = 0;
+          const walk = (ent: any) => {
+            count++;
+            for (const c of ent.children ?? []) walk(c);
+          };
+          walk(app.root);
+          statsRef.current.entities = count;
+          if (showStatsRef.current) {
+            setStats({ fps: statsRef.current.fps, entities: count, frames: 0 });
+          }
+        }
+      });
     }, []);
 
     const handleRemoteMeshInjection = useCallback((e: Event) => {
@@ -415,8 +622,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
           setupLights(app);
           setupGround(app);
+          setupGrid(app, showGridProp);
           setupOrbitControls(app, camera);
           setupRaycastSelection(app, camera);
+          setupStatsLoop(app);
 
           const resize = () => {
             if (containerRef.current && canvasRef.current) {
@@ -451,7 +660,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         appRef.current = null;
         pcRef.current = null;
       };
-    }, [handleRemoteMeshInjection, setupGround, setupLights, setupOrbitControls, setupRaycastSelection]);
+    }, [handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop, showGridProp]);
 
     const renderScene = useCallback((scene: GeneratedScene) => {
       const app = appRef.current;
@@ -483,17 +692,44 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         }
 
         entity.addComponent("rigidbody", { type: "static" });
-        entity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.5, 0.5) });
+        const coll = collisionForType(pc, obj.type, obj.scale);
+        entity.addComponent("collision", coll);
 
         root.addChild(entity);
+
+        // Load remote GLB mesh if provided
+        if (obj.meshUrl) {
+          app.assets.loadFromUrl(obj.meshUrl, "container", (err: Error | null, asset: any) => {
+            if (err) {
+              logger.warn(`Failed to load mesh ${obj.meshUrl}:`, err);
+              return;
+            }
+            if (entity && entity.render) {
+              entity.removeComponent("render");
+              entity.addComponent("model", { type: "asset", asset: asset.resource.model });
+              if (wireframeRef.current) {
+                forEachEntity(entity, (e) => {
+                  if (e.model?.meshInstances) {
+                    e.model.meshInstances.forEach((mi: any) => (mi.style = pc.RENDERSTYLE_WIREFRAME));
+                  }
+                });
+              }
+            }
+          });
+        }
       }
+
+      // Apply scene-authored lights (real light rig from the generated scene)
+      applySceneLights(scene, root);
 
       // Apply scene camera
       const cam = cameraRef.current;
       if (cam && scene.camera) {
         cam.camera.fov = scene.camera.fov ?? 50;
-        cam.setPosition(scene.camera.position?.[0] ?? 0, scene.camera.position?.[1] ?? 5, scene.camera.position?.[2] ?? 10);
+        const p = scene.camera.position ?? [0, 5, 10];
+        cam.setPosition(p[0], p[1], p[2]);
         if (scene.camera.target) {
+          orbitTargetRef.current = { x: scene.camera.target[0], y: scene.camera.target[1], z: scene.camera.target[2] };
           cam.lookAt(scene.camera.target[0], scene.camera.target[1], scene.camera.target[2]);
         }
       }
@@ -502,7 +738,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (scene.sky?.color) {
         cam.camera.clearColor = new pc.Color(scene.sky.color[0], scene.sky.color[1], scene.sky.color[2]);
       }
-    }, []);
+    }, [applySceneLights, forEachEntity]);
 
     const clearScene = useCallback(() => {
       const app = appRef.current;
@@ -511,11 +747,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
       sceneRootRef.current = null;
+      for (const light of baseLightsRef.current) light.enabled = true;
       const cam = cameraRef.current;
       if (cam) {
         cam.camera.fov = 50;
         cam.camera.clearColor = new pc.Color(0.07, 0.07, 0.12);
         orbitRef.current = { dist: 9, az: 40, el: 30 };
+        orbitTargetRef.current = { x: 0, y: 1, z: 0 };
       }
     }, []);
 
@@ -539,19 +777,26 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         const sky = opts?.skyColor ?? [0.05, 0.1, 0.25];
         const horizon = opts?.horizonColor ?? [0.5, 0.42, 0.35];
 
-        const canvas = buildEquirectTexture(base, sky, horizon);
-        const texture = new pc.Texture(app.graphicsDevice, {
-          width: canvas.width,
-          height: canvas.height,
-          format: pc.PIXELFORMAT_R8_G8_B8_A8,
-          mipmaps: true,
-        });
-        texture.setSource(canvas);
-        texture.addressU = pc.ADDRESS_REPEAT;
-        texture.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
-        texture.minFilter = pc.FILTER_LINEAR_MIPMAP_LINEAR;
-        texture.magFilter = pc.FILTER_LINEAR;
-        texture.anisotropy = 8;
+        const applyTextureToSphere = (sphere: any, source: any) => {
+          const texture = new pc.Texture(app.graphicsDevice, {
+            width: source.width || 2048,
+            height: source.height || 1024,
+            format: pc.PIXELFORMAT_R8_G8_B8_A8,
+            mipmaps: true,
+          });
+          texture.setSource(source);
+          texture.addressU = pc.ADDRESS_REPEAT;
+          texture.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
+          texture.minFilter = pc.FILTER_LINEAR_MIPMAP_LINEAR;
+          texture.magFilter = pc.FILTER_LINEAR;
+          texture.anisotropy = 8;
+
+          const mat = sphere.render.material;
+          mat.diffuseMap = texture;
+          mat.emissiveMap = texture;
+          mat.diffuse = new pc.Color(1, 1, 1);
+          mat.update();
+        };
 
         const sphere = new pc.Entity("PanoramaSphere");
         sphere.addComponent("render", { type: "sphere" });
@@ -559,8 +804,6 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         sphere.setPosition(0, 0, 0);
 
         const mat = new pc.StandardMaterial();
-        mat.diffuseMap = texture;
-        mat.emissiveMap = texture;
         mat.emissive = new pc.Color(1, 1, 1);
         mat.emissiveIntensity = opts?.exposure ?? 1.0;
         mat.lightMap = null;
@@ -570,6 +813,19 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         sphere.render.castShadows = false;
         sphere.render.receiveShadows = false;
         root.addChild(sphere);
+
+        // Procedural gradient fallback (always create, replaced if skyboxUrl loads)
+        const procedural = buildEquirectTexture(base, sky, horizon);
+        applyTextureToSphere(sphere, procedural);
+
+        // If a real equirect image URL is given, load and apply it
+        if (opts?.skyboxUrl) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => applyTextureToSphere(sphere, img);
+          img.onerror = () => logger.warn("Failed to load skybox image:", opts.skyboxUrl);
+          img.src = opts.skyboxUrl;
+        }
 
         // Hotspot markers on the panorama sphere
         const count = opts?.hotspotCount ?? 6;
@@ -606,6 +862,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           cam.lookAt(0, 1.6, 0);
         }
         orbitRef.current = { dist: 0.01, az: 40, el: 5 };
+        orbitTargetRef.current = { x: 0, y: 1.6, z: 0 };
       },
       [],
     );
@@ -616,9 +873,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
     const setToneMapping = useCallback((mode: ToneMappingMode) => {
       const app = appRef.current;
-      if (!app) return;
       const pc = pcRef.current;
-      if (!pc) return;
+      if (!app || !pc) return;
       const constName = TONE_MAPPING_CONSTANTS[mode];
       const value = (pc as any)[constName];
       if (value !== undefined) {
@@ -693,7 +949,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         onEntityCreatedRef.current?.({ name: entity.name, id: `${opts.x}-${opts.y}` });
         return entity;
       },
-      [],
+      [onEntityCreatedRef],
     );
 
     const clearActors = useCallback(() => {
@@ -704,12 +960,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       actorRootRef.current = null;
     }, []);
 
-    const animateCameraPath = useCallback((opts: { enabled: boolean; speed?: number; radius?: number; targetY?: number }) => {
+    const animateCameraPath = useCallback((opts: CameraPathOpts) => {
       cameraPathRef.current = {
         enabled: opts.enabled,
         speed: opts.speed ?? 1,
         radius: opts.radius ?? 9,
         targetY: opts.targetY ?? 1,
+        lookAt: opts.lookAt ?? [0, 1, 0],
+        ease: opts.ease ?? false,
         t: cameraPathRef.current.t,
       };
     }, []);
@@ -717,6 +975,81 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const highlightEntity = useCallback((id: string | null) => {
       highlightIdRef.current = id;
     }, []);
+
+    const captureSnapshot = useCallback((): string | null => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      return canvas.toDataURL("image/png");
+    }, []);
+
+    const setWireframe = useCallback(
+      (enabled: boolean) => {
+        wireframeRef.current = enabled;
+        const app = appRef.current;
+        const pc = pcRef.current;
+        if (!app || !pc) return;
+        const roots = [app.root.findByName("__sceneRoot"), app.root.findByName("__actorRoot")].filter(Boolean);
+        const style = enabled ? pc.RENDERSTYLE_WIREFRAME : pc.RENDERSTYLE_SOLID;
+        for (const root of roots) {
+          forEachEntity(root, (e) => {
+            const comp = e.render || e.model;
+            if (comp?.meshInstances) {
+              comp.meshInstances.forEach((mi: any) => (mi.style = style));
+            }
+          });
+        }
+      },
+      [forEachEntity],
+    );
+
+    const setShadows = useCallback((enabled: boolean) => {
+      shadowsRef.current = enabled;
+      const app = appRef.current;
+      if (!app) return;
+      forEachEntity(app.root, (e) => {
+        if (e.light) e.light.castShadows = enabled;
+        if (e.render) e.render.castShadows = enabled;
+      });
+    }, [forEachEntity]);
+
+    const setAmbient = useCallback((color: [number, number, number], intensity?: number) => {
+      const app = appRef.current;
+      const pc = pcRef.current;
+      if (!app || !pc) return;
+      const amb = baseLightsRef.current.find((l) => l.name === "AmbLight");
+      if (amb?.light) {
+        amb.light.color = new pc.Color(color[0], color[1], color[2]);
+        if (intensity !== undefined) amb.light.intensity = intensity;
+      }
+    }, []);
+
+    const focusOn = useCallback((id: string | null) => {
+      const app = appRef.current;
+      if (!app) return;
+      if (!id) {
+        orbitTargetRef.current = { x: 0, y: 1, z: 0 };
+        return;
+      }
+      const target = app.root.findByGuid(id);
+      if (target) {
+        const pos = target.getPosition();
+        orbitTargetRef.current = { x: pos.x, y: pos.y + 1, z: pos.z };
+        orbitRef.current = { ...orbitRef.current, dist: 6 };
+      }
+    }, []);
+
+    const getStats = useCallback((): ViewportStats => {
+      return { fps: statsRef.current.fps, entities: statsRef.current.entities, frames: statsRef.current.frames };
+    }, []);
+
+    const setShowGrid = useCallback((enabled: boolean) => {
+      showGridRef.current = enabled;
+      const app = appRef.current;
+      if (app) {
+        if (!gridRef.current) setupGrid(app, enabled);
+        else gridRef.current.enabled = enabled;
+      }
+    }, [setupGrid]);
 
     useImperativeHandle(ref, () => ({
       renderScene,
@@ -733,11 +1066,28 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       clearActors,
       animateCameraPath,
       highlightEntity,
+      captureSnapshot,
+      setWireframe,
+      setShadows,
+      setAmbient,
+      focusOn,
+      getStats,
+      setShowGrid,
     }));
+
+    const showStatsUi = showStats || showFps;
 
     return (
       <div ref={containerRef} className={`relative overflow-hidden bg-[radial-gradient(ellipse_at_center,#1e293b,#020617)] ${className}`}>
         <canvas ref={canvasRef} className="block h-full w-full touch-none" />
+
+        {showStatsUi && (
+          <div className="pointer-events-none absolute top-2 right-2 flex flex-col items-end space-y-1 text-[10px] font-mono text-emerald-400/80 bg-slate-950/70 backdrop-blur border border-slate-800/60 px-2.5 py-1.5 rounded-lg">
+            <span className="text-slate-500 text-[9px] tracking-widest">VIEWPORT STATS</span>
+            <span>FPS {stats.fps}</span>
+            <span>ENTITIES {stats.entities}</span>
+          </div>
+        )}
 
         {showGizmo && ready && (
           <div className="pointer-events-none absolute bottom-3 right-3 flex flex-col items-end space-y-1 text-[10px] font-mono text-white/30">
