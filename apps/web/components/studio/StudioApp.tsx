@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { Box, Eye, Gamepad2, Film, Boxes, Cpu, type LucideIcon } from "lucide-react";
 import Studio3DFactory from "@/components/studio/Studio3DFactory";
@@ -75,10 +75,12 @@ export default function StudioApp() {
       </header>
 
       <main className="flex-1 flex overflow-hidden">
-        {currentPage === "factory" && <Studio3DFactory />}
-        {currentPage === "panorama" && <Studio360View />}
-        {currentPage === "game" && <StudioGameBuilder />}
-        {currentPage === "movie" && <StudioMovieMaker />}
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center text-xs font-mono text-slate-500">Loading studio…</div>}>
+          {currentPage === "factory" && <Studio3DFactory />}
+          {currentPage === "panorama" && <Studio360View />}
+          {currentPage === "game" && <StudioGameBuilder />}
+          {currentPage === "movie" && <StudioMovieMaker />}
+        </Suspense>
       </main>
     </div>
   );
