@@ -15,7 +15,6 @@ export const typographyRenderers: Record<string, BlockRenderer> = {
       const ListTag = el.props.listType === 'ordered' ? 'ol' : 'ul';
       const items = (el.props.items as string[]) || [];
       return <ListTag {...baseProps}>{items.map((item, i) => <li key={i}>{item}</li>)}{children}</ListTag>;
-    }
   },
   'quote': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <blockquote {...baseProps}><p>{el.props.content}</p>{el.props.citation && <cite>— {el.props.citation}</cite>}{children}</blockquote>;

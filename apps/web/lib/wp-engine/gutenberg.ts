@@ -1,5 +1,5 @@
 import { CanvasElement, BlockDefinition } from '@/lib/builder/types';
-import { BLOCKS } from '@/lib/builder/components/ComponentLibrary';
+import { findBlockDefinition, blockToCanvasElement } from '@/lib/builder/blocks/utils';
 
 const BLOCK_NAME_MAP: Record<string, string> = {
   heading: 'core/heading',
@@ -137,17 +137,3 @@ export function serializeToWP(elements: CanvasElement[]): WPSerializeResult {
   };
 }
 
-export function findBlockDefinition(type: string): BlockDefinition | undefined {
-  return BLOCKS.find((b) => b.type === type);
-}
-
-export function blockToCanvasElement(def: BlockDefinition): CanvasElement {
-  return {
-    id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    type: def.type,
-    name: def.name,
-    icon: def.icon,
-    props: JSON.parse(JSON.stringify(def.defaultProps || {})),
-    styles: JSON.parse(JSON.stringify(def.defaultStyles || {})),
-  };
-}

@@ -1,7 +1,13 @@
 import type { BlockRenderer } from './types';
 
 export const notificationRenderers: Record<string, BlockRenderer> = {
-  'toast', 'banner', 'announcement-bar': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'toast': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="text-center text-xs font-medium px-3 py-1.5">{el.props.message || el.props.text}{children}</div>;
+  },
+  'banner': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="text-center text-xs font-medium px-3 py-1.5">{el.props.message || el.props.text}{children}</div>;
+  },
+  'announcement-bar': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} className="text-center text-xs font-medium px-3 py-1.5">{el.props.message || el.props.text}{children}</div>;
   },
   'push-notification': ({ el, selectedId, selectElement, baseProps, style, children }) => {

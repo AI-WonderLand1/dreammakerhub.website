@@ -10,7 +10,10 @@ export const layoutRenderers: Record<string, BlockRenderer> = {
   'container': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} style={{ ...style, maxWidth: el.props.maxWidth || '1200px', margin: '0 auto' }}>{children || <span className="text-white/30 text-xs">Container</span>}</div>;
   },
-  'wrapper', 'stack': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'wrapper': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps}>{children || <span className="text-white/30 text-xs">{el.name}</span>}</div>;
+  },
+  'stack': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}>{children || <span className="text-white/30 text-xs">{el.name}</span>}</div>;
   },
   'sidebar-layout': ({ el, selectedId, selectElement, baseProps, style, children }) => {

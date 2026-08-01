@@ -1,7 +1,13 @@
 import type { BlockRenderer } from './types';
 
 export const authRenderers: Record<string, BlockRenderer> = {
-  'login-form', 'register-form', 'password-reset': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'login-form': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="max-w-xs mx-auto"><p className="text-sm font-semibold mb-2">{el.props.title}</p><div className="space-y-2"><div className="h-7 rounded border border-white/10 bg-black/40" /><div className="h-7 rounded border border-white/10 bg-black/40" /></div><div className="mt-2 rounded bg-purple-600 text-white text-center py-1 text-xs font-semibold">{el.props.submitText}</div>{children}</div>;
+  },
+  'register-form': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="max-w-xs mx-auto"><p className="text-sm font-semibold mb-2">{el.props.title}</p><div className="space-y-2"><div className="h-7 rounded border border-white/10 bg-black/40" /><div className="h-7 rounded border border-white/10 bg-black/40" /></div><div className="mt-2 rounded bg-purple-600 text-white text-center py-1 text-xs font-semibold">{el.props.submitText}</div>{children}</div>;
+  },
+  'password-reset': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} className="max-w-xs mx-auto"><p className="text-sm font-semibold mb-2">{el.props.title}</p><div className="space-y-2"><div className="h-7 rounded border border-white/10 bg-black/40" /><div className="h-7 rounded border border-white/10 bg-black/40" /></div><div className="mt-2 rounded bg-purple-600 text-white text-center py-1 text-xs font-semibold">{el.props.submitText}</div>{children}</div>;
   },
   'oauth-buttons': ({ el, selectedId, selectElement, baseProps, style, children }) => {

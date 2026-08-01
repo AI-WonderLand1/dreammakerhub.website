@@ -1,7 +1,10 @@
 import type { BlockRenderer } from './types';
 
 export const blogRenderers: Record<string, BlockRenderer> = {
-  'step', 'steps': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'step': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps}><div className="flex gap-4">{(el.props.steps as any[] || []).map((s: any, i: number) => <div key={i} className="flex-1 text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 text-purple-400 flex items-center justify-center mx-auto text-sm font-bold">{i + 1}</div><p className="text-xs font-medium mt-1">{s.title}</p><p className="text-[10px] text-white/40">{s.desc}</p></div>)}</div>{children}</div>;
+  },
+  'steps': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}><div className="flex gap-4">{(el.props.steps as any[] || []).map((s: any, i: number) => <div key={i} className="flex-1 text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 text-purple-400 flex items-center justify-center mx-auto text-sm font-bold">{i + 1}</div><p className="text-xs font-medium mt-1">{s.title}</p><p className="text-[10px] text-white/40">{s.desc}</p></div>)}</div>{children}</div>;
   },
   'author-box': ({ el, selectedId, selectElement, baseProps, style, children }) => {
