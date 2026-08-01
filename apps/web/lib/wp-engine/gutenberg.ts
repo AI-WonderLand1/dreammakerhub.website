@@ -1,5 +1,4 @@
-import { CanvasElement, BlockDefinition } from '@/lib/builder/types';
-import { findBlockDefinition, blockToCanvasElement } from '@/lib/builder/blocks/utils';
+import { CanvasElement } from '@/lib/builder/types';
 
 const BLOCK_NAME_MAP: Record<string, string> = {
   heading: 'core/heading',

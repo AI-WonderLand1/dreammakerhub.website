@@ -1,4 +1,5 @@
 import type { BlockRenderer } from './types';
+import { AccordionItem, TabsContainer } from './shared';
 
 export const utilityRenderers: Record<string, BlockRenderer> = {
   'image': ({ el, selectedId, selectElement, baseProps, style, children }) => {
