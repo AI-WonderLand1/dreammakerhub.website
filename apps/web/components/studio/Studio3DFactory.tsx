@@ -20,7 +20,6 @@ import {
   Wand2,
   Save,
   FileJson,
-  FolderOpen,
   Loader2,
 } from "lucide-react";
 import StudioViewport, { type StudioViewportHandle, type StudioSelection } from "@/components/studio/StudioViewport";
@@ -78,7 +77,6 @@ export default function Studio3DFactory() {
   const [filesError, setFilesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedPath, setSavedPath] = useState<string | null>(null);
-  const [generatedNames, setGeneratedNames] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
 
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
