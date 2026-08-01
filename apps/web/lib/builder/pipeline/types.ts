@@ -219,8 +219,8 @@ export type EventPayloadMap = {
   [EventNames.AI_GENERATION_STARTED]: { prompt: string };
   [EventNames.AI_GENERATION_COMPLETED]: { result: string; duration: number };
   [EventNames.STORAGE_SAVING]: { projectId: string };
-  [EventNames.STORAGE_SAVED]: { projectId: string; timestamp: number };
-  [EventNames.STORAGE_LOADED]: { projectId: string; elements: CanvasElement[] };
+  [EventNames.STORAGE_SAVED]: { projectId: string; timestamp: number; revision?: boolean };
+  [EventNames.STORAGE_LOADED]: { projectId: string; elements?: CanvasElement[]; theme?: any; activeBreakpoint?: any; zoom?: number; pan?: { x: number; y: number }; showGrid?: boolean; snapToGrid?: boolean };
   [EventNames.STORAGE_ERROR]: { projectId: string; error: string };
   [EventNames.HISTORY_UNDO]: { elements: CanvasElement[] };
   [EventNames.HISTORY_REDO]: { elements: CanvasElement[] };

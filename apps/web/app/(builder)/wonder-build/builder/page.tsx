@@ -245,8 +245,19 @@ function BuilderContent() {
                   >
                     🗑️
                   </button>
-                  <span className="text-white/20 mx-1" aria-hidden="true">|</span>
-                  <AccessibilityCheckerPanel />
+                   <span className="text-white/20 mx-1" aria-hidden="true">|</span>
+                   <AccessibilityCheckerPanel />
+                   <button
+                     onClick={async () => {
+                       const rev = await storageService.saveRevision();
+                       showToast(rev ? '✅ Revision saved' : '⚠️ Revision failed');
+                     }}
+                     className="px-1.5 py-1 rounded text-[10px] font-semibold text-white/40 hover:text-white hover:bg-white/5"
+                     title="Save revision"
+                     aria-label="Save revision"
+                   >
+                     💾 Rev
+                   </button>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono text-white/30">{Math.round(zoom * 100)}%</span>
