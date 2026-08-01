@@ -1,0 +1,11 @@
+import type { BlockDefinition } from '../types';
+
+export const SEO_BLOCKS: BlockDefinition[] = [
+// ═══════════════════════════════════════
+// SEO
+// ═══════════════════════════════════════
+  { name: 'Meta Tags', type: 'meta-tags', icon: '🏷️', category: 'seo', description: 'SEO meta tag manager', defaultProps: { title: 'Page Title', description: 'Page description for SEO.', keywords: 'keyword1, keyword2', ogImage: '', ogTitle: '', ogDescription: '' }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'title', label: 'Meta Title', type: 'text' }, { key: 'description', label: 'Meta Description', type: 'textarea' }, { key: 'keywords', label: 'Keywords', type: 'text' }, { key: 'ogImage', label: 'OG Image', type: 'image' }, { key: 'ogTitle', label: 'OG Title', type: 'text' }, { key: 'ogDescription', label: 'OG Description', type: 'textarea' }] },
+  { name: 'Schema Markup', type: 'schema-markup', icon: '📋', category: 'seo', description: 'JSON-LD structured data', defaultProps: { schemaType: 'Organization', jsonLd: '{"@context":"https://schema.org","@type":"Organization","name":"My Org","url":"https://example.com"}', includeInHead: true }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'schemaType', label: 'Schema Type', type: 'select', options: [{ label: 'Organization', value: 'Organization' }, { label: 'WebSite', value: 'WebSite' }, { label: 'Article', value: 'Article' }, { label: 'Product', value: 'Product' }, { label: 'LocalBusiness', value: 'LocalBusiness' }, { label: 'FAQ', value: 'FAQPage' }] }, { key: 'jsonLd', label: 'JSON-LD', type: 'textarea' }] },
+  { name: 'Sitemap Link', type: 'sitemap', icon: '🗺️', category: 'seo', description: 'Sitemap link for SEO', defaultProps: { url: '/sitemap.xml', label: 'Sitemap' }, defaultStyles: { fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }, editableProps: [{ key: 'url', label: 'Sitemap URL', type: 'text' }, { key: 'label', label: 'Label', type: 'text' }] },
+  { name: 'Breadcrumb Schema', type: 'breadcrumb-schema', icon: '🔗', category: 'seo', description: 'Breadcrumb structured data', defaultProps: { items: [{ label: 'Home', url: '/' }, { label: 'Category', url: '/category' }, { label: 'Current Page', url: '/current' }] }, defaultStyles: { display: 'none' }, editableProps: [] },
+];
