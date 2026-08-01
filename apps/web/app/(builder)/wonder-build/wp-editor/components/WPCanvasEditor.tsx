@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
-import { BLOCKS } from '@/lib/builder/components/ComponentLibrary';
-import { blockToCanvasElement } from '@/lib/wp-engine/gutenberg';
+import { BLOCKS } from '@/lib/builder/blocks';
+import { blockToCanvasElement } from '@/lib/builder/blocks/utils';
 import { useWpEditorStore } from '@/lib/wp-engine/editor-store';
 import { WpBlockRenderer } from './WpBlockRenderer';
 import { BlockInserter } from './BlockInserter';
