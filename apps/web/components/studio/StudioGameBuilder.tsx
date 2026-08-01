@@ -1,7 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Play, Users, Cpu, Box, Zap, Grid3x3 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Play, Pause, Users, Cpu, Box, Zap, Grid3x3, Loader2 } from "lucide-react";
+import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
+import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
+import { useSearchParams } from "next/navigation";
 import { logger } from "@/lib/logger";
 
 const ACTORS = ["System_Player_Rig", "Dynamic_Enemy_AI", "Physics_Item_Crate", "Trigger_Zone_Volume"];
@@ -14,33 +17,112 @@ type ActorNode = {
   y: number;
 };
 
+const ACTOR_COLORS: Record<string, [number, number, number]> = {
+  System_Player_Rig: [0.2, 0.6, 1],
+  Dynamic_Enemy_AI: [1, 0.3, 0.3],
+  Physics_Item_Crate: [0.7, 0.5, 0.2],
+  Trigger_Zone_Volume: [0.3, 1, 0.6],
+};
+
+const ACTOR_PRIMITIVE: Record<string, GeneratedSceneObject["type"]> = {
+  System_Player_Rig: "box",
+  Dynamic_Enemy_AI: "cone",
+  Physics_Item_Crate: "box",
+  Trigger_Zone_Volume: "sphere",
+};
+
 export default function StudioGameBuilder() {
-  const [actors, setActors] = useState<ActorNode[]>([
-    { id: "a1", name: "Player_Rig", type: "System_Player_Rig", x: 3, y: 3 },
-    { id: "a2", name: "Crate_01", type: "Physics_Item_Crate", x: 7, y: 2 },
-  ]);
+  const searchParams = useSearchParams();
+  const projectId = searchParams?.get("projectId")?.trim() || "default";
+
+  const viewportRef = useRef<StudioViewportHandle>(null);
+  const [actors, setActors] = useState<ActorNode[]>([]);
   const [behaviorPrompt, setBehaviorPrompt] = useState("");
   const [compiling, setCompiling] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [script, setScript] = useState<string | null>(null);
+  const [savedPath, setSavedPath] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
   const [gridSize, setGridSize] = useState(12);
 
-  const addActor = useCallback((type: string) => {
-    const idx = actors.length + 1;
-    setActors((prev) => [
-      ...prev,
-      { id: `a${Date.now()}`, name: `${type.replace("System_", "").replace("Physics_", "").replace("Dynamic_", "").replace("Trigger_", "")}_${idx}`, type, x: idx % gridSize, y: Math.floor(idx / gridSize) },
-    ]);
-  }, [actors.length, gridSize]);
+  // Render placed actors into the real 3D viewport whenever the list changes
+  useEffect(() => {
+    viewportRef.current?.clearActors();
+    for (const actor of actors) {
+      viewportRef.current?.placeActor({ name: actor.name, type: actor.type, x: actor.x, y: actor.y });
+    }
+  }, [actors]);
+
+  const addActor = useCallback(
+    (type: string) => {
+      const idx = actors.length + 1;
+      const base = type.replace("System_", "").replace("Physics_", "").replace("Dynamic_", "").replace("Trigger_", "").replace("_", " ");
+      const name = `${base} ${idx}`;
+      setActors((prev) => [
+        ...prev,
+        { id: `a${Date.now()}`, name, type, x: (idx * 2) % gridSize, y: Math.floor((idx * 2) / gridSize) % gridSize },
+      ]);
+    },
+    [actors.length, gridSize],
+  );
 
   const removeActor = useCallback((id: string) => {
     setActors((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  const toggleTestPlay = useCallback(() => {
+    setTesting((prev) => {
+      viewportRef.current?.animateCameraPath({ enabled: !prev, speed: 1, radius: 12, targetY: 2 });
+      return !prev;
+    });
+  }, []);
+
+  const buildScene = useCallback((): GeneratedScene => {
+    const materials: GeneratedSceneMaterial[] = actors.map((a) => ({
+      id: `mat-${a.id}`,
+      color: ACTOR_COLORS[a.type] ?? [0.5, 0.5, 0.8],
+      metalness: a.type === "Physics_Item_Crate" ? 0.3 : 0.1,
+      roughness: 0.6,
+      emissive: [0, 0, 0],
+    }));
+
+    const objects: GeneratedSceneObject[] = actors.map((a) => {
+      const worldX = (a.x / gridSize) * 20 - 10;
+      const worldZ = (a.y / gridSize) * 20 - 10;
+      return {
+        id: a.id,
+        name: a.name,
+        type: ACTOR_PRIMITIVE[a.type] ?? "box",
+        meshUrl: "",
+        position: [worldX, a.type === "Physics_Item_Crate" ? 0.5 : 0.8, worldZ],
+        rotation: [0, 0, 0],
+        scale: [0.8, 0.8, 0.8],
+        material: `mat-${a.id}`,
+      };
+    });
+
+    return {
+      name: "AI Game Level",
+      description: `Procedural game level: ${actors.map((a) => a.name).join(", ") || "empty"}. Behavior: ${behaviorPrompt || "none"}`,
+      objects,
+      materials,
+      lights: [
+        { id: "light-key", type: "directional", color: [1, 1, 1], intensity: 1.2, direction: [-1, -1, -0.3] },
+        { id: "light-rim", type: "point", color: [0.3, 0.6, 0.9], intensity: 1.5, position: [4, 6, -4] },
+      ],
+      camera: { position: [0, 5, 12], target: [0, 1, 0], fov: 60 },
+      sky: { type: "color", color: [0.05, 0.08, 0.16] },
+    };
+  }, [actors, behaviorPrompt, gridSize]);
+
   const compileBehavior = useCallback(async () => {
     if (!behaviorPrompt.trim()) return;
     setCompiling(true);
     setScript(null);
+    setSavedPath(null);
     try {
+      const scene = buildScene();
+
       const res = await fetch("/api/3d/generate-scene", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,18 +131,38 @@ export default function StudioGameBuilder() {
       const data = await res.json();
       if (!data.ok) throw new Error(data.error?.message || "Compile failed");
 
+      // Render the compiled scene in the viewport
+      viewportRef.current?.renderScene(data.scene);
+
+      // Save the compiled level (actors + AI scene) to the project
+      setSaving(true);
+      const slug = (behaviorPrompt.toLowerCase().match(/[a-z0-9]+/g) ?? ["level"]).slice(0, 4).join("_");
+      const fileName = `levels/${slug}_${Date.now().toString(36)}.json`;
+      const saveRes = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: {
+            [fileName]: JSON.stringify({ ...scene, name: data.scene.name, description: data.scene.description }, null, 2),
+          },
+        }),
+      });
+      if (!saveRes.ok) throw new Error("Failed to save level");
+      setSavedPath(fileName);
+
       setScript(
-        `// Compiled behavior from prompt:\n// ${behaviorPrompt}\n\n${actors
-          .map((a) => `spawn("${a.name}", { class: "${a.type}", at: [${a.x}, 0, ${a.y}] });`)
-          .join("\n")}\n\nonEnterTrigger("Trigger_Zone_Volume", (zone) => {\n  log("${behaviorPrompt.split(" ").slice(0, 4).join(" ")}...");\n});`,
+        `// Compiled level "${data.scene.name}" → saved to ${fileName}\n// Prompt: ${behaviorPrompt}\n\n${scene.objects
+          .map((o) => `spawn("${o.name}", { class: "${o.type}", at: [${o.position[0].toFixed(2)}, ${o.position[1].toFixed(2)}, ${o.position[2].toFixed(2)}] });`)
+          .join("\n")}\n\nonEnterTrigger("Trigger Zone Volume", (zone) => {\n  log("${behaviorPrompt.split(" ").slice(0, 5).join(" ")}...");\n});`,
       );
     } catch (err: any) {
       logger.error("Compile behavior error:", err);
       setScript(`// Compilation failed: ${err?.message ?? "unknown error"}`);
     } finally {
       setCompiling(false);
+      setSaving(false);
     }
-  }, [behaviorPrompt, actors]);
+  }, [behaviorPrompt, buildScene, projectId]);
 
   return (
     <div className="flex w-full h-full overflow-hidden">
@@ -82,7 +184,7 @@ export default function StudioGameBuilder() {
 
         <div className="mt-6 flex-1 overflow-y-auto">
           <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-2.5">Placed Actors</span>
-          {actors.length === 0 && <p className="text-[11px] text-slate-600 font-mono">No actors placed yet.</p>}
+          {actors.length === 0 && <p className="text-[11px] text-slate-600 font-mono">No actors placed — add them above.</p>}
           <div className="space-y-1">
             {actors.map((a) => (
               <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-900/40 text-xs font-mono text-slate-300">
@@ -98,7 +200,7 @@ export default function StudioGameBuilder() {
       </div>
 
       {/* Viewport Editor */}
-      <div className="flex-1 flex flex-col bg-slate-900 min-w-0">
+      <div className="flex-1 flex flex-col bg-slate-900 min-w-0 pb-14">
         <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800">
           <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
             <Grid3x3 size={13} className="text-cyan-400" /> Level Canvas ({gridSize}×{gridSize} units)
@@ -111,41 +213,20 @@ export default function StudioGameBuilder() {
             >
               {[8, 12, 16].map((n) => <option key={n} value={n}>{n}×{n}</option>)}
             </select>
-            <button className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-md text-[11px] font-semibold transition">
-              <Play size={12} /> Test Play
+            <button
+              onClick={toggleTestPlay}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition ${
+                testing ? "bg-red-900/50 text-red-300 hover:bg-red-900" : "bg-slate-800 hover:bg-slate-700 text-slate-200"
+              }`}
+            >
+              {testing ? <><Pause size={12} /> Stop</> : <><Play size={12} /> Test Play</>}
             </button>
           </div>
         </div>
 
-        <div className="flex-1 relative bg-[radial-gradient(ellipse_at_center,#1e293b,#020617)] overflow-hidden p-4">
-          <div className="absolute inset-4 rounded-xl border border-slate-800 bg-slate-950/40">
-            {/* Grid */}
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px)",
-                backgroundSize: `${100 / gridSize}% ${100 / gridSize}%`,
-              }}
-            />
-            {/* Actors */}
-            {actors.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => logger.info("selected", a.name)}
-                className="absolute flex flex-col items-center group"
-                style={{ left: `${(a.x / gridSize) * 100}%`, top: `${(a.y / gridSize) * 100}%` }}
-              >
-                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/70 to-blue-600/70 border border-cyan-300/40 flex items-center justify-center group-hover:scale-110 transition">
-                  <Box size={16} className="text-white" />
-                </span>
-                <span className="mt-1 text-[9px] font-mono text-slate-400 bg-slate-950/70 px-1.5 py-0.5 rounded">{a.name}</span>
-              </button>
-            ))}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] font-mono text-slate-500">
-              🎮 Drag items from the left panel to position them in the scene space.
-            </div>
-          </div>
+        <StudioViewport ref={viewportRef} className="flex-1" />
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 text-[11px] font-mono text-slate-400 bg-slate-950/70 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-full">
+          {testing ? "🎮 TEST PLAY — orbit camera flying over level" : "🎮 Add actors → they spawn as real 3D entities in the scene"}
         </div>
       </div>
 
@@ -166,8 +247,11 @@ export default function StudioGameBuilder() {
           disabled={compiling || !behaviorPrompt.trim()}
           className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition"
         >
-          <Zap size={14} /> {compiling ? "Compiling..." : "Compile Actor Script"}
+          {compiling ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+          {compiling ? (saving ? "Saving..." : "Compiling...") : "Compile Actor Script"}
         </button>
+
+        {savedPath && <p className="text-[10px] font-mono text-emerald-400 break-all">✓ level saved {savedPath}</p>}
 
         {script && (
           <div className="rounded-xl border border-slate-800 bg-[#0d1117] p-3">
