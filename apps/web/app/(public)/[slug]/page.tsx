@@ -18,16 +18,24 @@ interface Page {
 }
 
 async function getPageBySlug(slug: string): Promise<Page | null> {
-  const { rows } = await query(
-    'SELECT * FROM pages WHERE slug = $1 AND published = true',
-    [slug]
-  );
-  return rows[0] || null;
+  try {
+    const { rows } = await query(
+      'SELECT * FROM pages WHERE slug = $1 AND published = true',
+      [slug]
+    );
+    return rows[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function generateStaticParams() {
-  const { rows } = await query('SELECT slug FROM pages WHERE published = true');
-  return rows.map((row: { slug: string }) => ({ slug: row.slug }));
+  try {
+    const { rows } = await query('SELECT slug FROM pages WHERE published = true');
+    return rows.map((row: { slug: string }) => ({ slug: row.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
