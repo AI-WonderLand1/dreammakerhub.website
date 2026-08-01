@@ -104,7 +104,7 @@ export default function TemplatesPanel() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full w-72 bg-[#0b0f19] text-white">
+    <div className="flex flex-col h-full w-[23.4rem] bg-[#0b0f19] text-white">
       <div className="shrink-0 p-3 border-b border-white/10">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs uppercase tracking-wider text-purple-400 font-bold">Templates</h3>
