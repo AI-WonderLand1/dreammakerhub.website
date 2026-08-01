@@ -26,6 +26,13 @@ export type Snapshot = {
   files: string[];
 };
 
+export type Revision = {
+  id: string;
+  versionNumber: number;
+  snapshot: unknown;
+  createdAt: string;
+};
+
 // Ensure the projects tables exist
 async function ensureTables() {
   const db = getDb();
@@ -50,6 +57,40 @@ async function ensureTables() {
       updated_at TIMESTAMPTZ DEFAULT NOW(),
       PRIMARY KEY (project_id, file_path)
     )
+  `).catch(() => {});
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS _project_revisions (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      owner_id TEXT NOT NULL,
+      version_number INT NOT NULL,
+      snapshot JSONB NOT NULL,
+      label TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (project_id, version_number)
+    )
+  `).catch(() => {});
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_project_revisions_project ON _project_revisions (project_id, created_at DESC)
+  `).catch(() => {});
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_project_revisions_version ON _project_revisions (project_id, version_number DESC)
+  `).catch(() => {});
+  await db.query(`
+    CREATE OR REPLACE FUNCTION prune_revisions(p_owner_id TEXT, p_project_id TEXT, p_limit INT)
+    RETURNS VOID AS $$
+    BEGIN
+      DELETE FROM _project_revisions
+      WHERE owner_id = p_owner_id
+        AND project_id = p_project_id
+        AND id NOT IN (
+          SELECT id FROM _project_revisions
+          WHERE owner_id = p_owner_id AND project_id = p_project_id
+          ORDER BY version_number DESC
+          LIMIT p_limit
+        );
+    END;
+    $$ LANGUAGE plpgsql
   `).catch(() => {});
 }
 
@@ -261,7 +302,85 @@ export async function deleteProject(projectId: string, ownerId: string): Promise
   await assertOwner(projectId, ownerId);
   const db = getDb();
   await db.query(`DELETE FROM _project_files WHERE project_id=$1`, [projectId]);
+  await db.query(`DELETE FROM _project_revisions WHERE project_id=$1`, [projectId]);
   await db.query(`DELETE FROM _projects WHERE id=$1`, [projectId]);
+}
+
+export async function createRevision(
+  projectId: string,
+  ownerId: string,
+  snapshot: unknown,
+  opts: { label?: string; limit?: number } = {},
+): Promise<Revision> {
+  const meta = await assertOwner(projectId, ownerId);
+  await ensureTables();
+  const db = getDb();
+  const limit = opts.limit ?? 50;
+
+  const tx = await db.connect();
+  try {
+    await tx.query('BEGIN');
+    const countRes = await tx.query(
+      `SELECT COALESCE(MAX(version_number), 0) AS max_version FROM _project_revisions WHERE project_id=$1`,
+      [projectId],
+    );
+    const versionNumber = Number(countRes.rows[0]?.max_version ?? 0) + 1;
+    const id = randomUUID();
+    await tx.query(
+      `INSERT INTO _project_revisions (id, project_id, owner_id, version_number, snapshot, label, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,NOW())`,
+      [id, projectId, ownerId, versionNumber, JSON.stringify(snapshot), opts.label ?? null],
+    );
+    await tx.query('SELECT prune_revisions($1, $2, $3)', [ownerId, projectId, limit]);
+    await tx.query(
+      `UPDATE _projects SET updated_at=NOW() WHERE id=$1`,
+      [projectId],
+    );
+    await tx.query('COMMIT');
+    return { id, versionNumber, snapshot, createdAt: new Date().toISOString() };
+  } catch (e) {
+    await tx.query('ROLLBACK');
+    throw e;
+  } finally {
+    tx.release();
+  }
+}
+
+export async function listRevisions(projectId: string, ownerId: string): Promise<Revision[]> {
+  await assertOwner(projectId, ownerId);
+  const db = getDb();
+  const result = await db.query(
+    `SELECT id, version_number, snapshot, created_at
+     FROM _project_revisions
+     WHERE project_id=$1
+     ORDER BY version_number DESC`,
+    [projectId],
+  );
+  return result.rows.map((r) => ({
+    id: r.id,
+    versionNumber: Number(r.version_number),
+    snapshot: r.snapshot,
+    createdAt: r.created_at?.toISOString?.() ?? r.created_at,
+  }));
+}
+
+export async function restoreRevision(projectId: string, ownerId: string, revisionId: string): Promise<Revision> {
+  await assertOwner(projectId, ownerId);
+  const db = getDb();
+  const result = await db.query(
+    `SELECT id, version_number, snapshot, created_at
+     FROM _project_revisions
+     WHERE project_id=$1 AND id=$2`,
+    [projectId, revisionId],
+  );
+  const r = result.rows[0];
+  if (!r) throw new Error("Revision not found");
+  return {
+    id: r.id,
+    versionNumber: Number(r.version_number),
+    snapshot: r.snapshot,
+    createdAt: r.created_at?.toISOString?.() ?? r.created_at,
+  };
 }
 
 export async function createSnapshot(projectId: string, ownerId: string): Promise<Snapshot> {
