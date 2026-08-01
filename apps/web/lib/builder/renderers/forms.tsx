@@ -28,7 +28,10 @@ export const formsRenderers: Record<string, BlockRenderer> = {
   'radio': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}><p className="text-xs text-white/50 mb-1">{el.props.label}</p>{(el.props.options as string[] || []).map((o: string, i: number) => <label key={i} className="flex items-center gap-2 text-xs text-white/60"><input type="radio" name={el.id} defaultChecked={i === 0} />{o}</label>)}{children}</div>;
   },
-  'search', 'product-search': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'search': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} style={{ display: 'flex', gap: '0.5rem' }}><input type="text" placeholder={el.props.placeholder || 'Search...'} className="flex-1 rounded border border-white/10 bg-black/40 px-2 py-1 text-xs text-white" /><button className="rounded bg-purple-600 text-white px-2 text-xs">{el.props.buttonText || '🔍'}</button>{children}</div>;
+  },
+  'product-search': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} style={{ display: 'flex', gap: '0.5rem' }}><input type="text" placeholder={el.props.placeholder || 'Search...'} className="flex-1 rounded border border-white/10 bg-black/40 px-2 py-1 text-xs text-white" /><button className="rounded bg-purple-600 text-white px-2 text-xs">{el.props.buttonText || '🔍'}</button>{children}</div>;
   },
 };

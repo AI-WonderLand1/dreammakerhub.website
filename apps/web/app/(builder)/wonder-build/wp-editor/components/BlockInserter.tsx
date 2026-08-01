@@ -1,8 +1,8 @@
 'use client';
 import { useMemo } from 'react';
-import { BLOCKS, BLOCK_CATEGORIES } from '@/lib/builder/components/ComponentLibrary';
+import { BLOCKS, BLOCK_CATEGORIES } from '@/lib/builder/blocks';
 import { BlockDefinition } from '@/lib/builder/types';
-import { blockToCanvasElement } from '@/lib/wp-engine/gutenberg';
+import { blockToCanvasElement } from '@/lib/builder/blocks/utils';
 import { useWpEditorStore } from '@/lib/wp-engine/editor-store';
 
 export function BlockInserter() {

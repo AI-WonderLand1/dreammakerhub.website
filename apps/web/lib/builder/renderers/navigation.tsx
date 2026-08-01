@@ -16,7 +16,10 @@ export const navigationRenderers: Record<string, BlockRenderer> = {
   'toc': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}><p className="text-xs font-semibold text-white/50 mb-1">{el.props.title}</p><div className="space-y-1">{[1, 2, 3].map((i) => <div key={i} className="text-[10px] text-white/40 pl-{(i-1)*2}" style={{ paddingLeft: `${(i-1)*12}px` }}>Section {i}</div>)}</div>{children}</div>;
   },
-  'social-share', 'social-feed': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'social-share': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps}><div className="flex gap-2">{(el.props.platforms || el.props.sources || ['twitter', 'facebook']).slice(0, 4).map((p: string, i: number) => <span key={i} className="text-lg opacity-60">{['🐦', '📘', '💼', '📷'][i] || '🔗'}</span>)}</div>{children}</div>;
+  },
+  'social-feed': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}><div className="flex gap-2">{(el.props.platforms || el.props.sources || ['twitter', 'facebook']).slice(0, 4).map((p: string, i: number) => <span key={i} className="text-lg opacity-60">{['🐦', '📘', '💼', '📷'][i] || '🔗'}</span>)}</div>{children}</div>;
   },
   'hashtag': ({ el, selectedId, selectElement, baseProps, style, children }) => {

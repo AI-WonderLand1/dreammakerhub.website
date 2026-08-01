@@ -107,13 +107,15 @@ export type BlockRenderer = (ctx: RendererCtx) => ReactNode;
 );
 
 // ── 5. Emit per-category renderer files ──────────────────────────────────
+// Each label becomes its own entry (object literal keys can't be comma-joined).
 const emitEntries = (groupList) =>
   groupList
-    .map((g) => {
+    .flatMap((g) => {
       const body = g.body.join('\n');
-      return `  ${g.labels.map((t) => `'${t}'`).join(', ')}: ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      const fn = `({ el, selectedId, selectElement, baseProps, style, children }) => {
 ${body}
-  },`;
+  }`;
+      return g.labels.map((t) => `  '${t}': ${fn},`);
     })
     .join('\n');
 

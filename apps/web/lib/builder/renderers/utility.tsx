@@ -13,13 +13,26 @@ export const utilityRenderers: Record<string, BlockRenderer> = {
   'spacer': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} />;
   },
-  'separator', 'divider': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'separator': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <hr {...baseProps} />;
+  },
+  'divider': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <hr {...baseProps} />;
   },
   'custom-html': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} dangerouslySetInnerHTML={{ __html: el.props.html || '' }} />;
   },
-  'accordion', 'faq': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'accordion': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      const accItems = (el.props.items as any[]) || [];
+      return (
+        <div {...baseProps} role="region" aria-label={el.props.title || 'Accordion'}>
+          {accItems.map((item: any, i: number) => (
+            <AccordionItem key={i} title={item.q || item.title} content={item.a || item.content} />
+          ))}
+        </div>
+      );
+  },
+  'faq': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       const accItems = (el.props.items as any[]) || [];
       return (
         <div {...baseProps} role="region" aria-label={el.props.title || 'Accordion'}>
@@ -82,7 +95,25 @@ export const utilityRenderers: Record<string, BlockRenderer> = {
   'lightbox': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} className="inline-block cursor-pointer"><img src={(el.props.images as string[] || [])[0] || 'https://picsum.photos/200/150'} className="w-32 h-24 object-cover rounded" /></div>;
   },
-  'ai-text', 'ai-chat', 'ai-translate', 'ai-summarize', 'ai-code', 'ai-rewrite', 'ai-extract': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+  'ai-text': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
+  },
+  'ai-chat': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
+  },
+  'ai-translate': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
+  },
+  'ai-summarize': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
+  },
+  'ai-code': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
+  },
+  'ai-rewrite': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
+  },
+  'ai-extract': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
   },
   'html': ({ el, selectedId, selectElement, baseProps, style, children }) => {
