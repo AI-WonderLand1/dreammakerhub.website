@@ -40,7 +40,7 @@ function buildElementCtx(el: CanvasElement, selectedId: string | null, selectEle
     baseProps,
     style,
     children: el.children?.map((child) =>
-      renderElement(buildElementCtx(child, selectedId, selectElement))
+      renderElementCtx(buildElementCtx(child, selectedId, selectElement))
     ),
   };
 }

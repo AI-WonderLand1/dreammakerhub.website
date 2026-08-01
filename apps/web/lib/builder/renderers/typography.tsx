@@ -2,7 +2,7 @@ import type { BlockRenderer } from './types';
 
 export const typographyRenderers: Record<string, BlockRenderer> = {
   'heading': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      const Tag = (el.props.level || 'h2') as keyof JSX.IntrinsicElements;
+      const Tag = (el.props.level || 'h2') as any;
       return <Tag {...baseProps}>{el.props.content || 'Heading'}{children}</Tag>;
   },
   'paragraph': ({ el, selectedId, selectElement, baseProps, style, children }) => {
