@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface Page {
   id: string;
   title: string;
