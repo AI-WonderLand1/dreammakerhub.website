@@ -304,7 +304,7 @@ function BuilderContent() {
                 </div>
 
                 {rightPanelOpen && (
-                  <aside aria-label="Element inspector" className="shrink-0 w-80 border-l border-white/10 flex flex-col">
+                  <aside aria-label="Element inspector" className="shrink-0 w-[26rem] border-l border-white/10 flex flex-col">
                     <nav aria-label="Right panel tabs" className="flex border-b border-white/10 bg-[#0c101d]">
                       {(['content', 'ai', 'import-export'] as const).map((tabName) => (
                         <button

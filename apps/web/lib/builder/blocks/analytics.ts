@@ -1,0 +1,13 @@
+import type { BlockDefinition } from '../types';
+
+export const ANALYTICS_BLOCKS: BlockDefinition[] = [
+// ═══════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════
+  { name: 'Google Analytics', type: 'ga-tracking', icon: '📊', category: 'analytics', description: 'Google Analytics tracking code', defaultProps: { measurementId: 'G-XXXXXXXXXX', anonymizeIp: true, sendPageView: true }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'measurementId', label: 'Measurement ID', type: 'text' }, { key: 'anonymizeIp', label: 'Anonymize IP', type: 'toggle' }, { key: 'sendPageView', label: 'Send Page View', type: 'toggle' }] },
+  { name: 'Hotjar', type: 'hotjar', icon: '🔥', category: 'analytics', description: 'Hotjar feedback and heatmap widget', defaultProps: { siteId: '', snippetVersion: 6 }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'siteId', label: 'Site ID', type: 'text' }, { key: 'snippetVersion', label: 'Snippet Version', type: 'number' }] },
+  { name: 'Facebook Pixel', type: 'facebook-pixel', icon: '📘', category: 'analytics', description: 'Facebook Pixel tracking code', defaultProps: { pixelId: '1234567890', trackEvents: true }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'pixelId', label: 'Pixel ID', type: 'text' }, { key: 'trackEvents', label: 'Track Events', type: 'toggle' }] },
+  { name: 'Google Tag Manager', type: 'gtm', icon: '🏷️', category: 'analytics', description: 'Google Tag Manager container', defaultProps: { containerId: 'GTM-XXXXXXX', dataLayerName: 'dataLayer' }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'containerId', label: 'Container ID', type: 'text' }, { key: 'dataLayerName', label: 'Data Layer Name', type: 'text' }] },
+  { name: 'Matomo', type: 'matomo', icon: '📈', category: 'analytics', description: 'Matomo (Piwik) analytics', defaultProps: { url: 'https://your-matomo-domain.com', siteId: 1 }, defaultStyles: { display: 'none' }, editableProps: [{ key: 'url', label: 'Matomo URL', type: 'text' }, { key: 'siteId', label: 'Site ID', type: 'number' }] },
+  { name: 'Simple Counter', type: 'simple-counter', icon: '🔢', category: 'analytics', description: 'Simple page view counter', defaultProps: { label: 'Visitors', count: 0, suffix: '', prefix: '' }, defaultStyles: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem', fontSize: '0.875rem' }, editableProps: [{ key: 'label', label: 'Label', type: 'text' }, { key: 'count', label: 'Count', type: 'number' }, { key: 'suffix', label: 'Suffix', type: 'text' }, { key: 'prefix', label: 'Prefix', type: 'text' }] },
+];

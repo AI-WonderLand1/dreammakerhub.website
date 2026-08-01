@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Pause, Film, Clapperboard, Music, Video, Scissors, Cpu, Maximize2, Loader2 } from "lucide-react";
+import { Play, Pause, Clapperboard, Music, Video, Scissors, Cpu, Maximize2, Loader2 } from "lucide-react";
 import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
 import type { GeneratedScene } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
@@ -28,7 +28,6 @@ export default function StudioMovieMaker() {
   const [currentTime, setCurrentTime] = useState(0);
   const [choreography, setChoreography] = useState("");
   const [injecting, setInjecting] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const [clips, setClips] = useState<{ camera: TrackClip[]; actor: TrackClip[]; audio: TrackClip[] }>({
     camera: [
@@ -163,7 +162,6 @@ export default function StudioMovieMaker() {
       logger.error("Inject keyframes error:", err);
     } finally {
       setInjecting(false);
-      setSaving(false);
     }
   }, [choreography, currentTime, clips, projectId]);
 

@@ -1,6 +1,6 @@
 'use client';
 import { useMemo } from 'react';
-import { BLOCKS } from '@/lib/builder/components/ComponentLibrary';
+import { BLOCKS } from '@/lib/builder/blocks';
 import { EditableProp } from '@/lib/builder/types';
 import { useWpEditorStore } from '@/lib/wp-engine/editor-store';
 
