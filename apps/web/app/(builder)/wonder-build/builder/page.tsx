@@ -101,8 +101,9 @@ function BuilderContent() {
             e.preventDefault();
             if (projectId) {
               storageService.saveToProject();
+              storageService.saveRevision(); // fire-and-forget: 2s debounced auto-save still running
             }
-            showToast('✅ Saved');
+            showToast('✅ Saved + revision');
             break;
           case 'd':
             if (selectedId) {

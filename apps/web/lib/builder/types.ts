@@ -80,6 +80,7 @@ export interface BlockDefinition {
   defaultProps: Record<string, any>;
   defaultStyles: CanvasElementStyles;
   editableProps: EditableProp[];
+  allowedChildren?: string[];
 }
 
 export type BlockCategory = 'forms' | 'typography' | 'media' | 'navigation' | 'marketing' | 'blog' | 'commerce' | 'products' | 'utility' | 'layout' | 'social' | 'analytics' | 'widgets' | 'notification' | 'payment' | 'seo' | 'files' | 'auth';
