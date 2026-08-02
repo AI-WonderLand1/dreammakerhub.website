@@ -3,6 +3,7 @@
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { useBuilderStore } from '../store';
 import { CanvasElement, BlockDefinition } from '../types';
+import { findBlockDefinition } from '../blocks/utils';
 import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
 
@@ -153,6 +154,15 @@ export default function VisualBuilderCanvas() {
     dragCounter.current = 0;
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain')) as BlockDefinition;
+      // Allowlist enforcement: if the drop target is a container with an
+      // `allowedChildren` array, reject blocks whose type isn't permitted.
+      if (dropTarget) {
+        const containerType = elements.find((el) => el.id === dropTarget)?.type;
+        const containerDef = containerType ? findBlockDefinition(containerType) : null;
+        if (containerDef?.allowedChildren && !containerDef.allowedChildren.includes(data.type)) {
+          return;
+        }
+      }
       const el: CanvasElement = {
         id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         type: data.type,
