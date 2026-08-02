@@ -1,35 +1,57 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import { useBuilderStore } from '../store';
 import { BLOCKS, BLOCK_CATEGORIES } from '../blocks';
 import type { BlockDefinition, BlockCategory, CanvasElement } from '../types';
 
+function LibraryBlockItem({ block }: { block: BlockDefinition }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `palette-${block.type}`,
+    data: { type: 'palette', block },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      onClick={() => useBuilderStore.getState().addElement(blockToElement(block))}
+      className={`flex items-center gap-2.5 p-2 rounded-lg border border-white/5 bg-white/[0.02] hover:border-purple-500/40 hover:bg-purple-500/5 cursor-grab active:cursor-grabbing transition-all group ${
+        isDragging ? 'opacity-40' : ''
+      }`}
+      title={block.description}
+    >
+      <span className="text-lg shrink-0">{block.icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-white/80 truncate">{block.name}</p>
+        <p className="text-[10px] text-white/30 truncate">{block.description}</p>
+      </div>
+      <span className="text-[9px] text-white/20 opacity-0 group-hover:opacity-100 transition-opacity">+</span>
+    </div>
+  );
+}
+
+function blockToElement(block: BlockDefinition): CanvasElement {
+  return {
+    id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    type: block.type,
+    name: block.name,
+    icon: block.icon,
+    props: { ...block.defaultProps },
+    styles: { ...block.defaultStyles },
+  };
+}
+
 export default function ComponentLibrary() {
-  const { addElement, setLeftPanelOpen } = useBuilderStore();
+  const { setLeftPanelOpen } = useBuilderStore();
   const [activeCategory, setActiveCategory] = useState<BlockCategory>('forms');
   const [search, setSearch] = useState('');
 
   const filtered = BLOCKS.filter(
     (b) => b.category === activeCategory && (!search || b.name.toLowerCase().includes(search.toLowerCase()))
   );
-
-  const handleDragStart = useCallback((e: React.DragEvent, block: BlockDefinition) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify(block));
-    e.dataTransfer.effectAllowed = 'copy';
-  }, []);
-
-  const handleAdd = useCallback((block: BlockDefinition) => {
-    const el: CanvasElement = {
-      id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      type: block.type,
-      name: block.name,
-      icon: block.icon,
-      props: { ...block.defaultProps },
-      styles: { ...block.defaultStyles },
-    };
-    addElement(el);
-  }, [addElement]);
 
   return (
     <div className="flex flex-col h-full w-[23.4rem] bg-[#0b0f19] text-white border-r border-white/10">
@@ -69,21 +91,7 @@ export default function ComponentLibrary() {
           <p className="text-xs text-white/30 text-center py-4">No blocks found.</p>
         )}
         {filtered.map((block) => (
-          <div
-            key={block.type}
-            draggable
-            onDragStart={(e) => handleDragStart(e, block)}
-            onClick={() => handleAdd(block)}
-            className="flex items-center gap-2.5 p-2 rounded-lg border border-white/5 bg-white/[0.02] hover:border-purple-500/40 hover:bg-purple-500/5 cursor-grab active:cursor-grabbing transition-all group"
-            title={block.description}
-          >
-            <span className="text-lg shrink-0">{block.icon}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-white/80 truncate">{block.name}</p>
-              <p className="text-[10px] text-white/30 truncate">{block.description}</p>
-            </div>
-            <span className="text-[9px] text-white/20 opacity-0 group-hover:opacity-100 transition-opacity">+</span>
-          </div>
+          <LibraryBlockItem key={block.type} block={block} />
         ))}
       </div>
 

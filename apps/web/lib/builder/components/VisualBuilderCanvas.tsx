@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useCallback, useRef, useEffect, useState } from 'react';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '../store';
-import { CanvasElement, BlockDefinition } from '../types';
-import { findBlockDefinition } from '../blocks/utils';
+import { CanvasElement } from '../types';
 import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
+import { CANVAS_ROOT_ID } from '../dnd-utils';
 
 function buildElementCtx(el: CanvasElement, selectedId: string | null, selectElement: (id: string | null) => void): RendererCtx {
   const isSelected = selectedId === el.id;
@@ -40,14 +43,49 @@ function buildElementCtx(el: CanvasElement, selectedId: string | null, selectEle
     selectElement,
     baseProps,
     style,
-    children: el.children?.map((child) =>
-      renderElementCtx(buildElementCtx(child, selectedId, selectElement))
-    ),
+    children: el.children?.length ? (
+      <SortableContext items={el.children.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+        {el.children.map((child) => (
+          <SortableBlock key={child.id} el={child} parentId={el.id} selectedId={selectedId} selectElement={selectElement} />
+        ))}
+      </SortableContext>
+    ) : undefined,
   };
 }
 
 function renderElement(el: CanvasElement, selectedId: string | null, selectElement: (id: string | null) => void): React.ReactNode {
   return renderElementCtx(buildElementCtx(el, selectedId, selectElement));
+}
+
+function SortableBlock({
+  el,
+  parentId,
+  selectedId,
+  selectElement,
+}: {
+  el: CanvasElement;
+  parentId: string | null;
+  selectedId: string | null;
+  selectElement: (id: string | null) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: el.id,
+    data: { type: 'canvas', parentId },
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    position: 'relative',
+    zIndex: isDragging ? 100 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {renderElement(el, selectedId, selectElement)}
+    </div>
+  );
 }
 
 const BREAKPOINT_WIDTHS: Record<string, string> = {
@@ -57,32 +95,12 @@ const BREAKPOINT_WIDTHS: Record<string, string> = {
   wide: '100%',
 };
 
-const CONTAINER_TYPES = ['group', 'columns', 'row', 'grid', 'flex', 'section', 'container', 'card'];
-
-function findDropContainer(elements: CanvasElement[], x: number, y: number): { parentId?: string; element?: CanvasElement } {
-  for (const el of elements) {
-    if (CONTAINER_TYPES.includes(el.type) && el.children) {
-      return { parentId: el.id, element: el };
-    }
-  }
-  for (const el of elements) {
-    if (el.children && el.children.length > 0) {
-      const nested = findDropContainer(el.children, x, y);
-      if (nested.parentId) return nested;
-    }
-  }
-  return {};
-}
-
 export default function VisualBuilderCanvas() {
-  const { elements, selectedId, selectElement, zoom, pan, setPan, setZoom, addElement, showGrid, snapToGrid, activeBreakpoint } = useBuilderStore();
+  const { elements, selectedId, selectElement, zoom, pan, setPan, setZoom, showGrid, activeBreakpoint } = useBuilderStore();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [dropTarget, setDropTarget] = useState<string | null>(null);
-  const dragCounter = useRef(0);
+  const { setNodeRef: setCanvasDroppableRef, isOver: isCanvasOver } = useDroppable({ id: CANVAS_ROOT_ID });
 
   const handleCanvasClick = useCallback(() => selectElement(null), [selectElement]);
 
@@ -116,120 +134,30 @@ export default function VisualBuilderCanvas() {
   };
   const handleMouseUp = () => setIsPanning(false);
 
-  // Drag over (for drops from ComponentLibrary)
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    setDragging(true);
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
-      const canvasX = (e.clientX - rect.left - pan.x) / zoom;
-      const canvasY = (e.clientY - rect.top - pan.y) / zoom;
-      setDragPos({ x: canvasX, y: canvasY });
-      // Find nearest container for nesting
-      if (elements.length > 0) {
-        const container = findDropContainer(elements, canvasX, canvasY);
-        setDropTarget(container.parentId || null);
-      }
-    }
-  }, [pan, zoom, elements]);
-
-  const handleDragLeave = useCallback(() => {
-    dragCounter.current -= 1;
-    if (dragCounter.current <= 0) {
-      dragCounter.current = 0;
-      setDragging(false);
-      setDropTarget(null);
-    }
-  }, []);
-
-  const handleDragEnter = useCallback(() => {
-    dragCounter.current += 1;
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    setDropTarget(null);
-    dragCounter.current = 0;
-    try {
-      const data = JSON.parse(e.dataTransfer.getData('text/plain')) as BlockDefinition;
-      // Allowlist enforcement: if the drop target is a container with an
-      // `allowedChildren` array, reject blocks whose type isn't permitted.
-      if (dropTarget) {
-        const containerType = elements.find((el) => el.id === dropTarget)?.type;
-        const containerDef = containerType ? findBlockDefinition(containerType) : null;
-        if (containerDef?.allowedChildren && !containerDef.allowedChildren.includes(data.type)) {
-          return;
-        }
-      }
-      const el: CanvasElement = {
-        id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        type: data.type,
-        name: data.name,
-        icon: data.icon,
-        props: { ...data.defaultProps },
-        styles: { ...data.defaultStyles },
-      };
-      addElement(el, dropTarget || undefined);
-    } catch { /* ignore */ }
-  }, [addElement, dropTarget]);
+  const mergedRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      canvasRef.current = node;
+      setCanvasDroppableRef(node);
+    },
+    [setCanvasDroppableRef]
+  );
 
   return (
     <div
-      ref={canvasRef}
+      ref={mergedRef}
       className="relative w-full h-full overflow-hidden bg-[#090d16] text-white select-none"
       style={{
         backgroundImage: showGrid
           ? 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)'
           : 'none',
         backgroundSize: '24px 24px',
-        cursor: isPanning ? 'grabbing' : dragging ? 'copy' : 'default',
+        cursor: isPanning ? 'grabbing' : isCanvasOver ? 'copy' : 'default',
       }}
       onClick={handleCanvasClick}
-      onDragOver={handleDragOver}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      {/* Drop indicator */}
-      {dragging && (
-        <>
-          {dropTarget && (
-            <div
-              className="absolute z-20 pointer-events-none border-2 border-dashed border-purple-500/50 rounded-lg"
-              style={{
-                left: pan.x,
-                top: pan.y,
-                width: '200px',
-                height: '60px',
-                transform: `scale(${zoom})`,
-                transformOrigin: '0 0',
-              }}
-            >
-              <span className="absolute -top-4 left-2 bg-purple-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-                Drop into container
-              </span>
-            </div>
-          )}
-          <div
-            className="absolute z-20 pointer-events-none"
-            style={{
-              left: dragPos.x * zoom + pan.x,
-              top: dragPos.y * zoom + pan.y,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <div className="bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg shadow-purple-900/50">
-              {dropTarget ? '+ Nest' : '+ Drop here'}
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Transformed canvas */}
       <div
         className="absolute inset-0 transition-transform duration-75 origin-top-left"
@@ -238,7 +166,7 @@ export default function VisualBuilderCanvas() {
           transformOrigin: '0 0',
         }}
       >
-        {elements.length === 0 && !dragging ? (
+        {elements.length === 0 ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center p-8 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] backdrop-blur-sm max-w-sm">
               <p className="text-4xl mb-3">🎨</p>
@@ -260,7 +188,11 @@ export default function VisualBuilderCanvas() {
                 padding: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? '16px' : '0',
               }}
             >
-              {elements.map((el) => renderElement(el, selectedId, selectElement))}
+              <SortableContext items={elements.map((el) => el.id)} strategy={verticalListSortingStrategy}>
+                {elements.map((el) => (
+                  <SortableBlock key={el.id} el={el} parentId={null} selectedId={selectedId} selectElement={selectElement} />
+                ))}
+              </SortableContext>
             </div>
           </div>
         )}

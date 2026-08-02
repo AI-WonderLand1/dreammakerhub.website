@@ -9,6 +9,7 @@ interface BuilderStore extends BuilderState {
   setElements: (elements: CanvasElement[]) => void;
   addElement: (element: CanvasElement, parentId?: string) => void;
   removeElement: (id: string) => void;
+  moveElement: (id: string, targetParentId: string | null, index: number) => void;
   selectElement: (id: string | null) => void;
   updateElementProps: (id: string, props: Record<string, any>) => void;
   updateElementStyles: (id: string, styles: Record<string, any>) => void;
@@ -119,6 +120,48 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       elements: removeRecursive(elements),
       selectedId: get().selectedId === id ? null : get().selectedId,
     });
+  },
+
+  moveElement: (id, targetParentId, index) => {
+    const { elements } = get();
+    let moved: CanvasElement | null = null;
+
+    // Find and remove the element from its current location (root or a container).
+    const stripRecursive = (els: CanvasElement[]): CanvasElement[] =>
+      els
+        .filter((el) => {
+          if (el.id === id) {
+            moved = el;
+            return false;
+          }
+          return true;
+        })
+        .map((el) => ({
+          ...el,
+          children: el.children ? stripRecursive(el.children) : undefined,
+        }));
+
+    const stripped = stripRecursive(elements);
+    if (!moved) return;
+
+    const insertInto = (els: CanvasElement[], at: number): CanvasElement[] => {
+      const next = [...els];
+      next.splice(Math.max(0, Math.min(at, next.length)), 0, moved as CanvasElement);
+      return next;
+    };
+
+    let result: CanvasElement[];
+    if (targetParentId) {
+      result = stripped.map((el) =>
+        el.id === targetParentId
+          ? { ...el, children: insertInto(el.children || [], index) }
+          : el
+      );
+    } else {
+      result = insertInto(stripped, index);
+    }
+
+    set({ elements: result });
   },
 
   selectElement: (id) => set({ selectedId: id }),
