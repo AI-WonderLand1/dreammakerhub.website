@@ -27,3 +27,4 @@ mobile_oci_key*.pem
 
 # Runtime artifacts / local secret stores
 agent/data/*.db
+apps/web/tsconfig.tsbuildinfo

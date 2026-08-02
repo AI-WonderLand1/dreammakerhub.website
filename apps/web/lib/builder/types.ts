@@ -123,4 +123,4 @@ export interface Extension {
 }
 
 export type LeftPanelTab = 'blocks' | 'layers' | 'templates' | 'files';
-export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility' | 'ai' | 'import-export';
+export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility' | 'ai' | 'import-export' | 'history';

@@ -26,6 +26,7 @@ const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/Ke
 const AccessibilityCheckerPanel = dynamic(() => import('@/lib/builder/components/AccessibilityCheckerPanel'), { ssr: false });
 const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
 const PipelineIndicator = dynamic(() => import('@/lib/builder/components/PipelineIndicator'), { ssr: false });
+const RevisionsPanel = dynamic(() => import('@/lib/builder/components/RevisionsPanel'), { ssr: false });
 const FileManagerPanel = dynamic(() => import('@/components/file-manager/FileManagerPanel'), { ssr: false });
 
 type BuilderTab = 'code' | 'design' | 'preview';
@@ -46,7 +47,13 @@ function BuilderContent() {
   const [tab, setTab] = useState<BuilderTab>('design');
   const [imported, setImported] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [projectStatus, setProjectStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
   const previewRef = useRef<HTMLIFrameElement>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   // Initialize pipeline with project ID
   useEffect(() => {
@@ -54,12 +61,58 @@ function BuilderContent() {
       setProjectId(projectId);
       storageService.setProjectId(projectId);
     }
+    import('@/lib/supabase/client').then(async ({ createClient, ensureSupabaseConfig, isSupabaseConfigured }) => {
+      const config = await ensureSupabaseConfig();
+      if (!config) {
+        if (isSupabaseConfigured === false) {
+          showToast('⚠️ Supabase not configured — local-only mode');
+        }
+        return;
+      }
+      const client = createClient();
+      if (!client) return;
+      const { data } = await client.auth.getSession();
+      const uid = data.session?.user?.id;
+      if (uid) storageService.setOwnerId(uid);
+    }).catch(() => {});
     const pipe = getPipeline({ projectId: projectId || undefined });
     if (!pipe.isRunning()) {
       pipe.start();
     }
     return () => {};
-  }, [projectId, setProjectId]);
+  }, [projectId, setProjectId, showToast]);
+
+  // Validate the project exists before showing an empty canvas
+  useEffect(() => {
+    if (!projectId) {
+      setProjectStatus('ready');
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/projects/${projectId}/files`)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setProjectStatus('ready');
+          return;
+        }
+        if (res.status === 500) {
+          return res.json().then((data: { error?: string }) => {
+            if (cancelled) return;
+            const msg = String(data?.error ?? '');
+            if (msg.includes('metadata missing') || msg.includes('Forbidden')) setProjectStatus('notfound');
+            else setProjectStatus('ready');
+          });
+        }
+        setProjectStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setProjectStatus('ready');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   // Wire preview iframe
   useEffect(() => {
@@ -67,11 +120,6 @@ function BuilderContent() {
       livePreviewService.setIframe(previewRef.current);
     }
   }, [tab]);
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  }, []);
 
   useEffect(() => {
     const pendingCode = sessionStorage.getItem('pendingBuilderCode');
@@ -101,9 +149,13 @@ function BuilderContent() {
             e.preventDefault();
             if (projectId) {
               storageService.saveToProject();
-              storageService.saveRevision(); // fire-and-forget: 2s debounced auto-save still running
+              storageService.saveRevision().then((rev) => {
+                if (rev) showToast('✅ Saved + revision');
+                else showToast('⚠️ Auto-saved, revision failed');
+              });
+            } else {
+              showToast('💾 No project — edit in local mode');
             }
-            showToast('✅ Saved + revision');
             break;
           case 'd':
             if (selectedId) {
@@ -158,6 +210,23 @@ function BuilderContent() {
 
   return (
     <>
+      {projectStatus === 'notfound' ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+          <div className="text-4xl">🔍</div>
+          <h1 className="text-xl font-bold text-white">Project not found</h1>
+          <p className="max-w-sm text-xs text-white/50">
+            This project doesn&apos;t exist, or you don&apos;t have access to it. Check the project ID in the URL and try
+            again.
+          </p>
+          <a
+            href="/wonder-build"
+            className="mt-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-500 transition-colors"
+          >
+            ← Back to WonderBuild Hub
+          </a>
+        </div>
+      ) : (
+      <>
       <a
         href="#builder-canvas"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:bg-purple-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-xs focus:font-semibold focus:outline-none focus:ring-2 focus:ring-purple-400"
@@ -318,7 +387,7 @@ function BuilderContent() {
                 {rightPanelOpen && (
                   <aside aria-label="Element inspector" className="shrink-0 w-[26rem] border-l border-white/10 flex flex-col">
                     <nav aria-label="Right panel tabs" className="flex border-b border-white/10 bg-[#0c101d]">
-                      {(['content', 'ai', 'import-export'] as const).map((tabName) => (
+                      {(['content', 'ai', 'import-export', 'history'] as const).map((tabName) => (
                         <button
                           key={tabName}
                           onClick={() => setRightPanelTab(tabName)}
@@ -328,7 +397,7 @@ function BuilderContent() {
                             rightPanelTab === tabName ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500' : 'text-white/40 hover:text-white/70'
                           }`}
                         >
-                          {tabName === 'content' ? '🔧 Inspector' : tabName === 'ai' ? '🤖 AI' : '📦 Import/Export'}
+                          {tabName === 'content' ? '🔧 Inspector' : tabName === 'ai' ? '🤖 AI' : tabName === 'import-export' ? '📦 Import/Export' : '🕘 History'}
                         </button>
                       ))}
                     </nav>
@@ -336,6 +405,7 @@ function BuilderContent() {
                       {rightPanelTab === 'content' && <InspectorPanel />}
                       {rightPanelTab === 'ai' && <AIAssistantPanel />}
                       {rightPanelTab === 'import-export' && <ImportExportPanel />}
+                      {rightPanelTab === 'history' && <RevisionsPanel projectId={projectId} />}
                     </div>
                   </aside>
                 )}
@@ -378,6 +448,8 @@ function BuilderContent() {
         >
           {toast}
         </div>
+      )}
+      </>
       )}
     </>
   );
