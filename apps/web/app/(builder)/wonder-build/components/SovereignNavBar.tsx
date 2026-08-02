@@ -13,7 +13,6 @@ const NAV_LINKS = [
   { href: '/wonder-build/preview', label: 'Preview', icon: '👁️' },
   { href: '/wonder-build/sandbox', label: 'Sandbox', icon: '📄' },
   { href: '/wonder-build/builder', label: 'Builder', icon: '🎨' },
-  { href: '/wonder-build/wp-editor', label: 'WP Editor', icon: '📝' },
   { href: '/wonder-build/playcanvas', label: '3D', icon: '🎮' },
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
 ] as const;

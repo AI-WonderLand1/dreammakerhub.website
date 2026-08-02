@@ -7,7 +7,6 @@ import {
   Brain,
   Box,
   Compass,
-  FileText,
   Palette,
   ArrowRight,
   Sparkles,
@@ -21,14 +20,6 @@ const TOOLS = [
     desc: 'Describe what to build and the AI generates production-ready apps and sites.',
     highlight: true,
     tag: 'AI',
-  },
-  {
-    href: '/wonder-build/wp-editor',
-    icon: FileText,
-    title: 'WordPress Editor',
-    desc: 'Gutenberg-style block canvas that publishes directly to WordPress via the AI Wonderland plugin.',
-    highlight: true,
-    tag: 'CMS',
   },
   {
     href: '/wonder-build/builder',
