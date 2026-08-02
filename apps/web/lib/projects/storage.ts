@@ -20,12 +20,6 @@ type FileEntry = {
   content?: string;
 };
 
-export type Snapshot = {
-  id: string;
-  createdAt: string;
-  files: string[];
-};
-
 export type Revision = {
   id: string;
   versionNumber: number;
@@ -383,26 +377,6 @@ export async function restoreRevision(projectId: string, ownerId: string, revisi
   };
 }
 
-export async function createSnapshot(projectId: string, ownerId: string): Promise<Snapshot> {
-  const files = await listFiles(projectId, ownerId);
-  return { id: randomUUID(), createdAt: new Date().toISOString(), files };
+export async function createSnapshot(projectId: string, ownerId: string): Promise<Revision> {
+  return createRevision(projectId, ownerId, await listFiles(projectId, ownerId));
 }
-
-export async function listSnapshots(projectId: string, ownerId: string): Promise<Snapshot[]> {
-  return [];
-}
-
-export async function restoreSnapshot(projectId: string, ownerId: string, snapshotId: string): Promise<Snapshot> {
-  const snapshots = await listSnapshots(projectId, ownerId);
-  const snapshot = snapshots.find((entry) => entry.id === snapshotId);
-  if (!snapshot) throw new Error("Snapshot not found");
-  return snapshot;
-}
-
-// Legacy storage shim for compatibility
-export const storage = {
-  upload: async (path: string, file: any) => ({ error: null }),
-  download: async (path: string) => ({ data: null, error: { message: "Storage not available" } }),
-  remove: async (path: string) => ({ error: null }),
-  list: async (path: string) => ({ data: [], error: null }),
-};

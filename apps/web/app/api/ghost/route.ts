@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
-import { storage } from "@/lib/projects/storage";
+import { listFiles, readFile } from "@/lib/projects/storage";
 import { randomUUID } from "crypto";
 import { logger } from '@/lib/logger';
 
@@ -25,19 +25,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "projectId required" }, { status: 400 });
     }
 
-    // Read all project files
-    const prefix = `projects/${projectId}/files/`;
-    const { data: fileList } = await storage.list(prefix);
+    // Read all project files from Postgres
+    const fileList = await listFiles(projectId, user.id);
     if (!fileList || fileList.length === 0) {
       return NextResponse.json({ error: "No files in project" }, { status: 400 });
     }
 
     const files: Record<string, string> = {};
-    for (const entry of fileList) {
-      const filePath = entry.name.replace(prefix, "");
-      const { data: fileData } = await storage.download(`${prefix}${filePath}`);
-      if (fileData) {
-        files[filePath] = await fileData.text();
+    for (const filePath of fileList) {
+      const content = await readFile(projectId, user.id, filePath);
+      if (content !== null) {
+        files[filePath] = content;
       }
     }
 
