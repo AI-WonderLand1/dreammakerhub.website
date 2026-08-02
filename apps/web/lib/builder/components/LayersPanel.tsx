@@ -4,7 +4,17 @@ import React from 'react';
 import { useBuilderStore } from '../store';
 
 export default function LayersPanel() {
-  const { elements, selectedId, selectElement, removeElement } = useBuilderStore();
+  const { elements, selectedId, selectElement, removeElement, moveElement } = useBuilderStore();
+
+  const moveUp = (id: string, parentId: string | null, index: number) => {
+    if (index <= 0) return;
+    moveElement(id, parentId, index - 1);
+  };
+
+  const moveDown = (id: string, parentId: string | null, index: number, length: number) => {
+    if (index >= length - 1) return;
+    moveElement(id, parentId, index + 1);
+  };
 
   return (
     <div className="flex flex-col h-full w-[23.4rem] bg-[#0b0f19] text-white">
@@ -33,12 +43,33 @@ export default function LayersPanel() {
                 <span className="font-medium truncate flex-1">{el.name}</span>
                 {el.locked && <span className="text-yellow-500 text-[10px]">🔒</span>}
                 {el.hidden && <span className="text-white/30 text-[10px]">👁️</span>}
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeElement(el.id); }}
-                  className="text-white/30 hover:text-red-400 px-1 text-xs"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveUp(el.id, null, index); }}
+                    disabled={index === 0}
+                    className="text-white/30 hover:text-white disabled:opacity-20 px-0.5 text-[10px]"
+                    title="Move up"
+                    aria-label={`Move ${el.name} up`}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveDown(el.id, null, index, elements.length); }}
+                    disabled={index >= elements.length - 1}
+                    className="text-white/30 hover:text-white disabled:opacity-20 px-0.5 text-[10px]"
+                    title="Move down"
+                    aria-label={`Move ${el.name} down`}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeElement(el.id); }}
+                    className="text-white/30 hover:text-red-400 px-1 text-xs"
+                    aria-label={`Delete ${el.name}`}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
               {el.children && el.children.length > 0 && (
                 <div className="ml-4 mt-1 space-y-1 border-l border-white/10 pl-2">
@@ -54,6 +85,24 @@ export default function LayersPanel() {
                     >
                       <span className="text-white/20">{child.icon || '•'}</span>
                       <span className="truncate flex-1">{child.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); moveUp(child.id, el.id, ci); }}
+                        disabled={ci === 0}
+                        className="text-white/30 hover:text-white disabled:opacity-20 px-0.5"
+                        title="Move up"
+                        aria-label={`Move ${child.name} up`}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); moveDown(child.id, el.id, ci, el.children!.length); }}
+                        disabled={ci >= el.children!.length - 1}
+                        className="text-white/30 hover:text-white disabled:opacity-20 px-0.5"
+                        title="Move down"
+                        aria-label={`Move ${child.name} down`}
+                      >
+                        ↓
+                      </button>
                     </div>
                   ))}
                 </div>

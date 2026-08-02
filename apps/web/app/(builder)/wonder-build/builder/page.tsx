@@ -2,16 +2,21 @@
 
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, pointerWithin } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import type { DragStartEvent, DragEndEvent, CollisionDetection } from '@dnd-kit/core';
 import { useSovereignOS } from '../context/SovereignOSContext';
 import { SovereignOSProvider } from '../context/SovereignOSContext';
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
 import { useBuilderStore } from '@/lib/builder/store';
-import type { CanvasElement } from '@/lib/builder/types';
+import type { CanvasElement, BlockDefinition } from '@/lib/builder/types';
+import { findBlockDefinition } from '@/lib/builder/blocks/utils';
 import { parseHtmlToElements, isHtmlString } from '@/lib/builder/html-parser';
 import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
 import { storageService } from '@/lib/builder/pipeline/StorageService';
 import { livePreviewService } from '@/lib/builder/pipeline/LivePreviewService';
+import { CANVAS_ROOT_ID, CONTAINER_TYPES, findElementInfo, blockToCanvasElement, isDescendantOf } from '@/lib/builder/dnd-utils';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
@@ -39,16 +44,37 @@ function BuilderContent() {
   const store = useBuilderStore();
   const {
     setElements, leftPanelOpen, setLeftPanelOpen, leftPanelTab, setLeftPanelTab,
-    rightPanelOpen, setRightPanelOpen, rightPanelTab, setRightPanelTab, showGrid, setShowGrid, snapToGrid, setSnapToGrid,
+    rightPanelOpen, rightPanelTab, setRightPanelTab, showGrid, setShowGrid, snapToGrid, setSnapToGrid,
     undo, redo, zoom, setZoom, selectedId, elements, removeElement, selectElement,
-    setShortcutsModalOpen, shortcutsModalOpen, setProjectId,
+    setShortcutsModalOpen, shortcutsModalOpen, setProjectId, addElement, moveElement,
   } = store;
 
   const [tab, setTab] = useState<BuilderTab>('design');
   const [imported, setImported] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [projectStatus, setProjectStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
+  const [dragOverlay, setDragOverlay] = useState<BlockDefinition | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // Prefer the innermost droppable under the pointer; when only the canvas
+  // root is under the pointer, resolve to it (empty-canvas drops).
+  const collisionDetection: CollisionDetection = useCallback(
+    (args) => {
+      const within = pointerWithin(args);
+      if (within.length > 0) {
+        const inner = within.filter((c) => c.id !== CANVAS_ROOT_ID);
+        if (inner.length > 0) return inner;
+        return within;
+      }
+      return closestCenter(args);
+    },
+    []
+  );
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -186,6 +212,93 @@ function BuilderContent() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, elements, undo, redo, removeElement, selectElement, zoom, setZoom, shortcutsModalOpen, setShortcutsModalOpen, showToast, projectId]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = event.active.data.current as { type?: string; block?: BlockDefinition } | undefined;
+    if (data?.type === 'palette' && data.block) {
+      setDragOverlay(data.block);
+    }
+  }, []);
+
+  const handleDragCancel = useCallback(() => {
+    setDragOverlay(null);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    setDragOverlay(null);
+    if (!over) return;
+
+    // Allowlist enforcement: reject nesting a block into a container whose
+    // `allowedChildren` array doesn't include the block's type.
+    const allowedIn = (containerType: string, childType: string): boolean => {
+      const containerDef = findBlockDefinition(containerType);
+      return !containerDef?.allowedChildren || containerDef.allowedChildren.includes(childType);
+    };
+
+    const activeData = active.data.current as { type?: string; parentId?: string | null; block?: BlockDefinition } | undefined;
+    const overId = over.id as string;
+
+    // Palette drop: create a new element, nesting into a container when dropped on one.
+    if (activeData?.type === 'palette' && activeData.block) {
+      const el = blockToCanvasElement(activeData.block);
+      if (overId === CANVAS_ROOT_ID) {
+        addElement(el);
+        return;
+      }
+      const overInfo = findElementInfo(useBuilderStore.getState().elements, overId);
+      if (!overInfo) {
+        addElement(el);
+        return;
+      }
+      if (CONTAINER_TYPES.includes(overInfo.el.type)) {
+        if (allowedIn(overInfo.el.type, el.type)) {
+          addElement(el, overId);
+        } else {
+          addElement(el);
+        }
+      } else {
+        addElement(el, overInfo.parentId || undefined);
+      }
+      return;
+    }
+
+    // Existing element move (reorder within a parent or move between containers).
+    const activeId = active.id as string;
+    if (overId === activeId) return;
+
+    const elements = useBuilderStore.getState().elements;
+    const activeInfo = findElementInfo(elements, activeId);
+    if (!activeInfo) return;
+
+    // Prevent dropping a container into its own subtree.
+    if (activeInfo.el.children?.length && isDescendantOf(elements, overId, activeId)) return;
+
+    let targetParentId: string | null;
+    let targetIndex: number;
+
+    if (overId === CANVAS_ROOT_ID) {
+      targetParentId = null;
+      targetIndex = elements.length;
+    } else {
+      const overInfo = findElementInfo(elements, overId);
+      if (!overInfo) return;
+
+      if (CONTAINER_TYPES.includes(overInfo.el.type)) {
+        // Dropped on a container: move into it as its last child.
+        if (!allowedIn(overInfo.el.type, activeInfo.el.type)) return;
+        targetParentId = overId;
+        targetIndex = overInfo.el.children?.length ?? 0;
+      } else {
+        // Dropped on a sibling: take that sibling's position in its parent.
+        if (overInfo.parentId && !allowedIn(overInfo.parentId, activeInfo.el.type)) return;
+        targetParentId = overInfo.parentId;
+        targetIndex = overInfo.index;
+      }
+    }
+
+    moveElement(activeId, targetParentId, targetIndex);
+  }, [addElement, moveElement]);
 
   const handleImportToCanvas = useCallback(() => {
     if (!editorCode) return;
@@ -353,6 +466,13 @@ function BuilderContent() {
                 </div>
               </nav>
 
+              <DndContext
+                sensors={sensors}
+                collisionDetection={collisionDetection}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+              >
               <div className="flex flex-1 overflow-hidden relative">
                 {leftPanelOpen && (
                   <aside aria-label="Block library and layers" className="shrink-0 border-r border-white/10">
@@ -410,6 +530,15 @@ function BuilderContent() {
                   </aside>
                 )}
               </div>
+              <DragOverlay dropAnimation={null}>
+                {dragOverlay ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-purple-500/50 bg-[#1a1230] px-3 py-2 text-xs text-white shadow-xl shadow-purple-900/40 pointer-events-none">
+                    <span className="text-lg">{dragOverlay.icon}</span>
+                    <span className="font-semibold">{dragOverlay.name}</span>
+                  </div>
+                ) : null}
+              </DragOverlay>
+              </DndContext>
             </div>
           )}
 
