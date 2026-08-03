@@ -40,6 +40,15 @@ export function getSupabaseClient() {
   if (cachedClient) return cachedClient
   if (!supabaseUrl || !supabaseAnonKey) return null
 
+  const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers)
+    const urlStr = typeof url === 'string' ? url : url.toString()
+    if (urlStr.includes('/auth/v1/token')) {
+      headers.delete('Authorization')
+    }
+    return fetch(url, { ...init, headers })
+  }
+
   cachedClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name) {
@@ -60,6 +69,9 @@ export function getSupabaseClient() {
         if (typeof document === 'undefined') return
         document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`
       },
+    },
+    global: {
+      fetch: customFetch,
     },
   })
   return cachedClient
