@@ -5,7 +5,7 @@ import { engineManager } from '@engine/core';
 import { logger } from '@/lib/logger';
 
 // Dynamic import for PlayCanvas (client-side only)
-let pc: any = null;
+const pc: any = null;
 
 interface PlayCanvasViewerProps {
   onSceneReady?: (app: any) => void;

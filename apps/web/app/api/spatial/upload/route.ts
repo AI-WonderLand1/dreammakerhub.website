@@ -15,7 +15,8 @@ const ALLOWED_TYPES = [
 
 async function ensureBucket() {
   try {
-    await supabaseServer.storage.createBucket(SPLAT_BUCKET, {
+    const supabase = await supabaseServer();
+    await supabase.storage.createBucket(SPLAT_BUCKET, {
       public: false,
       fileSizeLimit: MAX_FILE_SIZE,
       allowedMimeTypes: ALLOWED_TYPES,
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
       const path = `${userId}/${projectId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const buffer = Buffer.from(await file.arrayBuffer());
 
-      const { error } = await supabaseServer.storage
+      const { error } = await supabase.storage
         .from(SPLAT_BUCKET)
         .upload(path, buffer, { contentType: file.type, upsert: false });
 
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const { data: publicUrl } = supabaseServer.storage
+      const { data: publicUrl } = supabase.storage
         .from(SPLAT_BUCKET)
         .getPublicUrl(path);
 
