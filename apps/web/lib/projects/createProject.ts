@@ -18,7 +18,8 @@ export async function createProject(
   const { privateKey, publicKey } = generateSSHKeyPair(keyComment);
   const encryptedPrivateKey = encrypt(privateKey);
   
-  const { data: project, error: projectError } = await supabaseServer
+  const supabase = await supabaseServer();
+  const { data: project, error: projectError } = await supabase
     .from("projects")
     .insert({
       id: projectId,
@@ -38,7 +39,7 @@ export async function createProject(
     throw new Error(projectError.message);
   }
   
-  const { error: keyError } = await supabaseServer
+  const { error: keyError } = await supabase
     .from("project_ssh_keys")
     .insert({
       project_id: projectId,

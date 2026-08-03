@@ -13,7 +13,8 @@ export interface UserSSHKey {
  * Key is generated on first access and stored encrypted in Supabase.
  */
 export async function getUserSSHKey(userId: string, userEmail: string): Promise<UserSSHKey> {
-  const { data, error } = await supabaseServer
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase
     .from("profiles")
     .select("ssh_public_key, ssh_private_key_encrypted, ssh_key_generated_at")
     .eq("id", userId)
@@ -39,7 +40,7 @@ export async function getUserSSHKey(userId: string, userEmail: string): Promise<
   const encryptedPrivateKey = encrypt(privateKey);
 
   // Store in profiles
-  const { error: updateError } = await supabaseServer
+  const { error: updateError } = await supabase
     .from("profiles")
     .update({
       ssh_public_key: publicKey,

@@ -12,7 +12,8 @@ import { generateKeyPairSync } from "crypto";
 import { logger } from '@/lib/logger';
 
 export async function getProjectSSHKey(projectId: string): Promise<string | null> {
-  const { data, error } = await supabaseServer
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase
     .from("project_ssh_keys")
     .select("private_key_encrypted")
     .eq("project_id", projectId)
@@ -93,8 +94,9 @@ export async function createProjectRuntime(
       
       // Store encrypted private key and public key in database
       const encryptedPrivateKey = encrypt(privKey);
+      const supabase = await supabaseServer();
       
-      await supabaseServer
+      await supabase
         .from("project_ssh_keys")
         .insert({
           project_id: projectId,

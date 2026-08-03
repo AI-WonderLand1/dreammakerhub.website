@@ -126,7 +126,7 @@ export default function BillingUsagePage() {
       return;
     }
 
-    let channels: any[] = [];
+    const channels: any[] = [];
 
     const loadUsage = async () => {
       try {

@@ -12,7 +12,7 @@ export function updateRelationship(
   currentTick: number
 ): number {
   // Apply interaction effect
-  let newScore = currentScore + interactionValue;
+  const newScore = currentScore + interactionValue;
   
   // Clamp to [-100, 100]
   return Math.max(-100, Math.min(100, newScore));
@@ -24,7 +24,7 @@ export function decayRelationship(currentScore: number, currentTick: number, las
   // In a real implementation, we'd use (currentTick - lastInteractionTick) to calculate decay
   
   const decayRate = 0.999;
-  let newScore = currentScore * decayRate;
+  const newScore = currentScore * decayRate;
   
   return Math.max(-100, Math.min(100, newScore));
 }
