@@ -33,7 +33,7 @@ export async function storeConfessionToMem0(
   confession: StoredConfession
 ): Promise<boolean> {
   try {
-    const supabase = supabaseRouteClient();
+    const supabase = await supabaseRouteClient();
     const bucket = CONFESSIONS_BUCKET;
     const date = new Date().toISOString().slice(0, 10);
     const path = `users/${confession.userId}/projects/${confession.projectId}/${date}/${confession.traceId}.json`;
@@ -91,7 +91,7 @@ export async function searchMem0Confessions(
   limit: number = 10
 ): Promise<StoredConfession[]> {
   try {
-    const supabase = supabaseRouteClient();
+    const supabase = await supabaseRouteClient();
     const bucket = CONFESSIONS_BUCKET;
     const { data: files, error } = await supabase.storage
       .from(bucket)
@@ -147,7 +147,7 @@ export async function getUserConfessions(
   limit: number = 50
 ): Promise<StoredConfession[]> {
   try {
-    const supabase = supabaseRouteClient();
+    const supabase = await supabaseRouteClient();
     const bucket = CONFESSIONS_BUCKET;
     const prefix = projectId
       ? `users/${userId}/projects/${projectId}/`

@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 export async function DELETE(_: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
-  const supabase = supabaseRouteClient();
+  const supabase = await supabaseRouteClient();
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

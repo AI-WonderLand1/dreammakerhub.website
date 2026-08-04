@@ -53,7 +53,6 @@ const pathAliases = {
     '@/core/ai/providers/opencode': join(__dirname, '../../engine/core/ai/providers/opencode'),
     '@/core/ai/providers/openrouter': join(__dirname, '../../engine/core/ai/providers/openrouter'),
     '@/core/ai/runModel': join(__dirname, '../../engine/core/ai/runModel'),
-    '@/core/ide/applyArtifact': join(__dirname, '../../engine/core/ide/applyArtifact'),
     '@/data/templates': join(__dirname, 'data/templates'),
     '@/infra/lib/supabase/server-client': join(__dirname, '../../infra/lib/supabase/server-client'),
     '@/infra/services/jobs/orchestrateScenePipeline': join(__dirname, '../../infra/services/jobs/orchestrateScenePipeline'),

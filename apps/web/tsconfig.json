@@ -15,6 +15,7 @@
     "paths": {
       "@/*": ["./"],
       "@app/*": ["./app/*"],
+      "@/app/*": ["./app/*"],
       "@builder/*": ["./app/(builder)/wonder-build/*"],
       "@core/*": ["../../engine/core/*"],
 
