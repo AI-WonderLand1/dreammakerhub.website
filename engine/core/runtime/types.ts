@@ -1,5 +1,5 @@
 export interface EngineConfig {
-  canvas: HTMLCanvasElement
+  canvas?: HTMLCanvasElement
   width?: number
   height?: number
   onFrame?: (time: number) => void

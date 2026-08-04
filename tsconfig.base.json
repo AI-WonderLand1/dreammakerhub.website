@@ -16,9 +16,6 @@
       "@engine/*": [
         "engine/*"
       ],
-      "@ui/*": [
-        "ui/*"
-      ],
       "@infra/*": [
         "infra/*"
       ],
@@ -36,9 +33,6 @@
       ],
       "@core/*": [
         "engine/core/*"
-      ],
-      "@components/*": [
-        "ui/components/*"
       ],
       "@/lib/*": [
         "apps/web/lib/*"
