@@ -18,7 +18,6 @@ RUN rm -f package-lock.json && DATABASE_URL=postgresql://dummy:dummy@localhost:5
 COPY engine ./engine
 COPY infra ./infra
 COPY runners ./runners
-COPY ui ./ui
 COPY types ./types
 COPY tsconfig.base.json ./
 COPY apps/web ./apps/web
@@ -50,7 +49,6 @@ COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/engine ./engine
 COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners
-COPY --from=builder /app/ui ./ui
 COPY --from=builder /app/types ./types
 EXPOSE 5000
 ENV PATH="/app/node_modules/.bin:$PATH"
