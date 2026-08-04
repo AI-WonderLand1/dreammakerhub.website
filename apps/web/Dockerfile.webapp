@@ -23,7 +23,6 @@ RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --leg
 COPY engine ./engine
 COPY infra ./infra
 COPY runners ./runners
-COPY ui ./ui
 COPY types ./types
 COPY tsconfig.base.json ./
 COPY apps/web ./apps/web
@@ -56,11 +55,10 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps ./apps
 
-# Copy engine, infra, runners, ui, types for monorepo imports at runtime
+# Copy engine, infra, runners, types for monorepo imports at runtime
 COPY --from=builder /app/engine ./engine
 COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners
-COPY --from=builder /app/ui ./ui
 COPY --from=builder /app/types ./types
 EXPOSE 5000
 ENV PATH="/app/node_modules/.bin:$PATH"
