@@ -9,7 +9,7 @@ function last4(secret: string) {
 }
 
 export async function GET() {
-  const supabase = supabaseRouteClient();
+  const supabase = await supabaseRouteClient();
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -23,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const supabase = supabaseRouteClient();
+  const supabase = await supabaseRouteClient();
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

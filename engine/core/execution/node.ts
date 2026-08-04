@@ -1,6 +1,6 @@
-import { ExecutionNode as NodeType, NodeType, NodeStatus } from './types';
+import type { ExecutionNode as ExecutionNodeType, NodeType, NodeStatus } from './types';
 
-export class ExecutionNode implements NodeType {
+export class ExecutionNode implements ExecutionNodeType {
   public id: string;
   public type: NodeType;
   public inputs: Record<string, unknown>;
@@ -13,7 +13,7 @@ export class ExecutionNode implements NodeType {
   };
   public error?: string;
 
-  constructor(config: Partial<NodeType>) {
+  constructor(config: Partial<ExecutionNodeType>) {
     this.id = config.id || crypto.randomUUID();
     this.type = config.type || 'custom';
     this.inputs = config.inputs || {};

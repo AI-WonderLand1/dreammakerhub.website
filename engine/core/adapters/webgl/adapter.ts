@@ -1,4 +1,4 @@
-import type { EngineAdapter, EngineConfig, EngineInstance, WebGLShader } from '../types';
+import type { EngineAdapter, EngineConfig, EngineInstance, WebGLShader as WebGLShaderSource } from '../types';
 import { logger } from '@lib/logger';
 
 export class WebGLAdapter implements EngineAdapter {
@@ -8,14 +8,17 @@ export class WebGLAdapter implements EngineAdapter {
     logger.info('[WebGLAdapter] Creating engine instance...');
     
     const canvas = config.canvas;
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!canvas) {
+      throw new Error('[WebGLAdapter] No canvas provided');
+    }
+    const gl = (canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | WebGL2RenderingContext | null;
 
     if (!gl) {
       throw new Error('WebGL not supported');
     }
 
-    // Default shader for testing
-    const defaultShader: WebGLShader = {
+    // Default shader for rendering a fullscreen gradient
+    const defaultShader: WebGLShaderSource = {
       vertex: `
         attribute vec4 aVertexPosition;
         void main() {
@@ -94,12 +97,15 @@ export class WebGLAdapter implements EngineAdapter {
         cancelAnimationFrame(animationId);
         gl.deleteProgram(program);
         gl.deleteBuffer(positionBuffer);
-        gl.makeContextCurrent(null);
+        const webglLost = gl.getExtension('WEBGL_lose_context');
+        if (webglLost) {
+          webglLost.loseContext();
+        }
       },
     };
   }
 
-  private createShaderProgram(gl: WebGLRenderingContext | WebGL2RenderingContext, shader: WebGLShader): {
+  private createShaderProgram(gl: WebGLRenderingContext | WebGL2RenderingContext, shader: WebGLShaderSource): {
     program: WebGLProgram;
     uniforms: Record<string, WebGLUniformLocation | null>;
   } {

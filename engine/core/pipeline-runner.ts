@@ -1,8 +1,15 @@
-import { PipelineToEngineCompiler } from './engine/core/pipelines';
+import { PipelineToEngineCompiler } from './pipelines';
 import { logger } from '@lib/logger';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Server-only Supabase client used for pipeline storage operations.
+const supabase: SupabaseClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 // Initialize pipeline compiler as a singleton
-const pipelineCompiler = new PipelineToEngineCompiler();
+const pipelineCompiler = new PipelineToEngineCompiler(supabase);
 
 /**
  * Load AI-PLAYGROUND pipeline template into AI-WonderLand engine
@@ -26,8 +33,7 @@ export async function loadPipelineFromTemplate(templateId: string): Promise<void
     }
     
     // Compile pipeline to engine using PipelineToEngineCompiler
-    const compiler = new PipelineToEngineCompiler();
-    const engineConfig = await compiler.compilePipeline(template, {} as any);
+    const engineConfig = await pipelineCompiler.compilePipeline(template, {} as any);
     
     // Register this as an available pipeline in Supabase
     await supabase
@@ -96,7 +102,7 @@ export async function compilePipelineToEngine(pipelineId: string, userId?: strin
           .select('organization_id')
           .eq('user_id', userId);
         
-        if (orgAccess?.some(org => org.organization_id === template.organization_id)) {
+        if (orgAccess?.some((org: { organization_id?: string }) => org.organization_id === template.organization_id)) {
           // User has organization access
         } else if (template.user_id === userId) {
           // User is owner
@@ -109,8 +115,7 @@ export async function compilePipelineToEngine(pipelineId: string, userId?: strin
     }
     
     // Compile pipeline using PipelineToEngineCompiler
-    const compiler = new PipelineToEngineCompiler();
-    const executionGraph = await compiler.compilePipeline(template, {} as any);
+    const executionGraph = await pipelineCompiler.compilePipeline(template, {} as any);
     
     // Register compilation result for real-time updates
     await supabase.from('pipeline_compilations').insert({
@@ -138,17 +143,18 @@ export async function compilePipelineToEngine(pipelineId: string, userId?: strin
       success: true,
       engineConfig: executionGraph,
       pipelineId: pipelineId,
-      templateId: templateId,
+      templateId: pipelineId,
       compilationMetadata: {
         version: '1.0.0',
         compiledAt: Date.now(),
         subscriptionVerified: !!userId,
       }
     };
-    
+
   } catch (error) {
     logger.error('Pipeline compilation failed:', error);
-    
+    const message = error instanceof Error ? error.message : String(error);
+
     // Register compilation failure for analytics
     await supabase.from('pipeline_compilations').insert({
       id: crypto.randomUUID(),
@@ -156,10 +162,10 @@ export async function compilePipelineToEngine(pipelineId: string, userId?: strin
       compiled_at: Date.now(),
       compilation_version: '1.0.0',
       status: 'error',
-      error: error.message,
+      error: message,
       compilation_metadata: { compilation_method: 'automatic' }
     });
-    
+
     throw error;
   }
 }
@@ -280,7 +286,7 @@ export async function getAvailablePipelines(userId?: string, filters?: any): Pro
         .single();
       
       // Filter pipelines based on user permissions
-      availablePipelines = availablePipelines.filter(pipeline => {
+      availablePipelines = availablePipelines.filter((pipeline: any) => {
         // Check if pipeline is publicly available
         if (pipeline.is_public) return true;
         

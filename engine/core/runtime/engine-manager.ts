@@ -53,6 +53,10 @@ export class EngineManager {
 
     try {
       // 3. Create new engine via adapter
+      // Pipeline-driven loads may not include a canvas; create one when needed.
+      if (!config.canvas && typeof document !== 'undefined') {
+        config.canvas = document.createElement('canvas');
+      }
       const instance = await adapter.create(config);
 
       // 4. Set as active

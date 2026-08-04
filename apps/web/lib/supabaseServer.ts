@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/app/utils/supabase/server';
 
-let cachedClient: ReturnType<typeof createSupabaseServerClient> | null = null;
+let cachedClient: Awaited<ReturnType<typeof createSupabaseServerClient>> | null = null;
 
 async function getClient() {
   if (!cachedClient) {

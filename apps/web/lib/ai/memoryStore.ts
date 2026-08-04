@@ -31,7 +31,7 @@ export async function writeAiMemoryEntry(input: MemoryWriteInput) {
     language: input.language,
   }
 
-  const { error } = await supabaseRouteClient().storage.from(bucket).upload(path, JSON.stringify(payload), {
+  const { error } = await (await supabaseRouteClient()).storage.from(bucket).upload(path, JSON.stringify(payload), {
     contentType: 'application/json',
     upsert: true,
   })

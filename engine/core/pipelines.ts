@@ -1,11 +1,32 @@
 // Pipeline-to-Engine Compiler
-// Transforms AI-PLAYGROUND pipeline configurations into AI-WonderLand engine substrates
+// Transforms AI-Playground pipeline configurations into AI-WonderLand engine substrates
 
-import { EngineConfig, EngineManager } from './engine/core/runtime/engine-manager';
-import { ExecutionGraph, ExecutionNode, NodeType } from './engine/core/execution/types';
-import { GraphExecutor, NodeRunner } from './engine/core/execution/executor';
-import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
+import type { EngineConfig } from './runtime/types';
+import type { ExecutionGraph, ExecutionNode, NodeType } from './execution/types';
+import { GraphExecutor } from './execution/executor';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+/**
+ * Compiles AI-Playground pipeline templates into executable engine configurations.
+ * Used by the pipeline-runner bridge and by the AI-Playground integration.
+ */
+export class PipelineToEngineCompiler {
+  private supabase: SupabaseClient | null;
+
+  constructor(supabase?: SupabaseClient | null) {
+    this.supabase = supabase ?? null;
+  }
+
+  /**
+   * Compile a pipeline template into an engine configuration.
+   * @param pipeline - AI-Playground pipeline configuration
+   * @param inputs - Pipeline inputs
+   */
+  public async compilePipeline(pipeline: any, inputs: any): Promise<EngineConfig> {
+    const graph = await compilePipelineToGraph(pipeline, inputs, pipeline.trigger);
+    return compilePipelineToEngine(pipeline, graph);
+  }
+}
 
 /**
  * Transforms AI-PLAYGROUND pipeline configurations into AI-WonderLand engine substrates
@@ -219,7 +240,7 @@ async function registerPipelineRunners(executor: GraphExecutor, pipeline: any): 
           timestamp: Date.now(),
         };
       } catch (error) {
-        throw new Error(`Expression evaluation failed: ${error.message}`);
+        throw new Error(`Expression evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   });
@@ -243,7 +264,7 @@ async function getAIResponse(prompt: string, model: string, systemPrompt: string
  * @param expression - Expression to evaluate
  * @param context - Evaluation context
  */
-async function evaluateExpression(expression: string, context: any): any {
+async function evaluateExpression(expression: string, context: any): Promise<any> {
   // This would be implemented based on expression parsing
   // AI-PLAYGROUND has expression parser in src/utils/expressionParser.ts
   return expression;
@@ -344,16 +365,9 @@ async function encodeNodeConfig(config: any): Promise<string> {
 }
 
 export {
-  compilePipelineToEngine,
   createEdgeFunctions,
   registerPipelineRunners,
   extractRuntimeConfig,
   mapNodeType,
   compilePipelineToGraph,
 };
-
-// IMPORTANT: Import these from your actual project files:
-// import { createClient } from '@supabase/supabase-js';
-// import { GraphExecutor, NodeRunner } from './engine/core/execution/executor';
-// import { ExecutionGraph, ExecutionNode } from './engine/core/execution/types';
-// import crypto from 'crypto';

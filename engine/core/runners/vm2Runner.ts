@@ -1,19 +1,26 @@
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import vm from 'vm'
-import { env, requireEnv } from '@lib/env'
+import { requireEnv } from '@lib/env'
 import { logger } from '@lib/logger'
 let supabase: ReturnType<typeof createClient> | null = null
 
 function getSupabaseClient() {
   if (!supabase) {
     supabase = createClient(
-      requireEnv(env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL"),
-      requireEnv(env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY")
+      requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY")
     )
   }
 
   return supabase
+}
+
+interface ExtensionRecord {
+  encrypted_code: string
+  iv: string
+  tag: string
+  manifest: { permissions: string[] }
 }
 
 export async function executeCode(code: string): Promise<{ success: boolean; error?: string; hooks?: Record<string, unknown> }> {
@@ -44,12 +51,14 @@ export async function runExtension(extensionId: string) {
 
   if (error || !data) throw new Error('Extension not found or failed to fetch')
 
-  const key = Buffer.from(requireEnv(env.EXTENSION_ENCRYPTION_KEY, "EXTENSION_ENCRYPTION_KEY"), 'base64')
+  const record = data as ExtensionRecord
+
+  const key = Buffer.from(requireEnv("EXTENSION_ENCRYPTION_KEY"), 'base64')
   if (key.length !== 32) throw new Error('Invalid encryption key length')
 
-  const iv = Buffer.from(data.iv, 'base64')
-  const tag = Buffer.from(data.tag, 'base64')
-  const encrypted = Buffer.from(data.encrypted_code, 'base64')
+  const iv = Buffer.from(record.iv, 'base64')
+  const tag = Buffer.from(record.tag, 'base64')
+  const encrypted = Buffer.from(record.encrypted_code, 'base64')
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
   decipher.setAuthTag(tag)
@@ -59,7 +68,7 @@ export async function runExtension(extensionId: string) {
     decipher.final()
   ]).toString('utf8')
 
-  const sandbox = createSandbox(data.manifest.permissions, extensionId);
+  const sandbox = createSandbox(record.manifest.permissions, extensionId);
   const context = vm.createContext(sandbox);
   const script = new vm.Script(decrypted, { filename: `extension-${extensionId}.js` });
   const extension = script.runInContext(context, { timeout: 5000 });
@@ -100,7 +109,8 @@ function createSandbox(permissions: string[], extensionId: string) {
           .eq('extension_id', extensionId)
           .eq('key', key)
           .single()
-        return data?.value ?? null
+        const record = data as { value: string } | null
+        return record?.value ?? null
       },
       set: async (key: string, value: unknown) => {
         await storageClient
@@ -109,7 +119,7 @@ function createSandbox(permissions: string[], extensionId: string) {
             extension_id: extensionId,
             key,
             value: JSON.stringify(value)
-          })
+          } as never)
       }
     }
   }
