@@ -10,7 +10,7 @@ export { engineManager } from './runtime/engine-manager';
 export async function registerAllAdapters(): Promise<void> {
   // PlayCanvas
   try {
-    const { PlayCanvasAdapter } = await import('../adapters/playcanvas');
+    const { PlayCanvasAdapter } = await import('./adapters/playcanvas');
     engineManager.registerAdapter(new PlayCanvasAdapter());
     logger.info('[EngineCore] PlayCanvas adapter registered.');
   } catch (e) {
@@ -19,7 +19,7 @@ export async function registerAllAdapters(): Promise<void> {
 
   // WebGL
   try {
-    const { WebGLAdapter } = await import('../adapters/webgl');
+    const { WebGLAdapter } = await import('./adapters/webgl');
     engineManager.registerAdapter(new WebGLAdapter());
     logger.info('[EngineCore] WebGL adapter registered.');
   } catch (e) {
@@ -28,7 +28,7 @@ export async function registerAllAdapters(): Promise<void> {
 
   // Three.js / React Three Fiber
   try {
-    const { ThreeJSAdapter } = await import('../adapters/threejs');
+    const { ThreeJSAdapter } = await import('./adapters/threejs');
     engineManager.registerAdapter(new ThreeJSAdapter());
     logger.info('[EngineCore] Three.js adapter registered.');
   } catch (e) {
@@ -37,7 +37,7 @@ export async function registerAllAdapters(): Promise<void> {
 
   // DreamMakerHub Spatial Engine (Gaussian Splatting default) — additive only.
   try {
-    const { SpatialAdapter } = await import('../adapters/spatial');
+    const { SpatialAdapter } = await import('./adapters/spatial');
     engineManager.registerAdapter(new SpatialAdapter());
     logger.info('[EngineCore] DreamMakerHub Spatial Engine adapter registered.');
   } catch (e) {
