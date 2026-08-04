@@ -27,7 +27,7 @@ const requestSchema = z.object({
   outputFormat: z.enum(["text"]).optional().default("text"),
   existingComponents: z.array(z.object({
     type: z.string(),
-    props: z.record(z.unknown()),
+    props: z.record(z.string(), z.unknown()),
   })).optional(),
 });
 

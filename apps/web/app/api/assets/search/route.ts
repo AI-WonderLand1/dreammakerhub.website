@@ -9,10 +9,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q") || "3d model";
-    const source = searchParams.get("source") as "playcanvas" | "sketchfab" | "poly-haven" | "free3d" | "all" || "all";
+    let source = searchParams.get("source");
+    const allowedSources = ["playcanvas", "sketchfab", "poly-haven", "all"] as const;
+    const sourceValue = (allowedSources.includes(source as any) ? source : "all") as typeof allowedSources[number];
     const limit = parseInt(searchParams.get("limit") || "10", 10);
 
-    const assets = await searchExternalAssets({ query, source, limit });
+    const assets = await searchExternalAssets({ query, source: sourceValue, limit });
 
     return NextResponse.json({ assets });
   } catch (error: any) {

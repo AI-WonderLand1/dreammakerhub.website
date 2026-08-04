@@ -65,6 +65,12 @@ async function fetchGithubModules(): Promise<RegistryModule[]> {
   }
 }
 
+async function fetchGoogleAIModels(): Promise<RegistryModel[]> {
+  // TODO: implement fetching from Google AI
+  // For now return empty array
+  return []
+}
+
 export async function GET(req: NextRequest) {
   const paidUser = await requirePaidAIUser(req);
   if (paidUser instanceof NextResponse) return paidUser;
