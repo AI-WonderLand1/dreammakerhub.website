@@ -42,7 +42,7 @@ ENV SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 RUN npm run build
 
 # Production image
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 # Copy built app artifacts
@@ -64,6 +64,8 @@ COPY --from=builder /app/ui ./ui
 COPY --from=builder /app/types ./types
 EXPOSE 5000
 ENV PATH="/app/node_modules/.bin:$PATH"
+# DATABASE_URL can be overridden at runtime with -e flag or env file
+# Example: docker run -e DATABASE_URL="postgresql://postgres:password@db.hhdduixckgllodixrejp.supabase.co:5432/postgres" ...
 RUN apk add --no-cache curl openssh-client
-HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
+HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 CMD curl -f http://localhost:${PORT:-5000}/ || exit 1
 CMD ["sh", "-c", "next start -p ${PORT:-5000} -H 0.0.0.0"]
