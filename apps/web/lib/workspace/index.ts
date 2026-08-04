@@ -1,4 +1,6 @@
-export { createProjectRuntime, deleteProjectRuntime, getRuntimeStatus, getProjectSSHKey, createProjectPVC, saveProjectFiles, loadProjectFiles } from './provisioner';
+import { createProjectRuntime, deleteProjectRuntime, getRuntimeStatus, getProjectSSHKey, createProjectPVC, saveProjectFiles, loadProjectFiles } from './provisioner';
+
+export { createProjectRuntime, deleteProjectRuntime, getRuntimeStatus, getProjectSSHKey, createProjectPVC, saveProjectFiles, loadProjectFiles };
 
 export type WorkspaceConfig = {
   workspaceId: string;

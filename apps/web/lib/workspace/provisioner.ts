@@ -67,7 +67,7 @@ export async function createProjectPVC(projectId: string, size: string = "1Gi"):
       }
     };
     
-    await coreApi.createNamespacedPersistentVolumeClaim('default', pvc);
+    await coreApi.createNamespacedPersistentVolumeClaim({ namespace: 'default', body: pvc });
     return true;
   } catch (error: any) {
     if (error.response?.body?.reason === 'AlreadyExists') {
@@ -138,7 +138,7 @@ export async function deleteProjectRuntime(
       const kc = new k8s.KubeConfig();
       kc.loadFromDefault();
       const coreApi = kc.makeApiClient(CoreV1Api);
-      await coreApi.deleteNamespacedPersistentVolumeClaim(`wonder-files-${projectId}`, 'default');
+      await coreApi.deleteNamespacedPersistentVolumeClaim({ name: `wonder-files-${projectId}`, namespace: 'default' });
     } catch {}
     
     return { success: true };
@@ -157,20 +157,20 @@ export async function getRuntimeStatus(
     const appsApi = kc.makeApiClient(AppsV1Api);
     const coreApi = kc.makeApiClient(CoreV1Api);
 
-    const deployment = await appsApi.readNamespacedDeployment(
-      `wonder-runtime-${projectId}`,
-      'default'
-    );
+    const deployment = await appsApi.readNamespacedDeployment({
+      name: `wonder-runtime-${projectId}`,
+      namespace: 'default'
+    });
 
-    if (deployment.body?.status?.readyReplicas === 1) {
+    if (deployment.status?.readyReplicas === 1) {
       let storageUsed = null;
       
       try {
-        const pvc = await coreApi.readNamespacedPersistentVolumeClaim(
-          `wonder-files-${projectId}`,
-          'default'
-        );
-        storageUsed = pvc.body?.status?.capacity?.storage || 'unknown';
+        const pvc = await coreApi.readNamespacedPersistentVolumeClaim({
+          name: `wonder-files-${projectId}`,
+          namespace: 'default'
+        });
+        storageUsed = pvc.status?.capacity?.storage || 'unknown';
       } catch {}
       
       const domain = process.env.RUNTIME_DOMAIN || 'wonder.dev';
@@ -247,13 +247,13 @@ async function getProjectRuntimeUrl(projectId: string): Promise<string | null> {
     kc.loadFromDefault();
     const coreApi = kc.makeApiClient(CoreV1Api);
 
-    const result = await coreApi.readNamespacedService(
-      `wonder-runtime-${projectId}`,
-      'default'
-    );
+    const result = await coreApi.readNamespacedService({
+      name: `wonder-runtime-${projectId}`,
+      namespace: 'default'
+    });
     
-    if (result.body?.spec?.clusterIP) {
-      return `http://${result.body.spec.clusterIP}:3090`;
+    if (result.spec?.clusterIP) {
+      return `http://${result.spec.clusterIP}:3090`;
     }
   } catch {}
   

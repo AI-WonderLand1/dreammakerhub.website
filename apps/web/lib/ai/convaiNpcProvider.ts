@@ -22,7 +22,10 @@ export class ConvaiNpcProvider implements AiNpcProvider {
   private readonly characterId?: string;
   private readonly subscribers = new Map<string, Set<Subscriber>>();
 
-  constructor(env: ProviderEnv = process.env) {
+  constructor(env: ProviderEnv = {
+    NEXT_PUBLIC_ENABLE_CONVAI_NPC: process.env.NEXT_PUBLIC_ENABLE_CONVAI_NPC,
+    NEXT_PUBLIC_CONVAI_CHARACTER_ID: process.env.NEXT_PUBLIC_CONVAI_CHARACTER_ID,
+  }) {
     this.enabled = env.NEXT_PUBLIC_ENABLE_CONVAI_NPC === "true";
     this.characterId = env.NEXT_PUBLIC_CONVAI_CHARACTER_ID;
     // Only check for feature flag and character ID on client

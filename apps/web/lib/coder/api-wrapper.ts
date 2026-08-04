@@ -157,12 +157,17 @@ export class CoderAPIWrapper {
       try {
         const workspace = await this.getWorkspace(userId, workspaceId);
         
+        if (!workspace) {
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+          continue;
+        }
+        
         if (workspace.status === 'running') {
           logger.info(`[CoderAPIWrapper] Workspace ready: ${workspaceId}`);
           return;
         }
         
-        if (workspace.status === 'failed' || workspace.status === 'error') {
+        if (workspace.status === 'failed') {
           throw new Error(`Workspace failed: ${workspaceId}`);
         }
         

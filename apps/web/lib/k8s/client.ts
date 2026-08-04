@@ -53,7 +53,7 @@ async function createProjectSecret(
       }
     };
     
-    await coreApi.createNamespacedSecret('default', secret);
+    await coreApi.createNamespacedSecret({ namespace: 'default', body: secret });
     return true;
   } catch (error: any) {
     if (error.response?.body?.reason === 'AlreadyExists') {
@@ -132,7 +132,7 @@ async function createProjectDeployment(
       }
     };
     
-    await appsApi.createNamespacedDeployment('default', deployment);
+    await appsApi.createNamespacedDeployment({ namespace: 'default', body: deployment });
     return true;
   } catch (error: any) {
     if (error.response?.body?.reason === 'AlreadyExists') {
@@ -169,7 +169,7 @@ async function createProjectService(projectId: string): Promise<boolean> {
       }
     };
     
-    await coreApi.createNamespacedService('default', service);
+    await coreApi.createNamespacedService({ namespace: 'default', body: service });
     return true;
   } catch (error: any) {
     if (error.response?.body?.reason === 'AlreadyExists') {
@@ -208,7 +208,7 @@ async function createNetworkPolicy(projectId: string): Promise<boolean> {
       }
     };
     
-    await netApi.createNamespacedNetworkPolicy('default', policy);
+    await netApi.createNamespacedNetworkPolicy({ namespace: 'default', body: policy });
     return true;
   } catch (error: any) {
     if (error.response?.body?.reason === 'AlreadyExists') {
@@ -223,12 +223,12 @@ async function deleteProjectResources(projectId: string): Promise<boolean> {
   try {
     const { coreApi, appsApi, netApi } = getK8sClient();
     
-    await appsApi.deleteNamespacedDeployment(`wonder-runtime-${projectId}`, 'default');
-    await coreApi.deleteNamespacedService(`wonder-runtime-${projectId}`, 'default');
-    await coreApi.deleteNamespacedSecret(`wonder-ssh-key-${projectId}`, 'default');
+    await appsApi.deleteNamespacedDeployment({ name: `wonder-runtime-${projectId}`, namespace: 'default' });
+    await coreApi.deleteNamespacedService({ name: `wonder-runtime-${projectId}`, namespace: 'default' });
+    await coreApi.deleteNamespacedSecret({ name: `wonder-ssh-key-${projectId}`, namespace: 'default' });
     
     try {
-      await netApi.deleteNamespacedNetworkPolicy(`wonder-runtime-${projectId}`, 'default');
+      await netApi.deleteNamespacedNetworkPolicy({ name: `wonder-runtime-${projectId}`, namespace: 'default' });
     } catch {}
     
     return true;
