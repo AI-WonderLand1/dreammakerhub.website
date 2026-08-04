@@ -24,7 +24,7 @@ export interface AiAssetEntry {
   sceneData?: any;
 }
 
-export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; contentType?: string }) {
+export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string | Buffer | ArrayBuffer; contentType?: string }) {
   try {
     // Ensure bucket exists
     const { data: buckets } = await sb()!.storage.listBuckets();
@@ -40,9 +40,18 @@ export async function uploadAiAssetEntry(entry: AiAssetEntry & { body?: string; 
     // Upload scene data to Supabase storage
     if (entry.body && entry.contentType) {
       const filePath = `scenes/${entry.id}.json`;
+      let uploadBody: string | ArrayBuffer;
+      if (typeof entry.body === 'string') {
+        uploadBody = entry.body;
+      } else if (Buffer.isBuffer(entry.body)) {
+        const buf = Buffer.from(entry.body);
+        uploadBody = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length);
+      } else {
+        uploadBody = entry.body; // assume ArrayBuffer
+      }
       const { error: uploadError } = await sb()!.storage
         .from(BUCKET_NAME)
-        .upload(filePath, entry.body, {
+        .upload(filePath, uploadBody, {
           contentType: entry.contentType,
           upsert: true
         });

@@ -237,7 +237,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     : "text-white/70 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <item.icon size={16} />
+                <item.icon size="16" />
                 {item.label}
               </Link>
             ))}
@@ -264,7 +264,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         : "text-white/70 hover:text-white hover:bg-white/5"
                     }`}
                   >
-                    <item.icon size={16} />
+                    <item.icon size="16" />
                     {item.label}
                   </Link>
                 ))}
@@ -281,7 +281,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex-1 max-w-md">
               <div className="relative flex items-center gap-2">
-                <Search className="absolute left-3 text-white/40" size={16} />
+                <Search className="absolute left-3 text-white/40" size="16" />
                 <input 
                   type="text" 
                   placeholder="Search projects..." 

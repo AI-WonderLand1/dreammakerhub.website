@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
 
     if (!optimizeResponse.ok) {
       const errorText = await optimizeResponse.text();
-      logger.error("Optimizer error:", optimizeResponse.status, errorText);
+      logger.error(`Optimizer error: ${optimizeResponse.status}`, errorText);
       return NextResponse.json(
         { error: "Optimization failed", details: errorText },
         { status: optimizeResponse.status }
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
       savings: savings + "%",
     });
   } catch (error) {
-    logger.error("Asset processing error:", error);
+    logger.error("Asset processing error", error);
     return NextResponse.json(
       { error: "Failed to process asset" },
       { status: 500 }
