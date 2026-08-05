@@ -2,29 +2,16 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { logger } from '@/lib/logger';
-import { getSecretFromVault } from '@/lib/oracle-vault';
 
-let cachedSupabaseUrl: string | null = null;
-let cachedSupabaseAnonKey: string | null = null;
+function getSupabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-async function getSupabaseConfig() {
-  if (cachedSupabaseUrl && cachedSupabaseAnonKey) {
-    return { url: cachedSupabaseUrl, anonKey: cachedSupabaseAnonKey };
+  if (!url || !anonKey) {
+    logger.warn('[supabase-server] Supabase credentials not available');
   }
 
-  const [url, anonKey] = await Promise.all([
-    getSecretFromVault('NEXT_PUBLIC_SUPABASE_URL'),
-    getSecretFromVault('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-  ]);
-
-  cachedSupabaseUrl = url || process.env.NEXT_PUBLIC_SUPABASE_URL || null;
-  cachedSupabaseAnonKey = anonKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || null;
-
-  if (!cachedSupabaseUrl || !cachedSupabaseAnonKey) {
-    logger.warn('[supabase-server] Supabase credentials not available — using fallback');
-  }
-
-  return { url: cachedSupabaseUrl || '', anonKey: cachedSupabaseAnonKey || '' };
+  return { url, anonKey };
 }
 
 export async function createSupabaseServerClient() {
