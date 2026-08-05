@@ -23,6 +23,11 @@ interface Comment {
   user_id: string;
 }
 
+export const metadata = {
+  title: 'Support Center | AI Wonderland',
+  description: 'Get help with AI Wonderland.',
+};
+
 export default function SupportPage() {
   const { user } = useSupabase();
   const [tickets, setTickets] = useState<Ticket[]>([]);

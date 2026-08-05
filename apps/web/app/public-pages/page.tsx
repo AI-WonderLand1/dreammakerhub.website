@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: 'Public Pages | AI Wonderland',
+  description: 'Manage and publish your public pages.',
+};
+
 export default function PagesHub() {
   // This page serves as the bridge between homepage and PlayCanvas
   // It's intentionally kept out of public navigation but accessible via direct URL

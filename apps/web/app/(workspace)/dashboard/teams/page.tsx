@@ -19,6 +19,11 @@ interface Member {
   joined_at: string;
 }
 
+export const metadata = {
+  title: 'Team Management | AI Wonderland',
+  description: 'Manage your team and members.',
+};
+
 export default function TeamsPage() {
   const { user } = useSupabase();
   const [teams, setTeams] = useState<Team[]>([]);
