@@ -5,30 +5,12 @@ import { createBrowserClient } from '@supabase/ssr'
 let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 let supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-function isPlaceholderValue(value: string) {
-  return value.includes('placeholder') || value.includes('invalid')
-}
-
-function isUsableSupabaseUrl(value: string | undefined) {
-  return !!value && !isPlaceholderValue(value)
-}
-
-function isUsableSupabaseAnonKey(value: string | undefined) {
-  if (!value || isPlaceholderValue(value)) return false
-
-  const parts = value.split('.')
-  if (parts.length !== 3) return false
-
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return payload.role === 'anon' && typeof payload.ref === 'string'
-  } catch {
-    return false
-  }
+function isUsableSupabaseValue(value: string | undefined) {
+  return !!value && !value.includes('placeholder') && !value.includes('invalid')
 }
 
 function hasUsableSupabaseConfig() {
-  return isUsableSupabaseUrl(supabaseUrl) && isUsableSupabaseAnonKey(supabaseAnonKey)
+  return isUsableSupabaseValue(supabaseUrl) && isUsableSupabaseValue(supabaseAnonKey)
 }
 
 export const isSupabaseConfigured = hasUsableSupabaseConfig()
@@ -47,7 +29,7 @@ export async function ensureSupabaseConfig() {
     .then(async (res) => {
       if (!res.ok) throw new Error('Failed to fetch Supabase config')
       const config = await res.json()
-      if (isUsableSupabaseUrl(config.url) && isUsableSupabaseAnonKey(config.anonKey)) {
+      if (isUsableSupabaseValue(config.url) && isUsableSupabaseValue(config.anonKey)) {
         supabaseUrl = config.url
         supabaseAnonKey = config.anonKey
         return config
