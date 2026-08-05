@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
 function AuthPageContent() {
@@ -15,19 +15,29 @@ function AuthPageContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        window.location.href = redirectTo;
-      }
+    let cancelled = false;
+
+    ensureSupabaseConfig().then(() => {
+      if (cancelled) return;
+      const supabase = createClient();
+      if (!supabase) return;
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!cancelled && session?.user) {
+          window.location.href = redirectTo;
+        }
+      });
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [redirectTo]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    await ensureSupabaseConfig();
     const supabase = createClient();
     if (!supabase) {
       setError('Supabase not configured');
@@ -46,6 +56,7 @@ function AuthPageContent() {
   const handleSignUp = async () => {
     setError('');
     setLoading(true);
+    await ensureSupabaseConfig();
     const supabase = createClient();
     if (!supabase) {
       setError('Supabase not configured');
@@ -62,6 +73,7 @@ function AuthPageContent() {
   };
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    await ensureSupabaseConfig();
     const supabase = createClient();
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin + redirectTo } });

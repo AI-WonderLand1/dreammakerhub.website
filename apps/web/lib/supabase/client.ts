@@ -5,14 +5,22 @@ import { createBrowserClient } from '@supabase/ssr'
 let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 let supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
+function isUsableSupabaseValue(value: string | undefined) {
+  return !!value && !value.includes('placeholder') && !value.includes('invalid')
+}
+
+function hasUsableSupabaseConfig() {
+  return isUsableSupabaseValue(supabaseUrl) && isUsableSupabaseValue(supabaseAnonKey)
+}
+
+export const isSupabaseConfigured = hasUsableSupabaseConfig()
 
 let cachedClient: ReturnType<typeof createBrowserClient> | null = null
 let configPromise: Promise<{ url: string; anonKey: string } | null> | null = null
 
 export async function ensureSupabaseConfig() {
-  if (supabaseUrl && supabaseAnonKey) {
-    return { url: supabaseUrl, anonKey: supabaseAnonKey }
+  if (hasUsableSupabaseConfig()) {
+    return { url: supabaseUrl!, anonKey: supabaseAnonKey! }
   }
 
   if (configPromise) return configPromise
@@ -21,7 +29,7 @@ export async function ensureSupabaseConfig() {
     .then(async (res) => {
       if (!res.ok) throw new Error('Failed to fetch Supabase config')
       const config = await res.json()
-      if (config.url && config.anonKey) {
+      if (isUsableSupabaseValue(config.url) && isUsableSupabaseValue(config.anonKey)) {
         supabaseUrl = config.url
         supabaseAnonKey = config.anonKey
         return config
@@ -38,7 +46,7 @@ export async function ensureSupabaseConfig() {
 
 export function getSupabaseClient() {
   if (cachedClient) return cachedClient
-  if (!supabaseUrl || !supabaseAnonKey) return null
+  if (!hasUsableSupabaseConfig()) return null
 
   const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers)
@@ -49,7 +57,7 @@ export function getSupabaseClient() {
     return fetch(url, { ...init, headers })
   }
 
-  cachedClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+  cachedClient = createBrowserClient(supabaseUrl!, supabaseAnonKey!, {
     cookies: {
       get(name) {
         if (typeof document === 'undefined') return ''
