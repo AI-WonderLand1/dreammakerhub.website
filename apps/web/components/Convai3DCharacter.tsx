@@ -16,6 +16,18 @@ interface Convai3DCharacterProps {
   className?: string;
 }
 
+function getConvaiCredentials(): { apiKey: string; characterId: string } | null {
+  const apiKey = process.env.NEXT_PUBLIC_CONVAI_API_KEY;
+  const characterId = process.env.NEXT_PUBLIC_CONVAI_CHARACTER_ID;
+  
+  if (!apiKey || !characterId) {
+    logger.warn('[Convai] Credentials not available in environment');
+    return null;
+  }
+  
+  return { apiKey, characterId };
+}
+
 export default function Convai3DCharacter({ 
   characterId: propCharacterId,
   onResponse,
@@ -30,10 +42,9 @@ export default function Convai3DCharacter({
   useEffect(() => {
     async function loadCredentials() {
       try {
-        const res = await fetch('/api/vault/credentials');
-        const data = await res.json();
-        if (data.apiKey && data.characterId) {
-          setCredentials(data);
+        const creds = getConvaiCredentials();
+        if (creds) {
+          setCredentials(creds);
         } else {
           setError("Convai credentials not available");
           setIsLoading(false);
@@ -156,9 +167,17 @@ export function useConvaiCharacter() {
 
   useEffect(() => {
     async function load() {
-      const creds = await getConvaiCredentials();
-      setCredentials(creds);
-      setIsReady(true);
+      try {
+        const creds = getConvaiCredentials();
+        if (creds) {
+          setCredentials(creds);
+          setIsReady(true);
+        } else {
+          logger.warn('[Convai] Credentials not available');
+        }
+      } catch (error) {
+        logger.error('[Convai] Failed to load credentials:', error);
+      }
     }
     load();
   }, []);
