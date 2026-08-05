@@ -1,6 +1,11 @@
 import React from 'react';
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: 'Privacy Policy | AI Wonderland',
+  description: 'How AI Wonderland handles and protects your data.',
+};
+
 export default function PrivacyPage() {
   return (
     <div

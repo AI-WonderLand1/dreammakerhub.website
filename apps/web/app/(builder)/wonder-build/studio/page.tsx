@@ -8,6 +8,11 @@ async function getData() {
   };
 }
 
+export const metadata = {
+  title: 'WonderBuild Studio | AI Wonderland',
+  description: 'Your AI-powered studio for 3D creation.',
+};
+
 export default async function WonderBuildStudioPage() {
   const initialData = await getData();
   return <StudioClient initialData={initialData} />;

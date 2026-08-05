@@ -1,6 +1,11 @@
 import React from 'react';
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: '3D AI Generator | AI Wonderland',
+  description: 'Generate 3D scenes from simple text prompts.',
+};
+
 export default function AIGeneratorPage() {
   return (
     <div className="space-y-8">

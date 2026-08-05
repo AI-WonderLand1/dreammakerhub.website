@@ -1,5 +1,10 @@
 import { logger } from '@/lib/logger';
 // app/refund/page.tsx
+export const metadata = {
+  title: 'Refund and Return Policy | AI Wonderland',
+  description: 'AI Wonderland refund and return policy.',
+};
+
 export default function RefundPage() {
   return (
     <div className="max-w-4xl mx-auto p-6">

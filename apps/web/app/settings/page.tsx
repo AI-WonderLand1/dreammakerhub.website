@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: 'User Settings | AI Wonderland',
+  description: 'Manage your AI Wonderland account settings.',
+};
+
 export default function SettingsHome() {
   return (
     <section className="space-y-4">

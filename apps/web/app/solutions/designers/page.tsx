@@ -1,6 +1,11 @@
 import React from 'react';
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: 'For Designers | AI Wonderland',
+  description: 'AI Wonderland solutions built for designers.',
+};
+
 export default function DesignersPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">

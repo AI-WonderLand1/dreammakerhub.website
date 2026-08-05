@@ -29,6 +29,11 @@ const features = [
   },
 ];
 
+export const metadata = {
+  title: 'Features | AI Wonderland',
+  description: 'Every feature included with an AI Wonderland subscription.',
+};
+
 export default function FeaturesPage() {
   const isSubscribed = false;
   const ctaLabel = isSubscribed ? "Open" : "Upgrade to use";

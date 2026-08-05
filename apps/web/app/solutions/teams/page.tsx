@@ -1,6 +1,11 @@
 import React from 'react';
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: 'For Teams | AI Wonderland',
+  description: 'AI Wonderland solutions built for teams.',
+};
+
 export default function TeamsPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
