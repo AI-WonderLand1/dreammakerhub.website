@@ -1,17 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
-import { getSecretFromVault } from "@/lib/oracle-vault";
 
 let supabase: ReturnType<typeof createClient> | null = null;
 
-async function getSupabaseClient() {
+function getSupabaseClient() {
   if (!supabase) {
-    const [supabaseUrl, supabaseAnonKey] = await Promise.all([
-      getSecretFromVault('NEXT_PUBLIC_SUPABASE_URL'),
-      getSecretFromVault('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-    ]);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Missing Supabase credentials in Oracle Vault");
+      throw new Error("Missing Supabase credentials");
     }
 
     supabase = createClient(supabaseUrl, supabaseAnonKey);
