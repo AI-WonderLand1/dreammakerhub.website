@@ -113,7 +113,7 @@ export async function GET() {
           thumbnail: null
         };
       });
-      
+
       if (localTemplates.length > 0) {
         logger.info('Returning local templates:', localTemplates.length);
         return NextResponse.json({ templates: localTemplates });
@@ -121,83 +121,9 @@ export async function GET() {
     } catch (error) {
       logger.info("Local templates not available:", error.message);
     }
-    
-    // Fallback to hardcoded templates
-    const defaultTemplates = [
-      {
-        id: "basic-environment",
-        name: "Basic Environment",
-        description: "A simple 3D environment with ground plane and ambient lighting to get started.",
-        category: "starter",
-        thumbnail: null
-      },
-      {
-        id: "blank_canvas",
-        name: "Blank Canvas",
-        description: "Start from scratch with an empty 3D scene. Import your own models or build manually.",
-        category: "custom",
-        thumbnail: null
-      },
-      {
-        id: "template_futuristic_city",
-        name: "Futuristic City",
-        description: "Neon-lit skyscrapers with flying vehicles and holographic billboards",
-        category: "sci-fi",
-        thumbnail: null
-      },
-      {
-        id: "template_tropical_beach",
-        name: "Tropical Beach",
-        description: "Palm trees, white sand, crystal clear water, and sunset sky",
-        category: "nature",
-        thumbnail: null
-      },
-      {
-        id: "template_snow_mountains",
-        name: "Snow Mountains",
-        description: "Icy peaks with snow-covered pine trees and foggy valleys",
-        category: "nature",
-        thumbnail: null
-      },
-      {
-        id: "template_ancient_ruins",
-        name: "Ancient Ruins",
-        description: "Crumbling stone columns and mysterious artifacts in a jungle",
-        category: "fantasy",
-        thumbnail: null
-      },
-      {
-        id: "template_space_station",
-        name: "Space Station",
-        description: "Orbital station with Earth in background and asteroid field",
-        category: "space",
-        thumbnail: null
-      },
-      {
-        id: "template_medieval_village",
-        name: "Medieval Village",
-        description: "Cozy cottages, market square with wooden stalls, and castle in distance",
-        category: "fantasy",
-        thumbnail: null
-      },
-      {
-        id: "template_modern_office",
-        name: "Modern Office",
-        description: "Sleek glass walls, ergonomic furniture, city view through windows",
-        category: "city",
-        thumbnail: null
-      },
-      {
-        id: "template_desert_oasis",
-        name: "Desert Oasis",
-        description: "Palm trees around a crystal clear pool in golden sand dunes",
-        category: "nature",
-        thumbnail: null
-      }
-    ];
-    
-    return NextResponse.json({ templates: defaultTemplates });
-    
+
+    return NextResponse.json({ templates: [] });
+
   } catch (error) {
     logger.error("Failed to load templates:", error);
     return NextResponse.json(
