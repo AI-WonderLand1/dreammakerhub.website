@@ -59,6 +59,17 @@ app.get('/playcanvas/engine', (req, res) => {
   res.send(engineHtml);
 });
 
+// Serve the locally-installed PlayCanvas engine bundle (no playcanvas.com CDN)
+app.get('/playcanvas/engine/playcanvas.mjs', (req, res) => {
+  const engineFile = join(process.cwd(), 'node_modules/playcanvas/build/playcanvas.mjs');
+  if (existsSync(engineFile)) {
+    res.type('application/javascript');
+    res.sendFile(engineFile);
+  } else {
+    res.status(404).json({ error: 'Local engine bundle not found' });
+  }
+});
+
 // Legacy route for backward compatibility
 app.get('/playcanvas/editor', (req, res) => {
   const editorHtml = readFileSync('./editor-ui/index.html', 'utf-8');
@@ -375,7 +386,6 @@ app.listen(PORT, '0.0.0.0', () => {
 <html>
 <head>
   <title>PlayCanvas Engine</title>
-  <script src="https://code.playcanvas.com/playcanvas-stable.min.js"></script>
   <style>
     * { margin: 0; padding: 0; }
     body { background: #0a0a10; overflow: hidden; }
@@ -384,8 +394,9 @@ app.listen(PORT, '0.0.0.0', () => {
 </head>
 <body>
   <canvas id="engine-canvas"></canvas>
-  <script>
-    // Engine Container - runs PlayCanvas
+  <script type="module">
+    // Engine Container - runs the locally-served PlayCanvas engine
+    import * as pc from '/playcanvas/engine/playcanvas.mjs';
     const canvas = document.getElementById('engine-canvas');
     const app = new pc.Application(canvas, {
       mouse: new pc.Mouse(canvas),
