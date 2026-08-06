@@ -5,7 +5,9 @@ import type { PlayCanvasHostProps } from "@/components/PlayCanvasEditorHost";
 import { ensurePlayCanvasBootstrapLoaded, resetPlayCanvasBootstrapLoader } from "@/lib/playcanvasBootstrap";
 import { logger } from '@/lib/logger';
 
-export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: PlayCanvasHostProps) {
+const BRIDGE_READY_TIMEOUT_MS = 30_000;
+
+export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSceneChange }: PlayCanvasHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<{ destroy?: () => void } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -15,12 +17,14 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
   const onStatusRef = useRef(onStatus);
-  
+  const onSceneChangeRef = useRef(onSceneChange);
+
   useEffect(() => {
     onReadyRef.current = onReady;
     onErrorRef.current = onError;
     onStatusRef.current = onStatus;
-  }, [onReady, onError, onStatus]);
+    onSceneChangeRef.current = onSceneChange;
+  }, [onReady, onError, onStatus, onSceneChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,22 +66,41 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus }: Pl
 
       try {
         const cleanup = bootstrap.mount(container, { sceneId });
-        
+
         // Store cleanup in ref so it's accessible in cleanup function
         cleanupRef.current = cleanup || null;
-        
+
+        // Wire scene change notifications back to the host app
+        if (cleanup && typeof cleanup.onSceneChange === "function") {
+          cleanup.onSceneChange((scene: unknown) => {
+            onSceneChangeRef.current?.(scene);
+          });
+        }
+
         if (cancelled) {
           // If cancelled during mount, clean up immediately
           cleanup?.destroy?.();
           cleanupRef.current = null;
           return;
         }
-        
+
         // Check if mount returned a cleanup object with destroy method
         if (!cleanup || typeof cleanup.destroy !== "function") {
           logger.warn("PlayCanvas mount did not return a cleanup object with destroy method. Memory leaks may occur.");
         }
-        
+
+        // The WebGL Studio editor boots asynchronously inside an iframe.
+        // Wait for its "wonder_ready" handshake before reporting readiness.
+        const ready = cleanup?.ready ?? Promise.resolve();
+        await Promise.race([
+          ready,
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, BRIDGE_READY_TIMEOUT_MS);
+          }),
+        ]);
+
+        if (cancelled) return;
+
         onStatusRef.current?.("ready");
         onReadyRef.current?.();
       } catch (error) {

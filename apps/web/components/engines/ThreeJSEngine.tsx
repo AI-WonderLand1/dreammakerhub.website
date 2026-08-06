@@ -64,7 +64,7 @@ const LIGHTING_PRESETS = [
 const GLTF_IMPORT_SOURCES = [
   { name: 'Sketchfab', url: 'https://sketchfab.com' },
   { name: 'Poly Haven', url: 'https://polyhaven.com' },
-  { name: 'PlayCanvas Store', url: 'https://playcanvas.com' },
+  { name: 'Wonder 3D Studio', url: '/wonder-build/playcanvas' },
   { name: 'Khronos Sample Models', url: 'https://github.com/KhronosGroup/glTF-Sample-Models' },
   { name: 'Custom Upload', url: '' },
 ];

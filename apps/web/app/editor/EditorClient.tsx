@@ -2,16 +2,14 @@
 
 
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Script from 'next/script';
 import { logger } from '@/lib/logger';
 
-// PlayCanvas loaded from CDN
+// PlayCanvas loaded from the locally-installed package (no playcanvas.com CDN)
 let pc: any = null;
 
 export default function EditorPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<any>(null);
@@ -28,7 +26,38 @@ export default function EditorPage() {
   const [showAssets, setShowAssets] = useState(true);
   const [sceneObjects, setSceneObjects] = useState<any[]>([]);
 
-  // Initialize PlayCanvas after script loads
+  // Initialize PlayCanvas after local engine module loads
+  useEffect(() => {
+    let mounted = true;
+
+    const loadEngineAndInit = async () => {
+      try {
+        if (!pc) {
+          // Dynamic import of the locally-installed PlayCanvas engine
+          const module = await import('playcanvas');
+          if (!mounted) return;
+          pc = (module as any);
+          if (pc.default) pc = (pc.default as any);
+        }
+        if (!mounted) return;
+        setScriptLoaded(true);
+      } catch (err) {
+        logger.error('Failed to load PlayCanvas engine:', err);
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    loadEngineAndInit();
+
+    return () => {
+      mounted = false;
+      if (appRef.current) {
+        appRef.current.destroy();
+        appRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!scriptLoaded || !canvasRef.current) return;
 
@@ -36,8 +65,6 @@ export default function EditorPage() {
 
     const initPlayCanvas = () => {
       try {
-        // Get pc from window (loaded by CDN)
-        pc = (window as any).pc;
         if (!pc) {
           logger.error('PlayCanvas not loaded');
           setIsLoading(false);
@@ -87,9 +114,7 @@ export default function EditorPage() {
         appRef.current = null;
       }
     };
-  }, [scriptLoaded]);
-
-  const createDemoScene = (app: any): (() => void) | void => {
+  }, [scriptLoaded]);  const createDemoScene = (app: any): (() => void) | void => {
     // Camera
     const camera = new pc.Entity('Camera');
     camera.addComponent('camera', {
@@ -307,13 +332,6 @@ export default function EditorPage() {
           </aside>
         )}
       </div>
-
-      {/* Load PlayCanvas from CDN */}
-      <Script
-        src="https://code.playcanvas.com/playcanvas-1.66.0.min.js"
-        strategy="afterInteractive"
-        onLoad={() => setScriptLoaded(true)}
-      />
     </div>
   );
 }
