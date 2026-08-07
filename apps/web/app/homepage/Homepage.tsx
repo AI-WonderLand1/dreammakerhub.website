@@ -46,12 +46,13 @@ export default function Homepage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-   return (
-     <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
-       <HomepageNavbar scrolled={scrolled} />
-       <FeatureShowcase />
+    return (
+      <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
+        <HomepageNavbar scrolled={scrolled} />
+        <FeatureShowcase />
+        <NpcCtaSection />
 
-       <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
+        <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
 <Image
            src="/images/wonderland-background.png"
            alt="WonderPlay Landing Page - A whimsical wonderland forest scene with a wooden signpost pointing toward different paths"
