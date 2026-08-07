@@ -1,6 +1,6 @@
 
 bin/coder
-node_modules
+**/node_modules/
 *.tgz
 node-v*-linux-x64/
 agent/venv/
@@ -28,3 +28,39 @@ mobile_oci_key*.pem
 # Runtime artifacts / local secret stores
 agent/data/*.db
 apps/web/tsconfig.tsbuildinfo
+
+# Custom Engine build output
+/custom-engine/dist/
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directories used by testing tools
+coverage/
+.lcov*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment variables (already covered but adding more patterns)
+.env.local
+.env.*.local
+
+
+# Custom Engine specific
+/custom-engine/package-lock.json

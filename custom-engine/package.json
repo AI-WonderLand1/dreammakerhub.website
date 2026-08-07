@@ -1,0 +1,36 @@
+{
+  "name": "custom-npc-engine",
+  "version": "1.0.0",
+  "description": "A custom engine for AI NPCs with visual components and plugin system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.esm.js",
+  "scripts": {
+    "build": "tsc",
+    "build:dev": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "typedoc --out docs src",
+    "example": "ts-node custom-example.ts"
+  },
+  "keywords": [
+    "engine",
+    "npc",
+    "ai",
+    "simulation",
+    "webgl",
+    "plugin",
+    "visual"
+  ],
+  "author": "Custom Engine Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.0",
+    "typedoc": "^0.25.0"
+  },
+  "peerDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
