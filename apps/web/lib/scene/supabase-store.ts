@@ -13,7 +13,11 @@ function sb() {
   return _client;
 }
 
-export async function saveSceneToSupabase(sceneId: string, sceneData: object, userId?: string): Promise<{ success: boolean; path?: string }> {
+export async function saveSceneToSupabase(
+  sceneId: string,
+  sceneData: { name?: string; [key: string]: unknown },
+  userId?: string
+): Promise<{ success: boolean; path?: string }> {
   if (!sb()) {
     logger.warn("Supabase not configured, falling back to memory");
     memoryStore.set(sceneId, sceneData);
@@ -60,7 +64,7 @@ export async function loadSceneFromSupabase(sceneId: string): Promise<object | n
       .single();
 
     if (error) throw error;
-    return data?.data || null;
+    return (data as { data?: object } | null)?.data ?? null;
   } catch (error) {
     logger.error("Failed to load from Supabase:", error);
     return memoryStore.get(sceneId) || null;

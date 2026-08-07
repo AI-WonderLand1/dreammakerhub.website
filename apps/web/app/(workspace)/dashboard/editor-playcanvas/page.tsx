@@ -12,7 +12,7 @@ import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack
 import NpcPanel from "@/components/NpcPanel";
 import { setupTheatreBridge } from "@/lib/theatreBridgeSetup";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
-import { buildPlayCanvasEditorUrl, getPlayCanvasMode } from "@/lib/playcanvas";
+import { getPlayCanvasMode } from "@/lib/playcanvas";
 import type { ArtifactMetadata } from "@/lib/wonderspace/artifacts";
 import { logger } from '@/lib/logger';
 
@@ -80,7 +80,6 @@ export default function EditorPlayCanvasPage() {
   const effectiveSceneId = sceneId || selectedSetupProject?.sceneId || "";
 
   const playCanvasMode = getPlayCanvasMode();
-  const editorUrl = useMemo(() => buildPlayCanvasEditorUrl(effectiveSceneId), [effectiveSceneId]);
   const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
 
   const pushToast = useCallback((toast: Omit<ToastItem, "id">) => {

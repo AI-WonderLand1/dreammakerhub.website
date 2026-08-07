@@ -3,6 +3,11 @@ import { createClient } from "@/app/utils/supabase/server";
 import { injectWiringRuntime } from "@/lib/wonder-build/wiringRuntime";
 import { logger } from '@/lib/logger';
 
+export const metadata = {
+  title: 'Project Preview | AI Wonderland',
+  description: 'Live preview of your AI Wonderland project.',
+};
+
 export const runtime = "nodejs";
 
 /**

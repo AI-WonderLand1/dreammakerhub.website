@@ -65,10 +65,44 @@ async function fetchGithubModules(): Promise<RegistryModule[]> {
   }
 }
 
-async function fetchGoogleAIModels(): Promise<RegistryModel[]> {
-  // TODO: implement fetching from Google AI
-  // For now return empty array
-  return []
+async function fetchGoogleAIModels(): Promise<RegistryModule[]> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    // Return static list of Google AI Models
+    const models: RegistryModule[] = [
+      {
+        id: "google-gemini-pro",
+        name: "Gemini Pro",
+        description: "Google's Gemini Pro model for versatile AI tasks",
+        category: "chat",
+        source: "google",
+        private: false,
+      },
+      {
+        id: "google-gemini-ultra",
+        name: "Gemini Ultra",
+        description: "Google's most capable Gemini model for complex reasoning",
+        category: "chat",
+        source: "google",
+        private: false,
+      },
+      {
+        id: "google-gemini-nano",
+        name: "Gemini Nano",
+        description: "Efficient Gemini model for on-device tasks",
+        category: "chat",
+        source: "google",
+        private: false,
+      },
+    ];
+
+    return models;
+  } catch (error) {
+    logger.error("Google AI Models fetch errored", error);
+    return [];
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -76,7 +110,7 @@ export async function GET(req: NextRequest) {
   if (paidUser instanceof NextResponse) return paidUser;
 
   const registryModules = publicAiModules;
-  const googleAIModules = await fetchGoogleAIModules();
+  const googleAIModules = await fetchGoogleAIModels();
   const githubModules = await fetchGithubModules();
   const modules: RegistryModule[] = [
     ...registryModules.map((module) => ({ ...module, source: "public-registry" })),

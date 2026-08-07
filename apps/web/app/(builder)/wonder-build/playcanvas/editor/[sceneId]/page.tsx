@@ -41,7 +41,14 @@ function PlayCanvasEditor() {
   const [showVersions, setShowVersions] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(1);
   const [showAssetLib, setShowAssetLib] = useState(false);
+  const [assetSearch, setAssetSearch] = useState("");
+  const [assets, setAssets] = useState<ExternalAsset[]>([]);
+  const [assetSearching, setAssetSearching] = useState(false);
+  const [importingAsset, setImportingAsset] = useState<string | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const editorRef = useRef<any>(null);
+
+  const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
 
   const { saveNow } = useAutoSave(sceneId, sceneData, user?.id, {
     intervalMs: 30000,
@@ -295,6 +302,9 @@ function PlayCanvasEditor() {
                   setBridgeLoading(false);
                   setBridgeFailed(true);
                   pushToast("Could not embed PlayCanvas. Retrying...", "error");
+                }}
+                onSceneChange={(scene: unknown) => {
+                  if (scene) setSceneData(scene);
                 }}
               />
             </>
