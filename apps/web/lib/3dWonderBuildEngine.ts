@@ -61,8 +61,8 @@ export class WonderBuildEngine {
           <h1 class="wb-hero-title">${escapeHtml(heroTitle)}</h1>
           <p class="wb-hero-sub">${escapeHtml(heroSub)}</p>
           <div class="wb-hero-actions">
-            <a href="#" class="wb-btn wb-btn-primary">${escapeHtml(ctaLabel)}</a>
-            <a href="#" class="wb-btn wb-btn-secondary">Documentation</a>
+            <a href="/wonder-build/ai-builder" class="wb-btn wb-btn-primary">${escapeHtml(ctaLabel)}</a>
+            <a href="/docs" class="wb-btn wb-btn-secondary">Documentation</a>
           </div>
         </div>
       </section>`);
@@ -91,13 +91,13 @@ export class WonderBuildEngine {
               <h3>Free</h3>
               <div class="wb-price">$0<span>/mo</span></div>
               <ul><li>1 project</li><li>Community support</li></ul>
-              <a href="#" class="wb-btn wb-btn-outline">Start Free</a>
+              <a href="/wonder-build/ai-builder" class="wb-btn wb-btn-outline">Start Free</a>
             </div>
             <div class="wb-pricing-card wb-pricing-featured">
               <h3>Pro</h3>
               <div class="wb-price">$29<span>/mo</span></div>
               <ul><li>Unlimited projects</li><li>Priority support</li><li>Custom domains</li></ul>
-              <a href="#" class="wb-btn wb-btn-primary">Go Pro</a>
+              <a href="/wonder-build/ai-builder" class="wb-btn wb-btn-primary">Go Pro</a>
             </div>
           </div>
         </div>
@@ -124,9 +124,9 @@ export class WonderBuildEngine {
         <div class="wb-container">
           <p>&copy; ${new Date().getFullYear()} Your Project. All rights reserved.</p>
           <div class="wb-footer-links">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Contact</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/contact">Contact</a>
           </div>
         </div>
       </footer>`);
@@ -160,7 +160,7 @@ export class WonderBuildEngine {
 .wb-price span { font-size: 1rem; font-weight: 400; color: #94a3b8; }
 .wb-pricing-card ul { list-style: none; padding: 0; margin: 1.5rem 0; text-align: left; }
 .wb-pricing-card li { padding: 0.4rem 0; color: #cbd5e1; }
-.wb-pricing-card li::before { content: "✓ "; color: ${accent}; }
+.wb-pricing-card li::before { content: "��✓ "; color: ${accent}; }
 .wb-contact { padding: 4rem 0; }
 .wb-contact-form { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
 .wb-contact-form input, .wb-contact-form textarea { background: #111118; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 0.75rem 1rem; color: #f8fafc; font-size: 1rem; font-family: inherit; }
@@ -174,3 +174,4 @@ export class WonderBuildEngine {
     return { message: 'Generated layout', html, css };
   }
 }
+

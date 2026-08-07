@@ -73,7 +73,7 @@ export default function ThreeDLibraryPage() {
               <div className="aspect-video bg-zinc-900 flex items-center justify-center relative overflow-hidden">
                 {/* Placeholder for 3D Preview */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40 transition-opacity">
-                   <span className="text-6xl">📦</span>
+                   <span className="text-6xl">���📦</span>
                 </div>
                 <span className="relative z-10 text-sm text-white/40 group-hover:text-white/60 transition-colors">
                   {asset.type.toUpperCase()} PREVIEW
@@ -93,12 +93,14 @@ export default function ThreeDLibraryPage() {
                   {asset.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <Link
-                    href="#"
+                  <a
+                    href={asset.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
                   >
                     Details →
-                  </Link>
+                  </a>
                   <button className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors">
                     Download
                   </button>
