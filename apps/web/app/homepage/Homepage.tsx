@@ -13,6 +13,7 @@ import AIDiagram from "./AIDiagram";
 import HomepageNavbar from "./HomepageNavbar";
 import PricingSection from "./PricingSection";
 import ComparisonTable from "./ComparisonTable";
+import FeatureShowcase from "@/components/homepage/FeatureShowcase";
 import { PLANS, REGISTRY_ITEMS } from "./data";
 
 const openSpiritGuide = () => {
@@ -45,11 +46,12 @@ export default function Homepage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  return (
-    <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
-      <HomepageNavbar scrolled={scrolled} />
+   return (
+     <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
+       <HomepageNavbar scrolled={scrolled} />
+       <FeatureShowcase />
 
-      <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
+       <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
 <Image
            src="/images/wonderland-background.png"
            alt="WonderPlay Landing Page - A whimsical wonderland forest scene with a wooden signpost pointing toward different paths"
