@@ -68,12 +68,12 @@ export default function Sidebar() {
       
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         <NavItem icon={Home} label="Home" href="/dashboard/ai-generator" active />
-        <NavItem icon={Wand2} label="AI Tools" href="#" />
-        <NavItem icon={Box} label="3D Generator" href="#" />
-        <NavItem icon={Printer} label="Print Tools" href="#" />
-        <NavItem icon={Layers} label="Creations" href="#" />
-        <NavItem icon={Users} label="Community" href="#" />
-        <NavItem icon={Settings} label="Settings" href="#" />
+        <NavItem icon={Wand2} label="AI Tools" href="/dashboard/ai-generator" />
+        <NavItem icon={Box} label="3D Generator" href="/dashboard/3dhub" />
+        <NavItem icon={Printer} label="Print Tools" href="/dashboard/projects" />
+        <NavItem icon={Layers} label="Creations" href="/dashboard/projects" />
+        <NavItem icon={Users} label="Community" href="/community" />
+        <NavItem icon={Settings} label="Settings" href="/dashboard/settings" />
       </nav>
 
       <UpgradeCard />

@@ -1,22 +1,27 @@
-import PodLauncher from '@/components/engines/PodLauncher';
-import { logger } from '@/lib/logger';
+'use client';
 
-export const metadata = {
-  title: 'WonderPlay - 3D Editor',
-  description: 'Launch your private PlayCanvas 3D editor pod.',
-};
+import { useEffect } from 'react';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 export default function WonderPlayPage() {
-  return (
-    <PodLauncher
-      podType="playcanvas"
-      title="WonderPlay"
-      icon="&#127918;"
-      description="Your private PlayCanvas 3D editor. Create scenes, build games, and ship immersive experiences — all in your own isolated pod."
-      templateId="playcanvas-3d"
-      accentColor="purple"
-      backHref="/wonder-build"
-      backLabel="Back to WonderBuild"
-    />
-  );
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (user) {
+      // Assuming the user object has an access_token property
+      // Adjust this according to the actual user object structure from useAuth
+      const token = user.access_token || '';
+      const url = new URL('https://wonderplay-3d.dreammakerhub.website');
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+      window.location.href = url.toString();
+    } else {
+      window.location.href = 'https://wonderplay-3d.dreammakerhub.website';
+    }
+  }, [user, loading]);
+
+  return <div>Redirecting...</div>;
 }
