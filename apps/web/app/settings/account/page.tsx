@@ -1,4 +1,9 @@
 import { logger } from '@/lib/logger';
+export const metadata = {
+  title: 'Account Settings | AI Wonderland',
+  description: 'Manage your profile, authentication, and sessions.',
+};
+
 export default function AccountSettingsPage() {
   return (
     <section>

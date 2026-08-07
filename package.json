@@ -3,8 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "npc-sim"
+    "packages/*"
   ],
   "overrides": {
     "tar": ">=7.5.11",

@@ -10,6 +10,7 @@ export type PlayCanvasHostProps = {
   onReady?: () => void;
   onError?: (error?: Error) => void;
   onStatus?: (status: PlayCanvasHostStatus) => void;
+  onSceneChange?: (scene: unknown) => void;
 };
 
 export default function PlayCanvasEditorHost(props: PlayCanvasHostProps) {

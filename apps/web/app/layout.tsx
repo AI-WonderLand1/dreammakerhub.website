@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./(builder)/wonder-build/wonder-build.css";
 
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
 import { AuthProvider } from "@/lib/supabase/auth-context";
@@ -13,6 +14,15 @@ import UniversalAIAssistant from "@/components/ai/UniversalAIAssistant";
 import { AutoRunAI, AutoRunFromURL, AutoBuildTrigger } from "@/components/ai/AutoRunAI";
 import Footer from "@/components/Footer";
 import { logger } from '@/lib/logger';
+
+export const metadata: Metadata = {
+  title: {
+    default: "AI Wonderland - Build Anything with AI",
+    template: "%s | AI Wonderland",
+  },
+  description:
+    "Build websites, 3D games, and interactive experiences from natural language prompts. No coding required.",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

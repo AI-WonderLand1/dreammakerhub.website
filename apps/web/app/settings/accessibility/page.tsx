@@ -1,4 +1,9 @@
 import { logger } from '@/lib/logger';
+export const metadata = {
+  title: 'Accessibility | AI Wonderland',
+  description: 'Accessibility settings for your account.',
+};
+
 export default function AccessibilitySettingsPage() {
   return (
     <section>

@@ -75,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
+    await ensureSupabaseConfig()
     const supabase = getSupabaseClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -82,6 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const signUp = useCallback(async (email: string, password: string) => {
+    await ensureSupabaseConfig()
     const supabase = getSupabaseClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signUp({ email, password })
@@ -89,6 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const signInWithOAuth = useCallback(async (provider: 'github' | 'google', options?: { redirectTo?: string }) => {
+    await ensureSupabaseConfig()
     const supabase = getSupabaseClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signInWithOAuth({ provider, options })
