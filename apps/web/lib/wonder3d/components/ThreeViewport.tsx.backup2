@@ -684,6 +684,10 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
     cameraRef.current.position.y = radius * Math.cos(clampedPhi);
     cameraRef.current.position.z = radius * Math.sin(clampedPhi) * Math.sin(theta);
     cameraRef.current.lookAt(0, 0, 0);
+n  // Update Lighting Rig
+  const setupLighting = (scene: THREE.Scene, type: ViewportLighting) => {
+    // Remove existing lights
+    scene.children.filter((c) => c instanceof THREE.Light).forEach((l) => scene.remove(l));
 
     switch (type) {
       case 'cyberpunk': {
@@ -752,6 +756,17 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
   };
 
   // Update Lighting Rig
+      default: {
+        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        keyLight.position.set(4, 6, 5);
+        keyLight.castShadow = true;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xaabbcc, 1.0);
+        fillLight.position.set(-4, 3, -3);
+        scene.add(fillLight);
+        break;
       }
     }
   };
