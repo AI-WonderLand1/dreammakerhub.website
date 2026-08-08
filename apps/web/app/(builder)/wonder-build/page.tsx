@@ -8,6 +8,7 @@ import {
   Box,
   Compass,
   Palette,
+  Library,
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
@@ -47,6 +48,13 @@ const TOOLS = [
     icon: Compass,
     title: 'Spatial Designer',
     desc: 'Design immersive 3D spaces and environments.',
+  },
+  {
+    href: '/wonder-build/templates',
+    icon: Library,
+    title: 'Template Library',
+    desc: 'Browse 60+ batch prompt templates, generate new ones with AI, and visualize them in the visual renderer.',
+    tag: 'AI',
   },
 ];
 
