@@ -3,5 +3,5 @@ export const metadata = {
   description: 'Manage your team and members.',
 };
 
-import TeamsPage from "./TeamsPage";
+import TeamsPage from "../TeamsPage";
 export default TeamsPage;
