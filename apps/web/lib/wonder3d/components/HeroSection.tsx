@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { ThreeViewport } from './ThreeViewport';
 import { AssetCategory } from '../types';

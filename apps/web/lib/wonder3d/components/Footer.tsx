@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { Box, Github, Twitter, Disc as Discord, Shield, Sparkles } from 'lucide-react';
 

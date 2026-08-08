@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useMemo } from 'react';
 import { AssetItem, CartItem, FilterState, AssetCategory } from './types';
 import { getSeededAssets } from './utils/seedData';

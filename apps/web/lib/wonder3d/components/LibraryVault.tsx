@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { AssetItem, UserCollection } from '../types';
 import { AssetCard } from './AssetCard';

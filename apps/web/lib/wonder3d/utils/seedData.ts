@@ -1,3 +1,4 @@
+'use client';
 import { AssetItem, Model3DType } from '../types';
 import { INITIAL_ASSETS } from '../data/mockAssets';
 
