@@ -161,7 +161,7 @@ export default function ProjectHubPage() {
           >
             <Box className="w-8 h-8 mb-2 text-cyan-400" />
             <div className="font-medium">3DHub Studio</div>
-            <div className="text-xs text-white/50">AI 3D Factory, 360 views, game levels, cinematic timelines, and NPC simulation.</div>
+            <div className="text-xs text-white/50">AI 3D Factory, 360 views, game levels, cinematic timelines, </div>
           </Link>
         ) : (
           <Link

@@ -1,0 +1,106 @@
+Page/Component,Element Type,Label/Text,URL/Action,Status,Notes
+Homepage,Navigation Link,Features,/features,Works,Main nav
+Homepage,Navigation Link,Docs,/docs,Works,Main nav
+Homepage,Navigation Link,Tutorials,/tutorials,Works,Main nav
+Homepage,Navigation Link,Community,/community,Works,Main nav
+Homepage,Navigation Link,Support,/support,Works,Main nav
+Homepage,Navigation Link,Status,/status,Works,Main nav
+Homepage,Navigation Link,Wonder Build,/wonder-build,Works,Requires auth
+Homepage,Navigation Link,PlayCanvas Studio,/wonder-build/playcanvas,Works,Requires auth
+Homepage,Navigation Link,WonderSpace,/wonderspace,Works,Main nav
+Homepage,Interactive Signpost,Documentation,this way -> /docs,Works,Visual interactive element
+Homepage,Interactive Signpost,Tutorials,That way -> /tutorials,Works,Visual interactive element
+Homepage,Interactive Signpost,Community,wrong way -> /community,Works,Visual interactive element
+Homepage,Interactive Signpost,Features,tea party -> /features,Works,Visual interactive element
+Homepage,Interactive Signpost,WebGL Studio,down here -> /wonder-build/playcanvas,Works,Visual interactive element
+Homepage,Interactive Signpost,WonderSpace IDE,yonder -> /wonderspace,Works,Visual interactive element
+Homepage,Interactive Signpost,Dashboard,go back -> /dashboard,Works,Visual interactive element
+Homepage Navbar,Menu Button,Menu Icon,,Works,Hamburger menu toggle
+Homepage Navbar,Menu Button,Expanded Category Toggle,,Works,Dropdown toggle
+Homepage Navbar,Link,Dashboard Projects,/dashboard/projects,Works,Authenticated user link
+Homepage Navbar,Button,Sign Out,,Works,Sign out action
+Homepage Navbar,Link,Sign In,/public-pages/auth,Works,Guest user link
+Homepage Navbar,Link,Sign Up,/public-pages/auth?signup=true,Works,Guest user link
+WonderPlay Page,Pod Launcher Form,Pod Name input,,Works,Pod creation form
+WonderPlay Page,Pod Launcher Form,CPU selector (1-4),,Works,Resource selection
+WonderPlay Page,Pod Launcher Form,Memory selector (2-8 GB),,Works,Resource selection
+WonderPlay Page,Pod Launcher Form,Provision button,,Works,Form submission
+WonderPlay Page,Pod Launcher Form,Back to WonderBuild link,,Works,Navigation
+WonderSpace Page,Mode Selector,Wonderspace/Component/Website/Game radio buttons,,Works,Build mode selection
+WonderSpace Page,Prompt Input,Textarea for AI prompt,,Works,AI input field
+WonderSpace Page,Save to Runner checkbox,Save output to runner,,Works,Persistence option
+WonderSpace Page,Run Build button,Build triggered,,Works,Main action button
+WonderSpace Page,Agent Status Display,Architect/Builder/Reviewer/Runner status,,Works,Progress indicators
+WonderSpace Page,Code/Plan Display,Generated code/plan display,, Works,Output display
+WonderSpace Page,Save Path display,Saved file path display,, Works,File output indicator
+Builder Page,Auto-redirect to /wonder-build/builder,,works,Redirects to new builder
+AI Modules Page,Tab Selector,Explorer/Training tabs,,Works,Tab navigation
+AI Modules Page,Category Filter,All/Chat/code/agent/data/vision/training dropdown,,Works,Filter options
+AI Modules Page,Search Input,Search modules,,Works,Search functionality
+AI Modules Page,API Key Modal,Open BYOK modal,, Works,Authentication
+AI Modules Page,API Key Input,Enter API key,, Works,Credential input
+AI Modules Page,Connect Button,Connect to external service,, Works,Authentication action
+Footer,Link,Twitter,https://twitter.com/aiwonderland,Works,External link
+Footer,Link,GitHub,https://github.com/aiwonderland,Works,External link
+Footer,Link,Discord,https://discord.gg/aiwonderland,Works,External link
+Footer,Link,WonderBuild,/wonder-build/agent,Works,Internal link
+Footer,Link,Playground,https://playground.dreammakerhub.website/,Works,External link (AI Playground)
+Footer,Link,WonderPlay 3D,/wonder-build/playcanvas,Works,Internal link
+Footer,Link,WonderSpace IDE,/wonderspace/ide,Works,Internal link
+Footer,Link,Marketplace,/marketplace,Works,Internal link
+Footer,Link,About,/about,Works,Internal link
+Footer,Link,Careers,/careers,Works,Internal link
+Footer,Link,Contact,/contact,Works,Internal link
+Footer,Link,Blog,/blog,Works,Internal link
+Footer,Link,Privacy,/privacy,Works,Internal link
+Footer,Link,Terms,/terms,Works,Internal link
+Footer,Link,FAQ,/faq,Works,Internal link
+Dashboard Layout,Navigation Item,Dashboard,/dashboard,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Projects,/dashboard/projects,Works,Sidebar nav
+Dashboard Layout,Navigation Item,My Scenes,/library,Works,Sidebar nav
+Dashboard Layout,Navigation Item,AI Playground,https://playground.dreammakerhub.website/,Works,External link in sidebar
+Dashboard Layout,Navigation Item,Agents,/dashboard/agents,Works,Sidebar nav
+Dashboard Layout,Navigation Item,AetherGuard,/dashboard/aetherguard,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Wonderbuild,/wonder-build,Works,Sidebar nav
+Dashboard Layout,Navigation Item,3DHub Studio,/dashboard/3dhub,Works,Sidebar nav
+Dashboard Layout,Navigation Item,WonderPlay 3D,/wonder-build/playcanvas,Works,Sidebar nav
+Dashboard Layout,Navigation Item,WonderSpace IDE,/wonderspace/ide,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Settings,/dashboard/settings,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Usage & Billing,/dashboard/usage,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Teams,/dashboard/collaboration,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Storage,/dashboard/settings/byoc,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Security,/dashboard/settings/security,Works,Sidebar nav
+Dashboard Layout,Navigation Item,Feedback,/dashboard/support,Works,Sidebar nav
+Dashboard Layout,Mobile Menu Button,Menu toggle,,Works,Mobile responsive menu
+Auth Form,Login Form,Email input,,Works,Login credential
+Auth Form,Login Form,Password input,,Works,Login credential
+Auth Form,Login Form,Submit button,,Works,Form submission
+Auth Form,Signup Form,Full Name input,,Works,Registration
+Auth Form,Signup Form,Email input,,Works,Registration
+Auth Form,Signup Form,Password input,,Works,Registration
+Auth Form,Signup Form,Submit button,,Works,Form submission
+Auth Form,Subscribe Form,Plan selector (Free/Pro/Enterprise),,Works,Subscription selection
+Auth Form,Subscribe Form,Submit button,,Works,Form submission
+PodLauncher,Form,Pod Name input,,Works,Pod creation
+PodLauncher,Form,CPU selector (1-4),,Works,Resource selection
+PodLauncher,Form,Memory selector (2-8 GB),,Works,Resource selection
+PodLauncher,Form,Provision button,,Works,Form submission
+PodLauncher,Form,Back link,,Works,Navigation
+FileManager Page,Import Modal,Drag & drop area,,Works,File import
+FileManager Page,Import Modal,File input (hidden),,Works,File selection
+FileManager Page,Import Modal,Cancel button,,Works,Modal dismissal
+FileManager Page,File Tree,File/folder items,,Works,Navigation
+FileManager Page,File Tree,New file button,,Works,Creation action
+FileManager Page,File Tree,New folder button,,Works,Creation action
+FileManager Page,File Tree,Rename button,,Works,Edit action
+FileManager Page,File Tree,Delete button,,Works,Deletion action
+FileManager Page,File Tree,Download button,,Works,Export action
+FileManager Page,File Tree,Upload button,,Works,Import action
+FileManager Page,Code Editor,Save button,,Works,Persistence
+FileManager Page,Code Editor,Fullscreen toggle,,Works,View toggle
+AetherGuard Dialog,Status Button,Refresh data,,Works,Manual refresh
+Aetherguard Dialog,Link,Full dashboard link,,Works,Navigation
+Aetherguard Dialog,Close Button,X icon,,Works,Modal dismissal
+Aetherguard Dialog,Quick Actions,ESLint Fix button,,Works,Code action
+Aetherguard Dialog,Quick Actions,npm Audit Fix button,,Works,Security action
+Aetherguard Dialog,Quick Actions,Format Code button,,Works,Formatting action
