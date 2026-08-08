@@ -1,3 +1,4 @@
+'use client';
 // Web Audio API Synthesizer for UI & 3D Marketplace feedback
 class SoundEngine {
   private ctx: AudioContext | null = null;

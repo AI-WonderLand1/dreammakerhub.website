@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { AssetItem, Model3DType, ViewportLighting } from '../types';
 import { ThreeViewport } from './ThreeViewport';

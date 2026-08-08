@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { AssetItem, AssetCategory, AssetFormat, Model3DType } from '../types';
 import { 
