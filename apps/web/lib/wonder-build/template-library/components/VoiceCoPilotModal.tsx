@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Mic,
@@ -29,14 +30,13 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
     Array<{ sender: 'user' | 'gemini'; text: string }>
   >([]);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [inputText, setInputText] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const inputAudioCtxRef = useRef<AudioContext | null>(null);
-  const outputAudioCtxRef = useRef<AudioContext | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const inputAudioCtxRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-
-  const nextStartTimeRef = useRef<number>(0);
 
   if (!isOpen) return null;
 
@@ -54,140 +54,142 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
     return btoa(binary);
   };
 
-  const playPcmAudioChunk = (base64Audio: string) => {
-    try {
-      if (!outputAudioCtxRef.current) {
-        outputAudioCtxRef.current = new (window.AudioContext ||
-          (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      }
-      const audioCtx = outputAudioCtxRef.current;
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-
-      const binary = atob(base64Audio);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const int16Array = new Int16Array(bytes.buffer);
-      const float32Array = new Float32Array(int16Array.length);
-      for (let i = 0; i < int16Array.length; i++) {
-        float32Array[i] = int16Array[i] / (int16Array[i] < 0 ? 32768 : 32767);
-      }
-
-      const buffer = audioCtx.createBuffer(1, float32Array.length, 24000);
-      buffer.getChannelData(0).set(float32Array);
-
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audioCtx.destination);
-
-      const currentTime = audioCtx.currentTime;
-      if (nextStartTimeRef.current < currentTime) {
-        nextStartTimeRef.current = currentTime;
-      }
-      source.start(nextStartTimeRef.current);
-      nextStartTimeRef.current += buffer.duration;
-    } catch (err) {
-      console.error('Error playing audio chunk:', err);
+  const sendChunk = (base64Audio: string) => {
+    if (abortRef.current && abortRef.current.signal) {
+      // No-op: audio streaming via WebSocket is not available in this Next.js build.
+      // The server side of the co-pilot returns text transcripts via SSE.
     }
   };
 
-  const startVoiceSession = async () => {
+  const handleUserText = async (text?: string) => {
+    const message = (text ?? inputText).trim();
+    if (!message) return;
+
+    setTranscripts((prev) => [...prev, { sender: 'user', text: message }]);
+    setInputText('');
     setIsConnecting(true);
+    setError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setIsConnected(true);
+
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/live`;
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+      const res = await fetch('/api/wonder-build/template-library/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+        signal: controller.signal,
+      });
 
-      ws.onopen = async () => {
-        setIsConnected(true);
-        setIsConnecting(false);
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Voice co-pilot request failed.');
+      }
 
-        // Access Microphone
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaStreamRef.current = stream;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-        const inputCtx = new (window.AudioContext ||
-          (window as any).webkitAudioContext)({ sampleRate: 16000 });
-        inputAudioCtxRef.current = inputCtx;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
 
-        const sourceNode = inputCtx.createMediaStreamSource(stream);
-        const processorNode = inputCtx.createScriptProcessor(4096, 1, 1);
-        processorRef.current = processorNode;
+        // SSE format: "data: {...}\n\n"
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
 
-        sourceNode.connect(processorNode);
-        processorNode.connect(inputCtx.destination);
-
-        processorNode.onaudioprocess = (e) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            const channelData = e.inputBuffer.getChannelData(0);
-
-            // Compute volume for visualizer
-            let sum = 0;
-            for (let i = 0; i < channelData.length; i++) {
-              sum += channelData[i] * channelData[i];
+        for (const chunk of lines) {
+          const dataLine = chunk.split('\n').find((l) => l.startsWith('data:'));
+          if (!dataLine) continue;
+          const payload = dataLine.replace(/^data:\s*/, '');
+          try {
+            const json = JSON.parse(payload);
+            if (json.transcript) {
+              setTranscripts((prev) => {
+                const last = prev[prev.length - 1];
+                if (last && last.sender === 'gemini') {
+                  return [
+                    ...prev.slice(0, -1),
+                    { sender: 'gemini', text: last.text + json.transcript },
+                  ];
+                }
+                return [...prev, { sender: 'gemini', text: json.transcript }];
+              });
             }
-            const rms = Math.sqrt(sum / channelData.length);
-            setAudioLevel(Math.min(100, Math.round(rms * 250)));
-
-            const base64Pcm = pcmToBase64(channelData);
-            ws.send(JSON.stringify({ audio: base64Pcm }));
+            if (json.done) {
+              setAudioLevel(0);
+            }
+          } catch {
+            // ignore partial json
           }
-        };
-
+        }
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('Voice Co-Pilot error:', err);
+        setError(err.message || 'Voice Co-Pilot connection failed.');
         setTranscripts((prev) => [
           ...prev,
-          { sender: 'gemini', text: 'Hello! I am WonderVoice Co-Pilot. How can I help customize your template?' },
+          {
+            sender: 'gemini',
+            text: err.message || 'Voice Co-Pilot connection failed.',
+          },
         ]);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.audio) {
-            playPcmAudioChunk(data.audio);
-          }
-          if (data.transcript) {
-            setTranscripts((prev) => {
-              const last = prev[prev.length - 1];
-              if (last && last.sender === 'gemini') {
-                return [
-                  ...prev.slice(0, -1),
-                  { sender: 'gemini', text: last.text + ' ' + data.transcript },
-                ];
-              } else {
-                return [...prev, { sender: 'gemini', text: data.transcript }];
-              }
-            });
-          }
-          if (data.interrupted) {
-            nextStartTimeRef.current = 0;
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      };
-
-      ws.onerror = (err) => {
-        console.error('WebSocket Live Error:', err);
-        setIsConnecting(false);
-        setIsConnected(false);
-      };
-
-      ws.onclose = () => {
-        stopVoiceSession();
-      };
-    } catch (err: any) {
-      console.error('Failed to start Live Voice session:', err);
+      }
+    } finally {
       setIsConnecting(false);
       setIsConnected(false);
     }
   };
 
+  const startVoiceSession = async () => {
+    // Keep mic capture for visual feedback but drive the conversation via text (SSE).
+    setIsConnecting(true);
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const inputCtx = new (window.AudioContext ||
+        (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      inputAudioCtxRef.current = inputCtx;
+
+      const sourceNode = inputCtx.createMediaStreamSource(stream);
+      const processorNode = inputCtx.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processorNode;
+
+      sourceNode.connect(processorNode);
+      processorNode.connect(inputCtx.destination);
+
+      processorNode.onaudioprocess = (e) => {
+        const channelData = e.inputBuffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < channelData.length; i++) {
+          sum += channelData[i] * channelData[i];
+        }
+        const rms = Math.sqrt(sum / channelData.length);
+        setAudioLevel(Math.min(100, Math.round(rms * 250)));
+      };
+
+      setIsConnected(true);
+      setTranscripts((prev) => [
+        ...prev,
+        { sender: 'gemini', text: 'Hello! I am WonderVoice Co-Pilot. How can I help customize your template?' },
+      ]);
+    } catch (err: any) {
+      console.error('Mic access failed:', err);
+      setError(err.message || 'Microphone access was denied. You can still type a message below.');
+      setIsConnecting(false);
+    }
+  };
+
   const stopVoiceSession = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
     if (processorRef.current) {
       processorRef.current.disconnect();
       processorRef.current = null;
@@ -196,17 +198,9 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
       inputAudioCtxRef.current.close();
       inputAudioCtxRef.current = null;
     }
-    if (outputAudioCtxRef.current) {
-      outputAudioCtxRef.current.close();
-      outputAudioCtxRef.current = null;
-    }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
-    }
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
     }
     setIsConnected(false);
     setIsConnecting(false);
@@ -217,6 +211,7 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
     return () => {
       stopVoiceSession();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -232,11 +227,11 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
               <div className="flex items-center space-x-2">
                 <h3 className="font-bold text-lg text-white">WonderVoice Co-Pilot</h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
-                  gemini-3.1-flash-live
+                  gemini-live
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Real-time WebSocket audio conversation powered by Gemini Live API.
+                Streaming text conversation powered by Gemini Live API.
               </p>
             </div>
           </div>
@@ -280,18 +275,25 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
             <div className="text-center space-y-1">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 {isConnected
-                  ? 'Live Audio Session Active'
+                  ? 'Live Co-Pilot Session Active'
                   : isConnecting
-                  ? 'Establishing WebSocket Bridge...'
+                  ? 'Streaming Response...'
                   : 'Voice Co-Pilot Offline'}
               </span>
               <p className="text-xs text-slate-500">
                 {isConnected
-                  ? 'Speak freely into your microphone to talk with WonderVoice AI.'
-                  : 'Click Start below to begin low-latency voice interaction.'}
+                  ? 'Type a message below to talk with WonderVoice AI.'
+                  : 'Click Start below or just type a message to begin.'}
               </p>
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="w-full p-3 bg-red-950/50 border border-red-500/50 rounded-xl text-red-300 text-xs">
+              {error}
+            </div>
+          )}
 
           {/* Transcript Box */}
           <div className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 max-h-48 overflow-y-auto space-y-3 text-xs">
@@ -336,24 +338,44 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
             )}
           </div>
 
+          {/* Text Input */}
+          <div className="w-full flex items-center space-x-2">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleUserText()}
+              placeholder="Type a message for WonderVoice AI..."
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+            <button
+              onClick={() => handleUserText()}
+              disabled={isConnecting || !inputText.trim()}
+              className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center space-x-1.5 cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Send</span>
+            </button>
+          </div>
+
           {/* Controls */}
           <div className="w-full pt-2 flex items-center justify-center space-x-3">
-            {!isConnected ? (
+            {!isConnected && !isConnecting ? (
               <button
                 onClick={startVoiceSession}
-                disabled={isConnecting}
                 className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Mic className="w-4 h-4" />
-                <span>Start Live Voice Session</span>
+                <span>Start Live Co-Pilot Session</span>
               </button>
             ) : (
               <button
                 onClick={stopVoiceSession}
-                className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                disabled={isConnecting}
+                className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
               >
                 <MicOff className="w-4 h-4" />
-                <span>Disconnect Voice Co-Pilot</span>
+                <span>{isConnecting ? 'Streaming...' : 'Disconnect Co-Pilot'}</span>
               </button>
             )}
           </div>
