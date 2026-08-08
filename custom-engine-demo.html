@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom NPC Engine Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 12px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .mode-btn.active {
+            background: #009900;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Custom NPC Engine Demo</h3>
+        <p>Status: <span id="status">Initializing...</span></p>
+        <p>FPS: <span id="fps">0</span></p>
+        <p>NPCs: <span id="npc-count">0</span></p>
+    </div>
+    
+    <div id="controls">
+        <h4>Transform Mode:</h4>
+        <button id="move-btn" class="mode-btn">Move</button>
+        <button id="rotate-btn" class="mode-btn">Rotate</button>
+        <button id="scale-btn" class="mode-btn">Scale</button>
+        <br>
+        <button id="say-hello-btn">Say Hello</button>
+        <button id="reset-btn">Reset Positions</button>
+    </div>
+
+    <!-- The engine will create and append its canvas here -->
+    <div id="engine-container"></div>
+
+    <script type="module">
+        import { CustomEngine } from './custom-engine/dist/index.js';
+        import { NPCSimulationAIPlugin } from './custom-engine/dist/index.js';
+        import { TransformToolsPlugin } from './custom-engine/dist/index.js';
+
+        // Initialize engine
+        const engine = new CustomEngine({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: [0.05, 0.05, 0.1, 1.0],
+            debug: true
+        });
+
+        // Update size on resize
+        window.addEventListener('resize', () => {
+            engine.width = window.innerWidth;
+            engine.height = window.innerHeight;
+            if (engine.canvas) {
+                engine.canvas.width = window.innerWidth;
+                engine.canvas.height = window.innerHeight;
+                if (engine.gl) {
+                    engine.gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+                }
+            }
+        });
+
+        // Initialize engine
+        await engine.initialize();
+
+        // Add NPC-Sim plugin (using a mock API for demo)
+        // In a real app, this would connect to your actual npc-sim instance
+        const npcSimPlugin = new NPCSimulationAIPlugin({
+          apiUrl: 'http://localhost:3000/api/sim', // Change to your actual API
+          tickInterval: 100,
+          autoTick: true,
+          initialNPCs: [
+            { id: 'alice', name: 'Alice', position: [0, 1.5, 0] },
+            { id: 'bob', name: 'Bob', position: [2, 1.5, 0] },
+            { id: 'charlie', name: 'Charlie', position: [-2, 1.5, 0] }
+          ]
+        });
+
+        await engine.addPlugin(npcSimPlugin);
+
+        // Add transform tools
+        const transformTools = new TransformToolsPlugin({
+          showGizmos: true,
+          gizmoSize: 1.0,
+          snapTranslation: 0.5,
+          snapRotation: 15
+        });
+
+        await engine.addPlugin(transformTools);
+
+        // Set up UI
+        const statusEl = document.getElementById('status');
+        const fpsEl = document.getElementById('fps');
+        const npcCountEl = document.getElementById('npc-count');
+        const moveBtn = document.getElementById('move-btn');
+        const rotateBtn = document.getElementById('rotate-btn');
+        const scaleBtn = document.getElementById('scale-btn');
+        const sayHelloBtn = document.getElementById('say-hello-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let currentMode = 'move';
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0, objectId: null };
+
+        // Set active button
+        function setActiveMode(mode) {
+          [moveBtn, rotateBtn, scaleBtn].forEach(btn => btn.classList.remove('active'));
+          switch(mode) {
+            case 'move': moveBtn.classList.add('active'); break;
+            case 'rotate': rotateBtn.classList.add('active'); break;
+            case 'scale': scaleBtn.classList.add('active'); break;
+          }
+          currentMode = mode;
+        }
+
+        // Event listeners for mode buttons
+        moveBtn.addEventListener('click', () => setActiveMode('move'));
+        rotateBtn.addEventListener('click', () => setActiveMode('rotate'));
+        scaleBtn.addEventListener('click', () => setActiveMode('scale'));
+
+        // Say hello button
+        sayHelloBtn.addEventListener('click', async () => {
+          // In a real implementation, you'd send a command to your NPC-Sim API
+          alert('Hello button clicked! In a real app, this would make an NPC talk.');
+        });
+
+        // Reset positions button
+        resetBtn.addEventListener('click', () => {
+          // Reset NPC positions to initial values
+          alert('Reset button clicked! In a real app, this would reset NPC positions.');
+        });
+
+        // Engine events
+        engine.on('init', () => {
+          statusEl.textContent = 'Initialized';
+        });
+
+        engine.on('start', () => {
+          statusEl.textContent = 'Running';
+        });
+
+        engine.on('destroy', () => {
+          statusEl.textContent = 'Stopped';
+        });
+
+        // Simple FPS counter
+        let frames = 0;
+        let fpsTimer = null;
+        function updateFPS() {
+          fpsEl.textContent = frames;
+          frames = 0;
+        }
+        function startFPSTimer() {
+          fpsTimer = setInterval(updateFPS, 1000);
+        }
+        function stopFPSTimer() {
+          if (fpsTimer) {
+            clearInterval(fpsTimer);
+            fpsTimer = null;
+          }
+        }
+
+        engine.on('start', startFPSTimer);
+        engine.on('stop', stopFPSTimer);
+        engine.on('destroy', stopFPSTimer);
+
+        // Mock NPC count update (in real app, this would come from events or plugin)
+        setInterval(() => {
+          npcCountEl.textContent = '3'; // Mock value
+        }, 1000);
+
+        // Start the engine
+        await engine.start();
+
+        // Simple input handling for transform tools (mock implementation)
+        // In a real implementation, the transform tools plugin would handle this
+        engine.canvas.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          dragStart = { 
+            x: e.clientX, 
+            y: e.clientY, 
+            objectId: 'alice-visual' // In real app, this would be determined by raycasting
+          };
+        });
+
+        engine.canvas.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          
+          const dx = e.clientX - dragStart.x;
+          const dy = e.clientY - dragStart.y;
+          
+          // In a real implementation, you'd call the transform tools API
+          // This is just a mock to show the concept
+          if (dragStart.objectId) {
+            // Update object position/rotation/scale based on mode and drag delta
+            console.log(`Dragging ${dragStart.objectId} in ${currentMode} mode: dx=${dx}, dy=${dy}`);
+          }
+        });
+
+        engine.canvas.addEventListener('mouseup', () => {
+          isDragging = false;
+          dragStart = { x: 0, y: 0, objectId: null };
+        });
+
+        engine.canvas.addEventListener('mouseleave', () => {
+          isDragging = false;
+          dragStart = { x: 0, y: 0, objectId: null };
+        });
+    </script>
+</body>
+</html>

@@ -51,15 +51,6 @@ export default function StudioApp() {
               </button>
             );
           })}
-          <a
-            href="https://wonderplay-3d.up.railway.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-2 px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wide uppercase transition text-slate-400 hover:text-slate-200"
-          >
-            <Cpu size={14} />
-            <span>NPC Sim</span>
-          </a>
         </nav>
 
         <div className="flex items-center space-x-3">
