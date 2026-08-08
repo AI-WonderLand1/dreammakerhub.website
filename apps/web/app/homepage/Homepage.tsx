@@ -14,6 +14,7 @@ import HomepageNavbar from "./HomepageNavbar";
 import PricingSection from "./PricingSection";
 import ComparisonTable from "./ComparisonTable";
 import FeatureShowcase from "@/components/homepage/FeatureShowcase";
+import NpcCtaSection from "@/components/homepage/NpcCtaSection";
 import { PLANS, REGISTRY_ITEMS } from "./data";
 
 const openSpiritGuide = () => {
