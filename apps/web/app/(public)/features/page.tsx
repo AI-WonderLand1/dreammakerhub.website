@@ -3,5 +3,5 @@ export const metadata = {
   description: 'Every feature included with an AI Wonderland subscription.',
 };
 
-import FeaturesPage from "./FeaturesPage";
+import FeaturesPage from "../FeaturesPage";
 export default FeaturesPage;
