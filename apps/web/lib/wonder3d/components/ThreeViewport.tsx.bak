@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import * as THREE from 'three';
 import { Model3DType, ViewportRenderMode, ViewportLighting } from '../types';
 import { 
@@ -25,8 +24,6 @@ interface ThreeViewportProps {
   autoRotateDefault?: boolean;
   className?: string;
   showControlsBar?: boolean;
-  glbUrl?: string;
-  glbFilePath?: string;
   interactive?: boolean;
 }
 
@@ -50,10 +47,6 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isHovered, setIsHovered] = useState<boolean>(false);
-  // Custom model state
-  const [customModel, setCustomModel] = useState<THREE.Group | null>(null);
-  const [isLoadingCustomModel, setIsLoadingCustomModel] = useState<boolean>(false);
-  const [customModelError, setCustomModelError] = useState<string | null>(null);
   const [hasWebGlError, setHasWebGlError] = useState<boolean>(false);
 
   // References for Three.js internals
@@ -559,59 +552,10 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
     grid.name = 'gridHelper';
     scene.add(grid);
 
-    // 6. Load Custom Model or Create Procedural Model
-    const loadCustomModel = async () => {
-      if (glbUrl || glbFilePath) {
-        setIsLoadingCustomModel(true);
-        setCustomModelError(null);
-        try {
-          const loader = new GLTFLoader();
-          const url = glbUrl || (glbFilePath?.startsWith("/") ? glbFilePath : `/${glbFilePath}`);
-          const gltf = await loader.loadAsync(url);
-          const modelGroup = gltf.scene;
-          modelGroup.traverse((child) => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-              // Ensure material is properly set up for PBR
-              if (child.material instanceof THREE.MeshStandardMaterial) {
-                child.material.needsUpdate = true;
-              }
-            }
-          });
-          // Apply primary color tint if needed
-          if (primaryColor && primaryColor !== "#00F0FF") {
-            modelGroup.traverse((child) => {
-              if (child.isMesh && child.material instanceof THREE.MeshStandardMaterial) {
-                // Blend with primary color as tint
-                const color = new THREE.Color(primaryColor);
-                child.material.color.lerp(color, 0.3);
-              }
-            });
-          }
-          setCustomModel(modelGroup);
-          mainGroupRef.current = modelGroup;
-          scene.add(modelGroup);
-        } catch (error) {
-          console.error("Failed to load GLTF model:", error);
-          setCustomModelError(error.message);
-          // Fallback to procedural model
-          const modelGroup = createProceduralModel(modelType, primaryColor);
-          mainGroupRef.current = modelGroup;
-          scene.add(modelGroup);
-        } finally {
-          setIsLoadingCustomModel(false);
-        }
-      } else {
-        // No custom model URL, create procedural model
-        const modelGroup = createProceduralModel(modelType, primaryColor);
-        mainGroupRef.current = modelGroup;
-        scene.add(modelGroup);
-      }
-    };
-    
-    // Load the model
-    loadCustomModel();
+    // 6. Build & Add Procedural 3D Model
+    const modelGroup = createProceduralModel(modelType, primaryColor);
+    mainGroupRef.current = modelGroup;
+    scene.add(modelGroup);
 
     // 7. Animation Loop
     let clock = new THREE.Clock();
@@ -684,74 +628,55 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
     cameraRef.current.position.y = radius * Math.cos(clampedPhi);
     cameraRef.current.position.z = radius * Math.sin(clampedPhi) * Math.sin(theta);
     cameraRef.current.lookAt(0, 0, 0);
+  };
+
+  // Update Lighting Rig
+  const setupLighting = (scene: THREE.Scene, type: ViewportLighting) => {
+    // Remove existing lights
+    scene.children.filter((c) => c instanceof THREE.Light).forEach((l) => scene.remove(l));
 
     switch (type) {
       case 'cyberpunk': {
-        scene.add(new THREE.AmbientLight(0x0a0a20, 1.5));
-        const light1 = new THREE.DirectionalLight(0x00f0ff, 4.0);
-        light1.position.set(3, 5, 2);
+        scene.add(new THREE.AmbientLight(0x0a0a20, 1.2));
+        const light1 = new THREE.DirectionalLight(0x00f0ff, 3.5);
+        light1.position.set(5, 5, 5);
         scene.add(light1);
 
-        const light2 = new THREE.DirectionalLight(0xff007f, 2.5);
-        light2.position.set(-3, -1, -3);
+        const light2 = new THREE.DirectionalLight(0xff007f, 3.0);
+        light2.position.set(-5, -2, -5);
         scene.add(light2);
-
-        // Add rim light for separation
-        const rimLight = new THREE.DirectionalLight(0x00ffff, 1.5);
-        rimLight.position.set(0, 5, -5);
-        scene.add(rimLight);
         break;
       }
       case 'sunset': {
-        scene.add(new THREE.AmbientLight(0x221111, 1.2));
-        const keyLight = new THREE.DirectionalLight(0xff7700, 4.0);
-        keyLight.position.set(5, 3, 2);
+        scene.add(new THREE.AmbientLight(0x221111, 1.0));
+        const keyLight = new THREE.DirectionalLight(0xff7700, 3.8);
+        keyLight.position.set(6, 4, 3);
         scene.add(keyLight);
 
-        const fillLight = new THREE.DirectionalLight(0x2266aa, 1.8);
-        fillLight.position.set(-4, 1, -3);
+        const fillLight = new THREE.DirectionalLight(0x2266aa, 1.5);
+        fillLight.position.set(-5, 2, -4);
         scene.add(fillLight);
-
-        // Add rim light
-        const rimLight = new THREE.DirectionalLight(0xff6b35, 1.2);
-        rimLight.position.set(0, 4, -4);
-        scene.add(rimLight);
         break;
       }
       case 'void': {
-        scene.add(new THREE.AmbientLight(0x050505, 0.8));
-        const spotLight = new THREE.SpotLight(0xffffff, 6.0, 25, Math.PI / 3, 0.3);
-        spotLight.position.set(0, 10, 0);
-        spotLight.target.position.set(0, 0, 0);
+        scene.add(new THREE.AmbientLight(0x050505, 0.5));
+        const spotLight = new THREE.SpotLight(0xffffff, 5.0, 20, Math.PI / 4, 0.5);
+        spotLight.position.set(0, 8, 2);
         scene.add(spotLight);
         break;
       }
       case 'studio':
       default: {
-        // Enhanced studio lighting for PBR
-        scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 3.0);
-        keyLight.position.set(3, 6, 2);
+        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        keyLight.position.set(4, 6, 5);
         keyLight.castShadow = true;
         scene.add(keyLight);
 
-        const fillLight = new THREE.DirectionalLight(0xaabbcc, 1.5);
-        fillLight.position.set(-3, 2, -2);
-        fillLight.castShadow = true;
+        const fillLight = new THREE.DirectionalLight(0xaabbcc, 1.0);
+        fillLight.position.set(-4, 3, -3);
         scene.add(fillLight);
-
-        // Add rim/hair light for separation
-        const rimLight = new THREE.DirectionalLight(0xfff9c0, 1.2);
-        rimLight.position.set(-2, 4, 2);
-        scene.add(rimLight);
         break;
-      }
-    }
-  };
-
-  };
-
-  // Update Lighting Rig
       }
     }
   };
