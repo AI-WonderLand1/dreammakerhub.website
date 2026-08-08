@@ -11,6 +11,7 @@ export const menuItems: NavMenuItem[] = [
       { name: "AI-PLAYGROUND", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
       { name: "WonderSpace IDE", href: "/ide", icon: "💻" },
       { name: "3D Wonder-Build", href: "/wonder-build/spatial", icon: "🧊" },
+      { name: "NPC Creation", href: "https://wonderplay-3d.dreammakerhub.website/", icon: "🧙♂️" },
     ],
   },
   {

@@ -9,9 +9,7 @@ import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 import { PageHeader } from "@/app/components/layout/PageHeader";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
-import NpcPanel from "@/components/NpcPanel";
 import { setupTheatreBridge } from "@/lib/theatreBridgeSetup";
-import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { getPlayCanvasMode } from "@/lib/playcanvas";
 import type { ArtifactMetadata } from "@/lib/wonderspace/artifacts";
 import { logger } from '@/lib/logger';
@@ -68,6 +66,7 @@ export default function EditorPlayCanvasPage() {
   });
   const [glbFile, setGlbFile] = useState<File | null>(null);
   const [glbFeedback, setGlbFeedback] = useState<string>("Pick a .glb file to validate before saving.");
+  const [npcLiveEvents, setNpcLiveEvents] = useState<{ ts: number; npcId: string; event: unknown }[]>([]);
 
   const selectedSetupProject = useMemo(
     () => setupProjects.find((project) => project.id === selectedSetupProjectId) ?? null,
@@ -80,7 +79,6 @@ export default function EditorPlayCanvasPage() {
   const effectiveSceneId = sceneId || selectedSetupProject?.sceneId || "";
 
   const playCanvasMode = getPlayCanvasMode();
-  const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
 
   const pushToast = useCallback((toast: Omit<ToastItem, "id">) => {
     const id = makeToastId();
@@ -99,6 +97,18 @@ export default function EditorPlayCanvasPage() {
   useEffect(() => {
     setSelectedSetupProjectId(projectId);
   }, [projectId]);
+
+  useEffect(() => {
+    const handleNpcLiveEvent = (event: MessageEvent) => {
+      if (event.data?.type !== "NPC_LIVE_EVENT") return;
+      const npcEvent = event.data.npcEvent as { type: string; data?: { npcId?: string } } | undefined;
+      const npcId = npcEvent?.data?.npcId ?? event.data.npcId;
+      if (!npcId) return;
+      setNpcLiveEvents((prev) => [{ ts: Date.now(), npcId, event: event.data.npcEvent }, ...prev].slice(0, 30));
+    };
+    window.addEventListener("message", handleNpcLiveEvent);
+    return () => window.removeEventListener("message", handleNpcLiveEvent);
+  }, []);
 
   const loadSetupProjects = useCallback(async () => {
     setSetupLoading(true);
@@ -338,6 +348,24 @@ export default function EditorPlayCanvasPage() {
         <span className="rounded-full bg-black/40 px-2 py-0.5 uppercase tracking-wide">{playCanvasMode}</span>
         {playCanvasMode === "direct" ? <span className="text-cyan-300">NEXT_PUBLIC_PLAYCANVAS_MODE=direct</span> : null}
       </div>
+
+      <section className="rounded-2xl border border-white/10 bg-black/30 p-4 md:p-6">
+        <h2 className="text-lg font-semibold text-white">NPC Live Feed</h2>
+        <p className="mt-1 text-sm text-white/65">Real-time NPC events streamed from wonderplay-3D (voice, visemes, dialogue) are injected into the WebGL scene below.</p>
+        <div className="mt-3 rounded-lg bg-white/[0.03] border border-white/10 p-2 font-mono text-[11px] text-white/60 max-h-48 overflow-auto custom-scrollbar">
+          {npcLiveEvents.length === 0 ? (
+            <span className="text-white/35">No NPC live events yet. Deploy an NPC from the dashboard NPC page.</span>
+          ) : (
+            npcLiveEvents.map((item, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="text-white/40">{new Date(item.ts).toLocaleTimeString()}</span>
+                <span className="text-cyan-300">[{item.npcId}]</span>
+                <span className="truncate">{JSON.stringify(item.event)}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link href="/wonder-build/playcanvas" className="rounded-md border border-white/20 px-3 py-2 text-white/85 hover:bg-white/10">
@@ -583,12 +611,6 @@ export default function EditorPlayCanvasPage() {
       </section>
 
 
-      <NpcPanel
-        provider={npcProvider}
-        onProviderError={(message) => {
-          pushToast({ message, tone: "error" });
-        }}
-      />
 
       {!effectiveSceneId ? (
         <EmptyState
