@@ -79,9 +79,16 @@ const nextConfig = {
         destination: '/wonder-build/studio',
         permanent: true,
       },
+      // Legacy standalone builder engines now fold into a single Builder surface.
       {
-        source: '/wonder-build/agent',
-        destination: '/wonder-build/studio',
+        source: '/builder/3d',
+        destination: '/wonder-build/webgl',
+        permanent: true,
+      },
+      // Orphan standalone scene workspace → canonical Project management.
+      {
+        source: '/wonder-projects/:path*',
+        destination: '/dashboard/projects/:path*',
         permanent: true,
       },
     ];

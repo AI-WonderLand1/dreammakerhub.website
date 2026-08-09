@@ -16,7 +16,7 @@ function option(id: string, name: string, summary: string, href: string, status:
 export async function GET() {
   return NextResponse.json({
     ai: [
-      option("ai-builder", "Wonderbuild", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/ai-builder"),
+      option("ai-builder", "Wonderbuild", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/studio"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
       option("playground", "Playground", "Train, create, and test AI modules.", "/wonder-build", "beta"),
     ],
@@ -29,7 +29,7 @@ export async function GET() {
       option("collaboration", "Collaboration Runner", "Operate shared workspace actions and comments in one place.", "/dashboard/collaboration"),
     ],
     workers: [
-      option("terminal-worker", "Terminal Exec", "Run controlled terminal execution via SSH/terminal endpoints.", "/dashboard/overview", "beta"),
+      option("terminal-worker", "Terminal Exec", "Run controlled terminal execution via SSH/terminal endpoints.", "/dashboard/settings", "beta"),
       option("settings-security", "Security Controls", "Manage access and security posture for automation surfaces.", "/settings/security"),
     ],
   });

@@ -31,13 +31,22 @@ import {
   Bot,
   Database,
   Shield,
-  Boxes
+  Boxes,
+  Sparkles,
+  Palette,
+  Terminal,
+  Box
 } from "lucide-react";
 
 type SidebarItem = {
   href: string;
   label: string;
   icon: React.ElementType;
+};
+
+type SidebarGroup = {
+  label: string;
+  items: SidebarItem[];
 };
 
 type MenuItem = {
@@ -52,11 +61,11 @@ type Project = {
 };
 
   const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
-    wonderbuild: { editor: "/wonder-build", label: "Wonderbuild" },
+    wonderbuild: { editor: "/wonder-build/builder", label: "Wonderbuild" },
     game: { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
     "3d_scene": { editor: "/dashboard/3dhub", label: "3D Project" },
-    web_app: { editor: "/wonder-build/ai-builder", label: "Wonderbuild" },
-    workspace: { editor: "/wonderspace/ide", label: "IDE" },
+    web_app: { editor: "/wonder-build/studio", label: "Wonderbuild" },
+    workspace: { editor: "/ide", label: "IDE" },
   };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -73,17 +82,39 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [loadingProjects, setLoadingProjects] = useState(true);
 
-  const mainItems: SidebarItem[] = [
-    { href: "/dashboard", label: "Actions", icon: LayoutDashboard },
+  const sidebarGroups: SidebarGroup[] = [
+    {
+      label: "Build",
+      items: [
+        { href: "/wonder-build", label: "WonderBuild", icon: Pencil },
+        { href: "/wonder-build/studio", label: "AI Studio", icon: Sparkles },
+        { href: "/wonder-build/builder", label: "Visual Builder", icon: Palette },
+      ],
+    },
+    {
+      label: "Code",
+      items: [
+        { href: "/wonderspace", label: "WonderSpace", icon: Code2 },
+        { href: "/ide", label: "Cloud IDE", icon: Terminal },
+        { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
+      ],
+    },
+    {
+      label: "3D",
+      items: [
+        { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
+        { href: "/dashboard/3dhub", label: "3DHub Studio", icon: Boxes },
+        { href: "/wonder-build/webgl", label: "WebGL Studio", icon: Box },
+      ],
+    },
+  ];
+
+  const secondaryItems: SidebarItem[] = [
     { href: "/dashboard/projects", label: "Projects", icon: Folder },
+    { href: "/dashboard", label: "Actions", icon: LayoutDashboard },
     { href: "/library", label: "My Scenes", icon: Database },
-    { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Pencil },
     { href: "/dashboard/agents", label: "Agents", icon: Bot },
     { href: "/dashboard/aetherguard", label: "AetherGuard", icon: Shield },
-    { href: "/wonder-build", label: "Wonderbuild", icon: Pencil },
-    { href: "/dashboard/3dhub", label: "3DHub Studio", icon: Boxes },
-    { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
-    { href: "/wonderspace/ide", label: "WonderSpace IDE", icon: Code2 },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
 
@@ -225,15 +256,52 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         )}
 
         <nav className="p-2">
-          {/* Main items */}
-          <div className="mb-4">
-            {mainItems.map((item) => (
+          {/* Primary destinations: Build / Code / 3D */}
+          {sidebarGroups.map((group) => (
+            <div key={group.label} className="mb-3">
+              <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/35">
+                {group.label}
+              </p>
+              {group.items.map((item) =>
+                item.href.startsWith("http") ? (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-3 py-2 rounded-md text-sm mb-0.5 transition-colors text-white/70 hover:text-white hover:bg-white/5"
+                  >
+                    <item.icon size="16" />
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm mb-0.5 transition-colors ${
+                      isActive(item.href)
+                        ? "bg-white/10 text-white border-l-2 border-orange-500"
+                        : "text-white/70 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    <item.icon size="16" />
+                    {item.label}
+                  </Link>
+                )
+              )}
+            </div>
+          ))}
+
+          {/* Workspace utilities */}
+          <div className="border-t border-white/10 pt-1 mb-3">
+            <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/35">Workspace</p>
+            {secondaryItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm mb-0.5 transition-colors ${
-                  isActive(item.href) 
-                    ? "bg-white/10 text-white border-l-2 border-orange-500" 
+                  isActive(item.href)
+                    ? "bg-white/10 text-white border-l-2 border-orange-500"
                     : "text-white/70 hover:text-white hover:bg-white/5"
                 }`}
               >

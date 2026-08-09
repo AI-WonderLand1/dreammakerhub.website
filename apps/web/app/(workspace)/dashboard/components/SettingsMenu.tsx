@@ -57,7 +57,7 @@ export default function SettingsMenu() {
           </Link>
 
           <Link
-            href="/dashboard/features"
+            href="/dashboard/settings"
             className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
             onClick={() => setOpen(false)}
           >

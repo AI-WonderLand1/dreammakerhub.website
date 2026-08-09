@@ -21,32 +21,40 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-white mb-4">Products</h3>
+            <h3 className="text-sm font-bold text-white mb-4">Build</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/wonder-build/agent" className="text-white/60 hover:text-white">WonderBuild</Link></li>
+              <li><Link href="/wonder-build" className="text-white/60 hover:text-white">WonderBuild</Link></li>
+              <li><Link href="/wonder-build/studio" className="text-white/60 hover:text-white">AI Studio</Link></li>
+              <li><Link href="/wonder-build/builder" className="text-white/60 hover:text-white">Visual Builder</Link></li>
+              <li><Link href="/wonder-build/templates" className="text-white/60 hover:text-white">Templates</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-white mb-4">Code</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/wonderspace" className="text-white/60 hover:text-white">WonderSpace</Link></li>
+              <li><Link href="/ide" className="text-white/60 hover:text-white">Cloud IDE</Link></li>
               <li><a href="https://playground.dreammakerhub.website/" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white">Playground</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-white mb-4">3D</h3>
+            <ul className="space-y-2 text-sm">
               <li><Link href="/wonder-build/playcanvas" className="text-white/60 hover:text-white">WonderPlay 3D</Link></li>
-              <li><Link href="/wonderspace/ide" className="text-white/60 hover:text-white">WonderSpace IDE</Link></li>
+              <li><Link href="/dashboard/3dhub" className="text-white/60 hover:text-white">3DHub Studio</Link></li>
+              <li><Link href="/wonder-build/webgl" className="text-white/60 hover:text-white">WebGL Studio</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-white mb-4">Explore</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/dashboard/projects" className="text-white/60 hover:text-white">Projects</Link></li>
               <li><Link href="/marketplace" className="text-white/60 hover:text-white">Marketplace</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4">Company</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/about" className="text-white/60 hover:text-white">About</Link></li>
-              <li><Link href="/careers" className="text-white/60 hover:text-white">Careers</Link></li>
-              <li><Link href="/contact" className="text-white/60 hover:text-white">Contact</Link></li>
-              <li><Link href="/blog" className="text-white/60 hover:text-white">Blog</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4">Legal</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/privacy" className="text-white/60 hover:text-white">Privacy</Link></li>
-              <li><Link href="/terms" className="text-white/60 hover:text-white">Terms</Link></li>
-              <li><Link href="/faq" className="text-white/60 hover:text-white">FAQ</Link></li>
+              <li><Link href="/docs" className="text-white/60 hover:text-white">Docs</Link></li>
+              <li><Link href="/settings/account" className="text-white/60 hover:text-white">Account</Link></li>
             </ul>
           </div>
         </div>
