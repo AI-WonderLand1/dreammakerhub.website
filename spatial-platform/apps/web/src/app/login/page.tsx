@@ -40,11 +40,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 p-8">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[var(--accent)]">Spatial Platform</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            {isRegister ? 'Create an account' : 'Sign in to continue'}
-          </p>
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <a href="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Dashboard</a>
+          <a href="/login" className="text-sm px-4 py-1.5 rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors">Sign In</a>
         </div>
 
         {error && (

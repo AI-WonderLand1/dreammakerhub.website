@@ -29,9 +29,12 @@ export default function AdminListingsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold">Marketplace Listings</h1>
-        <p className="text-sm text-gray-400 mt-0.5">{data ? `${data.total} total listings` : ''}</p>
+<div className="mb-6">
+        <div className="flex items-center gap-4">
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+          <a href="/admin" className="text-[var(--accent)] hover:underline text-sm">Admin</a>
+        </div>
+        <h1 className="text-xl font-bold">Listings</h1>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-[var(--border)]">

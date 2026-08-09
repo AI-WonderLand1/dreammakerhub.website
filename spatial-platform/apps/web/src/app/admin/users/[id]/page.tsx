@@ -50,7 +50,8 @@ export default function AdminUserDetailPage() {
       <button onClick={() => router.back()} className="text-[var(--accent)] hover:underline text-sm mb-4">&larr; Back to Users</button>
 
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-full bg-[var(--muted)] flex items-center justify-center text-lg font-bold text-[var(--accent)]">
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+          <button onClick={() => router.back()} className="text-[var(--accent)] hover:underline text-sm">&larr; Back to Users</button>
           {(user.username as string)?.[0]?.toUpperCase() ?? '?'}
         </div>
         <div>

@@ -31,7 +31,10 @@ export default function MarketplacePage() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-[var(--border)] px-6 py-4">
-        <a href="/" className="text-[var(--accent)] hover:underline text-sm">&larr; Home</a>
+        <div className="flex items-center gap-4">
+          <a href="/" className="text-[var(--accent)] hover:underline text-sm">&larr; Home</a>
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+        </div>
         <h1 className="text-xl font-bold mt-2">Marketplace</h1>
       </header>
 

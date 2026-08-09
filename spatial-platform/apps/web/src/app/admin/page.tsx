@@ -25,6 +25,10 @@ export default function AdminDashboard() {
   return (
     <div className="p-6">
       <div className="mb-6">
+        <div className="flex items-center gap-4">
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+          <a href="/" className="text-[var(--accent)] hover:underline text-sm">&larr; Home</a>
+        </div>
         <h1 className="text-xl font-bold">Dashboard</h1>
         <p className="text-sm text-gray-400 mt-0.5">Platform overview and activity</p>
       </div>
