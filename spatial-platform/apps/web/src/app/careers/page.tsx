@@ -41,7 +41,10 @@ export default function CareersPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-[var(--border)] px-6 py-4">
-        <a href="/" className="text-[var(--accent)] hover:underline text-sm">&larr; Home</a>
+        <div className="flex items-center gap-4">
+          <a href="/" className="text-[var(--accent)] hover:underline text-sm">&larr; Home</a>
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+        </div>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">

@@ -64,9 +64,12 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
+<div className="mb-6">
+        <div className="flex items-center gap-4">
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+          <a href="/admin" className="text-[var(--accent)] hover:underline text-sm">Admin</a>
+        </div>
         <h1 className="text-xl font-bold">Settings</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Platform configuration</p>
       </div>
 
       {message && (

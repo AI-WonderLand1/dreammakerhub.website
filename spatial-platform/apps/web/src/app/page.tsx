@@ -26,6 +26,7 @@ export default function LandingPage() {
         <span className="text-lg font-bold text-[var(--accent)]">Spatial Platform</span>
         <div className="flex items-center gap-3">
           <a href="/careers" className="text-sm text-gray-400 hover:text-white transition-colors">Careers</a>
+          <a href="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Dashboard</a>
           <a
             href="/login"
             className="text-sm px-4 py-1.5 rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors"

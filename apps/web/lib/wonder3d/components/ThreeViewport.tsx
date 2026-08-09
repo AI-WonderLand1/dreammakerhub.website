@@ -752,9 +752,6 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
   };
 
   // Update Lighting Rig
-      }
-    }
-  };
 
   // Re-apply Render Mode Shaders/Materials
   useEffect(() => {
@@ -1015,4 +1012,4 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
       </div>
     </div>
   );
-};
+}

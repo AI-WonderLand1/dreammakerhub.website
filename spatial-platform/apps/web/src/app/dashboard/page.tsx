@@ -25,6 +25,7 @@ export default function DashboardPage() {
       <header className="border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-[var(--accent)]">Spatial Platform</h1>
         <div className="flex items-center gap-4">
+          <a href="/dashboard" className="text-sm px-3 py-1.5 rounded bg-[var(--muted)] hover:text-[var(--accent)] transition-colors">Dashboard</a>
           {user.role === 'admin' && (
             <a href="/admin" className="text-sm px-3 py-1.5 rounded bg-[var(--muted)] hover:text-[var(--accent)] transition-colors">
               Admin
@@ -69,6 +70,27 @@ export default function DashboardPage() {
           >
             <h2 className="text-lg font-semibold mb-2">Careers</h2>
             <p className="text-sm text-gray-400">Join the team</p>
+          </a>
+          <a
+            href="/"
+            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
+          >
+            <h2 className="text-lg font-semibold mb-2">Home</h2>
+            <p className="text-sm text-gray-400">Return to the start</p>
+          </a>
+          <a
+            href="/login"
+            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
+          >
+            <h2 className="text-lg font-semibold mb-2">Login</h2>
+            <p className="text-sm text-gray-400">Sign in to continue</p>
+          </a>
+          <a
+            href="/admin"
+            className="block p-6 rounded-lg border border-[var(--border)] bg-[var(--muted)] hover:border-[var(--accent)] transition-colors"
+          >
+            <h2 className="text-lg font-semibold mb-2">Admin</h2>
+            <p className="text-sm text-gray-400">Platform administration</p>
           </a>
         </div>
       </main>

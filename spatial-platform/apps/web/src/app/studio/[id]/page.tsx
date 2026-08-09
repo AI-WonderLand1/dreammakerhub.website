@@ -83,6 +83,16 @@ export default function StudioPage() {
 
   return (
     <div className="h-screen flex">
+      <header className="border-b border-[var(--border)] px-4 py-2 flex items-center justify-between bg-[var(--background)] z-10">
+        <div className="flex items-center gap-4">
+          <a href="/dashboard" className="text-[var(--accent)] hover:underline text-sm">Dashboard</a>
+          <a href="/" className="text-[var(--accent)] hover:underline text-sm">&larr;</a>
+          <h1 className="font-semibold text-sm">Studio</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">FPS: --</span>
+        </div>
+      </header>
       {showPanel && (
         <aside className="w-64 border-r border-[var(--border)] bg-[var(--background)] overflow-y-auto flex flex-col">
           <div className="p-4 border-b border-[var(--border)]">
