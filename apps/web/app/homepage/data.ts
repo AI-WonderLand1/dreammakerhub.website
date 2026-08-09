@@ -5,21 +5,38 @@ export type NavMenuItem = {
 
 export const menuItems: NavMenuItem[] = [
   {
-    title: "Products",
+    title: "Build",
     items: [
-      { name: "Wonder-Build", href: "/wonder-build", icon: "⚡" },
-      { name: "AI-PLAYGROUND", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
-      { name: "WonderSpace IDE", href: "/ide", icon: "💻" },
-      { name: "3D Wonder-Build", href: "/wonder-build/spatial", icon: "🧊" },
-      { name: "NPC Creation", href: "https://wonderplay-3d.dreammakerhub.website/", icon: "🧙♂️" },
+      { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
+      { name: "AI Studio", href: "/wonder-build/studio", icon: "🧠" },
+      { name: "Visual Builder", href: "/wonder-build/builder", icon: "🎨" },
+      { name: "Templates", href: "/wonder-build/templates", icon: "📄" },
     ],
   },
   {
-    title: "Solutions",
+    title: "Code",
     items: [
-      { name: "For Developers", href: "/solutions/developers", icon: "👨‍💻" },
-      { name: "For Designers", href: "/solutions/designers", icon: "🎨" },
-      { name: "For Teams", href: "/solutions/teams", icon: "👥" },
+      { name: "WonderSpace", href: "/wonderspace", icon: "💻" },
+      { name: "Cloud IDE", href: "/ide", icon: "🖥️" },
+      { name: "AI Playground", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
+    ],
+  },
+  {
+    title: "3D",
+    items: [
+      { name: "WonderPlay", href: "/wonder-build/playcanvas", icon: "🎮" },
+      { name: "3DHub Studio", href: "/dashboard/3dhub", icon: "🧊" },
+      { name: "WebGL Studio", href: "/wonder-build/webgl", icon: "✨" },
+      { name: "WonderPlay App", href: "/wonder-play", icon: "🌐" },
+    ],
+  },
+  {
+    title: "Explore",
+    items: [
+      { name: "Projects", href: "/dashboard/projects", icon: "📁" },
+      { name: "Marketplace", href: "/marketplace", icon: "🛍️" },
+      { name: "NPC Creation", href: "/wonder-build/playcanvas", icon: "🧙‍♂️" },
+      { name: "Tutorials", href: "/tutorials", icon: "🎓" },
     ],
   },
   {
@@ -27,8 +44,8 @@ export const menuItems: NavMenuItem[] = [
     items: [
       { name: "Documentation", href: "/docs", icon: "📚" },
       { name: "API Reference", href: "/api-reference", icon: "📖" },
-      { name: "Tutorials", href: "/tutorials", icon: "🎓" },
       { name: "Blog", href: "/blog", icon: "📝" },
+      { name: "Community", href: "/community", icon: "👥" },
     ],
   },
   {

@@ -31,7 +31,7 @@ const openSpiritGuide = () => {
       return;
     }
   }
-  window.location.href = '/wonder-build/ai-builder';
+  window.location.href = '/wonder-build/studio';
 };
 
 export default function Homepage() {
@@ -121,11 +121,11 @@ export default function Homepage() {
                   3D spatial workspace - design, collaborate, and explore in real-time
                 </div>
               </Link>
-              <Link href="/wonder-build/ai-builder"
+              <Link href="/wonder-build/studio"
                 className="px-6 py-3 border border-green-500/30 bg-green-500/10 rounded-lg text-white font-semibold hover:bg-green-500/20 transition group relative">
                 🤖 WonderBuild
-                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-green-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
-                  Describe what you want — three AI agents build it automatically
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-green-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  Describe what you want — build it with AI Studio
                 </div>
               </Link>
               <a href="/wonder-build/agent"

@@ -10,7 +10,6 @@ import { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import '../styles/tie-dye-neon.css';
-import { PAGES, getPagesByCategory } from '../lib/navigation';
 import { engineManager, registerAllAdapters } from '@engine/core';
 import { logger } from '@/lib/logger';
 

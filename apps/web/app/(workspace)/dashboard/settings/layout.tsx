@@ -16,7 +16,7 @@ const TABS = [
   { href: "/dashboard/settings", label: "Overview" },
   { href: "/dashboard/settings/coder", label: "WonderSpace IDE" },
   { href: "/dashboard/subscription", label: "Subscription" },
-  { href: "/dashboard/features", label: "Features" },
+  { href: "/dashboard/usage", label: "Usage & Billing" },
   { href: "/dashboard/settings/webhooks", label: "Webhooks" },
   { href: "/dashboard/settings/byoc", label: "BYOC" },
 ];

@@ -216,8 +216,8 @@ export function TriEngineShell() {
                   <Link href="/wonder-build/builder" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
                     Open Builder
                   </Link>
-                  <Link href="/wonder-build/ai-builder" className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/20 transition-colors">
-                    AI Builder
+                  <Link href="/wonder-build/studio" className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/20 transition-colors">
+                    AI Studio
                   </Link>
                 </div>
               </div>
