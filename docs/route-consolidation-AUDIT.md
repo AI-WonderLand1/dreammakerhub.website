@@ -144,3 +144,49 @@ DREAMMAKERHUB
 5. **`/ide`** has no bare directory but resolves via `(tools)/ide` — fine; do not create a second page.
 6. **Two project models**: Supabase `projects` (UUID, type enum) used by dashboard; `_projects` (SQLite via `getDb`) used by `api/projects` + `lib/projects/storage`. Consolidation keeps both wired to their existing callers; a unified `Project` view can be read-only aggregation, no schema change.
 7. **Live-redirect consumers**: docs `getting-started.mdx`, CLI (`packages/aiw-cli`), `docs/3d-cli.mdx`, and homepage cards reference `/wonder-build/ai-builder` — after redirect to studio these all still work; update labels in nav for clarity.
+
+## 7. Implementation log
+
+Status: consolidated nav live; builds green (see 7.4).
+
+### 7.1 Central nav registry
+- Created `apps/web/lib/navigation.ts` exporting `PAGES`, `getPagesByCategory` (legacy), `PRIMARY_NAV` (BUILD / CODE / 3D), `SECONDARY_NAV`, and `resolveProjectDestination()`.
+- `apps/web/components/GlobalNavigation.tsx` now consumes `PRIMARY_NAV`/`SECONDARY_NAV` (full / minimal / mobile variants); this fixes the previously-missing `lib/navigation` import that was breaking the component.
+- `apps/web/components/QuadEngineShell.tsx` no longer imports the missing `PAGES`/`getPagesByCategory` (removed import).
+- `apps/web/app/homepage/data.ts` menuItems grouped into Build / Code / 3D / Explore / Resources / Company; removed dead `/solutions/*` links.
+- `apps/web/app/(workspace)/dashboard/layout.tsx` sidebar regrouped into Build / Code / 3D + Workspace utilities + Management.
+- `apps/web/components/Footer.tsx`, `apps/web/components/Navbar.tsx` restructured to Build / Code / 3D sections.
+- `apps/web/app/(builder)/wonder-build/components/SovereignNavBar.tsx` NAV_LINKS trimmed to Hub / Agent / Builder / 3D / Dashboard.
+
+### 7.2 Query params, project types and CTAs
+- Query-param pushes from `AIWorkflowInput.tsx`, `hub/page.tsx`, `library/page.tsx`, `TriEngineShell.tsx`, `wonderspace/page.tsx` now target `/wonder-build/studio?…`.
+- Homepage hero CTAs and `homepage/ShowcaseSection.tsx` point at `/wonder-build/studio`.
+- Dashboard project editor routing via `PROJECT_TYPE_INFO` (e.g. `web_app → /wonder-build/studio`, `workspace → /ide`, `wonderbuild → /wonder-build/builder`).
+- `/api/projects` POST now accepts a `type` alias alongside `tool` (stored into `_projects.tool`); documented in `app/api-reference/page.tsx`.
+- Remaining `/wonder-build/ai-builder` references in `lib/3dWonderBuildEngine.ts` and `homepage/builder-showcase-cards.ts` repointed to `/wonder-build/studio`; only the redirect rule and internal comments remain.
+
+### 7.3 Redirects (final, in `apps/web/next.config.mjs`)
+| Source | Destination | Type | Status |
+|---|---|---|---|
+| `/wonder-build/preview` | `/wonder-build/studio` | permanent | kept |
+| `/wonder-build/ai-builder` | `/wonder-build/studio` | permanent | kept |
+| `/wonder-build/agent` | — | — | redirect removed; agent is a live surface (per user decision) |
+| `/builder/3d` | `/wonder-build/webgl` | permanent | added |
+| `/wonder-projects` | `/dashboard/projects` | permanent | added — narrowed to the bare index only |
+- **Note:** `/wonder-projects/[projectId]` stays live (runtime control, files, export); a `:path*` wildcard redirect would have shadowed it.
+
+### 7.4 Build verification
+- Install needed Node ≥20.19 (Prisma) — used nvm v20.19.0.
+- `prisma generate` run after `npm ci` (postinstall was interrupted).
+- Placeholder envs required at page-data collect time because `infra/lib/env.ts` calls `requireEnv()` at module scope for `ALICE_API_KEY` / `SIMPLE_RICK_API_KEY` / `SPIRIT_GUIDE_API_KEY` / `MONGODB_URI` — pre-existing, unrelated to consolidation.
+- Fixed pre-existing prerender bug in `apps/web/components/homepage/FeatureShowcase.tsx`: `<Image>` used without `next/image` import (`ReferenceError: Image is not defined`).
+- Result: `next build --webpack` exit 0; all canonical routes (`/wonder-build/*`, `/wonderspace*`, `/ide`, `/wonder-projects/[projectId]`, etc.) emitted.
+- ESLint on changed files: 0 errors (warnings only).
+
+### 7.5 Removed / archived
+- Removed 14 stray 3D-asset binaries from repo root (uploaded via "Add files via upload" PRs #303–#308): `Armored+Girl+*.rar`, `Armored+Future+Soldier+Nazi+Girl+…wmv`, `boat3D.zip`, `wonder3d---…zip` (~72MB).
+
+### 7.6 Deferred (documented, not changed)
+- The four near-identical SSE agent clients (`/api/build/stream` consumers in `SovereignOSContext`, `ai-builder/page`, `studio/AIAssistantModal`, `wonderspace/page`) — merge later, not now.
+- `/dashboard/ai-generator` orphan page — left untouched (live, no nav reference).
+- AI routes (`/api/builder/generate`, `/api/wonder-build/ai/*`, etc.) kept, only mapped-not-deleted.
