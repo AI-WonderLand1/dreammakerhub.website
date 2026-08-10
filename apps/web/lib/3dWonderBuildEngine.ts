@@ -61,7 +61,7 @@ export class WonderBuildEngine {
           <h1 class="wb-hero-title">${escapeHtml(heroTitle)}</h1>
           <p class="wb-hero-sub">${escapeHtml(heroSub)}</p>
           <div class="wb-hero-actions">
-            <a href="/wonder-build/ai-builder" class="wb-btn wb-btn-primary">${escapeHtml(ctaLabel)}</a>
+            <a href="/wonder-build/studio" class="wb-btn wb-btn-primary">${escapeHtml(ctaLabel)}</a>
             <a href="/docs" class="wb-btn wb-btn-secondary">Documentation</a>
           </div>
         </div>
@@ -91,13 +91,13 @@ export class WonderBuildEngine {
               <h3>Free</h3>
               <div class="wb-price">$0<span>/mo</span></div>
               <ul><li>1 project</li><li>Community support</li></ul>
-              <a href="/wonder-build/ai-builder" class="wb-btn wb-btn-outline">Start Free</a>
+              <a href="/wonder-build/studio" class="wb-btn wb-btn-outline">Start Free</a>
             </div>
             <div class="wb-pricing-card wb-pricing-featured">
               <h3>Pro</h3>
               <div class="wb-price">$29<span>/mo</span></div>
               <ul><li>Unlimited projects</li><li>Priority support</li><li>Custom domains</li></ul>
-              <a href="/wonder-build/ai-builder" class="wb-btn wb-btn-primary">Go Pro</a>
+              <a href="/wonder-build/studio" class="wb-btn wb-btn-primary">Go Pro</a>
             </div>
           </div>
         </div>

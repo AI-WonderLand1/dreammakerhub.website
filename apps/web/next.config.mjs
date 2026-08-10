@@ -85,10 +85,11 @@ const nextConfig = {
         destination: '/wonder-build/webgl',
         permanent: true,
       },
-      // Orphan standalone scene workspace → canonical Project management.
+      // Orphan standalone scene workspace index → canonical Project management.
+      // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {
-        source: '/wonder-projects/:path*',
-        destination: '/dashboard/projects/:path*',
+        source: '/wonder-projects',
+        destination: '/dashboard/projects',
         permanent: true,
       },
     ];
