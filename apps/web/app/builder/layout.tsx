@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
  * All builder surfaces consolidated under /wonder-build/*:
  *
  *   /wonder-build             → Main hub (SovereignOS shell)
- *   /wonder-build/ai-builder  → AI builder (websites, games, 3D assets)
+ *   /wonder-build/studio      → AI Studio (AI builder; /wonder-build/ai-builder redirects here)
  *   /wonder-build/playcanvas  → 3D scene editor (PlayCanvas)
  *   /wonder-build/builder     → Native visual drag-drop builder
  *   /wonder-build/3d          → WebGL Studio

@@ -26,12 +26,12 @@ export async function POST(req: NextRequest) {
   const userId = (auth as { userId: string }).userId;
 
   try {
-    const { name, tool } = await req.json();
+    const { name, tool, type } = await req.json();
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ ok: false, message: 'name is required' }, { status: 400 });
     }
 
-    const project = await createProject(userId, name.trim(), tool || 'wonderbuild');
+    const project = await createProject(userId, name.trim(), type || tool || 'wonderbuild');
     return NextResponse.json({ ok: true, project }, { status: 201 });
   } catch (err: any) {
     logger.error('Create project error:', err);

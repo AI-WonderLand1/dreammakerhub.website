@@ -15,7 +15,7 @@ export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
   {
     title: "WonderBuild",
     image: "/images/screenshots/puck-builder.svg",
-    href: "/wonder-build/ai-builder",
+    href: "/wonder-build/studio",
     desc: "Describe what you want — three AI agents generate complete websites, games, and dashboard UIs.",
   },
   {

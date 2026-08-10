@@ -25,11 +25,11 @@ const endpoints: Endpoint[] = [
     method: "POST",
     path: "/api/projects",
     group: "Projects",
-    description: "Create a new project.",
+    description: "Create a new project. `tool`/`type` selects the builder surface (e.g. wonderbuild, playcanvas, workspace, game, 3d_scene).",
     example: `curl -X POST https://ai-wonderland.app/api/projects \\
   -H "Authorization: Bearer <token>" \\
   -H "Content-Type: application/json" \\
-  -d '{"name":"My Project"}'`,
+  -d '{"name":"My Project","type":"wonderbuild"}'`,
   },
   {
     method: "POST",
