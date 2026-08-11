@@ -59,18 +59,18 @@ export default function FeatureShowcase() {
   }, []);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10">
+    <section className="relative z-10 mx-auto mb-10 w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-8 sm:px-6" aria-label="Wonderland feature showcase">
       <div className="absolute inset-0 flex items-center justify-center px-4">
         <div className="relative w-full max-w-4xl space-y-6">
-          {/* Slides */}
-          {FEATURE_SLIDES.map((slide, index) => (
+          <div className="relative h-[300px] w-full sm:h-[380px]">
+            {FEATURE_SLIDES.map((slide, index) => (
             <div
               key={slide.id}
-              className={`absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out ${
+              className={`absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-1000 ease-in-out ${
                 index === currentIndex ? 'opacity-100' : 'opacity-0'
-              } pointer-events-none`}
+              }`}
             >
-              <div className="relative flex h-[200px] w-full rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm overflow-hidden">
+              <div className="relative flex h-[240px] w-full items-center justify-center rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm overflow-hidden sm:h-[320px]">
                 <Image
                   src={slide.image}
                   alt={slide.alt}
@@ -91,8 +91,9 @@ export default function FeatureShowcase() {
               </div>
             </div>
           ))}
-          
-          /* Navigation dots */
+          </div>
+
+          {/* Navigation dots */}
           <div className="flex justify-center space-x-2">
             {FEATURE_SLIDES.map((_, index) => (
               <button
@@ -107,6 +108,6 @@ export default function FeatureShowcase() {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

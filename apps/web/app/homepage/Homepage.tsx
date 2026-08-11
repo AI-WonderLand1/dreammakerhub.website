@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/supabase/auth-context";
 import signMap from "./homepage-sign-map.json";
 import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-cards";
-import { HOMEPAGE_SIGN_LINKS } from "./homepage-links";
 import InteractiveSignpost from "./InteractiveSignpost";
 import ShowcaseSection from "./ShowcaseSection";
 import AIDiagram from "./AIDiagram";
@@ -15,6 +14,7 @@ import PricingSection from "./PricingSection";
 import ComparisonTable from "./ComparisonTable";
 import FeatureShowcase from "@/components/homepage/FeatureShowcase";
 import NpcCtaSection from "@/components/homepage/NpcCtaSection";
+import HeroSoccerCanvas from "@/components/homepage/HeroSoccerCanvas";
 import { PLANS, REGISTRY_ITEMS } from "./data";
 
 const openSpiritGuide = () => {
@@ -50,45 +50,48 @@ export default function Homepage() {
     return (
       <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
         <HomepageNavbar scrolled={scrolled} />
-        <FeatureShowcase />
-        <NpcCtaSection />
 
         <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
-<Image
-           src="/images/wonderland-background.png"
-           alt="WonderPlay Landing Page - A whimsical wonderland forest scene with a wooden signpost pointing toward different paths"
-           fill
-           priority
-           className="object-cover object-left"
-           sizes="100vw"
-         />
-<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/80" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
-        <div className="absolute inset-0 z-10">
-          {HOMEPAGE_SIGN_LINKS && (
-            <InteractiveSignpost iframeLabel={iframeLabel} heroMode />
-          )}
-        </div>
-        <div className="relative z-20 flex min-h-[100svh] flex-col justify-between px-6 pb-10 pt-24 sm:px-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="max-w-2xl">
-              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-pink-400">
-                <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span>
-              </p>
-              <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
-                Where your imagination<br className="hidden sm:block" /> comes to life
-              </h1>
-              <p className="mt-4 max-w-lg text-sm text-white/70 drop-shadow sm:text-base">
-                Build websites and 3D games — no coding required.
-              </p>
-              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-purple-300/80">
-                <span className="text-lg">🔮</span>
-                <span>Spirit Guide AI assistant available</span>
-              </div>
+          <HeroSoccerCanvas />
+          <div className="relative z-20 flex min-h-[100svh] flex-col items-center justify-center px-6 pb-20 pt-28 text-center sm:px-10">
+            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-300 backdrop-blur-md">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />
+              Innovation Engine · Live 3D Scene
+            </span>
+            <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-tight text-white drop-shadow-2xl sm:text-6xl lg:text-7xl">
+              AI WONDERLAND
+              <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-lg">
+                INNOVATION
+              </span>
+            </h1>
+            <p className="mt-6 max-w-xl text-sm text-white/70 drop-shadow sm:text-base">
+              Build websites, 3D games, and interactive experiences from natural language — no coding required.
+              Drag to orbit the scene, scroll to zoom, hover the ball to hear it talk, and give it a kick.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Link href="/wonder-build/studio"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-900/40 transition hover:scale-105 hover:shadow-purple-700/50">
+                🚀 Start Creating
+              </Link>
+              <a href="#explore"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/10">
+                Explore Wonderland ↓
+              </a>
+            </div>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-semibold uppercase tracking-widest text-white/40">
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> Interactive 3D Scene</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> AI-Powered Builds</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Voice Welcome</span>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section id="explore" className="relative mx-auto mt-6 mb-10 w-full max-w-6xl scroll-mt-24 px-4 sm:px-6">
+          <InteractiveSignpost iframeLabel={iframeLabel} />
+        </section>
+
+        <FeatureShowcase />
+        <NpcCtaSection />
 
       <ShowcaseSection />
 
