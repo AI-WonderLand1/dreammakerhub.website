@@ -7740,15 +7740,19 @@ Inspector.prototype.createWidget = function( name, content, options )
 	}
 	else
 	{
-		// Sanitize inputs before using innerHTML
-		var sanitizedCode = (code || '').replace(/[<>]/g, '');
-		var sanitizedClass = (content_class || '').replace(/[<>"]/g, '');
-		var sanitizedWidth = (contentwidth || '').replace(/[<>"]/g, '');
-		
-		element.innerHTML = sanitizedCode + "<span class='info_content "+sanitizedClass+"' "+sanitizedWidth+"></span>";
-		var content_element = element.querySelector("span.info_content");
+		element.innerHTML = code;
+		var content_element = document.createElement("span");
+		content_element.className = "info_content " + content_class;
+		if(contentwidth)
+			content_element.setAttribute("style", contentwidth);
+		element.appendChild(content_element);
 		if(content_element && content)
-			content_element.appendChild( content );
+		{
+			if(content.nodeType !== undefined)
+				content_element.appendChild( content );
+			else
+				content_element.appendChild( document.createTextNode( String(content) ) );
+		}
 	}
 
 	element.content = element.querySelector("span.info_content");
