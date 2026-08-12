@@ -124,6 +124,18 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
   badgeText,
   showHoverOverlay = true,
 }) => {
+  const sanitizeImageUrl = (value?: string): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : '';
+    } catch {
+      return '';
+    }
+  };
+
   const [imgError, setImgError] = useState(false);
 
   const displayTitle = title || template?.name || 'Template Preview';
@@ -131,7 +143,7 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
   const displayBadge = badgeText || template?.variant || displayCategory;
 
   // Resolve image source cleanly
-  const initialSrc = thumbnailUrl || template?.thumbnail;
+  const initialSrc = sanitizeImageUrl(thumbnailUrl || template?.thumbnail);
   const isPicsum = initialSrc?.includes('picsum.photos');
   const effectiveSrc = (!initialSrc || isPicsum || imgError)
     ? getCategoryVariantImage(displayCategory, displayTitle)

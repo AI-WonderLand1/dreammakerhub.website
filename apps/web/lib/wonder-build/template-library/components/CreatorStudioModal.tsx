@@ -35,6 +35,17 @@ export const CreatorStudioModal: React.FC<CreatorStudioModalProps> = ({
   onPublishTemplate,
   creatorTemplates,
 }) => {
+  const sanitizeImageUrl = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : '';
+    } catch {
+      return '';
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<'submit' | 'dashboard'>('submit');
 
   // Form State
@@ -57,8 +68,9 @@ export const CreatorStudioModal: React.FC<CreatorStudioModalProps> = ({
 
     if (!name.trim()) return;
 
+    const safeCustomThumbnail = sanitizeImageUrl(customThumbnail);
     const thumbnail =
-      customThumbnail.trim() ||
+      safeCustomThumbnail ||
       getCategoryVariantImage(category, variant || name);
 
     const elementsToUse: WonderBuildElement[] = useCurrentActiveElements
