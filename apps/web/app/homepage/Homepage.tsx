@@ -14,7 +14,7 @@ import PricingSection from "./PricingSection";
 import ComparisonTable from "./ComparisonTable";
 import FeatureShowcase from "@/components/homepage/FeatureShowcase";
 import NpcCtaSection from "@/components/homepage/NpcCtaSection";
-import HeroSoccerCanvas from "@/components/homepage/HeroSoccerCanvas";
+import HeroBanner from "@/components/homepage/HeroBanner";
 import { PLANS, REGISTRY_ITEMS } from "./data";
 
 const openSpiritGuide = () => {
@@ -52,11 +52,11 @@ export default function Homepage() {
         <HomepageNavbar scrolled={scrolled} />
 
         <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
-          <HeroSoccerCanvas />
+          <HeroBanner />
           <div className="relative z-20 flex min-h-[100svh] flex-col items-center justify-center px-6 pb-20 pt-28 text-center sm:px-10">
             <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-300 backdrop-blur-md">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />
-              Innovation Engine · Live 3D Scene
+              Innovation Engine · AI-Powered
             </span>
             <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-tight text-white drop-shadow-2xl sm:text-6xl lg:text-7xl">
               AI WONDERLAND
@@ -66,7 +66,6 @@ export default function Homepage() {
             </h1>
             <p className="mt-6 max-w-xl text-sm text-white/70 drop-shadow sm:text-base">
               Build websites, 3D games, and interactive experiences from natural language — no coding required.
-              Drag to orbit the scene, scroll to zoom, hover the ball to hear it talk, and give it a kick.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <Link href="/wonder-build/studio"
@@ -79,8 +78,8 @@ export default function Homepage() {
               </a>
             </div>
             <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-semibold uppercase tracking-widest text-white/40">
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> Interactive 3D Scene</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> AI-Powered Builds</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> AI-Powered Builds</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> 3D Games & Worlds</span>
               <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Voice Welcome</span>
             </div>
           </div>
@@ -88,6 +87,26 @@ export default function Homepage() {
 
         <section id="explore" className="relative mx-auto mt-6 mb-10 w-full max-w-6xl scroll-mt-24 px-4 sm:px-6">
           <InteractiveSignpost iframeLabel={iframeLabel} />
+        </section>
+
+        <section className="relative mx-auto mb-10 w-full max-w-7xl px-6 sm:px-8">
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { src: "/images/3DWONDERPLAYIMAGE.webp", title: "WonderPlay 3D Worlds", href: "/wonder-build/playcanvas", tag: "3D Engine" },
+              { src: "/images/3DSYSTEMSIMAGE.webp", title: "3D Systems & Scenes", href: "/wonder-build/studio", tag: "AI Builder" },
+              { src: "/images/3DPLAYIMAGE.webp", title: "3D Play Experience", href: "/wonder-build/webgl", tag: "WebGL Studio" },
+            ].map((card) => (
+              <Link key={card.title} href={card.href}
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 p-3 transition duration-300 hover:border-cyan-400/70 hover:bg-slate-900">
+                <div className="relative h-44 w-full overflow-hidden rounded-xl border border-slate-700/60">
+                  <Image src={card.src} alt={card.title} fill className="object-cover opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100" sizes="(max-width: 768px) 100vw, 400px" />
+                  <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300 backdrop-blur-md">{card.tag}</span>
+                </div>
+                <h3 className="mt-3 text-base font-bold text-white">{card.title}</h3>
+                <span className="mt-1 inline-flex items-center text-xs font-semibold text-cyan-300">Open builder →</span>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <FeatureShowcase />
@@ -235,10 +254,15 @@ export default function Homepage() {
           </p>
           <div className="mx-auto max-w-3xl">
             <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900 shadow-xl">
-              <video autoPlay muted loop playsInline className="aspect-video h-full w-full object-cover opacity-90">
-                <source src="/images/PlayCanvas-Features-TheEditor-CBR4.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+              <div className="relative aspect-video w-full">
+                <Image
+                  src="/images/3DWONDERPLAYIMAGE.webp"
+                  alt="WonderPlay 3D Editor preview"
+                  fill
+                  className="object-cover opacity-90"
+                  sizes="(max-width: 768px) 100vw, 768px"
+                />
+              </div>
               <div className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-xs text-white backdrop-blur-md">
                 Live Editor Preview
               </div>
