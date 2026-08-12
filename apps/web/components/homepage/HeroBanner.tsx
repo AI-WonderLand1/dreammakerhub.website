@@ -1,42 +1,30 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useWelcomeGreeting, setVoiceEnabled } from "./heroVoice";
 
-const SoccerHeroScene = dynamic(() => import("./SoccerHeroScene"), {
-  ssr: false,
-  loading: () => null,
-});
-
-interface HeroSoccerCanvasProps {
-  welcomeMessage?: string;
+interface HeroBannerProps {
   voiceOn?: boolean;
   onToggleVoice?: (enabled: boolean) => void;
 }
 
-export default function HeroSoccerCanvas({
-  welcomeMessage = "Welcome to AI Wonderland, the home of innovation. Let your imagination run wild.",
+export default function HeroBanner({
   voiceOn = true,
   onToggleVoice,
-}: HeroSoccerCanvasProps) {
-  useWelcomeGreeting(welcomeMessage);
+}: HeroBannerProps) {
+  useWelcomeGreeting("Welcome to AI Wonderland, the home of innovation. Let your imagination run wild.");
 
   return (
     <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_55%,#0b1b3a_0%,#05060f_55%,#000_100%)]" />
       <Image
-        src="/images/wonderland-background.png"
+        src="/images/hero-victorized-bg.webp"
         alt=""
         fill
         priority
-        className="object-cover object-left opacity-20"
+        className="object-cover object-center"
         sizes="100vw"
       />
-      <div className="absolute inset-0">
-        <SoccerHeroScene />
-      </div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/85" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/35 to-black/85" />
 
       <button
         type="button"

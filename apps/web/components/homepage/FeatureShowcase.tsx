@@ -15,7 +15,7 @@ interface FeatureSlide {
 const FEATURE_SLIDES: FeatureSlide[] = [
   {
     id: 1,
-    image: '/images/screenshots/playcanvas-builder.svg',
+    image: '/images/3DWONDERPLAYIMAGE.webp',
     alt: 'WonderPlay 3D Builder',
     title: 'WonderPlay 3D',
     description: 'Create stunning 3D games and spatial experiences with our PlayCanvas-powered editor',
@@ -39,7 +39,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
   },
   {
     id: 4,
-    image: '/images/screenshots/webgl-builder.svg',
+    image: '/images/3DPLAYIMAGE.webp',
     alt: 'WebGL Studio Builder',
     title: 'WebGL Studio',
     description: 'Advanced 3D graphics editor for creating custom shaders and visual effects',
