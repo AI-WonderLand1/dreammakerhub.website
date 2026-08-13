@@ -62,11 +62,11 @@ class FullStackAnalyzer:
         repo_path = Path(repo_path).expanduser().resolve()
         if not repo_path.exists():
             raise FileNotFoundError(f"Repository not found: {repo_path}")
-        if not repo_path.is_dir():
-            raise ValueError(f"Repository path must be a directory: {repo_path}")
+        if not repo_path.is_absolute():
+            raise ValueError(f"Repository path must be absolute: {repo_path}")
 
-        allowed_prefixes = [Path.home().resolve(), Path('/tmp').resolve(), Path('/workspaces').resolve(), Path('/home').resolve()]
-        if not any(repo_path == allowed_root or repo_path.is_relative_to(allowed_root) for allowed_root in allowed_prefixes):
+        allowed_roots = [Path.home().resolve(), Path('/tmp').resolve(), Path('/workspaces').resolve(), Path('/home').resolve()]
+        if not self._is_within_allowed_roots(repo_path, allowed_roots):
             raise ValueError(f"Repository path outside allowed directories: {repo_path}")
         
         structure = RepoStructure(
@@ -86,6 +86,15 @@ class FullStackAnalyzer:
         structure.backend_path = self._detect_backend(repo_path)
         
         return structure
+
+    def _is_within_allowed_roots(self, path: Path, allowed_roots: List[Path]) -> bool:
+        for root in allowed_roots:
+            try:
+                path.relative_to(root)
+                return True
+            except ValueError:
+                continue
+        return False
     
     def _build_tree(self, path: Path, depth: int = 0, max_depth: int = 4) -> Dict:
         if depth > max_depth:
