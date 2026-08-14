@@ -1,40 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
-  LayoutDashboard,
   Folder,
-  Code2,
-  Settings,
-  Zap,
-  BarChart3,
-  Users,
-  HelpCircle,
-  Boxes,
-  Sparkles,
-  ArrowRight
+  FolderOpen,
+  Pencil,
+  Play,
+  Globe,
+  Trash2,
+  LayoutTemplate,
+  Plus,
 } from "lucide-react";
 
 type Project = {
   id: string;
   name: string;
-  type: string;
-  updated_at: string;
+  tool?: string | null;
+  updatedAt: string;
 };
 
-const PROJECT_ICONS: Record<string, React.ElementType> = {
-  wonderbuild: Folder,
-  wonderbuild_ui: Folder,
-  game: Boxes,
-  "3d_scene": Boxes,
-  web_app: Code2,
-  workspace: Code2,
+const getFolderIcon = (type: string) => (type === "playcanvas" ? Play : Folder);
+
+const getFolderColor = (type: string) => {
+  const colors: Record<string, string> = {
+    wonderbuild: "border-l-purple-500",
+    playcanvas: "border-l-blue-500",
+    game: "border-l-pink-500",
+    "3d_scene": "border-l-blue-500",
+    web_app: "border-l-green-500",
+    workspace: "border-l-cyan-500",
+  };
+  return colors[type] || "border-l-gray-500";
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
@@ -52,66 +61,161 @@ export default function DashboardPage() {
         return;
       }
       setUserEmail(user?.email || null);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/projects");
+        if (res.ok) {
+          const data = await res.json();
+          setProjects(data.projects || []);
+        }
+      } catch {
+        /* folder list best-effort */
+      } finally {
+        setLoading(false);
+      }
     }
 
     load();
   }, [router]);
 
+  const handleDelete = useCallback(async (projectId: string) => {
+    if (!confirm("Delete this folder?")) return;
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" });
+      if (!res.ok) return;
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    } catch {
+      /* best-effort delete */
+    }
+  }, []);
+
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        {loading ? (
-          <p className="text-sm text-white/50 animate-pulse">Loading your workspace...</p>
-        ) : (
-          <p className="text-sm text-white/50">
-            Welcome back{userEmail ? `, ${userEmail}` : ""}! Choose an action below to get started.
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <FolderOpen className="w-6 h-6 text-blue-400" />
+            Files &amp; Folders
+          </h1>
+          <p className="text-sm text-white/50 mt-1">
+            {loading
+              ? "Loading your workspace..."
+              : `Welcome${userEmail ? `, ${userEmail}` : ""} — read and edit any file or folder below.`}
           </p>
-        )}
-      </div>
-
-      <a
-        href="/templates"
-        className="group mb-6 block rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-600/20 via-transparent to-cyan-500/10 p-6 transition hover:border-violet-400/60 hover:bg-violet-600/10"
-      >
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 text-white">
-            <Sparkles className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <div className="text-lg font-semibold text-white">Start from a template</div>
-            <div className="text-sm text-white/60">Pick a template, then build and publish in one canvas — no hub needed.</div>
-          </div>
-          <ArrowRight className="h-5 w-5 text-white/40 transition group-hover:translate-x-1 group-hover:text-white" />
         </div>
-      </a>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <a href="/dashboard/projects" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-          <Folder className="w-8 h-8 mb-2 text-blue-400" />
-          <div className="font-medium">Projects</div>
-          <div className="text-xs text-white/50">View & manage your projects</div>
-        </a>
-        
-        <a href="/dashboard/3dhub" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-          <Boxes className="w-8 h-8 mb-2 text-cyan-400" />
-          <div className="font-medium">3DHub Studio</div>
-          <div className="text-xs text-white/50">AI 3D factory, 360 view & more</div>
-        </a>
-        
-        <a href="/ide" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-          <Code2 className="w-8 h-8 mb-2 text-cyan-400" />
-          <div className="font-medium">WonderSpace IDE</div>
-          <div className="text-xs text-white/50">Cloud workspace</div>
-        </a>
-        
-        <a href="/dashboard/usage" className="block p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-          <BarChart3 className="w-8 h-8 mb-2 text-green-400" />
-          <div className="font-medium">Usage</div>
-          <div className="text-xs text-white/50">Token limits & billing</div>
-        </a>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/templates"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg border border-violet-500/40 bg-violet-600/15 text-sm font-medium text-violet-200 hover:bg-violet-600/25 transition"
+          >
+            <LayoutTemplate className="w-4 h-4" />
+            Template library
+          </Link>
+          <Link
+            href="/dashboard/projects"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-400 transition"
+          >
+            <Plus size={16} />
+            New Folder
+          </Link>
+        </div>
       </div>
+
+      {loading ? (
+        <div className="text-sm text-white/50 animate-pulse">Loading folders...</div>
+      ) : projects.length === 0 ? (
+        <div className="border border-white/10 rounded-xl p-12 text-center">
+          <Folder size={48} className="mx-auto mb-4 text-white/20" />
+          <p className="text-white/50 mb-2">No folders yet. Create one, or start from a template.</p>
+          <div className="flex justify-center gap-3 mt-4">
+            <Link
+              href="/dashboard/projects"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white text-sm"
+            >
+              <Plus size={16} />
+              New Folder
+            </Link>
+            <Link
+              href="/templates"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 text-white/70 text-sm hover:bg-white/20 transition"
+            >
+              <LayoutTemplate size={16} />
+              Template library
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-white/10 rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-white/5">
+              <tr className="text-left text-xs text-white/50 uppercase">
+                <th className="px-4 py-3">Folder</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Updated</th>
+                <th className="px-4 py-3 w-24"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {projects.map((project) => {
+                const Icon = getFolderIcon(project.tool || "wonderbuild");
+                return (
+                  <tr key={project.id} className="hover:bg-white/5">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/dashboard/projects/${project.id}/files`}
+                        className="flex items-center gap-3 group"
+                      >
+                        <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border-l-2 ${getFolderColor(project.tool || "wonderbuild")}`}>
+                          <Icon size={14} />
+                        </div>
+                        <div>
+                          <div className="font-medium group-hover:text-blue-400 transition-colors">{project.name}</div>
+                          <div className="text-[10px] text-white/40">open files &amp; folders</div>
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-white/60 capitalize">{project.tool || "wonderbuild"}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white/50">{formatDate(project.updatedAt)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <Link
+                          href={`/wonder-build?projectId=${project.id}`}
+                          className="p-2 rounded hover:bg-white/10"
+                          title="Open in Builder"
+                        >
+                          <Pencil size={14} />
+                        </Link>
+                        <Link
+                          href={`/dashboard/projects/${project.id}/files`}
+                          className="p-2 rounded hover:bg-white/10"
+                          title="File Manager"
+                        >
+                          <Folder size={14} />
+                        </Link>
+                        <Link
+                          href={`/dashboard/projects/${project.id}/pages`}
+                          className="p-2 rounded hover:bg-white/10"
+                          title="Published Pages"
+                        >
+                          <Globe size={14} />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(project.id)}
+                          className="p-2 rounded hover:bg-white/10 text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

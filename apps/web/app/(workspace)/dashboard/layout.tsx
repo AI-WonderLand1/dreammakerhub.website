@@ -9,6 +9,8 @@ import AetherGuardDialog from "@/components/AetherGuardDialog";
 import { logger } from '@/lib/logger';
 import { 
   LayoutDashboard, 
+  FolderOpen,
+  LayoutTemplate,
   Folder,
   Pencil, 
   Code2, 
@@ -110,8 +112,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   ];
 
   const secondaryItems: SidebarItem[] = [
+    { href: "/dashboard", label: "Files & Folders", icon: FolderOpen },
+    { href: "/templates", label: "Templates", icon: LayoutTemplate },
     { href: "/dashboard/projects", label: "Projects", icon: Folder },
-    { href: "/dashboard", label: "Actions", icon: LayoutDashboard },
     { href: "/library", label: "My Scenes", icon: Database },
     { href: "/dashboard/agents", label: "Agents", icon: Bot },
     { href: "/dashboard/aetherguard", label: "AetherGuard", icon: Shield },
