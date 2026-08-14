@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { WonderBuildTemplate } from '../types';
 import { Eye, ArrowUpRight } from 'lucide-react';
+import Real3DPreview from '@/components/engines/Real3DPreview';
 
 interface TemplateThumbnailProps {
   template?: WonderBuildTemplate;
@@ -130,7 +131,12 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
   const displayCategory = category || template?.category || 'Layout';
   const displayBadge = badgeText || template?.variant || displayCategory;
 
-  // Resolve image source cleanly
+  // Real-time 3D previews for 3D / spatial / canvas templates instead of stock photos.
+  const is3D = /(^|[^a-z])3d([^a-z]|$)|spatial|canvas|spline|metaverse|web3|interactive hero|product showcase/.test(
+    `${displayCategory} ${displayBadge} ${displayTitle} ${template?.id || ''}`.toLowerCase()
+  );
+
+  // Resolve image source cleanly (non-3D templates only)
   const initialSrc = thumbnailUrl || template?.thumbnail;
   const isPicsum = initialSrc?.includes('picsum.photos');
   const effectiveSrc = (!initialSrc || isPicsum || imgError)
@@ -141,13 +147,21 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
     <div
       className={`relative rounded-lg overflow-hidden bg-slate-900 border border-slate-800/80 hover:border-indigo-500/80 group/thumb transition-all duration-300 shadow-md hover:shadow-indigo-500/20 ${aspectRatio} ${className}`}
     >
-      <img
-        src={effectiveSrc}
-        alt={alt || displayTitle}
-        onError={() => setImgError(true)}
-        referrerPolicy="no-referrer"
-        className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300"
-      />
+      {is3D ? (
+        <Real3DPreview
+          seed={template?.id || displayTitle}
+          preset={displayCategory}
+          className="w-full h-full transition-transform duration-300 group-hover/thumb:scale-105"
+        />
+      ) : (
+        <img
+          src={effectiveSrc}
+          alt={alt || displayTitle}
+          onError={() => setImgError(true)}
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300"
+        />
+      )}
 
       {/* Overlay Badge */}
       {displayBadge && (

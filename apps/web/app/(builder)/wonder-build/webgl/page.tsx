@@ -1,11 +1,11 @@
 'use client';
 
 import Link from "next/link";
-import Image from "next/image";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { logger } from '@/lib/logger';
+import Real3DPreview from "@/components/engines/Real3DPreview";
 
 type SceneTemplate = {
   id: string;
@@ -13,6 +13,9 @@ type SceneTemplate = {
   description: string;
   category: string;
   thumbnail?: string;
+  glbUrl?: string;
+  nodes?: any[];
+  environment?: { skybox?: string; ambient?: number[] };
 };
 
 function TemplateGallery() {
@@ -82,17 +85,13 @@ function TemplateGallery() {
                 href={`/wonder-build/webgl/editor/${template.id}`}
                 className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 transition hover:border-purple-500/50 hover:bg-white/10"
               >
-                {template.thumbnail ? (
-                  <Image
-                    src={template.thumbnail}
-                    alt={template.name}
-                    width={300}
-                    height={200}
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video w-full bg-gradient-to-br from-purple-900/30 to-blue-900/30" />
-                )}
+                <Real3DPreview
+                  seed={template.id}
+                  preset={template.category}
+                  glbUrl={template.glbUrl}
+                  sceneData={{ nodes: template.nodes, environment: template.environment }}
+                  className="aspect-video w-full"
+                />
                 <div className="p-4">
                   <h3 className="font-semibold text-white group-hover:text-purple-300">{template.name}</h3>
                   <p className="mt-1 text-xs text-white/60 line-clamp-2">{template.description}</p>

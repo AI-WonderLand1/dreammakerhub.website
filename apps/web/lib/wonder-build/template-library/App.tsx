@@ -21,6 +21,7 @@ import {
   ViewportMode,
 } from './types';
 import { downloadJsonFile } from './utils/templateUtils';
+import { buildBuilderStatePayload } from './utils/builderAdapter';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('prompts');
@@ -29,6 +30,7 @@ export default function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
     INITIAL_PRESET_TEMPLATES[0].id
   );
+  const [builderLoading, setBuilderLoading] = useState<boolean>(false);
 
   const [selectedElementPath, setSelectedElementPath] = useState<number[]>([]);
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
@@ -45,6 +47,47 @@ export default function App() {
   const handlePublishCreatorTemplate = (newTemplate: WonderBuildTemplate) => {
     setTemplates((prev) => [newTemplate, ...prev]);
     setSelectedTemplateId(newTemplate.id);
+  };
+
+  // Create a project from a template, seed the builder state, then jump into the canvas.
+  const handleOpenInBuilder = async (tpl: WonderBuildTemplate) => {
+    if (!tpl || builderLoading) return;
+    setBuilderLoading(true);
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: tpl.name, tool: 'wonderbuild' }),
+      });
+
+      if (res.status === 401) {
+        window.location.href = '/public-pages/auth?redirectTo=/templates';
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || 'Unable to create project');
+      }
+
+      const { project } = await res.json();
+      if (!project?.id) throw new Error('Project creation returned no id');
+
+      const seedRes = await fetch(`/api/projects/${project.id}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: { 'builder-state.json': buildBuilderStatePayload(tpl) },
+        }),
+      });
+
+      if (!seedRes.ok) throw new Error('Unable to seed the builder with this template');
+
+      window.location.href = `/wonder-build/builder?projectId=${project.id}`;
+    } catch (err: any) {
+      alert(err?.message || 'Failed to open template in builder');
+    } finally {
+      setBuilderLoading(false);
+    }
   };
 
   // Selected Batch definition
@@ -279,6 +322,8 @@ export default function App() {
         onClose={() => setIsDeployModalOpen(false)}
         activeTemplateName={currentTemplate.name}
         totalTemplatesCount={templates.length}
+        onOpenInBuilder={() => handleOpenInBuilder(currentTemplate)}
+        builderLoading={builderLoading}
       />
 
       {/* Creator Studio & Template Marketplace Modal */}

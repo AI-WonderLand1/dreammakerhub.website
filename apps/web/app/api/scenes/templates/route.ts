@@ -110,7 +110,9 @@ export async function GET() {
           name: sceneData.name || file.replace('.json', '').replace(/_/g, ' '),
           description: sceneData.description || "3D Scene Template",
           category: sceneData.category || "custom",
-          thumbnail: null
+          thumbnail: null,
+          nodes: sceneData.nodes || null,
+          environment: sceneData.environment || null
         };
       });
 

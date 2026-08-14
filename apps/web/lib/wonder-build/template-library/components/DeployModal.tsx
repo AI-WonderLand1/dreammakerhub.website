@@ -6,11 +6,9 @@ import {
   CheckCircle2,
   ExternalLink,
   Globe,
-  Terminal,
   Copy,
   Check,
-  ShieldCheck,
-  Zap,
+  Palette,
 } from 'lucide-react';
 import { copyToClipboard } from '../utils/templateUtils';
 
@@ -19,6 +17,9 @@ interface DeployModalProps {
   onClose: () => void;
   activeTemplateName?: string;
   totalTemplatesCount?: number;
+  /** When set, the primary action opens the template in the WonderBuild canvas instead of the legacy fake deploy. */
+  onOpenInBuilder?: () => void;
+  builderLoading?: boolean;
 }
 
 export const DeployModal: React.FC<DeployModalProps> = ({
@@ -26,6 +27,8 @@ export const DeployModal: React.FC<DeployModalProps> = ({
   onClose,
   activeTemplateName = 'Modern SaaS Platform',
   totalTemplatesCount = 60,
+  onOpenInBuilder,
+  builderLoading = false,
 }) => {
   const [deployStep, setDeployStep] = useState<'idle' | 'deploying' | 'success'>('idle');
   const [copiedUrl, setCopiedUrl] = useState(false);
@@ -82,42 +85,63 @@ export const DeployModal: React.FC<DeployModalProps> = ({
             <div className="space-y-4">
               <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Target Production Preset:</span>
+                  <span className="text-xs text-slate-400">Template:</span>
                   <span className="text-xs font-bold text-indigo-400 font-mono">
                     {activeTemplateName}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Suite Templates Compiled:</span>
+                  <span className="text-xs text-slate-400">Compiled Blocks:</span>
                   <span className="text-xs font-bold text-emerald-400 font-mono">
-                    {totalTemplatesCount} / 60 Ready
+                    {totalTemplatesCount} Sources Ready
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Cloud Host Container:</span>
+                  <span className="text-xs text-slate-400">Editor:</span>
                   <span className="text-xs font-bold text-slate-300 font-mono">
-                    Cloud Run (Port 3000)
+                    WonderBuild Canvas
                   </span>
                 </div>
               </div>
 
               <div className="space-y-2 text-xs text-slate-300 bg-indigo-950/20 border border-indigo-500/20 p-3.5 rounded-xl">
                 <div className="flex items-center space-x-2 font-bold text-indigo-300">
-                  <Zap className="w-4 h-4 text-amber-400" />
-                  <span>Instant Production Bundle</span>
+                  <Palette className="w-4 h-4 text-amber-400" />
+                  <span>Open in the Builder, then publish</span>
                 </div>
                 <p className="text-slate-400 leading-relaxed">
-                  Deploys all compiled HTML/React layout structures, theme tokens, and batch definitions with single-click zero downtime deployment.
+                  Seeds a new project with this template inside the drag-and-drop canvas, where you can keep editing and
+                  publish to a live page.
                 </p>
               </div>
 
-              <button
-                onClick={handleStartDeploy}
-                className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 text-sm transition-all cursor-pointer"
-              >
-                <Rocket className="w-4 h-4" />
-                <span>Confirm & Deploy Now</span>
-              </button>
+              {onOpenInBuilder ? (
+                <button
+                  onClick={onOpenInBuilder}
+                  disabled={builderLoading}
+                  className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 text-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {builderLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      <span>Creating project...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Palette className="w-4 h-4" />
+                      <span>Open in Builder</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleStartDeploy}
+                  className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 text-sm transition-all cursor-pointer"
+                >
+                  <Rocket className="w-4 h-4" />
+                  <span>Confirm & Deploy Now</span>
+                </button>
+              )}
             </div>
           )}
 
