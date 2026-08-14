@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { WonderBuildTemplate, WonderBuildElement } from '../types';
 import { BATCH_DEFINITIONS } from '../data/batchPrompts';
-import { getCategoryVariantImage } from './TemplateThumbnail';
 import {
   Store,
   X,
@@ -57,9 +56,7 @@ export const CreatorStudioModal: React.FC<CreatorStudioModalProps> = ({
 
     if (!name.trim()) return;
 
-    const thumbnail =
-      customThumbnail.trim() ||
-      getCategoryVariantImage(category, variant || name);
+    const thumbnail = customThumbnail.trim();
 
     const elementsToUse: WonderBuildElement[] = useCurrentActiveElements
       ? currentActiveTemplate.elements

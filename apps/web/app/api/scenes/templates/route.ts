@@ -34,9 +34,9 @@ export async function GET() {
         if (files && files.length > 0) {
           const bucketTemplates = await Promise.all(
             files
-              .filter(f => f.name.endsWith(".glb"))
+              .filter((f: { name: string }) => f.name.endsWith(".glb"))
               .slice(0, 20)
-              .map(async (f) => {
+              .map(async (f: { name: string }) => {
                 const { data: { publicUrl } } = supabase.storage
                   .from("3d-assets")
                   .getPublicUrl(`3D module/${f.name}`);
@@ -60,7 +60,7 @@ export async function GET() {
                 }
                 
                 // Generate placeholder color from filename
-                const filenameHash = f.name.split("").reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
+                const filenameHash = f.name.split("").reduce((a: number, c: string) => ((a << 5) - a) + c.charCodeAt(0), 0);
                 const hue = Math.abs(filenameHash) % 360;
                 const placeholderColor = `hsl(${hue}, 60%, 50%)`;
                 
@@ -120,8 +120,8 @@ export async function GET() {
         logger.info('Returning local templates:', localTemplates.length);
         return NextResponse.json({ templates: localTemplates });
       }
-    } catch (error) {
-      logger.info("Local templates not available:", error.message);
+    } catch (error: any) {
+      logger.info("Local templates not available:", error?.message);
     }
 
     return NextResponse.json({ templates: [] });

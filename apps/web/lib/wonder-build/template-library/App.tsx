@@ -11,6 +11,7 @@ import { AIImageStudioModal } from './components/AIImageStudioModal';
 import { GroundedSearchModal } from './components/GroundedSearchModal';
 import { VoiceCoPilotModal } from './components/VoiceCoPilotModal';
 import { GeminiIntelligenceModal } from './components/GeminiIntelligenceModal';
+import IndustryPicker from './components/IndustryPicker';
 
 import { BATCH_DEFINITIONS } from './data/batchPrompts';
 import { INITIAL_PRESET_TEMPLATES } from './data/presetTemplates';
@@ -43,10 +44,22 @@ export default function App() {
   const [isSearchGroundingOpen, setIsSearchGroundingOpen] = useState<boolean>(false);
   const [isVoiceCoPilotOpen, setIsVoiceCoPilotOpen] = useState<boolean>(false);
   const [isIntelligenceOpen, setIsIntelligenceOpen] = useState<boolean>(false);
+  const [isGuidedStartOpen, setIsGuidedStartOpen] = useState<boolean>(true);
 
   const handlePublishCreatorTemplate = (newTemplate: WonderBuildTemplate) => {
     setTemplates((prev) => [newTemplate, ...prev]);
     setSelectedTemplateId(newTemplate.id);
+  };
+
+  const handleSelectIndustry = (batchNumber: number) => {
+    setSelectedBatchNumber(batchNumber);
+    setActiveTab('prompts');
+    const batch = BATCH_DEFINITIONS.find((b) => b.batchNumber === batchNumber);
+    const matched = batch
+      ? templates.find((t) => t.category.toLowerCase() === batch.category.toLowerCase())
+      : undefined;
+    if (matched) setSelectedTemplateId(matched.id);
+    setIsGuidedStartOpen(false);
   };
 
   // Create a project from a template, seed the builder state, then jump into the canvas.
@@ -302,6 +315,13 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Guided "What are you building?" start */}
+      <IndustryPicker
+        isOpen={isGuidedStartOpen}
+        onSelectIndustry={handleSelectIndustry}
+        onSkip={() => setIsGuidedStartOpen(false)}
+      />
 
       {/* AI Batch Generator Modal */}
       <AiGeneratorModal

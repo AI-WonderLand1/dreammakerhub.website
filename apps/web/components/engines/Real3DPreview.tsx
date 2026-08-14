@@ -172,7 +172,7 @@ export default function Real3DPreview({ seed = '', glbUrl, sceneData, preset = '
           const sc = n.transform?.scale || [1, 1, 1];
           const mat = meshMaterial(n);
           const id = (n.id || '').toLowerCase();
-          let mesh: THREE.Mesh;
+          let mesh: InstanceType<ThreeNamespace['Mesh']>;
 
           if (n.mesh === 'plane') {
             mesh = new THREE.Mesh(new THREE.BoxGeometry(sc[0], Math.max(0.1, sc[1]), sc[2]), mat);
@@ -228,8 +228,9 @@ export default function Real3DPreview({ seed = '', glbUrl, sceneData, preset = '
 
         const env = sceneData?.environment;
         if (env?.ambient) {
-          scene.background = new THREE.Color(env.ambient[0], env.ambient[1], env.ambient[2]);
-          scene.fog = new THREE.Fog(scene.background as THREE.Color, 18, 46);
+          const bgColor = new THREE.Color(env.ambient[0], env.ambient[1], env.ambient[2]);
+          scene.background = bgColor;
+          scene.fog = new THREE.Fog(bgColor, 18, 46);
         }
 
         const box = new THREE.Box3().setFromObject(pivot);
