@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name":"WonderSpace",
+    "slug":"wonderspace-mobile",
+    "version":"1.0.0",
+    "orientation":"portrait",
+    "userInterfaceStyle":"dark",
+    "scheme":"wonderspace",
+    "ios":{"supportsTablet":true,"bundleIdentifier":"com.aiwonderland.wonderspace"},
+    "android":{"package":"com.aiwonderland.wonderspace","adaptiveIcon":{"backgroundColor":"#07070b"}},
+    "plugins":["expo-router"],
+    "experiments":{"typedRoutes":true}
+  }
+}
