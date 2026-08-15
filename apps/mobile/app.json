@@ -9,6 +9,7 @@
     "ios":{"supportsTablet":true,"bundleIdentifier":"com.aiwonderland.wonderspace"},
     "android":{"package":"com.aiwonderland.wonderspace","adaptiveIcon":{"backgroundColor":"#07070b"}},
     "plugins":["expo-router"],
-    "experiments":{"typedRoutes":true}
+    "experiments":{"typedRoutes":true},
+    "extra":{"eas":{"projectId":"8f1bd6cb-c9b9-4a94-bd21-b30c47356ccd"}}
   }
 }
