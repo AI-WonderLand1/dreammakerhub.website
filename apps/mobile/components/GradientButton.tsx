@@ -1,0 +1,3 @@
+import {PropsWithChildren} from 'react';import {Pressable,StyleSheet,Text} from 'react-native';import {LinearGradient} from 'expo-linear-gradient';import {theme} from '@/constants/theme';
+export function GradientButton({children,onPress,colors=[theme.violet,theme.blue]}:PropsWithChildren<{onPress?:()=>void;colors?:string[]}>){return <Pressable onPress={onPress} style={({pressed})=>[styles.wrap,pressed&&{opacity:.82}]}><LinearGradient colors={colors as [string,string]} style={styles.button}><Text style={styles.text}>{children}</Text></LinearGradient></Pressable>}
+const styles=StyleSheet.create({wrap:{borderRadius:14,overflow:'hidden'},button:{paddingVertical:14,paddingHorizontal:18,alignItems:'center'},text:{color:'#fff',fontWeight:'800',fontSize:15}});
