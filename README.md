@@ -1,5 +1,19 @@
 # Custom NPC Engine - Complete Solution for AI NPCs in Games and Movies
 
+## 🚀 Founding Sponsorship Program
+
+DreamMakerHub is opening a **Founding Sponsor Program** to help fund continued development, infrastructure, AI/cloud costs, testing, deployment, and launch preparation.
+
+The sponsorship ecosystem is:
+
+**Dreamer → Creator → Architect → Studio → Enterprise**
+
+Sponsorship levels currently begin at **$25/month**, with monthly, quarterly, and annual options available. Sponsorship is intended as project support and is **not an offer of equity, securities, ownership, royalties, guaranteed profits, or investment returns**.
+
+👉 **[View the full DreamMakerHub Founding Sponsorship Program](SPONSORSHIP.md)**
+
+---
+
 ## Overview
 
 This solution provides a complete, extensible engine for creating AI-driven NPCs (Non-Player Characters) suitable for both games and film production. It combines a customizable rendering engine with powerful AI integration capabilities, visual component systems, and a plugin architecture for extending functionality.
