@@ -81,7 +81,7 @@ export const PLANS: Plan[] = [
     price: "$0",
     period: "/forever",
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "ai-wonderland.app subdomain"],
+    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
     cta: "Start Wandering, It's Free",
     href: "/public-pages/auth",
     highlight: false,

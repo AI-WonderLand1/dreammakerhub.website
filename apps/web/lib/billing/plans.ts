@@ -36,7 +36,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       "100 API calls/month",
       "100 MB storage",
       "Community support",
-      "ai-wonderland.app subdomain",
+      "dreammakerhub.website subdomain",
     ],
   },
   pro: {

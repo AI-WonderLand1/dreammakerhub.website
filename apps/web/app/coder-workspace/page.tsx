@@ -71,7 +71,7 @@ export default function CoderWorkspacePage() {
           {hasAccess ? (
             <div>
               <Link 
-                href="https://coder.ai-wonderland.app"
+                href={process.env.NEXT_PUBLIC_CODER_ACCESS_URL || "https://coder.dreammakerhub.website"}
                 className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition"
                 target="_blank"
               >
