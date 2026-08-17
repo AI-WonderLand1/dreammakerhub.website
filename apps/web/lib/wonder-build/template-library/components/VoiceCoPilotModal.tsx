@@ -211,7 +211,7 @@ export const VoiceCoPilotModal: React.FC<VoiceCoPilotModalProps> = ({
     return () => {
       stopVoiceSession();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   return (

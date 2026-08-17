@@ -33,11 +33,9 @@ import {
   Bot,
   Database,
   Shield,
-  Boxes,
   Sparkles,
   Palette,
   Terminal,
-  Box
 } from "lucide-react";
 
 type SidebarItem = {
@@ -65,7 +63,7 @@ type Project = {
   const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
     wonderbuild: { editor: "/wonder-build/builder", label: "Wonderbuild" },
     game: { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
-    "3d_scene": { editor: "/dashboard/3dhub", label: "3D Project" },
+    "3d_scene": { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
     web_app: { editor: "/wonder-build/studio", label: "Wonderbuild" },
     workspace: { editor: "/ide", label: "IDE" },
   };
@@ -104,9 +102,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     {
       label: "3D",
       items: [
-        { href: "/wonder-build/playcanvas", label: "WonderPlay 3D", icon: Play },
-        { href: "/dashboard/3dhub", label: "3DHub Studio", icon: Boxes },
-        { href: "/wonder-build/webgl", label: "WebGL Studio", icon: Box },
+        { href: "/dashboard/3dhub", label: "WonderPlay 3D", icon: Play },
       ],
     },
   ];

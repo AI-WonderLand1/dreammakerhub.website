@@ -430,3 +430,26 @@
 - [ ] Standardize tsconfig path aliases
 - [ ] Clean up vendored webglstudio.js-master
 - [ ] Add error handling to all empty catch blocks
+
+## WonderPlay 3D — One Product + Immersive Meshy Workspace
+
+### Part A — Unify to one "WonderPlay 3D" (nav/labels/routes)
+- [x] navigation.ts: remove "3DHub Studio" + "WebGL Studio" from PAGES & PRIMARY_NAV; single WonderPlay 3D -> /dashboard/3dhub
+- [x] dashboard/layout.tsx: sidebar 3D group -> one WonderPlay 3D item; PROJECT_TYPE_INFO labels
+- [x] projects/[id]/page.tsx: "Open in 3DHub" -> "Open in WonderPlay 3D"
+- [x] Footer.tsx: 3D column -> single WonderPlay 3D link
+- [x] homepage data.ts / Homepage.tsx / InteractiveSignpost / FeatureShowcase / NpcCtaSection: one WonderPlay 3D, drop webgl links
+- [x] SpiritGuideSearch.tsx: single WonderPlay 3D destination (merged aliases)
+- [x] StudioApp.tsx header "3DHUB STUDIO" -> "WONDERPLAY 3D"; 3dhub/page.tsx + wonder-build/page.tsx titles
+- [x] Delete app/(builder)/wonder-build/webgl/ (page + editor)
+- [x] Delete app/playcanvas-isolated/ (page + layout)
+- [x] 3d-cli/page.tsx labels -> WonderPlay 3D
+
+### Part B — Immersive Meshy-style workspace (/dashboard/3dhub)
+- [ ] StudioWorkspace.tsx: three-column shell (70px left rail + 320px control panel + 280px history + flex-1 center viewport)
+- [ ] Left_Mode_Sidebar: Text to 3D / Image to 3D / 360 / Animate / Movie / Assets
+- [ ] Generation_Control_Panel: prompt + engine chips + generate (existing /api/3d/generate-scene)
+- [ ] Center_3D_Preview_Viewport: StudioViewport (PlayCanvas WebGL) + canvas toolbar
+- [ ] Right_History_Sidebar: search + Asset_Preview_Grid (wrap tiles, thumbnails, click-to-load, download)
+- [ ] "Open in PlayCanvas Editor" hand-off link
+- [ ] Verify: lint + build + manual walk of nav surfaces

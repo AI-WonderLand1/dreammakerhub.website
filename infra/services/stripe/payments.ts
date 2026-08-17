@@ -34,10 +34,10 @@ export const stripeService = {
       });
 
       return { url: session.url };
-    } catch (error) {
-      logger.error('[STRIPE_ERROR]', { error });
-      throw new Error('Failed to create checkout session');
-    }
+} catch (error) {
+       logger.error('[STRIPE_ERROR]', { error });
+       throw new Error('Failed to create checkout session', { cause: error });
+     }
   },
 
   /**
