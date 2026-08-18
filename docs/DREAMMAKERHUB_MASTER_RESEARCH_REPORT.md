@@ -1,198 +1,376 @@
 # DreamMakerHub Master Technical & Commercial Research Report
 
-_Last updated: 2026-08-17_
+_Last updated: 2026-08-18_
 
 ## Scope
 
-This is the running evidence-based research record for DreamMakerHub / AI-WonderLand and connected repositories. The investigation prioritizes `dreammakerhub.website`, `AI-PLAYGROUND`, and `wonderplay-3D`, with emphasis on engine customization, AI/NPC systems, WonderSpace/Coder/Kubernetes integration, pipelines, realtime infrastructure, mobile integration, security, licensing/IP, monetization, and production readiness.
+Evidence-based running research record for DreamMakerHub / AI-WonderLand and connected repositories. Priority: `dreammakerhub.website`, `AI-PLAYGROUND`, and `wonderplay-3D`, with emphasis on engine customization, AI/NPC systems, WonderSpace/Coder/Kubernetes integration, pipelines, realtime infrastructure, mobile integration, security, licensing/IP, monetization, and production readiness.
 
 ## Executive status
 
-**Overall:** ambitious architecture with several real working subsystems, but significant portions remain scaffolding, placeholders, or unverified integration paths. The strongest current production-oriented code is in `AI-PLAYGROUND` (provider proxy, Supabase persistence/realtime, subscription schema). The `custom-engine` package in `dreammakerhub.website` is currently much less production-ready than its README claims: the core renderer only clears the WebGL buffer, there are compile-blocking source issues, and the external AI plugin returns placeholder text.
+**Overall:** the project contains substantially more real infrastructure than a simple marketing prototype, but it is a mixed-state codebase. Several important subsystems are implemented and connected, while other paths are architectural shells, duplicated implementations, placeholders, or stale/demo code. The strongest evidence today is the combination of AI-PLAYGROUND's server/provider/realtime/billing foundation and DreamMakerHub's real Coder/Kubernetes workspace infrastructure. The weakest areas remain the custom engine renderer, pipeline execution bridge, parts of NPC runtime behavior, mobile packaging, and licensing documentation.
 
-`wonderplay-3D` currently reads as a **3D development environment/tooling repository**, not a custom game engine. It provisions Blender + COLMAP through Nix and downloads Meshroom 2025.1.0 (~14 GB) into a vendor directory.
+**Important correction from prior runs:** Coder/Kubernetes/WonderSpace is **not merely unresolved**. `dreammakerhub.website` contains a real Coder client, authenticated workspace provisioning route, Coder/Kubernetes Terraform template, WonderSpace IDE launch UI, workspace persistence, and PlayCanvas 3D template. However, there are also parallel/stale workspace routes that only write local/Supabase records and do not provision Coder. The integration therefore exists, but the public UI path is not yet proven to use the real Coder provisioning path consistently.
 
-## Evidence reviewed this run
+**Important correction about `wonderplay-3D`:** the repository is not only a Blender/Meshroom toolchain. Its current `package.json`, server, landing page, Gemini NPC APIs, and WebSocket code show a second/active direction as a **web-native AI NPC orchestration engine**. At the same time, its README still describes it as a 3D tools development environment. The repository is therefore internally inconsistent/staged across two product directions and needs consolidation.
 
-### 1. dreammakerhub.website — custom-engine
+---
 
-#### `custom-engine/src/engine.ts`
+## Evidence reviewed — 2026-08-18
 
-- Real TypeScript `CustomEngine` class with initialization, WebGL context acquisition, scene-object storage, plugin lifecycle, event listeners, animation loop, and status reporting.
-- Initialization requests WebGL2/WebGL/experimental-webgl and enables depth testing.
-- The main render loop clears the color/depth buffers and calls `renderScene()`.
-- **Critical limitation:** `renderScene()` is explicitly a placeholder and does not iterate scene objects or draw geometry. The file itself states that visual plugins are expected to extend this.
-- Plugin lifecycle is real: initialize, enable/disable, remove, dispose, metadata lookup.
-- This means the core is a framework/runtime shell, not yet a full standalone renderer.
+### 1. `dreammakerhub.website` — pipeline bridge and execution
 
-#### `custom-engine/src/plugin.ts`
+#### `engine/core/pipelines.ts`
 
-- Real plugin contract with lifecycle methods and metadata/dependency declarations.
-- **Potential compile issue:** `PluginContext` refers to `CustomEngine`, but the file contains no import/type declaration for `CustomEngine`.
+- A real `PipelineToEngineCompiler` imports `GraphExecutor`, `EngineConfig`, `ExecutionGraph`, `ExecutionNode`, `NodeType`, and Supabase types.
+- It reads pipeline metadata and converts pipeline nodes into an execution graph and then an engine configuration.
+- It defines runtime metadata for streaming, scheduled execution, subscription level, and Supabase pipeline channels.
+- It defines generated Supabase Edge Function source for `executePipeline`, `evaluateExpression`, and `savePipeline`.
+- It registers runners for `ai.generate`, `asset.stream`, and `custom`.
+- **Critical implementation gap:** `getAIResponse()` returns a placeholder string (`AI response to: ...`) rather than calling AI-PLAYGROUND's provider system.
+- **Critical implementation gap:** `evaluateExpression()` returns the expression string rather than evaluating it, despite the comment saying AI-PLAYGROUND has an expression parser.
+- **Security naming problem:** `encodePipelineConfig()` and `encodeNodeConfig()` only Base64-encode JSON. Base64 is not encryption. Any claim that pipeline configuration is encrypted is currently false based on this implementation.
+- Node mapping exists, but several mappings are placeholders/semantically weak: `trigger`, `if`, `split`, `merge`, `git` are mapped to `engine.render`; this is not evidence of specialized runtime behavior for those node types.
 
-#### `custom-engine/src/index.ts`
+#### `engine/core/execution/executor.ts`
 
-- **Critical path issue:** located under `custom-engine/src/` but exports from `./src/engine`, `./src/plugin`, etc. From that location these paths resolve toward `custom-engine/src/src/...`, not the sibling files shown in the package.
-- This should be verified with an actual TypeScript build; it is a likely compile blocker.
+- A real topological-sort/runner architecture exists.
+- Runners are registered by node type and execution status is tracked.
+- **Critical compile/type issue:** the executor calls `graph.getAllNodes()`, but `ExecutionGraph` in `engine/core/execution/types.ts` is a plain interface with `nodes: Record<string, ExecutionNode>` and no `getAllNodes()` method.
+- **Critical runtime gap:** `resolveInputs()` explicitly returns `node.inputs` and comments that the real dependency-output mapping is not implemented.
+- Therefore the graph executor is a real execution framework but not yet a complete dataflow engine.
 
-#### `custom-engine/src/ai.ts`
+#### `engine/core/pipeline-runner.ts`
 
-- NPC simulation plugin architecture is real in concept and code: it expects a simulation tick/state/event interface, can auto-tick on a timer, processes decisions, maps actions to visual NPC animation/dialogue, and subscribes to simulation events.
-- **Critical source issue:** the initial-NPC loop is written as `for const npc of this.initialNPCs`, which is invalid TypeScript syntax and should prevent compilation as committed.
-- The `ExternalAIPlugin` stores provider/model/API-key configuration but `generateText()` explicitly returns a fabricated placeholder string rather than calling an external provider.
-- Therefore the NPC simulation adapter is partly implemented, while the generic external-AI dialogue path is scaffolded.
+- Real Supabase-backed pipeline loading and compilation path exists.
+- `loadPipelineFromTemplate()` reads `pipeline_templates`, compiles through `PipelineToEngineCompiler`, and writes an engine-oriented record back.
+- `compilePipelineToEngine()` checks subscription tier and organization/user/public access, compiles the pipeline, records compilation results, increments usage, and returns compilation metadata.
+- `saveCompiledEngine()` persists compiled engines and grants pipeline user access, then broadcasts `engine:compiled` through a Supabase channel.
+- `getAvailablePipelines()` filters available templates by status, search, subscription level, ownership, organization, and public access.
+- **Security concern:** the server-only Supabase client is created with `SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY`. A service-role fallback to an anon key is operationally dangerous because failure to configure the service key can silently change privilege behavior.
+- **Integration conclusion:** the pipeline storage/compilation layer is real, but the actual AI execution path is not end-to-end because the compiler's AI runner and expression runner are placeholders and the executor's input resolution is incomplete.
 
-#### `custom-engine/package.json` / `tsconfig.json`
+### 2. `dreammakerhub.website` — Coder / Kubernetes / WonderSpace
 
-- Package declares `build: tsc`, strict TypeScript, `noImplicitAny`, `noImplicitReturns`, `noUnusedLocals`, and `noUnusedParameters`.
-- Package metadata says MIT, but `custom-engine/LICENSE` was not found during this run. The declared license should therefore be treated as **unverified at repository level** until a license file or root licensing policy is confirmed.
+#### `.opencode/skills/coder-workspace-integration/SKILLS.md`
 
-### 2. AI-PLAYGROUND
+- Documents a real Civo Kubernetes cluster, Coder instance, `node-ide`, `python-ide`, and `wonderspace-ide` templates, and a Railway deployment target.
+- Explicitly instructs server-side use of Coder credentials and asynchronous build polling.
+- This file is operational guidance, not proof by itself, but the repository contains matching implementation files below.
 
-#### `server/index.ts`
+#### `infra/coder/template/main.tf`
 
-- Real Express server on port 3001 with static serving, `/api/chat`, `/api/chat/stream`, `/api/health`, templates, and conditional Stripe webhook mounting.
-- Chat endpoints require a Wonderland key and validate it before calling model providers.
-- Streaming forwards upstream response bytes as SSE.
-- **Security/production concern:** `cors()` is enabled with no visible origin restriction; production deployment should explicitly constrain allowed origins.
-- **Production concern:** streaming path assumes `providerResponse.body` is present.
+- Real Terraform using the Coder and Kubernetes providers.
+- Defines CPU, memory, disk, TTL/autostop parameters.
+- Creates a Coder agent, code-server app, persistent volume claim, and Kubernetes deployment.
+- Runs code-server bound to localhost so Coder proxy handles access.
+- Creates an SSH key and starts SSH inside the workspace.
+- Runs workspace containers as non-root user 1000.
+- This is substantive infrastructure, not a mock configuration.
+
+#### `packages/coder-workspace/src/coder-client.js`
+
+- Real Coder REST client using `Coder-Session-Token`.
+- Implements workspace listing, creation, start/stop/delete, build operations, build logs, readiness polling, file upload, template listing, AI bridge inspection, AI provider CRUD, and agent inspection.
+- Workspace creation sends `template_id`, `name`, and rich parameter values for CPU, memory, and disk.
+- File upload explicitly rejects path traversal and invalid paths.
+- This is one of the strongest verified infrastructure components in the project.
+
+#### `apps/web/lib/coder/api-wrapper.ts`
+
+- Higher-level Coder wrapper persists workspace metadata in Supabase, builds access URLs, polls readiness, manages workspace lifecycle and maps Coder status into app status.
+- Supports WonderSpace and PlayCanvas template paths.
+- Uses server-side configuration and a Supabase persistence layer.
+- `createWorkspaceForApp()` is used by the user-workspace provisioning route.
+
+#### `apps/web/app/api/user-workspace/provision/route.ts`
+
+- Authenticates through Supabase.
+- Validates workspace name and allowed pod type (`ide` or `playcanvas`).
+- Maps those types to `wonderspace-ide` and `playcanvas-3d`.
+- Obtains a user SSH key and calls the real `CoderAPIWrapper` with Coder API credentials.
+- Returns workspace/IDE URL and SSH command.
+- This proves a genuine authenticated user → DreamMakerHub → Coder API provisioning path exists.
+
+#### `apps/web/app/wonderspace/ide/page.tsx` and `apps/web/app/api/wonderspace/projects/route.ts`
+
+- The WonderSpace launch UI lets a user choose workspace name, owner, platform (`web`, `ios`, `android`, `multi`), and an IDE image tag.
+- **Critical mismatch:** the UI POSTs to `/api/wonderspace/projects`, whose implementation stores projects in `data/wonderspace-projects.json` using local filesystem I/O. It does **not** call Coder.
+- The platform selector is metadata only in this route; it does not prove native iOS/Android build support.
+- Therefore the branded WonderSpace UI currently has a **mock/local project creation path** alongside a separate real Coder provisioning API.
+
+#### `apps/web/app/api/workspace/provision/route.ts`
+
+- Another workspace route only creates a Supabase `workspaces` record with `status: READY` after checking the scene ID.
+- It does not call Coder.
+- This is a second stale/placeholder provisioning path that can falsely report a workspace as provisioned.
+
+#### `apps/web/components/BuildIDEButton.tsx`
+
+- Calls `/api/build-ide` and redirects to `workspaceUrl` on success.
+- No matching `/api/build-ide` implementation was located in this run.
+- This component is therefore a likely stale/dead path unless the endpoint exists outside the searched tree.
+
+**Coder/WonderSpace conclusion:** real infrastructure exists and is fairly substantial, but there are at least three workspace creation patterns in the repo: real Coder provisioning, Supabase-only provisioning, and filesystem-only WonderSpace project creation. These need to be consolidated so production UI cannot accidentally use a fake path.
+
+### 3. `AI-PLAYGROUND` — workflow/agent architecture
+
+#### `src/data/workflowTemplates.ts`
+
+- Contains real workflow templates with trigger, HTTP, code, AI-agent, IF, split, merge, loop, and schedule nodes.
+- Templates reference actual model IDs such as `gemini-3-flash-preview` and define system prompts and node configurations.
+- This demonstrates a meaningful visual workflow model, but templates alone do not prove that every node type executes correctly in production.
+
+#### `src/components/AgentCompiler.tsx`
+
+- UI allows users to choose a base model, system prompt, web search, code execution, vision, memory, training sources, and then “Compile & Spawn Agent.”
+- The component itself delegates the actual spawn action to `onSpawnAgent`; the true persistence/runtime path must be traced from the parent application.
+
+#### `src/App.tsx`
+
+- Uses Supabase session/auth and `useRealtimeSync`.
+- Seeds multiple specialized agents (Alice, Simple Rick, Neo, Atlas, Sage, Echo, Nova, Cipher) with different models and roles.
+- Syncs agents from Supabase into the active module list.
+- Also retains localStorage memories/events, meaning the app mixes durable server state with local browser state.
+- This is evidence of a real agent-oriented UI, but some seeded values are demonstration data and should not be treated as live autonomous agents without tracing the spawn/inference path.
+
+### 4. `AI-PLAYGROUND` — model provider layer
 
 #### `server/providers/registry.ts`
 
-- Real provider registry with OpenRouter, OpenAI, Anthropic, Groq, Mistral, Cohere, Together, Fireworks, DeepSeek, Perplexity, xAI and Google Gemini configurations.
-- API keys are read from server environment variables rather than client code.
-- `MODEL_ROUTES` maps many user-facing IDs to OpenRouter routes.
-- **Scaffolding:** Replicate and Hugging Face provider entries currently have empty request builders and return `Empty response received.`; they are registry placeholders, not working provider implementations.
-- Anthropic path sets `anthropic-dangerous-direct-browser-access`; since this request is made server-side, that header is unnecessary and should be reviewed/removed.
+- Real provider configurations exist for OpenRouter, OpenAI, Anthropic, Groq, Mistral, Cohere, Together, Fireworks, DeepSeek, Perplexity, xAI, and Google Gemini.
+- Server-side environment variables hold provider keys.
+- Many model IDs are routed through OpenRouter.
+- Replicate and Hugging Face entries remain stubs with empty request builders and placeholder responses.
+- Anthropic requests include `anthropic-dangerous-direct-browser-access` even though the request originates server-side; this header should be removed/reviewed.
+- The provider layer is a real commercial foundation, but the model catalog contains many route declarations that still require live-provider verification.
 
-#### `src/hooks/useRealtimeSync.ts`
+### 5. `AI-PLAYGROUND` — realtime and billing
 
-- Real Supabase realtime synchronization for `agents`, `workflows`, and `memories`.
-- Loads initial per-user state, subscribes to Postgres changes filtered by authenticated `user_id`, and exposes upsert/delete helpers.
-- This is meaningful cross-app synchronization infrastructure, not merely UI mock data.
+- `useRealtimeSync.ts` implements authenticated Supabase realtime for agents, workflows and memories.
+- `supabase-schema.sql` contains Auth-linked profiles, agents, usage logs, subscriptions, memories and workflows with RLS.
+- Realtime publication is enabled for core tables.
+- `usage_logs` includes model, prompt/completion/total tokens, cost, duration and status.
+- `subscriptions` stores Stripe customer/subscription IDs, plan, status, billing periods and cancellation state.
+- Stripe webhook code verifies signatures and handles checkout completion, subscription updates/deletion, and successful invoices.
+- **Route issue remains:** `server/index.ts` mounts the Stripe router under `/api/stripe/webhook` while the router defines `/stripe/webhook`; this composes to `/api/stripe/webhook/stripe/webhook` unless intentionally routed elsewhere. Must be verified/fixed before production billing.
+- Global CORS remains permissive in the Express server and should be restricted for production.
 
-#### `supabase-schema.sql`
+### 6. `wonderplay-3D` — corrected repository assessment
 
-- Real Auth-linked `profiles`, `agents`, `usage_logs`, `subscriptions`, `memories`, and `workflows` tables.
-- Row Level Security is enabled on these tables with user-scoped policies.
-- Realtime publication is explicitly enabled for `usage_logs`, `memories`, `workflows`, and `agents`.
-- `usage_logs` already carries model, token counts, cost, duration, and status — useful groundwork for usage-based monetization.
-- `subscriptions` stores Stripe customer/subscription IDs, plan ID, status, billing periods and cancellation state.
+#### `package.json`
 
-#### `server/stripe-webhook.ts`
+- Current package name is `custom-npc-orchestration-engine`.
+- Build script is `vite build && tsc --project tsconfig.json`.
+- Dependencies include `@gltf-transform/core`, Google GenAI SDK, React, Three.js, Express and Three standard libraries.
+- This is evidence of an active web NPC-engine direction, not just a tools-only repo.
 
-- Real Stripe signature verification is implemented with `constructEvent()`.
-- Handles `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_succeeded`.
-- Subscription state is upserted/updated in Supabase.
-- **Important route-integration issue to verify:** `server/index.ts` mounts the router at `/api/stripe/webhook`, while the router itself defines `POST /stripe/webhook`. This composes to `/api/stripe/webhook/stripe/webhook`, not the likely intended `/api/stripe/webhook`, unless an external route intentionally targets the doubled path.
-- This should be fixed or explicitly verified before using the Stripe webhook in production.
+#### `server.ts`
 
-#### `src/utils/nodeExec.ts`
+- Real Express server exposes Gemini-backed NPC intelligence, vision and video-analysis endpoints.
+- Intelligence endpoint sends NPC stats/behavior state to Gemini and requests structured JSON decisions including action, command, thought, animation and updated AI mode.
+- Vision endpoint accepts image data and requests structured object/threat analysis.
+- Video endpoint accepts base64 video and requests structured reconnaissance analysis.
+- Contact endpoint is real but only logs submissions; it does not send/store them durably.
+- Subscription endpoints are **in-memory only**: they store email/tier/expiry in a process-local object and reset on restart. They are not production billing.
+- WebSocket server exists for `/live-npc` and sends viseme frames plus simulated NPC behavior.
+- **Critical limitation:** the WebSocket section explicitly says it simulates NPC thinking/responding and emits random viseme values. This is demo behavior, not proof of real lip-sync or a persistent live NPC brain.
+- **Security concern:** Gemini endpoints accept an API key from the request body (`apiKey`) as an alternative to server environment configuration. A production version should not accept privileged provider keys from arbitrary browser clients.
+- `express.json` allows 50 MB payloads; this is useful for image/video demos but requires rate limits and abuse controls in production.
 
-- Contains real deterministic local operations (hashing, vector embedding, cosine similarity, browser persistence, JSON utilities, document processing) and real public/API integrations for Wikipedia, RSS, Perplexity, Pushbullet, SerpAPI, Wolfram Alpha, YouTube, etc.
-- The vector store in this file is browser `localStorage`, so it is useful for lightweight/local workflows but should not be represented as a production shared vector database.
+#### `src/components/LandingPage.tsx`
 
-### 3. wonderplay-3D
+- Marketing page claims intelligent reasoning, visual perception, behavior control, web-native Three.js, “sub-100ms latency,” and a live demo.
+- The 3D preview is visually simulated UI; the actual server path is remote Gemini inference.
+- The latency claim is not substantiated by telemetry in the inspected code and should not be used in sponsor material without measurement.
+
+#### `IMPLEMENTATION_SUMMARY.md`
+
+- Claims successful build, working landing page, contact API, and production-ready bundle.
+- This is documentation authored by the project, not independent build evidence. It must be reconciled against the current source and an actual CI/build run.
 
 #### `README.md`
 
-- Describes a 3D tools development environment using Blender and Meshroom, with COLMAP also included.
-- Quick start is `nix-shell`, `./setup.sh`, `blender`, and Meshroom wrapper commands.
-- This repository does **not** currently read like the implementation of a proprietary 3D engine; it is primarily a reproducible toolchain/dev environment.
+- Still describes the repo as a Blender/Meshroom/COLMAP 3D development environment and says Meshroom is downloaded at ~14 GB.
+- This conflicts with the current `package.json`, server, and React NPC product direction.
+- The repository needs a single authoritative README and product scope.
 
-#### `shell.nix`
+#### Nix/toolchain files
 
-- Provides Blender, COLMAP, Python 3, pip, NumPy, and OpenCV through Nix.
-- Shell hook reports installed Blender/COLMAP versions.
+- Blender/COLMAP/Python/NumPy/OpenCV and Meshroom tooling remain present.
+- Upstream licensing must be inventoried before any redistribution/bundling.
 
-#### `setup.sh`
+**WonderPlay conclusion:** the repo now has a real AI/NPC API/server direction plus a separate 3D tooling direction. The server-side AI endpoints are implemented enough to demonstrate provider calls, but the live NPC WebSocket behavior and subscriptions are demo/scaffold behavior. The repo should be split or clearly organized into product runtime vs developer toolchain if both are intentional.
 
-- Downloads Meshroom `2025.1.0` from a Zenodo URL, roughly 14 GB, extracts it into `vendor/`, and deletes the tarball.
-- `vendor/` is described as gitignored in the README.
-- **Licensing/IP follow-up:** Blender, COLMAP, and Meshroom have their own upstream licenses/terms. The repo itself has no `LICENSE` file found in this run. We must inventory the exact redistributable components and whether any binaries are merely developer dependencies or will ship to end users.
+---
 
 ## Cross-repository architecture findings
 
-### Strong / implemented
+### Strong / implemented foundations
 
-1. AI-PLAYGROUND has a real server-side model proxy and a broad provider registry.
-2. AI-PLAYGROUND has authenticated Supabase persistence and realtime synchronization.
-3. AI-PLAYGROUND has Stripe subscription persistence and webhook processing, subject to the route issue above.
-4. DreamMakerHub custom-engine has a genuine plugin/event/scene-object runtime skeleton.
-5. DreamMakerHub custom-engine has a real interface concept for connecting NPC simulation results to visual NPC state.
-6. WonderPlay 3D has a reproducible 3D tooling environment using Nix.
+1. AI-PLAYGROUND server-side provider proxy and broad model registry.
+2. AI-PLAYGROUND authenticated Supabase persistence and realtime synchronization.
+3. AI-PLAYGROUND subscription schema and Stripe webhook handling foundation.
+4. DreamMakerHub custom engine plugin/event/scene runtime skeleton.
+5. DreamMakerHub pipeline compiler, pipeline persistence, graph executor framework, and subscription-aware pipeline access logic.
+6. Real Coder API client and Coder/Kubernetes workspace infrastructure.
+7. Real user-authenticated DreamMakerHub → Coder workspace provisioning route.
+8. WonderPlay-3D Gemini NPC intelligence/vision/video endpoints.
+9. WonderPlay-3D WebSocket endpoint exists, though current behavior is simulated.
 
 ### Partially implemented / scaffolded
 
-1. Custom-engine rendering is currently a WebGL clear loop; actual geometry rendering is delegated to future visual plugins.
-2. External AI dialogue in custom-engine is a placeholder response.
-3. Replicate and Hugging Face provider entries are stubs.
-4. Some model routes appear to be catalog/route declarations rather than verified live-provider support.
-5. WonderPlay 3D is tooling infrastructure rather than demonstrated integration into the DreamMakerHub runtime.
+1. Custom-engine rendering: WebGL clear loop; no real geometry renderer in core.
+2. External AI in custom-engine: placeholder response.
+3. Pipeline AI runner: placeholder response instead of AI-PLAYGROUND provider integration.
+4. Pipeline expression evaluation: placeholder.
+5. Graph executor dependency-input resolution: not implemented.
+6. Replicate/Hugging Face provider adapters: stubs.
+7. WonderSpace UI project creation: filesystem JSON rather than Coder provisioning.
+8. Separate workspace route: Supabase record only.
+9. BuildIDEButton: points to an endpoint not located in this run.
+10. WonderPlay WebSocket visemes: randomized simulation.
+11. WonderPlay subscriptions: in-memory demo state.
+12. Mobile platform selector: UI metadata, not native packaging evidence.
 
-### Unresolved integration boundaries
+### Resolved integration boundary: Coder/Kubernetes/WonderSpace
 
-- Exact path from DreamMakerHub website UI → pipeline storage → graph compiler → execution runner → AI provider → engine runtime → realtime result.
-- Exact repository containing the claimed Coder/Kubernetes/WonderSpace orchestration layer. No clearly matching repository was discoverable under the searched AI-WonderLand1 organization during this run; treat that layer as **unresolved**, not assumed implemented.
-- Exact mobile build/export path. No `capacitor.config.ts` or `android/app/build.gradle` was found in AI-PLAYGROUND during this run; mobile integration therefore remains unverified there.
-- Exact location and implementation status of `pipelines.ts`, `QuadEngineShell`, GLB compiler, and live NPC WebSocket runtime referenced in prior research notes. These remain priority files to re-trace from the repository tree.
+The previously unresolved Coder layer is now traced sufficiently to classify it as **implemented infrastructure with inconsistent UI routing**:
+
+`WonderSpace/user UI` → `user-workspace/provision` → `CoderAPIWrapper` → Coder `/api/v2` → Kubernetes workspace/template → code-server/WonderSpace environment.
+
+A parallel UI path is:
+
+`WonderSpace IDE launch page` → `/api/wonderspace/projects` → local `data/wonderspace-projects.json` → `/ide`.
+
+These are not equivalent. The second path does not provision a Coder workspace.
+
+---
 
 ## Security findings
 
-- Positive: model API keys are server-side environment variables in AI-PLAYGROUND.
-- Positive: Supabase RLS policies are user-scoped for core user data.
-- Positive: Stripe webhook signature verification is present.
-- Concern: global permissive CORS in the Express server.
-- Concern: any client-controlled Wonderland key mechanism must be assessed for replay/abuse and rate limits.
-- Concern: `usage_logs` is user-readable but no insert policy is shown; confirm whether logs are written only by trusted server-side code.
-- Concern: external API helpers in `nodeExec.ts` accept API keys from node configuration; ensure these values cannot be persisted or exposed to untrusted users/workflows.
-- Concern: the custom engine README claims API-key management, but the generic external AI implementation currently does not actually call providers.
+### Positive
+
+- AI-PLAYGROUND provider keys are server-side environment variables.
+- Supabase RLS exists on core user data.
+- Stripe signature verification exists.
+- Coder client uses session-token headers and server-side API configuration.
+- Coder file upload contains explicit path traversal/invalid-path checks.
+- User-workspace route authenticates the Supabase user before provisioning.
+- Kubernetes workspace template runs as non-root UID 1000.
+
+### Concerns
+
+- AI-PLAYGROUND global CORS is permissive.
+- Client-controlled Wonderland-key mechanism needs rate-limit/replay analysis.
+- `nodeExec.ts` accepts API keys through node configuration; exposure/persistence must be audited.
+- WonderPlay accepts Gemini API keys from request bodies.
+- WonderPlay allows very large JSON payloads without evidence of production rate limiting.
+- `pipeline-runner.ts` falls back from service-role Supabase key to anon key.
+- Base64 is labeled as encryption in pipeline code.
+- Multiple workspace endpoints can report “provisioned/ready” without actually provisioning Coder.
+- Workspace image/owner/platform inputs need authorization and quota controls before public provisioning.
+- Code-server is launched with `--auth none` but bound to localhost and intended to sit behind Coder; deployment must preserve that network boundary.
+- SSH keys are generated/managed in workspace infrastructure; key lifecycle and revocation need a formal security review.
+
+---
 
 ## Monetization readiness
 
-The architecture already contains useful commercial primitives:
+### Strong commercial primitives
 
-- Stripe customer/subscription identifiers.
-- Subscription plan IDs and lifecycle state.
-- Usage logging with token counts, cost and duration.
-- Realtime dashboards/data synchronization.
+- Stripe customer/subscription IDs.
+- Subscription plans and lifecycle state.
+- Token/cost usage logging.
+- Realtime usage/state synchronization.
+- Pipeline subscription gating.
+- Workspace CPU/memory/disk parameters and TTLs.
+- Coder infrastructure capable of provisioning compute-backed workspaces.
 
-Immediate blocker: verify/fix the Stripe webhook route composition and trace the actual checkout/payment-link creation code end-to-end.
+### Best near-term commercial architecture
 
-The existing sponsorship program should remain separate from product subscription revenue. Sponsorship is project support, not an investment offering.
+A hybrid model remains supported by the evidence:
+
+**Subscription = capability/access**
+
+**Usage = expensive compute/AI/build consumption**
+
+Potential metered resources include AI inference, cloud workspace hours, builds, storage and high-cost generation.
+
+### Immediate commercial blockers
+
+1. Verify/fix Stripe webhook route composition.
+2. Trace actual checkout/payment-link creation.
+3. Ensure real billing state cannot be confused with WonderPlay's in-memory subscription demo.
+4. Define Coder workspace quotas and cost controls before offering cloud workspaces broadly.
+5. Consolidate fake/local workspace routes so public users cannot receive a false “ready” state.
+
+### Sponsorship
+
+The founding sponsorship program should remain separate from product subscriptions. Sponsorship is project support and promotional/technology partnership, not an investment or promise of financial return.
+
+---
 
 ## Licensing / IP status
 
-- `custom-engine/package.json` declares MIT, but no `custom-engine/LICENSE` file was found.
-- `wonderplay-3D` has no `LICENSE` file found in this run.
-- WonderPlay's direct use/download of Blender, COLMAP and Meshroom requires an upstream-license inventory before commercial redistribution or bundling.
-- Any future claim that DreamMakerHub is an original "custom Unreal Engine 5" should be avoided until all upstream engine code, licenses, modifications, and distribution rights are mapped. Current evidence reviewed here supports a custom WebGL engine shell, not an Unreal-derived engine.
+- `custom-engine/package.json` declares MIT, but repository-level `custom-engine/LICENSE` was not found in the inspected tree. Treat the declared license as unverified until a license file/root policy is confirmed.
+- `wonderplay-3D` has no repository `LICENSE` found in the inspected root.
+- WonderPlay directly references/downloads Blender, COLMAP and Meshroom tooling; exact upstream licenses and redistribution obligations must be inventoried.
+- WonderPlay dependencies include Three.js, glTF Transform, Google GenAI and Express; dependency licenses must be captured in a commercial bill of materials.
+- Any statement that DreamMakerHub is a “custom Unreal Engine 5” should be avoided until upstream source/license provenance is established. Evidence reviewed here supports a custom WebGL runtime plus Three.js-based tooling, not an Unreal-derived engine.
+- No evidence in this run establishes that DreamMakerHub owns exclusive rights to every upstream asset, model, binary, provider route, or downloaded tool.
 
-## Production-readiness scorecard (evidence-based, provisional)
+---
+
+## Mobile integration status
+
+- AI-PLAYGROUND: no native Capacitor/Android/iOS build files located in this run.
+- DreamMakerHub WonderSpace UI has `web`, `ios`, `android`, and `multi` selectors, but its current project API stores platform metadata in JSON and does not build native apps.
+- No verified Android/iOS packaging pipeline was established in this run.
+- **Status: UI intent exists; native build/export implementation remains unverified.**
+
+---
+
+## Production-readiness scorecard
 
 | Area | Status | Evidence |
 |---|---|---|
-| AI provider proxy | Partially production-oriented | Real server proxy and provider registry; some provider stubs |
-| Realtime sync | Implemented foundation | Supabase Postgres realtime + user filtering |
+| AI provider proxy | Partially production-oriented | Real provider proxy; some provider stubs |
+| AI-PLAYGROUND realtime | Implemented foundation | Supabase realtime + authenticated user filtering |
 | Subscription persistence | Implemented foundation | Stripe IDs/status in Supabase |
-| Stripe webhook | Implemented but integration issue | Signature verification + lifecycle handlers; route composition needs verification |
-| Custom 3D engine | Framework/scaffold | Real WebGL lifecycle/plugin runtime; renderScene is placeholder |
-| NPC simulation bridge | Partial | Real adapter structure; source compile issue and incomplete visual behaviors |
-| External NPC AI | Stub | `generateText()` returns placeholder text |
-| WonderPlay 3D | Toolchain | Blender/COLMAP/Nix/Meshroom setup; not proven integrated runtime |
-| Mobile | Unverified | No Capacitor/Android build files found in AI-PLAYGROUND |
-| Coder/Kubernetes/WonderSpace | Unresolved | Matching repo/path not yet traced |
-| Licensing | Needs audit | Declared MIT vs missing LICENSE; upstream 3D tools need inventory |
+| Stripe webhook | Implemented but route must be verified | Signature verification + lifecycle handlers |
+| Pipeline compiler | Partial | Real compiler/storage bridge, but AI/expression runners are placeholders |
+| Graph executor | Partial | Topological execution exists; dependency input resolution missing and type mismatch exists |
+| Custom 3D engine | Framework/scaffold | WebGL lifecycle/plugin runtime; core renderer placeholder |
+| NPC simulation bridge | Partial | Architecture exists; incomplete behaviors/compile issues remain |
+| WonderPlay AI NPC APIs | Implemented demo/service layer | Real Gemini calls for text/image/video |
+| WonderPlay live NPC WebSocket | Demo/scaffold | Randomized visemes and simulated thinking |
+| WonderPlay subscriptions | Demo/scaffold | In-memory process state |
+| Coder/Kubernetes | Implemented infrastructure | Terraform + Coder client + authenticated provisioning route |
+| WonderSpace UI | Mixed | One real Coder path plus filesystem-only project path |
+| Mobile | Unverified | Platform selector only; no native build pipeline traced |
+| Licensing | Needs audit | Missing repo license files + upstream dependencies |
+| Commercial controls | Partial | Billing/usage schema exists; workspace quotas/real checkout need verification |
 
-## Next investigation queue
+---
 
-1. Trace and verify the Stripe checkout/payment-link creation path and correct webhook route.
-2. Locate `pipelines.ts`, pipeline compiler/runner, and database records; trace a pipeline from persisted graph to execution.
-3. Locate `QuadEngineShell` and determine whether the dummy canvas/React renderer creates a duplicate runtime or is intentional.
-4. Locate GLB compiler, NPC WebSocket runtime and simulation service; verify whether binary/audio/viseme data is real or placeholder.
-5. Trace all imports between `dreammakerhub.website` and `AI-PLAYGROUND`; identify duplicated models, APIs, and shared Supabase contracts.
-6. Identify the Coder/Kubernetes/WonderSpace repository or prove that integration is currently external/uncommitted.
-7. Audit mobile build/export paths and Android/iOS packaging.
-8. Build an IP/license bill of materials for all upstream dependencies and bundled/downloaded tools.
-9. Run/inspect actual build/test scripts where the connected GitHub tooling exposes them; distinguish compile errors from theoretical concerns.
-10. Convert verified architecture into a sponsor-facing technical evidence appendix so marketing claims stay ahead of hype but behind the code.
+## Priority unresolved dependency queue — next run
+
+1. **Trace Stripe end-to-end:** checkout/payment links → webhook URL → Supabase subscription record → UI entitlement.
+2. **Trace Coder end-to-end from the actual public dashboard:** identify which UI component calls `user-workspace/provision` versus the filesystem-only WonderSpace route; eliminate ambiguity.
+3. **Trace `createWorkspaceForApp()` fully** and verify exact Coder payload/template parameters and readiness semantics.
+4. **Trace pipeline graph execution:** find every caller of `compilePipelineToEngine`, `GraphExecutor.execute`, and pipeline UI actions; establish whether execution ever reaches AI-PLAYGROUND's real provider proxy.
+5. **Trace AI-PLAYGROUND agent spawn:** follow `onSpawnAgent` from UI through persistence and actual inference/runtime calls.
+6. **Trace custom-engine/QuadEngineShell/GLB compiler/NPC WebSocket relationships** across the repo and identify duplicate runtimes.
+7. **Run/inspect actual build workflows:** determine which compile errors are current versus stale branches and whether CI validates the claimed production builds.
+8. **Audit WonderPlay server security:** remove BYOK API-key-from-body behavior for production, add rate limiting, and replace in-memory subscriptions.
+9. **Audit mobile packaging:** search all repos for Gradle, Xcode, Capacitor, React Native, Expo, Tauri, or equivalent build artifacts.
+10. **Build licensing BOM:** repository licenses, package licenses, Blender/COLMAP/Meshroom terms, model/provider terms, and distribution rights.
+11. **Cost model:** map Coder CPU/RAM/disk/TTL settings and AI token costs to proposed subscription/usage pricing.
+12. **Sponsor evidence appendix:** only claim features that the code and measured demos can substantiate.
+
+---
+
+## Evidence quality rule
+
+Marketing copy, implementation summaries, README claims, screenshots, and architecture documents are treated as **claims** until source code, configuration, live build output, or measured runtime behavior confirms them. The report intentionally distinguishes implemented code, partial implementation, demo/scaffold behavior, stale/duplicate paths, and unresolved dependencies.
