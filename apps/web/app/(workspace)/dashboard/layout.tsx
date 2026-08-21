@@ -64,7 +64,7 @@ type Project = {
     wonderbuild: { editor: "/wonder-build/builder", label: "Wonderbuild" },
     game: { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
     "3d_scene": { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
-    web_app: { editor: "/wonder-build/studio", label: "Wonderbuild" },
+    web_app: { editor: "/wonder-build/builder", label: "Wonderbuild" },
     workspace: { editor: "/ide", label: "IDE" },
   };
 
@@ -87,7 +87,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       label: "Build",
       items: [
         { href: "/wonder-build", label: "WonderBuild", icon: Pencil },
-        { href: "/wonder-build/studio", label: "AI Studio", icon: Sparkles },
         { href: "/wonder-build/builder", label: "Visual Builder", icon: Palette },
       ],
     },

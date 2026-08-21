@@ -372,6 +372,13 @@ function BuilderContent() {
               👁️ Preview
             </button>
           </div>
+          <button
+            onClick={() => window.location.href = `/library?sendTo=builder&projectId=${projectId}`}
+            className="px-3 py-1.5 text-xs font-semibold text-white/70 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors flex items-center gap-1"
+            title="Import 3D assets from Library"
+          >
+            <span className="text-lg">📦</span> Import 3D
+          </button>
         </div>
       </header>
 

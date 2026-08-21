@@ -69,22 +69,8 @@ const nextConfig = {
 
   async redirects() {
     return [
-      {
-        source: '/wonder-build/preview',
-        destination: '/wonder-build/studio',
-        permanent: true,
-      },
-      {
-        source: '/wonder-build/ai-builder',
-        destination: '/wonder-build/studio',
-        permanent: true,
-      },
-      // Legacy standalone builder engines now fold into a single Builder surface.
-      {
-        source: '/builder/3d',
-        destination: '/wonder-build/webgl',
-        permanent: true,
-      },
+      
+      
       // Orphan standalone scene workspace index → canonical Project management.
       // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {

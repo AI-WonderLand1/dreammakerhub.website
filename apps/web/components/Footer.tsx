@@ -24,7 +24,6 @@ export default function Footer() {
             <h3 className="text-sm font-bold text-white mb-4">Build</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/wonder-build" className="text-white/60 hover:text-white">WonderBuild</Link></li>
-              <li><Link href="/wonder-build/studio" className="text-white/60 hover:text-white">AI Studio</Link></li>
               <li><Link href="/wonder-build/builder" className="text-white/60 hover:text-white">Visual Builder</Link></li>
               <li><Link href="/wonder-build/templates" className="text-white/60 hover:text-white">Templates</Link></li>
             </ul>
@@ -44,7 +43,6 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/wonder-build/playcanvas" className="text-white/60 hover:text-white">WonderPlay 3D</Link></li>
               <li><Link href="/dashboard/3dhub" className="text-white/60 hover:text-white">3DHub Studio</Link></li>
-              <li><Link href="/wonder-build/webgl" className="text-white/60 hover:text-white">WebGL Studio</Link></li>
             </ul>
           </div>
 

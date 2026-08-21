@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { Suspense } from 'react';
 import {
   Boxes,
-  Brain,
   Box,
   Compass,
   Palette,
@@ -14,14 +13,6 @@ import {
 } from 'lucide-react';
 
 const TOOLS = [
-  {
-    href: '/wonder-build/studio',
-    icon: Brain,
-    title: 'AI Studio',
-    desc: 'Describe what to build and the AI generates production-ready apps and sites.',
-    highlight: true,
-    tag: 'AI',
-  },
   {
     href: '/wonder-build/builder',
     icon: Palette,
@@ -84,10 +75,10 @@ export default function WonderBuildHub() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/wonder-build/studio"
+                href="/wonder-build/builder"
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-900/30 transition hover:opacity-90"
               >
-                <Brain size={16} /> Start with AI Studio <ArrowRight size={14} />
+                <Palette size={16} /> Start with Visual Builder <ArrowRight size={14} />
               </Link>
               <Link
                 href="/dashboard/3dhub"

@@ -40,10 +40,8 @@ export type SecondaryNavItem = {
 export const PAGES: NavPage[] = [
   // BUILD — WonderBuild
   { path: "/wonder-build", label: "WonderBuild", icon: "⚡", category: "builder", description: "Build websites, apps, and landing pages — visually or with AI." },
-  { path: "/wonder-build/studio", label: "AI Studio", icon: "🧠", category: "builder", description: "Describe it — AI generates production-ready apps and sites." },
-  { path: "/wonder-build/agent", label: "AI Agent", icon: "🤖", category: "builder", description: "Agent-driven build loop for websites, games, and components." },
   { path: "/wonder-build/builder", label: "Visual Builder", icon: "🎨", category: "builder", description: "Drag-and-drop canvas, components, pages, and live preview." },
-  { path: "/wonder-build/templates", label: "Templates", icon: "📄", category: "builder", description: "Browse and generate template building blocks." },
+  { path: "/wonder-build/agent", label: "AI Agent", icon: "🤖", category: "builder", description: "Agent-driven build loop for websites, games, and components." },
   // CODE — WonderSpace
   { path: "/wonderspace", label: "WonderSpace", icon: "💻", category: "workspace", description: "AI-powered development environment with agents and preview." },
   { path: "/ide", label: "Cloud IDE", icon: "🖥️", category: "workspace", description: "Your private cloud workspace — VS Code, terminal, git." },
@@ -71,8 +69,6 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     icon: "⚡",
     href: "/wonder-build",
     items: [
-      { label: "WonderBuild Hub", href: "/wonder-build", description: "Pick a tool and start building." },
-      { label: "AI Studio", href: "/wonder-build/studio", description: "Describe it — AI generates it." },
       { label: "Visual Builder", href: "/wonder-build/builder", description: "Drag-and-drop canvas, components, preview." },
       { label: "AI Agent", href: "/wonder-build/agent", description: "Agent-driven build loop." },
       { label: "Templates", href: "/wonder-build/templates", description: "Browse and generate templates." },
