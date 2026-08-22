@@ -2,21 +2,19 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { Box, Eye, Gamepad2, Film, Boxes, Cpu, Bot, type LucideIcon } from "lucide-react";
+import { Box, Eye, Gamepad2, Film, Boxes, type LucideIcon } from "lucide-react";
 import Studio3DFactory from "@/components/studio/Studio3DFactory";
 import Studio360View from "@/components/studio/Studio360View";
 import StudioGameBuilder from "@/components/studio/StudioGameBuilder";
 import StudioMovieMaker from "@/components/studio/StudioMovieMaker";
-import StudioNPCSim from "@/components/studio/StudioNPCSim";
 
-type StudioPage = "factory" | "panorama" | "game" | "movie" | "npc-sim";
+type StudioPage = "factory" | "panorama" | "game" | "movie";
 
 const PAGES: { id: StudioPage; label: string; icon: LucideIcon; sub: string }[] = [
   { id: "factory", label: "3D Factory", icon: Box, sub: "AI mesh generation" },
   { id: "panorama", label: "360 View", icon: Eye, sub: "Panorama environments" },
   { id: "game", label: "Game Builder", icon: Gamepad2, sub: "Levels & logic" },
   { id: "movie", label: "Movie Maker", icon: Film, sub: "Cinematic timeline" },
-  { id: "npc-sim", label: "NPC AI Sim", icon: Bot, sub: "NPC behavior & voice" },
 ];
 
 export default function StudioApp() {
@@ -75,7 +73,6 @@ export default function StudioApp() {
           {currentPage === "panorama" && <Studio360View />}
           {currentPage === "game" && <StudioGameBuilder />}
           {currentPage === "movie" && <StudioMovieMaker />}
-          {currentPage === "npc-sim" && <StudioNPCSim />}
         </Suspense>
       </main>
     </div>

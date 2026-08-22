@@ -24,7 +24,7 @@ const TOOLS = [
     href: '/dashboard/3dhub',
     icon: Boxes,
     title: '3DHub Studio',
-    desc: 'AI 3D Factory, 360 panoramas, game levels, cinematic timelines, and NPC simulation.',
+    desc: 'AI 3D Factory, 360 panoramas, game levels, and cinematic timelines.',
     highlight: true,
     tag: '3D',
   },
