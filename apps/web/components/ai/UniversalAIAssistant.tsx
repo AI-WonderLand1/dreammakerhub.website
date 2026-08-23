@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useFeatureGate } from '@/lib/useSubscription';
-import { AI_PERSONAS, RAW_MODELS } from '@/lib/ai/models';
+import { CLIENT_PERSONAS } from '@/lib/ai/personas';
 import { logger } from '@/lib/logger';
 
 type Message = {
@@ -33,10 +33,7 @@ type UniversalAIProps = {
   dashboardUrl?: string;
 };
 
-const MODEL_OPTIONS = [
-  ...Object.values(AI_PERSONAS).map(p => ({ id: p.id, name: p.name, sub: p.tagline, tier: p.tier })),
-  ...RAW_MODELS.map(m => ({ id: m.id, name: m.label, sub: m.provider, tier: m.tier })),
-];
+const MODEL_OPTIONS = CLIENT_PERSONAS.map(p => ({ id: p.id, name: p.name, sub: p.tagline, tier: p.tier }));
 
 export default function UniversalAIAssistant({
   position = 'bottom-right',

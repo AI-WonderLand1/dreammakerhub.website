@@ -1,20 +1,14 @@
-export type AiTier = "free" | "premium";
+import type { AiTier } from "./personas";
 
-export type AiPersona = {
+// SERVER-ONLY: maps white-label personas to real OpenRouter models.
+// Never import this file from client components — model identifiers must not reach the browser.
+
+export type PersonaConfig = {
   id: string;
   name: string;
-  tagline: string;
   tier: AiTier;
   model: string;
   systemPrompt: string;
-};
-
-export type RawModel = {
-  id: string;
-  label: string;
-  provider: string;
-  tier: AiTier;
-  model: string;
 };
 
 const ALICE_PROMPT =
@@ -23,11 +17,10 @@ const ALICE_PROMPT =
 const SIMPLERICK_PROMPT =
   "You are SimpleRick, the premium AI of AI Wonderland. Blunt, brilliant, zero fluff — you give direct expert answers with just enough edge to be memorable. You can tackle advanced engineering, architecture, and debugging. Stay in character as SimpleRick; never mention underlying providers or model names.";
 
-export const AI_PERSONAS: Record<string, AiPersona> = {
+export const PERSONA_MODELS: Record<string, PersonaConfig> = {
   alice: {
     id: "alice",
     name: "Alice",
-    tagline: "Your free Wonderland guide",
     tier: "free",
     model: "meta-llama/llama-3.3-70b-instruct:free",
     systemPrompt: ALICE_PROMPT,
@@ -35,70 +28,51 @@ export const AI_PERSONAS: Record<string, AiPersona> = {
   simplerick: {
     id: "simplerick",
     name: "SimpleRick",
-    tagline: "Premium genius on demand",
     tier: "premium",
     model: "anthropic/claude-sonnet-4",
     systemPrompt: SIMPLERICK_PROMPT,
   },
 };
 
+// Internal model pool (server-side only). Not exposed in any user-facing UI.
+type RawModel = { id: string; model: string; tier: AiTier };
+
 export const RAW_MODELS: RawModel[] = [
-  {
-    id: "llama33-free",
-    label: "Llama 3.3 70B",
-    provider: "Meta",
-    tier: "free",
-    model: "meta-llama/llama-3.3-70b-instruct:free",
-  },
-  {
-    id: "deepseekv3-free",
-    label: "DeepSeek V3",
-    provider: "DeepSeek",
-    tier: "free",
-    model: "deepseek/deepseek-chat-v3-0324:free",
-  },
-  {
-    id: "gpt4o",
-    label: "GPT-4o",
-    provider: "OpenAI",
-    tier: "premium",
-    model: "openai/gpt-4o",
-  },
-  {
-    id: "claude-sonnet-4",
-    label: "Claude Sonnet 4",
-    provider: "Anthropic",
-    tier: "premium",
-    model: "anthropic/claude-sonnet-4",
-  },
-  {
-    id: "gemini-2-5-pro",
-    label: "Gemini 2.5 Pro",
-    provider: "Google",
-    tier: "premium",
-    model: "google/gemini-2.5-pro",
-  },
+  { id: "llama33-free", model: "meta-llama/llama-3.3-70b-instruct:free", tier: "free" },
+  { id: "deepseekv3-free", model: "deepseek/deepseek-chat-v3-0324:free", tier: "free" },
+  { id: "gpt4o", model: "openai/gpt-4o", tier: "premium" },
+  { id: "claude-sonnet-4", model: "anthropic/claude-sonnet-4", tier: "premium" },
+  { id: "gemini-2-5-pro", model: "google/gemini-2.5-pro", tier: "premium" },
 ];
 
-export function resolveModel(
-  selection?: string | null
-): { model: string; systemPrompt: string | null; tier: AiTier; label: string } {
+export function resolveModel(selection?: string | null): {
+  model: string;
+  systemPrompt: string | null;
+  tier: AiTier;
+  name: string;
+} {
   const sel = (selection || "").toLowerCase();
 
-  if (AI_PERSONAS[sel]) {
-    const p = AI_PERSONAS[sel];
-    return { model: p.model, systemPrompt: p.systemPrompt, tier: p.tier, label: p.name };
+  if (PERSONA_MODELS[sel]) {
+    const p = PERSONA_MODELS[sel];
+    return { model: p.model, systemPrompt: p.systemPrompt, tier: p.tier, name: p.name };
   }
 
   const raw = RAW_MODELS.find((m) => m.id === sel || m.model === selection);
   if (raw) {
-    return { model: raw.model, systemPrompt: null, tier: raw.tier, label: raw.label };
+    const persona = Object.values(PERSONA_MODELS).find((p) => p.tier === raw.tier);
+    return {
+      model: raw.model,
+      systemPrompt: persona?.systemPrompt ?? null,
+      tier: raw.tier,
+      name: persona?.name ?? "Assistant",
+    };
   }
 
   return {
-    model: AI_PERSONAS.alice.model,
-    systemPrompt: AI_PERSONAS.alice.systemPrompt,
+    model: PERSONA_MODELS.alice.model,
+    systemPrompt: PERSONA_MODELS.alice.systemPrompt,
     tier: "free",
-    label: AI_PERSONAS.alice.name,
+    name: PERSONA_MODELS.alice.name,
   };
 }

@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         {
           error: "This model requires a paid plan",
           upgrade: true,
-          label: resolved.label,
+          label: resolved.name,
         },
         { status: 402 }
       );
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       text,
-      label: resolved.label,
+      label: resolved.name,
       tier: resolved.tier,
     });
   } catch (err: any) {
