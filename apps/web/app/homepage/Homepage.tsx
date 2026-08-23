@@ -80,7 +80,7 @@ export default function Homepage() {
             <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-semibold uppercase tracking-widest text-white/40">
               <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> AI-Powered Builds</span>
               <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> 3D Games & Worlds</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Voice Welcome</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Accessible by Design</span>
             </div>
           </div>
         </section>
