@@ -91,7 +91,7 @@ export const PLANS: Plan[] = [
     id: "pro",
     name: "The Architect",
     tier: "Pro",
-    price: "$35",
+    price: "$39",
     period: "/mo",
     desc: "For builders who are serious about shipping. Full creative power, one subscription.",
     bullets: [
@@ -108,7 +108,7 @@ export const PLANS: Plan[] = [
     id: "team",
     name: "The Guild",
     tier: "Team",
-    price: "$149",
+    price: "$129",
     period: "/mo",
     desc: "Built for agencies and studios who ship together. Collaborate, iterate, and deliver, without the chaos.",
     bullets: [

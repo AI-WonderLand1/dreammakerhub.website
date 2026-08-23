@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import {
   Boxes,
   Box,
+  Brain,
   Compass,
   Palette,
   Library,
