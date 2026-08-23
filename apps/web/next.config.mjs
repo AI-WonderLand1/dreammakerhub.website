@@ -69,8 +69,15 @@ const nextConfig = {
 
   async redirects() {
     return [
-      
-      
+
+
+      // Template library merged into the hub — one page, one builder.
+      {
+        source: '/wonder-build/templates',
+        destination: '/wonder-build',
+        permanent: false,
+      },
+
       // Orphan standalone scene workspace index → canonical Project management.
       // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {

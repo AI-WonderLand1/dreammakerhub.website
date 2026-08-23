@@ -71,7 +71,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     items: [
       { label: "Visual Builder", href: "/wonder-build/builder", description: "Drag-and-drop canvas, components, preview." },
       { label: "AI Agent", href: "/wonder-build/agent", description: "Agent-driven build loop." },
-      { label: "Templates", href: "/wonder-build/templates", description: "Browse and generate templates." },
+      { label: "Templates", href: "/wonder-build", description: "Browse and generate templates." },
     ],
   },
   {
@@ -105,7 +105,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 
 export const SECONDARY_NAV: SecondaryNavItem[] = [
   { label: "Projects", href: "/dashboard/projects", icon: "📁" },
-  { label: "Templates", href: "/wonder-build/templates", icon: "📄" },
+  { label: "Templates", href: "/wonder-build", icon: "📄" },
   { label: "Marketplace", href: "/marketplace", icon: "🛍️" },
   { label: "Playground", href: "https://playground.dreammakerhub.website/", icon: "🤖", external: true },
   { label: "Docs", href: "/docs", icon: "📖" },

@@ -10,7 +10,7 @@ export const menuItems: NavMenuItem[] = [
       { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
       { name: "AI Studio", href: "/wonder-build/studio", icon: "🧠" },
       { name: "Visual Builder", href: "/wonder-build/builder", icon: "🎨" },
-      { name: "Templates", href: "/wonder-build/templates", icon: "📄" },
+      { name: "Templates", href: "/wonder-build", icon: "📄" },
     ],
   },
   {
