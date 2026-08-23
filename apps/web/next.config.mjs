@@ -78,6 +78,13 @@ const nextConfig = {
         permanent: false,
       },
 
+      // Preview lives as a tab inside the builder.
+      {
+        source: '/wonder-build/preview',
+        destination: '/wonder-build/builder?tab=preview',
+        permanent: false,
+      },
+
       // Orphan standalone scene workspace index → canonical Project management.
       // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {

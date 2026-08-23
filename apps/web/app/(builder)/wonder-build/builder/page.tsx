@@ -49,7 +49,19 @@ function BuilderContent() {
     setShortcutsModalOpen, shortcutsModalOpen, setProjectId, addElement, moveElement,
   } = store;
 
-  const [tab, setTab] = useState<BuilderTab>('design');
+  const [tab, setTab] = useState<BuilderTab>(() => {
+    const t = searchParams.get('tab');
+    return t === 'code' || t === 'design' || t === 'preview' ? t : 'design';
+  });
+
+  const switchTab = useCallback((next: BuilderTab) => {
+    setTab(next);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', next);
+      window.history.replaceState(null, '', url.toString());
+    } catch {}
+  }, []);
   const [imported, setImported] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [projectStatus, setProjectStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
@@ -359,15 +371,15 @@ function BuilderContent() {
         <div className="flex items-center gap-2">
           <AccessibilityBar />
           <div className="flex items-center rounded-lg border border-white/10 overflow-hidden" role="tablist" aria-label="View mode">
-            <button onClick={() => setTab('code')} role="tab" aria-selected={tab === 'code'}
+            <button onClick={() => switchTab('code')} role="tab" aria-selected={tab === 'code'}
               className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'code' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
               💻 Code
             </button>
-            <button onClick={() => setTab('design')} role="tab" aria-selected={tab === 'design'}
+            <button onClick={() => switchTab('design')} role="tab" aria-selected={tab === 'design'}
               className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'design' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
               🎨 Design
             </button>
-            <button onClick={() => setTab('preview')} role="tab" aria-selected={tab === 'preview'}
+            <button onClick={() => switchTab('preview')} role="tab" aria-selected={tab === 'preview'}
               className={`px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'preview' ? 'bg-violet-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
               👁️ Preview
             </button>
