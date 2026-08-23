@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useFeatureGate } from '@/lib/useSubscription';
+import { AI_PERSONAS, RAW_MODELS } from '@/lib/ai/models';
 import { logger } from '@/lib/logger';
 
 type Message = {
@@ -32,6 +33,11 @@ type UniversalAIProps = {
   dashboardUrl?: string;
 };
 
+const MODEL_OPTIONS = [
+  ...Object.values(AI_PERSONAS).map(p => ({ id: p.id, name: p.name, sub: p.tagline, tier: p.tier })),
+  ...RAW_MODELS.map(m => ({ id: m.id, name: m.label, sub: m.provider, tier: m.tier })),
+];
+
 export default function UniversalAIAssistant({
   position = 'bottom-right',
   theme = 'dark',
@@ -48,6 +54,8 @@ export default function UniversalAIAssistant({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState(defaultAgent);
   const [showAgents, setShowAgents] = useState(false);
+  const [modelId, setModelId] = useState('alice');
+  const [showModels, setShowModels] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -156,6 +164,38 @@ export default function UniversalAIAssistant({
     setIsLoading(true);
 
     try {
+      const useRealChat = selectedAgent === 'spirit-guide';
+
+      if (useRealChat) {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            modelId,
+            message: input,
+            history: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          }),
+        });
+        const data = await res.json();
+
+        let content: string;
+        if (res.status === 402 || data.upgrade) {
+          content = `🔒 ${data.label || 'This model'} requires a paid plan. Upgrade in the Dashboard → Subscription to unlock premium AI.`;
+        } else if (!res.ok || data.error) {
+          content = `Error: ${data.error || 'AI request failed'}`;
+        } else {
+          content = data.text || '(empty response)';
+        }
+
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content,
+          timestamp: Date.now(),
+        }]);
+        return;
+      }
+
       const endpoint = '/api/unified-ai';
       const body: any = {
         action: 'chat',
@@ -230,7 +270,7 @@ export default function UniversalAIAssistant({
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, selectedAgent, messages, pathname, dashboardUrl]);
+  }, [input, isLoading, selectedAgent, messages, pathname, dashboardUrl, modelId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -279,7 +319,7 @@ export default function UniversalAIAssistant({
           style={{ fontFamily: "Inter, system-ui, sans-serif" }}
         >
           {/* Header */}
-          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between relative">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
@@ -290,15 +330,63 @@ export default function UniversalAIAssistant({
                 <div>
                   <h3 className="text-sm font-semibold text-white tracking-tight">AI Assistant</h3>
                   <p className="text-[11px] text-white/25">
-                    {selectedAgent === 'spirit-guide'
-                      ? 'Spirit Guide active'
-                      : agents.find(a => a.id === selectedAgent)?.name || selectedAgent}
+                    {MODEL_OPTIONS.find(m => m.id === modelId)?.name || 'Alice'} ready
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 relative">
+              {/* Model Picker */}
+              <button
+                onClick={() => setShowModels(!showModels)}
+                className={`px-2 h-8 rounded-lg flex items-center gap-1 text-[11px] transition-colors ${showModels ? 'bg-white/[0.08] text-white' : 'text-white/40 hover:text-white hover:bg-white/[0.04]'}`}
+                title="Choose AI model"
+              >
+                {MODEL_OPTIONS.find(m => m.id === modelId)?.name || 'Alice'}
+                {MODEL_OPTIONS.find(m => m.id === modelId)?.tier === 'premium' && <span className="text-amber-400">★</span>}
+                <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showModels && (
+                <div className="absolute right-0 top-10 w-64 bg-[#101012] border border-white/[0.08] rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.7)] overflow-hidden z-10">
+                  {MODEL_OPTIONS.map(m => {
+                    const locked = m.tier === 'premium' && !isPaid;
+                    const active = m.id === modelId;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => {
+                          if (locked) {
+                            setShowModels(false);
+                            setMessages(prev => [...prev, {
+                              id: Date.now().toString(),
+                              role: 'system',
+                              content: `🔒 ${m.name} is a premium model — upgrade to Pro in Dashboard → Subscription to use it.`,
+                              timestamp: Date.now()
+                            }]);
+                            return;
+                          }
+                          setModelId(m.id);
+                          setShowModels(false);
+                        }}
+                        className={`w-full px-3 py-2.5 flex items-center justify-between gap-2 text-left transition-colors ${active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'}`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-xs font-medium text-white truncate">{m.name}</span>
+                          <span className="block text-[10px] text-white/30 truncate">{m.sub}</span>
+                        </span>
+                        {m.tier === 'premium'
+                          ? <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wide ${locked ? 'text-white/25' : 'text-amber-400'}`}>{locked ? '🔒 Pro' : '★ Pro'}</span>
+                          : <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-emerald-400">Free</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               {enableAgents && (
                 <button
                   onClick={() => {
