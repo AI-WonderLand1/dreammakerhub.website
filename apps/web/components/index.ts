@@ -14,5 +14,4 @@ export { default as WebGLStudioEngine } from './engines/WebGLStudioEngine';
 export { default as TheiaIDEEngine } from './engines/TheiaIDEEngine';
 
 // Accessibility exports
-export { SpiritGuide } from './SpiritGuide';
 export { VisualTranscript } from './VisualTranscript';

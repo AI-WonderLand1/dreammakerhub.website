@@ -27,7 +27,7 @@ const AGENT_ENDPOINTS = {
   builder: '/api/agent',
   designer: '/api/agent', 
   debugger: '/api/agent',
-  'spirit-guide': '/api/spirit-guide/chat',
+  'spirit-guide': '/api/chat',
   'project-runner': '/api/platform/options',
   'data-processor': '/api/platform/options',
 };
@@ -124,10 +124,41 @@ async function handleAgentRequest(agent: string, command: string, context?: any,
   }
 
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+    // Spirit Guide routes through the real chat endpoint (Alice persona)
+    if (agent === 'spirit-guide') {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const authHeader = req?.headers.get('authorization');
+      if (authHeader) headers['authorization'] = authHeader;
+
+      const res = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ modelId: 'alice', message: command }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        return NextResponse.json(
+          { error: data.error || 'Spirit Guide unavailable' },
+          { status: res.status }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        agent,
+        response: data.text || '',
+        suggestions: [],
+        dashboard: false,
+        timestamp: Date.now(),
+      });
+    }
+
     // Forward to agent endpoint with authentication headers
     const agentEndpoint = AGENT_ENDPOINTS[agent as keyof typeof AGENT_ENDPOINTS];
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    
+
     // Forward authentication headers
     const headers: Record<string, string> = { 
       'Content-Type': 'application/json' 
