@@ -30,14 +30,21 @@ export async function POST(req: Request) {
       messages: [{ role: "user", content: sanitizedMessage }]
     })
 
+    if (result.error || !result.text) {
+      return NextResponse.json(
+        { error: result.error || "AI returned an empty response" },
+        { status: 502 }
+      );
+    }
+
     await logUsage({
       userId,
       action: "ai.token",
       apiCalls: 1,
-      tokensUsed: Math.ceil(((sanitizedMessage.length + (result.text?.length || 0)) / 4)),
+      tokensUsed: Math.ceil(((sanitizedMessage.length + result.text.length) / 4)),
     })
 
-    return NextResponse.json({ text: result.text || "" })
+    return NextResponse.json({ text: result.text })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "AI error" }, { status: 500 })
   }
