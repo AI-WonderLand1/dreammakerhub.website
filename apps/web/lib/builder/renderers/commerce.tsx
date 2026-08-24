@@ -24,5 +24,5 @@ export const commerceRenderers: Record<string, BlockRenderer> = {
   },
   'color-swatches': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} className="flex gap-1">{(el.props.colors as any[] || []).map((c: any, i: number) => <div key={i} className="w-6 h-6 rounded-full border border-white/20" style={{ backgroundColor: c.value, borderColor: c.value === el.props.selected ? '#7c3aed' : 'rgba(255,255,255,0.2)' }} />)}{children}</div>;
-  },
+  }
 };

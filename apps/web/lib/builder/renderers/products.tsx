@@ -13,5 +13,5 @@ export const productsRenderers: Record<string, BlockRenderer> = {
   'stock-indicator': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       const stockStatus = el.props.status || 'in-stock';
       return <div {...baseProps}><span className={`inline-block w-2 h-2 rounded-full mr-1 ${stockStatus === 'in-stock' ? 'bg-green-400' : stockStatus === 'out-of-stock' ? 'bg-red-400' : 'bg-yellow-400'}`} /><span className="text-xs">{stockStatus === 'in-stock' ? `In Stock (${el.props.quantity || 0})` : stockStatus === 'out-of-stock' ? 'Out of Stock' : 'Pre-order'}</span>{children}</div>;
-  },
+  }
 };
