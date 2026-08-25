@@ -28,6 +28,7 @@ Verified:
 Newly verified gaps:
 - `/api/build/stream` accepts anonymous requests, performs multiple model calls, and does not visibly enforce per-build quotas/rate limits or usage deduction. The Reviewer call does not pass the paid flag and therefore uses the free/default model path.
 - `getAuthUser()` treats only Auth `app_metadata.plan === 'pro'` as paid. The Stripe webhook writes `profiles.plan` and `subscriptions`; the inspected path does not prove Auth metadata is updated.
+- `getAuthUser()` also performs a relative `fetch('/api/auth/session')` even though it is imported by the server-side build route; because errors are swallowed and returned as `null`, this path must be runtime-tested for silent fallback to anonymous/free status.
 - Public subscription and checkout UI use one hard-coded Stripe Payment Link instead of the dynamic `/api/subscription/subscribe` endpoint, so selected plan/annual interval are not proven to reach Stripe correctly.
 - Free-plan ensure writes `profiles.plan`, while migration `009_create_profiles_and_projects.sql` creates `user_profiles.subscription_plan`; the inspected migration does not establish the `profiles.plan` schema assumed by `ensure`.
 - Billing state is split across `user_profiles.subscription_plan`, `profiles.plan`, `subscriptions`, and Auth `app_metadata.plan`.
@@ -101,6 +102,7 @@ Still scaffolding/simulated/unproven: WonderPlay live-NPC loop, WonderPlay in-me
 7. Complete SBOM/license/IP mapping.
 8. Prove code-sharing/migration relationships among engine lineages.
 9. Remove stale `/api/spirit-guide/chat` references from unified chat routing.
+10. Runtime-test server-side auth resolution in `/api/build/stream` and replace the relative-fetch helper with direct server auth if the test confirms silent fallback.
 
 ## Next research chain
 
