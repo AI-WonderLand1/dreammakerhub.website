@@ -258,14 +258,22 @@ export const VisualRenderer: React.FC<VisualRendererProps> = ({
             className="relative inline-block max-w-full"
           >
             {renderBadge('IMAGE')}
-            <img
-              src={element.src || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80'}
-              alt={element.alt || 'Template visual element'}
-              style={inlineStyles}
-              onClick={handleClick}
-              referrerPolicy="no-referrer"
-              className={`transition-all max-w-full h-auto rounded-lg shadow-sm ${outlineClasses}`}
-            />
+            {element.src ? (
+              <img
+                src={element.src}
+                alt={element.alt || 'Template visual element'}
+                style={inlineStyles}
+                onClick={handleClick}
+                referrerPolicy="no-referrer"
+                className={`transition-all max-w-full h-auto rounded-lg shadow-sm ${outlineClasses}`}
+              />
+            ) : (
+              <div
+                onClick={handleClick}
+                style={{ ...inlineStyles, minHeight: '160px', borderRadius: '12px', background: 'linear-gradient(135deg,#1e293b,#334155)' }}
+                className={`transition-all w-full rounded-lg ${outlineClasses}`}
+              />
+            )}
           </motion.div>
         );
 

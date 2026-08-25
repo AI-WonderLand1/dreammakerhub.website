@@ -9,7 +9,7 @@ function toCss(styles?: Record<string, string | number>): string {
     .join(';');
 }
 
-const GENERIC_IMAGE_HOSTS = /picsum|placehold\.co|dummyimage|via\.placeholder|unsplash/;
+const PLACEHOLDER_IMAGE_HOSTS = /picsum|placehold\.co|dummyimage|via\.placeholder/;
 
 function renderElement(el: WonderBuildElement): string {
   const style = toCss(el.styles);
@@ -26,7 +26,9 @@ function renderElement(el: WonderBuildElement): string {
     case 'button':
       return `<button style="${style}">${el.icon || ''}${el.content || ''}</button>`;
     case 'image': {
-      if (!el.src || GENERIC_IMAGE_HOSTS.test(el.src)) return '';
+      if (!el.src || PLACEHOLDER_IMAGE_HOSTS.test(el.src)) {
+        return `<div style="${style};min-height:140px;border-radius:12px;background:linear-gradient(135deg,#1e293b,#334155)"></div>`;
+      }
       return `<img src="${el.src}" alt="${el.alt || ''}" style="max-width:100%;${style}" />`;
     }
     case 'grid': {

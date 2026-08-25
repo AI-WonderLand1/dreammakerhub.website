@@ -48,10 +48,10 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
     [template, hasElements]
   );
 
-  // Real uploaded thumbnail (creator templates) — never generic stock hosts.
+  // Real uploaded thumbnail (creator templates) — never generic placeholder hosts.
   const candidateImage = !hasElements ? thumbnailUrl || template?.thumbnail : undefined;
   const realImage =
-    candidateImage && !/(unsplash|picsum|placehold|dummyimage)/.test(candidateImage)
+    candidateImage && !/(picsum|placehold|dummyimage)/.test(candidateImage)
       ? candidateImage
       : undefined;
 

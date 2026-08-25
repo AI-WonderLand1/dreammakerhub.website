@@ -8,17 +8,24 @@ import { useBuilderStore } from '../store';
 import { CanvasElement } from '../types';
 import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
-import { CANVAS_ROOT_ID } from '../dnd-utils';
+import { CANVAS_ROOT_ID, acceptsChildren } from '../dnd-utils';
 
 function buildElementCtx(el: CanvasElement, selectedId: string | null, selectElement: (id: string | null) => void): RendererCtx {
   const isSelected = selectedId === el.id;
   const style: React.CSSProperties = {
-    ...el.styles,
+    ...(el.styles as React.CSSProperties),
     position: 'relative',
     cursor: 'pointer',
     outline: isSelected ? '2px solid #7c3aed' : '1px solid transparent',
     outlineOffset: '2px',
   };
+
+  // Empty containers need a visible drop zone, otherwise they collapse to
+  // zero height and can never be targeted for nesting.
+  if (!el.children?.length && acceptsChildren(el.type)) {
+    style.minHeight = el.styles?.minHeight || '56px';
+    style.minWidth = el.styles?.minWidth || '56px';
+  }
 
   const baseProps = {
     key: el.id,

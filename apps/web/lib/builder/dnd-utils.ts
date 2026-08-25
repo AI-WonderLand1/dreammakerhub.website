@@ -1,8 +1,21 @@
 import type { CanvasElement, BlockDefinition } from './types';
+import { BLOCKS } from './blocks';
 
 export const CANVAS_ROOT_ID = 'canvas-root';
 
 export const CONTAINER_TYPES = ['group', 'columns', 'row', 'grid', 'flex', 'section', 'container', 'card'];
+
+// Any palette block that declares an allowedChildren list is a nestable
+// container (covers Stack, Wrapper, Sidebar Layout, Masonry, Split Screen,
+// Scroll Container, etc.). Legacy hardcoded types stay accepted for
+// backward compatibility with saved builder states.
+const REGISTRY_CONTAINER_TYPES = new Set(
+  BLOCKS.filter((b) => b.allowedChildren && b.allowedChildren.length > 0).map((b) => b.type)
+);
+
+export function acceptsChildren(type: string): boolean {
+  return REGISTRY_CONTAINER_TYPES.has(type) || CONTAINER_TYPES.includes(type);
+}
 
 export interface ElementInfo {
   el: CanvasElement;

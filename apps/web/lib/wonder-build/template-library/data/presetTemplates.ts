@@ -8,7 +8,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Clean, focused SaaS landing page with high-contrast typography, product preview, and fast lead conversion.',
     category: 'SaaS',
     variant: 'minimal landing',
-    thumbnail: 'https://picsum.photos/seed/pulseflow/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -167,7 +167,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'High-impact dark theme SaaS landing page featuring vibrant gradients and enterprise value propositions.',
     category: 'SaaS',
     variant: 'bold landing',
-    thumbnail: 'https://picsum.photos/seed/nexuscore/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -254,7 +254,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Minimalist editorial agency template with bold typography, portfolio showreel grid, and contact form.',
     category: 'Agency/Portfolio',
     variant: 'creative studio',
-    thumbnail: 'https://picsum.photos/seed/vanguard/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -285,7 +285,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
                 type: 'card',
                 styles: { backgroundColor: '#f5f5f5', padding: '40px', borderRadius: '16px' },
                 children: [
-                  { type: 'image', src: 'https://picsum.photos/seed/design1/600/400', alt: 'Aether OS' },
+                  { type: 'image', src: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=600&q=80', alt: 'Aether OS' },
                   { type: 'heading', content: 'Aether OS — Spatial Computing Interface', styles: { fontSize: '20px', fontWeight: '700', marginTop: '20px' } },
                   { type: 'text', content: 'Brand Strategy, UX Design, WebGL Development', styles: { color: '#737373', fontSize: '14px', marginTop: '6px' } },
                 ],
@@ -294,7 +294,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
                 type: 'card',
                 styles: { backgroundColor: '#f5f5f5', padding: '40px', borderRadius: '16px' },
                 children: [
-                  { type: 'image', src: 'https://picsum.photos/seed/design2/600/400', alt: 'Monolith Watch' },
+                  { type: 'image', src: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=600&q=80', alt: 'Monolith Watch' },
                   { type: 'heading', content: 'Monolith — Luxury Swiss Watchmaking', styles: { fontSize: '20px', fontWeight: '700', marginTop: '20px' } },
                   { type: 'text', content: 'E-commerce, 3D Renderings, Motion System', styles: { color: '#737373', fontSize: '14px', marginTop: '6px' } },
                 ],
@@ -326,7 +326,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Premium e-commerce product detail layout with high-res gallery, specs, customer reviews, and buy bar.',
     category: 'Ecommerce',
     variant: 'product detail',
-    thumbnail: 'https://picsum.photos/seed/aurasound/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -343,7 +343,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
           {
             type: 'div',
             styles: { flex: '1' },
-            children: [{ type: 'image', src: 'https://picsum.photos/seed/headphones/600/600', alt: 'Aura Wireless Studio Headphones' }],
+            children: [{ type: 'image', src: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80', alt: 'Aura Wireless Studio Headphones' }],
           },
           {
             type: 'div',
@@ -385,7 +385,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Clean reading layout for longform tech essays, author info header, inline quotes, and newsletter callout.',
     category: 'Blog/Content',
     variant: 'standard article',
-    thumbnail: 'https://picsum.photos/seed/readingessay/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -401,7 +401,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
         children: [
           { type: 'heading', content: 'The Architecture of Autonomous Software Agents in 2026', styles: { fontSize: '40px', fontWeight: '800', lineHeight: '1.2' } },
           { type: 'text', content: 'By Dr. Elena Vance • March 14, 2026 • 8 min read', styles: { color: '#6b7280', marginTop: '16px', fontSize: '14px' } },
-          { type: 'image', src: 'https://picsum.photos/seed/aiagent/800/400', alt: 'AI Architecture' },
+          { type: 'image', src: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80', alt: 'AI Architecture' },
           { type: 'text', content: 'As intelligent systems transition from reactive text completion to proactive background orchestration, software design patterns are fundamentally shifting toward event-driven agent loops...', styles: { fontSize: '18px', lineHeight: '1.8', color: '#374151', marginTop: '24px' } },
         ],
       },
@@ -433,7 +433,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'High-conversion webinar registration page with countdown timer, speaker profile, and lead capture form.',
     category: 'Marketing/LeadGen',
     variant: 'webinar',
-    thumbnail: 'https://picsum.photos/seed/webinar/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -480,7 +480,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Corporate about page showing executive board, global infrastructure stats, and sustainability mission.',
     category: 'Corporate/Business',
     variant: 'about us',
-    thumbnail: 'https://picsum.photos/seed/apexcorp/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -513,7 +513,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Luxury architectural listings showcase with price filters, neighborhood highlights, and virtual tour triggers.',
     category: 'RealEstate',
     variant: 'property listing',
-    thumbnail: 'https://picsum.photos/seed/luxuryhouse/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -528,7 +528,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
         styles: { padding: '60px 40px', backgroundColor: '#f9fafb' },
         children: [
           { type: 'heading', content: 'Exclusive Architectural Properties', styles: { fontSize: '36px', fontWeight: '800' } },
-          { type: 'image', src: 'https://picsum.photos/seed/mansion/900/500', alt: 'The Malibu Cliffside Villa' },
+          { type: 'image', src: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80', alt: 'The Malibu Cliffside Villa' },
           { type: 'heading', content: 'The Malibu Cliffside Villa — $14,500,000', styles: { fontSize: '24px', fontWeight: '700', marginTop: '20px' } },
           { type: 'text', content: '5 Bedrooms • 7 Bathrooms • 8,400 sq ft • Private Oceanfront Access', styles: { color: '#4b5563', marginTop: '8px' } },
         ],
@@ -548,7 +548,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Online learning course catalog with skill filters, student enrollment counters, and syllabus outlines.',
     category: 'Education/Courses',
     variant: 'course catalog',
-    thumbnail: 'https://picsum.photos/seed/learning/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -581,7 +581,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Warm healthcare and wellness portal with online booking, doctor bios, and patient testimonials.',
     category: 'Health/Wellness',
     variant: 'clinic landing',
-    thumbnail: 'https://picsum.photos/seed/healthcenter/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -614,7 +614,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Immersive hotel reservation template with room suites preview, infinity pool gallery, and booking bar.',
     category: 'Travel/Hospitality',
     variant: 'hotel landing',
-    thumbnail: 'https://picsum.photos/seed/amalfihotel/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -647,7 +647,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Impactful charity fundraising page with live donation goal tracker, ocean cleanup metrics, and donor form.',
     category: 'Nonprofit/Charity',
     variant: 'donation page',
-    thumbnail: 'https://picsum.photos/seed/cleanocean/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -680,7 +680,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'High-energy electronic music festival landing page with stadium tour dates, VIP ticket passes, and video teasers.',
     category: 'Entertainment/Events',
     variant: 'concert landing',
-    thumbnail: 'https://picsum.photos/seed/concerttour/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -713,7 +713,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Modern neo-banking account portal with multi-currency balances, virtual corporate card issuance, and instant transfers.',
     category: 'Finance/Fintech',
     variant: 'banking dashboard',
-    thumbnail: 'https://picsum.photos/seed/fintechbank/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',
@@ -746,7 +746,7 @@ export const INITIAL_PRESET_TEMPLATES: WonderBuildTemplate[] = [
     description: 'Developer portal documentation with sidebar navigation, code snippet blocks, authentication guide, and endpoint tester.',
     category: 'Tech/Developer',
     variant: 'API documentation',
-    thumbnail: 'https://picsum.photos/seed/apidocs/800/600',
+    thumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80',
     elements: [
       {
         type: 'nav',

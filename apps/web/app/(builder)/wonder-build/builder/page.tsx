@@ -16,7 +16,7 @@ import { parseHtmlToElements, isHtmlString } from '@/lib/builder/html-parser';
 import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
 import { storageService } from '@/lib/builder/pipeline/StorageService';
 import { livePreviewService } from '@/lib/builder/pipeline/LivePreviewService';
-import { CANVAS_ROOT_ID, CONTAINER_TYPES, findElementInfo, blockToCanvasElement, isDescendantOf } from '@/lib/builder/dnd-utils';
+import { CANVAS_ROOT_ID, acceptsChildren, findElementInfo, blockToCanvasElement, isDescendantOf } from '@/lib/builder/dnd-utils';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
@@ -263,7 +263,7 @@ function BuilderContent() {
         addElement(el);
         return;
       }
-      if (CONTAINER_TYPES.includes(overInfo.el.type)) {
+      if (acceptsChildren(overInfo.el.type)) {
         if (allowedIn(overInfo.el.type, el.type)) {
           addElement(el, overId);
         } else {
@@ -296,7 +296,7 @@ function BuilderContent() {
       const overInfo = findElementInfo(elements, overId);
       if (!overInfo) return;
 
-      if (CONTAINER_TYPES.includes(overInfo.el.type)) {
+      if (acceptsChildren(overInfo.el.type)) {
         // Dropped on a container: move into it as its last child.
         if (!allowedIn(overInfo.el.type, activeInfo.el.type)) return;
         targetParentId = overId;

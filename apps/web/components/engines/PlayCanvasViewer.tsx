@@ -74,7 +74,7 @@ export default function PlayCanvasViewer({
 
   useEffect(() => {
     let mounted = true;
-    let animationFrameId: number;
+    let animationFrameId: number | undefined;
 
     const initPlayCanvas = async () => {
       try {
@@ -121,7 +121,6 @@ export default function PlayCanvasViewer({
 
     return () => {
       mounted = false;
-      cancelAnimationFrame(animationFrameId);
       // EngineManager handles cleanup automatically
       if (engineManager.getActiveEngineName() === 'playcanvas') {
         engineManager.dispose();

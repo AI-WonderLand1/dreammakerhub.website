@@ -13,52 +13,49 @@ export class AppError extends Error implements ApiError {
   code: string;
   details?: any;
 
-  constructor(message: string, statusCode: number = 500, code: string = 'INTERNAL_ERROR', details?: any) {
-    super(message);
+  constructor(message: string, statusCode: number = 500, code: string = 'INTERNAL_ERROR', details?: any, cause?: Error) {
+    super(message, { cause });
     this.name = 'AppError';
     this.statusCode = statusCode;
     this.code = code;
     this.details = details;
-    
-    // Maintain proper stack trace
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, AppError);
-    }
+  }
+}
   }
 }
 
 // Common error types
 export class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
-    super(message, 400, 'VALIDATION_ERROR', details);
+  constructor(message: string, details?: any, cause?: Error) {
+    super(message, 400, 'VALIDATION_ERROR', details, cause);
     this.name = 'ValidationError';
   }
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message: string = 'Authentication required') {
-    super(message, 401, 'AUTHENTICATION_ERROR');
+  constructor(message: string = 'Authentication required', cause?: Error) {
+    super(message, 401, 'AUTHENTICATION_ERROR', undefined, cause);
     this.name = 'AuthenticationError';
   }
 }
 
 export class AuthorizationError extends AppError {
-  constructor(message: string = 'Not authorized') {
-    super(message, 403, 'AUTHORIZATION_ERROR');
+  constructor(message: string = 'Not authorized', cause?: Error) {
+    super(message, 403, 'AUTHORIZATION_ERROR', undefined, cause);
     this.name = 'AuthorizationError';
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = 'Resource not found') {
-    super(message, 404, 'NOT_FOUND');
+  constructor(message: string = 'Resource not found', cause?: Error) {
+    super(message, 404, 'NOT_FOUND', undefined, cause);
     this.name = 'NotFoundError';
   }
 }
 
 export class RateLimitError extends AppError {
-  constructor(message: string = 'Rate limit exceeded') {
-    super(message, 429, 'RATE_LIMIT_EXCEEDED');
+  constructor(message: string = 'Rate limit exceeded', cause?: Error) {
+    super(message, 429, 'RATE_LIMIT_EXCEEDED', undefined, cause);
     this.name = 'RateLimitError';
   }
 }
@@ -235,7 +232,7 @@ export async function validateRequestBody<T>(
     if (error instanceof ValidationError) {
       throw error;
     }
-    throw new ValidationError('Invalid JSON body');
+    throw new ValidationError('Invalid JSON body', undefined, error);
   }
 }
 

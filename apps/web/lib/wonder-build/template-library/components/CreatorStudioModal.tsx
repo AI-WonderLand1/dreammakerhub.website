@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { WonderBuildTemplate, WonderBuildElement } from '../types';
 import { BATCH_DEFINITIONS } from '../data/batchPrompts';
+import { TemplateThumbnail } from './TemplateThumbnail';
 import {
   Store,
   X,
@@ -419,10 +420,12 @@ export const CreatorStudioModal: React.FC<CreatorStudioModalProps> = ({
                         className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center space-x-3">
-                          <img
-                            src={tpl.thumbnail}
+                          <TemplateThumbnail
+                            template={tpl}
                             alt={tpl.name}
-                            className="w-12 h-12 rounded-lg object-cover border border-slate-800 shrink-0"
+                            aspectRatio=""
+                            showHoverOverlay={false}
+                            className="w-12 h-12 rounded-lg shrink-0"
                           />
                           <div>
                             <div className="flex items-center space-x-2">
