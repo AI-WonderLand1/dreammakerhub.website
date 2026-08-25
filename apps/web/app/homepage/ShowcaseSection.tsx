@@ -42,7 +42,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
   },
   {
     id: "ai-wonder",
-    title: "AI-Wonder",
+    title: "AI Wonderland",
     description: "The flagship experience. Describe a scene in natural language — AI generates the 3D world, populates it with assets, and sets up lighting and physics automatically.",
     image: "/images/3DPLAYIMAGE.webp",
     href: "/wonder-build/playcanvas",

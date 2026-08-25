@@ -95,8 +95,7 @@ export const PLANS: Plan[] = [
     period: "/mo",
     desc: "For builders who are serious about shipping. Full creative power, one subscription.",
     bullets: [
-      "5 active projects", "Unlimited AI chats", "WonderPlay 3D Engine (WebGL + glTF)",
-      "WonderSpace Cloud IDE", "Egyptian Voice Module", "1-click deployment",
+      "Unlimited AI chats", "1-click deployment",
       "Custom domain included", "Accessibility tools for all creators", "Priority email support",
     ],
     cta: "Become an Architect",

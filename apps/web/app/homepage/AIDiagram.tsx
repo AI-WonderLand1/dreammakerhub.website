@@ -91,18 +91,18 @@ export default function AIDiagram() {
             <div className="absolute -bottom-6 left-[16.66%] right-[16.66%] h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent hidden sm:block" />
           </div>
 
-          {/* ─── Vertical connector to AI-Wonder ── */}
+          {/* ─── Vertical connector to AI Wonderland ── */}
           <div className="mt-6 flex justify-center">
             <div className="h-6 w-px bg-gradient-to-b from-purple-500/10 to-purple-500/40" />
           </div>
 
-          {/* ─── AI-Wonder Convergence Layer ────── */}
+          {/* ─── AI Wonderland Convergence Layer ────── */}
           <div className={nodeClass + " mt-0 w-full max-w-lg border-pink-500/20 bg-pink-950/10"}>
             <div className="flex items-center justify-center gap-2 mb-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-pink-500/20 text-xs">✨</span>
-              <span className="text-sm font-bold text-pink-300">AI-Wonder Convergence</span>
+              <span className="text-sm font-bold text-pink-300">AI Wonderland Convergence</span>
             </div>
-            <p className="text-[10px] text-white/40 mb-2">All tools feed into the AI-Wonder experience layer</p>
+            <p className="text-[10px] text-white/40 mb-2">All tools feed into the AI Wonderland experience layer</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs text-white/60">
               <span className="flex items-center gap-1">
                 <span>🧙</span> Spirit Guide

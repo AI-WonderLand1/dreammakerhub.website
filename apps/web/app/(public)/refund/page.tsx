@@ -30,7 +30,7 @@ export default function RefundPage() {
         <p>For enterprise subscriptions, refunds are handled on a case-by-case basis. Please contact our sales team at enterprise@ai-wonderland.com for custom refund arrangements.</p>
 
         <h2>Technical Issues</h2>
-        <p>If you're experiencing technical difficulties that prevent you from using AI-Wonderland despite having an active subscription, please contact support immediately. We will provide either a service credit or refund if the issue cannot be resolved within 72 hours.</p>
+        <p>If you're experiencing technical difficulties that prevent you from using AI Wonderland despite having an active subscription, please contact support immediately. We will provide either a service credit or refund if the issue cannot be resolved within 72 hours.</p>
       </div>
     </div>
   );

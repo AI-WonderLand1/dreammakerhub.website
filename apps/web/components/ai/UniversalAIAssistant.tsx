@@ -75,7 +75,7 @@ export default function UniversalAIAssistant({
         },
         {
           id: 'egyptian_voice',
-          name: 'Egyptian Voice',
+          name: 'Voice',
           type: 'builder',
           description: 'Ancient wisdom through hieroglyphic metaphors',
           available: true

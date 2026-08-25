@@ -261,7 +261,7 @@ export default function SubscriptionPage() {
             </div>
             <h1 className="mt-2 text-3xl font-extrabold">Subscription &amp; Billing</h1>
             <div className="mt-2 text-white/55">
-              Manage your AI-Wonderland plan and billing.
+              Manage your AI Wonderland plan and billing.
             </div>
           </div>
 
@@ -415,13 +415,13 @@ export default function SubscriptionPage() {
 
         {/* Comparison */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
-          <div className="text-sm font-bold text-white/80">Why AI-Wonderland?</div>
+          <div className="text-sm font-bold text-white/80">Why AI Wonderland?</div>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="py-2 text-white/50">Feature</th>
-                  <th className="py-2 text-purple-400">AI-Wonderland</th>
+                  <th className="py-2 text-purple-400">AI Wonderland</th>
                   <th className="py-2 text-white/40">v0.dev</th>
                   <th className="py-2 text-white/40">Bolt.new</th>
                   <th className="py-2 text-white/40">Cursor</th>

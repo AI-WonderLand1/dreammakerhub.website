@@ -1,7 +1,7 @@
 import type { StaticImport } from "next/image";
 
 /**
- * Central navigation registry for DreamMakerHub.
+ * Central navigation registry for AI Wonderland (DreamMakerHub, Inc.).
  *
  * Consumers should import the consolidated destinations (PRIMARY_NAV /
  * SECONDARY_NAV) instead of hardcoding link arrays in each component.
@@ -124,8 +124,8 @@ const PROJECT_TYPE_TO_DESTINATION: Record<string, string> = {
   "landing-page": "/wonder-build/builder",
   "landing_page": "/wonder-build/builder",
   "web-app": "/wonder-build/studio",
-  web_app: "/wonder-build/studio",
-  app: "/wonder-build/studio",
+  web_app: "/wonder-build/builder",
+  app: "/wonder-build/builder",
   store: "/wonder-build/builder",
   custom: "/wonder-build/builder",
   workspace: "/ide",

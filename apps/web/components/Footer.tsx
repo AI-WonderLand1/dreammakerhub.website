@@ -25,7 +25,6 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/wonder-build" className="text-white/60 hover:text-white">WonderBuild</Link></li>
               <li><Link href="/wonder-build/builder" className="text-white/60 hover:text-white">Visual Builder</Link></li>
-              <li><Link href="/wonder-build" className="text-white/60 hover:text-white">Templates</Link></li>
             </ul>
           </div>
 

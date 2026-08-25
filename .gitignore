@@ -57,6 +57,21 @@ coverage/
 *.tmp
 *.temp
 
+# Repo root hygiene — stray files at root (move to assets or ignore)
+159
+MYSECOUNDAD.mp4
+myfistad.mp4
+MYTHIRdAD.mp4
+soccer.jpeg
+
+# Scratch / temporary todo files
+3Denginefuture.md
+3Dtodo.md
+pixel_forge_todo.md
+TODO_LIST.md
+todo.md
+toist.md
+
 # Environment variables (already covered but adding more patterns)
 .env.local
 .env.*.local
