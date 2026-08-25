@@ -12,13 +12,17 @@ The `/api/build/stream` path is a genuine four-stage build flow: Architect -> Bu
 
 `getAuthUser()` derives `isPaid` solely from `session.user.app_metadata.plan === 'pro'`. The session route returns the Supabase user but does not itself assign the plan. No current source trace in this pass proved that Stripe completion updates Auth `app_metadata`; the verified webhook instead writes a `profiles.plan` field and a `subscriptions` row.
 
+### Additional auth-path concern
+
+`getAuthUser()` in `apps/web/lib/auth.ts` performs `fetch('/api/auth/session')` and is imported directly by the server-side `/api/build/stream` route. In a Node/Next server execution context, a relative URL passed to the standard `fetch()` API normally requires an absolute origin; the code catches any failure and returns `null`. Therefore this path should be runtime-tested because a relative-URL failure would silently classify the caller as anonymous/free even when a valid session exists. This is recorded as a **runtime-verification item**, not a confirmed production failure, until an actual deployed trace or build test proves the behavior.
+
 ## 2. Billing chain — a more precise failure map
 
 A dynamic Stripe checkout API exists at `/api/subscription/subscribe`. It authenticates a bearer token, validates the requested plan/interval, selects the configured monthly/yearly Stripe Price ID, and creates a real Stripe Checkout Session with `userId`, `plan`, and `interval` metadata.
 
 However, the public `/subscription` page bypasses that dynamic route for paid plans: its plan objects use one hard-coded Stripe Payment Link as `href`, and `onSelect()` navigates directly to that link. The `/checkout` page also contains the same hard-coded Payment Link rather than invoking `/api/subscription/subscribe`. This means the live UI does not prove that the selected plan or annual interval reaches the dynamic checkout endpoint.
 
-The billing toggle has a state bug: `billingInterval` uses `"month" | "year"`, but the toggle handler checks for `"monthly"`. As written, switching from month sets `year`, but switching back from year sets `month` only because the false branch is selected when the current value is not `monthly`; the condition is semantically wrong and should be normalized to a direct `billingInterval === 'year'` test.
+The billing toggle has a state bug: `billingInterval` uses `"month" | "year"`, but the toggle handler checks for `"monthly"`. The condition should be normalized to a direct `billingInterval === 'year'` test.
 
 The free-plan `/api/subscription/ensure` route writes to a `profiles` table with `{ id, plan: 'free' }`. The inspected `009_create_profiles_and_projects.sql` migration instead creates `user_profiles` with `subscription_plan` and usage-limit columns; it does not create the `profiles.plan` schema assumed by `ensure`.
 
@@ -77,13 +81,14 @@ The strongest genuinely commercial pieces today are:
 - real Expo/EAS mobile packaging;
 - a native C++/Vulkan engine lineage.
 
-The highest-risk commercial gaps remain billing entitlement consistency, anonymous AI build cost exposure, stale unified-chat routing, Coder workspace identity mismatch, simulated WonderPlay live-NPC behavior, mobile API parity, and repository/IP separation across the engine lineages.
+The highest-risk commercial gaps remain billing entitlement consistency, anonymous AI build cost exposure, possible silent auth fallback in the server-side build path, stale unified-chat routing, Coder workspace identity mismatch, simulated WonderPlay live-NPC behavior, mobile API parity, and repository/IP separation across the engine lineages.
 
 ## Next unresolved dependency chain
 
 1. Prove which database schema actually exists for `profiles`, `user_profiles`, and `subscriptions` and reconcile it with the Stripe webhook.
 2. Trace whether any code updates Supabase Auth `app_metadata.plan` after successful payment.
 3. Trace the selected Stripe Price ID from the UI through checkout metadata to the webhook and final entitlement.
-4. Trace `/api/build/stream` usage logging and quota enforcement, if any, beyond the inspected route.
-5. Trace the WonderPlay WebSocket upgrade path and whether the `ws` runtime dependency is supplied indirectly by the Bun lockfile/build image.
-6. Compare Vanguard repository trees/ancestry to determine whether `vanguard-engine` and `MOBILEAPP-VANGUARD-ENGINE` are forked copies, generated copies, or independent reimplementations.
+4. Runtime-test the server-side `getAuthUser()` relative-fetch path and replace it with direct server auth if necessary.
+5. Trace `/api/build/stream` usage logging and quota enforcement, if any, beyond the inspected route.
+6. Trace the WonderPlay WebSocket upgrade path and whether the `ws` runtime dependency is supplied indirectly by the Bun lockfile/build image.
+7. Compare Vanguard repository trees/ancestry to determine whether `vanguard-engine` and `MOBILEAPP-VANGUARD-ENGINE` are forked copies, generated copies, or independent reimplementations.
