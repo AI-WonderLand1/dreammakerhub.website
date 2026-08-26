@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { Box, Eye, Gamepad2, Film, Boxes, Cpu, type LucideIcon } from "lucide-react";
+import { Box, Eye, Gamepad2, Film, Boxes, type LucideIcon } from "lucide-react";
 import Studio3DFactory from "@/components/studio/Studio3DFactory";
 import Studio360View from "@/components/studio/Studio360View";
 import StudioGameBuilder from "@/components/studio/StudioGameBuilder";

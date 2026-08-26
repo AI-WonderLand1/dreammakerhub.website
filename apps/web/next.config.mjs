@@ -69,22 +69,22 @@ const nextConfig = {
 
   async redirects() {
     return [
+
+
+      // Template library merged into the hub — one page, one builder.
+      {
+        source: '/wonder-build/templates',
+        destination: '/wonder-build',
+        permanent: false,
+      },
+
+      // Preview lives as a tab inside the builder.
       {
         source: '/wonder-build/preview',
-        destination: '/wonder-build/studio',
-        permanent: true,
+        destination: '/wonder-build/builder?tab=preview',
+        permanent: false,
       },
-      {
-        source: '/wonder-build/ai-builder',
-        destination: '/wonder-build/studio',
-        permanent: true,
-      },
-      // Legacy standalone builder engines now fold into a single Builder surface.
-      {
-        source: '/builder/3d',
-        destination: '/wonder-build/webgl',
-        permanent: true,
-      },
+
       // Orphan standalone scene workspace index → canonical Project management.
       // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {

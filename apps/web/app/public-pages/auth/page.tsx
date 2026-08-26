@@ -21,8 +21,8 @@ function AuthPageContent() {
       if (cancelled) return;
       const supabase = createClient();
       if (!supabase) return;
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!cancelled && session?.user) {
+      supabase.auth.getUser().then(({ data: { user: verified }, error }: { data: { user: any }, error: any }) => {
+        if (!cancelled && !error && verified) {
           window.location.href = redirectTo;
         }
       });

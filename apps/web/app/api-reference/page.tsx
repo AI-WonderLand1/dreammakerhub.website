@@ -18,7 +18,7 @@ const endpoints: Endpoint[] = [
     path: "/api/projects",
     group: "Projects",
     description: "List projects the current user can access.",
-    example: `curl -X GET https://ai-wonderland.app/api/projects \\
+    example: `curl -X GET https://dreammakerhub.website/api/projects \\
   -H "Authorization: Bearer <token>"`,
   },
   {
@@ -26,7 +26,7 @@ const endpoints: Endpoint[] = [
     path: "/api/projects",
     group: "Projects",
     description: "Create a new project. `tool`/`type` selects the builder surface (e.g. wonderbuild, playcanvas, workspace, game, 3d_scene).",
-    example: `curl -X POST https://ai-wonderland.app/api/projects \\
+    example: `curl -X POST https://dreammakerhub.website/api/projects \\
   -H "Authorization: Bearer <token>" \\
   -H "Content-Type: application/json" \\
   -d '{"name":"My Project","type":"wonderbuild"}'`,
@@ -36,7 +36,7 @@ const endpoints: Endpoint[] = [
     path: "/api/projects/{projectId}/publish",
     group: "Publish",
     description: "Publish the latest build artifacts for a project.",
-    example: `curl -X POST https://ai-wonderland.app/api/projects/123/publish \\
+    example: `curl -X POST https://dreammakerhub.website/api/projects/123/publish \\
   -H "Authorization: Bearer <token>"`,
   },
   {
@@ -44,7 +44,7 @@ const endpoints: Endpoint[] = [
     path: "/api/projects/{projectId}/snapshots/restore",
     group: "Snapshots",
     description: "Restore the most recent snapshot.",
-    example: `curl -X POST https://ai-wonderland.app/api/projects/123/snapshots/restore \\
+    example: `curl -X POST https://dreammakerhub.website/api/projects/123/snapshots/restore \\
   -H "Authorization: Bearer <token>"`,
   },
 ];

@@ -47,8 +47,10 @@ export function computeSpatialTransform(
   const latest = samples[samples.length - 1]
   const pos = motionSampleToVec3(latest)
 
-  let rotX = 0, rotY = 0, rotZ = 0
-  let scaleX = 1, scaleY = 1, scaleZ = 1
+let rotX = 0, rotZ = 0
+   const rotY = 0
+   let scaleX = 1, scaleY = 1
+   const scaleZ = 1
 
   if (gesture === 'swipe' && samples.length >= 2) {
     const dx = samples[samples.length - 1].wrist.x - samples[0].wrist.x

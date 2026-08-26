@@ -70,7 +70,7 @@ export default function HubPage() {
   function handleBuild() {
     if (!prompt.trim()) return;
     if (mode === "website") {
-      router.push(`/wonder-build/studio?prompt=${encodeURIComponent(prompt)}&type=website`);
+      router.push(`/wonder-build/builder?prompt=${encodeURIComponent(prompt)}`);
     } else {
       router.push(`/game-builder/create?prompt=${encodeURIComponent(prompt)}`);
     }
@@ -259,7 +259,7 @@ export default function HubPage() {
             <Link
               key={template.id}
               href={template.type === "website"
-                ? `/wonder-build/studio?prompt=${encodeURIComponent(template.name)}&type=website`
+                ? `/wonder-build/builder?prompt=${encodeURIComponent(template.name)}`
                 : `/game-builder/create?prompt=${encodeURIComponent(template.name)}`
               }
               className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] transition-all hover:border-white/20"

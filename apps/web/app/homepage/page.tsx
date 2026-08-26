@@ -4,7 +4,7 @@ export const metadata = {
   openGraph: {
     title: "AI Wonderland - Build Anything with AI",
     description: "Build websites, 3D games, and interactive experiences from natural language prompts.",
-    url: "https://ai-wonderland.app",
+    url: "https://dreammakerhub.website",
     type: "website",
   },
   twitter: {

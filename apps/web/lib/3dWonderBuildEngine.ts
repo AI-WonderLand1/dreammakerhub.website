@@ -95,7 +95,7 @@ export class WonderBuildEngine {
             </div>
             <div class="wb-pricing-card wb-pricing-featured">
               <h3>Pro</h3>
-              <div class="wb-price">$29<span>/mo</span></div>
+              <div class="wb-price">$39<span>/mo</span></div>
               <ul><li>Unlimited projects</li><li>Priority support</li><li>Custom domains</li></ul>
               <a href="/wonder-build/studio" class="wb-btn wb-btn-primary">Go Pro</a>
             </div>

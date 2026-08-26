@@ -1,5 +1,19 @@
 # Custom NPC Engine - Complete Solution for AI NPCs in Games and Movies
 
+## 🚀 Founding Sponsorship Program
+
+DreamMakerHub is opening a **Founding Sponsor Program** to help fund continued development, infrastructure, AI/cloud costs, testing, deployment, and launch preparation.
+
+The sponsorship ecosystem is:
+
+**Dreamer → Creator → Architect → Studio → Enterprise**
+
+Sponsorship levels currently begin at **$25/month**, with monthly, quarterly, and annual options available. Sponsorship is intended as project support and is **not an offer of equity, securities, ownership, royalties, guaranteed profits, or investment returns**.
+
+👉 **[View the full DreamMakerHub Founding Sponsorship Program](SPONSORSHIP.md)**
+
+---
+
 ## Overview
 
 This solution provides a complete, extensible engine for creating AI-driven NPCs (Non-Player Characters) suitable for both games and film production. It combines a customizable rendering engine with powerful AI integration capabilities, visual component systems, and a plugin architecture for extending functionality.
@@ -153,7 +167,7 @@ The custom engine is designed to work alongside existing systems like the spatia
    - UI and menu systems
    - Save/load systems
 
-### With Game Engines (Unity, Unreal, etc.)
+### With Game Engines (vanguard engine, playcanvas webgpu. ect..)
 The custom engine can be used as:
 - **AI Brain Server**: Run npc-sim on a server, have game engines query it for NPC decisions
 - **Visualization Tool**: Use during development to visualize and tweak NPC behaviors
@@ -215,8 +229,21 @@ All visual components must implement:
 - Optional lifecycle methods: `dispose()`, `onEngineSet(engine)`
 
 ## License
+# DREAMMAKERHUB.WEBSITE
 
-MIT License - feel free to use, modify, and distribute this engine for both commercial and non-commercial projects.
+## License & Commercial Terms
+
+Copyright (c) 2026 AI WONDERLAND INNOVATION. All rights reserved.
+
+This software and its source code are proprietary and confidential. Unauthorized copying, modification, distribution, or sublicensing of this software, via any medium, is strictly prohibited. 
+
+### Usage Terms:
+- **Commercial Use:** Access to the hosted SaaS platform requires a paid subscription.
+- **Source Code Protection:** You may not use, copy, or adapt the source code of this project to create a competing service or redistributable product.
+- **Reverse Engineering:** Reverse engineering, decompiling, or disassembling the compiled assets or backend API of this software is strictly prohibited.
+
+For licensing inquiries or to purchase access, please contact: b1161976969@dreammakerhub.website
+
 
 ## Acknowledgments
 

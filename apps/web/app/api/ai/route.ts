@@ -1,6 +1,7 @@
 import { runModel } from "@/core/ai/runModel"
 import { NextResponse } from "next/server"
 import { requireUserId } from "@/lib/auth"
+import { logUsage } from "@/lib/usage/log"
 import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
@@ -28,7 +29,22 @@ export async function POST(req: Request) {
       model: "openrouter/google/gemini-flash-1.5",
       messages: [{ role: "user", content: sanitizedMessage }]
     })
-    return NextResponse.json({ text: result.text || "" })
+
+    if (result.error || !result.text) {
+      return NextResponse.json(
+        { error: result.error || "AI returned an empty response" },
+        { status: 502 }
+      );
+    }
+
+    await logUsage({
+      userId,
+      action: "ai.token",
+      apiCalls: 1,
+      tokensUsed: Math.ceil(((sanitizedMessage.length + result.text.length) / 4)),
+    })
+
+    return NextResponse.json({ text: result.text })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "AI error" }, { status: 500 })
   }

@@ -35,9 +35,8 @@ export const DeployModal: React.FC<DeployModalProps> = ({
 
   if (!isOpen) return null;
 
-  const liveUrl = `https://wonderbuild-suite.ai.studio/deploy/${activeTemplateName
-    .toLowerCase()
-    .replace(/\s+/g, '-')}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://dreammakerhub.website';
+  const liveUrl = `${origin}/wonder-build/builder?template=${encodeURIComponent(activeTemplateName)}`;
 
   const handleStartDeploy = () => {
     setDeployStep('deploying');

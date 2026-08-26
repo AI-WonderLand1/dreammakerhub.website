@@ -31,7 +31,7 @@ const openSpiritGuide = () => {
       return;
     }
   }
-  window.location.href = '/wonder-build/studio';
+  window.location.href = '/wonder-build/builder';
 };
 
 export default function Homepage() {
@@ -68,7 +68,7 @@ export default function Homepage() {
               Build websites, 3D games, and interactive experiences from natural language — no coding required.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <Link href="/wonder-build/studio"
+              <Link href="/wonder-build/builder"
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-900/40 transition hover:scale-105 hover:shadow-purple-700/50">
                 🚀 Start Creating
               </Link>
@@ -80,7 +80,7 @@ export default function Homepage() {
             <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-semibold uppercase tracking-widest text-white/40">
               <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> AI-Powered Builds</span>
               <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> 3D Games & Worlds</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Voice Welcome</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Accessible by Design</span>
             </div>
           </div>
         </section>
@@ -93,8 +93,8 @@ export default function Homepage() {
           <div className="grid gap-4 sm:grid-cols-3">
             {[
               { src: "/images/3DWONDERPLAYIMAGE.webp", title: "WonderPlay 3D Worlds", href: "/wonder-build/playcanvas", tag: "3D Engine" },
-              { src: "/images/3DSYSTEMSIMAGE.webp", title: "3D Systems & Scenes", href: "/wonder-build/studio", tag: "AI Builder" },
-              { src: "/images/3DPLAYIMAGE.webp", title: "3D Play Experience", href: "/wonder-build/webgl", tag: "WebGL Studio" },
+              { src: "/images/3DSYSTEMSIMAGE.webp", title: "3D Systems & Scenes", href: "/dashboard/3dhub", tag: "3D Studio" },
+              { src: "/images/3DPLAYIMAGE.webp", title: "3D Play Experience", href: "/wonder-build/playcanvas", tag: "PlayCanvas" },
             ].map((card) => (
               <Link key={card.title} href={card.href}
                 className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 p-3 transition duration-300 hover:border-cyan-400/70 hover:bg-slate-900">
@@ -143,11 +143,11 @@ export default function Homepage() {
                   3D spatial workspace - design, collaborate, and explore in real-time
                 </div>
               </Link>
-              <Link href="/wonder-build/studio"
+              <Link href="/wonder-build/builder"
                 className="px-6 py-3 border border-green-500/30 bg-green-500/10 rounded-lg text-white font-semibold hover:bg-green-500/20 transition group relative">
                 🤖 WonderBuild
                 <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-green-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Describe what you want — build it with AI Studio
+                  Visual drag-drop builder for websites & apps
                 </div>
               </Link>
               <a href="/wonder-build/agent"

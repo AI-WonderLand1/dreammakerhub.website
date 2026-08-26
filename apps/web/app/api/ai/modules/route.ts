@@ -70,33 +70,26 @@ async function fetchGoogleAIModels(): Promise<RegistryModule[]> {
   if (!apiKey) return [];
 
   try {
-    // Return static list of Google AI Models
-    const models: RegistryModule[] = [
-      {
-        id: "google-gemini-pro",
-        name: "Gemini Pro",
-        description: "Google's Gemini Pro model for versatile AI tasks",
-        category: "chat",
-        source: "google",
-        private: false,
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+      headers: {
+        'x-goog-api-key': apiKey,
       },
-      {
-        id: "google-gemini-ultra",
-        name: "Gemini Ultra",
-        description: "Google's most capable Gemini model for complex reasoning",
-        category: "chat",
-        source: "google",
-        private: false,
-      },
-      {
-        id: "google-gemini-nano",
-        name: "Gemini Nano",
-        description: "Efficient Gemini model for on-device tasks",
-        category: "chat",
-        source: "google",
-        private: false,
-      },
-    ];
+    });
+
+    if (!response.ok) {
+      logger.error("Google AI Models API error", { status: response.status });
+      return [];
+    }
+
+    const data = await response.json();
+    const models: RegistryModule[] = (data.models || []).map((model: any) => ({
+      id: `google-${model.name?.replace('models/', '') || 'unknown'}`,
+      name: model.displayName || model.name?.replace('models/', '') || 'Unknown Model',
+      description: model.description || 'Google AI model',
+      category: 'chat',
+      source: 'google',
+      private: false,
+    }));
 
     return models;
   } catch (error) {

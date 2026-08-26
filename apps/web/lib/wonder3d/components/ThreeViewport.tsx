@@ -482,14 +482,14 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
           // Rotate & Project Vertices
           const projected = rawVertices.map(([vx, vy, vz]) => {
             const len = Math.sqrt(vx*vx + vy*vy + vz*vz);
-            let x = (vx / len);
-            let y = (vy / len);
-            let z = (vz / len);
+            const x = (vx / len);
+            const y = (vy / len);
+            const z = (vz / len);
 
-            let x1 = x * Math.cos(angleY) - z * Math.sin(angleY);
-            let z1 = x * Math.sin(angleY) + z * Math.cos(angleY);
-            let y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
-            let z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
+            const x1 = x * Math.cos(angleY) - z * Math.sin(angleY);
+            const z1 = x * Math.sin(angleY) + z * Math.cos(angleY);
+            const y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
+            const z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
 
             const fov = 3.5;
             const dist = fov / (fov + z2 * 0.5);
@@ -614,7 +614,7 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
     loadCustomModel();
 
     // 7. Animation Loop
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
@@ -747,8 +747,6 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
         break;
       }
     }
-  };
-
   };
 
   // Update Lighting Rig

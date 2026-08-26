@@ -10,7 +10,7 @@ export const menuItems: NavMenuItem[] = [
       { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
       { name: "AI Studio", href: "/wonder-build/studio", icon: "🧠" },
       { name: "Visual Builder", href: "/wonder-build/builder", icon: "🎨" },
-      { name: "Templates", href: "/wonder-build/templates", icon: "📄" },
+      { name: "Templates", href: "/wonder-build", icon: "📄" },
     ],
   },
   {
@@ -81,7 +81,7 @@ export const PLANS: Plan[] = [
     price: "$0",
     period: "/forever",
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
-    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "ai-wonderland.app subdomain"],
+    bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
     cta: "Start Wandering, It's Free",
     href: "/public-pages/auth",
     highlight: false,
@@ -91,7 +91,7 @@ export const PLANS: Plan[] = [
     id: "pro",
     name: "The Architect",
     tier: "Pro",
-    price: "$35",
+    price: "$39",
     period: "/mo",
     desc: "For builders who are serious about shipping. Full creative power, one subscription.",
     bullets: [
@@ -108,7 +108,7 @@ export const PLANS: Plan[] = [
     id: "team",
     name: "The Guild",
     tier: "Team",
-    price: "$149",
+    price: "$129",
     period: "/mo",
     desc: "Built for agencies and studios who ship together. Collaborate, iterate, and deliver, without the chaos.",
     bullets: [

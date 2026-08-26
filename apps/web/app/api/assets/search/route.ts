@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q") || "3d model";
-    let source = searchParams.get("source");
+    const source = searchParams.get("source");
     const allowedSources = ["playcanvas", "sketchfab", "poly-haven", "all"] as const;
     const sourceValue = (allowedSources.includes(source as any) ? source : "all") as typeof allowedSources[number];
     const limit = parseInt(searchParams.get("limit") || "10", 10);

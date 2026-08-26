@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 const features = [
   {
     title: "AI Playground",
-    description: "Train, create, and test AI modules with WonderBuild at ai-wonderland.app.",
+    description: "Train, create, and test AI modules with WonderBuild at dreammakerhub.website.",
     included: "Personal",
   },
   {

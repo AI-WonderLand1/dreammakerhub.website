@@ -60,7 +60,7 @@ word-break: break-word !important;
         <div>
           <p>This Privacy Notice for <strong>AI-WONDERLAND INOVATION</strong> (doing business as <a href="mailto:aiwonderland@zohomail.com">aiwonderland@zohomail.com</a>), describes how and why we may access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:</p>
           <ul className="mt-2">
-            <li>Visit our website at <a href="https://ai-wonderland.app" target="_blank">https://ai-wonderland.app</a></li>
+            <li>Visit our website at <a href="https://dreammakerhub.website" target="_blank">https://dreammakerhub.website</a></li>
             <li>Engage with us in other related ways, including any marketing or events</li>
           </ul>
           <p>Questions or concerns? Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services.</p>

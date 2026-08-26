@@ -17,8 +17,7 @@ export function AIWorkflowInput() {
 
   function launch() {
     if (!prompt.trim()) return;
-    const params = new URLSearchParams({ prompt, type: 'website' });
-    router.push(`/wonder-build/studio?${params.toString()}`);
+    router.push(`/wonder-build/builder?${new URLSearchParams({ prompt, type: 'website' }).toString()}`);
   }
 
   return (
