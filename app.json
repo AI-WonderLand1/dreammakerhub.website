@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "582a9688-3a54-4c9a-a4d4-2fc6fe365893"
+      }
+    },
+    "android": {
+      "package": "com.dreammakerhub.website"
+    }
+  }
+}
