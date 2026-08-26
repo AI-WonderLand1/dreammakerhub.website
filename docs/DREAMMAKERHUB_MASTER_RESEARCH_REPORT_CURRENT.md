@@ -1,6 +1,6 @@
 # DreamMakerHub Master Technical & Commercial Research Report — Current Snapshot
 
-_Last verified: 2026-08-25_
+_Last verified: 2026-08-26_
 
 > Historical evidence remains in `DREAMMAKERHUB_MASTER_RESEARCH_REPORT.md` and the dated `docs/research/` addenda. This file is the current consolidated snapshot.
 
@@ -14,7 +14,7 @@ It is **not production-safe as one unified commercial product yet**. The highest
 
 ### `AI-WonderLand1/dreammakerhub.website`
 
-Current `Master`: `4f03c21ac1a585b9b91f13d9a2d688d66548fc80` (2026-08-24). No newer code commit was found in the 2026-08-25 run.
+Current `Master`: `70c0346b64efa41625c9c3bc658701efabce0f36` (2026-08-25). The latest commit revised README commercial terms.
 
 Verified:
 - Real OpenRouter transport with free-model fallback.
@@ -24,6 +24,7 @@ Verified:
 - Engine adapter architecture and Spatial/Gaussian-splat integration.
 - Real Expo/EAS mobile shell.
 - Real Stripe checkout API and Stripe webhook code.
+- Root `package.json` currently declares `ws` as a production dependency, so the root monorepo has the WebSocket runtime even though the standalone WonderPlay package does not.
 
 Newly verified gaps:
 - `/api/build/stream` accepts anonymous requests, performs multiple model calls, and does not visibly enforce per-build quotas/rate limits or usage deduction. The Reviewer call does not pass the paid flag and therefore uses the free/default model path.
@@ -34,6 +35,8 @@ Newly verified gaps:
 - Billing state is split across `user_profiles.subscription_plan`, `profiles.plan`, `subscriptions`, and Auth `app_metadata.plan`.
 - `unified-ai/route.ts` still has a default chat path to deleted `/api/spirit-guide/chat`; newer Spirit Guide routing correctly points to `/api/chat`. This is a concrete stale-route regression.
 - `CoderAPIWrapper.createWorkspace()` stores a locally generated UUID and then polls Coder using that local UUID instead of the Coder workspace ID returned by the create call.
+- The 2026-08-25 README revision now declares the website/source proprietary and confidential, but the repository still contains a root MIT `LICENSE`. This is a direct licensing contradiction that must be resolved before commercial distribution or sponsor representations.
+- The same README still contains stale `npc-sim` references even though the NPC simulation package was removed in earlier cleanup. Documentation needs reconciliation with the current implementation.
 
 ### `AI-WonderLand1/AI-PLAYGROUND`
 
@@ -50,6 +53,7 @@ Known gaps:
 - The inspected AI-PLAYGROUND server has a Stripe webhook consumer but no standalone checkout-session creation route; commercial checkout remains centered in DreamMakerHub unless another integration is proven.
 - `ApiKeysView.tsx` stores API-key records in browser `localStorage` and locally generates token-shaped strings. It also contains several `sk-or-v1-...`-shaped fixtures. Their live validity is unproven; if any are real they must be rotated.
 - Anthropic's browser-access header is present on a server-side request path and is unnecessary there.
+- `package.json` confirms this repo is a separate Vite/Express application rather than a workspace package of DreamMakerHub, so cross-repo provider/auth/billing contracts must be treated as integration boundaries, not shared runtime modules.
 
 ### `AI-WonderLand1/wonderplay-3D`
 
@@ -66,7 +70,7 @@ Known gaps:
 - `/live-npc` contains simulated thinking/randomized visemes; full provider-backed dialogue is not proven end-to-end.
 - Subscription routes are in-memory.
 - Gemini API keys may be supplied directly in request bodies.
-- `ws` is dynamically imported but is not a declared runtime dependency in `package.json`; Bun lock/build supply remains unresolved.
+- The standalone `wonderplay-3D/package.json` declares `@types/ws` only and does not declare the `ws` runtime package; the server's WebSocket path therefore needs an explicit runtime dependency/build verification even though the parent DreamMakerHub monorepo declares `ws`.
 - Full HTTP upgrade wiring for the `noServer` WebSocket instance is not proven.
 
 ### Vanguard repositories
@@ -81,6 +85,10 @@ Genuinely implemented: server-side AI transport, multiple providers, authenticat
 
 Still scaffolding/simulated/unproven: WonderPlay live-NPC loop, WonderPlay in-memory subscriptions, old public builder route, Replicate/Hugging Face providers, mobile build API parity, pipeline dependency-output execution, browser/localStorage API-key management as a secure credential system, full native Android renderer execution, canonical billing entitlement, and the stale unified-chat route.
 
+## Licensing / IP status
+
+The repository now contains conflicting commercial statements. Commit `70c0346` changed `README.md` from an MIT-style statement to proprietary/confidential commercial terms, while the root `LICENSE` file still contains the MIT License. The scope of the MIT license therefore needs explicit correction before the project is marketed as proprietary or sponsors are told what rights they receive. Third-party dependencies also include PlayCanvas, Three.js, Gaussian Splatting, GLTF Transform, WebContainer, Supabase, Stripe, and other libraries whose licenses must be inventoried separately from first-party code.
+
 ## P0 blockers before public commercial scale
 
 1. Canonicalize billing tables and Stripe entitlement state.
@@ -90,6 +98,7 @@ Still scaffolding/simulated/unproven: WonderPlay live-NPC loop, WonderPlay in-me
 5. Keep service-role operations server-side.
 6. Make every paid feature read one canonical entitlement source.
 7. Replace hard-coded public Stripe Payment Links with plan/interval-aware server checkout.
+8. Resolve the README-vs-root-MIT licensing contradiction before commercial licensing/sponsorship claims.
 
 ## P1 blockers
 
@@ -103,9 +112,11 @@ Still scaffolding/simulated/unproven: WonderPlay live-NPC loop, WonderPlay in-me
 8. Prove code-sharing/migration relationships among engine lineages.
 9. Remove stale `/api/spirit-guide/chat` references from unified chat routing.
 10. Runtime-test server-side auth resolution in `/api/build/stream` and replace the relative-fetch helper with direct server auth if the test confirms silent fallback.
+11. Reconcile stale README/NPC-sim claims with deleted packages and current architecture.
+12. Add/verify `ws` as a runtime dependency in the standalone WonderPlay deployment if its WebSocket server remains deployed independently.
 
 ## Next research chain
 
-**Stripe UI selection -> dynamic checkout API -> Stripe webhook -> canonical entitlement -> Auth/plan gate -> `/api/chat` and `/api/build/stream` -> usage accounting -> AI provider -> artifact persistence -> WebContainer/Coder workspace -> realtime event -> mobile/native engine parity.**
+**License scope -> Stripe UI selection -> dynamic checkout API -> Stripe webhook -> canonical entitlement -> Auth/plan gate -> `/api/chat` and `/api/build/stream` -> usage accounting -> AI provider -> artifact persistence -> WebContainer/Coder workspace -> realtime event -> WonderPlay NPC runtime -> mobile/native engine parity.**
 
-See `docs/research/2026-08-25-latest-findings.md` for today's detailed evidence and unresolved dependencies.
+See `docs/research/2026-08-26-latest-findings.md` for today's detailed evidence and unresolved dependencies.
