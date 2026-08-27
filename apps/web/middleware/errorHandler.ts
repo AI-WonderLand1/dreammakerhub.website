@@ -21,8 +21,6 @@ export class AppError extends Error implements ApiError {
     this.details = details;
   }
 }
-  }
-}
 
 // Common error types
 export class ValidationError extends AppError {
