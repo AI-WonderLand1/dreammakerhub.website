@@ -1,122 +1,128 @@
 # DreamMakerHub Master Technical & Commercial Research Report — Current Snapshot
 
-_Last verified: 2026-08-26_
+_Last verified: 2026-08-27_
 
 > Historical evidence remains in `DREAMMAKERHUB_MASTER_RESEARCH_REPORT.md` and the dated `docs/research/` addenda. This file is the current consolidated snapshot.
 
 ## Current verdict
 
-DreamMakerHub is a substantial early-stage platform, not a simple mockup. It contains real AI transport, model routing, usage/realtime infrastructure, a multi-stage AI builder, Coder/Kubernetes workspace infrastructure, a browser-local WebContainer IDE, engine adapters, Spatial/Gaussian-splat integration, a real Expo/EAS mobile shell, and separate native C++/Vulkan Vanguard engine efforts.
+DreamMakerHub is a substantial early-stage platform, not a simple mockup. It contains real AI transport/model routing, authenticated premium chat, usage/realtime infrastructure, a multi-stage AI builder, Coder/Kubernetes workspace infrastructure, a browser-local WebContainer IDE, engine adapters, Spatial/Gaussian-splat integration, a real Expo/EAS mobile shell, and separate native C++/Vulkan engine efforts.
 
-It is **not production-safe as one unified commercial product yet**. The highest-risk areas are billing/entitlement canonicalization, anonymous build-cost exposure, stale unified-AI routing, Coder workspace identity, incomplete pipeline execution, WonderPlay's simulated live-NPC loop, mobile API parity, native Android renderer defects, and unresolved licensing/IP boundaries across multiple engine repositories.
+It is **not production-safe as one unified commercial product yet**. The highest-risk areas are canonical billing/entitlement, anonymous build-cost exposure, false-success build persistence, incomplete pipeline-to-engine execution, Coder workspace identity, mobile dependency/project identity, licensing/IP contradictions, and disconnected sponsorship payment collection.
 
 ## Repository map
 
 ### `AI-WonderLand1/dreammakerhub.website`
 
-Current `Master`: `70c0346b64efa41625c9c3bc658701efabce0f36` (2026-08-25). The latest commit revised README commercial terms.
+Current connected `Master` tree was last observed at merge `d480925a29c1c9b13ed972acaae6e01275ac8c38` before today's research commit; today's research addendum is now committed on `Master` as `5e23a814edbd7deba9623b7396a9805805059ceb`.
 
 Verified:
 - Real OpenRouter transport with free-model fallback.
 - Authenticated premium chat plus usage/realtime infrastructure.
-- Real multi-stage `/api/build/stream` builder.
+- Real multi-stage `/api/build/stream` AI generation.
+- Direct pipeline-v1 AI runtime that calls `runModel`, performs constitutional checks, and emits pipeline status.
 - Real Coder/Kubernetes workspace infrastructure and browser-local WebContainer IDE.
 - Engine adapter architecture and Spatial/Gaussian-splat integration.
-- Real Expo/EAS mobile shell.
-- Real Stripe checkout API and Stripe webhook code.
-- Root `package.json` currently declares `ws` as a production dependency, so the root monorepo has the WebSocket runtime even though the standalone WonderPlay package does not.
+- Real Expo/EAS mobile shell and Android/iOS packaging configuration.
+- Real Stripe Checkout Session endpoint and Stripe webhook signature verification.
+- Published Founding Sponsorship program and GitHub funding metadata.
 
 Newly verified gaps:
-- `/api/build/stream` accepts anonymous requests, performs multiple model calls, and does not visibly enforce per-build quotas/rate limits or usage deduction. The Reviewer call does not pass the paid flag and therefore uses the free/default model path.
-- `getAuthUser()` treats only Auth `app_metadata.plan === 'pro'` as paid. The Stripe webhook writes `profiles.plan` and `subscriptions`; the inspected path does not prove Auth metadata is updated.
-- `getAuthUser()` also performs a relative `fetch('/api/auth/session')` even though it is imported by the server-side build route; because errors are swallowed and returned as `null`, this path must be runtime-tested for silent fallback to anonymous/free status.
-- Public subscription and checkout UI use one hard-coded Stripe Payment Link instead of the dynamic `/api/subscription/subscribe` endpoint, so selected plan/annual interval are not proven to reach Stripe correctly.
-- Free-plan ensure writes `profiles.plan`, while migration `009_create_profiles_and_projects.sql` creates `user_profiles.subscription_plan`; the inspected migration does not establish the `profiles.plan` schema assumed by `ensure`.
-- Billing state is split across `user_profiles.subscription_plan`, `profiles.plan`, `subscriptions`, and Auth `app_metadata.plan`.
-- `unified-ai/route.ts` still has a default chat path to deleted `/api/spirit-guide/chat`; newer Spirit Guide routing correctly points to `/api/chat`. This is a concrete stale-route regression.
-- `CoderAPIWrapper.createWorkspace()` stores a locally generated UUID and then polls Coder using that local UUID instead of the Coder workspace ID returned by the create call.
-- The 2026-08-25 README revision now declares the website/source proprietary and confidential, but the repository still contains a root MIT `LICENSE`. This is a direct licensing contradiction that must be resolved before commercial distribution or sponsor representations.
-- The same README still contains stale `npc-sim` references even though the NPC simulation package was removed in earlier cleanup. Documentation needs reconciliation with the current implementation.
+- `/api/build/stream` accepts anonymous requests, makes multiple model calls, and does not visibly enforce per-build quota/rate limits or usage deduction. Reviewer omits the paid flag and therefore uses the default/free model path.
+- The build Runner reports success but does not persist output: `manifestVisualBlock` currently returns its first argument unchanged; `route.ts` then reads `.path` from the returned string. `savedPath` therefore becomes undefined and no block file is written.
+- `engine/core/ai/pipeline-v1/runtime/pipeline.ts` is real direct AI execution, but `engine/core/pipelines.ts` is a separate incomplete bridge. It references an undefined/unimported `compilePipelineToGraph`, returns placeholder text from `getAIResponse`, returns expressions unchanged, and calls Base64 encoding “encryption.”
+- `engine/core/execution/executor.ts` calls `graph.getAllNodes()` even though the current `ExecutionGraph` type only exposes a `nodes` record. Its input resolver explicitly does not map dependency outputs.
+- `getAuthUser()` treats only Auth `app_metadata.plan === 'pro'` as paid and performs a relative server-side `fetch('/api/auth/session')` while swallowing failures to null.
+- Stripe webhook writes `profiles.plan` and `subscriptions`, while migration `009_create_profiles_and_projects.sql` creates `user_profiles.subscription_plan`; no inspected path proves Auth `app_metadata.plan` is synchronized.
+- The public checkout page uses one hard-coded Stripe Payment Link instead of the dynamic `/api/subscription/subscribe` endpoint, so selected plan/annual interval are not proven to reach Stripe correctly.
+- `user_profiles` RLS permits owners to update their whole row, including subscription and usage-limit fields. These fields are not clearly server-controlled.
+- Sponsorship copy is published, but `SPONSORSHIP.md` still says the sponsorship/payment link and business contact are “To be added.” `.github/FUNDING.yml` only points to Ko-fi and the website; no tier-aware sponsor checkout is wired.
+- README now presents proprietary/confidential commercial terms while the root `LICENSE` grants MIT rights. This is a direct licensing contradiction.
+- Commit `28cf239...` changed mobile to Expo `^53.0.27`, React Native `^0.72.17`, and React `19.1.0` without updating the package-lock. Expo's SDK 53 compatibility matrix targets React Native 0.79 and React 19.0.0, so the manifest is internally misaligned.
+- Root `app.json` and `apps/mobile/app.json` use different EAS project IDs while sharing the same Android package ID `com.dreammakerhub.website`.
+- `CoderAPIWrapper.createWorkspace()` stores a locally generated UUID and then polls Coder using that local UUID instead of the actual Coder workspace ID returned by the create call.
 
 ### `AI-WonderLand1/AI-PLAYGROUND`
 
-Current `main` is directly accessible; workflow-template work was merged 2026-08-21.
-
-Verified:
-- Real provider registry for OpenRouter, OpenAI, Anthropic, Groq, Mistral, Cohere, Together, Fireworks, DeepSeek, Perplexity, xAI and Google Gemini.
-- Workflow-template/AI canvas work merged into the main experience.
-- CORS allowlisting, chat/stream/template rate limits, Wonderland-key validation, and raw-body Stripe webhook verification.
-- Real Stripe webhook consumer and Supabase subscription persistence.
-
-Known gaps:
-- Replicate and Hugging Face providers are explicit stubs: empty request builders and empty-response parsers.
-- The inspected AI-PLAYGROUND server has a Stripe webhook consumer but no standalone checkout-session creation route; commercial checkout remains centered in DreamMakerHub unless another integration is proven.
-- `ApiKeysView.tsx` stores API-key records in browser `localStorage` and locally generates token-shaped strings. It also contains several `sk-or-v1-...`-shaped fixtures. Their live validity is unproven; if any are real they must be rotated.
-- Anthropic's browser-access header is present on a server-side request path and is unnecessary there.
-- `package.json` confirms this repo is a separate Vite/Express application rather than a workspace package of DreamMakerHub, so cross-repo provider/auth/billing contracts must be treated as integration boundaries, not shared runtime modules.
+The connected GitHub installation does **not currently expose this repository directly in the repository list**, so no new source-level claims were made today. Earlier verified evidence remains: real provider registry, workflow-template work, CORS/rate limits, Wonderland-key validation, and Stripe webhook persistence; Replicate and Hugging Face remain explicit provider stubs in the previously inspected source.
 
 ### `AI-WonderLand1/wonderplay-3D`
 
-Current `main`: `aaf1f7b` (2026-08-22).
-
-Verified:
-- Real Gemini NPC tactical reasoning, vision and video analysis.
-- Three.js/PlayCanvas-oriented 3D builder code.
-- New builder component tree and asset/NPC tooling.
-- WebSocket server code.
-
-Known gaps:
-- Public `/builder` still routes to the older `BuilderPage`.
-- `/live-npc` contains simulated thinking/randomized visemes; full provider-backed dialogue is not proven end-to-end.
-- Subscription routes are in-memory.
-- Gemini API keys may be supplied directly in request bodies.
-- The standalone `wonderplay-3D/package.json` declares `@types/ws` only and does not declare the `ws` runtime package; the server's WebSocket path therefore needs an explicit runtime dependency/build verification even though the parent DreamMakerHub monorepo declares `ws`.
-- Full HTTP upgrade wiring for the `noServer` WebSocket instance is not proven.
+The connected GitHub installation does **not currently expose this repository directly in the repository list**, so no new source-level claims were made today. Earlier verified evidence remains: real Gemini NPC tactical/vision/video endpoints, 3D builder components, WebSocket server code, and the unresolved simulated live-NPC loop/runtime wiring.
 
 ### Vanguard repositories
 
-`MOBILEAPP-VANGUARD-ENGINE` and `vanguard-engine` both expose the same broad C++20/23 Actor/Component/SceneGraph, reflection, Vulkan 1.3, Jolt, Dear ImGui, Tracy, and Next.js Engine Architect Studio architecture. This strongly indicates a shared/duplicated lineage, but no explicit migration manifest or cross-repository ancestry proof was found. Treat them as parallel lineages until ancestry is traced.
-
-`MOBILEAPP-VANGUARD-ENGINE` has concrete native blockers: GLSL is passed directly to `vkCreateShaderModule` instead of SPIR-V; Android swapchain extent fallback does not store `ANativeWindow_getWidth/Height` return values; generic Vulkan surface creation remains unresolved; and full native CMake/APK build success is not independently proven.
+Earlier evidence remains: `MOBILEAPP-VANGUARD-ENGINE` and `vanguard-engine` expose broad C++20/23 Actor/Component/SceneGraph, reflection, Vulkan 1.3, Jolt, Dear ImGui, Tracy, and Next.js Engine Architect Studio architecture. `MOBILEAPP-VANGUARD-ENGINE` has verified native blockers including GLSL-to-SPIR-V handling and Android swapchain/surface issues. These repositories are not currently exposed through the connected repository list, so no new source-level claims were made today.
 
 ## Genuine implementation vs scaffolding
 
-Genuinely implemented: server-side AI transport, multiple providers, authenticated premium chat, usage/realtime infrastructure, multi-stage AI generation/review, Coder/Kubernetes workspaces, WebContainer IDE, engine adapters, Spatial/Gaussian-splat path, Gemini NPC analysis, mobile packaging, and real Stripe webhook persistence.
+### Genuinely implemented / substantially real
+- Server-side OpenRouter transport and model fallback.
+- Authenticated premium chat and usage/realtime infrastructure.
+- Multi-stage Architect/Builder/Reviewer AI generation.
+- Direct pipeline-v1 AI runtime.
+- Coder/Kubernetes workspace API integration.
+- Browser-local WebContainer IDE architecture.
+- Engine adapters and Spatial/Gaussian-splat path.
+- Stripe checkout-session creation and webhook signature verification.
+- Expo/EAS project configuration and mobile shell.
+- Founding sponsorship documentation.
 
-Still scaffolding/simulated/unproven: WonderPlay live-NPC loop, WonderPlay in-memory subscriptions, old public builder route, Replicate/Hugging Face providers, mobile build API parity, pipeline dependency-output execution, browser/localStorage API-key management as a secure credential system, full native Android renderer execution, canonical billing entitlement, and the stale unified-chat route.
+### Scaffolding / incomplete / unsafe for commercial scale
+- Build Runner persistence (`manifestVisualBlock` no-op / false-success event).
+- Pipeline-to-engine compiler and graph executor integration.
+- Canonical Stripe entitlement synchronization.
+- Client-controlled subscription/quota fields under current RLS.
+- Anonymous build cost exposure and missing quota enforcement.
+- Dedicated sponsor payment collection.
+- Proprietary-vs-MIT licensing boundary.
+- Mobile Expo/RN dependency alignment and EAS project identity.
+- Coder workspace ID mapping.
+- WonderPlay live-NPC production loop, based on prior direct inspection.
 
 ## Licensing / IP status
 
-The repository now contains conflicting commercial statements. Commit `70c0346` changed `README.md` from an MIT-style statement to proprietary/confidential commercial terms, while the root `LICENSE` file still contains the MIT License. The scope of the MIT license therefore needs explicit correction before the project is marketed as proprietary or sponsors are told what rights they receive. Third-party dependencies also include PlayCanvas, Three.js, Gaussian Splatting, GLTF Transform, WebContainer, Supabase, Stripe, and other libraries whose licenses must be inventoried separately from first-party code.
+The repository now contains conflicting commercial statements. `README.md` presents proprietary/confidential terms while root `LICENSE` contains the MIT License, including rights to use, copy, modify, publish, distribute, sublicense, and sell the Software. The scope of the MIT license therefore needs explicit correction before the project is marketed as proprietary or sponsors are told what rights they receive. Third-party dependencies must also be inventoried separately from first-party code.
+
+## Commercial readiness
+
+### Sponsorship
+The public sponsorship program is ready as an offer document, with Dreamer/Creator/Architect/Studio/Enterprise tiers and monthly/quarterly/annual pricing. It is **not yet connected to a dedicated sponsor payment flow**. GitHub funding metadata currently points to Ko-fi (`wonderingtribe`) and the project website.
+
+### Subscriptions
+The subscription architecture has real Stripe components, but the public checkout bypasses the dynamic server endpoint and the webhook/entitlement records are split across `profiles`, `subscriptions`, `user_profiles`, and Auth metadata.
+
+### AI cost control
+The normal chat path has authentication and usage infrastructure, but `/api/build/stream` can execute multiple model calls without a visible per-build quota/rate-limit gate. This is a direct cost-abuse risk until fixed.
 
 ## P0 blockers before public commercial scale
 
 1. Canonicalize billing tables and Stripe entitlement state.
 2. Make subscription/limit fields server-controlled.
-3. Replace/harden anonymous `/api/build/stream` with quotas, rate limits and usage metering.
+3. Require authenticated build access or explicitly meter anonymous builds with hard limits.
 4. Make AI/compute quota consumption atomic.
 5. Keep service-role operations server-side.
 6. Make every paid feature read one canonical entitlement source.
-7. Replace hard-coded public Stripe Payment Links with plan/interval-aware server checkout.
-8. Resolve the README-vs-root-MIT licensing contradiction before commercial licensing/sponsorship claims.
+7. Replace the hard-coded public Stripe Payment Link with plan/interval-aware server checkout.
+8. Fix the build Runner so “save” actually persists and returns a real path.
+9. Resolve the README-vs-root-MIT licensing contradiction.
+10. Add a real sponsor payment/collection path before promoting “sponsorship available” as immediately payable.
 
 ## P1 blockers
 
-1. Complete pipeline execution/dataflow semantics.
+1. Complete pipeline-to-engine graph compilation and dependency-output mapping.
 2. Fix Coder workspace ID polling and verify Supabase -> Coder identity mapping.
 3. Decide/document WebContainer vs Coder workspace boundaries.
-4. Connect mobile to a real authenticated build contract.
-5. Wire WonderPlay live-NPC to a provider-backed runtime and remove simulated visemes.
-6. Fix native Android Vulkan shader/swapchain defects and prove an APK build.
+4. Align Expo/React Native versions and reconcile EAS project IDs; update lockfiles and prove an APK build.
+5. Connect mobile to a real authenticated build contract.
+6. Wire WonderPlay live-NPC to a provider-backed runtime and remove simulated visemes.
 7. Complete SBOM/license/IP mapping.
 8. Prove code-sharing/migration relationships among engine lineages.
-9. Remove stale `/api/spirit-guide/chat` references from unified chat routing.
+9. Remove stale README/NPC-sim claims and keep documentation synchronized with deleted packages.
 10. Runtime-test server-side auth resolution in `/api/build/stream` and replace the relative-fetch helper with direct server auth if the test confirms silent fallback.
-11. Reconcile stale README/NPC-sim claims with deleted packages and current architecture.
-12. Add/verify `ws` as a runtime dependency in the standalone WonderPlay deployment if its WebSocket server remains deployed independently.
 
 ## Next research chain
 
-**License scope -> Stripe UI selection -> dynamic checkout API -> Stripe webhook -> canonical entitlement -> Auth/plan gate -> `/api/chat` and `/api/build/stream` -> usage accounting -> AI provider -> artifact persistence -> WebContainer/Coder workspace -> realtime event -> WonderPlay NPC runtime -> mobile/native engine parity.**
+**Canonical entitlement -> quota enforcement -> build persistence -> pipeline-to-engine compiler -> mobile dependency/build state -> EAS project identity -> WonderPlay live-NPC runtime -> cross-repository API contracts -> licensing/SBOM.**
 
-See `docs/research/2026-08-26-latest-findings.md` for today's detailed evidence and unresolved dependencies.
+See `docs/research/2026-08-27-latest-findings.md` for today's detailed evidence.
