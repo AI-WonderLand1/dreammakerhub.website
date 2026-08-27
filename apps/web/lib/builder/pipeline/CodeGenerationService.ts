@@ -41,8 +41,8 @@ export class CodeGenerationService {
     const elements = useBuilderStore.getState().elements;
     const html = generateFullHtml(elements);
     const css = generateFullCss(elements);
-    const js = `;(function(){window.__BUILDER_STATE__=${JSON.stringify({ elements, version: 1 })};console.log("[Builder] Project loaded",new Date().toISOString());})();`;
 
+    const js = `;(function(){window.__BUILDER_STATE__=${JSON.stringify({ elements, version: 1 })};if (process.env.NODE_ENV !== 'production') { console.log("[Builder] Project loaded",new Date().toISOString()); }})();`;
     const payload = {
       html, css, js,
       files: [
