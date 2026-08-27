@@ -16,7 +16,7 @@
 - **[✓]** Disabled unsafe CSP report-only mode  
 - **[✓]** Disabled `ignoreBuildErrors: true` type checking  
 
-#### Issues Verified vs. todo.md
+#### Issues Verified vs. notes/todo.md
 
 | ID | File | Status | Verified |
 |----|------|--------|----------|

@@ -78,7 +78,7 @@ The current `server/stripe-webhook.ts` verifies Stripe signatures and writes sub
 
 ## 8. AI-PLAYGROUND still has explicit unresolved production items
 
-The repository's current `todo.md` records:
+The repository's current `notes/todo.md` records:
 
 - Replicate/Hugging Face providers are still stubs.
 - Browser/localStorage provider keys in `src/utils/nodeExec.ts` still need a backend/security decision.
