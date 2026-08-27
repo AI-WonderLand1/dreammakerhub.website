@@ -5,19 +5,24 @@
     "apps/*",
     "packages/*"
   ],
-  "overrides": {
+"overrides": {
     "tar": ">=7.5.11",
     "engine.io-client": "^6.6.6",
     "postcss": "^8.5.20",
     "sharp": "^0.35.3",
     "@tootallnate/once": ">=2.0.1",
-    "hono": ">=4.6.0",
-    "@hono/node-server": ">=1.19.13",
+    "hono": "^4.13.0",
+    "@hono/node-server": "^1.19.13",
     "fast-xml-parser": ">=5.7.0",
     "brace-expansion": ">=2.0.1",
     "@prisma/dev": {
-      "@hono/node-server": ">=1.19.13"
+      "@hono/node-server": "^1.19.13"
     },
+    "@mediapipe/tasks-vision": ">=0.10.35",
+    "deepmerge-ts": "^8.0.0",
+    "js-yaml": "^4.3.0",
+    "nanoid": "^3.3.18"
+  },
     "@mediapipe/tasks-vision": ">=0.10.35"
   },
   "scripts": {
@@ -47,7 +52,6 @@
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "lodash-es": "^4.18.1",
-    "next": "^16.2.10",
     "prisma": "^7.8.0",
     "typescript": "^5.4.0",
     "typescript-eslint": "^8.61.0",
@@ -104,6 +108,7 @@
     "lucide-react": "^1.8.0",
     "mem0ai": "^3.0.9",
     "motion": "^12.40.0",
+    "next": "^16.2.10",
     "pg": "^8.20.0",
     "playcanvas": "^2.19.7",
     "postcss": "^8.5.20",

@@ -37,7 +37,24 @@ ARG SUPABASE_SERVICE_ROLE_KEY=""
 ENV SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
 RUN npm run build
 
-FROM node:20-alpine
+# Production-only dependency tree (no devDependencies).
+# Scripts are skipped because postinstall needs the prisma CLI (a devDependency);
+# the generated Prisma client is copied from the builder stage instead.
+FROM node:22-alpine AS prod-deps
+WORKDIR /app
+
+COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
+COPY packages/ide-engine/package*.json ./packages/ide-engine/
+COPY packages/optimizer/package*.json ./packages/optimizer/
+COPY packages/perf-assets/package*.json ./packages/perf-assets/
+COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
+
+RUN rm -f package-lock.json \
+ && DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy \
+    npm install --omit=dev --ignore-scripts --legacy-peer-deps
+
+FROM node:22-alpine
 WORKDIR /app
 
 COPY --from=builder /app/apps/web/.next ./.next
@@ -45,7 +62,9 @@ COPY --from=builder /app/apps/web/public ./public
 COPY --from=builder /app/apps/web/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/apps/web/package.json ./package.json
 
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps ./apps
 
