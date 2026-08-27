@@ -1,15 +1,33 @@
 {
   "expo": {
-    "name":"WonderSpace",
-    "slug":"wonderspace-mobile",
-    "version":"1.0.0",
-    "orientation":"portrait",
-    "userInterfaceStyle":"dark",
-    "scheme":"wonderspace",
-    "ios":{"supportsTablet":true,"bundleIdentifier":"com.aiwonderland.wonderspace"},
-    "android":{"package":"com.aiwonderland.wonderspace","adaptiveIcon":{"backgroundColor":"#07070b"}},
-    "plugins":["expo-router"],
-    "experiments":{"typedRoutes":true},
-    "extra":{"eas":{"projectId":"8f1bd6cb-c9b9-4a94-bd21-b30c47356ccd"}}
+    "name": "WonderSpace",
+    "slug": "dreammakerhub-open-ai-project",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "wonderspace",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dreammakerhub.website"
+    },
+    "android": {
+      "package": "com.dreammakerhub.website",
+      "adaptiveIcon": {
+        "backgroundColor": "#07070b"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8f1bd6cb-c9b9-4a94-bd21-b30c47356ccd"
+      }
+    },
+    "owner": "dreammakerhub"
   }
 }
+
