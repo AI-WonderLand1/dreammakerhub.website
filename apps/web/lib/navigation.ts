@@ -48,8 +48,8 @@ export const PAGES: NavPage[] = [
   { path: "/wonderspace/ide", label: "New Workspace", icon: "🚀", category: "workspace", description: "Launch a named cloud IDE workspace." },
   { path: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: "🤖", category: "workspace", description: "Chat with models, test prompts, and run agent workflows.", external: true },
   // 3D — WonderPlay
-  { path: "/dashboard/3dhub", label: "WonderPlay 3D", icon: "🎮", category: "tools", description: "Create 3D scenes, 360 views, games and movies — then open them in the PlayCanvas editor." },
-  { path: "/wonder-play", label: "WonderPlay App", icon: "🌐", category: "tools", description: "Launch the external WonderPlay 3D runtime.", external: true },
+  { path: "/dashboard/3dhub", label: "NPC AI SIM", icon: "🎮", category: "tools", description: "Create 3D scenes, 360 views, games and movies — then open them in the PlayCanvas editor." },
+  { path: "/wonder-play", label: "WonderPlay App", icon: "🌐", category: "tools", description: "Launch the external NPC AI SIM runtime.", external: true },
   // Community & docs
   { path: "/community", label: "Community", icon: "👥", category: "community", description: "Join builders and office hours." },
   { path: "/docs", label: "Docs", icon: "📖", category: "docs", description: "Read API and architecture docs." },
@@ -96,7 +96,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     icon: "🎮",
     href: "/dashboard/3dhub",
     items: [
-      { label: "WonderPlay 3D", href: "/dashboard/3dhub", description: "Create 3D scenes, 360 views, games and movies by prompt." },
+      { label: "NPC AI SIM", href: "/dashboard/3dhub", description: "Create 3D scenes, 360 views, games and movies by prompt." },
       { label: "PlayCanvas Editor", href: "/wonder-build/playcanvas", description: "Open the PlayCanvas scene editor for games and movies." },
       { label: "WonderPlay App", href: "/wonder-play", description: "Launch the external WonderPlay runtime.", external: true },
     ],

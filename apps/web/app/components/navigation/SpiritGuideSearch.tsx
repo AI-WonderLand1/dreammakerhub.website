@@ -44,9 +44,9 @@ const DESTINATIONS: Destination[] = [
     ] 
   },
   { 
-    label: "WonderPlay 3D", 
+    label: "NPC AI SIM", 
     href: "/wonder-build/playcanvas", 
-    hints: ["3d", "scene", "engine", "wonderplay"], 
+    hints: ["3d", "scene", "engine", "npc-ai-sim"], 
     aliases: [
       "3d", "3d editor", "3d builder", "threejs", "playcanvas editor", "scene", "webgl",
       "3d engine", "3d graphics", "three.js", "webgpu", "game engine", "game dev",

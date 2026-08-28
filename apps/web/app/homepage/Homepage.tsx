@@ -92,7 +92,7 @@ export default function Homepage() {
         <section className="relative mx-auto mb-10 w-full max-w-7xl px-6 sm:px-8">
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { src: "/images/3DWONDERPLAYIMAGE.webp", title: "WonderPlay 3D Worlds", href: "/wonder-build/playcanvas", tag: "3D Engine" },
+              { src: "/images/3DWONDERPLAYIMAGE.webp", title: "NPC AI SIM Worlds", href: "/wonder-build/playcanvas", tag: "3D Engine" },
               { src: "/images/3DSYSTEMSIMAGE.webp", title: "3D Systems & Scenes", href: "/dashboard/3dhub", tag: "3D Studio" },
               { src: "/images/3DPLAYIMAGE.webp", title: "3D Play Experience", href: "/wonder-build/playcanvas", tag: "PlayCanvas" },
             ].map((card) => (
@@ -257,7 +257,7 @@ export default function Homepage() {
               <div className="relative aspect-video w-full">
                 <Image
                   src="/images/3DWONDERPLAYIMAGE.webp"
-                  alt="WonderPlay 3D Editor preview"
+                  alt="NPC AI SIM Editor preview"
                   fill
                   className="object-cover opacity-90"
                   sizes="(max-width: 768px) 100vw, 768px"

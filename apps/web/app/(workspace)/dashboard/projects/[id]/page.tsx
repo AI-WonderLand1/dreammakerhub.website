@@ -118,7 +118,7 @@ export default function ProjectHubPage() {
             href={is3dType(project.tool) ? `/dashboard/3dhub?projectId=${project.id}` : `/wonder-build?projectId=${project.id}`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-3 py-2 text-xs font-bold text-white shadow-lg hover:opacity-90"
           >
-            <Pencil size={14} /> Open in {is3dType(project.tool) ? "WonderPlay 3D" : "Builder"}
+            <Pencil size={14} /> Open in {is3dType(project.tool) ? "NPC AI SIM" : "Builder"}
           </Link>
           <button
             onClick={handleDownloadZip}

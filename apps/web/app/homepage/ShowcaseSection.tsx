@@ -23,7 +23,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     badge: "Visual Builder",
   },
   {
-    id: "wonderplay",
+    id: "npc-ai-sim",
     title: "WonderPlay",
     description: "Real-time 3D world editor powered by PlayCanvas. Build immersive environments with physics, materials, lighting, and AI-assisted scene generation.",
     image: "/images/3DWONDERPLAYIMAGE.webp",

@@ -24,7 +24,7 @@ Build websites, apps, and interactive 3D experiences entirely by describing what
 | Tier | Price | Includes |
 |---|---|---|
 | **Nomad** | Free | 1 active project, 5 AI chats/day, community support |
-| **Architect** | $39/mo | Unlimited AI chats, WonderPlay 3D Engine, 1‑click deployment, custom domain |
+| **Architect** | $39/mo | Unlimited AI chats, NPC AI SIM Engine, 1‑click deployment, custom domain |
 | **Guild** | $129/mo | Everything in Architect + team seats, shared asset library, always‑on runners |
 
 ## 🚀 Quick start

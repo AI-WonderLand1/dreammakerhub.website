@@ -37,7 +37,7 @@ function SceneLibraryInner() {
             ← Back to Home
           </Link>
           <h1 className="text-3xl font-bold mt-4">AI Wonderland Scene Library</h1>
-          <p className="text-white/60 mt-2">Choose a starting world for your WonderPlay 3D project</p>
+          <p className="text-white/60 mt-2">Choose a starting world for your NPC AI SIM project</p>
         </div>
 
         {loading ? (

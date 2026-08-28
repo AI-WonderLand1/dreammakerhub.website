@@ -40,7 +40,7 @@ export type NpcRealtimeHandlers = {
  * Client-side real-time NPC bridge.
  *
  * Opens an EventSource to the edge function `/api/npc/live?npcId={npcId}` which relays
- * the wonderplay-3D engine WebSocket stream (voice, visemes, dialogue) privately for the
+ * the npc-ai-sim engine WebSocket stream (voice, visemes, dialogue) privately for the
  * authenticated user. Events are forwarded to the supplied handlers so the dashboard can
  * render live status or push them into the PlayCanvas WebGL runtime.
  */

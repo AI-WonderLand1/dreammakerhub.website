@@ -64,7 +64,7 @@ export default function PlayCanvasIsolatedPage() {
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 p-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold mb-2">WonderPlay 3D - Isolated Editor</h1>
+          <h1 className="text-2xl font-bold mb-2">NPC AI SIM - Isolated Editor</h1>
           <p className="text-gray-400">
             AI Wonderland's private WebContainer-based PlayCanvas 3D environment
           </p>

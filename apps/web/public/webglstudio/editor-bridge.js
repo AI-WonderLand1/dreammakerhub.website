@@ -1,4 +1,4 @@
-// WonderPlay 3D Studio Bridge
+// NPC AI SIM Studio Bridge
 // Runs INSIDE the self-hosted WebGL Studio editor iframe. Connects the
 // LiteScene engine to the host app via postMessage. Zero external
 // (playcanvas.com) dependencies.

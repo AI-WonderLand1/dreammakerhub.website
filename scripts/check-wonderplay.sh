@@ -2,8 +2,8 @@
 
 set -e
 
-NAMESPACE="WonderPlay"
-DEPLOYMENT="wonderplay"
+NAMESPACE="NPC AI SIM"
+DEPLOYMENT="npc-ai-sim"
 
 echo "=== Checking ${DEPLOYMENT} deployment in namespace ${NAMESPACE} ==="
 

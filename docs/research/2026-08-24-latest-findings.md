@@ -2,7 +2,7 @@
 
 ## Executive update
 
-This run re-verified the current `Master` branch of `dreammakerhub.website`, the current `main` branch of `wonderplay-3D`, and the current `main` branch of `AI-PLAYGROUND`. It also surfaced two additional AI-WonderLand repositories that materially change the mobile/custom-engine assessment: `MOBILEAPP-VANGUARD-ENGINE` and `vanguard-engine`.
+This run re-verified the current `Master` branch of `dreammakerhub.website`, the current `main` branch of `npc-ai-sim`, and the current `main` branch of `AI-PLAYGROUND`. It also surfaced two additional AI-WonderLand repositories that materially change the mobile/custom-engine assessment: `MOBILEAPP-VANGUARD-ENGINE` and `vanguard-engine`.
 
 The strongest new conclusion is that the project now has a **real, separate native C++/Vulkan engine effort for Android** in `MOBILEAPP-VANGUARD-ENGINE`. This is substantially more than the Expo mobile shell previously documented, but the Android renderer still contains source-level blockers that prevent us from calling it a production-ready mobile engine.
 
@@ -75,15 +75,15 @@ The Anthropic provider still adds `anthropic-dangerous-direct-browser-access` to
 
 The current model-route table is broad and includes text, image, video, voice and embedding identifiers. The presence of a model ID in the registry does not by itself prove that the upstream provider is live; the provider implementation and configured credentials still determine actual availability.
 
-## 7. WonderPlay 3D — current public route is still the older builder
+## 7. NPC AI SIM — current public route is still the older builder
 
-The current `wonderplay-3D` `main` branch is at `aaf1f7bab02718b239e43c5597444fab4d1d8c2b` after an August 22 README update and 3D-wiring commit.
+The current `npc-ai-sim` `main` branch is at `aaf1f7bab02718b239e43c5597444fab4d1d8c2b` after an August 22 README update and 3D-wiring commit.
 
 `src/App.tsx` still routes `/builder` and `/builder/:templateId` directly to the older `BuilderPage.tsx`. It keeps subscription state as a local React boolean and has an API Docs route whose content is literally `Coming soon...`.
 
 So despite the newer builder component tree added by the 3D-wiring commit, the root application is still demonstrably wired to the older builder. The newer builder components should be treated as an **implemented but not yet canonical public route** until the route/import relationship changes.
 
-## 8. WonderPlay 3D — Gemini NPC APIs are real, but the live NPC loop is still simulated
+## 8. NPC AI SIM — Gemini NPC APIs are real, but the live NPC loop is still simulated
 
 `server.ts` contains real Gemini-backed endpoints for NPC tactical reasoning, image perception, and video reconnaissance using structured JSON response schemas.
 
@@ -155,7 +155,7 @@ Therefore the verified status is:
 The repositories now show at least three distinct engine/runtime layers:
 
 1. `dreammakerhub.website` — browser/server platform, engine adapters, Spatial/Gaussian-splat integration, WonderSpace orchestration and AI build/product layer.
-2. `wonderplay-3D` — web-native Three.js/PlayCanvas-oriented NPC/3D builder with Gemini NPC analysis and simulated live-NPC transport.
+2. `npc-ai-sim` — web-native Three.js/PlayCanvas-oriented NPC/3D builder with Gemini NPC analysis and simulated live-NPC transport.
 3. `MOBILEAPP-VANGUARD-ENGINE` — native C++20/23 Vulkan/Jolt/ImGui engine/editor with Android Vulkan work and a Next.js Engine Architect Studio.
 
 The separate older `vanguard-engine` repository contains an earlier C++ engine lineage with graphics/editor commits through August 16. It should be treated as a predecessor/parallel lineage until imports, copied code, or a migration relationship are proven.
@@ -191,5 +191,5 @@ The separate older `vanguard-engine` repository contains an earlier C++ engine l
 2. Trace `AI-PLAYGROUND` server entrypoints from workflow canvas/agent spawn through provider registry to actual provider streaming and usage persistence on current `main`.
 3. Trace WonderPlay `/live-npc` from browser/client to HTTP upgrade and determine whether the `ws` runtime is actually available in the Bun/Railway build.
 4. Trace `MOBILEAPP-VANGUARD-ENGINE` Android Gradle target to native C++ entrypoint, then determine whether the Vulkan renderer is actually used by the APK target or is a separate minimal test renderer.
-5. Trace code/import relationships between `vanguard-engine`, `MOBILEAPP-VANGUARD-ENGINE`, `wonderplay-3D`, and DreamMakerHub before making any unified-engine/IP claim.
+5. Trace code/import relationships between `vanguard-engine`, `MOBILEAPP-VANGUARD-ENGINE`, `npc-ai-sim`, and DreamMakerHub before making any unified-engine/IP claim.
 6. Build a repository-wide license/SBOM map covering proprietary code, MIT-licensed code, PlayCanvas, Three.js, WebContainer, Gaussian splats, glTF Transform, Jolt, Vulkan/SDL/ImGui/Tracy/Filament and other third-party components.

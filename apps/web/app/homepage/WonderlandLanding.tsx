@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
 const PRODUCTS = [
   { icon: "⌘", title: "WonderBuild", desc: "Describe an app or workflow in plain language and get a working build — frontend, backend, and database wired together automatically.", href: "/wonder-build" },
   { icon: "▣", title: "Playground ↗", desc: "Chat with multiple models, test prompts, and run agent workflows side by side before they go to production.", external: true, href: "https://playground.dreammakerhub.website" },
-  { icon: "◈", title: "WonderPlay 3D", desc: "A PlayCanvas-powered scene editor for building interactive 3D worlds and games without a heavyweight engine.", href: "/wonder-build/playcanvas" },
+  { icon: "◈", title: "NPC AI SIM", desc: "A PlayCanvas-powered scene editor for building interactive 3D worlds and games without a heavyweight engine.", href: "/wonder-build/playcanvas" },
   { icon: "{ }", title: "WonderSpace IDE", desc: "A full browser IDE with an isolated workspace per user — clone, code, and run, no local environment needed.", href: "/wonderspace" },
   { icon: "⇄", title: "Marketplace", desc: "Publish what you build, or start from a template someone else made. Every listing is a real, running app.", href: "/marketplace" },
 ];

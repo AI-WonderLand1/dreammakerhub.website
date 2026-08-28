@@ -16,8 +16,8 @@ const FEATURE_SLIDES: FeatureSlide[] = [
   {
     id: 1,
     image: '/images/3DWONDERPLAYIMAGE.webp',
-    alt: 'WonderPlay 3D Builder',
-    title: 'WonderPlay 3D',
+    alt: 'NPC AI SIM Builder',
+    title: 'NPC AI SIM',
     description: 'Create stunning 3D games and spatial experiences with our PlayCanvas-powered editor',
     href: '/wonder-build/playcanvas'
   },

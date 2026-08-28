@@ -4,7 +4,7 @@
 
 ### 1. Lock Separation Boundaries � ✅
 - **Main site** now contains only marketing/auth/dashboard shell
-- **WonderPlay 3D** redirected to subdomain: `wonderplay-3d.dreammakerhub.website` 
+- **NPC AI SIM** redirected to subdomain: `npc-ai-sim.dreammakerhub.website` 
   - Modified `apps/web/app/wonder-play/page.tsx` to redirect with auth token
 - **WonderBuild Studio**, **WonderSpace**, and **AI Playground** verified as separate routes:
   - WonderBuild: `/wonder-build/*` 
@@ -38,7 +38,7 @@
 - No major styling inconsistencies found in primary UI elements
 
 ### 5. Define Cross-Module Handoff Points � ✅
-- **Main site → WonderPlay 3D**: Redirect to `wonderplay-3d.dreammakerhub.website` with auth token
+- **Main site → NPC AI SIM**: Redirect to `npc-ai-sim.dreammakerhub.website` with auth token
 - **Main site → WonderSpace**: Link to `/wonderspace` (lazy-loaded route)
 - **Main site → WonderBuild**: Link to `/wonder-build/*` (lazy-loaded routes)
 - **Main site → AI Playground**: Link to `https://playground.dreammakerhub.website/` (already separate)
@@ -60,7 +60,7 @@
 
 ## Files Modified
 
-1. `apps/web/app/wonder-play/page.tsx` - WonderPlay 3D redirect to subdomain
+1. `apps/web/app/wonder-play/page.tsx` - NPC AI SIM redirect to subdomain
 2. `apps/web/components/dashboard/Sidebar.tsx` - Fixed broken sidebar links
 3. `apps/web/lib/3dWonderBuildEngine.ts` - Fixed broken links in template engine
 4. `apps/web/app/3d-library/page.tsx` - Fixed broken asset details link
@@ -83,7 +83,7 @@
 
 ## Conclusion
 
-The DreamMakerHub website has successfully implemented the separation of concerns between the main site (marketing/auth/dashboard) and the functional modules (WonderBuild Studio, WonderSpace, WonderPlay 3D, AI Playground). All core requirements have been met with minor exceptions noted above that would require additional architectural work to resolve completely.
+The DreamMakerHub website has successfully implemented the separation of concerns between the main site (marketing/auth/dashboard) and the functional modules (WonderBuild Studio, WonderSpace, NPC AI SIM, AI Playground). All core requirements have been met with minor exceptions noted above that would require additional architectural work to resolve completely.
 
 The site is now in a significantly improved state with clear boundaries, functional interactive elements, and proper handoff points between systems.
 
@@ -103,5 +103,5 @@ Based on the interactive element inventory and code review, the following items 
 All other identified issues have been resolved:
 - Fixed all broken href="#" links
 - Verified no empty event handlers
-- Fixed WonderPlay 3D redirect to subdomain
+- Fixed NPC AI SIM redirect to subdomain
 - All interactive elements now work correctly or link to valid destinations

@@ -46,7 +46,7 @@ Newly verified gaps:
 
 The connected GitHub installation does **not currently expose this repository directly in the repository list**, so no new source-level claims were made today. Earlier verified evidence remains: real provider registry, workflow-template work, CORS/rate limits, Wonderland-key validation, and Stripe webhook persistence; Replicate and Hugging Face remain explicit provider stubs in the previously inspected source.
 
-### `AI-WonderLand1/wonderplay-3D`
+### `AI-WonderLand1/npc-ai-sim`
 
 The connected GitHub installation does **not currently expose this repository directly in the repository list**, so no new source-level claims were made today. Earlier verified evidence remains: real Gemini NPC tactical/vision/video endpoints, 3D builder components, WebSocket server code, and the unresolved simulated live-NPC loop/runtime wiring.
 

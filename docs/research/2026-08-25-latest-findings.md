@@ -2,7 +2,7 @@
 
 ## Scope
 
-Fresh source trace across the currently accessible `Master`/`main` branches of `dreammakerhub.website`, `AI-PLAYGROUND`, `wonderplay-3D`, `vanguard-engine`, and `MOBILEAPP-VANGUARD-ENGINE`.
+Fresh source trace across the currently accessible `Master`/`main` branches of `dreammakerhub.website`, `AI-PLAYGROUND`, `npc-ai-sim`, `vanguard-engine`, and `MOBILEAPP-VANGUARD-ENGINE`.
 
 ## 1. dreammakerhub.website — current head and AI execution
 
@@ -52,7 +52,7 @@ The same file's `parseWorkspaceResponse()` correctly uses `coderWorkspace.id` wh
 
 A new security concern was re-confirmed in `src/components/ApiKeysView.tsx`: the client stores API-key records in `localStorage` and generates token-shaped strings locally with `Math.random()`. The source also contains several hard-coded `sk-or-v1-...`-shaped sample values. Their live validity cannot be proven from source alone, so they are classified as potentially sensitive-looking test fixtures rather than confirmed live credentials. If any are real, they should be revoked/rotated immediately.
 
-## 6. wonderplay-3D — live NPC remains a split implementation
+## 6. npc-ai-sim — live NPC remains a split implementation
 
 Current `main` remains `aaf1f7b` from 2026-08-22. `package.json` declares `@types/ws` as a dev dependency but does not declare the `ws` runtime package. `server.ts` dynamically imports `ws` and creates a `WebSocketServer({ noServer: true })` for `/live-npc` behavior.
 

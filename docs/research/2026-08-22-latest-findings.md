@@ -2,11 +2,11 @@
 
 ## Executive update
 
-The latest source trace materially changes the NPC and AI-PLAYGROUND assessments. The repository set is now confirmed to include `dreammakerhub.website`, `AI-PLAYGROUND`, and `wonderplay-3D` under the `AI-WonderLand1` organization. The current evidence shows active cleanup/consolidation in both DreamMakerHub and AI-PLAYGROUND, while a new cross-repository runtime mismatch remains unresolved in the WonderPlay NPC path.
+The latest source trace materially changes the NPC and AI-PLAYGROUND assessments. The repository set is now confirmed to include `dreammakerhub.website`, `AI-PLAYGROUND`, and `npc-ai-sim` under the `AI-WonderLand1` organization. The current evidence shows active cleanup/consolidation in both DreamMakerHub and AI-PLAYGROUND, while a new cross-repository runtime mismatch remains unresolved in the WonderPlay NPC path.
 
 ## 1. DreamMakerHub removed the standalone NPC-simulation scaffold from the public Studio
 
-Commit `b41b45e6334a33024df6d191c0deac6e1a26b52d` (`refactor: remove NPC AI sim, keep wonderplay-3D pipeline`, 2026-08-22) removed the public `StudioNPCSim` page and its 705-line implementation from `apps/web/components/studio/StudioNPCSim.tsx`. It also removed `mock-npc-sim-server.js`, `npc-sim-plan.md`, and the entire `npc-sim/` package (API/server, decision layer, intent, needs, relationships, tick/timing, utility AI, schema/seeds, package and local DB). `StudioApp.tsx` no longer exposes the `npc-sim` page, and the WonderBuild/3DHub copy no longer advertises NPC simulation as a Studio tool.
+Commit `b41b45e6334a33024df6d191c0deac6e1a26b52d` (`refactor: remove NPC AI sim, keep npc-ai-sim pipeline`, 2026-08-22) removed the public `StudioNPCSim` page and its 705-line implementation from `apps/web/components/studio/StudioNPCSim.tsx`. It also removed `mock-npc-sim-server.js`, `npc-sim-plan.md`, and the entire `npc-sim/` package (API/server, decision layer, intent, needs, relationships, tick/timing, utility AI, schema/seeds, package and local DB). `StudioApp.tsx` no longer exposes the `npc-sim` page, and the WonderBuild/3DHub copy no longer advertises NPC simulation as a Studio tool.
 
 **Interpretation:** this is a positive cleanup of an obvious scaffold/demo branch. The public Studio is no longer presenting that deleted mock NPC simulator as a product capability. Do not count the removed `npc-sim` package as implemented production IP.
 
@@ -34,11 +34,11 @@ This is important because it corrects a possible overstatement: the DreamMakerHu
 
 ## 4. Cross-repository live-NPC bridge is currently inconsistent
 
-`dreammakerhub.website/apps/web/app/api/npc/live/route.ts` is an authenticated SSE bridge. It constructs a WebSocket URL from `NEXT_PUBLIC_WONDERPLAY_3D_URL` (defaulting to `https://wonderplay-3d.dreammakerhub.website`) and attempts to connect to `/live-npc?id={npcId}`. It then relays binary audio, viseme frames and dialogue events back to the authenticated dashboard.
+`dreammakerhub.website/apps/web/app/api/npc/live/route.ts` is an authenticated SSE bridge. It constructs a WebSocket URL from `NEXT_PUBLIC_WONDERPLAY_3D_URL` (defaulting to `https://npc-ai-sim.dreammakerhub.website`) and attempts to connect to `/live-npc?id={npcId}`. It then relays binary audio, viseme frames and dialogue events back to the authenticated dashboard.
 
-The current `AI-WonderLand1/wonderplay-3D` `server.ts` exposes the verified Gemini REST endpoints (`/api/gemini/npc-intelligence`, `/api/gemini/npc-vision`, `/api/gemini/npc-video`), health and contact endpoints, but no server-side `/live-npc` listener is present in the inspected server or found by repository search. Its `package.json` includes `@types/ws` only as a development dependency and does not list the `ws` runtime package.
+The current `AI-WonderLand1/npc-ai-sim` `server.ts` exposes the verified Gemini REST endpoints (`/api/gemini/npc-intelligence`, `/api/gemini/npc-vision`, `/api/gemini/npc-video`), health and contact endpoints, but no server-side `/live-npc` listener is present in the inspected server or found by repository search. Its `package.json` includes `@types/ws` only as a development dependency and does not list the `ws` runtime package.
 
-The client-side `wonderplay-3D/src/websocketBrain.ts` independently expects a server at `${serverUrl}/live-npc?id=${npcId}` and handles audio/viseme/dialogue messages, so the protocol is clearly designed—but the server endpoint that would satisfy it is not verified in the current WonderPlay repository.
+The client-side `npc-ai-sim/src/websocketBrain.ts` independently expects a server at `${serverUrl}/live-npc?id=${npcId}` and handles audio/viseme/dialogue messages, so the protocol is clearly designed—but the server endpoint that would satisfy it is not verified in the current WonderPlay repository.
 
 **Additional implementation detail:** `src/websocketBrain.ts` currently supplies fixed viseme values (`jawOpen: 0.5`, `mouthFunnel: 0.1`, `mouthPucker: 0.2`) when binary audio arrives. This is not measured/generated viseme analysis.
 
@@ -95,7 +95,7 @@ A branch comparison confirms `feature/workflow-templates` and `main` have diverg
 
 ## 10. WonderPlay-3D current server remains REST-oriented despite an internal WebSocket client
 
-The current `wonderplay-3D/package.json` identifies the project as `custom-npc-orchestration-engine`, with Three.js, glTF Transform, Gemini SDK and Express dependencies. The server implements real Gemini-backed tactical reasoning, image perception and video reconnaissance with structured JSON output.
+The current `npc-ai-sim/package.json` identifies the project as `custom-npc-orchestration-engine`, with Three.js, glTF Transform, Gemini SDK and Express dependencies. The server implements real Gemini-backed tactical reasoning, image perception and video reconnaissance with structured JSON output.
 
 The current `src/index.ts` exports a `CustomNPCEngine` that creates a `WebsocketBrain`, compiles smart NPC GLBs, manages dialogue/voice/visemes, and emits NPC events. `src/websocketBrain.ts` creates a browser WebSocket connection to `/live-npc`, consumes binary audio and viseme frames, and sends player input.
 

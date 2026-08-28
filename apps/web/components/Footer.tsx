@@ -40,7 +40,7 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-bold text-white mb-4">3D</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/wonder-build/playcanvas" className="text-white/60 hover:text-white">WonderPlay 3D</Link></li>
+              <li><Link href="/wonder-build/playcanvas" className="text-white/60 hover:text-white">NPC AI SIM</Link></li>
               <li><Link href="/dashboard/3dhub" className="text-white/60 hover:text-white">3DHub Studio</Link></li>
             </ul>
           </div>

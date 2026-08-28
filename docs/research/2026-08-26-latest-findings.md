@@ -16,7 +16,7 @@ The same README still contains language describing `npc-sim` as a server-side NP
 
 ## 3. Root monorepo dependency state clarifies a prior WebSocket concern
 
-Current root `package.json` declares `ws` as a production dependency. That means the DreamMakerHub monorepo itself has the WebSocket runtime available. The standalone `wonderplay-3D` package, however, declares `@types/ws` only and does not declare `ws` as a runtime dependency. Because WonderPlay is a separate repository/deployment boundary, the monorepo dependency cannot be assumed to satisfy the standalone deployment. The unresolved dependency remains: verify the actual WonderPlay build/runtime environment and either add `ws` to that repo or prove the deployed runtime supplies it.
+Current root `package.json` declares `ws` as a production dependency. That means the DreamMakerHub monorepo itself has the WebSocket runtime available. The standalone `npc-ai-sim` package, however, declares `@types/ws` only and does not declare `ws` as a runtime dependency. Because WonderPlay is a separate repository/deployment boundary, the monorepo dependency cannot be assumed to satisfy the standalone deployment. The unresolved dependency remains: verify the actual WonderPlay build/runtime environment and either add `ws` to that repo or prove the deployed runtime supplies it.
 
 ## 4. AI-PLAYGROUND remains a separate application boundary
 

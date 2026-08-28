@@ -62,8 +62,8 @@ type Project = {
 
   const PROJECT_TYPE_INFO: Record<string, { editor: string; label: string }> = {
     wonderbuild: { editor: "/wonder-build/builder", label: "Wonderbuild" },
-    game: { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
-    "3d_scene": { editor: "/dashboard/3dhub", label: "WonderPlay 3D" },
+    game: { editor: "/dashboard/3dhub", label: "NPC AI SIM" },
+    "3d_scene": { editor: "/dashboard/3dhub", label: "NPC AI SIM" },
     web_app: { editor: "/wonder-build/builder", label: "Wonderbuild" },
     workspace: { editor: "/ide", label: "IDE" },
   };
@@ -101,7 +101,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     {
       label: "3D",
       items: [
-        { href: "/dashboard/3dhub", label: "WonderPlay 3D", icon: Play },
+        { href: "/dashboard/3dhub", label: "NPC AI SIM", icon: Play },
       ],
     },
   ];
@@ -406,12 +406,12 @@ function VoiceSearchButton() {
         const lower = final.toLowerCase();
         if (lower.includes("wonderbuild")) router.push("/wonder-build");
         else if (lower.includes("3d") || lower.includes("studio")) router.push("/dashboard/3dhub");
-        else if (lower.includes("wonderplay") || lower.includes("playcanvas")) router.push("/wonder-build/playcanvas");
+        else if (lower.includes("npc-ai-sim") || lower.includes("playcanvas")) router.push("/wonder-build/playcanvas");
         else if (lower.includes("project")) router.push("/dashboard/projects");
         else if (lower.includes("ide") || lower.includes("code")) router.push("/wonderspace/ide");
         else if (lower.includes("setting")) router.push("/settings");
         else if (lower.includes("usage") || lower.includes("token")) router.push("/dashboard/usage");
-        else alert(`Voice command "${final}" not recognized. Try "wonderbuild", "wonderplay", "projects", or "settings".`);
+        else alert(`Voice command "${final}" not recognized. Try "wonderbuild", "npc-ai-sim", "projects", or "settings".`);
       }
     };
     recognition.onend = () => setIsListening(false);

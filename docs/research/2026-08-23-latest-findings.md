@@ -2,11 +2,11 @@
 
 ## Scope of this run
 
-Follow-up investigation from the 2026-08-22 stopping point. Priority was the newly exposed `AI-WonderLand1/wonderplay-3D` repository, with cross-checks against `dreammakerhub.website` integration assumptions. `AI-PLAYGROUND` remains not directly exposed as a repository through the current GitHub connector, so no new claims are made about its current branch state in this run.
+Follow-up investigation from the 2026-08-22 stopping point. Priority was the newly exposed `AI-WonderLand1/npc-ai-sim` repository, with cross-checks against `dreammakerhub.website` integration assumptions. `AI-PLAYGROUND` remains not directly exposed as a repository through the current GitHub connector, so no new claims are made about its current branch state in this run.
 
-## 1. `wonderplay-3D` is now directly verified as an AI-WonderLand1 repository
+## 1. `npc-ai-sim` is now directly verified as an AI-WonderLand1 repository
 
-Repository: `AI-WonderLand1/wonderplay-3D`
+Repository: `AI-WonderLand1/npc-ai-sim`
 
 - Public repository, default branch `main`.
 - Repository metadata reports no declared GitHub license.
@@ -65,7 +65,7 @@ The current `package.json` includes `@types/ws` but does **not** list the `ws` r
 
 The server file inspected in this run does not by itself prove a complete HTTP server `upgrade` wiring path for the `noServer: true` WebSocket server. This remains an unresolved runtime integration item and should be traced next.
 
-## 6. Subscription logic inside `wonderplay-3D` is not durable billing
+## 6. Subscription logic inside `npc-ai-sim` is not durable billing
 
 `server.ts` contains `/api/subscriptions/create`, `/api/subscriptions/check`, and `/api/subscriptions/:subscriptionId` routes backed by an in-memory JavaScript object keyed by email.
 
@@ -84,7 +84,7 @@ This means repository documentation must be versioned against actual runtime cod
 
 ## 8. Licensing/IP finding updated
 
-The GitHub repository metadata for `wonderplay-3D` currently reports no declared GitHub license. This differs from `dreammakerhub.website`, whose repository metadata reports MIT.
+The GitHub repository metadata for `npc-ai-sim` currently reports no declared GitHub license. This differs from `dreammakerhub.website`, whose repository metadata reports MIT.
 
 Do not infer that the WonderPlay code is MIT-licensed merely because the parent DreamMakerHub repository is. The two repositories require separate license provenance and third-party dependency review.
 
@@ -108,7 +108,7 @@ Do not infer that the WonderPlay code is MIT-licensed merely because the parent 
 
 ### Unresolved dependencies to investigate next
 
-1. `wonderplay-3D` WebSocket upgrade path for `/live-npc` and the missing `ws` runtime dependency.
+1. `npc-ai-sim` WebSocket upgrade path for `/live-npc` and the missing `ws` runtime dependency.
 2. Whether the new `src/components/builder/` tree has an intended root component and what must replace the legacy `BuilderPage` route.
 3. Actual Supabase usage in the new builder components and whether authentication/project persistence is wired.
 4. PlayCanvas runtime usage versus the current Three.js legacy builder.
@@ -118,7 +118,7 @@ Do not infer that the WonderPlay code is MIT-licensed merely because the parent 
 
 ## Evidence links
 
-- `AI-WonderLand1/wonderplay-3D` repository
+- `AI-WonderLand1/npc-ai-sim` repository
 - Commit `2344c9b` — `3D wiring`
 - Commit `aaf1f7b` — `updated readme`
 - `src/App.tsx`

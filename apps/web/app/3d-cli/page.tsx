@@ -90,8 +90,8 @@ export default function Custom3DCLInterface() {
                 onChange={(e) => setProjectType(e.target.value as ProjectType)}
                 className="w-full p-3 bg-slate-950 border border-white/10 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-white"
               >
-                <option value="webgl">WonderPlay 3D (WebGL)</option>
-                <option value="playcanvas">WonderPlay 3D (PlayCanvas)</option>
+                <option value="webgl">NPC AI SIM (WebGL)</option>
+                <option value="playcanvas">NPC AI SIM (PlayCanvas)</option>
                 <option value="custom">Custom 3D Runtime</option>
               </select>
             </div>
@@ -139,8 +139,8 @@ export default function Custom3DCLInterface() {
         <div className="mt-8 rounded-lg border border-white/10 bg-slate-900/50 p-6">
           <h2 className="font-semibold text-lg mb-4 text-white">Command Reference</h2>
           <div className="space-y-3 text-sm text-slate-300">
-            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create webgl my-project</code> - Create WonderPlay 3D (WebGL) project</p>
-            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create playcanvas my-game</code> - Create WonderPlay 3D (PlayCanvas) project</p>
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create webgl my-project</code> - Create NPC AI SIM (WebGL) project</p>
+            <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create playcanvas my-game</code> - Create NPC AI SIM (PlayCanvas) project</p>
             <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">create custom my-runtime</code> - Create custom 3D runtime</p>
             <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">list</code> - List all your projects</p>
             <p><code className="bg-slate-800 px-2 py-1 rounded text-violet-300">status {`{project-id}`}</code> - Check project status</p>

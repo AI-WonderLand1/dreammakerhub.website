@@ -351,7 +351,7 @@ export default function EditorPlayCanvasPage() {
 
       <section className="rounded-2xl border border-white/10 bg-black/30 p-4 md:p-6">
         <h2 className="text-lg font-semibold text-white">NPC Live Feed</h2>
-        <p className="mt-1 text-sm text-white/65">Real-time NPC events streamed from wonderplay-3D (voice, visemes, dialogue) are injected into the WebGL scene below.</p>
+        <p className="mt-1 text-sm text-white/65">Real-time NPC events streamed from npc-ai-sim (voice, visemes, dialogue) are injected into the WebGL scene below.</p>
         <div className="mt-3 rounded-lg bg-white/[0.03] border border-white/10 p-2 font-mono text-[11px] text-white/60 max-h-48 overflow-auto custom-scrollbar">
           {npcLiveEvents.length === 0 ? (
             <span className="text-white/35">No NPC live events yet. Deploy an NPC from the dashboard NPC page.</span>

@@ -2,7 +2,7 @@ const rows = [
   { feature: "Active Projects", free: "1", pro: "5", team: "Unlimited", enterprise: "Unlimited" },
   { feature: "AI Chats", free: "5/day", pro: "Unlimited", team: "Unlimited", enterprise: "Unlimited" },
   { feature: "WonderBuild", free: "Basic", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
-  { feature: "WonderPlay 3D Engine", free: "—", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
+  { feature: "NPC AI SIM Engine", free: "—", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
   { feature: "WonderSpace IDE", free: "—", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
   { feature: "Custom Domain", free: "—", pro: "1", team: "Multiple", enterprise: "Unlimited" },
   { feature: "Team Seats", free: "1", pro: "1", team: "5", enterprise: "Unlimited" },

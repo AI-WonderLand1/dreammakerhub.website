@@ -5,7 +5,7 @@ Continued from the 2026-08-26 stopping point. Verified the current `Master` tree
 
 ## Current repository state
 
-The connected GitHub installation currently exposes `AI-WonderLand1/dreammakerhub.website` directly. The repository's current `Master` head is merge commit `d480925a29c1c9b13ed972acaae6e01275ac8c38` (2026-08-26). Separate `AI-PLAYGROUND` and `wonderplay-3D` repositories are not currently exposed through the connected GitHub repository list, so no new source-level claims are made about those repositories in this run.
+The connected GitHub installation currently exposes `AI-WonderLand1/dreammakerhub.website` directly. The repository's current `Master` head is merge commit `d480925a29c1c9b13ed972acaae6e01275ac8c38` (2026-08-26). Separate `AI-PLAYGROUND` and `npc-ai-sim` repositories are not currently exposed through the connected GitHub repository list, so no new source-level claims are made about those repositories in this run.
 
 ## 1. Build pipeline: AI generation is real; persistence/runner is not
 

@@ -1,4 +1,4 @@
-// WonderPlay 3D Studio Bootstrap
+// NPC AI SIM Studio Bootstrap
 // Mounts the self-hosted WebGL Studio editor (LiteScene engine) inside a
 // container element via an iframe. No external playcanvas.com dependency.
 (function() {

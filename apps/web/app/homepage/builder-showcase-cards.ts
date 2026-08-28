@@ -7,7 +7,7 @@ export type BuilderShowcaseCard = {
 
 export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
   {
-    title: "WonderPlay 3D Editor",
+    title: "NPC AI SIM Editor",
     image: "/images/screenshots/playcanvas-builder.svg",
     href: "/wonder-build/playcanvas",
     desc: "Real-time 3D world builder with physics, materials, WebGL shaders, and scene graph editing.",

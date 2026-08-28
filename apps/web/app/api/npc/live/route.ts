@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const WONDERPLAY_3D_URL =
-  process.env.NEXT_PUBLIC_WONDERPLAY_3D_URL || "https://wonderplay-3d.dreammakerhub.website";
+  process.env.NEXT_PUBLIC_WONDERPLAY_3D_URL || "https://npc-ai-sim.dreammakerhub.website";
 
 /**
  * Real-time NPC pipeline edge function.

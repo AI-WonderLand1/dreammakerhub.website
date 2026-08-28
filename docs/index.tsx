@@ -159,7 +159,7 @@ export default function DocsHome() {
           </p>
           <ul className="list-disc pl-5 space-y-2 text-gray-600 dark:text-gray-300">
             <li><strong>WonderBuild</strong>: Prompt-to-code multi-agent builder. Describe your vision, and three AI agents (Architect, Builder, Reviewer) generate the code in real-time.</li>
-            <li><strong>WonderPlay 3D Engine</strong>: Browser-based PlayCanvas editor for creating and editing 3D scenes with physics, materials, lighting, and AI-assisted generation.</li>
+            <li><strong>NPC AI SIM Engine</strong>: Browser-based PlayCanvas editor for creating and editing 3D scenes with physics, materials, lighting, and AI-assisted generation.</li>
             <li><strong>WonderSpace IDE</strong>: Cloud-based IDE with Monaco Editor, WebContainer runtime, terminal emulation, and Git integration — accessible from any browser.</li>
           </ul>
 
