@@ -1,166 +1,173 @@
 # DreamMakerHub Master Technical & Commercial Research Report — Current Snapshot
 
-_Last verified: 2026-08-28_
+_Last verified: 2026-08-29_
 
-> Historical evidence remains in `DREAMMAKERHUB_MASTER_RESEARCH_REPORT.md` and the dated `docs/research/` addenda. This file is the current consolidated snapshot.
+> Historical evidence remains in `DREAMMAKERHUB_MASTER_RESEARCH_REPORT.md` and the dated `docs/research/` addenda. This file is the current consolidated snapshot; older findings are corrected when newer source evidence supersedes them.
 
 ## Current verdict
 
-DreamMakerHub is a substantial early-stage platform, not a simple mockup. It contains real AI transport/model routing, authenticated premium chat, usage/realtime infrastructure, a multi-stage AI builder, Coder/Kubernetes workspace infrastructure, a browser-local WebContainer IDE, engine adapters, Spatial/Gaussian-splat integration, a real Expo/EAS mobile shell, and separate native C++/Vulkan engine efforts.
+DreamMakerHub is a substantial early-stage platform, not a simple mockup. Source evidence supports real AI model routing, authenticated premium chat, usage/realtime infrastructure, multi-stage AI building, Coder/Kubernetes workspace integration, browser-local WebContainer tooling, engine adapters, Spatial/Gaussian-splat integration, an Expo/EAS mobile shell, and separate native C++/Vulkan engine work.
 
-It is **not production-safe as one unified commercial product yet**. The highest-risk areas remain canonical billing/entitlement, anonymous build-cost exposure, deployment-safe persistence, incomplete pipeline-to-engine execution, Coder workspace identity, mobile dependency/project identity, licensing/IP contradictions, and disconnected sponsorship payment collection. The NPC/3D repository was renamed to `AI-WonderLand1/NPC-AI-SIM` and is now directly visible to the connected GitHub installation.
+It is **not production-safe as one unified commercial product yet**. The most urgent risks are canonical billing/entitlement, anonymous build-cost exposure, deployment-safe persistence, incomplete pipeline-to-engine execution, Coder identity mapping, mobile verification, licensing/IP boundaries, NPC live-runtime wiring, and sponsor payment collection.
 
 ## Repository map
 
 ### `AI-WonderLand1/dreammakerhub.website`
 
-Current `Master` head observed on 2026-08-28 is `fb4f7a5862a01a623b1b712af5d505075c5baece`.
+Latest observed `Master` head: `71aac05888074dcf6dce8fc0a8b01bc7d7387c64` (`redirect lloop nginx`, 2026-08-29), following `71d3d249` (`dns upcloud`).
 
-Verified:
-- Real OpenRouter transport with free-model fallback.
-- Authenticated premium chat plus usage/realtime infrastructure.
-- Real multi-stage `/api/build/stream` AI generation.
-- Direct pipeline-v1 AI runtime that calls `runModel`, performs constitutional checks, and emits pipeline status.
-- Real Coder/Kubernetes workspace API integration and browser-local WebContainer IDE.
-- Engine adapter architecture and Spatial/Gaussian-splat integration.
-- Real Expo/EAS mobile shell and Android/iOS packaging configuration.
-- Real Stripe Checkout Session endpoint and Stripe webhook signature verification.
-- Published Founding Sponsorship program and GitHub funding metadata.
-- Current package manifest includes `ws`, Stripe, Supabase, Coder/Kubernetes, WebContainer, PlayCanvas, Gaussian Splatting, Colyseus and WonderSpace IDE dependencies.
+Verified/substantially real:
+- OpenRouter transport/model fallback.
+- Authenticated premium chat and usage/realtime infrastructure.
+- Multi-stage `/api/build/stream` AI generation.
+- Direct pipeline-v1 AI runtime.
+- Coder/Kubernetes workspace API integration.
+- Browser-local WebContainer IDE.
+- Engine adapter and Spatial/Gaussian-splat paths.
+- Expo/EAS mobile shell.
+- Stripe Checkout Session creation and webhook signature verification.
+- Founding sponsorship documentation.
+- Root production dependencies include `ws`, Stripe, Supabase, Coder/Kubernetes, WebContainer, PlayCanvas, Gaussian Splatting, Colyseus and WonderSpace tooling.
 
 Current gaps:
-- `/api/build/stream` is an older route (last modified July 21 in the inspected tree), accepts anonymous requests, makes multiple model calls, and does not visibly enforce per-build quota/rate limits or usage deduction. Reviewer omits the paid flag and therefore uses the default/free model path.
-- Builder persistence is **not a no-op**. Current `engine/core/ai/bridge.ts` validates generated code and writes it with `writeFileSync` into `apps/web/app/(builder)/blocks`, returning a real path. However, `/api/build/stream` reports `Saved to blocks/ ✓` without checking the bridge status, and filesystem persistence is not automatically durable across serverless/container redeployments. The earlier report’s “manifestVisualBlock no-op” finding is corrected.
-- `engine/core/ai/pipeline-v1/runtime/pipeline.ts` is real direct AI execution, but `engine/core/pipelines.ts` remains a separate incomplete bridge. It references an undefined/unimported `compilePipelineToGraph`, returns placeholder text from `getAIResponse`, returns expressions unchanged, and calls Base64 encoding “encryption.”
-- `engine/core/execution/executor.ts` calls `graph.getAllNodes()` even though the current `ExecutionGraph` type exposes a `nodes` record; its dependency-output mapping is incomplete.
-- `getAuthUser()` treats only Auth `app_metadata.plan === 'pro'` as paid and uses a relative server-side `fetch('/api/auth/session')` while swallowing failures to null.
-- Stripe webhook writes `profiles.plan` and `subscriptions`, while inspected migration creates `user_profiles.subscription_plan`; no current path proves Auth `app_metadata.plan` is synchronized.
-- Public checkout uses one hard-coded Stripe Payment Link instead of the dynamic plan/interval-aware checkout endpoint.
-- `user_profiles` RLS permits owners to update the whole row, including subscription and usage-limit fields; these should be server-controlled.
-- Sponsorship copy is published, but the sponsor document still says payment/contact links are to be added; GitHub funding metadata only points to Ko-fi and the website.
+- `/api/build/stream` is an older route, accepts anonymous requests, makes multiple model calls, and does not visibly enforce per-build quota/rate limits or usage deduction. Reviewer also does not receive the paid flag.
+- Builder persistence is real: `engine/core/ai/bridge.ts` validates generated code and writes it with `writeFileSync`. The build route does not reliably inspect the bridge status before reporting success, and repository filesystem writes are not automatically durable across all deployment models.
+- `engine/core/ai/pipeline-v1/runtime/pipeline.ts` is real direct AI execution, while the older `engine/core/pipelines.ts` bridge still contains undefined/missing compiler references, placeholder AI/expression functions and Base64 mislabeled as encryption.
+- Graph executor dependency-output mapping remains incomplete and its `getAllNodes()` call conflicts with the inspected `ExecutionGraph` interface.
+- `getAuthUser()` only treats Auth `app_metadata.plan === 'pro'` as paid and swallows server-side session-fetch failures.
+- Stripe/webhook/database/Auth entitlement synchronization is not proven as one canonical chain; public checkout still uses a hard-coded Payment Link instead of the dynamic checkout endpoint.
+- Current `user_profiles` RLS permits owner updates to subscription/limit fields that should be server-controlled.
+- Sponsorship offer is published but still lacks a dedicated tier-aware collection flow.
 - README proprietary/confidential terms still conflict with the root MIT license.
-- Recent commits repaired package.json syntax, Docker/Node skew, error-handler parsing, workflow branch references, and merge-conflict placement. Earlier package-syntax findings should be downgraded, but a real build must still be proven.
-- Mobile dependency/EAS identity issues from the prior audit remain unresolved until a current build is verified.
-- `CoderAPIWrapper.createWorkspace()` still appears to poll with a locally generated UUID instead of the actual Coder workspace ID returned by Coder.
-- Current cross-repo NPC references were updated to `npc-ai-sim`; stale WonderPlay 3D URLs/env vars must still be audited.
+- Coder workspace creation still appears to poll using a locally generated UUID rather than the returned Coder workspace ID.
+- Stale WonderPlay 3D names/URLs remain to be reconciled after the rename to NPC-AI-SIM.
+
+### UpCloud deployment — new 2026-08-29 finding
+
+DreamMakerHub is moving from Civo/AWS/Railway toward an UpCloud VM + Docker Compose architecture. nginx now proxies public application hosts to `web:5000` and Coder/IDE hosts to `coder:7080`, including WebSocket upgrade headers.
+
+However:
+- The deployment README still says most public DNS records are on Railway, conflicting with the newest `dns upcloud` commit.
+- `.github/workflows/deploy-upcloud.yml` runs on `main`, pulls the repo on the VM, then executes `cp deploy/upcloud/.env.example .env` before `docker compose up -d --build`. The checked-in `.env.example` contains placeholders for Supabase, AI, Coder, Cloudflare and other credentials. This is a **P0 deployment risk** if the VM relies on `.env` for live configuration.
+- The TLS workflow requests root/www/coder/ide/wildcard-coder/ai certificates, while nginx also serves `play`, `playground`, `wonderplay-3d`, and `civo-test`. Coverage for those extra names is not proven.
+- DNS migration is not externally verified in this source-only audit; the repository documentation is inconsistent and must not be treated as proof of live DNS state.
 
 ### `AI-WonderLand1/AI-PLAYGROUND`
 
-Current `main` head observed on 2026-08-21 is `8509c6b9b2b29d1a973eb5f00c92409e4581f37f`. The repository is now directly discoverable through the connected GitHub installation.
+Latest observed `main` head remains `8509c6b9...` from the available commit history; latest observed commit activity includes a new UpCloud deploy workflow on 2026-08-28.
 
 Verified:
-- Express API with explicit CORS origin handling.
-- Separate rate limits for templates, chat, and streaming.
-- Wonderland-key validation before model calls.
-- Stripe webhook mounted with raw-body handling.
-- Real provider routing and streaming.
-- Health endpoint and JSON API 404 handling.
-- Provider adapters for OpenRouter, OpenAI, Anthropic, Groq, Mistral, Cohere, Together AI, Fireworks, DeepSeek, Perplexity, xAI and Google Gemini.
-- Workflow-template/library cleanup and recent dependency updates.
+- Vite/React frontend plus Express server.
+- Real provider routing/streaming for OpenRouter, OpenAI, Anthropic, Groq, Mistral, Cohere, Together, Fireworks, DeepSeek, Perplexity, xAI and Gemini.
+- Wonderland-key validation and separate chat/stream/template rate limits.
+- Stripe webhook handling and security policy.
+- Workflow/template/library work.
 
 Still incomplete:
-- Replicate and Hugging Face provider entries remain explicit stubs: request builders return `{}` and parsers return an empty-response placeholder.
-- The server requires a `wonderlandKey` for chat/stream calls. No current cross-repository source evidence proves DreamMakerHub’s authenticated user/session entitlement automatically receives and presents a valid Wonderland key.
-- The AI-PLAYGROUND billing/usage model remains a separate contract from DreamMakerHub’s Supabase/Stripe entitlement system and needs explicit reconciliation before shared commercial use.
+- Replicate and Hugging Face remain explicit provider stubs.
+- AI-PLAYGROUND requires a `wonderlandKey`; no source evidence proves DreamMakerHub authenticated users are automatically issued/mapped to one.
+- Its billing/usage contract remains separate from DreamMakerHub's Stripe/Supabase entitlement model.
+- **New deployment concern:** `.github/workflows/deploy.yml` only rsyncs the repository to `root@209.50.53.112:/var/www/html/`; it does not run `npm install`, `npm run build`, or start/restart the Express server. The README describes a Node/PM2/Railway production process. Therefore GitHub Actions does not by itself prove a functioning production deployment.
+- Package scripts confirm a server process is required (`server`, `start`) in addition to the Vite build.
 
 ### `AI-WonderLand1/NPC-AI-SIM`
 
-This repository was renamed from the previously tracked WonderPlay 3D project on 2026-08-28. Current head is `57383e4878f91a54e18b4eeed55d271669ed2eec`.
+Renamed from the formerly tracked WonderPlay 3D project on 2026-08-28. Latest observed head: `57383e4878f91a54e18b4eeed55d271669ed2eec`.
 
 Verified:
 - TypeScript/React application and Express server.
-- Real Gemini-backed NPC tactical reasoning, vision and video analysis endpoints using structured JSON output.
-- 3D builder components, GLTF tooling, PlayCanvas and Three.js dependencies.
-- NPC dialogue, voice, animation and safety-related modules.
-- A WebSocket server object and `/live-npc` connection handler code.
+- Real Gemini-backed NPC tactical reasoning, vision and video analysis.
+- PlayCanvas/Three.js and GLTF tooling.
+- NPC dialogue/voice/animation/safety modules.
+- WebSocket server object and `/live-npc` handler code.
 
-Important gaps:
-- `package.json` lists `@types/ws` but not the `ws` runtime package, despite `server.ts` dynamically importing `ws`.
-- The inspected server source creates `WebSocketServer({ noServer: true })`, but the current source evidence does not prove an HTTP upgrade handler calls `wss.handleUpgrade`. Therefore the DreamMakerHub -> `npc-ai-sim` live WebSocket path is still unresolved.
-- DreamMakerHub’s `/api/npc/live` is now a real authenticated SSE bridge to `https://npc-ai-sim.dreammakerhub.website/live-npc?id=...`, but the route does not visibly verify that the requested `npcId` belongs to the authenticated user before connecting.
-- Live viseme generation remains simulated/randomized in the inspected WebSocket code; provider-backed NPC intelligence exists separately.
-- Subscription state in `SubscriptionContext.tsx` is demo-grade: the server stores subscriptions in an in-memory object keyed by email and accepts the requested tier from the request body. It is not the canonical commercial billing system.
-- GitHub repository metadata currently reports no license.
-
-### Vanguard repositories
-
-Earlier evidence remains: `MOBILEAPP-VANGUARD-ENGINE` and `vanguard-engine` expose broad C++20/23 Actor/Component/SceneGraph, reflection, Vulkan 1.3, Jolt, Dear ImGui, Tracy, and Next.js Engine Architect Studio architecture. Native blockers previously identified include GLSL-to-SPIR-V handling and Android swapchain/surface issues. These repositories are not currently exposed through the connected repository list, so no new source-level claims were made today.
+Current gaps:
+- `package.json` contains `@types/ws` only in devDependencies and no `ws` runtime dependency, while `server.ts` dynamically imports `ws`.
+- The source creates `WebSocketServer({ noServer: true })` but does not prove an HTTP upgrade handler invokes `wss.handleUpgrade`.
+- DreamMakerHub's `/api/npc/live` is an authenticated SSE bridge to `https://npc-ai-sim.dreammakerhub.website/live-npc?id=...`, but visible NPC ownership verification is missing.
+- Live viseme behavior remains simulated/randomized in the inspected WebSocket code; provider-backed NPC intelligence exists separately.
+- Subscription routes use an in-memory email-keyed object and caller-supplied tier; this is demo-grade, not canonical billing.
+- GitHub metadata currently reports no repository license.
 
 ## Genuine implementation vs scaffolding
 
-### Genuinely implemented / substantially real
-- Server-side OpenRouter transport and model fallback.
-- Authenticated premium chat and usage/realtime infrastructure.
-- Multi-stage Architect/Builder/Reviewer AI generation.
+### Substantially real
+- AI provider transport/routing and premium chat.
+- Usage/realtime infrastructure.
+- Multi-stage AI builder.
 - Direct pipeline-v1 AI runtime.
-- Coder/Kubernetes workspace API integration.
-- Browser-local WebContainer IDE architecture.
-- Engine adapters and Spatial/Gaussian-splat path.
+- Coder/Kubernetes integration and WebContainer IDE architecture.
+- Engine adapters and Spatial/Gaussian-splat rendering path.
 - Stripe checkout-session creation and webhook signature verification.
-- Expo/EAS project configuration and mobile shell.
-- Current filesystem-writing `manifestVisualBlock` bridge.
 - AI-PLAYGROUND provider/rate-limit/key-validation server.
 - NPC-AI-SIM Gemini reasoning/vision/video endpoints and 3D/NPC modules.
-- Founding sponsorship documentation.
+- Expo/EAS mobile shell.
+- Filesystem-writing Builder bridge.
+- UpCloud/nginx/Docker deployment configuration exists in source.
 
-### Scaffolding / incomplete / unsafe for commercial scale
+### Scaffolding/incomplete/unsafe for commercial scale
 - Build endpoint authentication/quota/usage enforcement.
-- Deployment-safe Builder artifact persistence and success/error handling.
-- Pipeline-to-engine compiler and graph dependency mapping.
+- Deployment-safe Builder artifact persistence.
+- Pipeline-to-engine graph compiler/dependency mapping.
 - Canonical Stripe entitlement synchronization.
-- Client-controlled subscription/quota fields under current RLS.
+- Client-controlled subscription/quota fields.
 - Dedicated sponsor payment collection.
 - Proprietary-vs-MIT licensing boundary.
-- Mobile dependency/EAS identity alignment and verified APK build.
+- Mobile dependency/EAS identity alignment and verified build.
 - Coder workspace ID mapping.
-- NPC-AI-SIM live WebSocket upgrade/runtime and non-simulated viseme/audio loop.
-- Cross-repository Wonderland-key/AI-PLAYGROUND contract.
+- NPC live WebSocket upgrade/runtime and non-simulated viseme/audio loop.
+- Cross-repository Wonderland-key contract.
+- AI-PLAYGROUND production deployment/restart path.
+- UpCloud DNS/TLS migration verification.
 
-## Licensing / IP status
+## Licensing/IP
 
-DreamMakerHub’s README presents proprietary/confidential commercial terms while the root `LICENSE` contains MIT rights to use, modify, distribute, sublicense and sell the Software. The scope of the MIT license must be explicitly corrected before the project is marketed as proprietary. NPC-AI-SIM currently reports no GitHub license. Third-party engine/rendering dependencies must be inventoried separately from first-party code, including PlayCanvas, Three.js, Gaussian Splatting, GLTF Transform, Gemini SDKs, WebContainers, Coder and Kubernetes components.
+DreamMakerHub's README presents proprietary/confidential commercial terms while the root `LICENSE` grants MIT rights to use, modify, distribute, sublicense and sell the Software. The scope must be corrected before commercial claims are made. NPC-AI-SIM currently has no declared GitHub license. Third-party dependency licensing must be inventoried separately, including PlayCanvas, Three.js, Gaussian Splatting, GLTF Transform, Gemini SDKs, WebContainers, Coder and Kubernetes components.
 
 ## Commercial readiness
 
 ### Sponsorship
-The sponsorship program is ready as an offer document, with Dreamer/Creator/Architect/Studio/Enterprise tiers and monthly/quarterly/annual pricing. It is **not yet connected to a dedicated sponsor payment flow**. The next practical step is one tier-aware checkout/contact path, followed by a sponsor landing page and campaign-specific tracking.
+The Founding Sponsor offer exists with monthly/quarterly/annual tiers, but no dedicated tier-aware sponsor payment flow is proven. Keep sponsorship framed as sponsorship/partnership rather than an investment or guaranteed financial return.
 
 ### Subscriptions
-The subscription architecture has real Stripe components, but public checkout, webhook persistence, user profiles and Auth metadata are not yet proven to form one canonical entitlement chain.
+Stripe components exist, but public checkout, webhook persistence, database schemas and Auth metadata are not yet proven to form one canonical entitlement chain.
 
 ### AI cost control
-AI-PLAYGROUND has request rate limits and Wonderland-key validation. DreamMakerHub’s `/api/build/stream` still lacks a comparable visible authentication/quota boundary and can trigger multiple provider calls per build.
+AI-PLAYGROUND has rate limiting and Wonderland-key validation. DreamMakerHub `/api/build/stream` still lacks a comparable visible authentication/quota boundary and can trigger multiple model calls per build.
 
 ## P0 blockers before public commercial scale
 
-1. Canonicalize billing tables and Stripe entitlement state.
-2. Make subscription/limit fields server-controlled.
-3. Require authenticated build access or explicitly meter anonymous builds with hard limits.
-4. Make AI/compute quota consumption atomic.
-5. Keep service-role operations server-side.
-6. Make every paid feature read one canonical entitlement source.
-7. Replace the hard-coded public Stripe Payment Link with plan/interval-aware server checkout.
-8. Make Builder persistence deployment-safe and only report success when the write succeeds.
-9. Resolve README-vs-root-MIT licensing contradiction.
-10. Add a real sponsor payment/collection path.
+1. Fix production environment deployment so `.env.example` cannot overwrite live secrets/configuration.
+2. Verify actual Cloudflare DNS records for UpCloud migration.
+3. Verify TLS certificate coverage for every nginx hostname.
+4. Canonicalize Stripe entitlement state and paid-feature gates.
+5. Make subscription/usage/limit fields server-controlled.
+6. Require authenticated build access or enforce hard anonymous limits and metering.
+7. Make AI/compute quota consumption atomic.
+8. Keep service-role operations server-side.
+9. Replace hard-coded public Stripe Payment Link with plan/interval-aware checkout.
+10. Make Builder persistence deployment-safe and report success only after confirmed writes.
+11. Resolve README-vs-MIT licensing contradiction.
+12. Add a real sponsor payment/collection path.
+13. Prove AI-PLAYGROUND production deployment and process restart.
 
 ## P1 blockers
 
 1. Complete pipeline-to-engine graph compilation and dependency-output mapping.
 2. Fix Coder workspace ID polling and verify Supabase -> Coder identity mapping.
 3. Decide/document WebContainer vs Coder workspace boundaries.
-4. Align Expo/React Native versions and reconcile EAS project IDs; update lockfiles and prove an APK build.
+4. Align mobile dependencies/EAS project IDs, update lockfiles and prove an APK build.
 5. Connect mobile to a real authenticated build contract.
-6. Verify NPC-AI-SIM WebSocket upgrade handling and add the `ws` runtime dependency if that server remains the deployment target.
-7. Verify `npcId` ownership in the live bridge.
-8. Replace simulated NPC visemes/audio behavior with a provider-backed runtime path.
-9. Trace DreamMakerHub authenticated identity -> Wonderland key -> AI-PLAYGROUND -> provider -> usage/billing.
-10. Complete SBOM/license/IP mapping across all first- and third-party components.
-11. Remove stale WonderPlay 3D references after the repository rename.
-12. Keep documentation synchronized with repository moves and deleted packages.
+6. Add/verify `ws` runtime and HTTP upgrade handling in NPC-AI-SIM.
+7. Verify NPC ownership before live bridging.
+8. Replace simulated NPC visemes/audio with a provider-backed runtime.
+9. Trace DreamMakerHub identity -> Wonderland key -> AI-PLAYGROUND -> provider -> usage/billing.
+10. Complete SBOM/license/IP mapping.
+11. Remove stale WonderPlay 3D deployment references after rename.
+12. Reconcile stale deployment documentation with actual infrastructure.
 
 ## Next research chain
 
-**DreamMakerHub -> NPC-AI-SIM live runtime -> WebSocket upgrade -> provider-backed NPC brain -> DreamMakerHub SSE -> PlayCanvas feed; and separately DreamMakerHub identity -> Wonderland key -> AI-PLAYGROUND -> provider -> usage/billing.**
+**UpCloud deployment reality -> DNS/TLS -> production process -> DreamMakerHub identity -> canonical billing -> Wonderland key -> AI-PLAYGROUND provider -> usage/billing; then NPC-AI-SIM HTTP upgrade -> live NPC brain -> DreamMakerHub SSE -> PlayCanvas.**
 
-See `docs/research/2026-08-28-latest-findings.md` for today’s evidence.
+See `docs/research/2026-08-29-latest-findings.md` for today’s evidence.
