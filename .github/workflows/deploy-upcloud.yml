@@ -1,0 +1,59 @@
+name: Deploy to UpCloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  UPCLOUD_SERVER_IP: ${{ secrets.UPCLOUD_SERVER_IP }}
+  UPCLOUD_SSH_USER: ${{ secrets.UPCLOUD_SSH_USER }}
+  UPCLOUD_API_KEY: ${{ secrets.UPCLOUD_API_KEY }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  SSH_PRIVATE_KEY: ${{ secrets.UPLOAD_SSH_KEY }}
+  DOMAIN: dreammakerhub.website
+  EMAIL: aiwonderland111@gmail.com
+  LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy all services to UpCloud via Docker Compose
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.UPLOAD_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.UPCLOUD_SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync repo and deploy
+        run: |
+          ssh ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP} << 'EOF'
+            cd /home/${UPCLOUD_SSH_USER}/dreammakerhub.website
+            git pull origin main
+            cp deploy/upcloud/.env.example .env
+            docker compose -f deploy/upcloud/docker-compose.yml up -d --build
+          EOF
+
+      - name: Request TLS certificates via DNS-01
+        run: |
+          ssh ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP} << 'EOF'
+            cd /home/${UPCLOUD_SSH_USER}/dreammakerhub.website
+            mkdir -p certs
+            docker run --rm \
+              -v $(pwd)/certs:/etc/letsencrypt \
+              -v $(pwd)/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro \
+              -e CF_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }} \
+              certbot/certbot certonly --dns-cloudflare \
+              --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+              --dns-cloudflare-propagation-seconds 60 \
+              --non-interactive --agree-tos \
+              -m ${LETSENCRYPT_EMAIL} \
+              -d ${DOMAIN} -d www.${DOMAIN} \
+              -d coder.${DOMAIN} -d ide.${DOMAIN} \
+              -d *.coder.${DOMAIN} \
+              -d ai.${DOMAIN} || echo "Certbot DNS-01 failed"
+          EOF

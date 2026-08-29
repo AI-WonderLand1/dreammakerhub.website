@@ -1,0 +1,113 @@
+version: "3.8"
+
+services:
+  # --- Coder IDE Control Plane ---
+  coder:
+    image: ghcr.io/coder/coder:v2.32.0
+    container_name: coder
+    restart: unless-stopped
+    ports:
+      - "7080:7080"
+      - "8443:8443"
+    environment:
+      CODER_ACCESS_URL: https://coder.dreammakerhub.website
+      CODER_WILDCARD_ACCESS_URL: "*.coder.dreammakerhub.website"
+      CODER_DERP_FORCE_WEBCOCKETS: "true"
+      CODER_SESSION_HOST_PREFIX_COOKIES: "true"
+      CODER_PG_CONNECTION_URL: "postgres://coder:${CODER_DB_PASSWORD}@coder-db:5432/coder?sslmode=disable"
+      CODER_DB_PASSWORD: ${CODER_DB_PASSWORD}
+    depends_on:
+      - coder-db
+    networks:
+      - dreammakerhub
+
+  # --- Coder PostgreSQL ---
+  coder-db:
+    image: postgres:16-alpine
+    container_name: coder-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: coder
+      POSTGRES_PASSWORD: ${CODER_DB_PASSWORD}
+      POSTGRES_DB: coder
+    volumes:
+      - coder-db-data:/var/lib/postgresql/data
+    networks:
+      - dreammakerhub
+
+  # --- Web App (Next.js) ---
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dreammaker-web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: "5000"
+      NODE_ENV: production
+      NEXT_PUBLIC_URL: https://dreammakerhub.website
+      NEXT_PUBLIC_CODER_ACCESS_URL: https://coder.dreammakerhub.website
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: https://dreammakerhub.website
+    networks:
+      - dreammakerhub
+
+  # --- GLTF Optimizer ---
+  optimizer:
+    build:
+      context: ./packages/optimizer
+      dockerfile: Dockerfile
+    container_name: optimizer
+    restart: unless-stopped
+    ports:
+      - "3090:3090"
+    networks:
+      - dreammakerhub
+
+  # --- Nginx Reverse Proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-dreammakerhub.conf:/etc/nginx/sites-enabled/dreammakerhub:ro
+      - ./certs:/etc/letsencrypt:ro
+      - ./certbot:/var/www/certbot:ro
+    depends_on:
+      - web
+      - coder
+    networks:
+      - dreammakerhub
+
+  # --- Certbot for TLS (DNS-01 via Cloudflare) ---
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    restart: unless-stopped
+    environment:
+      CF_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ./certs:/etc/letsencrypt
+      - ./cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --dns-cloudflare --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini --dns-cloudflare-propagation-seconds 60; sleep 12h & wait $${!}; done;"
+    networks:
+      - dreammakerhub
+
+volumes:
+  coder-db-data:
+
+networks:
+  dreammakerhub:
+    driver: bridge
