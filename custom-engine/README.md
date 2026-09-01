@@ -266,4 +266,4 @@ npm run build:dev
 
 ## License
 
-MIT
+Prosperity Public License 3.0.0. See the repository root [`LICENSE`](../LICENSE).
