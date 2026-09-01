@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-and-push:
@@ -30,12 +31,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Log in to OCI Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
-          registry: ord.ocir.io
-          username: ${{ secrets.OCI_REGISTRY_USER }}
-          password: ${{ secrets.OCI_REGISTRY_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push web image
         uses: docker/build-push-action@v7
@@ -46,6 +47,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/AI-WonderLand1/dreammakerhub.website
           tags: |
-            ord.ocir.io/axgejcaos4uw/ai-wonderland/web:latest
-            ord.ocir.io/axgejcaos4uw/ai-wonderland/web:${{ github.sha }}
+            ghcr.io/ai-wonderland1/dreammakerhub-website:latest
+            ghcr.io/ai-wonderland1/dreammakerhub-website:${{ github.sha }}
