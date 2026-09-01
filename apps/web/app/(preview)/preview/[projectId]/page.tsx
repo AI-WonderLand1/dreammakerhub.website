@@ -2,6 +2,7 @@ import { readFile } from "@/lib/projects/storage";
 import { createClient } from "@/app/utils/supabase/server";
 import { injectWiringRuntime } from "@/lib/wonder-build/wiringRuntime";
 import { logger } from '@/lib/logger';
+import { sanitizeUntrustedHtml } from '@/lib/security/sanitize-html.server';
 
 export const metadata = {
   title: 'Project Preview | AI Wonderland',
@@ -9,29 +10,6 @@ export const metadata = {
 };
 
 export const runtime = "nodejs";
-
-/**
- * Sanitize HTML to prevent XSS — strips dangerous tags/attributes while preserving safe content.
- */
-function sanitizeHtml(html: string): string {
-  let s = html;
-  // Strip all event handlers (onclick, onerror, onload, etc.)
-  s = s.replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '');
-  // Strip dangerous protocol URIs
-  s = s.replace(/(?:href|src|action|data|codebase|formaction)\s*=\s*(?:"[^"]*"|'[^']*')/gi, (m) => {
-    if (/javascript|data:text\/html|vbscript|file:/i.test(m)) {
-      return m.replace(/=.*/, '=""');
-    }
-    return m;
-  });
-  // Strip dangerous tags and their content
-  const DANGEROUS_TAGS = ['script', 'iframe', 'object', 'embed', 'form', 'svg', 'math', 'link', 'base', 'meta', 'style'];
-  for (const tag of DANGEROUS_TAGS) {
-    const regex = new RegExp(`<${tag}\\b[^<]*(?:(?!<\\/${tag}>)<[^<]*)*<\\/${tag}>|<${tag}\\b[^>]*\\/?>`, 'gi');
-    s = s.replace(regex, '');
-  }
-  return s;
-}
 
 /**
  * PreviewPage
@@ -67,11 +45,12 @@ export default async function PreviewPage({
     );
   }
 
-  const styleTag = css ? `<style>${css}</style>` : "";
-  const htmlWithWiring = injectWiringRuntime(styleTag + sanitizeHtml(html));
+  const sanitizedHtml = sanitizeUntrustedHtml(html);
+  const htmlWithWiring = injectWiringRuntime(sanitizedHtml);
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {css ? <style>{css}</style> : null}
       <header className="border-b border-white/10 p-4 flex items-center justify-between bg-black/80 backdrop-blur-md sticky top-0 z-50">
         <div className="text-sm text-gray-300">
           Previewing project:{" "}
