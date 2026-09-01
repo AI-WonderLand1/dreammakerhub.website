@@ -1,0 +1,51 @@
+name: Build & Push Web Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - Master
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "apps/web/**"
+      - "engine/**"
+      - "infra/**"
+      - "packages/**"
+      - "prisma/**"
+      - "runners/**"
+      - "types/**"
+      - "tsconfig.base.json"
+      - ".github/workflows/web-image.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Log in to OCI Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ord.ocir.io
+          username: ${{ secrets.OCI_REGISTRY_USER }}
+          password: ${{ secrets.OCI_REGISTRY_TOKEN }}
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          tags: |
+            ord.ocir.io/axgejcaos4uw/ai-wonderland/web:latest
+            ord.ocir.io/axgejcaos4uw/ai-wonderland/web:${{ github.sha }}
