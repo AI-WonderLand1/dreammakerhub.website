@@ -103,7 +103,7 @@
     "dotenv": "^17.4.2",
     "groq-sdk": "^1.1.2",
     "http-proxy": "^1.18.1",
-    "jsdom": "^30.0.1",
+    "jsdom": "29.1.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.8.0",
     "mem0ai": "^3.0.9",
