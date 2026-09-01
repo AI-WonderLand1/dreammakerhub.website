@@ -1,0 +1,41 @@
+services:
+  web:
+    image: ghcr.io/ai-wonderland1/dreammakerhub-website:latest
+    container_name: dreammaker-web
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      PORT: "5000"
+      NODE_ENV: production
+      NEXT_PUBLIC_URL: https://dreammakerhub.website
+      NEXTAUTH_URL: https://dreammakerhub.website
+    expose:
+      - "5000"
+    networks:
+      - dreammakerhub-web
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: dreammaker-caddy
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile.web:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - dreammakerhub-web
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+networks:
+  dreammakerhub-web:
+    driver: bridge
