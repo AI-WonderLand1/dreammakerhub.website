@@ -1,12 +1,12 @@
 import 'server-only';
 
-import createDOMPurify from 'dompurify';
+import createDOMPurify, { type Config } from 'dompurify';
 import { JSDOM } from 'jsdom';
 
 const window = new JSDOM('<!doctype html><html><body></body></html>').window;
 const purifier = createDOMPurify(window as unknown as Window);
 
-const SANITIZE_CONFIG = {
+const SANITIZE_CONFIG: Config = {
   USE_PROFILES: { html: true },
   FORBID_TAGS: [
     'script',
@@ -22,7 +22,7 @@ const SANITIZE_CONFIG = {
   ],
   FORBID_ATTR: ['srcdoc'],
   ALLOW_DATA_ATTR: false,
-} as const;
+};
 
 /**
  * Sanitize HTML from users, stored projects, or model output before it reaches
