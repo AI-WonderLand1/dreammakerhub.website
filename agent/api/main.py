@@ -1,4 +1,5 @@
 from typing import Optional, List, Any
+import logging
 import os
 import sys
 from fastapi import FastAPI, HTTPException, Header, Depends
@@ -9,6 +10,7 @@ from core.alice import AliceAgent
 from core.api_keys import APIKeyManager
 
 DEFAULT_LLM_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Wonderland Agent API",
@@ -87,8 +89,13 @@ async def analyze_repo(request: RepoAnalyzeRequest, api_info: dict = Depends(get
     try:
         summary = orchestrator.analyze_and_plan(request.repo_path)
         return {"success": True, "summary": summary}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Repository not found") from None
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid repository path") from None
+    except Exception:
+        logger.exception("Repository analysis failed")
+        raise HTTPException(status_code=500, detail="Repository analysis failed") from None
 
 @app.get("/api/orchestrator/status")
 async def get_status(user_id: str = "worker", api_info: dict = Depends(get_api_key)):
