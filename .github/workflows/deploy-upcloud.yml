@@ -1,59 +1,95 @@
-name: Deploy to UpCloud
+name: Deploy Main Site to UpCloud VM
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  push:
+    branches:
+      - Master
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "apps/web/**"
+      - "engine/**"
+      - "infra/**"
+      - "packages/**"
+      - "prisma/**"
+      - "runners/**"
+      - "types/**"
+      - "tsconfig.base.json"
+      - "deploy/upcloud/docker-compose.web.yml"
+      - "deploy/upcloud/Caddyfile.web"
+      - ".github/workflows/deploy-upcloud.yml"
+
+permissions:
+  contents: read
 
 env:
   UPCLOUD_SERVER_IP: ${{ secrets.UPCLOUD_SERVER_IP }}
   UPCLOUD_SSH_USER: ${{ secrets.UPCLOUD_SSH_USER }}
-  UPCLOUD_API_KEY: ${{ secrets.UPCLOUD_API_KEY }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   SSH_PRIVATE_KEY: ${{ secrets.UPLOAD_SSH_KEY }}
-  DOMAIN: dreammakerhub.website
-  EMAIL: aiwonderland111@gmail.com
-  LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy all services to UpCloud via Docker Compose
+    name: Deploy DreamMakerHub web to UpCloud VM
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$UPCLOUD_SERVER_IP" || { echo "Missing GitHub secret: UPCLOUD_SERVER_IP"; exit 1; }
+          test -n "$SSH_PRIVATE_KEY" || { echo "Missing GitHub secret: UPLOAD_SSH_KEY"; exit 1; }
+          if [ -z "$UPCLOUD_SSH_USER" ]; then
+            echo "UPCLOUD_SSH_USER is empty; workflow will use root."
+          fi
 
       - name: Set up SSH
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.UPLOAD_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.UPCLOUD_SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Sync repo and deploy
+      - name: Deploy web image
+        shell: bash
         run: |
-          ssh ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP} << 'EOF'
-            cd /home/${UPCLOUD_SSH_USER}/dreammakerhub.website
-            git pull origin main
-            cp deploy/upcloud/.env.example .env
-            docker compose -f deploy/upcloud/docker-compose.yml up -d --build
-          EOF
+          set -euo pipefail
+          SSH_USER="${UPCLOUD_SSH_USER:-root}"
+          ssh "$SSH_USER@$UPCLOUD_SERVER_IP" 'bash -s' <<'REMOTE'
+            set -euo pipefail
+            APP_DIR=/opt/dreammakerhub.website
 
-      - name: Request TLS certificates via DNS-01
+            if [ -d "$APP_DIR/.git" ]; then
+              git -C "$APP_DIR" fetch origin Master
+              git -C "$APP_DIR" reset --hard origin/Master
+            else
+              rm -rf "$APP_DIR"
+              git clone --branch Master --single-branch https://github.com/AI-WonderLand1/dreammakerhub.website.git "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            if [ ! -f .env ]; then
+              echo "ERROR: $APP_DIR/.env is missing. Create the production environment file on the VM; it will never be overwritten by this workflow." >&2
+              exit 1
+            fi
+
+            docker compose -f deploy/upcloud/docker-compose.web.yml pull
+            docker compose -f deploy/upcloud/docker-compose.web.yml up -d --remove-orphans
+
+            docker compose -f deploy/upcloud/docker-compose.web.yml ps
+            docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null'
+          REMOTE
+
+      - name: Verify public homepage
+        shell: bash
         run: |
-          ssh ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP} << 'EOF'
-            cd /home/${UPCLOUD_SSH_USER}/dreammakerhub.website
-            mkdir -p certs
-            docker run --rm \
-              -v $(pwd)/certs:/etc/letsencrypt \
-              -v $(pwd)/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro \
-              -e CF_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }} \
-              certbot/certbot certonly --dns-cloudflare \
-              --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
-              --dns-cloudflare-propagation-seconds 60 \
-              --non-interactive --agree-tos \
-              -m ${LETSENCRYPT_EMAIL} \
-              -d ${DOMAIN} -d www.${DOMAIN} \
-              -d coder.${DOMAIN} -d ide.${DOMAIN} \
-              -d *.coder.${DOMAIN} \
-              -d ai.${DOMAIN} || echo "Certbot DNS-01 failed"
-          EOF
+          curl --fail --show-error --silent --retry 5 --retry-delay 5 https://dreammakerhub.website/ >/dev/null
+          echo "DreamMakerHub homepage is responding."
