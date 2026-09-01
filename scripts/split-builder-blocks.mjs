@@ -97,7 +97,7 @@ fs.writeFileSync(path.join(BLOCKS_DIR, 'index.ts'), barrel);
 // ── 6. Write categories.ts (BLOCK_CATEGORIES) ────────────────────────────
 const catsStart = lines.findIndex((l) => l.trim().startsWith('export const BLOCK_CATEGORIES'));
 if (catsStart === -1) throw new Error('Could not find BLOCK_CATEGORIES export');
-const catsLines = [lines[catsStart].replace(/export const BLOCK_CATEGORIES/, 'export const BLOCK_CATEGORIES'), ...lines.slice(catsStart + 1)];
+const catsLines = [lines[catsStart], ...lines.slice(catsStart + 1)];
 const catsEndIdx = catsLines.findIndex((l) => l.trim() === '];');
 const catsBody = catsLines.slice(0, catsEndIdx + 1);
 fs.writeFileSync(
