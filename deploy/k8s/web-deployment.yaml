@@ -15,12 +15,8 @@ spec:
     spec:
       containers:
       - name: web
-        image: node:22-alpine
-        command: ["sh", "-c"]
-        args:
-        - |
-          cd /data/apps/web &&
-          exec node node_modules/.bin/next start -p 5000 -H 0.0.0.0
+        image: ord.ocir.io/axgejcaos4uw/ai-wonderland/web:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
         env:
@@ -28,21 +24,33 @@ spec:
           value: "5000"
         - name: NODE_ENV
           value: "production"
-        volumeMounts:
-        - name: data
-          mountPath: /data
+        - name: NEXT_PUBLIC_URL
+          value: "https://dreammakerhub.website"
+        envFrom:
+        - secretRef:
+            name: dreammaker-web-env
+            optional: true
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 20
         resources:
           requests:
-            cpu: "500m"
-            memory: "1Gi"
+            cpu: "250m"
+            memory: "512Mi"
           limits:
             cpu: "1"
             memory: "2Gi"
-      volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: dreammaker-web-data
-
+      imagePullSecrets:
+      - name: oci-registry-secret
 ---
 apiVersion: v1
 kind: Service
@@ -56,7 +64,6 @@ spec:
     targetPort: 5000
   selector:
     app: dreammaker-web
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -64,9 +71,9 @@ metadata:
   name: dreammaker-web
   namespace: coder
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-dns"
-  ingressClassName: traefik
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - dreammakerhub.website

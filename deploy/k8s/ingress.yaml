@@ -5,8 +5,8 @@ metadata:
   namespace: coder
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    kubernetes.io/ingress.class: traefik
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - coder.dreammakerhub.website
@@ -30,8 +30,8 @@ metadata:
   namespace: coder
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    kubernetes.io/ingress.class: traefik
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - ide.dreammakerhub.website
@@ -45,30 +45,5 @@ spec:
         backend:
           service:
             name: coder-ide
-            port:
-              number: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: workspace-ingress
-  namespace: coder
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    kubernetes.io/ingress.class: traefik
-spec:
-  tls:
-  - hosts:
-    - "*.coder.dreammakerhub.website"
-    secretName: coder-workspace-tls
-  rules:
-  - host: "*.coder.dreammakerhub.website"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: coder
             port:
               number: 80

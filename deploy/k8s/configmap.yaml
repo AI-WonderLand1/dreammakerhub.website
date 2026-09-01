@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: coder-config
-  namespace: wonderland
+  namespace: coder
 data:
   CODER_ACCESS_URL: "https://coder.dreammakerhub.website"
   CODER_WILDCARD_ACCESS_URL: "*.coder.dreammakerhub.website"

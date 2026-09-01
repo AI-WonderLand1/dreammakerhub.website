@@ -1,20 +1,3 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: coder
-  labels:
-    app.kubernetes.io/name: coder
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: coder-env
-  namespace: coder
-type: Opaque
-stringData:
-  CODER_URL: "https://ide.dreammakerhub.website"
-  CODER_SESSION_TOKEN: "CHANGE_ME" # Set via: kubectl create secret generic coder-env -n coder --from-literal=CODER_SESSION_TOKEN=<token>
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,10 +23,7 @@ spec:
           name: web
         env:
         - name: CODER_URL
-          valueFrom:
-            secretKeyRef:
-              name: coder-env
-              key: CODER_URL
+          value: "https://ide.dreammakerhub.website"
         - name: CODER_SESSION_TOKEN
           valueFrom:
             secretKeyRef:
@@ -54,7 +34,7 @@ spec:
             cpu: 500m
             memory: 1Gi
           limits:
-            cpu: 2
+            cpu: "2"
             memory: 4Gi
         volumeMounts:
         - name: workspace
@@ -63,6 +43,8 @@ spec:
       - name: workspace
         persistentVolumeClaim:
           claimName: coder-workspace-pvc
+      imagePullSecrets:
+      - name: oci-registry-secret
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -82,7 +64,7 @@ metadata:
   name: coder-ide
   namespace: coder
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
   - port: 80
     targetPort: 13337
