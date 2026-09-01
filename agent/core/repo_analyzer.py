@@ -59,16 +59,45 @@ class FullStackAnalyzer:
                             'dist', 'build', '.next', 'coverage', '.idea', 'vendor'}
     
     def analyze(self, repo_path: str) -> RepoStructure:
-        repo_path = Path(repo_path).resolve()
-        if not repo_path.exists():
-            raise FileNotFoundError(f"Repository not found: {repo_path}")
-        if not repo_path.is_absolute():
-            raise ValueError(f"Repository path must be absolute: {repo_path}")
-        if repo_path.is_relative_to(Path.home()) is False and '/tmp' not in str(repo_path):
-            allowed_prefixes = [Path.home(), Path('/tmp'), Path('/workspaces'), Path('/home')]
-            if not any(str(repo_path).startswith(str(p)) for p in allowed_prefixes):
-                raise ValueError(f"Repository path outside allowed directories: {repo_path}")
-        
+        requested_path = Path(repo_path).expanduser()
+
+        if not requested_path.is_absolute():
+            raise ValueError(f"Repository path must be absolute: {requested_path}")
+
+        allowed_roots = tuple(
+            root.resolve()
+            for root in (Path('/tmp'), Path('/workspaces'), Path('/home'))
+        )
+
+        # Validate the lexical path before touching the filesystem.
+        if not any(
+            requested_path == root or requested_path.is_relative_to(root)
+            for root in allowed_roots
+        ):
+            raise ValueError(
+                f"Repository path outside allowed directories: {requested_path}"
+            )
+
+        # Resolve symlinks and validate again so an allowed-looking path cannot
+        # escape through a symlink before any reads or directory traversal.
+        try:
+            resolved_path = requested_path.resolve(strict=True)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Repository not found: {requested_path}")
+
+        if not any(
+            resolved_path == root or resolved_path.is_relative_to(root)
+            for root in allowed_roots
+        ):
+            raise ValueError(
+                f"Resolved repository path outside allowed directories: {resolved_path}"
+            )
+
+        if not resolved_path.is_dir():
+            raise ValueError(f"Repository path is not a directory: {resolved_path}")
+
+        repo_path = resolved_path
+
         structure = RepoStructure(
             root=str(repo_path),
             frontend_path=None,

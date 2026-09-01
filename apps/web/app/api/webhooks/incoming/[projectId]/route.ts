@@ -3,8 +3,40 @@ import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/app/utils/supabase/server";
 import crypto from "crypto";
 import { logger } from '@/lib/logger';
+import { verifyApiKeyHash } from '@/lib/security/api-key-hash.server';
 
 export const runtime = "nodejs";
+
+function verifyHexSignature(provided: string, expectedHex: string): boolean {
+  const normalized = provided.startsWith('sha256=') ? provided.slice(7) : provided;
+  if (!/^[0-9a-f]{64}$/i.test(normalized)) return false;
+
+  const actual = Buffer.from(normalized, 'hex');
+  const expected = Buffer.from(expectedHex, 'hex');
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+async function upgradeLegacyApiKeyHash(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  projectId: string,
+  currentHash: string,
+  upgradedHash?: string,
+) {
+  if (!upgradedHash) return;
+
+  const { error } = await supabase
+    .from("project_api_configs")
+    .update({ api_key_hash: upgradedHash })
+    .eq("project_id", projectId)
+    .eq("api_key_hash", currentHash);
+
+  if (error) {
+    logger.warn("Failed to upgrade legacy project API key hash", {
+      projectId,
+      error,
+    });
+  }
+}
 
 /**
  * POST /api/webhooks/incoming/[projectId]
@@ -20,9 +52,10 @@ export async function POST(
   try {
     const { projectId } = params;
 
-    // Get API key from header
     const authHeader = req.headers.get("authorization");
-    const apiKey = authHeader?.replace("Bearer ", "") || req.headers.get("x-api-key");
+    const apiKey = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : req.headers.get("x-api-key")?.trim();
 
     if (!apiKey) {
       return NextResponse.json(
@@ -33,32 +66,46 @@ export async function POST(
 
     const supabase = await createSupabaseServerClient();
 
-    // Verify API key (hashed comparison)
-    const apiKeyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
     const { data: config, error: configError } = await supabase
       .from("project_api_configs")
-      .select("user_id, webhook_secret")
+      .select("user_id, webhook_secret, api_key_hash")
       .eq("project_id", projectId)
-      .eq("api_key_hash", apiKeyHash)
       .single();
 
-    if (configError || !config) {
+    if (configError || !config?.api_key_hash) {
       return NextResponse.json(
         { ok: false, error: "Invalid API key", traceId },
         { status: 401 }
       );
     }
 
-    // Optionally verify HMAC signature
+    const keyVerification = await verifyApiKeyHash(apiKey, config.api_key_hash);
+    if (!keyVerification.valid) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid API key", traceId },
+        { status: 401 }
+      );
+    }
+
+    await upgradeLegacyApiKeyHash(
+      supabase,
+      projectId,
+      config.api_key_hash,
+      keyVerification.upgradedHash,
+    );
+
+    // Read the body exactly once so HMAC verification and JSON parsing use
+    // identical bytes.
+    const rawBody = await req.text();
+
     const signature = req.headers.get("x-webhook-signature");
     if (signature && config.webhook_secret) {
-      const body = await req.text();
       const expectedSig = crypto
         .createHmac("sha256", config.webhook_secret)
-        .update(body)
+        .update(rawBody)
         .digest("hex");
 
-      if (signature !== expectedSig) {
+      if (!verifyHexSignature(signature, expectedSig)) {
         return NextResponse.json(
           { ok: false, error: "Invalid signature", traceId },
           { status: 401 }
@@ -66,15 +113,31 @@ export async function POST(
       }
     }
 
-    // Parse the incoming payload
-    const payload = await req.json().catch(() => ({}));
+    let payload: Record<string, any> = {};
+    if (rawBody.trim()) {
+      try {
+        const parsed = JSON.parse(rawBody);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          payload = parsed;
+        } else {
+          return NextResponse.json(
+            { ok: false, error: "Webhook payload must be a JSON object", traceId },
+            { status: 400 }
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          { ok: false, error: "Invalid JSON payload", traceId },
+          { status: 400 }
+        );
+      }
+    }
 
-    // Store the event
     const { error: eventError } = await supabase.from("project_webhook_events").insert({
       project_id: projectId,
       user_id: config.user_id,
       event_type: payload.event || "custom",
-      payload: payload,
+      payload,
       received_at: new Date().toISOString(),
     });
 
@@ -82,7 +145,6 @@ export async function POST(
       logger.error("Failed to store webhook event:", eventError);
     }
 
-    // Process event (extend as needed)
     const response: Record<string, unknown> = {
       ok: true,
       projectId,
@@ -91,7 +153,6 @@ export async function POST(
       receivedAt: new Date().toISOString(),
     };
 
-    // Add any custom processing logic here
     if (payload.event === "build.complete") {
       response.action = "Project build completed";
       response.deploymentUrl = `/published/${projectId}`;
@@ -122,7 +183,7 @@ export async function GET(
   const traceId = randomUUID();
 
   try {
-    const apiKey = req.headers.get("x-api-key");
+    const apiKey = req.headers.get("x-api-key")?.trim();
     if (!apiKey) {
       return NextResponse.json(
         { ok: false, error: "Missing API key", traceId },
@@ -133,23 +194,34 @@ export async function GET(
     const supabase = await createSupabaseServerClient();
     const { projectId } = params;
 
-    // Verify API key (hashed comparison)
-    const apiKeyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
-    const { data: config } = await supabase
+    const { data: config, error: configError } = await supabase
       .from("project_api_configs")
-      .select("user_id")
+      .select("user_id, api_key_hash")
       .eq("project_id", projectId)
-      .eq("api_key_hash", apiKeyHash)
       .single();
 
-    if (!config) {
+    if (configError || !config?.api_key_hash) {
       return NextResponse.json(
         { ok: false, error: "Invalid API key", traceId },
         { status: 401 }
       );
     }
 
-    // Get recent events
+    const keyVerification = await verifyApiKeyHash(apiKey, config.api_key_hash);
+    if (!keyVerification.valid) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid API key", traceId },
+        { status: 401 }
+      );
+    }
+
+    await upgradeLegacyApiKeyHash(
+      supabase,
+      projectId,
+      config.api_key_hash,
+      keyVerification.upgradedHash,
+    );
+
     const { data: events, error } = await supabase
       .from("project_webhook_events")
       .select("id, event_type, payload, received_at")

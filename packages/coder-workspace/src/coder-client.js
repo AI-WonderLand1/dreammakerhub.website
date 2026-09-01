@@ -1,4 +1,13 @@
 const CODER_API_VERSION = '/api/v2';
+const MIN_POLL_INTERVAL_MS = 250;
+const MAX_POLL_INTERVAL_MS = 10_000;
+const MAX_WAIT_TIMEOUT_MS = 5 * 60 * 1000;
+
+function boundedInteger(value, fallback, min, max) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
 
 export class CoderClient {
   constructor(coderUrl, sessionToken) {
@@ -114,7 +123,8 @@ export class CoderClient {
   }
 
   async waitForWorkspace(workspaceId, options = {}) {
-    const { timeoutMs = 60000, intervalMs = 2000 } = options;
+    const timeoutMs = boundedInteger(options.timeoutMs, 60_000, 1_000, MAX_WAIT_TIMEOUT_MS);
+    const intervalMs = boundedInteger(options.intervalMs, 2_000, MIN_POLL_INTERVAL_MS, MAX_POLL_INTERVAL_MS);
     const start = Date.now();
 
     while (Date.now() - start < timeoutMs) {
@@ -337,7 +347,8 @@ function buildQueryParams(options) {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  const delay = boundedInteger(ms, MIN_POLL_INTERVAL_MS, MIN_POLL_INTERVAL_MS, MAX_POLL_INTERVAL_MS);
+  return new Promise(resolve => setTimeout(resolve, delay));
 }
 
 export class CoderError extends Error {
