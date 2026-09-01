@@ -1,26 +1,22 @@
-DREAMMAKERHUB / AI-WONDERLAND PROPRIETARY LICENSE
-Copyright (c) 2026 [michael waite/WonderingTribe]. All Rights Reserved.
+DREAMMAKERHUB / AI-WONDERLAND LICENSING NOTICE
 
-1. Scope of Proprietary Assets
+First-party software and source code in this repository are licensed under the
+Prosperity Public License 3.0.0, as provided in the repository root LICENSE file.
 
-The AI Personas: The behavioral logic, identity parameters, and prompt engineering for Alice and Rick.
+The Prosperity Public License allows noncommercial use and sharing for free and
+permits commercial evaluation for a thirty-day trial period. Commercial use
+beyond that trial requires separate commercial permission from the contributor.
 
-The AI Constitution: The unique set of ethical guidelines and governing protocols for the platform.
+This notice does not relicense third-party software. Any third-party component,
+library, asset, or vendored source file that carries its own copyright or license
+notice remains governed by that original license.
 
-The Integrated Engine: Custom-merged logic involving the PlayCanvas Engine, specialized WebGL shaders, and proprietary glTF conversion/loading pipelines.
+Third-party examples include, without limitation:
 
-Deployment Logic: All custom templates and configurations used to deploy this environment via Coder.com and Kubernetes.
+- PlayCanvas and PlayCanvas-derived files, which retain their applicable MIT
+  license terms where those terms are stated in the original source.
+- CodeMirror and other vendored libraries, which retain their own license terms.
+- Coder and related infrastructure tooling, which remain subject to their own
+  applicable open-source or commercial licensing terms.
 
-2. Mandatory Restrictions
-
-No Cloning/Forking: You are permitted to view this code on GitHub for educational review. You are NOT permitted to fork, clone, or download this code for the purpose of hosting a competing service.
-
-No Persona Theft: The identities and logic of Alice and Rick are unique intellectual properties. Creating derivative AI based on these parameters is strictly prohibited.
-
-Source Available Only: This repository does not grant any Open Source rights. It is "Source Available" meaning "Look, but don't touch."
-
-3. Third-Party Software Acknowledgments
-
-PlayCanvas: Built using the PlayCanvas Engine (MIT). Original PlayCanvas files remain under MIT, but the integration and custom modifications in this repo are Proprietary.
-
-Coder.com: This project utilizes Coder for infrastructure orchestration. Usage of Coder's open-source or enterprise tools remains subject to Coder's own licensing agreements.
+For the controlling terms for first-party code in this repository, see LICENSE.
