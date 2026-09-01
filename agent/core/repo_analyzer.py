@@ -55,48 +55,43 @@ class FullStackAnalyzer:
     }
     
     def __init__(self):
-        self.ignored_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.venv', 
+        self.ignored_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.venv',
                             'dist', 'build', '.next', 'coverage', '.idea', 'vendor'}
-    
-    def analyze(self, repo_path: str) -> RepoStructure:
-        requested_path = Path(repo_path).expanduser()
-
-        if not requested_path.is_absolute():
-            raise ValueError(f"Repository path must be absolute: {requested_path}")
-
-        allowed_roots = tuple(
-            root.resolve()
-            for root in (Path('/tmp'), Path('/workspaces'), Path('/home'))
+        self.allowed_roots = tuple(
+            os.path.realpath(os.path.abspath(os.path.expanduser(root)))
+            for root in (str(Path.home()), '/tmp', '/workspaces')
         )
 
-        # Validate the lexical path before touching the filesystem.
-        if not any(
-            requested_path == root or requested_path.is_relative_to(root)
-            for root in allowed_roots
-        ):
-            raise ValueError(
-                f"Repository path outside allowed directories: {requested_path}"
-            )
+    def _resolve_safe_path(self, raw_path: str, *, expect_dir: Optional[bool] = None) -> Path:
+        """Normalize and constrain a caller-supplied path to an approved root."""
+        if not raw_path:
+            raise ValueError("Path is required")
 
-        # Resolve symlinks and validate again so an allowed-looking path cannot
-        # escape through a symlink before any reads or directory traversal.
-        try:
-            resolved_path = requested_path.resolve(strict=True)
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Repository not found: {requested_path}")
+        expanded = os.path.expanduser(raw_path)
+        if not os.path.isabs(expanded):
+            raise ValueError("Path must be absolute")
+
+        normalized = os.path.realpath(os.path.abspath(expanded))
 
         if not any(
-            resolved_path == root or resolved_path.is_relative_to(root)
-            for root in allowed_roots
+            normalized == root or normalized.startswith(root + os.sep)
+            for root in self.allowed_roots
         ):
-            raise ValueError(
-                f"Resolved repository path outside allowed directories: {resolved_path}"
-            )
+            raise ValueError("Path is outside allowed repository roots")
 
-        if not resolved_path.is_dir():
-            raise ValueError(f"Repository path is not a directory: {resolved_path}")
+        if not os.path.exists(normalized):
+            raise FileNotFoundError("Requested path was not found")
 
-        repo_path = resolved_path
+        if expect_dir is True and not os.path.isdir(normalized):
+            raise ValueError("Repository path must be a directory")
+
+        if expect_dir is False and not os.path.isfile(normalized):
+            raise ValueError("File path must point to a regular file")
+
+        return Path(normalized)
+
+    def analyze(self, repo_path: str) -> RepoStructure:
+        repo_path = self._resolve_safe_path(repo_path, expect_dir=True)
 
         structure = RepoStructure(
             root=str(repo_path),
@@ -187,10 +182,8 @@ class FullStackAnalyzer:
         return None
     
     def analyze_file(self, file_path: str) -> FileInfo:
-        path = Path(file_path)
-        if not path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
+        path = self._resolve_safe_path(file_path, expect_dir=False)
+
         ext = path.suffix.lower()
         language = self._get_language(ext)
         content = self._read_file_safe(path)
