@@ -22,6 +22,8 @@
     "esbuild": ">=0.28.1",
     "hono": ">=4.6.0",
     "brace-expansion": ">=2.0.1",
-    "@opentelemetry/core": ">=1.30.0"
+    "@opentelemetry/core": ">=1.30.0",
+    "mysql2": "3.22.0",
+    "mariadb": "3.5.3"
   }
 }
