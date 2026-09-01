@@ -14,10 +14,8 @@ if ! kubectl get ingressclass nginx >/dev/null 2>&1; then
   cat >&2 <<'EOF'
 ERROR: ingress class "nginx" is not installed.
 
-Install an ingress controller before deploying the app. For ingress-nginx:
-  helm upgrade --install ingress-nginx ingress-nginx \
-    --repo https://kubernetes.github.io/ingress-nginx \
-    --namespace ingress-nginx --create-namespace
+Run the UpCloud bootstrap first:
+  ./deploy/upcloud/bootstrap-k8s.sh
 EOF
   exit 1
 fi
@@ -26,7 +24,8 @@ if ! kubectl get crd certificates.cert-manager.io >/dev/null 2>&1; then
   cat >&2 <<'EOF'
 ERROR: cert-manager is not installed.
 
-Install cert-manager with its official Helm chart before continuing.
+Run the UpCloud bootstrap first:
+  ./deploy/upcloud/bootstrap-k8s.sh
 EOF
   exit 1
 fi
