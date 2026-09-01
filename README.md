@@ -40,6 +40,10 @@ Build websites, apps, and interactive 3D experiences entirely by describing what
 - [Templates](/wonder-build)
 - [Community](/community)
 
+## License
+
+Prosperity Public License 3.0.0. See [`LICENSE`](LICENSE) for the full terms.
+
 ---
 
 *AI Wonderland. Build anything. Just by describing it.*
