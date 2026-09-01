@@ -22,7 +22,7 @@
     "visual"
   ],
   "author": "Custom Engine Team",
-  "license": "MIT",
+  "license": "SEE LICENSE IN ../LICENSE",
   "devDependencies": {
     "@types/node": "^20.11.0",
     "ts-node": "^10.9.1",
