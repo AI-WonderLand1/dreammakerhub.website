@@ -42,7 +42,7 @@ export class CodeGenerationService {
     const html = generateFullHtml(elements);
     const css = generateFullCss(elements);
 
-    const js = `;(function(){window.__BUILDER_STATE__=${JSON.stringify({ elements, version: 1 })};if (process.env.NODE_ENV !== 'production') { console.log("[Builder] Project loaded",new Date().toISOString()); }})();`;
+    const js = getBuilderStateBootstrapJs();
     const payload = {
       html, css, js,
       files: [
@@ -68,6 +68,8 @@ export class CodeGenerationService {
 }
 
 function generateFullHtml(elements: any[]): string {
+  const serializedState = escapeHtml(JSON.stringify({ elements, version: 1 }));
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,11 +82,26 @@ function generateFullHtml(elements: any[]): string {
   <div id="app">
 ${elements.map((el) => renderEl(el, 1)).join('\n')}
   </div>
+  <textarea id="builder-state-data" hidden aria-hidden="true">${serializedState}</textarea>
   <script>
-    window.__BUILDER_STATE__ = ${JSON.stringify({ elements, version: 1 }, null, 2)};
+    ${getBuilderStateBootstrapJs()}
   <\/script>
 </body>
 </html>`;
+}
+
+function getBuilderStateBootstrapJs(): string {
+  return `;(function(){
+    var stateNode = document.getElementById("builder-state-data");
+    var fallback = { elements: [], version: 1 };
+    try {
+      window.__BUILDER_STATE__ = stateNode
+        ? JSON.parse(stateNode.value || "{}")
+        : fallback;
+    } catch {
+      window.__BUILDER_STATE__ = fallback;
+    }
+  })();`;
 }
 
 function renderEl(el: any, depth: number): string {
