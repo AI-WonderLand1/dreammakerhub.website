@@ -4,7 +4,9 @@ import createDOMPurify, { type Config } from 'dompurify';
 import { JSDOM } from 'jsdom';
 
 const window = new JSDOM('<!doctype html><html><body></body></html>').window;
-const purifier = createDOMPurify(window as unknown as Window);
+const purifier = createDOMPurify(
+  window as unknown as Parameters<typeof createDOMPurify>[0],
+);
 
 const SANITIZE_CONFIG: Config = {
   USE_PROFILES: { html: true },
