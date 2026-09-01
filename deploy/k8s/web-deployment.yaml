@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: ord.ocir.io/axgejcaos4uw/ai-wonderland/web:latest
+        image: ghcr.io/ai-wonderland1/dreammakerhub-website:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
@@ -49,8 +49,6 @@ spec:
           limits:
             cpu: "1"
             memory: "2Gi"
-      imagePullSecrets:
-      - name: oci-registry-secret
 ---
 apiVersion: v1
 kind: Service
