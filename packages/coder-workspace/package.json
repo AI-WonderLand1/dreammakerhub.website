@@ -9,7 +9,7 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
-    "fastify": "^5.8.5",
+    "fastify": "^5.12.1",
     "@supabase/supabase-js": "^2.49.0"
   }
 }
