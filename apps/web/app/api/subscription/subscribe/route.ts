@@ -10,6 +10,15 @@ function getBearerToken(req: NextRequest) {
   return m?.[1] || null;
 }
 
+function sanitizeRedirectPath(raw: unknown): string {
+  if (typeof raw !== "string") return "/dashboard/projects";
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes("://")) {
+    return "/dashboard/projects";
+  }
+  return trimmed;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const token = getBearerToken(request);
@@ -18,8 +27,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { plan, interval } = body ?? {};
+    const { plan, interval, redirectTo: rawRedirectTo } = body ?? {};
     const isYearly = interval === "year";
+    const redirectTo = sanitizeRedirectPath(rawRedirectTo);
 
     if (!plan || !(plan in PLANS)) {
       return NextResponse.json({ error: "Invalid plan selection" }, { status: 400 });
@@ -30,6 +40,10 @@ export async function POST(request: NextRequest) {
     }
 
     const planConfig = PLANS[plan as PlanId];
+    if (planConfig.price === 0 || planConfig.id === "enterprise") {
+      return NextResponse.json({ error: "Plan does not use self-service checkout" }, { status: 400 });
+    }
+
     const priceId = isYearly ? planConfig.stripePriceYearlyId : planConfig.stripePriceId;
 
     if (!priceId) {
@@ -58,13 +72,23 @@ export async function POST(request: NextRequest) {
     const userEmail = userRes.user.email;
 
     const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://dreammakerhub.website";
+
+    const successUrl = new URL("/subscription", baseUrl);
+    successUrl.searchParams.set("success", "true");
+    successUrl.searchParams.set("plan", planConfig.id);
+    successUrl.searchParams.set("redirectTo", redirectTo);
+
+    const cancelUrl = new URL("/subscription", baseUrl);
+    cancelUrl.searchParams.set("canceled", "true");
+    cancelUrl.searchParams.set("redirectTo", redirectTo);
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: userEmail || undefined,
-      metadata: { userId, plan, interval: isYearly ? "year" : "month" },
-      success_url: `${baseUrl}/subscription/success`,
-      cancel_url: `${baseUrl}/subscription?canceled=true`,
+      metadata: { userId, plan: planConfig.id, interval: isYearly ? "year" : "month" },
+      success_url: successUrl.toString(),
+      cancel_url: cancelUrl.toString(),
     });
 
     return NextResponse.json({ success: true, url: session.url });
