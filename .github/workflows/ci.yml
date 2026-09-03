@@ -36,6 +36,7 @@ jobs:
           SIMPLE_RICK_API_KEY: ci-build-placeholder
           SPIRIT_GUIDE_API_KEY: ci-build-placeholder
           MONGODB_URI: mongodb://127.0.0.1:27017/ci-build
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
           
       - name: Run tests
         run: npm test
