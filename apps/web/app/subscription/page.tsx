@@ -90,7 +90,7 @@ function SubscriptionContent() {
         mode: p.price === 0 ? "free" : "paid",
         icon: p.id === "free" ? "🌿" : p.id === "pro" ? "⭐" : p.id === "team" ? "🏢" : "🌐",
         highlight: p.highlight ?? false,
-        href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : "https://buy.stripe.com/8x2dR8cmZ54dbWlfky8so00",
+        href: p.id === "free" ? "/public-pages/auth" : p.id === "enterprise" ? "/contact" : undefined,
         monthlyPrice: p.price / 100,
       })),
     [isYearly]
@@ -209,7 +209,7 @@ function SubscriptionContent() {
           <div className="flex items-center justify-center gap-3 mt-8">
             <span className={`text-xs font-semibold ${!isYearly ? 'text-white' : 'text-slate-400'}`}>Monthly Billing</span>
             <button 
-              onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'year' : 'month')}
+              onClick={() => setBillingInterval(billingInterval === 'month' ? 'year' : 'month')}
               className="w-11 h-6 rounded-full relative transition-colors bg-zinc-800 border border-gray-700 p-0.5 focus:outline-none"
               aria-label="Toggle Billing Cycle"
             >
