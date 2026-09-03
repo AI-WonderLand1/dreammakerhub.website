@@ -9,7 +9,7 @@
     "dev": "node --watch src/server.js"
   },
   "dependencies": {
-    "fastify": "^5.8.5",
+    "fastify": "^5.12.1",
     "@gltf-transform/core": "^4.0.0",
     "@gltf-transform/extensions": "^4.0.0",
     "@gltf-transform/functions": "^4.0.0",
