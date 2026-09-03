@@ -6,9 +6,18 @@ import { Suspense } from 'react';
 import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
+function sanitizeRedirectPath(raw: string | null): string {
+  if (!raw) return '/dashboard/projects';
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('://')) {
+    return '/dashboard/projects';
+  }
+  return trimmed;
+}
+
 function AuthPageContent() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard/projects';
+  const redirectTo = sanitizeRedirectPath(searchParams.get('redirectTo'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
