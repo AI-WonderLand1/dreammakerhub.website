@@ -30,6 +30,13 @@ jobs:
         env:
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           Wonder_Build_2026: ${{ secrets.Wonder_Build_2026 }}
+          # Build-time placeholders only. These modules require values at import time;
+          # production receives the real secrets from the deployment environment.
+          ALICE_API_KEY: ci-build-placeholder
+          SIMPLE_RICK_API_KEY: ci-build-placeholder
+          SPIRIT_GUIDE_API_KEY: ci-build-placeholder
+          MONGODB_URI: mongodb://127.0.0.1:27017/ci-build
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
           
       - name: Run tests
         run: npm test

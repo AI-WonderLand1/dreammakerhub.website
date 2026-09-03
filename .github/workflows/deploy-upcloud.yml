@@ -2,51 +2,45 @@ name: Deploy Main Site to UpCloud VM
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - Master
-    paths:
-      - "Dockerfile"
-      - ".dockerignore"
-      - "package.json"
-      - "package-lock.json"
-      - "apps/web/**"
-      - "engine/**"
-      - "infra/**"
-      - "packages/**"
-      - "prisma/**"
-      - "runners/**"
-      - "types/**"
-      - "tsconfig.base.json"
-      - "deploy/upcloud/docker-compose.web.yml"
-      - "deploy/upcloud/Caddyfile.web"
-      - ".github/workflows/deploy-upcloud.yml"
+  workflow_run:
+    workflows:
+      - Build & Push Web Image
+    types:
+      - completed
 
 permissions:
   contents: read
+  packages: read
 
 env:
-  UPCLOUD_SERVER_IP: ${{ secrets.UPCLOUD_SERVER_IP }}
-  UPCLOUD_SSH_USER: ${{ secrets.UPCLOUD_SSH_USER }}
+  # Host and SSH username are deployment configuration, not secrets.
+  # GitHub repository variables can override these defaults.
+  UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
+  UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'ubuntu' }}
   SSH_PRIVATE_KEY: ${{ secrets.UPLOAD_SSH_KEY }}
 
 jobs:
   deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'Master')
     runs-on: ubuntu-latest
     name: Deploy DreamMakerHub web to UpCloud VM
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
 
-      - name: Validate deployment secrets
+    steps:
+      - name: Checkout Master
+        uses: actions/checkout@v7
+        with:
+          ref: Master
+
+      - name: Validate deployment configuration
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$UPCLOUD_SERVER_IP" || { echo "Missing GitHub secret: UPCLOUD_SERVER_IP"; exit 1; }
+          test -n "$UPCLOUD_SERVER_IP" || { echo "Missing UpCloud server IP"; exit 1; }
           test -n "$SSH_PRIVATE_KEY" || { echo "Missing GitHub secret: UPLOAD_SSH_KEY"; exit 1; }
-          if [ -z "$UPCLOUD_SSH_USER" ]; then
-            echo "UPCLOUD_SSH_USER is empty; workflow will use root."
-          fi
+          echo "Deploy target: ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP}"
 
       - name: Set up SSH
         shell: bash
@@ -61,8 +55,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SSH_USER="${UPCLOUD_SSH_USER:-root}"
-          ssh "$SSH_USER@$UPCLOUD_SERVER_IP" 'bash -s' <<'REMOTE'
+          ssh "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'bash -s' <<'REMOTE'
             set -euo pipefail
             APP_DIR=/opt/dreammakerhub.website
 
@@ -92,4 +85,4 @@ jobs:
         shell: bash
         run: |
           curl --fail --show-error --silent --retry 5 --retry-delay 5 https://dreammakerhub.website/ >/dev/null
-          echo "DreamMakerHub homepage is responding."
+          echo "DreamMakerHub homepage is responding from the production deployment."

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
+
+import { useAuth } from "@/lib/supabase/auth-context";
 
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 
-const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/8x2dR8cmZ54dbWlfky8so00";
 
 const DEFAULT_REDIRECT = "/dashboard/projects";
 
@@ -25,11 +26,19 @@ function parsePlan(raw: string | null): PlanId | null {
   return raw as PlanId;
 }
 
+function parseInterval(raw: string | null): "month" | "year" {
+  return raw === "year" ? "year" : "month";
+}
+
 function CheckoutContent() {
   const searchParams = useSearchParams();
 
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
   const planId = parsePlan(searchParams.get("plan"));
+  const interval = parseInterval(searchParams.get("interval"));
+  const { user, session, loading: authLoading } = useAuth();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const plan = useMemo(() => (planId ? PLANS[planId] : null), [planId]);
 
@@ -47,6 +56,46 @@ function CheckoutContent() {
     );
   }
 
+  const startCheckout = async () => {
+    if (authLoading || checkoutLoading) return;
+
+    if (!user || !session?.access_token) {
+      const back = `/checkout?plan=${encodeURIComponent(plan.id)}&interval=${interval}&redirectTo=${encodeURIComponent(redirectTo)}`;
+      window.location.href = `/public-pages/auth?redirectTo=${encodeURIComponent(back)}`;
+      return;
+    }
+
+    setCheckoutError("");
+    setCheckoutLoading(true);
+
+    try {
+      const response = await fetch("/api/subscription/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          plan: plan.id,
+          interval,
+          redirectTo,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.error || "Unable to start checkout");
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "Unable to start checkout");
+      setCheckoutLoading(false);
+    }
+  };
+
+  const displayPrice = interval === "year" ? plan.yearlyPriceDisplay : plan.priceDisplay;
+
   return (
     <div className="min-h-screen bg-black text-white p-6 sm:p-10">
       <div className="mx-auto max-w-3xl">
@@ -60,7 +109,7 @@ function CheckoutContent() {
               <h2 className="text-xl font-semibold">{plan.name}</h2>
               <p className="text-white/70 mt-1">Cancel any time.</p>
             </div>
-            <p className="text-2xl font-extrabold">{plan.priceDisplay}</p>
+            <p className="text-2xl font-extrabold">{displayPrice}</p>
           </div>
 
           <ul className="mt-5 space-y-2 text-sm text-white/80">
@@ -74,23 +123,23 @@ function CheckoutContent() {
 
           <div className="mt-4 text-xs text-white/60">
             By subscribing, you agree to our{' '}
-            <Link href="/(public)/terms" className="text-purple-300 hover:underline">Terms of Service</Link>
+            <Link href="/terms" className="text-purple-300 hover:underline">Terms of Service</Link>
             ,{' '}
-            <Link href="/(public)/privacy" className="text-purple-300 hover:underline">Privacy Policy</Link>
+            <Link href="/privacy" className="text-purple-300 hover:underline">Privacy Policy</Link>
             , and{' '}
-            <Link href="/(public)/refund" className="text-purple-300 hover:underline">Refund & Return Policy</Link>
+            <Link href="/refund" className="text-purple-300 hover:underline">Refund & Return Policy</Link>
             .
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href={STRIPE_PAYMENT_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white"
+            <button
+              type="button"
+              onClick={startCheckout}
+              disabled={authLoading || checkoutLoading}
+              className="inline-block rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Subscribe to {plan.name}
-            </a>
+              {checkoutLoading ? "Opening secure checkout..." : `Subscribe to ${plan.name}`}
+            </button>
 
             <Link
               href={`/subscription?redirectTo=${encodeURIComponent(redirectTo)}`}
@@ -98,6 +147,11 @@ function CheckoutContent() {
             >
               Change plan
             </Link>
+          {checkoutError && (
+            <p className="w-full text-sm text-red-300" role="alert">
+              {checkoutError}
+            </p>
+          )}
           </div>
         </div>
       </div>
