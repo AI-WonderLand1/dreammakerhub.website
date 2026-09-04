@@ -12,7 +12,32 @@ Do **not** restructure, merge, rename, or repurpose:
 - NPC simulation/runtime code
 - dedicated 3D/game routes
 
-Website-builder 3D support means normal web media assets such as GLB/GLTF viewers and video embeds. It does **not** mean a 3D scene editor.
+Website-builder 3D support means normal **web media assets** only. It does **not** mean a 3D scene editor.
+
+### WonderBuild graphics / 3D asset rule
+
+Allowed inside WonderBuild websites and templates:
+
+- high-quality raster graphics and generated artwork
+- SVG/icon graphics
+- animated decorative web graphics
+- image/video hero media
+- GLB/GLTF models rendered as normal website content
+- product/model viewers
+- simple interactive 3D embeds that behave like a web component
+- 3D hero/product assets used inside a normal website layout
+
+Not part of WonderBuild:
+
+- game-engine scene editing
+- world/level editors
+- scene graphs exposed as a game-development workflow
+- NPC simulation tooling
+- physics/gameplay systems
+- WonderPlay editor features
+- general PlayCanvas/WebGL scene-authoring UI
+
+If a 3D asset is placed in WonderBuild, the user should treat it like an **image/video/component on a webpage**: insert it, size it, position it, configure presentation, preview it, and publish it.
 
 ---
 
@@ -50,7 +75,298 @@ DASHBOARD / PROJECTS
 
 Mental model: **START → BUILD (+ Preview) → PUBLISH**.
 
-Internal implementation details such as project creation, template conversion, `builder-state.json` seeding, and renderer handoffs must not become user-facing steps.
+There are only **three user-facing workflow steps**. Blank / Template / AI are choices inside START. Pages / Insert / CMS / Assets / Components / Design / Interact / AI Assist / Code / Preview are tools inside BUILD. Domain / SEO / validation / deployment are tools inside PUBLISH.
+
+Internal implementation details such as project creation, template conversion, `builder-state.json` seeding, renderer handoffs, autosave, revisions, persistence, adapters, APIs, and deployment plumbing must **never become extra user-facing steps**.
+
+---
+
+# Visual / UX source of truth
+
+The current reference screenshots supplied for WonderBuild define the intended **product layout and interaction model**. They are not decorative mockups; they are the target for how the three-step product should feel and behave.
+
+## STEP 1 — START layout
+
+### START home
+
+`/wonder-build`
+
+Purpose: let the user choose how to begin, then move directly into BUILD.
+
+Required structure:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ WonderBuild                      1 START → 2 BUILD → 3 PUBLISH │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  START YOUR WEBSITE                                         │
+│  Blank             Template             Generate with AI    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Rules:
+
+- START is Step 1.
+- Blank / Template / AI are **choices**, not additional numbered workflow steps.
+- Creating/seeding a project happens behind the scenes.
+- Every successful START choice lands directly in `/wonder-build/builder?projectId=...`.
+
+### Template START page — target layout
+
+`/wonder-build/templates`
+
+The supplied template-library screenshot is the visual target.
+
+Required shell:
+
+```text
+TOP BAR
+WonderBuild | Home | Templates | AI Generate | My Projects | Assets | Learn
+                                      Search templates | notifications | account
+
+LEFT SIDEBAR
++ Create a Website
+Templates
+AI Generate
+My Projects
+Assets
+Components
+Domains
+Integrations
+Settings
+
+MAIN HERO
+Large high-impact visual / graphic
+"Stunning Templates for Any Vision"
+Search
+feature/value badges
+
+FILTER BAR
+All | Business | Ecommerce | Portfolio | Blog | SaaS | Creative | ...
+Sort / Popular
+
+TEMPLATE GRID
+large visual thumbnails
+name + category
+Preview
+Use Template
+
+AI HELP CARD
+Ask AI to find a template or generate one
+```
+
+Functional requirements:
+
+- [ ] Template search works.
+- [ ] Category filters work.
+- [ ] Sort/filter controls work.
+- [ ] Preview opens a quick preview only.
+- [ ] **Use Template** creates/seeds the project and opens BUILD directly.
+- [ ] AI Generate stays inside START and also opens BUILD directly after generation.
+- [ ] My Projects returns to project management without introducing a new builder step.
+- [ ] Assets is a library/tool destination, not a new workflow stage.
+- [ ] Template thumbnails use real polished graphics/screenshots, not generic placeholder cards.
+- [ ] Hero area uses high-impact graphics consistent with the WonderBuild visual identity.
+- [ ] No Deploy screen between template choice and BUILD.
+
+## STEP 2 — BUILD layout
+
+`/wonder-build/builder?projectId=...`
+
+The supplied professional builder screenshot is the target layout.
+
+Required shell:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│ WonderBuild | Project name | Saved | device width | zoom | undo/redo       │
+│                                               Preview | Publish | Deploy     │
+├──────┬───────────────────────┬─────────────────────────────┬─────────────────┤
+│ TOOL │ PAGES / INSERT / CMS  │                             │ DESIGN          │
+│ RAIL │ ASSETS / COMPONENTS   │         LIVE CANVAS         │ INTERACT        │
+│      │                       │                             │ AI ASSIST       │
+│      │ Pages tree            │  select / drag / resize     │                 │
+│      │                       │  drop / edit in place       │ Inspector       │
+│      │ Layers tree           │                             │ controls        │
+│      │                       │                             │                 │
+└──────┴───────────────────────┴─────────────────────────────┴─────────────────┘
+```
+
+### BUILD top bar
+
+Must provide:
+
+- project name
+- saved/autosave state
+- desktop/tablet/mobile breakpoint controls
+- width/viewport context
+- zoom
+- undo/redo
+- Preview
+- Publish
+- deployment/go-live entry where appropriate
+
+The builder must have **one coherent chrome layer**. Do not stack multiple competing headers/toolbars.
+
+### BUILD left side
+
+Primary tool rail / tabs:
+
+- Pages
+- Insert
+- CMS
+- Assets
+- Components
+
+Pages mode must show:
+
+- searchable page list/tree
+- Home clearly identified
+- active page clearly highlighted
+- Add Page
+- rename
+- page slug/path where useful
+- Layers visible in the same site-building mental model
+
+Insert mode must show:
+
+- searchable component/block catalog
+- categories
+- drag onto canvas
+- click to insert
+- block library must not dominate the whole editor
+
+### BUILD canvas
+
+The canvas is a **real website page frame**, not a game-editor/infinite-world canvas.
+
+Must support:
+
+- drag blocks from Insert to canvas
+- reorder blocks
+- nested containers
+- drag existing elements between valid containers
+- visual selected-element outline
+- floating selected-element toolbar
+- direct route to Design inspector
+- direct route to AI Assist for the selected element
+- delete/duplicate actions
+- resize handles
+- alignment guides
+- snapping feedback
+- desktop/tablet/mobile page widths
+- live visual updates
+- scrolling as a website page
+- zoom/pan only as editor navigation, not as the product mental model
+
+Drag/drop correctness requirements:
+
+- [ ] Root drop works.
+- [ ] Nested container drop works at any depth.
+- [ ] Reorder works at root.
+- [ ] Reorder works inside nested containers.
+- [ ] Move between containers works.
+- [ ] Invalid child types are rejected using the real parent block type.
+- [ ] A container cannot be dropped into its own descendants.
+- [ ] Layers stay synchronized with canvas ordering/nesting.
+- [ ] Pages remain isolated from each other.
+- [ ] Undo/redo cannot leak content between pages.
+
+### BUILD right side
+
+Top-level modes:
+
+- **Design**
+- **Interact**
+- **AI Assist**
+
+Design must expose professional controls for the selected element:
+
+- selector/current element
+- layout
+- flex/grid
+- direction
+- alignment
+- justify
+- gap
+- wrap
+- spacing / margin / padding
+- width/height/min/max
+- overflow
+- typography
+- color
+- background
+- borders/radius
+- effects where appropriate
+- responsive overrides
+- accessibility
+
+Interact must expose usable website interactions, not game logic:
+
+- navigate/link
+- scroll-to
+- modal/toggle behavior
+- hover effects
+- basic animation/transitions
+- form/webhook actions where supported and secured
+
+AI Assist must operate on the **same live builder state** as drag/drop and Design.
+
+AI must know:
+
+- active page
+- selected element
+- element type
+- element props
+- element styles
+- allowed block catalog
+
+AI actions must support, at minimum:
+
+- add a block to the page
+- add a block inside a selected valid container
+- edit selected element text/props
+- edit selected element styles
+- restyle a selected element
+- make selected content more responsive
+- help generate a section/page layout
+
+AI must use the same Zustand/store actions and canonical page state as manual editing. It must **not** maintain a second hidden editable document.
+
+### BUILD graphics quality
+
+The builder itself should visually match the supplied dark professional reference:
+
+- deep navy/black editor chrome
+- violet/indigo/cyan accent lighting
+- compact professional controls
+- clear selected states
+- strong typography hierarchy
+- polished icons
+- subtle glow rather than giant generic gradient cards
+- high-quality template/site graphics in the canvas
+- no toy-like emoji-first editor chrome once equivalent icons exist
+
+The visual target is closer to a professional Framer/Webflow-class editor than a generic admin dashboard.
+
+## STEP 3 — PUBLISH layout
+
+Publish remains Step 3 and is reachable directly from BUILD.
+
+Required responsibilities:
+
+- publish the complete multi-page site
+- generated site URLs
+- domain/custom domain
+- SEO title/description/social image
+- validation/checklist
+- publish status
+- revision/republish behavior
+- final go-live action
+
+Do not add another required "Deploy Builder", "Visual Renderer", or "Export then Publish" workflow stage.
 
 ---
 
@@ -288,6 +604,7 @@ WonderSpace/CODE and WonderPlay/3D registry sections remain separate.
 - [x] Add compatibility handling for stale WonderBuild Studio/AI-builder URLs.
 - [ ] Simplify the duplicated/stacked headers inside `/wonder-build/builder` so the editor has one coherent chrome layer.
 - [ ] Change remaining `Hub` wording inside Builder to `Start` or `Projects` where appropriate.
+- [ ] Audit visible numbering/labels so only START / BUILD / PUBLISH are presented as workflow steps.
 
 ## Phase 2 — START experience
 
@@ -297,13 +614,23 @@ WonderSpace/CODE and WonderPlay/3D registry sections remain separate.
 - [x] AI generation seeds builder state and opens Builder.
 - [x] Keep batch/template power tools as secondary Start tools rather than workflow stages.
 - [x] Stop using VisualRenderer as the normal editing destination.
+- [ ] Remove misleading `01 / 02 / 03` numbering from Blank / Template / AI cards; they are choices inside Step 1, not three more steps.
+- [ ] Bring `/wonder-build/templates` to the supplied high-impact template-library layout.
+- [ ] Add real polished template thumbnails/graphics.
+- [ ] Make template search/category/sort controls functional.
 - [ ] Add proper loading/progress UI for project creation and template seeding.
 - [ ] Add failure recovery if project is created but template state seeding fails.
 
 ## Phase 3 — BUILD: Framer + WordPress feel (website builder only)
 
+- [ ] Match the supplied professional builder shell/layout.
 - [ ] Make Pages a first-class panel/navigation concept.
 - [ ] Add site-level structure instead of a block-library-first mental model.
+- [ ] Keep Pages and Layers synchronized and usable together.
+- [ ] Fix nested drag/drop so valid containers work at any depth.
+- [ ] Add regression coverage for nested add/move/reorder/duplicate behavior.
+- [ ] Add contextual floating selected-element controls.
+- [ ] Make AI operate on active page + selected element using the same canonical store.
 - [ ] Add CMS collections/posts/custom content management.
 - [ ] Add unified Assets library for images, video, documents, and simple 3D web assets.
 - [ ] Add reusable components/global sections.
@@ -315,6 +642,8 @@ WonderSpace/CODE and WonderPlay/3D registry sections remain separate.
 - [ ] Add positioning controls without turning the product into a game/scene editor.
 - [ ] Move the large block catalog behind Insert/Search so it does not dominate the editor.
 - [ ] Keep AI editing available contextually in the same editor.
+- [ ] Make Design / Interact / AI Assist the primary right-panel mental model.
+- [ ] Replace placeholder/toy-like editor visuals with polished icons/graphics where practical.
 
 ## Phase 4 — Canonical website data model
 
