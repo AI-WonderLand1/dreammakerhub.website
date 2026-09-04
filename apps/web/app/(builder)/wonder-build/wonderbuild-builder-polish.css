@@ -1,8 +1,9 @@
 /* Second-pass visual polish for the website-builder controls. */
 
 /* The legacy Builder header is still rendered for compatibility, but the
-   unified SovereignNavBar is now the single visible editor header. */
-header[role='banner'] {
+   unified SovereignNavBar is now the single visible editor header. Scope this
+   to the editor shell so customer/template content using role=banner is safe. */
+div.flex.h-screen.flex-col.overflow-hidden > header[role='banner'] {
   display: none !important;
 }
 
