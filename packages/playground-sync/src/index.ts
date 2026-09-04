@@ -28,7 +28,7 @@
  *   });
  */
 
-import { logger } from '@/lib/logger';
+const logger = console;
 
 export interface PlaygroundSyncConfig {
   apiUrl: string;
@@ -128,9 +128,7 @@ export class PlaygroundSync {
     }
   }
 
-  /**
-   * Track token usage from a playground session.
-   */
+  /** Track token usage from a playground session. */
   async trackUsage(
     userId: string,
     tokens: number,
@@ -147,9 +145,7 @@ export class PlaygroundSync {
     });
   }
 
-  /**
-   * Get combined usage data for a user.
-   */
+  /** Get combined usage data for a user. */
   async getUsage(userId: string): Promise<SyncResponse & { 
     data?: { 
       playground: { totalTokens: number; lastModel: string };
@@ -160,9 +156,7 @@ export class PlaygroundSync {
     return this.request(`/playground-usage?userId=${userId}`, 'GET');
   }
 
-  /**
-   * Add tokens to a user's balance.
-   */
+  /** Add tokens to a user's balance. */
   async addTokens(
     userId: string,
     amount: number,
@@ -178,9 +172,7 @@ export class PlaygroundSync {
     });
   }
 
-  /**
-   * Subtract tokens from a user's balance.
-   */
+  /** Subtract tokens from a user's balance. */
   async subtractTokens(
     userId: string,
     amount: number,
@@ -196,9 +188,7 @@ export class PlaygroundSync {
     });
   }
 
-  /**
-   * Set a user's token balance.
-   */
+  /** Set a user's token balance. */
   async setTokens(
     userId: string,
     amount: number,
@@ -214,9 +204,7 @@ export class PlaygroundSync {
     });
   }
 
-  /**
-   * Get token balance and recent transactions.
-   */
+  /** Get token balance and recent transactions. */
   async getTokenBalance(userId: string): Promise<SyncResponse & {
     data?: {
       balance: number;
@@ -232,9 +220,7 @@ export class PlaygroundSync {
     return this.request(`/playground-tokens?userId=${userId}`, 'GET');
   }
 
-  /**
-   * Report session status.
-   */
+  /** Report session status. */
   async reportStatus(
     userId: string,
     status: 'started' | 'active' | 'completed' | 'error',
@@ -253,9 +239,7 @@ export class PlaygroundSync {
     });
   }
 
-  /**
-   * Get active sessions and status.
-   */
+  /** Get active sessions and status. */
   async getStatus(userId?: string): Promise<SyncResponse & {
     data?: {
       sessions: Array<{
@@ -272,10 +256,7 @@ export class PlaygroundSync {
     return this.request(`/playground-status${params}`, 'GET');
   }
 
-  /**
-   * Subscribe to real-time updates via Server-Sent Events.
-   * Returns an unsubscribe function.
-   */
+  /** Subscribe to real-time updates via Server-Sent Events. */
   subscribeToRealtime(
     userId: string,
     callback: RealtimeCallback,
@@ -302,15 +283,12 @@ export class PlaygroundSync {
       callback({ type: 'heartbeat', timestamp: new Date().toISOString() });
     };
 
-    // Return unsubscribe function
     return () => {
       eventSource.close();
     };
   }
 
-  /**
-   * Create an EventSource for real-time updates (browser only).
-   */
+  /** Create an EventSource for real-time updates (browser only). */
   createRealtimeConnection(
     userId: string,
     events: string[] = ['usage', 'tokens', 'status']
@@ -329,12 +307,10 @@ export class PlaygroundSync {
   }
 }
 
-// Export a factory function for easy setup
 export function createPlaygroundSync(config: PlaygroundSyncConfig): PlaygroundSync {
   return new PlaygroundSync(config);
 }
 
-// Export default instance if environment variables are set
 let defaultInstance: PlaygroundSync | null = null;
 
 export function getPlaygroundSync(): PlaygroundSync | null {
