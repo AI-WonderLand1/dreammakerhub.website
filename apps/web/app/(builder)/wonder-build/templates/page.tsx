@@ -1,12 +1,22 @@
-import TemplateLibraryApp from "@/lib/wonder-build/template-library/App";
-import { logger } from '@/lib/logger';
+import { Suspense } from 'react';
+import TemplateLibraryApp from '@/lib/wonder-build/template-library/App';
 
 export const metadata = {
-  title: 'WonderBuild Template Library | AI Wonderland',
+  title: 'Choose a WonderBuild Template | AI Wonderland',
   description:
-    'Batch prompt studio, template visualizer, AI generator, creator marketplace and deploy suite for WonderBuild website templates.',
+    'Choose or generate a website starting point, then continue editing in the WonderBuild visual builder.',
 };
 
 export default function TemplateLibraryPage() {
-  return <TemplateLibraryApp />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-white/50">
+          Loading WonderBuild templates…
+        </div>
+      }
+    >
+      <TemplateLibraryApp />
+    </Suspense>
+  );
 }
