@@ -2,6 +2,7 @@ import type { BlockDefinition } from '../types';
 import { FORMS_BLOCKS } from './forms';
 import { TYPOGRAPHY_BLOCKS } from './typography';
 import { MEDIA_BLOCKS } from './media';
+import { WEB_3D_BLOCKS } from './web3d';
 import { NAVIGATION_BLOCKS } from './navigation';
 import { MARKETING_BLOCKS } from './marketing';
 import { BLOG_BLOCKS } from './blog';
@@ -22,6 +23,7 @@ export const BLOCKS: BlockDefinition[] = [
   ...FORMS_BLOCKS,
   ...TYPOGRAPHY_BLOCKS,
   ...MEDIA_BLOCKS,
+  ...WEB_3D_BLOCKS,
   ...NAVIGATION_BLOCKS,
   ...MARKETING_BLOCKS,
   ...BLOG_BLOCKS,
@@ -43,6 +45,7 @@ export { BLOCK_CATEGORIES } from './categories';
 export { FORMS_BLOCKS } from './forms';
 export { TYPOGRAPHY_BLOCKS } from './typography';
 export { MEDIA_BLOCKS } from './media';
+export { WEB_3D_BLOCKS } from './web3d';
 export { NAVIGATION_BLOCKS } from './navigation';
 export { MARKETING_BLOCKS } from './marketing';
 export { BLOG_BLOCKS } from './blog';

@@ -17,8 +17,8 @@ import {
 
 const steps = [
   { number: '1', label: 'Start', sub: 'Blank, template, or AI' },
-  { number: '2', label: 'Build', sub: 'AI + visual editing' },
-  { number: '3', label: 'Publish', sub: 'Preview and go live' },
+  { number: '2', label: 'Build', sub: 'AI + drag/drop + preview' },
+  { number: '3', label: 'Publish', sub: 'Domain, SEO, go live' },
 ];
 
 export default function WonderBuildStartPage() {
@@ -172,7 +172,7 @@ export default function WonderBuildStartPage() {
           <article className="wb-neon-card flex min-h-[330px] flex-col rounded-[24px] p-6">
             <div className="mb-5 flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,.12)]"><FilePlus2 className="h-5 w-5" /></div>
-              <span className="text-[10px] font-black uppercase tracking-[.18em] text-white/20">01 · Blank</span>
+              <span className="text-[10px] font-black uppercase tracking-[.18em] text-white/20">Blank start</span>
             </div>
             <h2 className="text-xl font-black">Start from a clean canvas</h2>
             <p className="mt-2 text-sm leading-6 text-white/45">Create a real WonderBuild project instantly and enter the visual editor with no extra setup screen.</p>
@@ -186,7 +186,7 @@ export default function WonderBuildStartPage() {
           <article className="wb-neon-card flex min-h-[330px] flex-col rounded-[24px] p-6">
             <div className="mb-5 flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-300/20 bg-violet-500/10 text-violet-200 shadow-[0_0_30px_rgba(139,92,246,.12)]"><LayoutTemplate className="h-5 w-5" /></div>
-              <span className="text-[10px] font-black uppercase tracking-[.18em] text-white/20">02 · Template</span>
+              <span className="text-[10px] font-black uppercase tracking-[.18em] text-white/20">Template start</span>
             </div>
             <h2 className="text-xl font-black">Choose a designed starting point</h2>
             <p className="mt-2 text-sm leading-6 text-white/45">Browse polished layouts, preview them, then open the selected design directly in the same visual builder.</p>
@@ -203,7 +203,7 @@ export default function WonderBuildStartPage() {
           <article className="wb-neon-card flex min-h-[330px] flex-col rounded-[24px] p-6">
             <div className="mb-5 flex items-start justify-between">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-fuchsia-300/20 bg-fuchsia-500/10 text-fuchsia-200 shadow-[0_0_30px_rgba(217,70,239,.12)]"><Sparkles className="h-5 w-5" /></div>
-              <span className="text-[10px] font-black uppercase tracking-[.18em] text-white/20">03 · AI</span>
+              <span className="text-[10px] font-black uppercase tracking-[.18em] text-white/20">AI start</span>
             </div>
             <h2 className="text-xl font-black">Describe it. Let AI start it.</h2>
             <p className="mt-2 text-sm leading-6 text-white/45">Generate a visual starting design from a prompt, then keep editing with AI and drag-and-drop in Build mode.</p>
