@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { Box, FileImage, FolderOpen, Video } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import FileManagerPanel from '@/components/file-manager/FileManagerPanel';
+
+const ASSET_KINDS: Array<{ icon: LucideIcon; label: string }> = [
+  { icon: FileImage, label: 'Images' },
+  { icon: Video, label: 'Video' },
+  { icon: Box, label: 'GLB/GLTF' },
+];
 
 export default function AssetsPanel({ projectId }: { projectId: string }) {
   const libraryHref = projectId
@@ -30,19 +37,12 @@ export default function AssetsPanel({ projectId }: { projectId: string }) {
         </p>
 
         <div className="mt-3 grid grid-cols-3 gap-1.5">
-          {[
-            [FileImage, 'Images'],
-            [Video, 'Video'],
-            [Box, 'GLB/GLTF'],
-          ].map(([Icon, label]) => {
-            const AssetIcon = Icon as typeof FileImage;
-            return (
-              <div key={String(label)} className="rounded-lg border border-white/7 bg-white/[.025] px-2 py-2 text-center">
-                <AssetIcon size={13} className="mx-auto text-violet-300/70" />
-                <p className="mt-1 text-[8px] font-bold text-white/35">{String(label)}</p>
-              </div>
-            );
-          })}
+          {ASSET_KINDS.map(({ icon: AssetIcon, label }) => (
+            <div key={label} className="rounded-lg border border-white/7 bg-white/[.025] px-2 py-2 text-center">
+              <AssetIcon size={13} className="mx-auto text-violet-300/70" />
+              <p className="mt-1 text-[8px] font-bold text-white/35">{label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
