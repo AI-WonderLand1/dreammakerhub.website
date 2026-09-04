@@ -1,0 +1,103 @@
+/* Second-pass visual polish for the website-builder controls. */
+header[role='banner'] > div:first-child a {
+  color: rgba(196,181,253,.72) !important;
+  font-weight: 800;
+}
+
+header[role='banner'] button[role='tab'] {
+  min-width: 74px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  letter-spacing: .01em;
+}
+
+header[role='banner'] button[role='tab'][aria-selected='true'] {
+  border-color: rgba(167,139,250,.24);
+  background: linear-gradient(135deg, rgba(124,58,237,.88), rgba(79,70,229,.82)) !important;
+  box-shadow: 0 8px 24px rgba(91,33,182,.22), inset 0 1px 0 rgba(255,255,255,.13);
+}
+
+header[role='banner'] button[role='tab'][aria-selected='false'] {
+  background: rgba(255,255,255,.025);
+}
+
+nav[aria-label='Canvas toolbar'] button {
+  border: 1px solid transparent;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+nav[aria-label='Canvas toolbar'] button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(139,92,246,.16);
+  background: rgba(139,92,246,.07) !important;
+}
+
+aside[aria-label='Block library and layers'] button[role='tab'],
+aside[aria-label='Element inspector'] button[role='tab'] {
+  min-height: 34px;
+  letter-spacing: .02em;
+  border-bottom-width: 1px !important;
+}
+
+aside[aria-label='Block library and layers'] button[role='tab'][aria-selected='true'],
+aside[aria-label='Element inspector'] button[role='tab'][aria-selected='true'] {
+  background: linear-gradient(180deg, rgba(124,58,237,.16), rgba(124,58,237,.06)) !important;
+  color: rgb(221 214 254) !important;
+  border-bottom-color: rgb(139 92 246) !important;
+  box-shadow: inset 0 -1px 0 rgba(139,92,246,.35);
+}
+
+aside[aria-label='Element inspector'] input,
+aside[aria-label='Element inspector'] select,
+aside[aria-label='Element inspector'] textarea {
+  border-radius: 9px !important;
+  border-color: rgba(148,163,184,.11) !important;
+  background: rgba(2,6,18,.56) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+aside[aria-label='Element inspector'] input:focus,
+aside[aria-label='Element inspector'] select:focus,
+aside[aria-label='Element inspector'] textarea:focus {
+  border-color: rgba(139,92,246,.48) !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,.07) !important;
+}
+
+aside[aria-label='Element inspector'] > div > div > button {
+  transition: background .18s ease, color .18s ease;
+}
+
+#builder-canvas .builder-element.selected {
+  outline-color: rgba(167,139,250,.95) !important;
+  filter: drop-shadow(0 0 10px rgba(139,92,246,.16));
+}
+
+#builder-canvas .builder-element:hover {
+  outline-color: rgba(34,211,238,.45) !important;
+}
+
+/* Make the working surface feel like a framed professional design canvas. */
+#builder-canvas > div {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.018);
+}
+
+/* Better scrollbar treatment inside the builder. */
+#builder-canvas *::-webkit-scrollbar,
+aside[aria-label='Block library and layers'] *::-webkit-scrollbar,
+aside[aria-label='Element inspector'] *::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+#builder-canvas *::-webkit-scrollbar-thumb,
+aside[aria-label='Block library and layers'] *::-webkit-scrollbar-thumb,
+aside[aria-label='Element inspector'] *::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(139,92,246,.22);
+}
+
+#builder-canvas *::-webkit-scrollbar-track,
+aside[aria-label='Block library and layers'] *::-webkit-scrollbar-track,
+aside[aria-label='Element inspector'] *::-webkit-scrollbar-track {
+  background: transparent;
+}
