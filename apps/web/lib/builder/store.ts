@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BuilderState, CanvasElement, Breakpoint, BuilderTheme, LeftPanelTab, RightPanelTab } from './types';
+import { addSitePage, normalizeSitePages, renameSitePage, switchSitePage, syncActivePageElements } from './pages';
 import { getEventBus } from './pipeline/EventBus';
 import { EventNames } from './pipeline/types';
 
@@ -7,6 +8,9 @@ interface BuilderStore extends BuilderState {
   projectId: string;
   setProjectId: (id: string) => void;
   setElements: (elements: CanvasElement[]) => void;
+  createPage: (name?: string) => string;
+  switchPage: (pageId: string) => boolean;
+  renamePage: (pageId: string, name: string) => boolean;
   addElement: (element: CanvasElement, parentId?: string) => void;
   removeElement: (id: string) => void;
   moveElement: (id: string, targetParentId: string | null, index: number) => void;
@@ -64,8 +68,15 @@ function loadPersistedState(): Partial<BuilderState & { projectId?: string }> {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      const site = normalizeSitePages(
+        parsed.pages,
+        parsed.activePageId,
+        Array.isArray(parsed.elements) ? parsed.elements : undefined,
+      );
       return {
-        elements: parsed.elements || [],
+        elements: site.elements,
+        pages: site.pages,
+        activePageId: site.activePageId,
         zoom: parsed.zoom ?? 1,
         pan: parsed.pan ?? { x: 0, y: 0 },
         showGrid: parsed.showGrid ?? true,
@@ -78,11 +89,14 @@ function loadPersistedState(): Partial<BuilderState & { projectId?: string }> {
 }
 
 const persisted = loadPersistedState();
+const initialSite = normalizeSitePages(persisted.pages, persisted.activePageId, persisted.elements);
 
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
   projectId: persisted.projectId || '',
   setProjectId: (id) => set({ projectId: id }),
-  elements: persisted.elements || [],
+  elements: initialSite.elements,
+  pages: initialSite.pages,
+  activePageId: initialSite.activePageId,
   selectedId: null,
   activeBreakpoint: 'desktop',
   zoom: persisted.zoom ?? 1,
@@ -92,7 +106,47 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   theme: initialTheme,
   history: { past: [], future: [] },
 
-  setElements: (elements) => set({ elements }),
+  setElements: (elements) => set((state) => ({
+    elements,
+    pages: syncActivePageElements(state.pages, state.activePageId, elements),
+  })),
+
+  createPage: (name = 'Untitled Page') => {
+    const state = get();
+    const next = addSitePage(state.pages, state.activePageId, state.elements, name);
+    set({
+      pages: next.pages,
+      activePageId: next.activePageId,
+      elements: next.elements,
+      selectedId: null,
+    });
+    getEventBus().emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
+    return next.page.id;
+  },
+
+  switchPage: (pageId) => {
+    const state = get();
+    const next = switchSitePage(state.pages, state.activePageId, state.elements, pageId);
+    if (!next) return false;
+    set({
+      pages: next.pages,
+      activePageId: next.activePageId,
+      elements: next.elements,
+      selectedId: null,
+    });
+    getEventBus().emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
+    return true;
+  },
+
+  renamePage: (pageId, name) => {
+    const state = get();
+    if (!state.pages.some((page) => page.id === pageId)) return false;
+    const syncedPages = syncActivePageElements(state.pages, state.activePageId, state.elements);
+    const pages = renameSitePage(syncedPages, pageId, name);
+    set({ pages });
+    getEventBus().emit(EventNames.PROJECT_STATE_CHANGED, { elements: state.elements });
+    return true;
+  },
 
   addElement: (element, parentId) => {
     const { elements } = get();
