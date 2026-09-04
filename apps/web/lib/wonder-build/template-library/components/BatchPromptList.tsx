@@ -67,7 +67,7 @@ export const BatchPromptList: React.FC<BatchPromptListProps> = ({
           return (
             <div key={`batch-${batch.batchNumber}`} id={`batch-card-${batch.batchNumber}`} onClick={() => onSelectBatch(batch)} className={`wb-template-card group cursor-pointer rounded-2xl border p-3 transition ${isSelected ? 'ring-1 ring-violet-400/45 shadow-[0_16px_44px_rgba(76,29,149,.24)]' : ''}`}>
               <div className="flex items-start gap-3">
-                <div className="relative w-24 shrink-0" title="Preview template" onClick={(e) => { if (leadTemplate && onSelectTemplateToPreview) { e.stopPropagation(); onSelectTemplateToPreview(leadTemplate); } }}>
+                <div className="relative w-24 shrink-0" title="Customize template" onClick={(e) => { if (leadTemplate && onSelectTemplateToPreview) { e.stopPropagation(); onSelectTemplateToPreview(leadTemplate); } }}>
                   <TemplateThumbnail template={leadTemplate} title={batch.category} category={batch.category} badgeText={`#${batch.batchNumber}`} aspectRatio="aspect-[4/3]" showHoverOverlay className="w-full" />
                 </div>
 
@@ -80,7 +80,7 @@ export const BatchPromptList: React.FC<BatchPromptListProps> = ({
                   <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-white/35">{batch.description}</p>
                   <div className="mt-2 flex items-center justify-between border-t border-white/6 pt-2">
                     <span className="text-[9px] font-semibold text-white/25">{batch.count} variants</span>
-                    {leadTemplate && onSelectTemplateToPreview && <button onClick={(e) => { e.stopPropagation(); onSelectTemplateToPreview(leadTemplate); }} className="flex items-center gap-1 text-[9px] font-bold text-cyan-300/75 transition hover:text-cyan-200"><Eye className="h-2.5 w-2.5" />Preview</button>}
+                    {leadTemplate && onSelectTemplateToPreview && <button onClick={(e) => { e.stopPropagation(); onSelectTemplateToPreview(leadTemplate); }} className="flex items-center gap-1 text-[9px] font-bold text-cyan-300/75 transition hover:text-cyan-200"><Eye className="h-2.5 w-2.5" />Customize</button>}
                   </div>
                 </div>
               </div>

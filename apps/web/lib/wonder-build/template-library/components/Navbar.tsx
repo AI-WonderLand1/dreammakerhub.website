@@ -3,7 +3,6 @@ import React from 'react';
 import { ActiveTab } from '../types';
 import {
   Layers,
-  Eye,
   Sparkles,
   Terminal,
   Store,
@@ -12,7 +11,6 @@ import {
   Image as ImageIcon,
   Zap,
   FolderOpen,
-  ArrowRight,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -59,16 +57,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <div className="flex items-center rounded-2xl border border-white/10 bg-black/30 p-1.5 shadow-inner shadow-black/30">
-            <button id="nav-btn-prompts" onClick={() => setActiveTab('prompts')} className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${activeTab === 'prompts' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_8px_24px_rgba(124,58,237,.28)]' : 'text-white/45 hover:bg-white/5 hover:text-white'}`}>
-              <Terminal className="h-3.5 w-3.5" /><span>Templates</span>
-            </button>
-            <button id="nav-btn-visual-builder" onClick={() => setActiveTab('visual-builder')} className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${activeTab === 'visual-builder' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_8px_24px_rgba(124,58,237,.28)]' : 'text-white/45 hover:bg-white/5 hover:text-white'}`}>
-              <Eye className="h-3.5 w-3.5" /><span>Quick Preview</span>
-            </button>
+          <button
+            id="nav-btn-prompts"
+            onClick={() => setActiveTab('prompts')}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${activeTab === 'prompts' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_8px_24px_rgba(124,58,237,.28)]' : 'text-white/45 hover:bg-white/5 hover:text-white'}`}
+          >
+            <Terminal className="h-3.5 w-3.5" /><span>Templates</span>
+          </button>
+          <div className="rounded-xl border border-white/8 bg-white/[.035] px-3 py-2 text-[10px] text-white/35">
+            Choose a starting point → <span className="font-bold text-cyan-300">Build</span>
           </div>
-          <ArrowRight className="h-3.5 w-3.5 text-white/15" />
-          <div className="rounded-xl border border-white/8 bg-white/[.035] px-3 py-2 text-[10px] text-white/35">Customize opens <span className="font-bold text-cyan-300">Build</span></div>
         </div>
 
         <div className="flex items-center gap-1.5">
