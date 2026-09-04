@@ -5,14 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
 import { PublishModal } from './PublishModal';
-import { logger } from '@/lib/logger';
 
 const NAV_LINKS = [
-  { href: '/wonder-build', label: 'Hub', icon: '🏠' },
-  { href: '/wonder-build/agent', label: 'Agent', icon: '🤖' },
-  { href: '/wonder-build/builder', label: 'Builder', icon: '🎨' },
-  { href: '/wonder-build/playcanvas', label: '3D', icon: '🎮' },
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { href: '/dashboard/projects', label: 'Projects', icon: '📁' },
+  { href: '/wonder-build', label: 'Start', icon: '✨' },
+  { href: '/wonder-build/builder', label: 'Build', icon: '🎨' },
 ] as const;
 
 export function SovereignNavBar() {
@@ -24,10 +21,10 @@ export function SovereignNavBar() {
     <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-white/10 bg-[#0b0b0d]/95 px-4 backdrop-blur-xl">
       <div className="flex min-w-0 items-center gap-3">
         <Link href="/wonder-build" className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-violet-400">
-          AI Wonderland
+          WonderBuild
         </Link>
         <span className="h-4 w-px bg-white/15" />
-        <p className="truncate text-xs text-white/60">Dream / Template Builder</p>
+        <p className="truncate text-xs text-white/60">Website Builder</p>
       </div>
 
       <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1 md:flex">
