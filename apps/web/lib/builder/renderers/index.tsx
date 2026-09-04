@@ -8,6 +8,7 @@ import { formsRenderers } from './forms';
 import { layoutRenderers } from './layout';
 import { marketingRenderers } from './marketing';
 import { mediaRenderers } from './media';
+import { web3dRenderers } from './web3d';
 import { navigationRenderers } from './navigation';
 import { notificationRenderers } from './notification';
 import { productsRenderers } from './products';
@@ -26,6 +27,7 @@ export const RENDERERS: Record<string, RendererCtx['el']['type'] extends never ?
   ...layoutRenderers,
   ...marketingRenderers,
   ...mediaRenderers,
+  ...web3dRenderers,
   ...navigationRenderers,
   ...notificationRenderers,
   ...productsRenderers,
