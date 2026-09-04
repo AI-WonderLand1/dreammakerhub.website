@@ -159,26 +159,26 @@ function SortableBlock({
       if (snapToGrid) {
         width = Math.max(24, Math.round(width / 8) * 8);
         height = Math.max(24, Math.round(height / 8) * 8);
-      }
 
-      if (parentRect) {
-        const parentWidth = parentRect.width / scale;
-        const parentHeight = parentRect.height / scale;
-        const left = (rect.left - parentRect.left) / scale;
-        const top = (rect.top - parentRect.top) / scale;
-        const widthTargets = [parentWidth / 2 - left, parentWidth - left].filter((value) => value >= 24);
-        const heightTargets = [parentHeight / 2 - top, parentHeight - top].filter((value) => value >= 24);
+        if (parentRect) {
+          const parentWidth = parentRect.width / scale;
+          const parentHeight = parentRect.height / scale;
+          const left = (rect.left - parentRect.left) / scale;
+          const top = (rect.top - parentRect.top) / scale;
+          const widthTargets = [parentWidth / 2 - left, parentWidth - left].filter((value) => value >= 24);
+          const heightTargets = [parentHeight / 2 - top, parentHeight - top].filter((value) => value >= 24);
 
-        const widthMatch = widthTargets.find((target) => Math.abs(width - target) <= alignmentThreshold);
-        if (widthMatch != null) {
-          width = widthMatch;
-          alignedX = true;
-        }
+          const widthMatch = widthTargets.find((target) => Math.abs(width - target) <= alignmentThreshold);
+          if (widthMatch != null) {
+            width = widthMatch;
+            alignedX = true;
+          }
 
-        const heightMatch = heightTargets.find((target) => Math.abs(height - target) <= alignmentThreshold);
-        if (heightMatch != null) {
-          height = heightMatch;
-          alignedY = true;
+          const heightMatch = heightTargets.find((target) => Math.abs(height - target) <= alignmentThreshold);
+          if (heightMatch != null) {
+            height = heightMatch;
+            alignedY = true;
+          }
         }
       }
 
