@@ -122,7 +122,10 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     });
     const bus = getEventBus();
     bus.emit(EventNames.HISTORY_CLEAR, {});
-    bus.emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
+    bus.emit(EventNames.PROJECT_METADATA_UPDATED, {
+      key: 'pages',
+      value: { activePageId: next.activePageId, pageCount: next.pages.length },
+    });
     return next.page.id;
   },
 
@@ -138,7 +141,10 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     });
     const bus = getEventBus();
     bus.emit(EventNames.HISTORY_CLEAR, {});
-    bus.emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
+    bus.emit(EventNames.PROJECT_METADATA_UPDATED, {
+      key: 'activePageId',
+      value: next.activePageId,
+    });
     return true;
   },
 
@@ -148,7 +154,10 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     const syncedPages = syncActivePageElements(state.pages, state.activePageId, state.elements);
     const pages = renameSitePage(syncedPages, pageId, name);
     set({ pages });
-    getEventBus().emit(EventNames.PROJECT_STATE_CHANGED, { elements: state.elements });
+    getEventBus().emit(EventNames.PROJECT_METADATA_UPDATED, {
+      key: 'pageName',
+      value: { pageId, name: pages.find((page) => page.id === pageId)?.name || name },
+    });
     return true;
   },
 
