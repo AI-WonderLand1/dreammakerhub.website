@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { query } from '@/lib/db';
 import PublishedBuilderPage from '@/lib/builder/components/PublishedBuilderPage';
-import type { CanvasElement } from '@/lib/builder/types';
+import type { BuilderTheme, CanvasElement } from '@/lib/builder/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,6 +16,7 @@ interface PublishedWonderBuildContent {
     pageSlug: string;
     isHome: boolean;
   };
+  theme?: BuilderTheme;
   elements: CanvasElement[];
 }
 
@@ -53,7 +54,7 @@ async function getPublishedPage(projectId: string, pageSlug: string) {
          AND pg.content->>'kind' = 'wonderbuild-site-page'
          AND pg.content->'wonderBuild'->>'projectId' = $1
          AND pg.content->'wonderBuild'->>'pageSlug' = $2
-         AND pg.slug LIKE ('wb-' || pr.id::text || '-%')
+         AND pg.slug LIKE ('wb-' || pg.user_id::text || '-' || pr.id::text || '-%')
        ORDER BY pg.updated_at DESC NULLS LAST
        LIMIT 1`,
       [projectId, pageSlug],
@@ -93,5 +94,5 @@ export default async function PublishedWonderBuildPage({
   const page = await getPublishedPage(projectId, requestedPageSlug(slug));
   if (!page) notFound();
 
-  return <PublishedBuilderPage elements={page.content.elements} />;
+  return <PublishedBuilderPage elements={page.content.elements} theme={page.content.theme} />;
 }
