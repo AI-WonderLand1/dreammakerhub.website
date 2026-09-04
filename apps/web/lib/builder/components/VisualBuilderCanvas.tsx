@@ -11,6 +11,8 @@ import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
 import { CANVAS_ROOT_ID, acceptsChildren } from '../dnd-utils';
 
+type ResizeAxis = 'x' | 'y' | 'xy';
+
 function buildElementCtx(
   el: CanvasElement,
   selectedId: string | null,
@@ -94,6 +96,9 @@ function SortableBlock({
   selectElement: (id: string | null) => void;
 }) {
   const isSelected = selectedId === el.id;
+  const blockRef = useRef<HTMLDivElement | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [sizeLabel, setSizeLabel] = useState<string | null>(null);
   const setRightPanelOpen = useBuilderStore((state) => state.setRightPanelOpen);
   const setRightPanelTab = useBuilderStore((state) => state.setRightPanelTab);
   const removeElement = useBuilderStore((state) => state.removeElement);
@@ -103,9 +108,14 @@ function SortableBlock({
     data: { type: 'canvas', parentId },
   });
 
+  const mergedRef = useCallback((node: HTMLDivElement | null) => {
+    blockRef.current = node;
+    setNodeRef(node);
+  }, [setNodeRef]);
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isResizing ? undefined : transition,
     opacity: isDragging ? 0.35 : 1,
     position: 'relative',
     zIndex: isDragging ? 100 : isSelected ? 30 : undefined,
@@ -116,47 +126,136 @@ function SortableBlock({
     setRightPanelTab(tab);
   };
 
+  const startResize = (axis: ResizeAxis, event: React.PointerEvent<HTMLButtonElement>) => {
+    if (el.locked || event.button !== 0) return;
+    const node = blockRef.current;
+    if (!node) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const store = useBuilderStore.getState();
+    const zoom = Math.max(store.zoom || 1, 0.1);
+    const snap = store.snapToGrid;
+    const rect = node.getBoundingClientRect();
+    const startWidth = rect.width / zoom;
+    const startHeight = rect.height / zoom;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const snapValue = (value: number) => snap ? Math.round(value / 8) * 8 : Math.round(value);
+
+    setIsResizing(true);
+    setSizeLabel(`${Math.round(startWidth)} × ${Math.round(startHeight)}`);
+    document.body.style.cursor = axis === 'x' ? 'ew-resize' : axis === 'y' ? 'ns-resize' : 'nwse-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMove = (moveEvent: PointerEvent) => {
+      const deltaX = (moveEvent.clientX - startX) / zoom;
+      const deltaY = (moveEvent.clientY - startY) / zoom;
+      const width = Math.max(40, snapValue(startWidth + deltaX));
+      const height = Math.max(24, snapValue(startHeight + deltaY));
+      const nextStyles: Record<string, string> = {};
+
+      if (axis === 'x' || axis === 'xy') nextStyles.width = `${width}px`;
+      if (axis === 'y' || axis === 'xy') nextStyles.height = `${height}px`;
+
+      useBuilderStore.getState().updateElementStyles(el.id, nextStyles);
+      setSizeLabel(`${axis === 'y' ? Math.round(startWidth) : width} × ${axis === 'x' ? Math.round(startHeight) : height}`);
+    };
+
+    const handleUp = () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      setIsResizing(false);
+      window.setTimeout(() => setSizeLabel(null), 700);
+    };
+
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+  };
+
+  const resizeHandleBase = 'absolute z-[90] rounded-full border border-violet-100/70 bg-violet-500 shadow-[0_0_0_2px_rgba(10,16,32,.9),0_0_16px_rgba(139,92,246,.7)] transition hover:scale-125 hover:bg-violet-300';
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={mergedRef} style={style} {...attributes} {...listeners}>
       {isSelected && !isDragging && (
-        <div
-          className="absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-          aria-label={`${el.name} quick actions`}
-        >
-          <span className="max-w-28 truncate px-2 text-[8px] font-black uppercase tracking-[.1em] text-violet-100/60">
-            {el.name}
-          </span>
-          <span className="h-4 w-px bg-white/8" />
-          <button
-            type="button"
-            onClick={() => openPanel('content')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[.06] hover:text-white"
-            title="Open Design inspector"
-            aria-label="Open Design inspector"
+        <>
+          <div
+            className="absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`${el.name} quick actions`}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => openPanel('ai')}
-            className="flex h-7 items-center gap-1 rounded-md bg-violet-500/10 px-2 text-[8px] font-black text-violet-100/70 transition hover:bg-violet-500/20 hover:text-white"
-            title="Edit selected element with AI"
-            aria-label="Edit selected element with AI"
-          >
-            <Sparkles className="h-3.5 w-3.5" /> AI
-          </button>
-          <button
-            type="button"
-            onClick={() => removeElement(el.id)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition hover:bg-red-500/10 hover:text-red-300"
-            title="Delete element"
-            aria-label={`Delete ${el.name}`}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+            <span className="max-w-28 truncate px-2 text-[8px] font-black uppercase tracking-[.1em] text-violet-100/60">
+              {el.name}
+            </span>
+            <span className="h-4 w-px bg-white/8" />
+            <button
+              type="button"
+              onClick={() => openPanel('content')}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[.06] hover:text-white"
+              title="Open Design inspector"
+              aria-label="Open Design inspector"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openPanel('ai')}
+              className="flex h-7 items-center gap-1 rounded-md bg-violet-500/10 px-2 text-[8px] font-black text-violet-100/70 transition hover:bg-violet-500/20 hover:text-white"
+              title="Edit selected element with AI"
+              aria-label="Edit selected element with AI"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> AI
+            </button>
+            <button
+              type="button"
+              onClick={() => removeElement(el.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition hover:bg-red-500/10 hover:text-red-300"
+              title="Delete element"
+              aria-label={`Delete ${el.name}`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {!el.locked && (
+            <>
+              <button
+                type="button"
+                className={`${resizeHandleBase} -right-[6px] top-1/2 h-3 w-3 -translate-y-1/2 cursor-ew-resize`}
+                onPointerDown={(event) => startResize('x', event)}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={`Resize ${el.name} width`}
+                title="Drag to resize width"
+              />
+              <button
+                type="button"
+                className={`${resizeHandleBase} bottom-[-6px] left-1/2 h-3 w-3 -translate-x-1/2 cursor-ns-resize`}
+                onPointerDown={(event) => startResize('y', event)}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={`Resize ${el.name} height`}
+                title="Drag to resize height"
+              />
+              <button
+                type="button"
+                className={`${resizeHandleBase} bottom-[-6px] right-[-6px] h-3.5 w-3.5 cursor-nwse-resize`}
+                onPointerDown={(event) => startResize('xy', event)}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={`Resize ${el.name}`}
+                title="Drag to resize width and height"
+              />
+            </>
+          )}
+
+          {sizeLabel && (
+            <div className="pointer-events-none absolute bottom-[-30px] right-0 z-[85] rounded-md border border-violet-300/15 bg-[#070b16]/95 px-2 py-1 font-mono text-[8px] font-bold text-violet-100/70 shadow-lg">
+              {sizeLabel}px
+            </div>
+          )}
+        </>
       )}
       {renderElement(el, selectedId, selectElement)}
     </div>
