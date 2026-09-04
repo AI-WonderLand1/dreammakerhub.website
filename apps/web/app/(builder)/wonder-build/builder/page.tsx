@@ -21,6 +21,7 @@ import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
 const VisualBuilderCanvas = dynamic(() => import('@/lib/builder/components/VisualBuilderCanvas'), { ssr: false });
+const PagesPanel = dynamic(() => import('@/lib/builder/components/PagesPanel'), { ssr: false });
 const ComponentLibrary = dynamic(() => import('@/lib/builder/components/ComponentLibrary'), { ssr: false });
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
 const AIAssistantPanel = dynamic(() => import('@/lib/builder/components/AIAssistantPanel'), { ssr: false });
@@ -410,9 +411,9 @@ function BuilderContent() {
                   <button
                     onClick={() => setLeftPanelOpen(!leftPanelOpen)}
                     className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${leftPanelOpen ? 'bg-purple-600/20 text-purple-300' : 'text-white/40 hover:text-white'}`}
-                    aria-label={leftPanelOpen ? 'Hide left panel' : 'Show blocks panel'}
+                    aria-label={leftPanelOpen ? 'Hide left panel' : 'Show left panel'}
                   >
-                    {leftPanelOpen ? '◀ Hide' : '▶ Blocks'}
+                    {leftPanelOpen ? '◀ Hide' : '▶ Pages'}
                   </button>
                   <span className="text-white/20 mx-1" aria-hidden="true">|</span>
                   <button onClick={undo} className="px-1.5 py-1 rounded text-xs text-white/40 hover:text-white hover:bg-white/5" title="Undo" aria-label="Undo">↩</button>
@@ -494,9 +495,9 @@ function BuilderContent() {
               >
               <div className="flex flex-1 overflow-hidden relative">
                 {leftPanelOpen && (
-                  <aside aria-label="Block library and layers" className="shrink-0 border-r border-white/10">
+                  <aside aria-label="Pages, blocks, layers, templates, and files" className="shrink-0 border-r border-white/10">
                     <nav aria-label="Panel tabs" className="flex border-b border-white/10">
-                      {(['blocks', 'layers', 'templates', 'files'] as const).map((tabName) => (
+                      {(['pages', 'blocks', 'layers', 'templates', 'files'] as const).map((tabName) => (
                         <button
                           key={tabName}
                           onClick={() => setLeftPanelTab(tabName)}
@@ -506,11 +507,12 @@ function BuilderContent() {
                             leftPanelTab === tabName ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500' : 'text-white/40 hover:text-white/70'
                           }`}
                         >
-                          {tabName === 'blocks' ? '🧱 Blocks' : tabName === 'layers' ? '📋 Layers' : tabName === 'templates' ? '📄 Templates' : '📁 Files'}
+                          {tabName === 'pages' ? '📑 Pages' : tabName === 'blocks' ? '🧱 Blocks' : tabName === 'layers' ? '📋 Layers' : tabName === 'templates' ? '📄 Templates' : '📁 Files'}
                         </button>
                       ))}
                     </nav>
                     <div role="tabpanel">
+                      {leftPanelTab === 'pages' && <PagesPanel />}
                       {leftPanelTab === 'blocks' && <ComponentLibrary />}
                       {leftPanelTab === 'layers' && <LayersPanel />}
                       {leftPanelTab === 'templates' && <TemplatesPanel />}
