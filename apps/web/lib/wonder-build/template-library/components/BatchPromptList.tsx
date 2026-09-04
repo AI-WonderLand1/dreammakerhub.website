@@ -4,16 +4,7 @@ import { BATCH_DEFINITIONS } from '../data/batchPrompts';
 import { BatchDefinition, WonderBuildTemplate } from '../types';
 import { copyToClipboard } from '../utils/templateUtils';
 import { TemplateThumbnail } from './TemplateThumbnail';
-import {
-  Copy,
-  Check,
-  Search,
-  Sparkles,
-  Terminal,
-  FileCode,
-  Eye,
-  ArrowRight,
-} from 'lucide-react';
+import { Copy, Check, Search, Sparkles, Terminal, FileCode, Eye } from 'lucide-react';
 
 interface BatchPromptListProps {
   selectedBatchNumber: number;
@@ -50,156 +41,60 @@ export const BatchPromptList: React.FC<BatchPromptListProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 border-r border-slate-800 w-full lg:w-80 xl:w-96 flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header & Search */}
-      <div className="p-3.5 border-b border-slate-800 space-y-2.5">
+    <aside className="wb-template-sidebar flex h-[calc(100vh-4.5rem)] w-full flex-col border-r lg:w-80 xl:w-96">
+      <div className="space-y-3 border-b border-white/8 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold text-white flex items-center space-x-1.5">
-            <Terminal className="w-4 h-4 text-indigo-400" />
-            <span>{BATCH_DEFINITIONS.length} Prompt Batches</span>
-          </h2>
-          <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-mono font-semibold">
-            {BATCH_DEFINITIONS.reduce((sum, b) => sum + b.variants.length, 0)} Layouts
-          </span>
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[.2em] text-violet-300/55">Explore</p>
+            <h2 className="mt-1 flex items-center gap-2 text-sm font-black text-white"><Terminal className="h-4 w-4 text-violet-300" />Template Collections</h2>
+          </div>
+          <span className="rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[9px] font-black text-violet-200">{BATCH_DEFINITIONS.reduce((sum, b) => sum + b.variants.length, 0)} layouts</span>
         </div>
 
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
-          <input
-            id="batch-search-input"
-            type="text"
-            placeholder="Filter category or layout..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-2.5 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-          />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-white/25" />
+          <input id="batch-search-input" type="text" placeholder="Search styles or industries..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-white/10 bg-black/30 py-2 pl-9 pr-3 text-xs text-white outline-none transition placeholder:text-white/20 focus:border-violet-400/40 focus:shadow-[0_0_0_3px_rgba(139,92,246,.07)]" />
         </div>
       </div>
 
-      {/* Batch Cards List - Compact structure so 4+ fit on screen */}
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
         {filteredBatches.map((batch) => {
           const isSelected = selectedBatchNumber === batch.batchNumber;
           const isCopied = copiedBatchNum === batch.batchNumber;
-
-          // Find templates matching this batch category
-          const matchingTemplates = templates.filter(
-            (t) => t.category.toLowerCase() === batch.category.toLowerCase()
-          );
-
-          // Get lead template for thumbnail
+          const matchingTemplates = templates.filter((t) => t.category.toLowerCase() === batch.category.toLowerCase());
           const leadTemplate = matchingTemplates[0];
 
           return (
-            <div
-              key={`batch-${batch.batchNumber}`}
-              id={`batch-card-${batch.batchNumber}`}
-              onClick={() => onSelectBatch(batch)}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer group relative ${
-                isSelected
-                  ? 'bg-slate-800/95 border-indigo-500/80 shadow-md ring-1 ring-indigo-500/30'
-                  : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-800/50 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-start gap-2.5">
-                {/* Compact Thumbnail Container with Hover Effect */}
-                <div
-                  className="w-24 shrink-0 relative group/thumb"
-                  title="Click to preview template"
-                  onClick={(e) => {
-                    if (leadTemplate && onSelectTemplateToPreview) {
-                      e.stopPropagation();
-                      onSelectTemplateToPreview(leadTemplate);
-                    }
-                  }}
-                >
-                  <TemplateThumbnail
-                    template={leadTemplate}
-                    title={batch.category}
-                    category={batch.category}
-                    badgeText={`#${batch.batchNumber}`}
-                    aspectRatio="aspect-[4/3]"
-                    showHoverOverlay={true}
-                    className="w-full rounded-md shadow-sm"
-                  />
+            <div key={`batch-${batch.batchNumber}`} id={`batch-card-${batch.batchNumber}`} onClick={() => onSelectBatch(batch)} className={`wb-template-card group cursor-pointer rounded-2xl border p-3 transition ${isSelected ? 'ring-1 ring-violet-400/45 shadow-[0_16px_44px_rgba(76,29,149,.24)]' : ''}`}>
+              <div className="flex items-start gap-3">
+                <div className="relative w-24 shrink-0" title="Preview template" onClick={(e) => { if (leadTemplate && onSelectTemplateToPreview) { e.stopPropagation(); onSelectTemplateToPreview(leadTemplate); } }}>
+                  <TemplateThumbnail template={leadTemplate} title={batch.category} category={batch.category} badgeText={`#${batch.batchNumber}`} aspectRatio="aspect-[4/3]" showHoverOverlay className="w-full" />
                 </div>
 
-                {/* Info Block */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.2 rounded border border-indigo-500/20 truncate">
-                      Batch #{batch.batchNumber}
-                    </span>
-
-                    {/* Copy Button */}
-                    <button
-                      id={`btn-copy-batch-${batch.batchNumber}`}
-                      onClick={(e) => handleCopyPrompt(e, batch)}
-                      title="Copy Prompt Block"
-                      className={`p-1 rounded border transition-all cursor-pointer ${
-                        isCopied
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border-slate-700'
-                      }`}
-                    >
-                      {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-md border border-violet-400/15 bg-violet-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[.14em] text-violet-200">Collection {batch.batchNumber}</span>
+                    <button id={`btn-copy-batch-${batch.batchNumber}`} onClick={(e) => handleCopyPrompt(e, batch)} title="Copy prompt" className={`rounded-lg border p-1.5 transition ${isCopied ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' : 'border-white/8 bg-white/[.035] text-white/30 hover:text-white'}`}>{isCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}</button>
                   </div>
-
-                  <h3 className="text-xs font-bold text-white mt-1 group-hover:text-indigo-300 transition-colors truncate">
-                    {batch.category}
-                  </h3>
-
-                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1 leading-tight">
-                    {batch.description}
-                  </p>
-
-                  <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-slate-800/80">
-                    <span className="text-[10px] text-slate-500 font-medium">
-                      {batch.count} Variants
-                    </span>
-
-                    {leadTemplate && onSelectTemplateToPreview && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectTemplateToPreview(leadTemplate);
-                        }}
-                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center space-x-0.5 transition-colors cursor-pointer"
-                      >
-                        <Eye className="w-2.5 h-2.5" />
-                        <span>Preview</span>
-                      </button>
-                    )}
+                  <h3 className="mt-2 truncate text-[13px] font-black text-white transition group-hover:text-violet-200">{batch.category}</h3>
+                  <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-white/35">{batch.description}</p>
+                  <div className="mt-2 flex items-center justify-between border-t border-white/6 pt-2">
+                    <span className="text-[9px] font-semibold text-white/25">{batch.count} variants</span>
+                    {leadTemplate && onSelectTemplateToPreview && <button onClick={(e) => { e.stopPropagation(); onSelectTemplateToPreview(leadTemplate); }} className="flex items-center gap-1 text-[9px] font-bold text-cyan-300/75 transition hover:text-cyan-200"><Eye className="h-2.5 w-2.5" />Preview</button>}
                   </div>
                 </div>
               </div>
 
-              {/* Action bar on active selection */}
               {isSelected && (
-                <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
-                  <span className="text-indigo-300 font-medium flex items-center space-x-1">
-                    <FileCode className="w-3 h-3" />
-                    <span>Active Batch</span>
-                  </span>
-
-                  <button
-                    id={`btn-run-batch-ai-${batch.batchNumber}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRunBatchAi(batch);
-                    }}
-                    className="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-sm"
-                  >
-                    <Sparkles className="w-2.5 h-2.5" />
-                    <span>AI Generator</span>
-                  </button>
+                <div className="mt-3 flex items-center justify-between rounded-xl border border-violet-400/12 bg-violet-500/[.065] px-2.5 py-2">
+                  <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[.12em] text-violet-200"><FileCode className="h-3 w-3" />Selected</span>
+                  <button id={`btn-run-batch-ai-${batch.batchNumber}`} onClick={(e) => { e.stopPropagation(); onRunBatchAi(batch); }} className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-2.5 py-1.5 text-[9px] font-black text-white shadow-[0_8px_20px_rgba(124,58,237,.2)]"><Sparkles className="h-3 w-3" />Generate AI</button>
                 </div>
               )}
             </div>
           );
         })}
       </div>
-    </div>
+    </aside>
   );
 };

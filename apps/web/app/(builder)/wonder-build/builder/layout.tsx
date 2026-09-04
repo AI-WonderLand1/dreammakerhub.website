@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'WonderBuild Builder | AI Wonderland',
-  description: 'Build 3D worlds and games in WonderBuild.',
+  title: 'WonderBuild Website Builder | AI Wonderland',
+  description: 'Design, edit, preview, and publish websites with AI and drag-and-drop tools in WonderBuild.',
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

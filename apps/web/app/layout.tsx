@@ -12,8 +12,7 @@ import { ClientAccessibilityWrapper } from "@/components/ClientAccessibilityWrap
 import { cn } from "@/lib/utils";
 import UniversalAIAssistant from "@/components/ai/UniversalAIAssistant";
 import { AutoRunAI, AutoRunFromURL, AutoBuildTrigger } from "@/components/ai/AutoRunAI";
-import Footer from "@/components/Footer";
-import { logger } from '@/lib/logger';
+import RouteAwareFooter from "@/components/RouteAwareFooter";
 
 export const metadata: Metadata = {
   title: {
@@ -50,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AutoRunFromURL />
               <AutoBuildTrigger />
               <ClientAccessibilityWrapper />
-              <Footer />
+              <RouteAwareFooter />
             </AccessibilityProvider>
           </BuilderProvider>
         </AuthProvider>

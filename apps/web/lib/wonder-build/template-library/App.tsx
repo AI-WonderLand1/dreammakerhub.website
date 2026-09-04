@@ -1,11 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { BatchPromptList } from './components/BatchPromptList';
 import { PromptViewer } from './components/PromptViewer';
 import { VisualRenderer } from './components/VisualRenderer';
 import { AiGeneratorModal } from './components/AiGeneratorModal';
-import { DeployModal } from './components/DeployModal';
 import { CreatorStudioModal } from './components/CreatorStudioModal';
 import { AIImageStudioModal } from './components/AIImageStudioModal';
 import { GroundedSearchModal } from './components/GroundedSearchModal';
@@ -38,13 +37,22 @@ export default function App() {
 
   // Modals state
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
-  const [isDeployModalOpen, setIsDeployModalOpen] = useState<boolean>(false);
   const [isCreatorStudioOpen, setIsCreatorStudioOpen] = useState<boolean>(false);
   const [isImageStudioOpen, setIsImageStudioOpen] = useState<boolean>(false);
   const [isSearchGroundingOpen, setIsSearchGroundingOpen] = useState<boolean>(false);
   const [isVoiceCoPilotOpen, setIsVoiceCoPilotOpen] = useState<boolean>(false);
   const [isIntelligenceOpen, setIsIntelligenceOpen] = useState<boolean>(false);
   const [isGuidedStartOpen, setIsGuidedStartOpen] = useState<boolean>(true);
+
+  // /wonder-build/templates?mode=ai opens the existing AI starting flow without
+  // forcing every consumer of this shared component to use Next's search hook.
+  useEffect(() => {
+    const mode = new URLSearchParams(window.location.search).get('mode');
+    if (mode === 'ai') {
+      setIsGuidedStartOpen(false);
+      setIsAiModalOpen(true);
+    }
+  }, []);
 
   const handlePublishCreatorTemplate = (newTemplate: WonderBuildTemplate) => {
     setTemplates((prev) => [newTemplate, ...prev]);
@@ -62,7 +70,7 @@ export default function App() {
     setIsGuidedStartOpen(false);
   };
 
-  // Create a project from a template, seed the builder state, then jump into the canvas.
+  // Create the real project, seed canonical builder state, then open the real editor.
   const handleOpenInBuilder = async (tpl: WonderBuildTemplate) => {
     if (!tpl || builderLoading) return;
     setBuilderLoading(true);
@@ -73,8 +81,8 @@ export default function App() {
         body: JSON.stringify({ name: tpl.name, tool: 'wonderbuild' }),
       });
 
-      if (res.status === 401) {
-        window.location.href = '/public-pages/auth?redirectTo=/templates';
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = `/public-pages/auth?redirectTo=${encodeURIComponent('/wonder-build')}`;
         return;
       }
       if (!res.ok) {
@@ -95,29 +103,24 @@ export default function App() {
 
       if (!seedRes.ok) throw new Error('Unable to seed the builder with this template');
 
-      window.location.href = `/wonder-build/builder?projectId=${project.id}`;
+      window.location.href = `/wonder-build/builder?projectId=${encodeURIComponent(project.id)}`;
     } catch (err: any) {
       alert(err?.message || 'Failed to open template in builder');
-    } finally {
       setBuilderLoading(false);
     }
   };
 
-  // Selected Batch definition
   const currentBatch =
     BATCH_DEFINITIONS.find((b) => b.batchNumber === selectedBatchNumber) ||
     BATCH_DEFINITIONS[0];
 
-  // Selected Template
   const currentTemplate =
     templates.find((t) => t.id === selectedTemplateId) || templates[0];
 
-  // Get templates associated with current batch
   const batchTemplates = templates.filter(
     (t) => t.category.toLowerCase() === currentBatch.category.toLowerCase()
   );
 
-  // Find selected element node in tree
   const getElementAtPath = (
     elements: WonderBuildElement[],
     path: number[]
@@ -139,7 +142,7 @@ export default function App() {
     selectedElementPath
   );
 
-  // Tree manipulation handlers
+  // Tree manipulation handlers used by Start-step helper tools.
   const handleUpdateElementNode = (
     path: number[],
     updatedNode: WonderBuildElement
@@ -170,12 +173,10 @@ export default function App() {
     );
   };
 
-  // Export all master templates
   const handleExportAll = () => {
     downloadJsonFile(templates, 'wonderbuild_60_templates_master.json');
   };
 
-  // Batch import
   const handleImportBatchTemplates = (newTemplates: WonderBuildTemplate[]) => {
     setTemplates((prev) => {
       const existingIds = new Set(prev.map((t) => t.id));
@@ -184,9 +185,10 @@ export default function App() {
     });
   };
 
-  const handleSelectTemplateAndNavigateToPreview = (tpl: WonderBuildTemplate) => {
+  // Template cards are starting points. Customize/Edit always opens the canonical builder.
+  const handleSelectTemplateAndOpenBuilder = (tpl: WonderBuildTemplate) => {
     setSelectedTemplateId(tpl.id);
-    setActiveTab('visual-builder');
+    void handleOpenInBuilder(tpl);
   };
 
   const handleGenerateTemplateFromSearchResearch = (topic: string, summary: string) => {
@@ -245,12 +247,11 @@ export default function App() {
 
     setTemplates((prev) => [newTemplate, ...prev]);
     setSelectedTemplateId(newId);
-    setActiveTab('visual-builder');
+    void handleOpenInBuilder(newTemplate);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
-      {/* Top Main Navigation Header */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -258,7 +259,6 @@ export default function App() {
         readyBatchesCount={BATCH_DEFINITIONS.length}
         onExportAll={handleExportAll}
         onOpenAiModal={() => setIsAiModalOpen(true)}
-        onOpenDeployModal={() => setIsDeployModalOpen(true)}
         onOpenCreatorStudio={() => setIsCreatorStudioOpen(true)}
         onOpenImageStudio={() => setIsImageStudioOpen(true)}
         onOpenSearchGrounding={() => setIsSearchGroundingOpen(true)}
@@ -266,9 +266,7 @@ export default function App() {
         onOpenIntelligence={() => setIsIntelligenceOpen(true)}
       />
 
-      {/* Main Body Workspace */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden h-[calc(100vh-4rem)]">
-        {/* Left Sidebar: 14 Batch Prompts Selector */}
         <BatchPromptList
           selectedBatchNumber={selectedBatchNumber}
           templates={templates}
@@ -284,16 +282,15 @@ export default function App() {
             setSelectedBatchNumber(batch.batchNumber);
             setIsAiModalOpen(true);
           }}
-          onSelectTemplateToPreview={handleSelectTemplateAndNavigateToPreview}
+          onSelectTemplateToPreview={handleSelectTemplateAndOpenBuilder}
         />
 
-        {/* Center Main Viewport Content */}
         <div className="flex-1 flex overflow-hidden">
           {activeTab === 'prompts' && (
             <PromptViewer
               batch={currentBatch}
               associatedTemplates={batchTemplates}
-              onSelectTemplateToView={handleSelectTemplateAndNavigateToPreview}
+              onSelectTemplateToView={handleSelectTemplateAndOpenBuilder}
               onRunBatchAi={(batch) => {
                 setSelectedBatchNumber(batch.batchNumber);
                 setIsAiModalOpen(true);
@@ -309,21 +306,18 @@ export default function App() {
                 onSelectElement={(path) => setSelectedElementPath(path)}
                 viewportMode={viewportMode}
                 setViewportMode={setViewportMode}
-                onOpenDeployModal={() => setIsDeployModalOpen(true)}
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* Guided "What are you building?" start */}
       <IndustryPicker
         isOpen={isGuidedStartOpen}
         onSelectIndustry={handleSelectIndustry}
         onSkip={() => setIsGuidedStartOpen(false)}
       />
 
-      {/* AI Batch Generator Modal */}
       <AiGeneratorModal
         batch={currentBatch}
         isOpen={isAiModalOpen}
@@ -332,21 +326,11 @@ export default function App() {
           handleImportBatchTemplates(newTemplates);
           if (newTemplates.length > 0) {
             setSelectedTemplateId(newTemplates[0].id);
+            void handleOpenInBuilder(newTemplates[0]);
           }
         }}
       />
 
-      {/* Production Deploy Modal */}
-      <DeployModal
-        isOpen={isDeployModalOpen}
-        onClose={() => setIsDeployModalOpen(false)}
-        activeTemplateName={currentTemplate.name}
-        totalTemplatesCount={templates.length}
-        onOpenInBuilder={() => handleOpenInBuilder(currentTemplate)}
-        builderLoading={builderLoading}
-      />
-
-      {/* Creator Studio & Template Marketplace Modal */}
       <CreatorStudioModal
         isOpen={isCreatorStudioOpen}
         onClose={() => setIsCreatorStudioOpen(false)}
@@ -355,7 +339,6 @@ export default function App() {
         creatorTemplates={templates.filter((t) => t.isCreatorTemplate)}
       />
 
-      {/* AI Pro Image Studio Modal */}
       <AIImageStudioModal
         isOpen={isImageStudioOpen}
         onClose={() => setIsImageStudioOpen(false)}
@@ -365,20 +348,17 @@ export default function App() {
         onUpdateElementNode={handleUpdateElementNode}
       />
 
-      {/* Search Grounding Modal */}
       <GroundedSearchModal
         isOpen={isSearchGroundingOpen}
         onClose={() => setIsSearchGroundingOpen(false)}
         onGenerateFromResearch={handleGenerateTemplateFromSearchResearch}
       />
 
-      {/* Voice Co-Pilot Live API Modal */}
       <VoiceCoPilotModal
         isOpen={isVoiceCoPilotOpen}
         onClose={() => setIsVoiceCoPilotOpen(false)}
       />
 
-      {/* Gemini Intelligence & Audit Modal */}
       <GeminiIntelligenceModal
         isOpen={isIntelligenceOpen}
         onClose={() => setIsIntelligenceOpen(false)}

@@ -1,0 +1,53 @@
+/* Template-library ambient treatment. */
+body:has(.wb-template-nav) {
+  background: #050816;
+}
+
+body:has(.wb-template-nav) > div,
+div:has(> .wb-template-nav) {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(59,130,246,.12), transparent 28%),
+    radial-gradient(circle at 35% 6%, rgba(139,92,246,.14), transparent 24%),
+    linear-gradient(180deg, #050816 0%, #060916 58%, #050713 100%) !important;
+}
+
+div:has(> .wb-template-nav)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(99,102,241,.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,.032) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
+
+div:has(> .wb-template-nav) > * {
+  position: relative;
+  z-index: 1;
+}
+
+.wb-template-workspace::-webkit-scrollbar,
+.wb-template-sidebar *::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.wb-template-workspace::-webkit-scrollbar-thumb,
+.wb-template-sidebar *::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(139,92,246,.22);
+}
+
+.wb-template-workspace::-webkit-scrollbar-track,
+.wb-template-sidebar *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wb-template-section button:focus-visible,
+.wb-template-card:focus-visible {
+  outline: 2px solid rgba(167,139,250,.9) !important;
+  outline-offset: 3px;
+}

@@ -38,16 +38,17 @@ export type SecondaryNavItem = {
 };
 
 export const PAGES: NavPage[] = [
-  // BUILD — WonderBuild
-  { path: "/wonder-build", label: "WonderBuild", icon: "⚡", category: "builder", description: "Build websites, apps, and landing pages — visually or with AI." },
-  { path: "/wonder-build/builder", label: "Visual Builder", icon: "🎨", category: "builder", description: "Drag-and-drop canvas, components, pages, and live preview." },
-  { path: "/wonder-build/agent", label: "AI Agent", icon: "🤖", category: "builder", description: "Agent-driven build loop for websites, games, and components." },
+  // BUILD — WonderBuild website builder
+  { path: "/wonder-build", label: "WonderBuild Start", icon: "⚡", category: "builder", description: "Start a website from blank, a template, or AI." },
+  { path: "/wonder-build/templates", label: "Website Templates", icon: "📄", category: "builder", description: "Choose or generate a starting point, then open it in the WonderBuild editor." },
+  { path: "/wonder-build/builder", label: "WonderBuild Builder", icon: "🎨", category: "builder", description: "AI-assisted drag-and-drop website editor with design, code, preview, and publish." },
+  { path: "/wonder-build/agent", label: "Builder Agent", icon: "🤖", category: "builder", description: "Advanced agent-driven build surface. AI editing is also available inside the main builder." },
   // CODE — WonderSpace
   { path: "/wonderspace", label: "WonderSpace", icon: "💻", category: "workspace", description: "AI-powered development environment with agents and preview." },
   { path: "/ide", label: "Cloud IDE", icon: "🖥️", category: "workspace", description: "Your private cloud workspace — VS Code, terminal, git." },
   { path: "/wonderspace/ide", label: "New Workspace", icon: "🚀", category: "workspace", description: "Launch a named cloud IDE workspace." },
   { path: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: "🤖", category: "workspace", description: "Chat with models, test prompts, and run agent workflows.", external: true },
-  // 3D — WonderPlay
+  // 3D — WonderPlay (intentionally unchanged by WonderBuild website-flow work)
   { path: "/dashboard/3dhub", label: "NPC AI SIM", icon: "🎮", category: "tools", description: "Create 3D scenes, 360 views, games and movies — then open them in the PlayCanvas editor." },
   { path: "/wonder-play", label: "WonderPlay App", icon: "🌐", category: "tools", description: "Launch the external NPC AI SIM runtime.", external: true },
   // Community & docs
@@ -65,13 +66,13 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     id: "build",
     label: "Build",
     product: "WonderBuild",
-    tagline: "Websites, apps & landing pages",
+    tagline: "Start → Build + Preview → Publish",
     icon: "⚡",
     href: "/wonder-build",
     items: [
-      { label: "Visual Builder", href: "/wonder-build/builder", description: "Drag-and-drop canvas, components, preview." },
-      { label: "AI Agent", href: "/wonder-build/agent", description: "Agent-driven build loop." },
-      { label: "Templates", href: "/wonder-build", description: "Browse and generate templates." },
+      { label: "Start Website", href: "/wonder-build", description: "Start blank, choose a template, or generate with AI." },
+      { label: "Templates", href: "/wonder-build/templates", description: "Choose or generate a starting design." },
+      { label: "Website Builder", href: "/wonder-build/builder", description: "AI + drag-and-drop editor with Preview and Publish." },
     ],
   },
   {
@@ -105,7 +106,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 
 export const SECONDARY_NAV: SecondaryNavItem[] = [
   { label: "Projects", href: "/dashboard/projects", icon: "📁" },
-  { label: "Templates", href: "/wonder-build", icon: "📄" },
+  { label: "Templates", href: "/wonder-build/templates", icon: "📄" },
   { label: "Marketplace", href: "/marketplace", icon: "🛍️" },
   { label: "Playground", href: "https://playground.dreammakerhub.website/", icon: "🤖", external: true },
   { label: "Docs", href: "/docs", icon: "📖" },
@@ -123,7 +124,7 @@ const PROJECT_TYPE_TO_DESTINATION: Record<string, string> = {
   website: "/wonder-build/builder",
   "landing-page": "/wonder-build/builder",
   "landing_page": "/wonder-build/builder",
-  "web-app": "/wonder-build/studio",
+  "web-app": "/wonder-build/builder",
   web_app: "/wonder-build/builder",
   app: "/wonder-build/builder",
   store: "/wonder-build/builder",
