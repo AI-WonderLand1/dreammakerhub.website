@@ -14,6 +14,15 @@ export default function PagesPanel() {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
 
+  const selectPage = (pageId: string) => {
+    // switchPage intentionally clears page-local selection/history. Avoid
+    // clearing it again when the user simply clicks the already-active page
+    // (including the first click of a double-click-to-rename gesture).
+    if (useBuilderStore.getState().activePageId !== pageId) {
+      switchPage(pageId);
+    }
+  };
+
   const beginRename = (pageId: string, name: string) => {
     setEditingPageId(pageId);
     setDraftName(name);
@@ -97,7 +106,7 @@ export default function PagesPanel() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => switchPage(page.id)}
+                    onClick={() => selectPage(page.id)}
                     onDoubleClick={() => beginRename(page.id, page.name)}
                     className="min-w-0 flex-1 text-left"
                     title="Open page — double-click to rename"
