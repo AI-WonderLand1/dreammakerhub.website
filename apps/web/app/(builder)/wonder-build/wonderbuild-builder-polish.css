@@ -1,24 +1,9 @@
 /* Second-pass visual polish for the website-builder controls. */
-header[role='banner'] > div:first-child a {
-  color: rgba(196,181,253,.72) !important;
-  font-weight: 800;
-}
 
-header[role='banner'] button[role='tab'] {
-  min-width: 74px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  letter-spacing: .01em;
-}
-
-header[role='banner'] button[role='tab'][aria-selected='true'] {
-  border-color: rgba(167,139,250,.24);
-  background: linear-gradient(135deg, rgba(124,58,237,.88), rgba(79,70,229,.82)) !important;
-  box-shadow: 0 8px 24px rgba(91,33,182,.22), inset 0 1px 0 rgba(255,255,255,.13);
-}
-
-header[role='banner'] button[role='tab'][aria-selected='false'] {
-  background: rgba(255,255,255,.025);
+/* The legacy Builder header is still rendered for compatibility, but the
+   unified SovereignNavBar is now the single visible editor header. */
+header[role='banner'] {
+  display: none !important;
 }
 
 nav[aria-label='Canvas toolbar'] button {
