@@ -80,7 +80,7 @@ export function SovereignNavBar() {
           const Icon = mode.icon;
           const isActive = activeMode === mode.id;
           return (
-            <Link
+            <a
               key={mode.id}
               href={modeHref(mode.id)}
               aria-current={isActive ? 'page' : undefined}
@@ -92,7 +92,7 @@ export function SovereignNavBar() {
             >
               <Icon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{mode.label}</span>
-            </Link>
+            </a>
           );
         })}
       </nav>
