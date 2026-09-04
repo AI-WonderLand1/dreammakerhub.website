@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, FilePlus2, LayoutTemplate, Sparkles, FolderOpen } from 'lucide-react';
 
@@ -8,6 +8,17 @@ export default function WonderBuildStartPage() {
   const [projectName, setProjectName] = useState('Untitled Website');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [routingExistingProject, setRoutingExistingProject] = useState(false);
+
+  // Compatibility for existing links that still target /wonder-build?projectId=...
+  // The canonical editable project surface is /wonder-build/builder.
+  useEffect(() => {
+    const projectId = new URLSearchParams(window.location.search).get('projectId');
+    if (!projectId) return;
+
+    setRoutingExistingProject(true);
+    window.location.replace(`/wonder-build/builder?projectId=${encodeURIComponent(projectId)}`);
+  }, []);
 
   const createBlankWebsite = async () => {
     if (creating) return;
@@ -40,6 +51,14 @@ export default function WonderBuildStartPage() {
       setCreating(false);
     }
   };
+
+  if (routingExistingProject) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#08090d] text-sm text-white/50">
+        Opening website project…
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#08090d] text-white">
