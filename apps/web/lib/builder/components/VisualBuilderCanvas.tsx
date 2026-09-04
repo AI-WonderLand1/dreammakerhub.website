@@ -1,27 +1,30 @@
 'use client';
 
-import React, { useCallback, useRef, useEffect, useState } from 'react';
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import { useBuilderStore } from '../store';
-import { CanvasElement } from '../types';
+import type { CanvasElement } from '../types';
 import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
 import { CANVAS_ROOT_ID, acceptsChildren } from '../dnd-utils';
 
-function buildElementCtx(el: CanvasElement, selectedId: string | null, selectElement: (id: string | null) => void): RendererCtx {
+function buildElementCtx(
+  el: CanvasElement,
+  selectedId: string | null,
+  selectElement: (id: string | null) => void,
+): RendererCtx {
   const isSelected = selectedId === el.id;
   const style: React.CSSProperties = {
     ...(el.styles as React.CSSProperties),
     position: 'relative',
     cursor: 'pointer',
-    outline: isSelected ? '2px solid #7c3aed' : '1px solid transparent',
-    outlineOffset: '2px',
+    outline: isSelected ? '1.5px solid #8b5cf6' : '1px solid transparent',
+    outlineOffset: isSelected ? '2px' : '0',
   };
 
-  // Empty containers need a visible drop zone, otherwise they collapse to
-  // zero height and can never be targeted for nesting.
   if (!el.children?.length && acceptsChildren(el.type)) {
     style.minHeight = el.styles?.minHeight || '56px';
     style.minWidth = el.styles?.minWidth || '56px';
@@ -29,17 +32,22 @@ function buildElementCtx(el: CanvasElement, selectedId: string | null, selectEle
 
   const baseProps = {
     key: el.id,
-    onClick: (e: React.MouseEvent) => { e.stopPropagation(); selectElement(el.id); },
+    onClick: (event: React.MouseEvent) => {
+      event.stopPropagation();
+      selectElement(el.id);
+    },
     onFocus: () => selectElement(el.id),
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.stopPropagation();
+    onKeyDown: (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.stopPropagation();
         selectElement(el.id);
       }
     },
     tabIndex: 0,
     role: 'group',
-    'aria-label': `${el.name} element${el.props?.alt ? `: ${el.props.alt}` : ''}${el.props?.content ? `: ${typeof el.props.content === 'string' ? el.props.content.slice(0, 50) : ''}` : ''}`,
+    'aria-label': `${el.name} element${el.props?.alt ? `: ${el.props.alt}` : ''}${
+      el.props?.content && typeof el.props.content === 'string' ? `: ${el.props.content.slice(0, 50)}` : ''
+    }`,
     style,
     className: `builder-element ${isSelected ? 'selected' : ''}`,
   };
@@ -51,16 +59,26 @@ function buildElementCtx(el: CanvasElement, selectedId: string | null, selectEle
     baseProps,
     style,
     children: el.children?.length ? (
-      <SortableContext items={el.children.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={el.children.map((child) => child.id)} strategy={verticalListSortingStrategy}>
         {el.children.map((child) => (
-          <SortableBlock key={child.id} el={child} parentId={el.id} selectedId={selectedId} selectElement={selectElement} />
+          <SortableBlock
+            key={child.id}
+            el={child}
+            parentId={el.id}
+            selectedId={selectedId}
+            selectElement={selectElement}
+          />
         ))}
       </SortableContext>
     ) : undefined,
   };
 }
 
-function renderElement(el: CanvasElement, selectedId: string | null, selectElement: (id: string | null) => void): React.ReactNode {
+function renderElement(
+  el: CanvasElement,
+  selectedId: string | null,
+  selectElement: (id: string | null) => void,
+): React.ReactNode {
   return renderElementCtx(buildElementCtx(el, selectedId, selectElement));
 }
 
@@ -75,6 +93,11 @@ function SortableBlock({
   selectedId: string | null;
   selectElement: (id: string | null) => void;
 }) {
+  const isSelected = selectedId === el.id;
+  const setRightPanelOpen = useBuilderStore((state) => state.setRightPanelOpen);
+  const setRightPanelTab = useBuilderStore((state) => state.setRightPanelTab);
+  const removeElement = useBuilderStore((state) => state.removeElement);
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: el.id,
     data: { type: 'canvas', parentId },
@@ -83,13 +106,58 @@ function SortableBlock({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.35 : 1,
     position: 'relative',
-    zIndex: isDragging ? 100 : undefined,
+    zIndex: isDragging ? 100 : isSelected ? 30 : undefined,
+  };
+
+  const openPanel = (tab: 'content' | 'ai') => {
+    setRightPanelOpen(true);
+    setRightPanelTab(tab);
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {isSelected && !isDragging && (
+        <div
+          className="absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          aria-label={`${el.name} quick actions`}
+        >
+          <span className="max-w-28 truncate px-2 text-[8px] font-black uppercase tracking-[.1em] text-violet-100/60">
+            {el.name}
+          </span>
+          <span className="h-4 w-px bg-white/8" />
+          <button
+            type="button"
+            onClick={() => openPanel('content')}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[.06] hover:text-white"
+            title="Open Design inspector"
+            aria-label="Open Design inspector"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => openPanel('ai')}
+            className="flex h-7 items-center gap-1 rounded-md bg-violet-500/10 px-2 text-[8px] font-black text-violet-100/70 transition hover:bg-violet-500/20 hover:text-white"
+            title="Edit selected element with AI"
+            aria-label="Edit selected element with AI"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> AI
+          </button>
+          <button
+            type="button"
+            onClick={() => removeElement(el.id)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition hover:bg-red-500/10 hover:text-red-300"
+            title="Delete element"
+            aria-label={`Delete ${el.name}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       {renderElement(el, selectedId, selectElement)}
     </div>
   );
@@ -98,12 +166,23 @@ function SortableBlock({
 const BREAKPOINT_WIDTHS: Record<string, string> = {
   mobile: '375px',
   tablet: '768px',
-  desktop: '100%',
-  wide: '100%',
+  desktop: '1180px',
+  wide: '1366px',
 };
 
 export default function VisualBuilderCanvas() {
-  const { elements, selectedId, selectElement, zoom, pan, setPan, setZoom, showGrid, activeBreakpoint } = useBuilderStore();
+  const {
+    elements,
+    selectedId,
+    selectElement,
+    zoom,
+    pan,
+    setPan,
+    setZoom,
+    showGrid,
+    activeBreakpoint,
+    theme,
+  } = useBuilderStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -111,34 +190,31 @@ export default function VisualBuilderCanvas() {
 
   const handleCanvasClick = useCallback(() => selectElement(null), [selectElement]);
 
-  // Mouse wheel zoom
   useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
-    const handler = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.05 : 0.05;
-        setZoom(zoom + delta);
-      }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handler = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      const delta = event.deltaY > 0 ? -0.05 : 0.05;
+      setZoom(zoom + delta);
     };
-    el.addEventListener('wheel', handler, { passive: false });
-    return () => el.removeEventListener('wheel', handler);
+    canvas.addEventListener('wheel', handler, { passive: false });
+    return () => canvas.removeEventListener('wheel', handler);
   }, [zoom, setZoom]);
 
-  // Pan with middle mouse
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1) {
-      e.preventDefault();
-      setIsPanning(true);
-      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-    }
+  const handleMouseDown = (event: React.MouseEvent) => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    setIsPanning(true);
+    setPanStart({ x: event.clientX - pan.x, y: event.clientY - pan.y });
   };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isPanning) {
-      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
-    }
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (!isPanning) return;
+    setPan({ x: event.clientX - panStart.x, y: event.clientY - panStart.y });
   };
+
   const handleMouseUp = () => setIsPanning(false);
 
   const mergedRef = useCallback(
@@ -146,16 +222,20 @@ export default function VisualBuilderCanvas() {
       canvasRef.current = node;
       setCanvasDroppableRef(node);
     },
-    [setCanvasDroppableRef]
+    [setCanvasDroppableRef],
   );
+
+  const stageWidth = BREAKPOINT_WIDTHS[activeBreakpoint] || BREAKPOINT_WIDTHS.desktop;
+  const stageBackground = theme?.colors?.background || '#0f172a';
+  const stageText = theme?.colors?.text || '#f8fafc';
 
   return (
     <div
       ref={mergedRef}
-      className="relative w-full h-full overflow-hidden bg-[#090d16] text-white select-none"
+      className="wb-canvas-workspace relative h-full w-full select-none overflow-auto bg-[#050914] text-white"
       style={{
         backgroundImage: showGrid
-          ? 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)'
+          ? 'linear-gradient(rgba(124,58,237,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,.045) 1px, transparent 1px)'
           : 'none',
         backgroundSize: '24px 24px',
         cursor: isPanning ? 'grabbing' : isCanvasOver ? 'copy' : 'default',
@@ -164,45 +244,60 @@ export default function VisualBuilderCanvas() {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
     >
-      {/* Transformed canvas */}
-      <div
-        className="absolute inset-0 transition-transform duration-75 origin-top-left"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: '0 0',
-        }}
-      >
-        {elements.length === 0 ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center p-8 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] backdrop-blur-sm max-w-sm">
-              <p className="text-4xl mb-3">🎨</p>
-              <h3 className="text-lg font-semibold text-purple-300">Infinite Canvas</h3>
-              <p className="text-sm text-white/40 mt-1">Drag blocks from the library or click to add them.</p>
-              <p className="text-[10px] text-white/20 mt-2">Scroll to zoom · Middle-click to pan</p>
-            </div>
+      <div className="min-h-full min-w-full px-8 py-7">
+        <div
+          className="flex min-h-full justify-center transition-transform duration-75"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: 'top center',
+          }}
+        >
+          <div
+            className={`wb-canvas-stage relative min-h-[820px] shrink-0 overflow-visible border border-violet-300/15 shadow-[0_24px_90px_rgba(0,0,0,.48),0_0_0_1px_rgba(124,58,237,.07)] transition-[width,border-radius] duration-200 ${
+              activeBreakpoint === 'mobile'
+                ? 'rounded-[28px]'
+                : activeBreakpoint === 'tablet'
+                  ? 'rounded-xl'
+                  : 'rounded-sm'
+            }`}
+            style={{
+              width: stageWidth,
+              maxWidth: 'calc(100vw - 120px)',
+              backgroundColor: stageBackground,
+              color: stageText,
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-transparent via-violet-300/65 to-transparent" />
+
+            {elements.length === 0 ? (
+              <div className="flex min-h-[820px] items-center justify-center overflow-hidden p-8">
+                <div className="max-w-sm rounded-2xl border border-dashed border-violet-300/20 bg-black/10 p-8 text-center backdrop-blur-sm">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10 text-xl">✦</div>
+                  <h3 className="text-sm font-bold text-violet-100">Start building this page</h3>
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-white/35">Drag a block from Insert onto the page, or ask AI Assist to create one. Both use this same live page state.</p>
+                  <p className="mt-3 text-[9px] text-white/20">Ctrl/⌘ + wheel to zoom · middle mouse to pan</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-hidden">
+                <SortableContext items={elements.map((element) => element.id)} strategy={verticalListSortingStrategy}>
+                  {elements.map((element) => (
+                    <SortableBlock
+                      key={element.id}
+                      el={element}
+                      parentId={null}
+                      selectedId={selectedId}
+                      selectElement={selectElement}
+                    />
+                  ))}
+                </SortableContext>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="p-8 min-h-full min-w-full" style={{ width: '4000px', height: '4000px' }}>
-            <div
-              className="mx-auto transition-all duration-200"
-              style={{
-                maxWidth: BREAKPOINT_WIDTHS[activeBreakpoint] || '100%',
-                width: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? BREAKPOINT_WIDTHS[activeBreakpoint] : '100%',
-                boxShadow: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? '0 0 0 1px rgba(255,255,255,0.1), 0 8px 32px rgba(0,0,0,0.4)' : 'none',
-                borderRadius: activeBreakpoint === 'mobile' ? '24px' : activeBreakpoint === 'tablet' ? '12px' : '0',
-                backgroundColor: 'var(--builder-bg, transparent)',
-                padding: activeBreakpoint === 'mobile' || activeBreakpoint === 'tablet' ? '16px' : '0',
-              }}
-            >
-              <SortableContext items={elements.map((el) => el.id)} strategy={verticalListSortingStrategy}>
-                {elements.map((el) => (
-                  <SortableBlock key={el.id} el={el} parentId={null} selectedId={selectedId} selectElement={selectElement} />
-                ))}
-              </SortableContext>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

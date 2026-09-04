@@ -1,29 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useSovereignOS } from '../context/SovereignOSContext';
 import { PublishModal } from './PublishModal';
+import { useBuilderStore } from '@/lib/builder/store';
 import {
   Blocks,
-  FolderOpen,
-  WandSparkles,
-  Rocket,
-  CircleCheckBig,
-  Palette,
+  Check,
   Code2,
   Eye,
+  Monitor,
   Package,
+  Palette,
+  Redo2,
+  Rocket,
+  Smartphone,
+  Tablet,
+  Undo2,
 } from 'lucide-react';
 
 type BuilderMode = 'design' | 'code' | 'preview';
-
-const MODE_TABS: Array<{ id: BuilderMode; label: string; icon: typeof Palette }> = [
-  { id: 'design', label: 'Design', icon: Palette },
-  { id: 'code', label: 'Code', icon: Code2 },
-  { id: 'preview', label: 'Preview', icon: Eye },
-];
 
 export function SovereignNavBar() {
   const searchParams = useSearchParams();
@@ -31,8 +29,26 @@ export function SovereignNavBar() {
   const requestedTab = searchParams.get('tab');
   const initialMode: BuilderMode = requestedTab === 'code' || requestedTab === 'preview' ? requestedTab : 'design';
   const [activeMode, setActiveMode] = useState<BuilderMode>(initialMode);
-  const { running } = useSovereignOS();
+  const [projectName, setProjectName] = useState('Website Project');
   const [publishOpen, setPublishOpen] = useState(false);
+  const { running } = useSovereignOS();
+  const { activeBreakpoint, setBreakpoint, zoom, setZoom, undo, redo } = useBuilderStore();
+
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    fetch(`/api/projects/${projectId}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const name = data?.project?.name;
+        if (typeof name === 'string' && name.trim()) setProjectName(name.trim());
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   const modeHref = (mode: BuilderMode) => {
     const params = new URLSearchParams();
@@ -43,23 +59,14 @@ export function SovereignNavBar() {
 
   const activateMode = (mode: BuilderMode) => {
     setActiveMode(mode);
-
-    // The legacy header remains in the DOM as the existing state controller,
-    // but is visually hidden by WonderBuild CSS. Reuse its proven switchTab
-    // handlers so changing view mode does not reload the page or risk dropping
-    // a pending autosave. This can be removed once BuilderContent owns the
-    // unified header directly.
     const legacyTabs = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("header[role='banner'] button[role='tab']")
+      document.querySelectorAll<HTMLButtonElement>("header[role='banner'] button[role='tab']"),
     );
     const target = legacyTabs.find((button) => button.textContent?.toLowerCase().includes(mode));
-
     if (target) {
       target.click();
       return;
     }
-
-    // Safe fallback if the legacy controller is removed before this bridge.
     window.location.href = modeHref(mode);
   };
 
@@ -67,85 +74,121 @@ export function SovereignNavBar() {
     ? `/library?sendTo=builder&projectId=${encodeURIComponent(projectId)}`
     : '/library?sendTo=builder';
 
+  const deviceButtons = [
+    { id: 'desktop' as const, label: 'Desktop', icon: Monitor },
+    { id: 'tablet' as const, label: 'Tablet', icon: Tablet },
+    { id: 'mobile' as const, label: 'Mobile', icon: Smartphone },
+  ];
+
   return (
-    <header className="wb-builder-nav fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b px-3 sm:px-4">
-      <div className="flex min-w-0 items-center gap-2.5">
+    <header className="wb-builder-nav fixed inset-x-0 top-0 z-50 flex h-[52px] items-center justify-between border-b px-2.5 sm:px-3">
+      <div className="flex min-w-0 items-center gap-2">
         <Link href="/wonder-build" className="flex shrink-0 items-center gap-2" title="WonderBuild Start">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-violet-300/20 bg-gradient-to-br from-violet-600 to-blue-600 shadow-[0_0_18px_rgba(124,58,237,.28)]">
-            <Blocks className="h-3.5 w-3.5 text-white" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-300/20 bg-gradient-to-br from-violet-600 to-indigo-700 shadow-[0_0_20px_rgba(124,58,237,.28)]">
+            <Blocks className="h-4 w-4 text-white" />
           </span>
-          <span className="hidden text-[11px] font-black tracking-tight text-white sm:inline">WonderBuild</span>
+          <span className="hidden text-[11px] font-black tracking-tight text-white lg:inline">WonderBuild</span>
         </Link>
 
-        <span className="hidden h-4 w-px bg-white/10 sm:block" />
+        <span className="h-5 w-px bg-white/8" />
 
-        <div className="hidden items-center gap-1 lg:flex">
-          <Link
-            href="/dashboard/projects"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[9px] font-bold text-white/35 transition hover:bg-white/[.04] hover:text-white/70"
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="max-w-[180px] truncate text-[10px] font-bold text-white/78">{projectName}</span>
+            <span className="rounded bg-white/[.045] px-1 py-0.5 text-[7px] font-black text-white/30">v2</span>
+          </div>
+          <div className="mt-0.5 flex items-center gap-1 text-[8px] font-semibold text-emerald-300/65">
+            <Check size={9} /> Autosave
+          </div>
+        </div>
+
+        <div className="ml-1 hidden items-center rounded-md border border-white/8 bg-black/20 p-0.5 md:flex">
+          <button
+            type="button"
+            onClick={() => activateMode('design')}
+            className={`flex h-7 items-center gap-1 rounded px-2 text-[8px] font-bold transition ${activeMode === 'design' ? 'bg-violet-500/18 text-violet-200' : 'text-white/30 hover:text-white/65'}`}
+            aria-pressed={activeMode === 'design'}
           >
-            <FolderOpen className="h-3.5 w-3.5" />Projects
-          </Link>
-          <Link
-            href="/wonder-build"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[9px] font-bold text-white/35 transition hover:bg-white/[.04] hover:text-white/70"
+            <Palette size={11} /> Design
+          </button>
+          <button
+            type="button"
+            onClick={() => activateMode('code')}
+            className={`flex h-7 items-center gap-1 rounded px-2 text-[8px] font-bold transition ${activeMode === 'code' ? 'bg-violet-500/18 text-violet-200' : 'text-white/30 hover:text-white/65'}`}
+            aria-pressed={activeMode === 'code'}
           >
-            <WandSparkles className="h-3.5 w-3.5" />Start
-          </Link>
+            <Code2 size={11} /> Code
+          </button>
         </div>
       </div>
 
-      <nav
-        className="wb-builder-nav-pill absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-xl border p-1"
-        aria-label="Builder view mode"
-      >
-        {MODE_TABS.map((mode) => {
-          const Icon = mode.icon;
-          const isActive = activeMode === mode.id;
-          return (
+      <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
+        <div className="flex items-center rounded-lg border border-white/8 bg-black/25 p-1 shadow-inner">
+          {deviceButtons.map(({ id, label, icon: Icon }) => (
             <button
-              key={mode.id}
+              key={id}
               type="button"
-              onClick={() => activateMode(mode.id)}
-              aria-pressed={isActive}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[9px] font-black transition sm:px-3 ${
-                isActive
-                  ? 'bg-gradient-to-r from-violet-600/90 to-indigo-600/90 text-white shadow-[0_6px_18px_rgba(124,58,237,.22)]'
-                  : 'text-white/35 hover:bg-white/[.04] hover:text-white/70'
-              }`}
+              onClick={() => setBreakpoint(id)}
+              className={`flex h-7 w-8 items-center justify-center rounded-md transition ${activeBreakpoint === id ? 'bg-violet-500/18 text-violet-200 shadow-[0_0_12px_rgba(124,58,237,.12)]' : 'text-white/28 hover:bg-white/[.04] hover:text-white/65'}`}
+              title={label}
+              aria-label={`${label} canvas`}
+              aria-pressed={activeBreakpoint === id}
             >
-              <Icon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{mode.label}</span>
+              <Icon size={13} />
             </button>
-          );
-        })}
-      </nav>
+          ))}
+        </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-2">
+        <select
+          value={Math.round(zoom * 100)}
+          onChange={(event) => setZoom(Number(event.target.value) / 100)}
+          className="h-8 rounded-lg border border-white/8 bg-black/25 px-2 text-[9px] font-semibold text-white/55 outline-none hover:text-white"
+          aria-label="Canvas zoom"
+        >
+          {[50, 75, 100, 125, 150, 175, 200].map((value) => (
+            <option key={value} value={value}>{value}%</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <div className="hidden items-center gap-0.5 sm:flex">
+          <button type="button" onClick={undo} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[.04] hover:text-white/70" title="Undo" aria-label="Undo">
+            <Undo2 size={13} />
+          </button>
+          <button type="button" onClick={redo} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[.04] hover:text-white/70" title="Redo" aria-label="Redo">
+            <Redo2 size={13} />
+          </button>
+        </div>
+
         <Link
           href={assetHref}
-          className="hidden items-center gap-1.5 rounded-xl border border-white/8 bg-white/[.035] px-2.5 py-1.5 text-[9px] font-bold text-white/45 transition hover:border-violet-300/20 hover:bg-violet-500/10 hover:text-white md:flex"
-          title="Open website asset library"
+          className="hidden h-8 items-center gap-1.5 rounded-lg border border-white/8 bg-white/[.025] px-2 text-[8px] font-bold text-white/35 transition hover:border-violet-300/20 hover:bg-violet-500/8 hover:text-white lg:flex"
+          title="Open asset library"
         >
-          <Package className="h-3.5 w-3.5" />Assets
+          <Package size={12} /> Assets
         </Link>
 
-        {running ? (
-          <span className="hidden items-center gap-1.5 rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[9px] font-bold text-violet-200 xl:flex">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-300 shadow-[0_0_8px_rgba(196,181,253,.7)]" />AI working
-          </span>
-        ) : (
-          <span className="hidden items-center gap-1.5 text-[9px] font-bold text-white/25 xl:flex">
-            <CircleCheckBig className="h-3.5 w-3.5 text-emerald-300/70" />Ready
+        {running && (
+          <span className="hidden items-center gap-1.5 rounded-full border border-violet-400/15 bg-violet-500/8 px-2 py-1 text-[8px] font-bold text-violet-200/80 xl:flex">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-300" />AI
           </span>
         )}
 
         <button
           type="button"
-          onClick={() => setPublishOpen(true)}
-          className="wb-publish-button inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[9px] font-black text-white transition hover:-translate-y-0.5 sm:px-3.5 sm:text-[10px]"
+          onClick={() => activateMode('preview')}
+          className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[8px] font-black transition ${activeMode === 'preview' ? 'border-violet-300/25 bg-violet-500/16 text-violet-100' : 'border-white/8 bg-white/[.025] text-white/55 hover:border-white/15 hover:bg-white/[.05] hover:text-white'}`}
         >
-          <Rocket className="h-3.5 w-3.5" />Publish
+          <Eye size={12} /> Preview
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPublishOpen(true)}
+          className="wb-publish-button inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[8px] font-black text-white transition hover:-translate-y-px"
+        >
+          <Rocket size={12} /> Publish
         </button>
       </div>
 

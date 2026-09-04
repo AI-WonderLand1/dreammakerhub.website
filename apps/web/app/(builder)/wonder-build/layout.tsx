@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './wonderbuild-wow.css';
 import './wonderbuild-builder-polish.css';
 import './wonderbuild-template-polish.css';
+import './wonderbuild-reference-shell.css';
 
 export const metadata: Metadata = {
   title: 'WonderBuild | AI Wonderland',
