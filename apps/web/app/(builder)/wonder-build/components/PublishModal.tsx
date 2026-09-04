@@ -26,7 +26,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId') || '';
   const { editorCode } = useSovereignOS();
-  const { elements, pages, activePageId } = useBuilderStore();
+  const { elements, pages, activePageId, theme } = useBuilderStore();
   const [target, setTarget] = useState<'site' | 'html' | 'json'>('site');
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string; url?: string } | null>(null);
@@ -50,6 +50,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
           pages,
           activePageId,
           elements,
+          theme,
         }, null, 2);
         downloadFile(json, 'wonderbuild-site.json', 'application/json');
         setResult({ ok: true, message: `Site JSON downloaded (${pages.length} page${pages.length === 1 ? '' : 's'})` });
@@ -69,6 +70,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
           projectId,
           pages,
           activePageId,
+          theme,
         }),
       });
       const data = await res.json();
@@ -109,7 +111,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
               </span>
             </div>
             <p className="mt-1.5 text-[10px] leading-relaxed text-white/35">
-              Page names, slugs, and separate canvas content are published from the existing WonderBuild page state.
+              Page names, slugs, separate canvas content, and the project theme are published from the existing WonderBuild state.
             </p>
           </div>
         )}
