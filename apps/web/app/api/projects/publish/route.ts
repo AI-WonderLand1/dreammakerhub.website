@@ -3,7 +3,7 @@ import { createClient } from '@/infra/lib/supabase/server-client';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { sanitizeUntrustedHtml } from '@/lib/security/sanitize-html.server';
 import { logger } from '@/lib/logger';
-import type { CanvasElement } from '@/lib/builder/types';
+import type { BuilderTheme, CanvasElement } from '@/lib/builder/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PAGE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
@@ -56,8 +56,8 @@ function parseWonderBuildPages(value: unknown): WonderBuildPublishPage[] | null 
   return pages;
 }
 
-function internalPageSlug(projectId: string, pageId: string): string {
-  return `wb-${projectId}-${pageId.toLowerCase()}`;
+function internalPageSlug(userId: string, projectId: string, pageId: string): string {
+  return `wb-${userId}-${projectId}-${pageId.toLowerCase()}`;
 }
 
 function publicPageUrl(projectId: string, pageSlug: string): string {
@@ -88,10 +88,13 @@ export async function POST(req: NextRequest) {
       if (!pages) {
         return NextResponse.json({ ok: false, message: 'Invalid WonderBuild page data' }, { status: 400 });
       }
-
       if (!pages.some((page) => page.slug === '/')) {
         return NextResponse.json({ ok: false, message: 'WonderBuild site must include a Home page' }, { status: 400 });
       }
+
+      const theme = body.theme && typeof body.theme === 'object'
+        ? body.theme as BuilderTheme
+        : undefined;
 
       const supabase = await createClient();
       const { data: project, error: projectError } = await supabase
@@ -110,7 +113,7 @@ export async function POST(req: NextRequest) {
       const rows = pages.map((page) => ({
         user_id: userId,
         title: page.name,
-        slug: internalPageSlug(projectId, page.id),
+        slug: internalPageSlug(userId, projectId, page.id),
         body_html: '',
         content: {
           kind: 'wonderbuild-site-page',
@@ -121,6 +124,7 @@ export async function POST(req: NextRequest) {
             pageSlug: page.slug,
             isHome: page.slug === '/',
           },
+          theme,
           elements: page.elements,
         },
         published: true,
@@ -130,13 +134,9 @@ export async function POST(req: NextRequest) {
       const { error: upsertError } = await supabase
         .from('pages')
         .upsert(rows, { onConflict: 'slug' });
-
       if (upsertError) throw upsertError;
 
-      // Remove pages that belonged to an earlier publish of this project but
-      // are no longer present. Internal slugs are project-scoped and are not
-      // used as the public WonderBuild URL.
-      const prefix = `wb-${projectId}-`;
+      const prefix = `wb-${userId}-${projectId}-`;
       const activeSlugs = new Set(rows.map((row) => row.slug));
       const { data: previousRows, error: previousError } = await supabase
         .from('pages')
@@ -173,8 +173,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Backward-compatible single-page publish path for callers that have not
-    // migrated to the WonderBuild site payload yet.
     if (target === 'site') {
       const { code, elements, title } = body;
       const supabase = await createClient();
@@ -186,7 +184,6 @@ export async function POST(req: NextRequest) {
         .select('id')
         .eq('slug', slug)
         .maybeSingle();
-
       if (existing) slug = `${slug}-${Date.now()}`;
 
       const safeHtml = sanitizeUntrustedHtml(typeof code === 'string' ? code : '');
@@ -204,7 +201,6 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (error) throw error;
-
       return NextResponse.json({
         ok: true,
         message: `Published to /${slug}`,
