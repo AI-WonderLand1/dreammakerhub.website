@@ -1,283 +1,511 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Bot, Check, CornerDownLeft, MousePointer2, Sparkles, WandSparkles } from 'lucide-react';
 import { useBuilderStore } from '../store';
+import type { CanvasElement } from '../types';
+import { acceptsChildren } from '../dnd-utils';
+import { findBlockDefinition } from '../blocks/utils';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
+type BuilderAction =
+  | {
+      action: 'add';
+      block: {
+        type: string;
+        name?: string;
+        icon?: string;
+        props?: Record<string, unknown>;
+        styles?: Record<string, unknown>;
+      };
+      target?: 'root' | 'selected';
+    }
+  | {
+      action: 'edit';
+      targetId?: string;
+      props?: Record<string, unknown>;
+      styles?: Record<string, unknown>;
+    };
+
 const SUGGESTIONS = [
-  'Add a hero section with heading and CTA button',
-  'Create a 3-column feature grid',
-  'Add a testimonial carousel',
-  'Build a pricing table with 3 tiers',
-  'Insert a contact form',
-  'Make the layout responsive',
-  'Improve color contrast',
-  'Add an image gallery',
+  'Improve the selected element',
+  'Make the selected element look more premium',
+  'Add a hero section',
+  'Add a CTA button inside this section',
+  'Make this page more responsive',
+  'Create a 3-column feature section',
 ];
 
-const BUILDER_SYSTEM_PROMPT = `You are a helpful web builder assistant integrated into a drag-and-drop website builder. 
-Your job is to help users build pages by suggesting blocks to add, explaining how to use features, and answering questions.
+const FALLBACK_BLOCKS: Array<[string, string]> = [
+  ['hero', 'hero'],
+  ['feature', 'feature-grid'],
+  ['pricing', 'pricing'],
+  ['contact', 'contact-form'],
+  ['gallery', 'gallery'],
+  ['button', 'button'],
+  ['navigation', 'navbar'],
+  ['navbar', 'navbar'],
+  ['video', 'video'],
+  ['columns', 'columns'],
+  ['footer', 'section'],
+];
 
-Available block categories: forms, typography, media, navigation, marketing, blog, commerce, products, utility, layout, social, analytics, widgets, notification, payment, seo, files, auth.
+const FORBIDDEN_KEYS = new Set([
+  'dangerouslySetInnerHTML',
+  'innerHTML',
+  'outerHTML',
+  'clickJs',
+  'customCSS',
+  'srcDoc',
+  'srcdoc',
+]);
 
-When the user asks to add something specific, you can respond with a JSON command at the end of your message in this format:
----BLOCK
-{"name":"Button","type":"button","icon":"🔘","category":"forms","props":{"label":"Click Here","url":"#","variant":"primary","size":"md"},"styles":{"backgroundColor":"#7c3aed","color":"#ffffff","padding":"0.625rem 1.25rem","borderRadius":"0.5rem","fontWeight":"600","fontSize":"0.875rem","display":"inline-block","border":"none","textDecoration":"none"}}
----END
+function findElement(elements: CanvasElement[], id: string | null): CanvasElement | null {
+  if (!id) return null;
+  for (const element of elements) {
+    if (element.id === id) return element;
+    const nested = findElement(element.children || [], id);
+    if (nested) return nested;
+  }
+  return null;
+}
 
-Only include the JSON block command when the user explicitly asks to add a block. For general questions, just provide helpful text advice.
-
-Keep responses concise, friendly, and focused on the builder context.`;
-
-const FALLBACK_RESPONSES: Record<string, string> = {
-  hero: '✅ Added a hero section with heading, subtitle, and CTA button. You can edit the text in the inspector panel.',
-  feature: '✅ Added a 3-column feature grid. Customize the icons, titles, and descriptions in the inspector.',
-  testimonial: '✅ Added a testimonial carousel. Add more testimonials or change the autoplay settings in the inspector.',
-  pricing: '✅ Added a pricing card. Toggle the "highlighted" option to make it stand out.',
-  contact: '✅ Added a contact form with name, email, and message fields. Change the submit button text in the inspector.',
-  gallery: '✅ Added an image gallery grid. Switch to carousel mode in the inspector panel.',
-  responsive: '💡 To make your page responsive:\n1. Use the breakpoint switcher at the top of the inspector panel\n2. Set different styles per device\n3. Use flexbox/grid layouts with relative units\n4. Toggle "Hide on this device" for mobile-specific visibility',
-  color: '🎨 Use the color pickers in the Style section to set text and background colors. The contrast checker tells you if colors pass WCAG AA/AAA.',
-  layout: '✅ Added a 2-column layout. Drag blocks into each column. Adjust the column count in the inspector.',
-  button: '✅ Added a primary button. Change the label, URL, variant, and size in the inspector.',
-  nav: '✅ Added a navigation bar. Customize the logo and links in the inspector panel.',
-  footer: '✅ Added a footer section. Drop navigation links, social icons, or copyright text inside it.',
-  video: '✅ Added a YouTube video embed. Use the Video section in the inspector to change the source and playback settings.',
-  map: '✅ Added an OpenStreetMap embed. Enter an address or custom map URL in the inspector.',
-  counter: '✅ Added an animated counter. Set the target number, suffix, and label in the inspector.',
-};
-
-function addFallbackBlock(keyword: string) {
-  const store = useBuilderStore.getState();
-  const id = `el-${Date.now()}-ai-${Math.random().toString(36).slice(2, 4)}`;
-  const blocks: Record<string, any> = {
-    hero: {
-      type: 'hero', name: 'Hero Section', icon: '⚡',
-      props: { title: 'Build Something Amazing', subtitle: 'Create with AI-powered tools.', cta: 'Get Started' },
-      styles: { padding: '4rem 2rem', textAlign: 'center', backgroundColor: '#1e1b4b', borderRadius: '0.75rem', marginBottom: '1rem' },
-    },
-    feature: {
-      type: 'feature-grid', name: 'Feature Grid', icon: '🔲',
-      props: { features: [{ icon: '⚡', title: 'Fast', desc: 'Lightning quick performance.' }, { icon: '🔒', title: 'Secure', desc: 'Enterprise-grade security.' }, { icon: '📱', title: 'Responsive', desc: 'Works on all devices.' }], columns: 3 },
-      styles: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', padding: '2rem 0', textAlign: 'center' },
-    },
-    testimonial: {
-      type: 'carousel-testimonials', name: 'Testimonial Carousel', icon: '🎠',
-      props: { items: [{ quote: 'Amazing product!', author: 'Alice', role: 'CEO' }, { quote: 'Transformed our workflow.', author: 'Bob', role: 'Developer' }, { quote: 'Highly recommended.', author: 'Carol', role: 'Designer' }], autoplay: true, interval: 4 },
-      styles: { padding: '2rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', maxWidth: '600px', margin: '0 auto' },
-    },
-    pricing: {
-      type: 'pricing', name: 'Pricing Table', icon: '💰',
-      props: { plan: 'Pro', price: '$19', interval: '/month', features: ['Feature 1', 'Feature 2', 'Feature 3'], cta: 'Choose Plan', highlighted: false },
-      styles: { padding: '2rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', maxWidth: '350px' },
-    },
-    contact: {
-      type: 'contact-form', name: 'Contact Form', icon: '📧',
-      props: { fields: ['name', 'email', 'message'], submitText: 'Send Message', showSubject: true },
-      styles: { maxWidth: '600px', margin: '0 auto', padding: '1.5rem' },
-    },
-    gallery: {
-      type: 'gallery', name: 'Gallery', icon: '🖼️',
-      props: { images: ['https://picsum.photos/400/300?1', 'https://picsum.photos/400/300?2', 'https://picsum.photos/400/300?3'], columns: 3, mode: 'grid' },
-      styles: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' },
-    },
-    layout: {
-      type: 'columns', name: 'Columns', icon: '🔲',
-      props: { columns: 2 },
-      styles: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1rem' },
-    },
-    button: {
-      type: 'button', name: 'Button', icon: '🔘',
-      props: { label: 'Click Here', url: '#', variant: 'primary', size: 'md' },
-      styles: { backgroundColor: '#7c3aed', color: '#ffffff', padding: '0.625rem 1.25rem', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.875rem', display: 'inline-block', border: 'none', textDecoration: 'none' },
-    },
-    nav: {
-      type: 'navbar', name: 'Navbar', icon: '🧭',
-      props: { logo: 'Logo', links: [{ label: 'Home', url: '/' }, { label: 'About', url: '/about' }, { label: 'Contact', url: '/contact' }], sticky: false },
-      styles: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', backgroundColor: 'rgba(15,23,42,0.95)', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-    },
-    footer: {
-      type: 'section', name: 'Footer Section', icon: '📐',
-      props: { width: 'full', paddingY: '3rem' },
-      styles: { padding: '3rem 2rem', backgroundColor: 'rgba(15,23,42,0.9)', borderTop: '1px solid rgba(255,255,255,0.1)', marginBottom: '1rem', textAlign: 'center', fontSize: '0.875rem', color: '#94a3b8' },
-    },
-    video: {
-      type: 'video', name: 'Video', icon: '🎬',
-      props: { src: 'https://www.youtube.com/embed/dQw4w9WgXcQ', caption: '', autoplay: false, platform: 'youtube' },
-      styles: { aspectRatio: '16/9', width: '100%', borderRadius: '0.5rem', marginBottom: '1rem' },
-    },
-    map: {
-      type: 'map', name: 'Map', icon: '🗺️',
-      props: { src: 'https://www.openstreetmap.org/export/embed.html?bbox=-0.004%2C51.476%2C0.005%2C51.480&layer=mapnik', address: '', zoom: 12 },
-      styles: { width: '100%', height: '350px', border: 'none', borderRadius: '0.5rem', marginBottom: '1rem' },
-    },
-    counter: {
-      type: 'count-up', name: 'Count Up', icon: '📊',
-      props: { number: 1000, suffix: '+', label: 'Users', duration: 2 },
-      styles: { textAlign: 'center', padding: '1.5rem', fontSize: '2.5rem', fontWeight: '700', color: '#7c3aed' },
-    },
-  };
-  for (const [key, def] of Object.entries(blocks)) {
-    if (keyword.includes(key)) {
-      store.addElement({ id, ...def } as any);
-      return;
-    }
+function sanitizeUrl(value: string): string {
+  const raw = value.trim();
+  if (!raw) return '';
+  if (raw.startsWith('#') || raw.startsWith('/') || raw.startsWith('./') || raw.startsWith('../') || raw.startsWith('?')) {
+    return raw;
+  }
+  try {
+    const url = new URL(raw);
+    return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol.toLowerCase()) ? raw : '#';
+  } catch {
+    return '#';
   }
 }
 
+function sanitizeObject(input: unknown): Record<string, unknown> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+  const output: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (FORBIDDEN_KEYS.has(key) || /^on[A-Z]/.test(key) || /^on[a-z]/.test(key)) continue;
+
+    if (typeof value === 'string' && /(?:url|href|src|link)$/i.test(key)) {
+      output[key] = sanitizeUrl(value);
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      output[key] = value.map((entry) => {
+        if (entry && typeof entry === 'object' && !Array.isArray(entry)) return sanitizeObject(entry);
+        return entry;
+      });
+      continue;
+    }
+
+    if (value && typeof value === 'object') {
+      output[key] = sanitizeObject(value);
+      continue;
+    }
+
+    if (['string', 'number', 'boolean'].includes(typeof value) || value === null) {
+      output[key] = value;
+    }
+  }
+
+  return output;
+}
+
+function buildSystemPrompt(pageName: string, selected: CanvasElement | null) {
+  const selectedContext = selected
+    ? JSON.stringify(
+        {
+          id: selected.id,
+          type: selected.type,
+          name: selected.name,
+          props: selected.props,
+          styles: selected.styles,
+        },
+        null,
+        2,
+      )
+    : 'No element is currently selected.';
+
+  return `You are WonderBuild AI Assist inside a live drag-and-drop website editor.
+You edit the SAME builder state the user is looking at. The active page is ${JSON.stringify(pageName)}.
+
+Selected element context:
+${selectedContext}
+
+You may return at most ONE machine action after your short human explanation.
+
+To edit the selected element:
+---BUILDER_ACTION
+{"action":"edit","targetId":"selected","props":{"content":"New text"},"styles":{"fontSize":"48px","color":"#a78bfa"}}
+---END
+
+To add a normal WonderBuild catalog block:
+---BUILDER_ACTION
+{"action":"add","block":{"type":"button","props":{"label":"Get started","url":"#contact"},"styles":{}},"target":"selected"}
+---END
+
+Rules:
+- Use edit when the user says this, selected, current element, heading, button, image, etc. and an element is selected.
+- Use target selected for add only when the selected element is a container; otherwise use root.
+- Use normal CSS-in-JS camelCase style keys.
+- Keep props/styles as plain JSON values.
+- Never generate scripts, JavaScript handlers, custom HTML, dangerouslySetInnerHTML, srcdoc, javascript: URLs, custom CSS, or webhook code.
+- Do not replace the whole page for a small edit.
+- If no machine action is needed, answer normally without an action block.
+- Be concise.`;
+}
+
+function extractAction(text: string): BuilderAction | null {
+  const match = text.match(/---BUILDER_ACTION\s*([\s\S]*?)\s*---END/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[1]) as BuilderAction;
+    if (!parsed || (parsed.action !== 'add' && parsed.action !== 'edit')) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function stripAction(text: string): string {
+  return text.replace(/---BUILDER_ACTION\s*[\s\S]*?\s*---END/, '').trim();
+}
+
+function applyQuickLocalEdit(prompt: string, selected: CanvasElement | null): boolean {
+  if (!selected) return false;
+  const lower = prompt.toLowerCase();
+  const styles: Record<string, unknown> = {};
+  const props: Record<string, unknown> = {};
+
+  if (/\b(center|centered)\b/.test(lower)) styles.textAlign = 'center';
+  if (/\b(bold|bolder)\b/.test(lower)) styles.fontWeight = '700';
+  if (/\b(rounded|rounder)\b/.test(lower)) styles.borderRadius = '16px';
+  if (/\b(full width|full-width)\b/.test(lower)) styles.width = '100%';
+  if (/\b(bigger|larger)\b/.test(lower)) styles.fontSize = '48px';
+  if (/\b(smaller)\b/.test(lower)) styles.fontSize = '18px';
+
+  const wantsBackground = lower.includes('background');
+  const colors: Array<[RegExp, string]> = [
+    [/\bpurple\b/, '#8b5cf6'],
+    [/\bblue\b/, '#3b82f6'],
+    [/\bcyan\b/, '#22d3ee'],
+    [/\bgreen\b/, '#22c55e'],
+    [/\bwhite\b/, '#ffffff'],
+    [/\bblack\b/, '#050816'],
+  ];
+  for (const [pattern, color] of colors) {
+    if (pattern.test(lower)) {
+      styles[wantsBackground ? 'backgroundColor' : 'color'] = color;
+      break;
+    }
+  }
+
+  const textMatch = prompt.match(/(?:change|set|make)\s+(?:the\s+)?(?:text|label|title)\s+(?:to\s+)?["“'](.+?)["”']/i);
+  if (textMatch) {
+    if (Object.prototype.hasOwnProperty.call(selected.props || {}, 'content')) props.content = textMatch[1];
+    else if (Object.prototype.hasOwnProperty.call(selected.props || {}, 'label')) props.label = textMatch[1];
+    else if (Object.prototype.hasOwnProperty.call(selected.props || {}, 'title')) props.title = textMatch[1];
+  }
+
+  if (Object.keys(props).length === 0 && Object.keys(styles).length === 0) return false;
+  const store = useBuilderStore.getState();
+  if (Object.keys(props).length) store.updateElementProps(selected.id, props);
+  if (Object.keys(styles).length) store.updateElementStyles(selected.id, styles);
+  return true;
+}
+
 export default function AIAssistantPanel() {
+  const pages = useBuilderStore((state) => state.pages);
+  const activePageId = useBuilderStore((state) => state.activePageId);
+  const elements = useBuilderStore((state) => state.elements);
+  const selectedId = useBuilderStore((state) => state.selectedId);
+  const selectElement = useBuilderStore((state) => state.selectElement);
+
+  const activePage = pages.find((page) => page.id === activePageId);
+  const selected = useMemo(() => findElement(elements, selectedId), [elements, selectedId]);
+
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hi! I\'m your AI builder assistant. Ask me to add blocks, change styles, or help with your page layout.' },
+    {
+      role: 'assistant',
+      content: 'Select anything on the canvas and tell me what to change, or ask me to add a section. I edit the same page your drag-and-drop builder is using.',
+    },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lastApplied, setLastApplied] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
-  }, [messages]);
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages, loading]);
 
-  const tryAddBlockFromResponse = useCallback((text: string) => {
-    const match = text.match(/---BLOCK\n([\s\S]*?)\n---END/);
-    if (match) {
-      try {
-        const block = JSON.parse(match[1]);
-        useBuilderStore.getState().addElement({
-          id: `el-${Date.now()}-ai-${Math.random().toString(36).slice(2, 4)}`,
-          type: block.type,
-          name: block.name,
-          icon: block.icon,
-          props: block.props || {},
-          styles: block.styles || {},
-        });
-        return true;
-      } catch {}
+  const applyAction = useCallback((action: BuilderAction): string | null => {
+    const store = useBuilderStore.getState();
+    const currentSelected = findElement(store.elements, store.selectedId);
+
+    if (action.action === 'edit') {
+      const targetId = action.targetId === 'selected' || !action.targetId ? currentSelected?.id : action.targetId;
+      const target = findElement(store.elements, targetId || null);
+      if (!target) return 'Select an element first so I know what to edit.';
+
+      const props = sanitizeObject(action.props);
+      const styles = sanitizeObject(action.styles);
+      if (Object.keys(props).length) store.updateElementProps(target.id, props);
+      if (Object.keys(styles).length) store.updateElementStyles(target.id, styles);
+      store.selectElement(target.id);
+      return `Updated ${target.name}`;
     }
-    return false;
+
+    const definition = findBlockDefinition(action.block?.type || '');
+    if (!definition) return `I could not add “${action.block?.type || 'that block'}” because it is not in the WonderBuild component catalog.`;
+
+    const id = `el-${Date.now()}-ai-${Math.random().toString(36).slice(2, 6)}`;
+    const element: CanvasElement = {
+      id,
+      type: definition.type,
+      name: action.block.name?.slice(0, 80) || definition.name,
+      icon: action.block.icon || definition.icon,
+      props: {
+        ...definition.defaultProps,
+        ...sanitizeObject(action.block.props),
+      },
+      styles: {
+        ...definition.defaultStyles,
+        ...sanitizeObject(action.block.styles),
+      },
+    };
+
+    const parentId =
+      action.target === 'selected' && currentSelected && acceptsChildren(currentSelected.type)
+        ? currentSelected.id
+        : undefined;
+
+    store.addElement(element, parentId);
+    store.selectElement(element.id);
+    return `Added ${element.name}${parentId ? ` inside ${currentSelected?.name}` : ''}`;
   }, []);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || loading) return;
-    const userMsg: Message = { role: 'user', content: input.trim() };
-    setMessages((prev) => [...prev, userMsg]);
-    const promptText = input.trim();
+  const addFallbackBlock = useCallback((prompt: string): string | null => {
+    const lower = prompt.toLowerCase();
+    const store = useBuilderStore.getState();
+    const currentSelected = findElement(store.elements, store.selectedId);
+
+    for (const [keyword, type] of FALLBACK_BLOCKS) {
+      if (!lower.includes(keyword)) continue;
+      const definition = findBlockDefinition(type);
+      if (!definition) continue;
+      const element: CanvasElement = {
+        id: `el-${Date.now()}-ai-${Math.random().toString(36).slice(2, 6)}`,
+        type: definition.type,
+        name: definition.name,
+        icon: definition.icon,
+        props: { ...definition.defaultProps },
+        styles: { ...definition.defaultStyles },
+      };
+      const wantsInside = /\b(inside|in this|within)\b/.test(lower);
+      const parentId = wantsInside && currentSelected && acceptsChildren(currentSelected.type) ? currentSelected.id : undefined;
+      store.addElement(element, parentId);
+      store.selectElement(element.id);
+      return `Added ${definition.name}${parentId ? ` inside ${currentSelected?.name}` : ''}`;
+    }
+
+    return null;
+  }, []);
+
+  const handleSend = useCallback(async (override?: string) => {
+    const promptText = (override ?? input).trim();
+    if (!promptText || loading) return;
+
+    setMessages((previous) => [...previous, { role: 'user', content: promptText }]);
     setInput('');
     setLoading(true);
+    setLastApplied(null);
+
+    const liveStore = useBuilderStore.getState();
+    const liveSelected = findElement(liveStore.elements, liveStore.selectedId);
+    const livePage = liveStore.pages.find((page) => page.id === liveStore.activePageId);
 
     try {
-      const res = await fetch('/api/ai', {
+      const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `${BUILDER_SYSTEM_PROMPT}\n\nUser: ${promptText}\n\nRespond helpfully. If the user wants to add a block, include the ---BLOCK JSON command at the end.`,
+          message: `${buildSystemPrompt(livePage?.name || 'Home', liveSelected)}\n\nUser request: ${promptText}`,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        const reply = data.text || 'Got it! Let me know if you need anything else.';
-        tryAddBlockFromResponse(reply);
-        const cleanReply = reply.replace(/---BLOCK\n[\s\S]*?\n---END/, '').trim() || reply;
-        setMessages((prev) => [...prev, { role: 'assistant', content: cleanReply }]);
-        setLoading(false);
+
+      if (response.ok) {
+        const data = await response.json();
+        const reply = typeof data.text === 'string' ? data.text : 'Done.';
+        const action = extractAction(reply);
+        const applied = action ? applyAction(action) : null;
+        if (applied) setLastApplied(applied);
+        setMessages((previous) => [
+          ...previous,
+          { role: 'assistant', content: stripAction(reply) || applied || 'Done.' },
+        ]);
         return;
       }
-    } catch {}
+    } catch {
+      // Local fallback below keeps basic builder edits available if the AI route is unavailable.
+    } finally {
+      setLoading(false);
+    }
 
-    const lower = promptText.toLowerCase();
-    const keywords = Object.keys(FALLBACK_RESPONSES);
-    let matched = false;
-    for (const kw of keywords) {
-      if (lower.includes(kw)) {
-        addFallbackBlock(lower);
-        setMessages((prev) => [...prev, { role: 'assistant', content: FALLBACK_RESPONSES[kw] }]);
-        matched = true;
-        break;
-      }
+    if (applyQuickLocalEdit(promptText, liveSelected)) {
+      setLastApplied(`Updated ${liveSelected?.name || 'selected element'}`);
+      setMessages((previous) => [
+        ...previous,
+        { role: 'assistant', content: 'Applied that change directly to the selected element.' },
+      ]);
+      return;
     }
-    if (!matched) {
-      const help = 'Try asking me to add specific blocks like "Add a hero section" or "Create a pricing table". Type "help" or "suggest" for ideas.';
-      setMessages((prev) => [...prev, { role: 'assistant', content: help }]);
+
+    const added = addFallbackBlock(promptText);
+    if (added) {
+      setLastApplied(added);
+      setMessages((previous) => [...previous, { role: 'assistant', content: `${added}.` }]);
+      return;
     }
-    setLoading(false);
-  }, [input, loading, tryAddBlockFromResponse]);
+
+    setMessages((previous) => [
+      ...previous,
+      {
+        role: 'assistant',
+        content: liveSelected
+          ? `I could not apply that automatically. Try “make this purple”, “make this bigger”, “center this”, or ask me to add a specific component.`
+          : 'Select an element to edit it with AI, or ask me to add a specific component such as a hero, button, gallery, or contact form.',
+      },
+    ]);
+  }, [addFallbackBlock, applyAction, input, loading]);
+
+  const runSuggestion = (suggestion: string) => {
+    setInput(suggestion);
+    void handleSend(suggestion);
+  };
 
   return (
-    <div className="w-full bg-[#0c101d] text-white flex flex-col overflow-hidden h-full">
-      <div className="shrink-0 flex items-center justify-between border-b border-white/10 p-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm">🤖</span>
-          <span className="text-xs font-semibold">AI Assistant</span>
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#080d1b] text-white">
+      <div className="shrink-0 border-b border-white/8 bg-gradient-to-b from-violet-500/[.07] to-transparent px-3 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10 shadow-[0_0_22px_rgba(139,92,246,.12)]">
+              <WandSparkles className="h-4 w-4 text-violet-200" />
+            </span>
+            <div>
+              <div className="text-[11px] font-black text-white">AI Assist</div>
+              <div className="text-[8px] font-bold uppercase tracking-[.14em] text-violet-200/35">Live builder context</div>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[.07] px-2 py-1 text-[8px] font-black text-emerald-200/70">
+            <Check className="h-3 w-3" /> Same canvas
+          </span>
         </div>
-        <span className="text-[9px] text-purple-400/60 font-mono">v1.0</span>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-white/8 bg-black/20 px-2.5 py-2">
+            <div className="text-[8px] font-black uppercase tracking-[.12em] text-white/25">Page</div>
+            <div className="mt-0.5 truncate text-[10px] font-bold text-white/65">{activePage?.name || 'Home'}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => selected && selectElement(selected.id)}
+            className={`rounded-lg border px-2.5 py-2 text-left transition ${
+              selected
+                ? 'border-violet-300/15 bg-violet-500/[.07] hover:bg-violet-500/10'
+                : 'border-white/8 bg-black/20'
+            }`}
+          >
+            <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-[.12em] text-white/25">
+              <MousePointer2 className="h-3 w-3" /> Selected
+            </div>
+            <div className={`mt-0.5 truncate text-[10px] font-bold ${selected ? 'text-violet-100/80' : 'text-white/25'}`}>
+              {selected?.name || 'Nothing selected'}
+            </div>
+          </button>
+        </div>
       </div>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-2">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+      <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-3">
+        {messages.map((message, index) => (
+          <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30'
-                  : 'bg-white/5 text-white/70 border border-white/5'
+              className={`max-w-[88%] rounded-xl border px-3 py-2 text-[10px] leading-relaxed whitespace-pre-wrap ${
+                message.role === 'user'
+                  ? 'border-violet-400/20 bg-violet-500/15 text-violet-100'
+                  : 'border-white/7 bg-white/[.035] text-white/65'
               }`}
             >
-              {msg.content}
+              {message.content}
             </div>
           </div>
         ))}
+
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white/5 rounded-xl px-3 py-2 text-[11px] text-white/50 border border-white/5">
-              <span className="inline-flex gap-1">
-                <span className="animate-bounce">.</span>
-                <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
-                <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
-              </span>
+            <div className="inline-flex items-center gap-2 rounded-xl border border-violet-300/10 bg-violet-500/[.06] px-3 py-2 text-[10px] text-violet-100/60">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Editing the live builder…
             </div>
           </div>
         )}
       </div>
 
-      {messages.length <= 2 && (
-        <div className="shrink-0 px-2 pb-2 space-y-1">
-          <p className="text-[9px] text-white/20 px-1">Try asking:</p>
-          <div className="flex flex-wrap gap-1">
-            {SUGGESTIONS.slice(0, 4).map((s) => (
-              <button
-                key={s}
-                onClick={() => setInput(s)}
-                className="text-[9px] px-2 py-1 rounded-full bg-white/5 text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors border border-white/5"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+      {lastApplied && (
+        <div className="mx-3 mb-2 flex shrink-0 items-center gap-2 rounded-lg border border-emerald-300/15 bg-emerald-500/[.07] px-2.5 py-2 text-[9px] font-bold text-emerald-200/70">
+          <Check className="h-3.5 w-3.5" /> {lastApplied}
         </div>
       )}
 
-      <div className="shrink-0 border-t border-white/10 p-2">
-        <div className="flex gap-1.5">
-          <input
+      <div className="shrink-0 border-t border-white/8 p-3">
+        <div className="mb-2 flex gap-1 overflow-x-auto pb-1">
+          {SUGGESTIONS.slice(0, 4).map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => runSuggestion(suggestion)}
+              disabled={loading || (suggestion.toLowerCase().includes('selected') && !selected)}
+              className="shrink-0 rounded-full border border-white/8 bg-white/[.03] px-2 py-1 text-[8px] font-bold text-white/35 transition hover:border-violet-300/20 hover:bg-violet-500/10 hover:text-violet-100 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 transition focus-within:border-violet-400/35 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,.06)]">
+          <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder="Ask AI to build something..."
-            className="flex-1 rounded-lg border border-white/10 bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none focus:border-purple-500 placeholder:text-white/20"
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void handleSend();
+              }
+            }}
+            rows={2}
+            placeholder={selected ? `Ask AI to edit ${selected.name}…` : 'Ask AI to add or improve something…'}
+            className="min-h-[42px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[10px] leading-relaxed text-white outline-none placeholder:text-white/20"
           />
           <button
-            onClick={handleSend}
+            type="button"
+            onClick={() => void handleSend()}
             disabled={loading || !input.trim()}
-            className="shrink-0 rounded-lg bg-purple-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_6px_18px_rgba(124,58,237,.2)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35"
+            aria-label="Send AI request"
           >
-            ➤
+            {loading ? <Bot className="h-3.5 w-3.5 animate-pulse" /> : <CornerDownLeft className="h-3.5 w-3.5" />}
           </button>
         </div>
+        <p className="mt-1.5 text-center text-[8px] text-white/15">AI actions update the same page state used by drag/drop and the inspector.</p>
       </div>
     </div>
   );
