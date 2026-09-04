@@ -20,7 +20,7 @@ import { SovereignNavBar } from '../components/SovereignNavBar';
 import type { BuilderMode } from '../components/SovereignNavBar';
 import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
 import { useBuilderStore } from '@/lib/builder/store';
-import type { BlockDefinition } from '@/lib/builder/types';
+import type { BlockDefinition, LeftPanelTab } from '@/lib/builder/types';
 import { findBlockDefinition } from '@/lib/builder/blocks/utils';
 import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
 import { storageService } from '@/lib/builder/pipeline/StorageService';
@@ -36,13 +36,21 @@ import {
 const VisualBuilderCanvas = dynamic(() => import('@/lib/builder/components/VisualBuilderCanvas'), { ssr: false });
 const PagesPanel = dynamic(() => import('@/lib/builder/components/PagesPanel'), { ssr: false });
 const ComponentLibrary = dynamic(() => import('@/lib/builder/components/ComponentLibrary'), { ssr: false });
+const CMSPanel = dynamic(() => import('@/lib/builder/components/CMSPanel'), { ssr: false });
+const AssetsPanel = dynamic(() => import('@/lib/builder/components/AssetsPanel'), { ssr: false });
+const SavedComponentsPanel = dynamic(() => import('@/lib/builder/components/SavedComponentsPanel'), { ssr: false });
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
 const InteractionPanel = dynamic(() => import('@/lib/builder/components/InteractionPanel'), { ssr: false });
 const AIAssistantPanel = dynamic(() => import('@/lib/builder/components/AIAssistantPanel'), { ssr: false });
-const LayersPanel = dynamic(() => import('@/lib/builder/components/LayersPanel'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
-const TemplatesPanel = dynamic(() => import('@/lib/builder/components/TemplatesPanel'), { ssr: false });
-const FileManagerPanel = dynamic(() => import('@/components/file-manager/FileManagerPanel'), { ssr: false });
+
+const LEFT_TABS: Array<{ id: LeftPanelTab; label: string; short: string }> = [
+  { id: 'pages', label: 'Pages', short: '📑' },
+  { id: 'insert', label: 'Insert', short: '＋' },
+  { id: 'cms', label: 'CMS', short: '◫' },
+  { id: 'assets', label: 'Assets', short: '◇' },
+  { id: 'components', label: 'Components', short: '⌑' },
+];
 
 function BuilderContent() {
   const searchParams = useSearchParams();
@@ -109,7 +117,15 @@ function BuilderContent() {
   }, [setEditorCode, showToast, switchTab]);
 
   useEffect(() => {
-    if (leftPanelTab === 'layers') setLeftPanelTab('pages');
+    const rawTab = leftPanelTab as string;
+    const legacyMap: Record<string, LeftPanelTab> = {
+      blocks: 'insert',
+      layers: 'pages',
+      templates: 'insert',
+      files: 'assets',
+    };
+    const normalized = legacyMap[rawTab];
+    if (normalized) setLeftPanelTab(normalized);
   }, [leftPanelTab, setLeftPanelTab]);
 
   useEffect(() => {
@@ -399,40 +415,32 @@ function BuilderContent() {
           >
             <div className="flex h-full overflow-hidden" role="tabpanel" aria-label="Build editor">
               {leftPanelOpen && (
-                <aside aria-label="Pages, blocks, layers, templates, and files" className="shrink-0 border-r border-white/10">
+                <aside aria-label="Pages, Insert, CMS, Assets, and Components" className="shrink-0 border-r border-white/10">
                   <nav aria-label="Panel tabs" className="flex border-b border-white/10">
-                    {(['pages', 'blocks', 'layers', 'templates', 'files'] as const).map((tabName) => (
+                    {LEFT_TABS.map((panel) => (
                       <button
-                        key={tabName}
+                        key={panel.id}
                         type="button"
-                        onClick={() => setLeftPanelTab(tabName === 'layers' ? 'pages' : tabName)}
+                        onClick={() => setLeftPanelTab(panel.id)}
                         role="tab"
-                        aria-selected={leftPanelTab === tabName || (tabName === 'layers' && leftPanelTab === 'pages')}
+                        aria-selected={leftPanelTab === panel.id}
                         className={`flex-1 px-3 py-1.5 text-[10px] font-semibold transition-colors ${
-                          leftPanelTab === tabName
+                          leftPanelTab === panel.id
                             ? 'bg-violet-600/20 text-violet-300 border-b-2 border-violet-500'
                             : 'text-white/40 hover:text-white/70'
                         }`}
-                        title={tabName === 'blocks' ? 'Insert' : tabName.charAt(0).toUpperCase() + tabName.slice(1)}
+                        title={panel.label}
                       >
-                        {tabName === 'pages'
-                          ? '📑 Pages'
-                          : tabName === 'blocks'
-                            ? '＋ Insert'
-                            : tabName === 'layers'
-                              ? 'Layers'
-                              : tabName === 'templates'
-                                ? '◇ Templates'
-                                : '⌑ Files'}
+                        {panel.short} {panel.label}
                       </button>
                     ))}
                   </nav>
                   <div role="tabpanel" className="h-full min-h-0">
                     {leftPanelTab === 'pages' && <PagesPanel />}
-                    {leftPanelTab === 'blocks' && <ComponentLibrary />}
-                    {leftPanelTab === 'layers' && <LayersPanel />}
-                    {leftPanelTab === 'templates' && <TemplatesPanel />}
-                    {leftPanelTab === 'files' && <FileManagerPanel projectId={projectId} />}
+                    {leftPanelTab === 'insert' && <ComponentLibrary />}
+                    {leftPanelTab === 'cms' && <CMSPanel projectId={projectId} />}
+                    {leftPanelTab === 'assets' && <AssetsPanel projectId={projectId} />}
+                    {leftPanelTab === 'components' && <SavedComponentsPanel projectId={projectId} />}
                   </div>
                 </aside>
               )}
