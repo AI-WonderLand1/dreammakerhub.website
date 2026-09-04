@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useBuilderStore } from '@/lib/builder/store';
 import { useSovereignOS } from '../context/SovereignOSContext';
-import { logger } from '@/lib/logger';
 
 interface PublishModalProps {
   isOpen: boolean;
@@ -23,12 +23,13 @@ function downloadFile(content: string, filename: string, mimeType: string) {
 }
 
 export function PublishModal({ isOpen, onClose }: PublishModalProps) {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get('projectId') || '';
   const { editorCode } = useSovereignOS();
-  const { elements } = useBuilderStore();
+  const { elements, pages, activePageId } = useBuilderStore();
   const [target, setTarget] = useState<'site' | 'html' | 'json'>('site');
-  const [title, setTitle] = useState('');
   const [publishing, setPublishing] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; message: string; url?: string } | null>(null);
 
   if (!isOpen) return null;
 
@@ -39,16 +40,24 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
       if (target === 'html') {
         const html = editorCode || generateHTML(elements);
         downloadFile(html, 'export.html', 'text/html');
-        setResult({ ok: true, message: 'HTML file downloaded' });
-        setPublishing(false);
+        setResult({ ok: true, message: 'Active page HTML downloaded' });
         return;
       }
 
       if (target === 'json') {
-        const json = JSON.stringify(elements, null, 2);
-        downloadFile(json, 'export.json', 'application/json');
-        setResult({ ok: true, message: 'JSON file downloaded' });
-        setPublishing(false);
+        const json = JSON.stringify({
+          version: 2,
+          pages,
+          activePageId,
+          elements,
+        }, null, 2);
+        downloadFile(json, 'wonderbuild-site.json', 'application/json');
+        setResult({ ok: true, message: `Site JSON downloaded (${pages.length} page${pages.length === 1 ? '' : 's'})` });
+        return;
+      }
+
+      if (!projectId) {
+        setResult({ ok: false, message: 'Save this as a project before publishing the site.' });
         return;
       }
 
@@ -57,13 +66,17 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           target: 'site',
-          title: title || 'Untitled Page',
-          code: editorCode || '',
-          elements,
+          projectId,
+          pages,
+          activePageId,
         }),
       });
       const data = await res.json();
-      setResult({ ok: res.ok, message: data.message || (res.ok ? 'Published successfully' : 'Publish failed') });
+      setResult({
+        ok: res.ok,
+        message: data.message || (res.ok ? 'Published successfully' : 'Publish failed'),
+        url: typeof data.url === 'string' ? data.url : undefined,
+      });
     } catch (err: any) {
       setResult({ ok: false, message: err.message || 'Publish failed' });
     } finally {
@@ -74,35 +87,38 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
   const buttonLabel = publishing
     ? 'Publishing...'
     : target === 'site'
-      ? 'Publish to Site'
+      ? `Publish ${pages.length} Page${pages.length === 1 ? '' : 's'}`
       : target === 'html'
-        ? 'Export HTML'
-        : 'Export JSON';
+        ? 'Export Active Page HTML'
+        : 'Export Site JSON';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0c101d] p-6 text-white shadow-2xl">
         <h2 className="text-lg font-bold">Publish</h2>
-        <p className="mt-1 text-sm text-white/50">Publish to your site or export your project as HTML or JSON.</p>
+        <p className="mt-1 text-sm text-white/50">
+          Publish every WonderBuild page in this project, or export the current site state.
+        </p>
 
         {target === 'site' && (
-          <div className="mt-4">
-            <label className="text-xs text-white/70 block mb-1">Page Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="My Page"
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-violet-500"
-            />
+          <div className="mt-4 rounded-xl border border-violet-400/15 bg-violet-500/[.06] px-3 py-2.5">
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className="font-semibold text-white/70">Pages ready</span>
+              <span className="rounded bg-violet-400/10 px-2 py-0.5 text-[10px] font-black text-violet-200">
+                {pages.length}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[10px] leading-relaxed text-white/35">
+              Page names, slugs, and separate canvas content are published from the existing WonderBuild page state.
+            </p>
           </div>
         )}
 
         <div className="mt-4 flex gap-2 rounded-lg border border-white/10 p-1">
           {([
-            { key: 'site' as const, label: '🚀 Publish to Site' },
-            { key: 'html' as const, label: '📄 HTML Export' },
-            { key: 'json' as const, label: '📦 JSON Export' },
+            { key: 'site' as const, label: '🚀 Publish Site' },
+            { key: 'html' as const, label: '📄 Active HTML' },
+            { key: 'json' as const, label: '📦 Site JSON' },
           ]).map(({ key, label }) => (
             <button
               key={key}
@@ -120,7 +136,17 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
           <div className={`mt-4 rounded-lg px-3 py-2 text-xs font-semibold ${
             result.ok ? 'bg-green-500/10 text-green-300' : 'bg-red-500/10 text-red-300'
           }`}>
-            {result.message}
+            <div>{result.message}</div>
+            {result.ok && result.url && (
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1.5 inline-block text-[10px] font-bold text-green-200 underline underline-offset-2 hover:text-white"
+              >
+                Open published site ↗
+              </a>
+            )}
           </div>
         )}
 
