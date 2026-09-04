@@ -12,7 +12,6 @@ import {
   ArrowRight,
   ExternalLink,
   Eye,
-  Rocket,
 } from 'lucide-react';
 
 interface PromptViewerProps {
@@ -40,7 +39,6 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-950 p-4 sm:p-6 space-y-6">
-      {/* Sub-page Category Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/60 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -56,14 +54,13 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
           </div>
 
           <h1 className="text-2xl font-black text-white mt-2 tracking-tight">
-            {batch.category} Suite Overview
+            {batch.category} Starting Points
           </h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            {batch.description} Select any layout variant below to view, customize, and edit in the live Visual Renderer.
+            {batch.description} Choose a layout below to create a project and continue in the main WonderBuild editor.
           </p>
         </div>
 
-        {/* Quick Actions */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             id="btn-copy-prompt-batch-view"
@@ -84,19 +81,18 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
             className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs rounded-xl shadow-lg transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Generate via Gemini</span>
+            <span>Generate with AI</span>
           </button>
         </div>
       </div>
 
-      {/* Required Variant Layouts Gallery - Each with a Thumbnail & Hover Effect */}
       <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
             <Layers className="w-4 h-4 text-indigo-400" />
             <span>Batch #{batch.batchNumber} Variant Templates ({batch.variants.length})</span>
           </h3>
-          <span className="text-xs text-slate-400">Click any card to open in Preview</span>
+          <span className="text-xs text-slate-400">Choose a card to open it in Builder</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -123,7 +119,6 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
                     : 'border-slate-800/80 hover:border-purple-500/60'
                 }`}
               >
-                {/* Thumbnail Image / SVG Mockup */}
                 <TemplateThumbnail
                   template={matchedTemplate}
                   title={variantName}
@@ -157,11 +152,10 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
                   </p>
                 </div>
 
-                {/* Footer Action Bar */}
                 <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] font-semibold text-indigo-400 group-hover:text-indigo-300">
                   <span className="flex items-center space-x-1">
                     <Eye className="w-3 h-3" />
-                    <span>{matchedTemplate ? 'Open Preview' : 'Generate Layout'}</span>
+                    <span>{matchedTemplate ? 'Customize in Builder' : 'Generate Layout'}</span>
                   </span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -171,15 +165,14 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
         </div>
       </div>
 
-      {/* Loaded Custom Templates Section if any */}
       {associatedTemplates.length > 0 && (
         <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
               <FileCheck2 className="w-4 h-4 text-emerald-400" />
-              <span>Loaded Suite Presets ({associatedTemplates.length})</span>
+              <span>Loaded Starting Templates ({associatedTemplates.length})</span>
             </h3>
-            <span className="text-xs text-slate-400">Ready for editing</span>
+            <span className="text-xs text-slate-400">Ready to open in Builder</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -233,7 +226,7 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({
                 <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-xs text-indigo-400 font-semibold">
                   <span className="flex items-center space-x-1">
                     <Eye className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Live Preview & Customize</span>
+                    <span>Open in Builder</span>
                   </span>
                   <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>
