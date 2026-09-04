@@ -14,6 +14,8 @@ import {
   Monitor,
   Package,
   Palette,
+  PanelLeft,
+  PanelRight,
   Redo2,
   Rocket,
   Smartphone,
@@ -35,7 +37,18 @@ export function SovereignNavBar({
   const [projectName, setProjectName] = useState('Website Project');
   const [publishOpen, setPublishOpen] = useState(false);
   const { running } = useSovereignOS();
-  const { activeBreakpoint, setBreakpoint, zoom, setZoom, undo, redo } = useBuilderStore();
+  const {
+    activeBreakpoint,
+    setBreakpoint,
+    zoom,
+    setZoom,
+    undo,
+    redo,
+    leftPanelOpen,
+    setLeftPanelOpen,
+    rightPanelOpen,
+    setRightPanelOpen,
+  } = useBuilderStore();
 
   useEffect(() => {
     if (!projectId) return;
@@ -135,6 +148,31 @@ export function SovereignNavBar({
       </div>
 
       <div className="flex items-center gap-1.5">
+        {activeMode === 'design' && (
+          <div className="hidden items-center gap-0.5 sm:flex">
+            <button
+              type="button"
+              onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${leftPanelOpen ? 'bg-violet-500/10 text-violet-200' : 'text-white/28 hover:bg-white/[.04] hover:text-white/70'}`}
+              title={leftPanelOpen ? 'Hide left tools' : 'Show left tools'}
+              aria-label={leftPanelOpen ? 'Hide left tools' : 'Show left tools'}
+              aria-pressed={leftPanelOpen}
+            >
+              <PanelLeft size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${rightPanelOpen ? 'bg-violet-500/10 text-violet-200' : 'text-white/28 hover:bg-white/[.04] hover:text-white/70'}`}
+              title={rightPanelOpen ? 'Hide inspector' : 'Show inspector'}
+              aria-label={rightPanelOpen ? 'Hide inspector' : 'Show inspector'}
+              aria-pressed={rightPanelOpen}
+            >
+              <PanelRight size={13} />
+            </button>
+          </div>
+        )}
+
         <div className="hidden items-center gap-0.5 sm:flex">
           <button type="button" onClick={undo} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[.04] hover:text-white/70" title="Undo" aria-label="Undo">
             <Undo2 size={13} />
