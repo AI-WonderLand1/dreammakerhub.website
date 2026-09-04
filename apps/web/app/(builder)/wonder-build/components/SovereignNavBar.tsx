@@ -29,7 +29,8 @@ export function SovereignNavBar() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId') || '';
   const requestedTab = searchParams.get('tab');
-  const activeMode: BuilderMode = requestedTab === 'code' || requestedTab === 'preview' ? requestedTab : 'design';
+  const initialMode: BuilderMode = requestedTab === 'code' || requestedTab === 'preview' ? requestedTab : 'design';
+  const [activeMode, setActiveMode] = useState<BuilderMode>(initialMode);
   const { running } = useSovereignOS();
   const [publishOpen, setPublishOpen] = useState(false);
 
@@ -38,6 +39,28 @@ export function SovereignNavBar() {
     if (projectId) params.set('projectId', projectId);
     params.set('tab', mode);
     return `/wonder-build/builder?${params.toString()}`;
+  };
+
+  const activateMode = (mode: BuilderMode) => {
+    setActiveMode(mode);
+
+    // The legacy header remains in the DOM as the existing state controller,
+    // but is visually hidden by WonderBuild CSS. Reuse its proven switchTab
+    // handlers so changing view mode does not reload the page or risk dropping
+    // a pending autosave. This can be removed once BuilderContent owns the
+    // unified header directly.
+    const legacyTabs = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("header[role='banner'] button[role='tab']")
+    );
+    const target = legacyTabs.find((button) => button.textContent?.toLowerCase().includes(mode));
+
+    if (target) {
+      target.click();
+      return;
+    }
+
+    // Safe fallback if the legacy controller is removed before this bridge.
+    window.location.href = modeHref(mode);
   };
 
   const assetHref = projectId
@@ -80,10 +103,11 @@ export function SovereignNavBar() {
           const Icon = mode.icon;
           const isActive = activeMode === mode.id;
           return (
-            <a
+            <button
               key={mode.id}
-              href={modeHref(mode.id)}
-              aria-current={isActive ? 'page' : undefined}
+              type="button"
+              onClick={() => activateMode(mode.id)}
+              aria-pressed={isActive}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[9px] font-black transition sm:px-3 ${
                 isActive
                   ? 'bg-gradient-to-r from-violet-600/90 to-indigo-600/90 text-white shadow-[0_6px_18px_rgba(124,58,237,.22)]'
@@ -92,7 +116,7 @@ export function SovereignNavBar() {
             >
               <Icon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{mode.label}</span>
-            </a>
+            </button>
           );
         })}
       </nav>
