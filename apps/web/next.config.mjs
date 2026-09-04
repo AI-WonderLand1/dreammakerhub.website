@@ -69,16 +69,7 @@ const nextConfig = {
 
   async redirects() {
     return [
-
-
-      // Template library merged into the hub — one page, one builder.
-      {
-        source: '/wonder-build/templates',
-        destination: '/wonder-build',
-        permanent: false,
-      },
-
-      // Preview lives as a tab inside the builder.
+      // Preview lives as a tab inside the website builder.
       {
         source: '/wonder-build/preview',
         destination: '/wonder-build/builder?tab=preview',
