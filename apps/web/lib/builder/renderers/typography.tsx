@@ -1,4 +1,5 @@
 import type { BlockRenderer } from './types';
+import { sanitizeBuilderHtml } from '@/lib/security/sanitize-html.client';
 
 export const typographyRenderers: Record<string, BlockRenderer> = {
   'heading': ({ el, selectedId, selectElement, baseProps, style, children }) => {
@@ -9,7 +10,8 @@ export const typographyRenderers: Record<string, BlockRenderer> = {
       return <p {...baseProps}>{el.props.content}{children}</p>;
   },
   'rich-text': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: el.props.content || '' }} />;
+      const safeContent = sanitizeBuilderHtml(el.props.content);
+      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: safeContent }} />;
   },
   'list': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       const ListTag = el.props.listType === 'ordered' ? 'ol' : 'ul';
