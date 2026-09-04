@@ -42,6 +42,14 @@ function mapType(t: WonderBuildElement['type']): string {
   }
 }
 
+function gridColumnCount(el: WonderBuildElement): number {
+  const template = String(el.styles?.gridTemplateColumns || '');
+  const repeatMatch = template.match(/repeat\(\s*(\d+)/i);
+  if (!repeatMatch) return 2;
+  const parsed = Number.parseInt(repeatMatch[1], 10);
+  return Number.isFinite(parsed) ? Math.min(12, Math.max(1, parsed)) : 2;
+}
+
 function toProps(el: WonderBuildElement): Record<string, any> {
   const props: Record<string, any> = {};
   switch (el.type) {
@@ -60,9 +68,12 @@ function toProps(el: WonderBuildElement): Record<string, any> {
       if (el.alt) props.alt = el.alt;
       break;
     case 'grid':
-      props.columns = 2;
+      props.columns = gridColumnCount(el);
       break;
     case 'nav':
+      // These props remain as a fallback for native navbar blocks. Imported
+      // WonderBuild navs keep their original child tree and the renderer now
+      // prefers that tree, avoiding duplicated synthetic navigation content.
       props.logo = 'Brand';
       props.links = (el.children || []).map((c, i) => ({ id: `l${i}`, label: c.content || `Link ${i + 1}` }));
       break;
