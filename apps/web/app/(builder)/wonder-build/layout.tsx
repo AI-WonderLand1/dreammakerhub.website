@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './wonderbuild-wow.css';
+import './wonderbuild-builder-polish.css';
 
 export const metadata: Metadata = {
   title: 'WonderBuild | AI Wonderland',
