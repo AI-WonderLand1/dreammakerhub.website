@@ -1,5 +1,6 @@
 import type { BlockRenderer } from './types';
 import { AccordionItem, TabsContainer } from './shared';
+import { sanitizeBuilderHtml } from '@/lib/security/sanitize-html.client';
 
 export const utilityRenderers: Record<string, BlockRenderer> = {
   'image': ({ el, selectedId, selectElement, baseProps, style, children }) => {
@@ -21,7 +22,8 @@ export const utilityRenderers: Record<string, BlockRenderer> = {
       return <hr {...baseProps} />;
   },
   'custom-html': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: el.props.html || '' }} />;
+      const safeHtml = sanitizeBuilderHtml(el.props.html);
+      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: safeHtml }} />;
   },
   'accordion': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       const accItems = (el.props.items as any[]) || [];
@@ -118,7 +120,8 @@ export const utilityRenderers: Record<string, BlockRenderer> = {
       return <div {...baseProps} className="rounded border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-300/70"><span className="font-semibold">{el.icon} {el.name}</span> — {el.props.prompt || el.props.text?.slice(0, 60)}{children}</div>;
   },
   'html': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: el.props.html || '' }} />;
+      const safeHtml = sanitizeBuilderHtml(el.props.html);
+      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: safeHtml }} />;
   },
   'shortcode': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#a78bfa' }}>{el.props.shortcode}{children}</div>;
