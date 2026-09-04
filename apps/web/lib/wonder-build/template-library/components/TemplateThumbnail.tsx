@@ -26,7 +26,8 @@ function PreviewElement({ element }: { element: WonderBuildElement }) {
 
   switch (element.type) {
     case 'heading': {
-      const size = typeof element.styles?.fontSize === 'number' ? element.styles.fontSize : 0;
+      const rawSize = element.styles?.fontSize;
+      const size = typeof rawSize === 'number' ? rawSize : typeof rawSize === 'string' ? Number.parseFloat(rawSize) : 0;
       const Tag = size > 28 ? 'h1' : size > 20 ? 'h2' : 'h3';
       return <Tag style={style}>{element.content || ''}</Tag>;
     }
@@ -87,8 +88,11 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
     };
   }, [displayCategory, displayTitle]);
 
-  const SCALE = 0.5;
-  const PREVIEW_WIDTH = 1280;
+  // Scale relative to the thumbnail container instead of forcing a fixed
+  // 1280px preview into every card. This keeps the whole layout visible in
+  // both tiny sidebar thumbnails and wide featured cards.
+  const previewScale = 0.2;
+  const previewCanvasPercent = `${100 / previewScale}%`;
 
   return (
     <div className={`wb-template-thumb group/thumb relative overflow-hidden border transition-all duration-300 ${aspectRatio} ${className}`}>
@@ -101,8 +105,20 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
 
       {hasElements ? (
         <div className="pointer-events-none absolute inset-0 overflow-hidden pt-4">
-          <div style={{ width: PREVIEW_WIDTH, minHeight: 320, transform: `scale(${SCALE})`, transformOrigin: 'top left', fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif", backgroundColor: '#0f172a', color: '#f1f5f9' }}>
-            {template!.elements.map((element, index) => <PreviewElement key={element.id || `template-preview-${index}`} element={element} />)}
+          <div
+            style={{
+              width: previewCanvasPercent,
+              minHeight: previewCanvasPercent,
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top left',
+              fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+              backgroundColor: '#0f172a',
+              color: '#f1f5f9',
+            }}
+          >
+            {template!.elements.map((element, index) => (
+              <PreviewElement key={element.id || `template-preview-${index}`} element={element} />
+            ))}
           </div>
         </div>
       ) : realImage ? (
@@ -123,7 +139,7 @@ export const TemplateThumbnail: React.FC<TemplateThumbnailProps> = ({
       {showHoverOverlay && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-[#040713]/72 p-2 opacity-0 backdrop-blur-[3px] transition-opacity duration-250 group-hover/thumb:opacity-100">
           <div className="flex translate-y-1 items-center gap-1.5 rounded-xl border border-violet-300/25 bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-2 text-[10px] font-black text-white shadow-[0_12px_32px_rgba(124,58,237,.3)] transition-transform group-hover/thumb:translate-y-0">
-            <Eye className="h-3 w-3" /><span>Preview design</span><ArrowUpRight className="h-3 w-3" />
+            <Eye className="h-3 w-3" /><span>Customize in Builder</span><ArrowUpRight className="h-3 w-3" />
           </div>
         </div>
       )}
