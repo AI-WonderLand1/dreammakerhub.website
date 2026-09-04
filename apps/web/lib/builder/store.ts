@@ -306,7 +306,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     getEventBus().emit(EventNames.HISTORY_REDO, { elements: [] });
   },
 
-  leftPanelTab: 'blocks',
+  leftPanelTab: 'pages',
   setLeftPanelTab: (tab) => set({ leftPanelTab: tab }),
   leftPanelOpen: true,
   setLeftPanelOpen: (open) => set({ leftPanelOpen: open }),
