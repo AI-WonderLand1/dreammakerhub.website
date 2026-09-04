@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
+import { Copy, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import { useBuilderStore } from '../store';
 import type { CanvasElement } from '../types';
 import { renderElement as renderElementCtx } from '../renderers';
@@ -97,11 +97,23 @@ function SortableBlock({
   const setRightPanelOpen = useBuilderStore((state) => state.setRightPanelOpen);
   const setRightPanelTab = useBuilderStore((state) => state.setRightPanelTab);
   const removeElement = useBuilderStore((state) => state.removeElement);
+  const duplicateElement = useBuilderStore((state) => state.duplicateElement);
+  const updateElementStyles = useBuilderStore((state) => state.updateElementStyles);
+  const zoom = useBuilderStore((state) => state.zoom);
+  const blockRef = useRef<HTMLDivElement | null>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: el.id,
     data: { type: 'canvas', parentId },
   });
+
+  const setCombinedRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      blockRef.current = node;
+      setNodeRef(node);
+    },
+    [setNodeRef],
+  );
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -116,47 +128,98 @@ function SortableBlock({
     setRightPanelTab(tab);
   };
 
+  const beginResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const node = blockRef.current;
+    if (!node) return;
+
+    const rect = node.getBoundingClientRect();
+    const scale = Math.max(zoom, 0.1);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = rect.width / scale;
+    const startHeight = rect.height / scale;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const width = Math.max(24, startWidth + (moveEvent.clientX - startX) / scale);
+      const height = Math.max(24, startHeight + (moveEvent.clientY - startY) / scale);
+      updateElementStyles(el.id, {
+        width: `${Math.round(width)}px`,
+        height: `${Math.round(height)}px`,
+      });
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  };
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setCombinedRef} style={style} {...attributes} {...listeners}>
       {isSelected && !isDragging && (
-        <div
-          className="absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-          aria-label={`${el.name} quick actions`}
-        >
-          <span className="max-w-28 truncate px-2 text-[8px] font-black uppercase tracking-[.1em] text-violet-100/60">
-            {el.name}
-          </span>
-          <span className="h-4 w-px bg-white/8" />
+        <>
+          <div
+            className="absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`${el.name} quick actions`}
+          >
+            <span className="max-w-28 truncate px-2 text-[8px] font-black uppercase tracking-[.1em] text-violet-100/60">
+              {el.name}
+            </span>
+            <span className="h-4 w-px bg-white/8" />
+            <button
+              type="button"
+              onClick={() => openPanel('content')}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[.06] hover:text-white"
+              title="Open Design inspector"
+              aria-label="Open Design inspector"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openPanel('ai')}
+              className="flex h-7 items-center gap-1 rounded-md bg-violet-500/10 px-2 text-[8px] font-black text-violet-100/70 transition hover:bg-violet-500/20 hover:text-white"
+              title="Edit selected element with AI"
+              aria-label="Edit selected element with AI"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> AI
+            </button>
+            <button
+              type="button"
+              onClick={() => duplicateElement(el.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/35 transition hover:bg-white/[.06] hover:text-white"
+              title="Duplicate element"
+              aria-label={`Duplicate ${el.name}`}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => removeElement(el.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition hover:bg-red-500/10 hover:text-red-300"
+              title="Delete element"
+              aria-label={`Delete ${el.name}`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => openPanel('content')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[.06] hover:text-white"
-            title="Open Design inspector"
-            aria-label="Open Design inspector"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => openPanel('ai')}
-            className="flex h-7 items-center gap-1 rounded-md bg-violet-500/10 px-2 text-[8px] font-black text-violet-100/70 transition hover:bg-violet-500/20 hover:text-white"
-            title="Edit selected element with AI"
-            aria-label="Edit selected element with AI"
-          >
-            <Sparkles className="h-3.5 w-3.5" /> AI
-          </button>
-          <button
-            type="button"
-            onClick={() => removeElement(el.id)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition hover:bg-red-500/10 hover:text-red-300"
-            title="Delete element"
-            aria-label={`Delete ${el.name}`}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+            onPointerDown={beginResize}
+            className="absolute -bottom-1.5 -right-1.5 z-[85] h-3.5 w-3.5 cursor-nwse-resize rounded-[3px] border border-violet-200/80 bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,.6)]"
+            title="Resize element"
+            aria-label={`Resize ${el.name}`}
+          />
+        </>
       )}
       {renderElement(el, selectedId, selectElement)}
     </div>
