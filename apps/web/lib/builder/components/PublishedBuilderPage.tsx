@@ -14,7 +14,7 @@ function sanitizePublishedUrl(value: string): string {
   if (raw.startsWith('#') || raw.startsWith('/') || raw.startsWith('./') || raw.startsWith('../') || raw.startsWith('?')) {
     return raw;
   }
-  if (/^data:image\/(?:png|jpeg|jpg|gif|webp|avif|svg\+xml);/i.test(raw)) return raw;
+  if (/^data:image\/(?:png|jpeg|jpg|gif|webp|avif);/i.test(raw)) return raw;
 
   try {
     const url = new URL(raw);
