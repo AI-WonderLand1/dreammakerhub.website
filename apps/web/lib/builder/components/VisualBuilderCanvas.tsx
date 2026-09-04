@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -12,6 +12,7 @@ import type { RendererCtx } from '../renderers/types';
 import { CANVAS_ROOT_ID, acceptsChildren } from '../dnd-utils';
 
 type ResizeAxis = 'x' | 'y' | 'xy';
+type SelectionBounds = { left: number; top: number; width: number; height: number };
 
 function buildElementCtx(
   el: CanvasElement,
@@ -99,6 +100,7 @@ function SortableBlock({
   const blockRef = useRef<HTMLDivElement | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [sizeLabel, setSizeLabel] = useState<string | null>(null);
+  const [selectionBounds, setSelectionBounds] = useState<SelectionBounds | null>(null);
   const setRightPanelOpen = useBuilderStore((state) => state.setRightPanelOpen);
   const setRightPanelTab = useBuilderStore((state) => state.setRightPanelTab);
   const removeElement = useBuilderStore((state) => state.removeElement);
@@ -112,6 +114,49 @@ function SortableBlock({
     blockRef.current = node;
     setNodeRef(node);
   }, [setNodeRef]);
+
+  const getRenderedNode = useCallback((): HTMLElement | null => {
+    const wrapper = blockRef.current;
+    if (!wrapper) return null;
+    const firstChild = wrapper.firstElementChild;
+    return firstChild instanceof HTMLElement ? firstChild : wrapper;
+  }, []);
+
+  const measureSelection = useCallback(() => {
+    if (!isSelected || isDragging) {
+      setSelectionBounds(null);
+      return;
+    }
+    const wrapper = blockRef.current;
+    const rendered = getRenderedNode();
+    if (!wrapper || !rendered) return;
+    const zoom = Math.max(useBuilderStore.getState().zoom || 1, 0.1);
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const renderedRect = rendered.getBoundingClientRect();
+    setSelectionBounds({
+      left: (renderedRect.left - wrapperRect.left) / zoom,
+      top: (renderedRect.top - wrapperRect.top) / zoom,
+      width: renderedRect.width / zoom,
+      height: renderedRect.height / zoom,
+    });
+  }, [getRenderedNode, isDragging, isSelected]);
+
+  useLayoutEffect(() => {
+    measureSelection();
+  }, [measureSelection, el.styles, el.props, el.children]);
+
+  useEffect(() => {
+    if (!isSelected) return;
+    const rendered = getRenderedNode();
+    if (!rendered) return;
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureSelection) : null;
+    resizeObserver?.observe(rendered);
+    window.addEventListener('resize', measureSelection);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', measureSelection);
+    };
+  }, [getRenderedNode, isSelected, measureSelection]);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -128,8 +173,8 @@ function SortableBlock({
 
   const startResize = (axis: ResizeAxis, event: React.PointerEvent<HTMLButtonElement>) => {
     if (el.locked || event.button !== 0) return;
-    const node = blockRef.current;
-    if (!node) return;
+    const rendered = getRenderedNode();
+    if (!rendered) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -137,7 +182,7 @@ function SortableBlock({
     const store = useBuilderStore.getState();
     const zoom = Math.max(store.zoom || 1, 0.1);
     const snap = store.snapToGrid;
-    const rect = node.getBoundingClientRect();
+    const rect = rendered.getBoundingClientRect();
     const startWidth = rect.width / zoom;
     const startHeight = rect.height / zoom;
     const startX = event.clientX;
@@ -155,10 +200,8 @@ function SortableBlock({
       const width = Math.max(40, snapValue(startWidth + deltaX));
       const height = Math.max(24, snapValue(startHeight + deltaY));
       const nextStyles: Record<string, string> = {};
-
       if (axis === 'x' || axis === 'xy') nextStyles.width = `${width}px`;
       if (axis === 'y' || axis === 'xy') nextStyles.height = `${height}px`;
-
       useBuilderStore.getState().updateElementStyles(el.id, nextStyles);
       setSizeLabel(`${axis === 'y' ? Math.round(startWidth) : width} × ${axis === 'x' ? Math.round(startHeight) : height}`);
     };
@@ -169,6 +212,7 @@ function SortableBlock({
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       setIsResizing(false);
+      measureSelection();
       window.setTimeout(() => setSizeLabel(null), 700);
     };
 
@@ -177,13 +221,15 @@ function SortableBlock({
   };
 
   const resizeHandleBase = 'absolute z-[90] rounded-full border border-violet-100/70 bg-violet-500 shadow-[0_0_0_2px_rgba(10,16,32,.9),0_0_16px_rgba(139,92,246,.7)] transition hover:scale-125 hover:bg-violet-300';
+  const bounds = selectionBounds;
 
   return (
     <div ref={mergedRef} style={style} {...attributes} {...listeners}>
-      {isSelected && !isDragging && (
+      {isSelected && !isDragging && bounds && (
         <>
           <div
-            className="absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
+            className="absolute z-[80] flex -translate-x-1/2 -translate-y-[calc(100%+7px)] items-center gap-0.5 rounded-lg border border-violet-300/20 bg-[#0a1020]/95 p-1 shadow-[0_10px_30px_rgba(0,0,0,.42),0_0_22px_rgba(124,58,237,.14)] backdrop-blur-xl"
+            style={{ left: bounds.left + bounds.width / 2, top: bounds.top }}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
             aria-label={`${el.name} quick actions`}
@@ -225,7 +271,8 @@ function SortableBlock({
             <>
               <button
                 type="button"
-                className={`${resizeHandleBase} -right-[6px] top-1/2 h-3 w-3 -translate-y-1/2 cursor-ew-resize`}
+                className={`${resizeHandleBase} h-3 w-3 -translate-y-1/2 cursor-ew-resize`}
+                style={{ left: bounds.left + bounds.width - 6, top: bounds.top + bounds.height / 2 }}
                 onPointerDown={(event) => startResize('x', event)}
                 onClick={(event) => event.stopPropagation()}
                 aria-label={`Resize ${el.name} width`}
@@ -233,7 +280,8 @@ function SortableBlock({
               />
               <button
                 type="button"
-                className={`${resizeHandleBase} bottom-[-6px] left-1/2 h-3 w-3 -translate-x-1/2 cursor-ns-resize`}
+                className={`${resizeHandleBase} h-3 w-3 -translate-x-1/2 cursor-ns-resize`}
+                style={{ left: bounds.left + bounds.width / 2, top: bounds.top + bounds.height - 6 }}
                 onPointerDown={(event) => startResize('y', event)}
                 onClick={(event) => event.stopPropagation()}
                 aria-label={`Resize ${el.name} height`}
@@ -241,7 +289,8 @@ function SortableBlock({
               />
               <button
                 type="button"
-                className={`${resizeHandleBase} bottom-[-6px] right-[-6px] h-3.5 w-3.5 cursor-nwse-resize`}
+                className={`${resizeHandleBase} h-3.5 w-3.5 cursor-nwse-resize`}
+                style={{ left: bounds.left + bounds.width - 7, top: bounds.top + bounds.height - 7 }}
                 onPointerDown={(event) => startResize('xy', event)}
                 onClick={(event) => event.stopPropagation()}
                 aria-label={`Resize ${el.name}`}
@@ -251,7 +300,10 @@ function SortableBlock({
           )}
 
           {sizeLabel && (
-            <div className="pointer-events-none absolute bottom-[-30px] right-0 z-[85] rounded-md border border-violet-300/15 bg-[#070b16]/95 px-2 py-1 font-mono text-[8px] font-bold text-violet-100/70 shadow-lg">
+            <div
+              className="pointer-events-none absolute z-[85] -translate-x-full rounded-md border border-violet-300/15 bg-[#070b16]/95 px-2 py-1 font-mono text-[8px] font-bold text-violet-100/70 shadow-lg"
+              style={{ left: bounds.left + bounds.width, top: bounds.top + bounds.height + 8 }}
+            >
               {sizeLabel}px
             </div>
           )}
@@ -381,7 +433,7 @@ export default function VisualBuilderCanvas() {
                 </div>
               </div>
             ) : (
-              <div className="overflow-hidden">
+              <div className="overflow-visible">
                 <SortableContext items={elements.map((element) => element.id)} strategy={verticalListSortingStrategy}>
                   {elements.map((element) => (
                     <SortableBlock
