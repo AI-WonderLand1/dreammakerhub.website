@@ -1,6 +1,5 @@
 'use client';
-import React, { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { BatchPromptList } from './components/BatchPromptList';
 import { PromptViewer } from './components/PromptViewer';
@@ -25,9 +24,6 @@ import { downloadJsonFile } from './utils/templateUtils';
 import { buildBuilderStatePayload } from './utils/builderAdapter';
 
 export default function App() {
-  const searchParams = useSearchParams();
-  const aiStart = searchParams.get('mode') === 'ai';
-
   const [activeTab, setActiveTab] = useState<ActiveTab>('prompts');
   const [selectedBatchNumber, setSelectedBatchNumber] = useState<number>(1);
   const [templates, setTemplates] = useState<WonderBuildTemplate[]>(INITIAL_PRESET_TEMPLATES);
@@ -40,13 +36,23 @@ export default function App() {
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
 
   // Modals state
-  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(aiStart);
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [isCreatorStudioOpen, setIsCreatorStudioOpen] = useState<boolean>(false);
   const [isImageStudioOpen, setIsImageStudioOpen] = useState<boolean>(false);
   const [isSearchGroundingOpen, setIsSearchGroundingOpen] = useState<boolean>(false);
   const [isVoiceCoPilotOpen, setIsVoiceCoPilotOpen] = useState<boolean>(false);
   const [isIntelligenceOpen, setIsIntelligenceOpen] = useState<boolean>(false);
-  const [isGuidedStartOpen, setIsGuidedStartOpen] = useState<boolean>(!aiStart);
+  const [isGuidedStartOpen, setIsGuidedStartOpen] = useState<boolean>(true);
+
+  // /wonder-build/templates?mode=ai opens the existing AI starting flow without
+  // forcing every consumer of this shared component to use Next's search hook.
+  useEffect(() => {
+    const mode = new URLSearchParams(window.location.search).get('mode');
+    if (mode === 'ai') {
+      setIsGuidedStartOpen(false);
+      setIsAiModalOpen(true);
+    }
+  }, []);
 
   const handlePublishCreatorTemplate = (newTemplate: WonderBuildTemplate) => {
     setTemplates((prev) => [newTemplate, ...prev]);
@@ -104,21 +110,17 @@ export default function App() {
     }
   };
 
-  // Selected Batch definition
   const currentBatch =
     BATCH_DEFINITIONS.find((b) => b.batchNumber === selectedBatchNumber) ||
     BATCH_DEFINITIONS[0];
 
-  // Selected Template
   const currentTemplate =
     templates.find((t) => t.id === selectedTemplateId) || templates[0];
 
-  // Get templates associated with current batch
   const batchTemplates = templates.filter(
     (t) => t.category.toLowerCase() === currentBatch.category.toLowerCase()
   );
 
-  // Find selected element node in tree
   const getElementAtPath = (
     elements: WonderBuildElement[],
     path: number[]
