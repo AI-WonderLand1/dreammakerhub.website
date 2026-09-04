@@ -42,12 +42,13 @@ export class StorageService {
   }
 
   start(): void {
-    this.unsubs.push(
-      this.bus.on(EventNames.PROJECT_STATE_CHANGED, () => {
-        this.scheduleLocalSave();
-        this.scheduleProjectSave();
-      })
-    );
+    const scheduleSave = () => {
+      this.scheduleLocalSave();
+      this.scheduleProjectSave();
+    };
+
+    this.unsubs.push(this.bus.on(EventNames.PROJECT_STATE_CHANGED, scheduleSave));
+    this.unsubs.push(this.bus.on(EventNames.PROJECT_METADATA_UPDATED, scheduleSave));
     this.unsubs.push(
       this.bus.on(EventNames.STORAGE_SAVING, (event) => {
         const { projectId } = event.payload;
