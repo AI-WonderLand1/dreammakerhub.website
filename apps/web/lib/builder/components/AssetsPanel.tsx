@@ -62,11 +62,11 @@ export default function AssetsPanel({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <div className="border-b border-white/8 px-3 py-2 text-[8px] font-black uppercase tracking-[.16em] text-white/25">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 border-b border-white/8 px-3 py-2 text-[8px] font-black uppercase tracking-[.16em] text-white/25">
           Project files
         </div>
-        <div className="h-[calc(100%-33px)] min-h-0">
+        <div className="min-h-0 flex-1">
           <FileManagerPanel projectId={projectId} />
         </div>
       </div>
