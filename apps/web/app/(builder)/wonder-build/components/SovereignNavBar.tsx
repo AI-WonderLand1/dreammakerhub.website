@@ -14,6 +14,8 @@ import {
   Monitor,
   Package,
   Palette,
+  PanelLeft,
+  PanelRight,
   Redo2,
   Rocket,
   Smartphone,
@@ -21,18 +23,32 @@ import {
   Undo2,
 } from 'lucide-react';
 
-type BuilderMode = 'design' | 'code' | 'preview';
+export type BuilderMode = 'design' | 'code' | 'preview';
 
-export function SovereignNavBar() {
+export function SovereignNavBar({
+  activeMode,
+  onModeChange,
+}: {
+  activeMode: BuilderMode;
+  onModeChange: (mode: BuilderMode) => void;
+}) {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId') || '';
-  const requestedTab = searchParams.get('tab');
-  const initialMode: BuilderMode = requestedTab === 'code' || requestedTab === 'preview' ? requestedTab : 'design';
-  const [activeMode, setActiveMode] = useState<BuilderMode>(initialMode);
   const [projectName, setProjectName] = useState('Website Project');
   const [publishOpen, setPublishOpen] = useState(false);
   const { running } = useSovereignOS();
-  const { activeBreakpoint, setBreakpoint, zoom, setZoom, undo, redo } = useBuilderStore();
+  const {
+    activeBreakpoint,
+    setBreakpoint,
+    zoom,
+    setZoom,
+    undo,
+    redo,
+    leftPanelOpen,
+    setLeftPanelOpen,
+    rightPanelOpen,
+    setRightPanelOpen,
+  } = useBuilderStore();
 
   useEffect(() => {
     if (!projectId) return;
@@ -49,26 +65,6 @@ export function SovereignNavBar() {
       cancelled = true;
     };
   }, [projectId]);
-
-  const modeHref = (mode: BuilderMode) => {
-    const params = new URLSearchParams();
-    if (projectId) params.set('projectId', projectId);
-    params.set('tab', mode);
-    return `/wonder-build/builder?${params.toString()}`;
-  };
-
-  const activateMode = (mode: BuilderMode) => {
-    setActiveMode(mode);
-    const legacyTabs = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("header[role='banner'] button[role='tab']"),
-    );
-    const target = legacyTabs.find((button) => button.textContent?.toLowerCase().includes(mode));
-    if (target) {
-      target.click();
-      return;
-    }
-    window.location.href = modeHref(mode);
-  };
 
   const assetHref = projectId
     ? `/library?sendTo=builder&projectId=${encodeURIComponent(projectId)}`
@@ -95,17 +91,17 @@ export function SovereignNavBar() {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="max-w-[180px] truncate text-[10px] font-bold text-white/78">{projectName}</span>
-            <span className="rounded bg-white/[.045] px-1 py-0.5 text-[7px] font-black text-white/30">v2</span>
+            <span className="rounded bg-white/[.045] px-1 py-0.5 text-[7px] font-black text-white/30">BUILD</span>
           </div>
           <div className="mt-0.5 flex items-center gap-1 text-[8px] font-semibold text-emerald-300/65">
             <Check size={9} /> Autosave
           </div>
         </div>
 
-        <div className="ml-1 hidden items-center rounded-md border border-white/8 bg-black/20 p-0.5 md:flex">
+        <div className="ml-1 hidden items-center rounded-md border border-white/8 bg-black/20 p-0.5 md:flex" aria-label="Build mode">
           <button
             type="button"
-            onClick={() => activateMode('design')}
+            onClick={() => onModeChange('design')}
             className={`flex h-7 items-center gap-1 rounded px-2 text-[8px] font-bold transition ${activeMode === 'design' ? 'bg-violet-500/18 text-violet-200' : 'text-white/30 hover:text-white/65'}`}
             aria-pressed={activeMode === 'design'}
           >
@@ -113,7 +109,7 @@ export function SovereignNavBar() {
           </button>
           <button
             type="button"
-            onClick={() => activateMode('code')}
+            onClick={() => onModeChange('code')}
             className={`flex h-7 items-center gap-1 rounded px-2 text-[8px] font-bold transition ${activeMode === 'code' ? 'bg-violet-500/18 text-violet-200' : 'text-white/30 hover:text-white/65'}`}
             aria-pressed={activeMode === 'code'}
           >
@@ -152,6 +148,31 @@ export function SovereignNavBar() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        {activeMode === 'design' && (
+          <div className="hidden items-center gap-0.5 sm:flex">
+            <button
+              type="button"
+              onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${leftPanelOpen ? 'bg-violet-500/10 text-violet-200' : 'text-white/28 hover:bg-white/[.04] hover:text-white/70'}`}
+              title={leftPanelOpen ? 'Hide left tools' : 'Show left tools'}
+              aria-label={leftPanelOpen ? 'Hide left tools' : 'Show left tools'}
+              aria-pressed={leftPanelOpen}
+            >
+              <PanelLeft size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${rightPanelOpen ? 'bg-violet-500/10 text-violet-200' : 'text-white/28 hover:bg-white/[.04] hover:text-white/70'}`}
+              title={rightPanelOpen ? 'Hide inspector' : 'Show inspector'}
+              aria-label={rightPanelOpen ? 'Hide inspector' : 'Show inspector'}
+              aria-pressed={rightPanelOpen}
+            >
+              <PanelRight size={13} />
+            </button>
+          </div>
+        )}
+
         <div className="hidden items-center gap-0.5 sm:flex">
           <button type="button" onClick={undo} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/28 transition hover:bg-white/[.04] hover:text-white/70" title="Undo" aria-label="Undo">
             <Undo2 size={13} />
@@ -164,7 +185,7 @@ export function SovereignNavBar() {
         <Link
           href={assetHref}
           className="hidden h-8 items-center gap-1.5 rounded-lg border border-white/8 bg-white/[.025] px-2 text-[8px] font-bold text-white/35 transition hover:border-violet-300/20 hover:bg-violet-500/8 hover:text-white lg:flex"
-          title="Open asset library"
+          title="Open website assets including images, video, and 3D web assets"
         >
           <Package size={12} /> Assets
         </Link>
@@ -177,7 +198,7 @@ export function SovereignNavBar() {
 
         <button
           type="button"
-          onClick={() => activateMode('preview')}
+          onClick={() => onModeChange('preview')}
           className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[8px] font-black transition ${activeMode === 'preview' ? 'border-violet-300/25 bg-violet-500/16 text-violet-100' : 'border-white/8 bg-white/[.025] text-white/55 hover:border-white/15 hover:bg-white/[.05] hover:text-white'}`}
         >
           <Eye size={12} /> Preview

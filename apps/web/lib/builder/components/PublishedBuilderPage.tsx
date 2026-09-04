@@ -1,10 +1,10 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import type { BuilderTheme, CanvasElement } from '../types';
 import { renderElement } from '../renderers';
 
-const URLISH_PROP = /(?:url|href|src|link|action|poster)$/i;
+const URLISH_PROP = /(?:url|href|src|link|poster)$/i;
 const SAFE_ABSOLUTE_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 function sanitizePublishedUrl(value: string): string {
@@ -50,6 +50,17 @@ function sanitizePublishedElement(element: CanvasElement): CanvasElement {
   };
 }
 
+function interactionClass(element: CanvasElement): string {
+  const hover = String(element.props?.hoverEffect || 'none');
+  const scroll = String(element.props?.scrollEffect || 'none');
+  return [
+    `builder-element type-${element.type}`,
+    hover !== 'none' ? `wb-hover-${hover}` : '',
+    scroll !== 'none' ? `wb-scroll-${scroll}` : '',
+    element.props?.clickAction && element.props.clickAction !== 'none' ? 'wb-interactive' : '',
+  ].filter(Boolean).join(' ');
+}
+
 function PublishedElement({ element }: { element: CanvasElement }) {
   const safeElement = sanitizePublishedElement(element);
   const style = { ...(safeElement.styles as CSSProperties) };
@@ -57,13 +68,39 @@ function PublishedElement({ element }: { element: CanvasElement }) {
     <PublishedElement key={child.id} element={child} />
   ));
 
+  const handleInteraction = (event: ReactMouseEvent<HTMLElement>) => {
+    const action = String(safeElement.props?.clickAction || 'none');
+    if (action === 'navigate') {
+      const target = sanitizePublishedUrl(String(safeElement.props?.clickUrl || ''));
+      if (!target || target === '#') return;
+      event.preventDefault();
+      event.stopPropagation();
+      const newTab = Boolean(safeElement.props?.clickNewTab) && /^https?:/i.test(target);
+      if (newTab) window.open(target, '_blank', 'noopener,noreferrer');
+      else window.location.assign(target);
+      return;
+    }
+
+    if (action === 'scroll-to') {
+      const target = String(safeElement.props?.scrollTarget || '').replace(/[^a-zA-Z0-9_:-]/g, '');
+      if (!target) return;
+      const destination = document.getElementById(target);
+      if (!destination) return;
+      event.preventDefault();
+      event.stopPropagation();
+      destination.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return <>{renderElement({
     el: safeElement,
     selectedId: null,
     selectElement: () => {},
     baseProps: {
       style,
-      className: `builder-element type-${safeElement.type}`,
+      id: typeof safeElement.props?.htmlId === 'string' ? safeElement.props.htmlId.replace(/[^a-zA-Z0-9_:-]/g, '') : undefined,
+      onClick: handleInteraction,
+      className: interactionClass(safeElement),
     },
     style,
     children,
@@ -85,6 +122,21 @@ export default function PublishedBuilderPage({
 
   return (
     <main className="min-h-screen w-full" style={rootStyle}>
+      <style>{`
+        .wb-interactive { cursor: pointer; }
+        .wb-hover-lift, .wb-hover-scale, .wb-hover-glow { transition: transform .22s ease, box-shadow .22s ease, filter .22s ease; }
+        .wb-hover-lift:hover { transform: translateY(-6px); }
+        .wb-hover-scale:hover { transform: scale(1.035); }
+        .wb-hover-glow:hover { box-shadow: 0 0 32px rgba(139,92,246,.38); }
+        .wb-hover-underline:hover { text-decoration: underline; }
+        .wb-scroll-fade-in { animation: wbPublishedFadeIn .55s ease both; }
+        .wb-scroll-slide-up { animation: wbPublishedSlideUp .6s cubic-bezier(.2,.75,.25,1) both; }
+        @keyframes wbPublishedFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes wbPublishedSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) {
+          .wb-hover-lift, .wb-hover-scale, .wb-hover-glow, .wb-scroll-fade-in, .wb-scroll-slide-up { animation: none !important; transition: none !important; transform: none !important; }
+        }
+      `}</style>
       {elements.map((element) => (
         <PublishedElement key={element.id} element={element} />
       ))}
