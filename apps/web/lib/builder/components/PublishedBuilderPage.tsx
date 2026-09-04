@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import type { CanvasElement } from '../types';
+import type { BuilderTheme, CanvasElement } from '../types';
 import { renderElement } from '../renderers';
 
 const URLISH_PROP = /(?:url|href|src|link|action|poster)$/i;
@@ -70,9 +70,21 @@ function PublishedElement({ element }: { element: CanvasElement }) {
   })}</>;
 }
 
-export default function PublishedBuilderPage({ elements }: { elements: CanvasElement[] }) {
+export default function PublishedBuilderPage({
+  elements,
+  theme,
+}: {
+  elements: CanvasElement[];
+  theme?: BuilderTheme;
+}) {
+  const rootStyle: CSSProperties = {
+    backgroundColor: theme?.colors?.background || '#ffffff',
+    color: theme?.colors?.text || '#0f172a',
+    fontFamily: theme?.fonts?.body || 'Inter, system-ui, sans-serif',
+  };
+
   return (
-    <main className="min-h-screen w-full bg-white text-slate-950">
+    <main className="min-h-screen w-full" style={rootStyle}>
       {elements.map((element) => (
         <PublishedElement key={element.id} element={element} />
       ))}
