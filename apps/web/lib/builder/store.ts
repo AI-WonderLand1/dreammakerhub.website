@@ -120,7 +120,9 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       elements: next.elements,
       selectedId: null,
     });
-    getEventBus().emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
+    const bus = getEventBus();
+    bus.emit(EventNames.HISTORY_CLEAR, {});
+    bus.emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
     return next.page.id;
   },
 
@@ -134,7 +136,9 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       elements: next.elements,
       selectedId: null,
     });
-    getEventBus().emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
+    const bus = getEventBus();
+    bus.emit(EventNames.HISTORY_CLEAR, {});
+    bus.emit(EventNames.PROJECT_STATE_CHANGED, { elements: next.elements });
     return true;
   },
 
@@ -149,35 +153,40 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   },
 
   addElement: (element, parentId) => {
-    const { elements } = get();
-    if (parentId) {
-      const newElements = elements.map((el) => {
-        if (el.id === parentId) {
-          return { ...el, children: [...(el.children || []), element] };
-        }
-        return el;
-      });
-      set({ elements: newElements });
-    } else {
-      set({ elements: [...elements, element] });
-    }
+    const state = get();
+    const { elements } = state;
+    const nextElements = parentId
+      ? elements.map((el) =>
+          el.id === parentId
+            ? { ...el, children: [...(el.children || []), element] }
+            : el
+        )
+      : [...elements, element];
+
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
   removeElement: (id) => {
-    const { elements } = get();
+    const state = get();
     const removeRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.filter((el) => el.id !== id).map((el) => ({
         ...el,
         children: el.children ? removeRecursive(el.children) : undefined,
       }));
+    const nextElements = removeRecursive(state.elements);
     set({
-      elements: removeRecursive(elements),
-      selectedId: get().selectedId === id ? null : get().selectedId,
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+      selectedId: state.selectedId === id ? null : state.selectedId,
     });
   },
 
   moveElement: (id, targetParentId, index) => {
-    const { elements } = get();
+    const state = get();
+    const { elements } = state;
     let moved: CanvasElement | null = null;
 
     // Find and remove the element from its current location (root or a container).
@@ -215,46 +224,64 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       result = insertInto(stripped, index);
     }
 
-    set({ elements: result });
+    set({
+      elements: result,
+      pages: syncActivePageElements(state.pages, state.activePageId, result),
+    });
   },
 
   selectElement: (id) => set({ selectedId: id }),
 
   updateElementProps: (id, props) => {
-    const { elements } = get();
+    const state = get();
     const updateRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.map((el) => {
         if (el.id === id) return { ...el, props: { ...el.props, ...props } };
         if (el.children) return { ...el, children: updateRecursive(el.children) };
         return el;
       });
-    set({ elements: updateRecursive(elements) });
+    const nextElements = updateRecursive(state.elements);
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
   updateElementStyles: (id, styles) => {
-    const { elements } = get();
+    const state = get();
     const updateRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.map((el) => {
         if (el.id === id) return { ...el, styles: { ...el.styles, ...styles } };
         if (el.children) return { ...el, children: updateRecursive(el.children) };
         return el;
       });
-    set({ elements: updateRecursive(elements) });
+    const nextElements = updateRecursive(state.elements);
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
   duplicateElement: (id) => {
-    const { elements } = get();
-    const el = elements.find((e) => e.id === id);
+    const state = get();
+    const el = state.elements.find((e) => e.id === id);
     if (!el) return;
     const dup: CanvasElement = {
       ...el,
       id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: `${el.name} (copy)`,
     };
-    set({ elements: [...elements, dup] });
+    const nextElements = [...state.elements, dup];
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
-  clearElements: () => set({ elements: [] }),
+  clearElements: () => set((state) => ({
+    elements: [],
+    pages: syncActivePageElements(state.pages, state.activePageId, []),
+  })),
 
   setBreakpoint: (breakpoint) => set({ activeBreakpoint: breakpoint }),
   setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(3, zoom)) }),
