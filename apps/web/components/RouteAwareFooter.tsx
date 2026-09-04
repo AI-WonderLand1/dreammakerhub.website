@@ -12,6 +12,7 @@ export default function RouteAwareFooter() {
 
   const isWonderBuildWebsiteSurface =
     pathname === '/wonder-build' ||
+    pathname.startsWith('/wonder-build/templates') ||
     pathname.startsWith('/wonder-build/builder') ||
     pathname.startsWith('/wonder-build/agent') ||
     pathname === '/builder' ||
