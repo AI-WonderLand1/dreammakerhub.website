@@ -45,6 +45,17 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+const projectEditHref = (project: Project) => {
+  const type = project.tool || "wonderbuild";
+  if (type === "wonderbuild" || type === "web_app") {
+    return `/wonder-build/builder?projectId=${encodeURIComponent(project.id)}`;
+  }
+  if (type === "playcanvas") {
+    return "/wonder-build/playcanvas";
+  }
+  return `/wonder-build?projectId=${encodeURIComponent(project.id)}`;
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -110,6 +121,12 @@ export default function ProjectsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Failed to create project");
 
+      if (newProjectType === "wonderbuild" && data?.project?.id) {
+        window.location.href = `/wonder-build/builder?projectId=${encodeURIComponent(data.project.id)}`;
+        return;
+      }
+
+      // WonderPlay/PlayCanvas behavior stays separate from the website-builder flow.
       setProjects((prev) => [data.project, ...prev]);
       setShowCreate(false);
       setNewProjectName("");
@@ -258,9 +275,9 @@ export default function ProjectsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <Link
-                          href={`/wonder-build?projectId=${project.id}`}
+                          href={projectEditHref(project)}
                           className="p-2 rounded hover:bg-white/10"
-                          title="Open in Builder"
+                          title={project.tool === "playcanvas" ? "Open WonderPlay" : "Open in Builder"}
                         >
                           <Pencil size={14} />
                         </Link>
