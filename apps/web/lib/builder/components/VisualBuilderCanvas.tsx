@@ -225,6 +225,8 @@ function SortableBlock({
 
   return (
     <div ref={mergedRef} style={style} {...attributes} {...listeners}>
+      {renderElement(el, selectedId, selectElement)}
+
       {isSelected && !isDragging && bounds && (
         <>
           <div
@@ -309,7 +311,6 @@ function SortableBlock({
           )}
         </>
       )}
-      {renderElement(el, selectedId, selectElement)}
     </div>
   );
 }
