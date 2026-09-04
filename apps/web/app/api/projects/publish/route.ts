@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { target } = body;
 
-    if (target === 'site' && body.projectId && body.pages) {
+    if (target === 'site' && body.pages !== undefined) {
       const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
       if (!UUID_RE.test(projectId)) {
         return NextResponse.json({ ok: false, message: 'Invalid project ID' }, { status: 400 });
