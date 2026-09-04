@@ -145,7 +145,7 @@ function PublishedElement({ element }: { element: CanvasElement }) {
 
   if (!isValidElement(rendered)) return <>{rendered}</>;
 
-  const root = rendered as ReactElement<Record<string, any>>;
+  const root = rendered as ReactElement<any>;
   const existingClassName = typeof root.props.className === 'string' ? root.props.className : '';
   const existingOnClick = typeof root.props.onClick === 'function' ? root.props.onClick : null;
   const safeHtmlId = typeof safeElement.props?.htmlId === 'string'
