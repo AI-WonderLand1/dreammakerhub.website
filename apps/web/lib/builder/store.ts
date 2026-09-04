@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BuilderState, CanvasElement, Breakpoint, BuilderTheme, LeftPanelTab, RightPanelTab } from './types';
+import { addSitePage, normalizeSitePages, renameSitePage, switchSitePage, syncActivePageElements } from './pages';
 import { getEventBus } from './pipeline/EventBus';
 import { EventNames } from './pipeline/types';
 
@@ -7,6 +8,9 @@ interface BuilderStore extends BuilderState {
   projectId: string;
   setProjectId: (id: string) => void;
   setElements: (elements: CanvasElement[]) => void;
+  createPage: (name?: string) => string;
+  switchPage: (pageId: string) => boolean;
+  renamePage: (pageId: string, name: string) => boolean;
   addElement: (element: CanvasElement, parentId?: string) => void;
   removeElement: (id: string) => void;
   moveElement: (id: string, targetParentId: string | null, index: number) => void;
@@ -64,8 +68,15 @@ function loadPersistedState(): Partial<BuilderState & { projectId?: string }> {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      const site = normalizeSitePages(
+        parsed.pages,
+        parsed.activePageId,
+        Array.isArray(parsed.elements) ? parsed.elements : undefined,
+      );
       return {
-        elements: parsed.elements || [],
+        elements: site.elements,
+        pages: site.pages,
+        activePageId: site.activePageId,
         zoom: parsed.zoom ?? 1,
         pan: parsed.pan ?? { x: 0, y: 0 },
         showGrid: parsed.showGrid ?? true,
@@ -78,11 +89,14 @@ function loadPersistedState(): Partial<BuilderState & { projectId?: string }> {
 }
 
 const persisted = loadPersistedState();
+const initialSite = normalizeSitePages(persisted.pages, persisted.activePageId, persisted.elements);
 
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
   projectId: persisted.projectId || '',
   setProjectId: (id) => set({ projectId: id }),
-  elements: persisted.elements || [],
+  elements: initialSite.elements,
+  pages: initialSite.pages,
+  activePageId: initialSite.activePageId,
   selectedId: null,
   activeBreakpoint: 'desktop',
   zoom: persisted.zoom ?? 1,
@@ -92,38 +106,96 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   theme: initialTheme,
   history: { past: [], future: [] },
 
-  setElements: (elements) => set({ elements }),
+  setElements: (elements) => set((state) => ({
+    elements,
+    pages: syncActivePageElements(state.pages, state.activePageId, elements),
+  })),
+
+  createPage: (name = 'Untitled Page') => {
+    const state = get();
+    const next = addSitePage(state.pages, state.activePageId, state.elements, name);
+    set({
+      pages: next.pages,
+      activePageId: next.activePageId,
+      elements: next.elements,
+      selectedId: null,
+    });
+    const bus = getEventBus();
+    bus.emit(EventNames.HISTORY_CLEAR, {});
+    bus.emit(EventNames.PROJECT_METADATA_UPDATED, {
+      key: 'pages',
+      value: { activePageId: next.activePageId, pageCount: next.pages.length },
+    });
+    return next.page.id;
+  },
+
+  switchPage: (pageId) => {
+    const state = get();
+    const next = switchSitePage(state.pages, state.activePageId, state.elements, pageId);
+    if (!next) return false;
+    set({
+      pages: next.pages,
+      activePageId: next.activePageId,
+      elements: next.elements,
+      selectedId: null,
+    });
+    const bus = getEventBus();
+    bus.emit(EventNames.HISTORY_CLEAR, {});
+    bus.emit(EventNames.PROJECT_METADATA_UPDATED, {
+      key: 'activePageId',
+      value: next.activePageId,
+    });
+    return true;
+  },
+
+  renamePage: (pageId, name) => {
+    const state = get();
+    if (!state.pages.some((page) => page.id === pageId)) return false;
+    const syncedPages = syncActivePageElements(state.pages, state.activePageId, state.elements);
+    const pages = renameSitePage(syncedPages, pageId, name);
+    set({ pages });
+    getEventBus().emit(EventNames.PROJECT_METADATA_UPDATED, {
+      key: 'pageName',
+      value: { pageId, name: pages.find((page) => page.id === pageId)?.name || name },
+    });
+    return true;
+  },
 
   addElement: (element, parentId) => {
-    const { elements } = get();
-    if (parentId) {
-      const newElements = elements.map((el) => {
-        if (el.id === parentId) {
-          return { ...el, children: [...(el.children || []), element] };
-        }
-        return el;
-      });
-      set({ elements: newElements });
-    } else {
-      set({ elements: [...elements, element] });
-    }
+    const state = get();
+    const { elements } = state;
+    const nextElements = parentId
+      ? elements.map((el) =>
+          el.id === parentId
+            ? { ...el, children: [...(el.children || []), element] }
+            : el
+        )
+      : [...elements, element];
+
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
   removeElement: (id) => {
-    const { elements } = get();
+    const state = get();
     const removeRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.filter((el) => el.id !== id).map((el) => ({
         ...el,
         children: el.children ? removeRecursive(el.children) : undefined,
       }));
+    const nextElements = removeRecursive(state.elements);
     set({
-      elements: removeRecursive(elements),
-      selectedId: get().selectedId === id ? null : get().selectedId,
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+      selectedId: state.selectedId === id ? null : state.selectedId,
     });
   },
 
   moveElement: (id, targetParentId, index) => {
-    const { elements } = get();
+    const state = get();
+    const { elements } = state;
     let moved: CanvasElement | null = null;
 
     // Find and remove the element from its current location (root or a container).
@@ -161,46 +233,64 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       result = insertInto(stripped, index);
     }
 
-    set({ elements: result });
+    set({
+      elements: result,
+      pages: syncActivePageElements(state.pages, state.activePageId, result),
+    });
   },
 
   selectElement: (id) => set({ selectedId: id }),
 
   updateElementProps: (id, props) => {
-    const { elements } = get();
+    const state = get();
     const updateRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.map((el) => {
         if (el.id === id) return { ...el, props: { ...el.props, ...props } };
         if (el.children) return { ...el, children: updateRecursive(el.children) };
         return el;
       });
-    set({ elements: updateRecursive(elements) });
+    const nextElements = updateRecursive(state.elements);
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
   updateElementStyles: (id, styles) => {
-    const { elements } = get();
+    const state = get();
     const updateRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els.map((el) => {
         if (el.id === id) return { ...el, styles: { ...el.styles, ...styles } };
         if (el.children) return { ...el, children: updateRecursive(el.children) };
         return el;
       });
-    set({ elements: updateRecursive(elements) });
+    const nextElements = updateRecursive(state.elements);
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
   duplicateElement: (id) => {
-    const { elements } = get();
-    const el = elements.find((e) => e.id === id);
+    const state = get();
+    const el = state.elements.find((e) => e.id === id);
     if (!el) return;
     const dup: CanvasElement = {
       ...el,
       id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: `${el.name} (copy)`,
     };
-    set({ elements: [...elements, dup] });
+    const nextElements = [...state.elements, dup];
+    set({
+      elements: nextElements,
+      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+    });
   },
 
-  clearElements: () => set({ elements: [] }),
+  clearElements: () => set((state) => ({
+    elements: [],
+    pages: syncActivePageElements(state.pages, state.activePageId, []),
+  })),
 
   setBreakpoint: (breakpoint) => set({ activeBreakpoint: breakpoint }),
   setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(3, zoom)) }),

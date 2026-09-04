@@ -1,7 +1,8 @@
 import { getEventBus } from './EventBus';
 import { EventNames } from './types';
 import { useBuilderStore } from '../store';
-import type { BuilderState, BuilderTheme, Breakpoint } from '../types';
+import { normalizeSitePages, syncActivePageElements } from '../pages';
+import type { BuilderState, BuilderTheme, Breakpoint, SitePage } from '../types';
 import { logger } from '@/lib/logger';
 
 const LOCAL_KEY = 'aiw-builder-state';
@@ -10,6 +11,8 @@ const DEBOUNCE_MS = 2000;
 
 export type VisualState = {
   elements: BuilderState['elements'];
+  pages: SitePage[];
+  activePageId: string;
   theme: BuilderTheme;
   activeBreakpoint: Breakpoint;
   zoom: number;
@@ -39,12 +42,13 @@ export class StorageService {
   }
 
   start(): void {
-    this.unsubs.push(
-      this.bus.on(EventNames.PROJECT_STATE_CHANGED, () => {
-        this.scheduleLocalSave();
-        this.scheduleProjectSave();
-      })
-    );
+    const scheduleSave = () => {
+      this.scheduleLocalSave();
+      this.scheduleProjectSave();
+    };
+
+    this.unsubs.push(this.bus.on(EventNames.PROJECT_STATE_CHANGED, scheduleSave));
+    this.unsubs.push(this.bus.on(EventNames.PROJECT_METADATA_UPDATED, scheduleSave));
     this.unsubs.push(
       this.bus.on(EventNames.STORAGE_SAVING, (event) => {
         const { projectId } = event.payload;
@@ -74,8 +78,13 @@ export class StorageService {
 
   private readState(): VisualState {
     const state = useBuilderStore.getState();
+    const pages = syncActivePageElements(state.pages, state.activePageId, state.elements);
     return {
+      // Keep the active page mirrored at the top level while older preview,
+      // validation, template, and publish consumers still read `elements`.
       elements: state.elements,
+      pages,
+      activePageId: state.activePageId,
       theme: state.theme,
       activeBreakpoint: state.activeBreakpoint,
       zoom: state.zoom,
@@ -87,7 +96,19 @@ export class StorageService {
 
   private applyState(state: Partial<VisualState>): void {
     const store = useBuilderStore.getState();
-    if (state.elements) store.setElements(state.elements);
+    const site = normalizeSitePages(
+      state.pages,
+      state.activePageId,
+      Array.isArray(state.elements) ? state.elements : undefined,
+    );
+
+    useBuilderStore.setState({
+      pages: site.pages,
+      activePageId: site.activePageId,
+      elements: site.elements,
+      selectedId: null,
+    });
+
     if (state.theme) useBuilderStore.setState({ theme: state.theme });
     if (state.activeBreakpoint) store.setBreakpoint(state.activeBreakpoint);
     if (state.zoom != null) store.setZoom(state.zoom);
@@ -101,6 +122,7 @@ export class StorageService {
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify({
         ...this.readState(),
+        version: 2,
         projectId: this.projectId,
       }));
     } catch {}
@@ -113,9 +135,11 @@ export class StorageService {
       if (!raw) return false;
       const parsed = JSON.parse(raw);
       if (parsed.projectId) this.projectId = parsed.projectId;
-      if (parsed.elements) {
+      if (Array.isArray(parsed.pages) || Array.isArray(parsed.elements)) {
         this.applyState({
-          elements: parsed.elements,
+          pages: parsed.pages,
+          activePageId: parsed.activePageId,
+          elements: Array.isArray(parsed.elements) ? parsed.elements : undefined,
           zoom: parsed.zoom ?? 1,
           pan: parsed.pan ?? { x: 0, y: 0 },
           showGrid: parsed.showGrid ?? true,
@@ -130,7 +154,7 @@ export class StorageService {
 
   async saveToProject(): Promise<void> {
     if (!this.projectId) return;
-    const payload = JSON.stringify({ ...this.readState(), version: 1 }, null, 2);
+    const payload = JSON.stringify({ ...this.readState(), version: 2 }, null, 2);
 
     try {
       const res = await fetch(`/api/projects/${this.projectId}/files`, {
@@ -167,12 +191,19 @@ export class StorageService {
       const data = await res.json();
       const raw = data.files?.[STATE_FILE];
       if (!raw) return false;
-      const parsed = JSON.parse(raw) as Partial<VisualState>;
-      if (parsed.elements) {
+      const parsed = JSON.parse(raw) as Partial<VisualState> & { version?: number };
+      if (Array.isArray(parsed.pages) || Array.isArray(parsed.elements)) {
         this.applyState(parsed);
+        const current = useBuilderStore.getState();
         this.bus.emit(EventNames.STORAGE_LOADED, {
           projectId: this.projectId,
-          ...parsed,
+          elements: current.elements,
+          theme: current.theme,
+          activeBreakpoint: current.activeBreakpoint,
+          zoom: current.zoom,
+          pan: current.pan,
+          showGrid: current.showGrid,
+          snapToGrid: current.snapToGrid,
         });
       }
       return true;
@@ -224,7 +255,7 @@ export class StorageService {
       if (!res.ok) return false;
       const { revision } = await res.json();
       const snapshot = revision?.snapshot as Partial<VisualState>;
-      if (snapshot?.elements) {
+      if (snapshot && (Array.isArray(snapshot.pages) || Array.isArray(snapshot.elements))) {
         this.applyState(snapshot);
         return true;
       }

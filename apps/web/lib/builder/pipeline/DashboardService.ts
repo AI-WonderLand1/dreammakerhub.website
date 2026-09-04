@@ -22,9 +22,10 @@ export class DashboardService {
     this.initSupabase();
 
     this.unsubs.push(this.bus.on(EventNames.PROJECT_STATE_CHANGED, () => this.publishStats()));
+    this.unsubs.push(this.bus.on(EventNames.PROJECT_METADATA_UPDATED, () => this.publishStats()));
     this.unsubs.push(this.bus.on(EventNames.STORAGE_SAVED, () => this.publishStats()));
     this.unsubs.push(this.bus.on(EventNames.VALIDATION_COMPLETED, (event) => {
-      const { passed, issues } = event.payload;
+      const { passed } = event.payload;
       this.lastStats = this.computeStats(passed ? 'passed' : 'failed');
       this.broadcast();
     }));
@@ -45,14 +46,15 @@ export class DashboardService {
   }
 
   private computeStats(validationStatus?: DashboardStatsPayload['validationStatus']): DashboardStatsPayload {
-    const elements = useBuilderStore.getState().elements;
+    const state = useBuilderStore.getState();
+    const elements = state.elements;
     const fileCount = fileFolderManager.getFileCount();
     const issues = validationService.getLastIssues();
     const validationErrors = issues.filter((i) => i.severity === 'error').length;
 
     return {
       elementCount: elements.length,
-      pageCount: 1,
+      pageCount: state.pages.length,
       fileCount,
       storageUsage: fileCount * 512,
       validationStatus: validationStatus || (validationErrors > 0 ? 'failed' : 'passed'),

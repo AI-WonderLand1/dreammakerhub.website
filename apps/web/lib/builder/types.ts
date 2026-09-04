@@ -71,6 +71,13 @@ export interface CanvasElement {
   hidden?: boolean;
 }
 
+export interface SitePage {
+  id: string;
+  name: string;
+  slug: string;
+  elements: CanvasElement[];
+}
+
 export interface BlockDefinition {
   name: string;
   type: string;
@@ -101,6 +108,8 @@ export interface BuilderTheme {
 
 export interface BuilderState {
   elements: CanvasElement[];
+  pages: SitePage[];
+  activePageId: string;
   selectedId: string | null;
   activeBreakpoint: Breakpoint;
   zoom: number;
