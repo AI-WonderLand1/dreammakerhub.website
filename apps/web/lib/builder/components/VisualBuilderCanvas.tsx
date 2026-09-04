@@ -100,7 +100,12 @@ function SortableBlock({
   const duplicateElement = useBuilderStore((state) => state.duplicateElement);
   const updateElementStyles = useBuilderStore((state) => state.updateElementStyles);
   const zoom = useBuilderStore((state) => state.zoom);
+  const snapToGrid = useBuilderStore((state) => state.snapToGrid);
   const blockRef = useRef<HTMLDivElement | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [guideX, setGuideX] = useState(false);
+  const [guideY, setGuideY] = useState(false);
+  const [sizeLabel, setSizeLabel] = useState('');
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: el.id,
@@ -136,32 +141,82 @@ function SortableBlock({
     if (!node) return;
 
     const rect = node.getBoundingClientRect();
+    const parentRect = node.parentElement?.getBoundingClientRect() || null;
     const scale = Math.max(zoom, 0.1);
     const startX = event.clientX;
     const startY = event.clientY;
     const startWidth = rect.width / scale;
     const startHeight = rect.height / scale;
+    const alignmentThreshold = 6;
+    setIsResizing(true);
 
     const onMove = (moveEvent: PointerEvent) => {
-      const width = Math.max(24, startWidth + (moveEvent.clientX - startX) / scale);
-      const height = Math.max(24, startHeight + (moveEvent.clientY - startY) / scale);
+      let width = Math.max(24, startWidth + (moveEvent.clientX - startX) / scale);
+      let height = Math.max(24, startHeight + (moveEvent.clientY - startY) / scale);
+      let alignedX = false;
+      let alignedY = false;
+
+      if (snapToGrid) {
+        width = Math.max(24, Math.round(width / 8) * 8);
+        height = Math.max(24, Math.round(height / 8) * 8);
+
+        if (parentRect) {
+          const parentWidth = parentRect.width / scale;
+          const parentHeight = parentRect.height / scale;
+          const left = (rect.left - parentRect.left) / scale;
+          const top = (rect.top - parentRect.top) / scale;
+          const widthTargets = [parentWidth / 2 - left, parentWidth - left].filter((value) => value >= 24);
+          const heightTargets = [parentHeight / 2 - top, parentHeight - top].filter((value) => value >= 24);
+
+          const widthMatch = widthTargets.find((target) => Math.abs(width - target) <= alignmentThreshold);
+          if (widthMatch != null) {
+            width = widthMatch;
+            alignedX = true;
+          }
+
+          const heightMatch = heightTargets.find((target) => Math.abs(height - target) <= alignmentThreshold);
+          if (heightMatch != null) {
+            height = heightMatch;
+            alignedY = true;
+          }
+        }
+      }
+
+      const roundedWidth = Math.round(width);
+      const roundedHeight = Math.round(height);
+      setGuideX(alignedX);
+      setGuideY(alignedY);
+      setSizeLabel(`${roundedWidth} × ${roundedHeight}`);
       updateElementStyles(el.id, {
-        width: `${Math.round(width)}px`,
-        height: `${Math.round(height)}px`,
+        width: `${roundedWidth}px`,
+        height: `${roundedHeight}px`,
       });
     };
 
-    const onUp = () => {
+    const cleanup = () => {
       window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointerup', cleanup);
+      window.removeEventListener('pointercancel', cleanup);
+      setIsResizing(false);
+      setGuideX(false);
+      setGuideY(false);
+      setSizeLabel('');
     };
 
     window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointerup', cleanup, { once: true });
+    window.addEventListener('pointercancel', cleanup, { once: true });
   };
 
   return (
     <div ref={setCombinedRef} style={style} {...attributes} {...listeners}>
+      {guideX && (
+        <div className="pointer-events-none absolute -right-px top-[-1000px] z-[70] h-[2000px] w-px bg-cyan-300/85 shadow-[0_0_8px_rgba(103,232,249,.65)]" aria-hidden="true" />
+      )}
+      {guideY && (
+        <div className="pointer-events-none absolute -bottom-px left-[-1000px] z-[70] h-px w-[2000px] bg-cyan-300/85 shadow-[0_0_8px_rgba(103,232,249,.65)]" aria-hidden="true" />
+      )}
+
       {isSelected && !isDragging && (
         <>
           <div
@@ -212,11 +267,17 @@ function SortableBlock({
             </button>
           </div>
 
+          {isResizing && sizeLabel && (
+            <div className="pointer-events-none absolute bottom-5 right-0 z-[86] rounded-md border border-cyan-300/20 bg-[#07101d]/95 px-2 py-1 font-mono text-[8px] font-bold text-cyan-100 shadow-lg" aria-live="polite">
+              {sizeLabel}{snapToGrid ? ' · snap 8px' : ''}
+            </div>
+          )}
+
           <button
             type="button"
             onPointerDown={beginResize}
             className="absolute -bottom-1.5 -right-1.5 z-[85] h-3.5 w-3.5 cursor-nwse-resize rounded-[3px] border border-violet-200/80 bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,.6)]"
-            title="Resize element"
+            title={snapToGrid ? 'Resize element · snaps to 8px grid and alignment guides' : 'Resize element'}
             aria-label={`Resize ${el.name}`}
           />
         </>

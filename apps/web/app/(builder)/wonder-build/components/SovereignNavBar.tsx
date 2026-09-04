@@ -42,10 +42,15 @@ export function SovereignNavBar({
     setBreakpoint,
     zoom,
     setZoom,
+    showGrid,
+    setShowGrid,
+    snapToGrid,
+    setSnapToGrid,
     undo,
     redo,
     leftPanelOpen,
     setLeftPanelOpen,
+    setLeftPanelTab,
     rightPanelOpen,
     setRightPanelOpen,
   } = useBuilderStore();
@@ -66,15 +71,17 @@ export function SovereignNavBar({
     };
   }, [projectId]);
 
-  const assetHref = projectId
-    ? `/library?sendTo=builder&projectId=${encodeURIComponent(projectId)}`
-    : '/library?sendTo=builder';
-
   const deviceButtons = [
     { id: 'desktop' as const, label: 'Desktop', icon: Monitor },
     { id: 'tablet' as const, label: 'Tablet', icon: Tablet },
     { id: 'mobile' as const, label: 'Mobile', icon: Smartphone },
   ];
+
+  const openAssets = () => {
+    if (activeMode !== 'design') onModeChange('design');
+    setLeftPanelOpen(true);
+    setLeftPanelTab('assets');
+  };
 
   return (
     <header className="wb-builder-nav fixed inset-x-0 top-0 z-50 flex h-[52px] items-center justify-between border-b px-2.5 sm:px-3">
@@ -145,6 +152,29 @@ export function SovereignNavBar({
             <option key={value} value={value}>{value}%</option>
           ))}
         </select>
+
+        {activeMode === 'design' && (
+          <div className="flex h-8 items-center rounded-lg border border-white/8 bg-black/25 p-0.5">
+            <button
+              type="button"
+              onClick={() => setShowGrid(!showGrid)}
+              className={`h-7 rounded-md px-2 text-[8px] font-bold transition ${showGrid ? 'bg-white/[.07] text-white/70' : 'text-white/28 hover:text-white/60'}`}
+              aria-pressed={showGrid}
+              title="Toggle canvas grid"
+            >
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => setSnapToGrid(!snapToGrid)}
+              className={`h-7 rounded-md px-2 text-[8px] font-bold transition ${snapToGrid ? 'bg-cyan-400/10 text-cyan-200' : 'text-white/28 hover:text-white/60'}`}
+              aria-pressed={snapToGrid}
+              title="Snap resize to 8px grid and alignment guides"
+            >
+              Snap
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5">
@@ -182,13 +212,14 @@ export function SovereignNavBar({
           </button>
         </div>
 
-        <Link
-          href={assetHref}
+        <button
+          type="button"
+          onClick={openAssets}
           className="hidden h-8 items-center gap-1.5 rounded-lg border border-white/8 bg-white/[.025] px-2 text-[8px] font-bold text-white/35 transition hover:border-violet-300/20 hover:bg-violet-500/8 hover:text-white lg:flex"
-          title="Open website assets including images, video, and 3D web assets"
+          title="Open website assets"
         >
           <Package size={12} /> Assets
-        </Link>
+        </button>
 
         {running && (
           <span className="hidden items-center gap-1.5 rounded-full border border-violet-400/15 bg-violet-500/8 px-2 py-1 text-[8px] font-bold text-violet-200/80 xl:flex">
