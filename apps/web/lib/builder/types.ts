@@ -131,5 +131,5 @@ export interface Extension {
   initialize?: (store: any) => void;
 }
 
-export type LeftPanelTab = 'pages' | 'blocks' | 'layers' | 'templates' | 'files';
+export type LeftPanelTab = 'pages' | 'insert' | 'cms' | 'assets' | 'components';
 export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility' | 'ai' | 'import-export' | 'history';
