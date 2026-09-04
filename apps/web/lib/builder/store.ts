@@ -88,6 +88,103 @@ function loadPersistedState(): Partial<BuilderState & { projectId?: string }> {
   return {};
 }
 
+function appendChildRecursive(
+  elements: CanvasElement[],
+  parentId: string,
+  child: CanvasElement,
+): { elements: CanvasElement[]; inserted: boolean } {
+  let inserted = false;
+
+  const next = elements.map((element) => {
+    if (element.id === parentId) {
+      inserted = true;
+      return { ...element, children: [...(element.children || []), child] };
+    }
+
+    if (element.children?.length) {
+      const nested = appendChildRecursive(element.children, parentId, child);
+      if (nested.inserted) {
+        inserted = true;
+        return { ...element, children: nested.elements };
+      }
+    }
+
+    return element;
+  });
+
+  return { elements: next, inserted };
+}
+
+function insertChildAtRecursive(
+  elements: CanvasElement[],
+  parentId: string,
+  child: CanvasElement,
+  index: number,
+): { elements: CanvasElement[]; inserted: boolean } {
+  let inserted = false;
+
+  const next = elements.map((element) => {
+    if (element.id === parentId) {
+      const children = [...(element.children || [])];
+      children.splice(Math.max(0, Math.min(index, children.length)), 0, child);
+      inserted = true;
+      return { ...element, children };
+    }
+
+    if (element.children?.length) {
+      const nested = insertChildAtRecursive(element.children, parentId, child, index);
+      if (nested.inserted) {
+        inserted = true;
+        return { ...element, children: nested.elements };
+      }
+    }
+
+    return element;
+  });
+
+  return { elements: next, inserted };
+}
+
+function cloneElementTree(element: CanvasElement, root = true): CanvasElement {
+  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    ...element,
+    id: `el-${nonce}`,
+    name: root ? `${element.name} (copy)` : element.name,
+    children: element.children?.map((child) => cloneElementTree(child, false)),
+  };
+}
+
+function duplicateRecursive(
+  elements: CanvasElement[],
+  id: string,
+): { elements: CanvasElement[]; duplicateId: string | null } {
+  let duplicateId: string | null = null;
+  const next: CanvasElement[] = [];
+
+  for (const element of elements) {
+    if (element.id === id) {
+      const duplicate = cloneElementTree(element);
+      duplicateId = duplicate.id;
+      next.push(element, duplicate);
+      continue;
+    }
+
+    if (element.children?.length) {
+      const nested = duplicateRecursive(element.children, id);
+      if (nested.duplicateId) {
+        duplicateId = nested.duplicateId;
+        next.push({ ...element, children: nested.elements });
+        continue;
+      }
+    }
+
+    next.push(element);
+  }
+
+  return { elements: next, duplicateId };
+}
+
 const persisted = loadPersistedState();
 const initialSite = normalizeSitePages(persisted.pages, persisted.activePageId, persisted.elements);
 
@@ -163,14 +260,15 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 
   addElement: (element, parentId) => {
     const state = get();
-    const { elements } = state;
-    const nextElements = parentId
-      ? elements.map((el) =>
-          el.id === parentId
-            ? { ...el, children: [...(el.children || []), element] }
-            : el
-        )
-      : [...elements, element];
+    let nextElements: CanvasElement[];
+
+    if (parentId) {
+      const nested = appendChildRecursive(state.elements, parentId, element);
+      // A stale target should not silently eat a block. Fall back to the page root.
+      nextElements = nested.inserted ? nested.elements : [...state.elements, element];
+    } else {
+      nextElements = [...state.elements, element];
+    }
 
     set({
       elements: nextElements,
@@ -195,10 +293,8 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 
   moveElement: (id, targetParentId, index) => {
     const state = get();
-    const { elements } = state;
     let moved: CanvasElement | null = null;
 
-    // Find and remove the element from its current location (root or a container).
     const stripRecursive = (els: CanvasElement[]): CanvasElement[] =>
       els
         .filter((el) => {
@@ -213,24 +309,18 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
           children: el.children ? stripRecursive(el.children) : undefined,
         }));
 
-    const stripped = stripRecursive(elements);
+    const stripped = stripRecursive(state.elements);
     if (!moved) return;
-
-    const insertInto = (els: CanvasElement[], at: number): CanvasElement[] => {
-      const next = [...els];
-      next.splice(Math.max(0, Math.min(at, next.length)), 0, moved as CanvasElement);
-      return next;
-    };
 
     let result: CanvasElement[];
     if (targetParentId) {
-      result = stripped.map((el) =>
-        el.id === targetParentId
-          ? { ...el, children: insertInto(el.children || [], index) }
-          : el
-      );
+      const nested = insertChildAtRecursive(stripped, targetParentId, moved, index);
+      // If a target disappeared between drag start/end, preserve the moved block
+      // instead of losing it from the page.
+      result = nested.inserted ? nested.elements : [...stripped, moved];
     } else {
-      result = insertInto(stripped, index);
+      result = [...stripped];
+      result.splice(Math.max(0, Math.min(index, result.length)), 0, moved);
     }
 
     set({
@@ -273,17 +363,13 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 
   duplicateElement: (id) => {
     const state = get();
-    const el = state.elements.find((e) => e.id === id);
-    if (!el) return;
-    const dup: CanvasElement = {
-      ...el,
-      id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      name: `${el.name} (copy)`,
-    };
-    const nextElements = [...state.elements, dup];
+    const duplicated = duplicateRecursive(state.elements, id);
+    if (!duplicated.duplicateId) return;
+
     set({
-      elements: nextElements,
-      pages: syncActivePageElements(state.pages, state.activePageId, nextElements),
+      elements: duplicated.elements,
+      pages: syncActivePageElements(state.pages, state.activePageId, duplicated.elements),
+      selectedId: duplicated.duplicateId,
     });
   },
 
