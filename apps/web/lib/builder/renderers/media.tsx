@@ -1,10 +1,32 @@
 import type { BlockRenderer } from './types';
+import {
+  sanitizeBuilderSvg,
+  sanitizeEmbedUrl,
+  sanitizeYouTubeVideoId,
+} from '@/lib/security/sanitize-html.client';
+
+const EMBED_SANDBOX = 'allow-scripts allow-same-origin allow-presentation';
 
 export const mediaRenderers: Record<string, BlockRenderer> = {
   'video': ({ el, selectedId, selectElement, baseProps, style, children }) => {
+      const safeSrc = sanitizeEmbedUrl(el.props.src);
       return (
         <div {...baseProps}>
-          <iframe src={el.props.src} style={{ width: '100%', height: '100%', aspectRatio: '16/9', border: 'none', borderRadius: 'inherit' }} allowFullScreen />
+          {safeSrc ? (
+            <iframe
+              src={safeSrc}
+              title={el.props.title || el.props.caption || 'Embedded video'}
+              sandbox={EMBED_SANDBOX}
+              referrerPolicy="strict-origin-when-cross-origin"
+              style={{ width: '100%', height: '100%', aspectRatio: '16/9', border: 'none', borderRadius: 'inherit' }}
+              allow="accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+            />
+          ) : (
+            <div className="flex aspect-video items-center justify-center rounded border border-amber-500/20 bg-amber-500/5 px-4 text-center text-xs text-amber-200/70">
+              Video embeds must use a trusted HTTPS provider.
+            </div>
+          )}
           {el.props.caption && <p className="text-xs text-white/50 mt-1 text-center">{el.props.caption}</p>}
           {children}
         </div>
@@ -46,7 +68,8 @@ export const mediaRenderers: Record<string, BlockRenderer> = {
       return <div {...baseProps} className="flex items-center justify-center"><span className="text-4xl">🎞️</span>{children}</div>;
   },
   'svg': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: el.props.svg || '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"/></svg>' }} />;
+      const safeSvg = sanitizeBuilderSvg(el.props.svg || '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"/></svg>');
+      return <div {...baseProps} dangerouslySetInnerHTML={{ __html: safeSvg }} />;
   },
 
   'masonry-gallery': ({ el, baseProps, style }) => (
@@ -68,9 +91,29 @@ export const mediaRenderers: Record<string, BlockRenderer> = {
       </div>
     </section>
   ),
-  'youtube-lite': ({ el, baseProps, style }) => (
-    <iframe {...baseProps} style={style} src={`https://www.youtube-nocookie.com/embed/${el.props.videoId}`} title={el.props.title} allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen loading="lazy" />
-  ),
+  'youtube-lite': ({ el, baseProps, style }) => {
+    const videoId = sanitizeYouTubeVideoId(el.props.videoId);
+    if (!videoId) {
+      return (
+        <div {...baseProps} style={style} className="flex aspect-video items-center justify-center rounded border border-amber-500/20 bg-amber-500/5 px-4 text-center text-xs text-amber-200/70">
+          Invalid YouTube video ID.
+        </div>
+      );
+    }
+    return (
+      <iframe
+        {...baseProps}
+        style={style}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+        title={el.props.title || 'YouTube video'}
+        sandbox={EMBED_SANDBOX}
+        referrerPolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        loading="lazy"
+      />
+    );
+  },
   'before-after': ({ el, baseProps, style }) => (
     <figure {...baseProps} style={{ ...style, backgroundImage: el.props.beforeSrc ? `url(${el.props.beforeSrc})` : undefined, backgroundSize: 'cover' }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: el.props.afterSrc ? `url(${el.props.afterSrc})` : undefined, backgroundSize: 'cover', clipPath: `inset(0 0 0 ${el.props.startPercent ?? 50}%)` }} />
