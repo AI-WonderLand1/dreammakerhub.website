@@ -1,6 +1,17 @@
 'use client';
 
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  CSSProperties,
+  MouseEvent as ReactMouseEvent,
+  ReactElement,
+} from 'react';
 import type { BuilderTheme, CanvasElement } from '../types';
 import { renderElement } from '../renderers';
 
@@ -28,9 +39,7 @@ function sanitizePropValue(value: unknown, key = ''): unknown {
   if (typeof value === 'string' && URLISH_PROP.test(key)) {
     return sanitizePublishedUrl(value);
   }
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizePropValue(entry));
-  }
+  if (Array.isArray(value)) return value.map((entry) => sanitizePropValue(entry));
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([childKey, childValue]) => [
@@ -50,13 +59,14 @@ function sanitizePublishedElement(element: CanvasElement): CanvasElement {
   };
 }
 
-function interactionClass(element: CanvasElement): string {
+function interactionClass(element: CanvasElement, scrollVisible: boolean): string {
   const hover = String(element.props?.hoverEffect || 'none');
   const scroll = String(element.props?.scrollEffect || 'none');
   return [
     `builder-element type-${element.type}`,
     hover !== 'none' ? `wb-hover-${hover}` : '',
-    scroll !== 'none' ? `wb-scroll-${scroll}` : '',
+    scroll !== 'none' ? 'wb-scroll-pending' : '',
+    scroll !== 'none' && scrollVisible ? `wb-scroll-${scroll}` : '',
     element.props?.clickAction && element.props.clickAction !== 'none' ? 'wb-interactive' : '',
   ].filter(Boolean).join(' ');
 }
@@ -64,9 +74,38 @@ function interactionClass(element: CanvasElement): string {
 function PublishedElement({ element }: { element: CanvasElement }) {
   const safeElement = sanitizePublishedElement(element);
   const style = { ...(safeElement.styles as CSSProperties) };
+  const scrollEffect = String(safeElement.props?.scrollEffect || 'none');
+  const rootRef = useRef<HTMLElement | null>(null);
+  const [scrollVisible, setScrollVisible] = useState(scrollEffect === 'none');
+
   const children = safeElement.children?.map((child) => (
     <PublishedElement key={child.id} element={child} />
   ));
+
+  useEffect(() => {
+    if (scrollEffect === 'none') {
+      setScrollVisible(true);
+      return;
+    }
+
+    const node = rootRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setScrollVisible(true);
+      return;
+    }
+
+    setScrollVisible(false);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setScrollVisible(true);
+        observer.disconnect();
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -5% 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [safeElement.id, scrollEffect]);
 
   const handleInteraction = (event: ReactMouseEvent<HTMLElement>) => {
     const action = String(safeElement.props?.clickAction || 'none');
@@ -92,19 +131,38 @@ function PublishedElement({ element }: { element: CanvasElement }) {
     }
   };
 
-  return <>{renderElement({
+  const rendered = renderElement({
     el: safeElement,
     selectedId: null,
     selectElement: () => {},
     baseProps: {
       style,
-      id: typeof safeElement.props?.htmlId === 'string' ? safeElement.props.htmlId.replace(/[^a-zA-Z0-9_:-]/g, '') : undefined,
-      onClick: handleInteraction,
-      className: interactionClass(safeElement),
+      className: `builder-element type-${safeElement.type}`,
     },
     style,
     children,
-  })}</>;
+  });
+
+  if (!isValidElement(rendered)) return <>{rendered}</>;
+
+  const root = rendered as ReactElement<any>;
+  const existingClassName = typeof root.props.className === 'string' ? root.props.className : '';
+  const existingOnClick = typeof root.props.onClick === 'function' ? root.props.onClick : null;
+  const safeHtmlId = typeof safeElement.props?.htmlId === 'string'
+    ? safeElement.props.htmlId.replace(/[^a-zA-Z0-9_:-]/g, '')
+    : undefined;
+
+  return cloneElement(root, {
+    ref: (node: HTMLElement | null) => {
+      rootRef.current = node;
+    },
+    id: safeHtmlId || root.props.id,
+    className: [existingClassName, interactionClass(safeElement, scrollVisible)].filter(Boolean).join(' '),
+    onClick: (event: ReactMouseEvent<HTMLElement>) => {
+      existingOnClick?.(event);
+      if (!event.defaultPrevented) handleInteraction(event);
+    },
+  });
 }
 
 export default function PublishedBuilderPage({
@@ -129,11 +187,13 @@ export default function PublishedBuilderPage({
         .wb-hover-scale:hover { transform: scale(1.035); }
         .wb-hover-glow:hover { box-shadow: 0 0 32px rgba(139,92,246,.38); }
         .wb-hover-underline:hover { text-decoration: underline; }
+        .wb-scroll-pending { opacity: 0; }
         .wb-scroll-fade-in { animation: wbPublishedFadeIn .55s ease both; }
         .wb-scroll-slide-up { animation: wbPublishedSlideUp .6s cubic-bezier(.2,.75,.25,1) both; }
         @keyframes wbPublishedFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes wbPublishedSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @media (prefers-reduced-motion: reduce) {
+          .wb-scroll-pending { opacity: 1 !important; }
           .wb-hover-lift, .wb-hover-scale, .wb-hover-glow, .wb-scroll-fade-in, .wb-scroll-slide-up { animation: none !important; transition: none !important; transform: none !important; }
         }
       `}</style>

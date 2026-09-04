@@ -15,7 +15,7 @@ import {
 import type { CollisionDetection, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import dynamic from 'next/dynamic';
-import { SovereignOSProvider } from '../context/SovereignOSContext';
+import { SovereignOSProvider, useSovereignOS } from '../context/SovereignOSContext';
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import type { BuilderMode } from '../components/SovereignNavBar';
 import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
@@ -47,6 +47,7 @@ const FileManagerPanel = dynamic(() => import('@/components/file-manager/FileMan
 function BuilderContent() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId') || '';
+  const { setEditorCode } = useSovereignOS();
 
   const {
     leftPanelOpen,
@@ -99,6 +100,15 @@ function BuilderContent() {
   }, []);
 
   useEffect(() => {
+    const pendingCode = sessionStorage.getItem('pendingBuilderCode');
+    if (!pendingCode) return;
+    setEditorCode(pendingCode);
+    sessionStorage.removeItem('pendingBuilderCode');
+    switchTab('code');
+    showToast('AI-generated code loaded');
+  }, [setEditorCode, showToast, switchTab]);
+
+  useEffect(() => {
     if (leftPanelTab === 'layers') setLeftPanelTab('pages');
   }, [leftPanelTab, setLeftPanelTab]);
 
@@ -107,7 +117,11 @@ function BuilderContent() {
   }, [rightPanelTab, setRightPanelTab]);
 
   useEffect(() => {
+    const pipeline = getPipeline({ projectId: projectId || undefined });
+    if (!pipeline.isRunning()) pipeline.start();
+
     if (!projectId) {
+      setProjectId('');
       setProjectStatus('ready');
       return;
     }
@@ -136,9 +150,6 @@ function BuilderContent() {
         if (ownerId) storageService.setOwnerId(ownerId);
       })
       .catch(() => {});
-
-    const pipeline = getPipeline({ projectId });
-    if (!pipeline.isRunning()) pipeline.start();
 
     return () => {
       cancelled = true;
@@ -180,7 +191,7 @@ function BuilderContent() {
           case 's':
             event.preventDefault();
             if (!projectId) {
-              showToast('No project selected');
+              showToast('Saved locally');
               return;
             }
             void storageService.saveToProject();

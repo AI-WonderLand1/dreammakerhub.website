@@ -14,18 +14,6 @@ function findElement(elements: CanvasElement[], id: string | null): CanvasElemen
   return null;
 }
 
-function safeHref(value: string): string {
-  const raw = value.trim();
-  if (!raw) return '';
-  if (raw.startsWith('#') || raw.startsWith('/') || raw.startsWith('./') || raw.startsWith('../') || raw.startsWith('?')) return raw;
-  try {
-    const url = new URL(raw);
-    return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol.toLowerCase()) ? raw : '#';
-  } catch {
-    return '#';
-  }
-}
-
 export default function InteractionPanel() {
   const elements = useBuilderStore((state) => state.elements);
   const selectedId = useBuilderStore((state) => state.selectedId);
@@ -83,10 +71,11 @@ export default function InteractionPanel() {
               </label>
               <input
                 value={String(selected.props?.clickUrl || '')}
-                onChange={(event) => setProp('clickUrl', safeHref(event.target.value))}
+                onChange={(event) => setProp('clickUrl', event.target.value)}
                 placeholder="/about or https://example.com"
                 className="mt-1 h-9 w-full rounded-lg border border-white/8 bg-black/30 px-2 text-[10px] text-white outline-none placeholder:text-white/18 focus:border-violet-400/40"
               />
+              <p className="mt-1 text-[8px] leading-4 text-white/20">URLs are validated and sanitized when the published site executes them.</p>
               <label className="mt-2 flex items-center gap-2 text-[9px] text-white/35">
                 <input
                   type="checkbox"
@@ -140,7 +129,7 @@ export default function InteractionPanel() {
             <option value="fade-in">Fade in</option>
             <option value="slide-up">Slide up</option>
           </select>
-          <p className="mt-2 text-[9px] leading-4 text-white/25">These effects are stored on the same element and are applied on the published site.</p>
+          <p className="mt-2 text-[9px] leading-4 text-white/25">Scroll effects trigger when the published element enters the viewport.</p>
         </section>
       </div>
     </div>
