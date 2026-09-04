@@ -2,7 +2,7 @@ import type { CanvasElement, SitePage } from './types';
 
 export const DEFAULT_PAGE_ID = 'home';
 export const DEFAULT_PAGE_NAME = 'Home';
-export const DEFAULT_PAGE_SLUG = 'home';
+export const DEFAULT_PAGE_SLUG = '/';
 
 function pageId(): string {
   return `page-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -20,13 +20,8 @@ export function slugifyPageName(value: string): string {
   return slug || 'page';
 }
 
-function uniqueSlug(base: string, pages: SitePage[], ignorePageId?: string): string {
-  const used = new Set(
-    pages
-      .filter((page) => page.id !== ignorePageId)
-      .map((page) => page.slug)
-  );
-
+function uniqueSlug(base: string, pages: SitePage[]): string {
+  const used = new Set(pages.map((page) => page.slug));
   if (!used.has(base)) return base;
 
   let index = 2;
@@ -76,9 +71,9 @@ export function normalizeSitePages(
           const id = typeof candidate.id === 'string' && candidate.id
             ? candidate.id
             : index === 0 ? DEFAULT_PAGE_ID : `page-${index + 1}`;
-          const slug = typeof candidate.slug === 'string' && candidate.slug
-            ? slugifyPageName(candidate.slug)
-            : slugifyPageName(name);
+          const slug = typeof candidate.slug === 'string' && candidate.slug.trim()
+            ? candidate.slug.trim()
+            : id === DEFAULT_PAGE_ID ? DEFAULT_PAGE_SLUG : slugifyPageName(name);
 
           return {
             id,
@@ -160,13 +155,13 @@ export function renameSitePage(
   nextName: string,
 ): SitePage[] {
   const cleanName = nextName.trim() || 'Untitled Page';
-  const page = pages.find((candidate) => candidate.id === pageIdToRename);
-  if (!page) return pages;
+  if (!pages.some((candidate) => candidate.id === pageIdToRename)) return pages;
 
-  const nextSlug = uniqueSlug(slugifyPageName(cleanName), pages, pageIdToRename);
+  // Page names and URLs are separate concerns. Renaming does not silently
+  // mutate the slug; a future page-settings control can edit the slug explicitly.
   return pages.map((candidate) =>
     candidate.id === pageIdToRename
-      ? { ...candidate, name: cleanName, slug: nextSlug }
+      ? { ...candidate, name: cleanName }
       : candidate
   );
 }
