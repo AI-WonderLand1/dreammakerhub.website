@@ -2,7 +2,7 @@
 
 ## Scope guardrail
 
-This work is **ONLY** for the WonderBuild website builder experience in `dreammakerhub.website`.
+This work is **ONLY** for the WonderBuild website-builder experience in `dreammakerhub.website`.
 
 Do **not** restructure, merge, rename, or repurpose:
 
@@ -12,13 +12,13 @@ Do **not** restructure, merge, rename, or repurpose:
 - NPC simulation/runtime code
 - dedicated 3D/game routes
 
-Website-builder 3D support means only normal website media assets (for example GLB/GLTF embeds/viewers), not a scene editor.
+Website-builder 3D support means normal web media assets such as GLB/GLTF viewers and video embeds. It does **not** mean a 3D scene editor.
 
 ---
 
-## Target user journey
+## Product model
 
-Authentication is outside the 3 build steps.
+Authentication is outside the three build steps.
 
 ```text
 LOGIN / REGISTER
@@ -27,98 +27,122 @@ DASHBOARD / PROJECTS
       ↓
 1. START
    - Blank website
-   - Pick a template
+   - Choose template
    - Generate with AI
       ↓
 2. BUILD
-   - Drag and drop
+   - Drag/drop
    - AI editing
    - Pages
    - CMS
-   - Assets (image/video/3D web assets)
+   - Assets (images/video/3D web assets)
    - Components
    - Code when needed
    - Responsive design
-   - Preview as an editor mode, not a separate workflow step
+   - Preview as an editor mode
       ↓
 3. PUBLISH
    - Domain
    - SEO
-   - final checks
-   - deploy/go live
+   - validation
+   - go live
 ```
 
-Mental model: **START → BUILD → PUBLISH**.
+Mental model: **START → BUILD (+ Preview) → PUBLISH**.
 
-Do not expose internal implementation steps such as project creation, state conversion, renderer handoff, or file seeding as separate user-facing stages.
+Internal implementation details such as project creation, template conversion, `builder-state.json` seeding, and renderer handoffs must not become user-facing steps.
 
 ---
 
-## Current route/code audit
+## Route/code audit
 
-### Authentication
+### Auth
 
-- Canonical auth UI: `/public-pages/auth`
-- `/auth/login` redirects to `/public-pages/auth`.
-- Auth defaults to `/dashboard/projects` when no `redirectTo` is supplied.
-- `redirectTo` is already supported and sanitized.
+- Canonical auth UI: `/public-pages/auth`.
+- `/auth/login` redirects there.
+- Auth supports a sanitized `redirectTo`.
+- Default authenticated destination is `/dashboard/projects`.
 
-### Dashboard projects
+### Dashboard/projects
 
 File: `apps/web/app/(workspace)/dashboard/projects/page.tsx`
 
-Current behavior:
+Original issue:
 
-- `New Project` creates the record with `/api/projects` but leaves the user on the projects page.
-- WonderBuild project edit icon links to `/wonder-build?projectId=...`.
-- `/wonder-build` does not currently open that project in the real editor, so the project link is pointed at the wrong surface.
+- WonderBuild projects linked to `/wonder-build?projectId=...` instead of the real editor.
+- Creating a project left the user on the project list instead of entering the website editor.
 
-Required behavior:
+First-pass fix:
 
-- Creating a WonderBuild project should move directly into the real builder.
-- Existing WonderBuild projects should open `/wonder-build/builder?projectId=...`.
-- Project creation is implementation detail; it should not become another user-facing step.
+- Existing WonderBuild projects now link directly to `/wonder-build/builder?projectId=...`.
+- New WonderBuild projects immediately open the canonical builder.
+- WonderPlay/PlayCanvas project creation remains a separate behavior.
 
 ### `/wonder-build`
 
 File: `apps/web/app/(builder)/wonder-build/page.tsx`
 
-Current behavior:
+Original issue:
 
-- Renders `TemplateLibraryApp` directly.
-- The same template app is also implemented by `/wonder-build/templates`.
-- `next.config.mjs` redirects `/wonder-build/templates` back to `/wonder-build`.
+- `/wonder-build` directly rendered the large template/batch app, making template selection, AI tools, previewing, and building look like one confusing pre-builder application.
 
-Conclusion:
+First-pass fix:
 
-- `/wonder-build` is currently functioning as the template/batch application, not a clean START screen.
-- `/wonder-build/templates` is effectively a duplicate route implementation hidden behind a redirect.
+- `/wonder-build` is now the **START** screen.
+- It presents only three primary choices: Blank, Template, AI.
+- Blank creates the project behind the scenes and goes directly to Builder.
+- Old `/wonder-build?projectId=...` links are compatibility-routed into the real builder.
 
-### Template library internal flow
+### `/wonder-build/templates`
+
+File: `apps/web/app/(builder)/wonder-build/templates/page.tsx`
+
+Original issue:
+
+- It rendered the template app but `next.config.mjs` immediately redirected it back to `/wonder-build`, so two route implementations existed for one screen.
+
+First-pass fix:
+
+- The redirect was removed.
+- `/wonder-build/templates` is now a Step-1 subflow for choosing/generating a starting point.
+
+### Template-library internal flow
 
 Main file: `apps/web/lib/wonder-build/template-library/App.tsx`
 
-Current behavior:
+Original issue:
 
-- Holds template data in local React state.
-- Has internal tabs `prompts` and `visual-builder`.
-- `visual-builder` renders a second editing/preview surface: `VisualRenderer`.
-- Template selection often switches to `VisualRenderer` rather than opening the real builder.
-- The real project is only created later in `handleOpenInBuilder()`.
-- `handleOpenInBuilder()`:
-  1. POSTs `/api/projects`
-  2. converts the template with `builderAdapter.ts`
-  3. writes `builder-state.json`
-  4. redirects to `/wonder-build/builder?projectId=...`
-- That handoff is currently exposed too late in the flow (through deploy/open-in-builder behavior).
+```text
+Template / AI
+   ↓
+VisualRenderer
+   ↓
+Deploy modal
+   ↓
+Create project
+   ↓
+Convert state
+   ↓
+Real Builder
+```
 
-Required behavior:
+First-pass fix:
 
-- `VisualRenderer` may remain as a **quick preview only**, not a second editor.
-- Any action labeled Edit/Customize/Open should create/seed the project and immediately open the real builder.
-- AI-generated templates should follow the same path.
+```text
+Template / AI
+   ↓
+Create + seed project
+   ↓
+Real Builder
+```
 
-### Duplicate website-builder state models
+- Template Customize/Edit actions now call `handleOpenInBuilder()` directly.
+- AI-generated templates now open the real builder directly.
+- Search-grounded generated templates do the same.
+- The Deploy modal is no longer the gateway to the actual editor.
+- The old internal Visual Renderer is labeled **Quick Preview** and is no longer the main Customize destination.
+
+### Duplicate website-builder models
 
 Files:
 
@@ -126,12 +150,10 @@ Files:
 - `apps/web/lib/wonder-build/template-library/utils/builderAdapter.ts`
 - `apps/web/lib/builder/types.ts`
 
-Current flow:
+Current technical flow still contains:
 
 ```text
 WonderBuildTemplate / WonderBuildElement
-        ↓
-VisualRenderer
         ↓
 builderAdapter
         ↓
@@ -142,9 +164,9 @@ VisualBuilderCanvas
 
 Risk:
 
-- Two website-editing models can drift.
-- Adapter mappings can be lossy (for example grid/footer/nav transformations).
-- There is no obvious reverse round-trip from the real builder back to template state.
+- Two editable schemas can drift.
+- Adapter mappings can lose information.
+- There is no obvious reverse round-trip.
 
 Long-term target:
 
@@ -156,15 +178,15 @@ canonical builder state
 VisualBuilderCanvas
 ```
 
-Do not rewrite all schemas in the first pass. First remove the duplicate user-facing editing step, then consolidate the data model safely.
+Do **not** delete the adapter until existing templates are migrated safely.
 
-### Real website builder
+### Canonical website editor
 
 Route: `/wonder-build/builder`
 
 Main file: `apps/web/app/(builder)/wonder-build/builder/page.tsx`
 
-This is the canonical website editor. It already includes or references:
+Already contains:
 
 - drag/drop canvas
 - component library
@@ -176,168 +198,169 @@ This is the canonical website editor. It already includes or references:
 - AI assistant panel
 - import/export
 - Code / Design / Preview tabs
-- storage/pipeline/project persistence
+- project persistence/pipeline
 - publish controls
 
-Therefore **Preview belongs inside BUILD**, and Publish remains the final action.
+Therefore:
 
-### Builder navigation
+- **AI belongs inside BUILD.**
+- **Preview belongs inside BUILD.**
+- **Publish is Step 3.**
+
+### Website-builder navigation
 
 File: `apps/web/app/(builder)/wonder-build/components/SovereignNavBar.tsx`
 
-Current links:
+Original links mixed Hub / Agent / Builder / 3D / Dashboard.
 
-- Hub
-- Agent
-- Builder
-- 3D
-- Dashboard
+First-pass website-builder chrome now emphasizes:
 
-For the website-builder surface this is too product/tool-oriented and mixes unrelated WonderPlay/3D navigation into the website editing workflow.
-
-Target for website builder chrome:
-
-- Dashboard / Projects
+- Projects
 - Start
-- Builder
-- Preview
+- Build
 - Publish
 
-AI should be available **inside** Builder, not require a separate workflow step.
+The Agent and 3D routes were not deleted. They were removed from the primary website-builder flow only.
 
-Do not delete the Agent or 3D routes; only remove them from the website-builder-specific primary workflow where appropriate.
-
-### Builder metadata
-
-File: `apps/web/app/(builder)/wonder-build/builder/layout.tsx`
-
-Current description says `Build 3D worlds and games in WonderBuild.`
-
-This is wrong for the website builder and must be corrected without changing WonderPlay/3D products.
-
-### Global footer/chrome leak into editor
+### Global footer leak
 
 File: `apps/web/app/layout.tsx`
 
-`<Footer />` is rendered globally after every route, including full-screen editors.
+Original issue:
 
-This is why the visual builder screenshot shows the large marketing footer under the editor.
+- Marketing `<Footer />` rendered below full-screen editors.
 
-Target:
+First-pass fix:
 
-- Marketing/public pages keep the Footer.
-- Full-screen website builder/editor routes do not render the marketing Footer.
-
-Implement this with route-aware chrome rather than deleting the Footer globally.
+- Added `apps/web/components/RouteAwareFooter.tsx`.
+- Marketing footer is hidden on WonderBuild website-builder/start/template/editor surfaces.
+- Unrelated WonderPlay/3D routes remain untouched.
 
 ### Preview route
 
-`next.config.mjs` currently redirects:
+`next.config.mjs` keeps:
 
 - `/wonder-build/preview` → `/wonder-build/builder?tab=preview`
 
-This matches the target architecture: Preview is a builder mode, not a separate step.
+This is the desired architecture.
 
-### Broken/stale website-builder links
+### Stale website-builder routes
 
-The repository still contains references to `/wonder-build/studio`, but there is no current `apps/web/app/(builder)/wonder-build/studio/page.tsx` route on `Master`.
+First-pass compatibility shims:
 
-Website-builder links that point to missing `/wonder-build/studio` must be redirected or repointed to the current START/BUILD flow.
+- `/wonder-build/studio` → `/wonder-build`
+- `/wonder-build/ai-builder` → `/wonder-build`
 
-Do not touch unrelated 3D/NPC Studio components just because they contain the word `studio`.
+These shims apply to stale WonderBuild website links only; they do not alter NPC/WonderPlay studio code.
 
 ### Central navigation
 
 File: `apps/web/lib/navigation.ts`
 
-Current BUILD navigation exposes separate entries for:
+First-pass BUILD navigation now presents one WonderBuild product:
 
-- WonderBuild
-- Visual Builder
-- AI Agent
+- Start Website
+- Templates
+- Website Builder
 
-This reinforces the impression of separate website-building products.
+with the tagline:
 
-Target wording should express one product with stages/capabilities:
+**Start → Build + Preview → Publish**
 
-- Start / Templates / AI Start
-- Builder
-- Preview (inside Builder)
-- Publish (inside Builder)
-
-Keep CODE/WonderSpace and 3D/WonderPlay registry sections intact.
+WonderSpace/CODE and WonderPlay/3D registry sections remain separate.
 
 ---
 
-## Implementation plan
+## Phase 1 — Routing and workflow consolidation
 
-### Phase 1 — Fix flow/routing without large schema rewrites
+- [x] Audit auth, dashboard, WonderBuild, template, builder, preview, publish, and primary navigation routes.
+- [x] Confirm `/wonder-build/builder` as canonical website editor.
+- [x] Confirm Preview is already an editor mode via `?tab=preview`.
+- [x] Fix Dashboard WonderBuild project links to open canonical builder.
+- [x] Open newly created Dashboard WonderBuild projects immediately in Builder.
+- [x] Keep WonderPlay project creation separate.
+- [x] Make template Customize/Edit actions call `handleOpenInBuilder()` directly.
+- [x] Rename retained Visual Renderer UI to Quick Preview.
+- [x] Remove Deploy as the required gateway into the real builder.
+- [x] Keep Publish in the real builder.
+- [x] Correct website-builder metadata that described it as a 3D/game editor.
+- [x] Hide global marketing footer from full-screen WonderBuild website surfaces.
+- [x] Add compatibility handling for stale WonderBuild Studio/AI-builder URLs.
+- [ ] Simplify the duplicated/stacked headers inside `/wonder-build/builder` so the editor has one coherent chrome layer.
+- [ ] Change remaining `Hub` wording inside Builder to `Start` or `Projects` where appropriate.
 
-- [x] Audit current auth, dashboard, WonderBuild, builder, preview, publish, template, and navigation routes.
-- [x] Confirm canonical real editor is `/wonder-build/builder`.
-- [x] Confirm Preview already belongs in builder via `?tab=preview`.
-- [ ] Fix dashboard WonderBuild project links to open `/wonder-build/builder?projectId=...`.
-- [ ] After creating a WonderBuild project from Dashboard, immediately open the builder.
-- [ ] Preserve WonderPlay project creation behavior; do not merge it into this flow.
-- [ ] Make template `Customize/Edit` actions call the existing `handleOpenInBuilder()` path directly.
-- [ ] Rename internal `Visual Renderer` behavior to `Quick Preview` where retained.
-- [ ] Remove `Deploy` as the gateway required to reach the real builder.
-- [ ] Keep Publish in the real builder.
-- [ ] Correct builder metadata from 3D/game language to website-builder language.
-- [ ] Hide the global marketing Footer on full-screen WonderBuild editor routes.
-- [ ] Add a safe redirect/repoint for stale `/wonder-build/studio` website-builder links.
+## Phase 2 — START experience
 
-### Phase 2 — Turn `/wonder-build` into a clean START experience
+- [x] `/wonder-build` shows three primary choices: Blank / Template / AI.
+- [x] Blank website project creation happens behind the scenes.
+- [x] Template selection seeds builder state and opens Builder.
+- [x] AI generation seeds builder state and opens Builder.
+- [x] Keep batch/template power tools as secondary Start tools rather than workflow stages.
+- [x] Stop using VisualRenderer as the normal editing destination.
+- [ ] Add proper loading/progress UI for project creation and template seeding.
+- [ ] Add failure recovery if project is created but template state seeding fails.
 
-- [ ] Present three primary choices only:
-  - Blank website
-  - Choose template
-  - Generate with AI
-- [ ] Automatically create project records behind the scenes.
-- [ ] Template selection seeds builder state then opens Builder.
-- [ ] AI generation seeds builder state then opens Builder.
-- [ ] Keep batch/template power-user tools accessible as secondary controls, not the main workflow.
-- [ ] Remove `Visual Renderer` as a separate editing destination.
+## Phase 3 — BUILD: Framer + WordPress feel (website builder only)
 
-### Phase 3 — Make BUILD feel like Framer + WordPress (website builder only)
+- [ ] Make Pages a first-class panel/navigation concept.
+- [ ] Add site-level structure instead of a block-library-first mental model.
+- [ ] Add CMS collections/posts/custom content management.
+- [ ] Add unified Assets library for images, video, documents, and simple 3D web assets.
+- [ ] Add reusable components/global sections.
+- [ ] Add global styles/design tokens.
+- [ ] Improve responsive controls/breakpoints.
+- [ ] Add Framer-like resize handles.
+- [ ] Add alignment guides/snapping feedback.
+- [ ] Add stronger flex/grid/layout controls.
+- [ ] Add positioning controls without turning the product into a game/scene editor.
+- [ ] Move the large block catalog behind Insert/Search so it does not dominate the editor.
+- [ ] Keep AI editing available contextually in the same editor.
 
-- [ ] Pages panel/navigation inside the editor.
-- [ ] Site-level structure instead of a block-library-first mental model.
-- [ ] CMS collections/posts/custom content management.
-- [ ] Assets library for images, video, documents, and simple 3D web assets.
-- [ ] Reusable components/global sections.
-- [ ] Global styles/design tokens.
-- [ ] Stronger responsive controls and breakpoints.
-- [ ] Framer-like canvas interactions: resize, alignment, layout controls, positioning.
-- [ ] Keep large block catalog under Insert/Search rather than dominating the UI.
+## Phase 4 — Canonical website data model
 
-### Phase 4 — Consolidate website-builder data model
-
-- [ ] Define the real builder state as the canonical editable schema.
+- [ ] Define builder state/`CanvasElement` model as the canonical editable representation.
 - [ ] Make templates generate canonical builder state directly where practical.
 - [ ] Make AI generation target canonical builder state.
-- [ ] Reduce/remove lossy `WonderBuildElement → CanvasElement` conversions.
-- [ ] Add migration/compatibility support for existing templates before deleting old model code.
+- [ ] Reduce lossy `WonderBuildElement → CanvasElement` conversions.
+- [ ] Add migration/compatibility for existing templates before removing old model code.
 
-### Phase 5 — Publish polish
+## Phase 5 — PUBLISH
 
-- [ ] Publish panel includes domain, SEO, social metadata, validation, and go-live controls.
-- [ ] Keep Publish as Step 3, reachable directly from Builder.
-- [ ] Confirm published preview, custom domain, and revision flows remain intact.
+- [ ] Consolidate domain setup into Publish.
+- [ ] Add SEO title/description/social-image controls.
+- [ ] Add final validation/checklist before go-live.
+- [ ] Confirm custom domain, generated page, revision, and republish behavior.
+- [ ] Keep Publish as Step 3 reachable directly from Builder.
 
 ---
 
-## Definition of done for the first usable flow
+## CI / repository blockers discovered while validating this branch
 
-A new user can:
+PR CI reaches `next build --webpack` but currently fails on repository-level missing modules outside the WonderBuild flow work:
+
+- `@/infra/services/storage/provider`
+- `@/infra/services/jobs/orchestrateScenePipeline`
+- `@/infra/services/storage/promoteTempScene`
+- `@/runners/registry.worker`
+- `@t3-oss/env-nextjs`
+
+The CI workflow also runs Node 20 while several installed packages declare Node 22+ requirements.
+
+These failures are **not** being silently fixed in this WonderBuild-only change because they touch WonderSpace/shared dependency infrastructure. They should be handled as a separate repository build/CI repair task.
+
+---
+
+## Definition of done for the first usable website-builder flow
+
+A user can:
 
 1. Register/sign in.
-2. Start from blank, a template, or AI.
-3. Land directly in one canonical editor.
+2. Start from Blank, Template, or AI.
+3. Land directly in one canonical website editor.
 4. Use AI and drag/drop in that editor.
-5. Preview without leaving the editor.
-6. Publish from the editor.
+5. Preview without leaving that editor.
+6. Publish from that editor.
 
-No user-facing `Visual Renderer → Deploy modal → Open in Builder` handoff is required.
+There is no required user-facing `Visual Renderer → Deploy modal → Open in Builder` handoff.
 
-No changes to NPC-AI-SIM or WonderPlay are required for this milestone.
+NPC-AI-SIM and WonderPlay remain separate products/systems.
