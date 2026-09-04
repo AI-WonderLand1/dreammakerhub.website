@@ -12,8 +12,6 @@
   backdrop-filter: blur(22px) saturate(135%);
 }
 
-/* Keep the old tab controller in the DOM for the existing mode bridge, but do
- * not render a second visible header underneath the new editor bar. */
 header[role='banner'] {
   display: none !important;
 }
@@ -34,8 +32,8 @@ nav[aria-label='Canvas toolbar'] button {
   border-radius: 6px !important;
 }
 
-/* Left editor dock: icon rail + active tool panel. */
-aside[aria-label='Pages, blocks, layers, templates, and files'] {
+/* Left editor dock: five BUILD tools, not extra workflow steps. */
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] {
   display: flex !important;
   width: 318px !important;
   min-width: 318px !important;
@@ -46,7 +44,7 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] {
   box-shadow: 18px 0 55px rgba(0, 0, 0, .24) !important;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] {
   display: flex !important;
   flex: 0 0 46px !important;
   width: 46px !important;
@@ -59,7 +57,7 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label
   background: linear-gradient(180deg, rgba(8, 12, 27, .98), rgba(5, 8, 18, .98)) !important;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button {
   position: relative;
   flex: 0 0 36px !important;
   width: 36px !important;
@@ -73,7 +71,7 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label
   background: transparent !important;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button::after {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button::after {
   position: absolute;
   inset: 0;
   display: grid;
@@ -84,23 +82,23 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label
   line-height: 1;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button:nth-child(1)::after { content: '▱'; }
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button:nth-child(2)::after { content: '+'; font-size: 20px; }
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button:nth-child(3) { display: none !important; }
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button:nth-child(4)::after { content: '◇'; }
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button:nth-child(5)::after { content: '⌑'; }
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button:nth-child(1)::after { content: '▱'; }
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button:nth-child(2)::after { content: '+'; font-size: 20px; }
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button:nth-child(3)::after { content: '◫'; }
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button:nth-child(4)::after { content: '◇'; }
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button:nth-child(5)::after { content: '⌑'; }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button[aria-selected='true'] {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button[aria-selected='true'] {
   border-color: rgba(139, 92, 246, .28) !important;
   background: linear-gradient(145deg, rgba(124, 58, 237, .22), rgba(59, 130, 246, .08)) !important;
   box-shadow: inset 0 0 0 1px rgba(139, 92, 246, .08), 0 0 18px rgba(124, 58, 237, .10) !important;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > nav[aria-label='Panel tabs'] button[aria-selected='true']::after {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > nav[aria-label='Panel tabs'] button[aria-selected='true']::after {
   color: #c4b5fd;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > div[role='tabpanel'] {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > div[role='tabpanel'] {
   flex: 1 1 auto !important;
   min-width: 0 !important;
   min-height: 0 !important;
@@ -109,7 +107,7 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > div[role='tabp
   background: #070b16 !important;
 }
 
-aside[aria-label='Pages, blocks, layers, templates, and files'] > div[role='tabpanel'] > * {
+aside[aria-label='Pages, Insert, CMS, Assets, and Components'] > div[role='tabpanel'] > * {
   width: 100% !important;
   max-width: 100% !important;
 }
@@ -120,7 +118,6 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > div[role='tabp
   background: transparent !important;
 }
 
-/* Make palette/library rows fit the narrower professional dock. */
 .wb-builder-library {
   width: 100% !important;
   min-width: 0 !important;
@@ -130,8 +127,6 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > div[role='tabp
   border-radius: 8px !important;
 }
 
-/* Canvas workspace should read as a real web page mounted in an editor, not an
- * unbounded game/scene canvas. */
 #builder-canvas {
   min-width: 0 !important;
   background:
@@ -167,7 +162,6 @@ aside[aria-label='Pages, blocks, layers, templates, and files'] > div[role='tabp
   box-shadow: 0 0 0 1px rgba(139, 92, 246, .18), 0 0 20px rgba(124, 58, 237, .11);
 }
 
-/* Right property dock. */
 aside[aria-label='Element inspector'] {
   width: 326px !important;
   min-width: 326px !important;
@@ -205,9 +199,8 @@ aside[aria-label='Element inspector'] textarea {
   background: rgba(2, 6, 15, .65) !important;
 }
 
-/* Responsive behavior: preserve canvas room rather than crushing the page. */
 @media (max-width: 1180px) {
-  aside[aria-label='Pages, blocks, layers, templates, and files'] {
+  aside[aria-label='Pages, Insert, CMS, Assets, and Components'] {
     width: 278px !important;
     min-width: 278px !important;
   }
@@ -223,7 +216,7 @@ aside[aria-label='Element inspector'] textarea {
     display: none !important;
   }
 
-  aside[aria-label='Pages, blocks, layers, templates, and files'] {
+  aside[aria-label='Pages, Insert, CMS, Assets, and Components'] {
     width: 250px !important;
     min-width: 250px !important;
   }
