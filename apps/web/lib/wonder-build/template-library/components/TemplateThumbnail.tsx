@@ -13,8 +13,23 @@ function hashString(str: string): number {
 function safeImageSrc(src?: string): string | undefined {
   if (!src) return undefined;
   const value = src.trim();
-  if (/^https?:\/\//i.test(value) || value.startsWith('/')) return value;
-  if (/^data:image\/(?:png|jpe?g|gif|webp|avif);base64,/i.test(value)) return value;
+  if (!value) return undefined;
+
+  try {
+    const localBase = new URL('https://dreammakerhub.local');
+    const parsed = new URL(value, localBase);
+
+    if (parsed.origin === localBase.origin) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch {
+    return undefined;
+  }
+
   return undefined;
 }
 
