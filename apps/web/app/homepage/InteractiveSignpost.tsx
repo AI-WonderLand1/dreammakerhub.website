@@ -10,7 +10,12 @@ interface InteractiveSignpostProps {
 const NpcExperiencePreview = dynamic(() => import('./NpcExperiencePreview'), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[570px] items-center justify-center rounded-[30px] border border-cyan-400/20 bg-[#050814] text-sm text-white/45">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="flex min-h-[570px] items-center justify-center rounded-[30px] border border-cyan-400/20 bg-[#050814] text-sm text-white/45"
+    >
       Loading rigged 3D NPC preview…
     </div>
   ),
