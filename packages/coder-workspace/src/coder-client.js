@@ -9,6 +9,15 @@ function boundedInteger(value, fallback, min, max) {
   return Math.min(max, Math.max(min, Math.trunc(parsed)));
 }
 
+function safePollDelay(ms) {
+  const bounded = boundedInteger(ms, 2_000, MIN_POLL_INTERVAL_MS, MAX_POLL_INTERVAL_MS);
+  if (bounded <= 500) return 500;
+  if (bounded <= 1_000) return 1_000;
+  if (bounded <= 2_000) return 2_000;
+  if (bounded <= 5_000) return 5_000;
+  return 10_000;
+}
+
 export class CoderClient {
   constructor(coderUrl, sessionToken) {
     this.coderUrl = coderUrl.replace(/\/+$/, '');
@@ -124,7 +133,7 @@ export class CoderClient {
 
   async waitForWorkspace(workspaceId, options = {}) {
     const timeoutMs = boundedInteger(options.timeoutMs, 60_000, 1_000, MAX_WAIT_TIMEOUT_MS);
-    const intervalMs = boundedInteger(options.intervalMs, 2_000, MIN_POLL_INTERVAL_MS, MAX_POLL_INTERVAL_MS);
+    const intervalMs = safePollDelay(options.intervalMs ?? 2_000);
     const start = Date.now();
 
     while (Date.now() - start < timeoutMs) {
@@ -347,7 +356,7 @@ function buildQueryParams(options) {
 }
 
 function sleep(ms) {
-  const delay = boundedInteger(ms, MIN_POLL_INTERVAL_MS, MIN_POLL_INTERVAL_MS, MAX_POLL_INTERVAL_MS);
+  const delay = safePollDelay(ms);
   return new Promise(resolve => setTimeout(resolve, delay));
 }
 
