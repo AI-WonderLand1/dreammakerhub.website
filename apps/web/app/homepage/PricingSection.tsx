@@ -3,7 +3,7 @@ import type { Plan } from "./data";
 
 export default function PricingSection({ plans }: { plans: Plan[] }) {
   return (
-    <section id="pricing" className="relative mx-auto mt-16 w-[calc(100%-2.5rem)] max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-950 to-black px-5 py-12 sm:w-[calc(100%-4rem)] sm:px-8 sm:py-14">
+    <section id="pricing" className="relative mx-5 mt-16 max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-950 to-black px-5 py-12 sm:mx-8 sm:px-8 sm:py-14 lg:mx-auto">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
       <div className="relative z-10">
         <div className="mb-10 text-center">
