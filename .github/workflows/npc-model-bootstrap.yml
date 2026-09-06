@@ -1,0 +1,63 @@
+name: NPC Model Bootstrap
+
+on:
+  push:
+    branches: [feat/homepage-3d-npc-preview]
+
+permissions:
+  contents: write
+
+jobs:
+  bundle-model:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/homepage-3d-npc-preview
+
+      - name: Download pinned RobotExpressive GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          target='apps/web/public/models/npc/RobotExpressive.glb'
+          if [ -f "$target" ]; then
+            echo 'NPC model already bundled.'
+            exit 0
+          fi
+
+          mkdir -p "$(dirname "$target")"
+          curl --fail --location --retry 3 \
+            'https://raw.githubusercontent.com/mrdoob/three.js/eba30de865cfbf31ac736f792defd9a60ff28d57/examples/models/gltf/RobotExpressive/RobotExpressive.glb' \
+            --output "$target"
+
+          echo '047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319  apps/web/public/models/npc/RobotExpressive.glb' | sha256sum --check --strict
+
+          cat > apps/web/public/models/npc/README.md <<'EOF'
+          # NPC preview model
+
+          `RobotExpressive.glb` is the bundled skinned/rigged model used by the public homepage NPC preview.
+
+          - Original model: Tomás Laulhé
+          - glTF modifications: Don McCurdy
+          - Upstream: `mrdoob/three.js`, `examples/models/gltf/RobotExpressive/RobotExpressive.glb`
+          - Pinned upstream commit: `eba30de865cfbf31ac736f792defd9a60ff28d57`
+          - SHA-256: `047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319`
+          - Model license: CC0 1.0
+
+          The model is stored locally so the homepage preview does not depend on a third-party runtime CDN.
+          EOF
+
+      - name: Commit bundled model
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- apps/web/public/models/npc && [ -z "$(git status --porcelain -- apps/web/public/models/npc)" ]; then
+            echo 'Nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/web/public/models/npc
+          git commit -m 'assets: bundle pinned CC0 NPC model'
+          git push origin HEAD:feat/homepage-3d-npc-preview
