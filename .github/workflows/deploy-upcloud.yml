@@ -17,7 +17,9 @@ env:
   # GitHub repository variables can override these defaults.
   UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
   UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'ubuntu' }}
-  SSH_PRIVATE_KEY: ${{ secrets.UPLOAD_SSH_KEY }}
+  # Prefer the correctly named UpCloud secret while retaining the historical
+  # UPLOAD_SSH_KEY spelling so existing repository configuration keeps working.
+  SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
 
 jobs:
   deploy:
@@ -39,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$UPCLOUD_SERVER_IP" || { echo "Missing UpCloud server IP"; exit 1; }
-          test -n "$SSH_PRIVATE_KEY" || { echo "Missing GitHub secret: UPLOAD_SSH_KEY"; exit 1; }
+          test -n "$SSH_PRIVATE_KEY" || { echo "Missing GitHub Actions SSH secret: set UPCLOUD_SSH_KEY (preferred) or legacy UPLOAD_SSH_KEY"; exit 1; }
           echo "Deploy target: ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP}"
 
       - name: Set up SSH
