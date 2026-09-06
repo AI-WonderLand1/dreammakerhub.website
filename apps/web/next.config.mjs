@@ -59,8 +59,6 @@ const pathAliases = {
     '@/infra/services/storage/provider': join(__dirname, '../../infra/services/storage/provider'),
     '@/runners/aetherguardWorker': join(__dirname, '../../runners/aetherguardWorker'),
     '@/runners/registry.worker': join(__dirname, '../../runners/registry.worker'),
-    // Keep the broad @ alias last so specific repo-root aliases above win first.
-    '@': __dirname,
   };
 
 const appUrl = process.env.NEXT_PUBLIC_URL || 'https://dreammakerhub.website';
