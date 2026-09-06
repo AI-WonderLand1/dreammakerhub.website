@@ -48,3 +48,32 @@ jobs:
         uses: github/codeql-action/analyze@v4.37.3
         with:
           category: "/language:${{ matrix.language }}"
+
+  report:
+    name: Report findings for analyzed ref
+    needs: analyze
+    if: ${{ always() && needs.analyze.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: read
+    steps:
+      - name: Report current-ref CodeQL findings
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANALYZED_REF: ${{ github.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" > all-findings.json
+          jq --arg ref "$ANALYZED_REF" '[.[] | select(.most_recent_instance.ref == $ref)]' all-findings.json > current-ref-findings.json
+          count="$(jq 'length' current-ref-findings.json)"
+          echo "CURRENT_REF_CODEQL_ALERTS=${count}"
+          jq -r '.[] | ["CODEQL_CURRENT_REF", (.number|tostring), (.rule.id // "unknown"), (.rule.security_severity_level // .rule.severity // "unknown"), (.most_recent_instance.location.path // "unknown"), ((.most_recent_instance.location.start_line // 0)|tostring), (.rule.description // .rule.name // "unknown")] | join("|")' current-ref-findings.json
+          {
+            echo "## CodeQL findings for analyzed ref"
+            echo
+            echo "Ref: \`${ANALYZED_REF}\`"
+            echo
+            echo "Open findings whose latest instance is on this ref: **${count}**"
+          } >> "$GITHUB_STEP_SUMMARY"
