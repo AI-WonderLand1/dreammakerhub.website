@@ -16,7 +16,7 @@ env:
   # Host and SSH username are deployment configuration, not secrets.
   # GitHub repository variables can override these defaults.
   UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
-  UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'ubuntu' }}
+  UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
   # Prefer the correctly named UpCloud secret while retaining the historical
   # UPLOAD_SSH_KEY spelling so existing repository configuration keeps working.
   SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
