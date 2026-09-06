@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { useBuilderStore } from '../store';
 import { parseHtmlToElements, isHtmlString } from '../html-parser';
 
@@ -109,7 +110,13 @@ export default function ImportExportPanel() {
     } catch {
       if (isHtmlString(text)) {
         try {
-          const parsed = parseHtmlToElements(text);
+          const sanitizedHtml = DOMPurify.sanitize(text, {
+            USE_PROFILES: { html: true },
+            FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'base', 'link', 'meta'],
+            FORBID_ATTR: ['srcdoc'],
+            ALLOW_DATA_ATTR: false,
+          });
+          const parsed = parseHtmlToElements(sanitizedHtml);
           if (parsed.length > 0) {
             setElements(parsed);
             setImportStatus(`✅ Imported ${parsed.length} element(s) from HTML`);
