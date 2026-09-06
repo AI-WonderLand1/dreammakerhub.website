@@ -4,8 +4,9 @@ on:
   pull_request:
     branches: [Master, main]
     paths:
-      - 'apps/web/app/homepage/Npc3DPreview.tsx'
+      - 'apps/web/app/homepage/NpcExperiencePreview.tsx'
       - 'apps/web/app/homepage/InteractiveSignpost.tsx'
+      - 'apps/web/public/models/npc/**'
       - '.github/workflows/npc-preview-check.yml'
 
 permissions:
@@ -28,6 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts
 
+      - name: Verify bundled NPC model
+        run: |
+          test -s apps/web/public/models/npc/RobotExpressive.glb
+          echo '047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319  apps/web/public/models/npc/RobotExpressive.glb' | sha256sum --check --strict
+
       - name: Type-check homepage NPC preview
         run: >-
           npx tsc
@@ -40,5 +46,5 @@ jobs:
           --lib DOM,DOM.Iterable,ES2022
           --esModuleInterop
           --allowSyntheticDefaultImports
-          apps/web/app/homepage/Npc3DPreview.tsx
+          apps/web/app/homepage/NpcExperiencePreview.tsx
           apps/web/app/homepage/InteractiveSignpost.tsx
