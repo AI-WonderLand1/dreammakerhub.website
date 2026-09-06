@@ -1,0 +1,49 @@
+name: NPC Preview Check
+
+on:
+  pull_request:
+    branches: [Master, main]
+    paths:
+      - 'apps/web/app/homepage/NpcExperiencePreview.tsx'
+      - 'apps/web/app/homepage/InteractiveSignpost.tsx'
+      - 'apps/web/public/models/npc/**'
+      - 'scripts/verify-npc-preview-model.mjs'
+      - '.github/workflows/npc-preview-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck-npc-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Verify bundled NPC model and animation clips
+        run: node scripts/verify-npc-preview-model.mjs
+
+      - name: Type-check homepage NPC preview
+        run: >-
+          npx tsc
+          --noEmit
+          --skipLibCheck
+          --jsx react-jsx
+          --target ES2022
+          --module esnext
+          --moduleResolution bundler
+          --lib DOM,DOM.Iterable,ES2022
+          --esModuleInterop
+          --allowSyntheticDefaultImports
+          apps/web/app/homepage/NpcExperiencePreview.tsx
+          apps/web/app/homepage/InteractiveSignpost.tsx
