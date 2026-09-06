@@ -8,9 +8,6 @@ export const menuItems: NavMenuItem[] = [
     title: "Build",
     items: [
       { name: "WonderBuild", href: "/wonder-build", icon: "⚡" },
-      { name: "AI Studio", href: "/wonder-build/studio", icon: "🧠" },
-      { name: "Visual Builder", href: "/wonder-build/builder", icon: "🎨" },
-      { name: "Templates", href: "/wonder-build", icon: "📄" },
     ],
   },
   {
@@ -24,37 +21,25 @@ export const menuItems: NavMenuItem[] = [
   {
     title: "3D",
     items: [
-      { name: "WonderPlay", href: "/wonder-build/playcanvas", icon: "🎮" },
-      { name: "3DHub Studio", href: "/dashboard/3dhub", icon: "🧊" },
-      { name: "WebGL Studio", href: "/wonder-build/webgl", icon: "✨" },
-      { name: "WonderPlay App", href: "/wonder-play", icon: "🌐" },
+      { name: "WonderPlay 3D Studio", href: "/dashboard/3dhub", icon: "🎮" },
+      { name: "NPC-AI-SIM", href: "/wonder-play", icon: "🧙" },
     ],
   },
   {
     title: "Explore",
     items: [
-      { name: "Projects", href: "/dashboard/projects", icon: "📁" },
+      { name: "My Projects", href: "/dashboard/projects", icon: "📁" },
       { name: "Marketplace", href: "/marketplace", icon: "🛍️" },
-      { name: "NPC Creation", href: "/wonder-build/playcanvas", icon: "🧙‍♂️" },
-      { name: "Tutorials", href: "/tutorials", icon: "🎓" },
     ],
   },
   {
     title: "Resources",
     items: [
       { name: "Documentation", href: "/docs", icon: "📚" },
-      { name: "API Reference", href: "/api-reference", icon: "📖" },
-      { name: "Blog", href: "/blog", icon: "📝" },
+      { name: "Tutorials", href: "/tutorials", icon: "🎓" },
       { name: "Community", href: "/community", icon: "👥" },
-    ],
-  },
-  {
-    title: "Company",
-    items: [
-      { name: "About Us", href: "/about", icon: "ℹ️" },
-      { name: "Careers", href: "/careers", icon: "💼" },
+      { name: "About", href: "/about", icon: "ℹ️" },
       { name: "Contact", href: "/contact", icon: "📧" },
-      { name: "Privacy Policy", href: "/privacy", icon: "🔒" },
     ],
   },
 ];
