@@ -1,9 +1,9 @@
-import os
 import json
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 from pathlib import Path
 import re
+
 
 @dataclass
 class FileInfo:
@@ -16,6 +16,7 @@ class FileInfo:
     classes: List[str]
     dependencies: List[str]
 
+
 @dataclass
 class RepoStructure:
     root: str
@@ -25,6 +26,7 @@ class RepoStructure:
     config_files: List[str]
     languages: Dict[str, int]
     file_tree: Dict
+
 
 class FullStackAnalyzer:
     FRAMEWORK_PATTERNS = {
@@ -39,7 +41,7 @@ class FullStackAnalyzer:
         'rails': ['rails', 'ruby'],
         'spring': ['spring', 'java'],
     }
-    
+
     LANG_EXTENSIONS = {
         'python': ['.py', '.pyi'],
         'javascript': ['.js', '.jsx', '.mjs'],
@@ -53,42 +55,51 @@ class FullStackAnalyzer:
         'css': ['.css', '.scss', '.sass', '.less'],
         'sql': ['.sql'],
     }
-    
+
     def __init__(self):
-        self.ignored_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.venv',
-                            'dist', 'build', '.next', 'coverage', '.idea', 'vendor'}
+        self.ignored_dirs = {
+            '.git', 'node_modules', '__pycache__', 'venv', '.venv',
+            'dist', 'build', '.next', 'coverage', '.idea', 'vendor'
+        }
         self.allowed_roots = tuple(
-            os.path.realpath(os.path.abspath(os.path.expanduser(root)))
-            for root in (str(Path.home()), '/tmp', '/workspaces')
+            Path(root).expanduser().resolve(strict=False)
+            for root in (Path.home(), Path('/tmp'), Path('/workspaces'))
         )
 
+    def _is_within_allowed_roots(self, path: Path) -> bool:
+        """Return True only when path is equal to or below an approved root."""
+        for root in self.allowed_roots:
+            try:
+                path.relative_to(root)
+                return True
+            except ValueError:
+                continue
+        return False
+
     def _resolve_safe_path(self, raw_path: str, *, expect_dir: Optional[bool] = None) -> Path:
-        """Normalize and constrain a caller-supplied path to an approved root."""
+        """Canonicalize and constrain a caller-supplied path to an approved root."""
         if not raw_path:
             raise ValueError("Path is required")
 
-        expanded = os.path.expanduser(raw_path)
-        if not os.path.isabs(expanded):
+        candidate = Path(raw_path).expanduser()
+        if not candidate.is_absolute():
             raise ValueError("Path must be absolute")
 
-        normalized = os.path.realpath(os.path.abspath(expanded))
+        try:
+            normalized = candidate.resolve(strict=True)
+        except (FileNotFoundError, RuntimeError, OSError) as exc:
+            raise FileNotFoundError("Requested path was not found") from exc
 
-        if not any(
-            normalized == root or normalized.startswith(root + os.sep)
-            for root in self.allowed_roots
-        ):
+        if not self._is_within_allowed_roots(normalized):
             raise ValueError("Path is outside allowed repository roots")
 
-        if not os.path.exists(normalized):
-            raise FileNotFoundError("Requested path was not found")
-
-        if expect_dir is True and not os.path.isdir(normalized):
+        if expect_dir is True and not normalized.is_dir():
             raise ValueError("Repository path must be a directory")
 
-        if expect_dir is False and not os.path.isfile(normalized):
+        if expect_dir is False and not normalized.is_file():
             raise ValueError("File path must point to a regular file")
 
-        return Path(normalized)
+        return normalized
 
     def analyze(self, repo_path: str) -> RepoStructure:
         repo_path = self._resolve_safe_path(repo_path, expect_dir=True)
@@ -102,15 +113,15 @@ class FullStackAnalyzer:
             languages={},
             file_tree={}
         )
-        
+
         structure.file_tree = self._build_tree(repo_path)
         structure.languages = self._analyze_languages(repo_path)
         structure.config_files = self._find_config_files(repo_path)
         structure.frontend_path = self._detect_frontend(repo_path)
         structure.backend_path = self._detect_backend(repo_path)
-        
+
         return structure
-    
+
     def _build_tree(self, path: Path, depth: int = 0, max_depth: int = 4) -> Dict:
         if depth > max_depth:
             return {}
@@ -126,15 +137,19 @@ class FullStackAnalyzer:
         except PermissionError:
             pass
         return tree
-    
+
     def _analyze_languages(self, repo_path: Path) -> Dict[str, int]:
-        languages = {}
-        for ext, lang in self.LANG_EXTENSIONS.items():
-            count = sum(1 for _ in repo_path.rglob(f'*{ext}'))
+        languages: Dict[str, int] = {}
+        for lang, extensions in self.LANG_EXTENSIONS.items():
+            count = sum(
+                1
+                for ext in extensions
+                for _ in repo_path.rglob(f'*{ext}')
+            )
             if count > 0:
                 languages[lang] = count
         return dict(sorted(languages.items(), key=lambda x: x[1], reverse=True))
-    
+
     def _find_config_files(self, repo_path: Path) -> List[str]:
         config_names = {
             'package.json', 'requirements.txt', 'Cargo.toml', 'go.mod',
@@ -147,10 +162,12 @@ class FullStackAnalyzer:
             found = list(repo_path.rglob(config))
             configs.extend([str(f.relative_to(repo_path)) for f in found])
         return configs
-    
+
     def _detect_frontend(self, repo_path: Path) -> Optional[str]:
-        indicators = ['src/', 'components/', 'pages/', 'public/', 'assets/',
-                     'package.json', 'tsconfig.json', 'vite.config.js', 'next.config.js']
+        indicators = [
+            'src/', 'components/', 'pages/', 'public/', 'assets/',
+            'package.json', 'tsconfig.json', 'vite.config.js', 'next.config.js'
+        ]
         for indicator in indicators:
             found = list(repo_path.rglob(indicator))
             if found:
@@ -162,10 +179,12 @@ class FullStackAnalyzer:
         if client_dir.exists():
             return 'client'
         return None
-    
+
     def _detect_backend(self, repo_path: Path) -> Optional[str]:
-        indicators = ['app.py', 'main.py', 'server.py', 'api/', 'routes/',
-                     'requirements.txt', 'Cargo.toml', 'go.mod']
+        indicators = [
+            'app.py', 'main.py', 'server.py', 'api/', 'routes/',
+            'requirements.txt', 'Cargo.toml', 'go.mod'
+        ]
         for indicator in indicators:
             found = list(repo_path.rglob(indicator))
             if found:
@@ -180,14 +199,14 @@ class FullStackAnalyzer:
         if api_dir.exists():
             return 'api'
         return None
-    
+
     def analyze_file(self, file_path: str) -> FileInfo:
         path = self._resolve_safe_path(file_path, expect_dir=False)
 
         ext = path.suffix.lower()
         language = self._get_language(ext)
         content = self._read_file_safe(path)
-        
+
         return FileInfo(
             path=str(path),
             language=language,
@@ -198,21 +217,21 @@ class FullStackAnalyzer:
             classes=self._extract_classes(content, language),
             dependencies=self._extract_dependencies(path, language)
         )
-    
+
     def _get_language(self, ext: str) -> str:
         ext = ext.lower()
         for lang, extensions in self.LANG_EXTENSIONS.items():
             if ext in extensions:
                 return lang
         return 'unknown'
-    
+
     def _read_file_safe(self, path: Path) -> str:
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with path.open('r', encoding='utf-8') as f:
                 return f.read()
-        except:
+        except (OSError, UnicodeError):
             return ""
-    
+
     def _extract_imports(self, content: str, language: str) -> List[str]:
         imports = []
         patterns = {
@@ -225,7 +244,7 @@ class FullStackAnalyzer:
         if language in patterns:
             imports = re.findall(patterns[language], content, re.MULTILINE)
         return imports[:50]
-    
+
     def _extract_exports(self, content: str, language: str) -> List[str]:
         exports = []
         patterns = {
@@ -235,7 +254,7 @@ class FullStackAnalyzer:
         if language in patterns:
             exports = re.findall(patterns[language], content)
         return exports[:30]
-    
+
     def _extract_functions(self, content: str, language: str) -> List[str]:
         functions = []
         patterns = {
@@ -247,7 +266,7 @@ class FullStackAnalyzer:
             matches = re.findall(patterns[language], content, re.MULTILINE)
             functions = [m[0] if isinstance(m, tuple) else m for m in matches]
         return functions[:50]
-    
+
     def _extract_classes(self, content: str, language: str) -> List[str]:
         classes = []
         patterns = {
@@ -259,31 +278,31 @@ class FullStackAnalyzer:
         if language in patterns:
             classes = re.findall(patterns[language], content, re.MULTILINE)
         return classes[:30]
-    
+
     def _extract_dependencies(self, path: Path, language: str) -> List[str]:
         deps = []
         parent = path.parent
-        
+
         pkg_json = parent / 'package.json'
         if pkg_json.exists():
             try:
                 data = json.loads(self._read_file_safe(pkg_json))
                 deps.extend(list(data.get('dependencies', {}).keys()))
                 deps.extend(list(data.get('devDependencies', {}).keys()))
-            except:
+            except (json.JSONDecodeError, AttributeError):
                 pass
-        
+
         req_txt = parent / 'requirements.txt'
         if req_txt.exists():
-            try:
-                content = self._read_file_safe(req_txt)
-                deps.extend([line.split('=')[0].split('==')[0].strip() 
-                           for line in content.split('\n') if line.strip() and not line.startswith('#')])
-            except:
-                pass
-        
+            content = self._read_file_safe(req_txt)
+            deps.extend([
+                line.split('=')[0].split('==')[0].strip()
+                for line in content.split('\n')
+                if line.strip() and not line.startswith('#')
+            ])
+
         return deps[:100]
-    
+
     def generate_summary(self, repo_structure: RepoStructure) -> str:
         summary = f"# Repository Analysis: {Path(repo_structure.root).name}\n\n"
         summary += "## Structure\n"

@@ -3,7 +3,7 @@ name: Build & Push Optimizer
 on:
   push:
     branches:
-      - main
+      - Master
     paths:
       - 'packages/optimizer/**'
 
