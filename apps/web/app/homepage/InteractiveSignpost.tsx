@@ -7,20 +7,20 @@ interface InteractiveSignpostProps {
   heroMode?: boolean;
 }
 
-const Npc3DPreview = dynamic(() => import('./Npc3DPreview'), {
+const NpcExperiencePreview = dynamic(() => import('./NpcExperiencePreview'), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[520px] items-center justify-center rounded-[28px] border border-cyan-400/20 bg-[#050814] text-sm text-white/45">
-      Loading interactive 3D NPC preview…
+    <div className="flex min-h-[570px] items-center justify-center rounded-[30px] border border-cyan-400/20 bg-[#050814] text-sm text-white/45">
+      Loading rigged 3D NPC preview…
     </div>
   ),
 });
 
 /**
- * Compatibility wrapper kept so existing homepage imports remain stable while
- * the old static Wonderland signpost experience is replaced by the real 3D
- * NPC preview. `heroMode` is retained for API compatibility with older callers.
+ * Compatibility wrapper retained so the homepage integration remains stable.
+ * The former static Wonderland signpost has been replaced by a real rigged,
+ * animated WebGL NPC product preview.
  */
 export default function InteractiveSignpost({ iframeLabel }: InteractiveSignpostProps) {
-  return <Npc3DPreview iframeLabel={iframeLabel} />;
+  return <NpcExperiencePreview iframeLabel={iframeLabel} />;
 }
