@@ -40,7 +40,7 @@ export async function ensureSupabaseConfig() {
       console.error('Error ensuring Supabase config:', err)
       return null
     })
-  
+
   return configPromise
 }
 
@@ -48,28 +48,11 @@ export function getSupabaseClient() {
   if (cachedClient) return cachedClient
   if (!hasUsableSupabaseConfig()) return null
 
-  cachedClient = createBrowserClient(supabaseUrl!, supabaseAnonKey!, {
-    cookies: {
-      get(name) {
-        if (typeof document === 'undefined') return ''
-        const cookie = document.cookie
-          .split('; ')
-          .find((row) => row.startsWith(`${name}=`))
-        return cookie ? cookie.split('=')[1] : ''
-      },
-      set(name, value, opts) {
-        if (typeof document === 'undefined') return
-        const maxAge = opts?.maxAge ?? 604800
-        let cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`
-        if (opts?.secure) cookie += '; Secure'
-        document.cookie = cookie
-      },
-      remove(name, _opts) {
-        if (typeof document === 'undefined') return
-        document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`
-      },
-    },
-  })
+  // Let @supabase/ssr manage browser cookies itself. Its cookie adapter handles
+  // the chunked/base64 auth-cookie format used by current Supabase releases.
+  // The old hand-written document.cookie adapter only handled a single cookie
+  // and could make an active session look logged out after navigation/reload.
+  cachedClient = createBrowserClient(supabaseUrl!, supabaseAnonKey!)
   return cachedClient
 }
 
