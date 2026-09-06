@@ -1,7 +1,9 @@
 from typing import Optional, List, Any
 import logging
 import os
+import re
 import sys
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,6 +12,8 @@ from core.alice import AliceAgent
 from core.api_keys import APIKeyManager
 
 DEFAULT_LLM_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
+AGENT_REPO_ROOT = Path(os.environ.get("AGENT_REPO_ROOT", "/workspaces")).expanduser().resolve(strict=False)
+REPO_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._@+-]{0,127}$")
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -38,6 +42,25 @@ def get_api_key(x_api_key: str = Header(None)):
     if not result:
         raise HTTPException(status_code=401, detail="Invalid or expired API key")
     return result
+
+
+def resolve_requested_repo_path(raw_path: str) -> str:
+    """Map an untrusted repository path to a single repo under a trusted root."""
+    if not isinstance(raw_path, str) or not raw_path.strip():
+        raise ValueError("Repository name is required")
+
+    repo_name = os.path.basename(raw_path.rstrip("/\\"))
+    if not REPO_NAME_PATTERN.fullmatch(repo_name) or repo_name in {".", ".."}:
+        raise ValueError("Invalid repository name")
+
+    candidate = (AGENT_REPO_ROOT / repo_name).resolve(strict=False)
+    try:
+        candidate.relative_to(AGENT_REPO_ROOT)
+    except ValueError as exc:
+        raise ValueError("Repository is outside the configured root") from exc
+
+    return str(candidate)
+
 
 class SpiritGuideRequest(BaseModel):
     question: str
@@ -71,36 +94,63 @@ async def root():
 
 @app.post("/api/ask")
 async def ask_alice(request: AskRequest, api_info: dict = Depends(get_api_key)):
-    answer = alice_agent.ask(request.question, user_id=request.user_id, context=request.context)
-    return {"answer": answer}
+    try:
+        answer = alice_agent.ask(request.question, user_id=request.user_id, context=request.context)
+        return {"answer": answer}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Alice request failed")
+        raise HTTPException(status_code=500, detail="AI request failed") from None
 
 @app.post("/api/spirit-guide/consult")
 async def consult_spirit_guide(request: SpiritGuideRequest, api_info: dict = Depends(get_api_key)):
-    answer = spirit_guide.consult(request.question, request.user_id or "seeker")
-    return {"persona": "spirit_guide", "answer": answer}
+    try:
+        answer = spirit_guide.consult(request.question, request.user_id or "seeker")
+        return {"persona": "spirit_guide", "answer": answer}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Spirit guide request failed")
+        raise HTTPException(status_code=500, detail="Spirit guide request failed") from None
 
 @app.post("/api/orchestrator/execute")
 async def orchestrator_execute(request: OrchestratorRequest, api_info: dict = Depends(get_api_key)):
-    answer = orchestrator.execute(request.goal, request.user_id or "worker")
-    return {"persona": "orchestrator", "answer": answer}
+    try:
+        answer = orchestrator.execute(request.goal, request.user_id or "worker")
+        return {"persona": "orchestrator", "answer": answer}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Orchestrator execution failed")
+        raise HTTPException(status_code=500, detail="Orchestrator execution failed") from None
 
 @app.post("/api/orchestrator/analyze")
 async def analyze_repo(request: RepoAnalyzeRequest, api_info: dict = Depends(get_api_key)):
     try:
-        summary = orchestrator.analyze_and_plan(request.repo_path)
+        repo_path = resolve_requested_repo_path(request.repo_path)
+        summary = orchestrator.analyze_and_plan(repo_path)
         return {"success": True, "summary": summary}
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Repository not found") from None
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid repository path") from None
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Repository analysis failed")
         raise HTTPException(status_code=500, detail="Repository analysis failed") from None
 
 @app.get("/api/orchestrator/status")
 async def get_status(user_id: str = "worker", api_info: dict = Depends(get_api_key)):
-    status = orchestrator.get_status(user_id)
-    return {"persona": "orchestrator", "status": status}
+    try:
+        status = orchestrator.get_status(user_id)
+        return {"persona": "orchestrator", "status": status}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Orchestrator status request failed")
+        raise HTTPException(status_code=500, detail="Orchestrator status request failed") from None
 
 @app.post("/api/keys/create")
 async def create_api_key(request: APIKeyCreateRequest):
