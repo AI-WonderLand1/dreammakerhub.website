@@ -1,0 +1,33 @@
+name: "CodeQL Alert Inventory"
+
+on:
+  pull_request:
+    branches: ["Master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: read
+
+jobs:
+  inventory:
+    name: Inventory open CodeQL alerts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch open CodeQL alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" > findings.json
+          count="$(jq 'length' findings.json)"
+          echo "OPEN_CODEQL_ALERTS=${count}"
+          jq -r '.[] | ["CODEQL_ALERT", (.number|tostring), (.rule.id // "unknown"), (.rule.security_severity_level // .rule.severity // "unknown"), (.most_recent_instance.location.path // "unknown"), ((.most_recent_instance.location.start_line // 0)|tostring), (.rule.description // .rule.name // "unknown")] | join("|")' findings.json
+
+      - name: Upload alert inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-open-alerts
+          path: findings.json
+          retention-days: 7
