@@ -20,7 +20,14 @@ const NpcExperiencePreview = dynamic(() => import('./NpcExperiencePreview'), {
  * Compatibility wrapper retained so the homepage integration remains stable.
  * The former static Wonderland signpost has been replaced by a real rigged,
  * animated WebGL NPC product preview.
+ *
+ * The descendant canvas keeps vertical touch panning enabled so a 3D viewport
+ * cannot trap normal page scrolling on phones/tablets.
  */
 export default function InteractiveSignpost({ iframeLabel }: InteractiveSignpostProps) {
-  return <NpcExperiencePreview iframeLabel={iframeLabel} />;
+  return (
+    <div className="[&_canvas]:!touch-pan-y">
+      <NpcExperiencePreview iframeLabel={iframeLabel} />
+    </div>
+  );
 }
