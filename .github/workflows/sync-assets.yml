@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - Master
     paths:
       - 'scripts/sync-assets.ts'
 
