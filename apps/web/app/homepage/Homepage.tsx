@@ -4,42 +4,158 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/supabase/auth-context";
-import signMap from "./homepage-sign-map.json";
-import { BUILDER_SHOWCASE_CARDS, toSafeInternalHref } from "./builder-showcase-cards";
-import InteractiveSignpost from "./InteractiveSignpost";
-import ShowcaseSection from "./ShowcaseSection";
 import AIDiagram from "./AIDiagram";
 import HomepageNavbar from "./HomepageNavbar";
 import PricingSection from "./PricingSection";
-import ComparisonTable from "./ComparisonTable";
-import FeatureShowcase from "@/components/homepage/FeatureShowcase";
-import NpcCtaSection from "@/components/homepage/NpcCtaSection";
 import HeroBanner from "@/components/homepage/HeroBanner";
-import { PLANS, REGISTRY_ITEMS } from "./data";
+import { PLANS } from "./data";
 
-const openSpiritGuide = () => {
-  const assistantButton = document.querySelector('button[aria-label="Open AI Assistant"]');
-  if (assistantButton) {
-    (assistantButton as HTMLElement).click();
-    return;
-  }
-  const aiButtons = document.querySelectorAll('button');
-  for (const button of aiButtons) {
-    const label = button.getAttribute('aria-label') || button.textContent || '';
-    if (label.toLowerCase().includes('ai') || label.toLowerCase().includes('assistant') || label.includes('🔮')) {
-      (button as HTMLElement).click();
-      return;
-    }
-  }
-  window.location.href = '/wonder-build/builder';
+type Product = {
+  name: string;
+  label: string;
+  description: string;
+  href: string;
+  icon: string;
+  image?: string;
+  external?: boolean;
+  accent: string;
 };
 
-export default function Homepage() {
-  const isAuthenticated = Boolean(useAuth().user);
-  const destinationNames = signMap.map((link) => link.label).join(", ");
-  const iframeLabel = `WonderPlay Landing Page destinations: ${destinationNames}`;
+const PRODUCTS: Product[] = [
+  {
+    name: "WonderBuild",
+    label: "Websites & Apps",
+    description: "Create from a prompt, then edit visually or with code and publish from one builder.",
+    href: "/wonder-build",
+    icon: "⚡",
+    image: "/images/screenshots/puck-builder.svg",
+    accent: "from-violet-500/25 to-fuchsia-500/10",
+  },
+  {
+    name: "WonderSpace",
+    label: "Cloud Development",
+    description: "A browser workspace for coding, terminals, Git workflows, and AI-assisted development.",
+    href: "/wonderspace",
+    icon: "💻",
+    image: "/images/screenshots/theia-builder.svg",
+    accent: "from-amber-500/20 to-orange-500/10",
+  },
+  {
+    name: "AI Playground",
+    label: "Models & BYOK",
+    description: "Experiment with multiple AI providers and models without locking your workflow to one vendor.",
+    href: "https://playground.dreammakerhub.website/",
+    icon: "🤖",
+    external: true,
+    accent: "from-cyan-500/20 to-blue-500/10",
+  },
+  {
+    name: "WonderPlay",
+    label: "3D Studio",
+    description: "Build and edit realtime 3D scenes, worlds, assets, materials, lighting, and interactions.",
+    href: "/dashboard/3dhub",
+    icon: "🎮",
+    image: "/images/screenshots/playcanvas-builder.svg",
+    accent: "from-blue-500/20 to-cyan-500/10",
+  },
+  {
+    name: "NPC-AI-SIM",
+    label: "AI Characters",
+    description: "Create, configure, test, and export intelligent 3D NPCs with behavior, voice, memory, and AI.",
+    href: "/wonder-play",
+    icon: "🧙",
+    accent: "from-pink-500/20 to-purple-500/10",
+  },
+];
 
+const STEPS = [
+  ["01", "Describe", "Tell AI what you want to create in plain language."],
+  ["02", "Generate", "Start from AI output, a template, or a blank project."],
+  ["03", "Edit", "Use visual tools, code, AI commands, or all three together."],
+  ["04", "Ship", "Preview, test, export, or publish when it is ready."],
+] as const;
+
+const DEMOS = [
+  {
+    title: "WonderBuild visual editor",
+    description: "Drag-and-drop website and app editing with a live canvas.",
+    image: "/images/screenshots/puck-builder.svg",
+    href: "/wonder-build/builder",
+  },
+  {
+    title: "WonderSpace cloud IDE",
+    description: "A full coding workspace that runs in the browser.",
+    image: "/images/screenshots/theia-builder.svg",
+    href: "/ide",
+  },
+  {
+    title: "WonderPlay realtime 3D",
+    description: "Scene editing and 3D creation without leaving the platform.",
+    image: "/images/screenshots/playcanvas-builder.svg",
+    href: "/dashboard/3dhub",
+  },
+] as const;
+
+function ProductCard({ product }: { product: Product }) {
+  const content = (
+    <div className={`group h-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${product.accent} p-px transition hover:border-white/25 hover:-translate-y-0.5`}>
+      <div className="flex h-full flex-col rounded-[15px] bg-[#070a11]/95 p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-xl">
+            {product.icon}
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
+            {product.label}
+          </span>
+        </div>
+
+        {product.image ? (
+          <div className="relative mt-5 h-40 overflow-hidden rounded-xl border border-white/10 bg-[#05070c] sm:h-44">
+            <Image
+              src={product.image}
+              alt={`${product.name} interface preview`}
+              fill
+              className="object-cover object-top opacity-90 transition duration-300 group-hover:scale-[1.02] group-hover:opacity-100"
+              sizes="(max-width: 768px) 100vw, 500px"
+            />
+          </div>
+        ) : (
+          <div className="mt-5 flex h-40 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[radial-gradient(circle_at_50%_25%,rgba(56,189,248,0.13),transparent_42%),linear-gradient(145deg,#070b14,#05060a)] sm:h-44">
+            <div className="w-[78%] rounded-xl border border-white/10 bg-black/55 p-3 shadow-2xl">
+              <div className="mb-3 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-pink-400/70" />
+                <span className="h-2 w-2 rounded-full bg-amber-300/70" />
+                <span className="h-2 w-2 rounded-full bg-emerald-400/70" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-2 w-2/3 rounded bg-white/15" />
+                <div className="h-2 w-full rounded bg-cyan-400/10" />
+                <div className="h-2 w-4/5 rounded bg-purple-400/10" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <h3 className="mt-5 text-xl font-bold text-white">{product.name}</h3>
+        <p className="mt-2 flex-1 text-sm leading-6 text-white/58">{product.description}</p>
+        <span className="mt-5 inline-flex items-center text-sm font-semibold text-cyan-300">
+          Open {product.name} →
+        </span>
+      </div>
+    </div>
+  );
+
+  if (product.external) {
+    return <a href={product.href}>{content}</a>;
+  }
+
+  return <Link href={product.href}>{content}</Link>;
+}
+
+export default function Homepage() {
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  const primaryHref = user ? "/dashboard/projects" : "/public-pages/auth?signup=true";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -47,240 +163,147 @@ export default function Homepage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-    return (
-      <main className="relative min-h-screen" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
-        <HomepageNavbar scrolled={scrolled} />
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <HomepageNavbar scrolled={scrolled} />
 
-        <section className="relative w-full overflow-hidden" style={{ minHeight: "100svh" }}>
-          <HeroBanner />
-          <div className="relative z-20 flex min-h-[100svh] flex-col items-center justify-center px-6 pb-20 pt-28 text-center sm:px-10">
-            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-300 backdrop-blur-md">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />
-              Innovation Engine · AI-Powered
+      <section className="relative isolate overflow-hidden border-b border-white/10">
+        <HeroBanner />
+        <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl flex-col items-center justify-center px-5 pb-20 pt-28 text-center sm:min-h-[760px] sm:px-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200 sm:text-xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+            One platform for AI creation
+          </span>
+
+          <h1 className="mt-7 max-w-5xl text-4xl font-black leading-[1.02] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">
+            Build websites, apps, AI experiences and
+            <span className="block bg-gradient-to-r from-cyan-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">
+              3D worlds with AI.
             </span>
-            <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-tight text-white drop-shadow-2xl sm:text-6xl lg:text-7xl">
-              AI WONDERLAND
-              <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-lg">
-                INNOVATION
-              </span>
-            </h1>
-            <p className="mt-6 max-w-xl text-sm text-white/70 drop-shadow sm:text-base">
-              Build websites, 3D games, and interactive experiences from natural language — no coding required.
-            </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <Link href="/wonder-build/builder"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-900/40 transition hover:scale-105 hover:shadow-purple-700/50">
-                🚀 Start Creating
-              </Link>
-              <a href="#explore"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/10">
-                Explore Wonderland ↓
-              </a>
-            </div>
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-semibold uppercase tracking-widest text-white/40">
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> AI-Powered Builds</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> 3D Games & Worlds</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-pink-400" /> Accessible by Design</span>
-            </div>
-          </div>
-        </section>
+          </h1>
 
-        <section id="explore" className="relative mx-auto mt-6 mb-10 w-full max-w-6xl scroll-mt-24 px-4 sm:px-6">
-          <InteractiveSignpost iframeLabel={iframeLabel} />
-        </section>
+          <p className="mt-6 max-w-2xl text-base leading-7 text-white/65 sm:text-lg sm:leading-8">
+            Start with a prompt. Keep control with visual editors and real code. Use the same projects across WonderBuild, WonderSpace, AI Playground, WonderPlay, and NPC-AI-SIM.
+          </p>
 
-        <section className="relative mx-auto mb-10 w-full max-w-7xl px-6 sm:px-8">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { src: "/images/3DWONDERPLAYIMAGE.webp", title: "NPC AI SIM Worlds", href: "/wonder-build/playcanvas", tag: "3D Engine" },
-              { src: "/images/3DSYSTEMSIMAGE.webp", title: "3D Systems & Scenes", href: "/dashboard/3dhub", tag: "3D Studio" },
-              { src: "/images/3DPLAYIMAGE.webp", title: "3D Play Experience", href: "/wonder-build/playcanvas", tag: "PlayCanvas" },
-            ].map((card) => (
-              <Link key={card.title} href={card.href}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 p-3 transition duration-300 hover:border-cyan-400/70 hover:bg-slate-900">
-                <div className="relative h-44 w-full overflow-hidden rounded-xl border border-slate-700/60">
-                  <Image src={card.src} alt={card.title} fill className="object-cover opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100" sizes="(max-width: 768px) 100vw, 400px" />
-                  <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300 backdrop-blur-md">{card.tag}</span>
-                </div>
-                <h3 className="mt-3 text-base font-bold text-white">{card.title}</h3>
-                <span className="mt-1 inline-flex items-center text-xs font-semibold text-cyan-300">Open builder →</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <FeatureShowcase />
-        <NpcCtaSection />
-
-      <ShowcaseSection />
-
-      <section className="relative mx-auto -mt-16 w-full max-w-4xl px-6">
-        <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/30 rounded-2xl p-8 backdrop-blur-lg shadow-2xl shadow-purple-900/20">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">🚀 Ready to Create?</h2>
-            <p className="text-white/70 mb-6 max-w-md mx-auto">
-              Start building your 3D world in seconds. No experience needed.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              <Link href="/template_futuristic_city"
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white font-semibold hover:scale-105 transition-transform shadow-lg shadow-purple-900/30 group relative">
-                🏙️ Start with Futuristic City
-                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
-                  Pre-built futuristic city scene with neon lights and skyscrapers
-                </div>
-              </Link>
-              <Link href="/wonder-build/playcanvas"
-                className="px-6 py-3 border border-white/20 bg-white/5 rounded-lg text-white font-semibold hover:bg-white/10 transition group relative">
-                🎨 Start from Scratch
-                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-white/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
-                  Blank canvas - build anything you imagine from the ground up
-                </div>
-              </Link>
-              <Link href="/wonder-build/spatial"
-                className="px-6 py-3 border border-cyan-500/30 bg-cyan-500/10 rounded-lg text-white font-semibold hover:bg-cyan-500/20 transition group relative">
-                🌌 Spatial Designer
-                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-cyan-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48">
-                  3D spatial workspace - design, collaborate, and explore in real-time
-                </div>
-              </Link>
-              <Link href="/wonder-build/builder"
-                className="px-6 py-3 border border-green-500/30 bg-green-500/10 rounded-lg text-white font-semibold hover:bg-green-500/20 transition group relative">
-                🤖 WonderBuild
-                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-green-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Visual drag-drop builder for websites & apps
-                </div>
-              </Link>
-              <a href="/wonder-build/agent"
-                className="px-6 py-3 border border-purple-500/30 bg-purple-500/10 rounded-lg text-white font-semibold hover:bg-purple-500/20 transition group relative">
-                🎮 WonderBuild
-                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/90 border border-purple-500/30 rounded-lg p-3 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56">
-                  Build anything with AI — websites, 3D games, and interactive experiences
-                </div>
-              </a>
-            </div>
-            <p className="text-white/40 text-sm mt-4">💡 Hover over buttons to see what they do</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="builder-showcase" className="mx-auto mt-8 w-full max-w-7xl px-6 sm:px-8">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-xl shadow-cyan-900/20 backdrop-blur-sm">
-          <h2 className="text-3xl font-bold text-white">Builder Showcase</h2>
-          <p className="mt-2 text-sm text-white/70">These are snapshots of the engines in action. Each card opens the builder experience so you can continue the flow immediately.</p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {BUILDER_SHOWCASE_CARDS.map((card) => (
-              <Link key={card.title} href={toSafeInternalHref(card.href)}
-                className="group overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-950/80 p-3 transition duration-300 hover:border-cyan-400/80 hover:bg-slate-900">
-                <div className="relative h-40 w-full overflow-hidden rounded-xl border border-slate-700/60">
-                  <Image src={card.image} alt={`${card.title} screenshot`} fill className="object-cover opacity-95 transition duration-300 group-hover:scale-105 group-hover:opacity-100" sizes="(max-width: 768px) 320px, 600px" />
-                </div>
-                <div className="mt-3">
-                  <h3 className="text-lg font-semibold text-white">{card.title}</h3>
-                  <p className="mt-1 text-sm text-white/70">{card.desc}</p>
-                  <span className="mt-2 inline-flex items-center text-xs font-semibold text-cyan-300">Open builder →</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {isAuthenticated && (
-        <section className="relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/60 to-black px-6 py-10 sm:px-8">
-          <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 -translate-y-1/4 translate-x-1/4 rounded-full bg-emerald-600/20 blur-[80px]" />
-          <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-emerald-400">Premium Feature</p>
-              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Cloud Development Workspace</h2>
-              <p className="mt-1 max-w-xl text-sm text-gray-400">
-                Get your own cloud development environment with VS Code, pre-configured for Wonderland projects.
-                Available for Pro and Elite subscribers.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {["VS Code in Browser", "Pre-configured Wonderland", "Git Integration", "Terminal Access"].map((tag) => (
-                  <span key={tag} className="rounded-full bg-emerald-900/40 border border-emerald-500/20 px-3 py-0.5 text-xs text-emerald-300">{tag}</span>
-                ))}
-              </div>
-            </div>
-            <Link href="/coder-workspace"
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500">
-              💻 Open Workspace
+          <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+            <Link
+              href={primaryHref}
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-7 py-3 text-sm font-bold text-white shadow-[0_16px_50px_rgba(124,58,237,0.25)] transition hover:brightness-110"
+            >
+              {user ? "Open My Projects" : "Start Building Free"}
             </Link>
+            <a
+              href="#products"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.05] px-7 py-3 text-sm font-semibold text-white/85 backdrop-blur transition hover:bg-white/[0.09]"
+            >
+              Explore the platform
+            </a>
           </div>
-        </section>
-      )}
 
-      <section id="features" className="relative mx-auto mt-10 w-full max-w-6xl px-6 sm:px-8">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cyan-400">Extension Registry</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Plug-in anything. Extend everything.</h2>
-            <p className="mt-1 text-sm text-gray-400">Curated extensions that plug into Playground and Wonder-Build.</p>
+          <div className="mt-10 grid w-full max-w-3xl grid-cols-2 gap-2 text-left sm:grid-cols-4">
+            {["Prompt → project", "Visual + code", "Multi-provider AI", "Web + 3D"].map((item) => (
+              <div key={item} className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2.5 text-xs font-medium text-white/55 backdrop-blur">
+                <span className="mr-2 text-emerald-400">✓</span>{item}
+              </div>
+            ))}
           </div>
-          <Link href="/marketplace"
-            className="shrink-0 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-5 py-2.5 text-sm font-semibold text-cyan-300 hover:bg-cyan-500/20 transition">
-            Browse All →
-          </Link>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {REGISTRY_ITEMS.map((item) => (
-            <Link key={item.name} href="/marketplace"
-              className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-cyan-500/30 hover:bg-white/[0.06]">
-              <span className="text-2xl shrink-0">{item.icon}</span>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-white group-hover:text-cyan-300 transition">{item.name}</p>
-                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/40">{item.tag}</span>
-                </div>
-                <p className="text-xs text-gray-500">{item.desc}</p>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">How it works</p>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">One flow from idea to something real</h2>
+          <p className="mt-3 text-sm leading-6 text-white/50 sm:text-base">You should not need to learn the platform before you can start creating.</p>
+        </div>
+        <div className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map(([number, title, copy]) => (
+            <div key={number} className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+              <div className="text-xs font-black tracking-[0.2em] text-cyan-300/70">{number}</div>
+              <h3 className="mt-4 text-lg font-bold text-white">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/50">{copy}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="products" className="mx-auto w-full max-w-7xl scroll-mt-20 px-5 py-8 sm:px-8 sm:py-14">
+        <div className="max-w-3xl">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">The platform</p>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Five products. One ecosystem.</h2>
+          <p className="mt-3 text-sm leading-6 text-white/50 sm:text-base">
+            Choose the tool that fits the work. Your homepage should explain the products, not expose every internal route and implementation detail.
+          </p>
+        </div>
+        <div className="mt-9 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {PRODUCTS.map((product) => <ProductCard key={product.name} product={product} />)}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300">See it in action</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Real tools, not decorative filler</h2>
+          </div>
+          <p className="max-w-lg text-sm leading-6 text-white/45">The homepage now gives the product UI room to sell the platform instead of stacking repeated showcase sections.</p>
+        </div>
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-3">
+          {DEMOS.map((demo) => (
+            <Link key={demo.title} href={demo.href} className="group overflow-hidden rounded-2xl border border-white/10 bg-[#070a10] transition hover:border-cyan-400/35">
+              <div className="relative aspect-[16/10] overflow-hidden border-b border-white/10 bg-black">
+                <Image src={demo.image} alt={demo.title} fill className="object-cover object-top transition duration-300 group-hover:scale-[1.015]" sizes="(max-width: 1024px) 100vw, 420px" />
+              </div>
+              <div className="p-5">
+                <h3 className="text-base font-bold text-white">{demo.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/50">{demo.description}</p>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      <PricingSection plans={PLANS} />
-      <ComparisonTable />
       <AIDiagram />
+      <PricingSection plans={PLANS} />
 
-      <section className="relative mx-auto mt-12 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black px-6 py-10 sm:px-8">
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[100px]" />
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
-          <h2 className="mb-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            Powerful <span className="text-blue-500">WonderPlay</span> 3D Integration
-          </h2>
-          <p className="mx-auto mb-6 max-w-xl text-sm text-gray-400">
-            Seamless real-time 3D editing and high-performance gameplay directly in the browser.
-          </p>
-          <div className="mx-auto max-w-3xl">
-            <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900 shadow-xl">
-              <div className="relative aspect-video w-full">
-                <Image
-                  src="/images/3DWONDERPLAYIMAGE.webp"
-                  alt="NPC AI SIM Editor preview"
-                  fill
-                  className="object-cover opacity-90"
-                  sizes="(max-width: 768px) 100vw, 768px"
-                />
-              </div>
-              <div className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-xs text-white backdrop-blur-md">
-                Live Editor Preview
-              </div>
-            </div>
+      <section className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="relative overflow-hidden rounded-3xl border border-violet-400/20 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.22),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(6,182,212,0.14),transparent_35%),#07070b] px-6 py-12 text-center sm:px-10 sm:py-16">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">AI Wonderland Innovation</p>
+          <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-black tracking-tight text-white sm:text-5xl">Start with an idea. Build the rest here.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/55 sm:text-base">Use AI to move faster without giving up visual control, code access, provider choice, or ownership of the project.</p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href={primaryHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 py-3 text-sm font-bold text-black transition hover:bg-white/90">
+              {user ? "Go to Dashboard" : "Create an Account"}
+            </Link>
+            <Link href="/docs" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-7 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/[0.08]">
+              Read the Docs
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto mt-12 mb-16 w-full max-w-6xl px-6 text-center sm:px-8">
-        <p className="text-sm text-white/30 mb-4">
-          Already have an account?{" "}
-          <Link href="/public-pages/auth" className="text-purple-400 hover:text-purple-300 transition">Sign in</Link>
-          {" · "}
-          <Link href="/subscription" className="text-purple-400 hover:text-purple-300 transition">View plans</Link>
-          {" · "}
-          <Link href="/marketplace" className="text-cyan-400 hover:text-cyan-300 transition">Browse registry</Link>
-        </p>
-      </section>
+      <footer className="border-t border-white/10 bg-[#05060a]">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-10 sm:grid-cols-2 sm:px-8 lg:grid-cols-4">
+          <div>
+            <div className="text-lg font-black text-white">AI Wonderland</div>
+            <p className="mt-2 max-w-xs text-sm leading-6 text-white/40">AI creation tools for websites, apps, code, realtime 3D, and intelligent characters.</p>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-widest text-white/35">Build</div>
+            <div className="mt-3 space-y-2 text-sm text-white/55"><Link className="block hover:text-white" href="/wonder-build">WonderBuild</Link><Link className="block hover:text-white" href="/wonderspace">WonderSpace</Link><Link className="block hover:text-white" href="/wonder-play">NPC-AI-SIM</Link></div>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-widest text-white/35">Explore</div>
+            <div className="mt-3 space-y-2 text-sm text-white/55"><Link className="block hover:text-white" href="/dashboard/projects">Projects</Link><Link className="block hover:text-white" href="/marketplace">Marketplace</Link><Link className="block hover:text-white" href="/community">Community</Link></div>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-widest text-white/35">Company</div>
+            <div className="mt-3 space-y-2 text-sm text-white/55"><Link className="block hover:text-white" href="/about">About</Link><Link className="block hover:text-white" href="/contact">Contact</Link><Link className="block hover:text-white" href="/privacy">Privacy</Link></div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
