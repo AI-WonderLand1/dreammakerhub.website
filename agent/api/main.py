@@ -71,18 +71,36 @@ async def root():
 
 @app.post("/api/ask")
 async def ask_alice(request: AskRequest, api_info: dict = Depends(get_api_key)):
-    answer = alice_agent.ask(request.question, user_id=request.user_id, context=request.context)
-    return {"answer": answer}
+    try:
+        answer = alice_agent.ask(request.question, user_id=request.user_id, context=request.context)
+        return {"answer": answer}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Alice request failed")
+        raise HTTPException(status_code=500, detail="AI request failed") from None
 
 @app.post("/api/spirit-guide/consult")
 async def consult_spirit_guide(request: SpiritGuideRequest, api_info: dict = Depends(get_api_key)):
-    answer = spirit_guide.consult(request.question, request.user_id or "seeker")
-    return {"persona": "spirit_guide", "answer": answer}
+    try:
+        answer = spirit_guide.consult(request.question, request.user_id or "seeker")
+        return {"persona": "spirit_guide", "answer": answer}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Spirit guide request failed")
+        raise HTTPException(status_code=500, detail="Spirit guide request failed") from None
 
 @app.post("/api/orchestrator/execute")
 async def orchestrator_execute(request: OrchestratorRequest, api_info: dict = Depends(get_api_key)):
-    answer = orchestrator.execute(request.goal, request.user_id or "worker")
-    return {"persona": "orchestrator", "answer": answer}
+    try:
+        answer = orchestrator.execute(request.goal, request.user_id or "worker")
+        return {"persona": "orchestrator", "answer": answer}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Orchestrator execution failed")
+        raise HTTPException(status_code=500, detail="Orchestrator execution failed") from None
 
 @app.post("/api/orchestrator/analyze")
 async def analyze_repo(request: RepoAnalyzeRequest, api_info: dict = Depends(get_api_key)):
@@ -93,14 +111,22 @@ async def analyze_repo(request: RepoAnalyzeRequest, api_info: dict = Depends(get
         raise HTTPException(status_code=404, detail="Repository not found") from None
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid repository path") from None
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Repository analysis failed")
         raise HTTPException(status_code=500, detail="Repository analysis failed") from None
 
 @app.get("/api/orchestrator/status")
 async def get_status(user_id: str = "worker", api_info: dict = Depends(get_api_key)):
-    status = orchestrator.get_status(user_id)
-    return {"persona": "orchestrator", "status": status}
+    try:
+        status = orchestrator.get_status(user_id)
+        return {"persona": "orchestrator", "status": status}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Orchestrator status request failed")
+        raise HTTPException(status_code=500, detail="Orchestrator status request failed") from None
 
 @app.post("/api/keys/create")
 async def create_api_key(request: APIKeyCreateRequest):
