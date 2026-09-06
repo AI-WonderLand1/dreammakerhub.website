@@ -4,7 +4,6 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const pathAliases = {
-    '@': __dirname,
     '@app': join(__dirname, 'app'),
     '@builder': join(__dirname, 'app/(builder)/wonder-build'),
     '@/core': join(__dirname, '../../engine/core'),
