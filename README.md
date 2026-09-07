@@ -14,7 +14,7 @@ Build websites, apps, and interactive 3D experiences entirely by describing what
 |---|---|---|---|
 | Drag‑and‑drop interface | ✅ | ❌ | ❌ |
 | AI‑agent build loop | ✅ | ✅ | ❌ |
-| PlayCanvas editor | ❌ | ❌ | ✅ |
+| vanguard editor | ❌ | ❌ | ✅ |
 | Cloud workspace & git | ❌ | ✅ | ❌ |
 | 1‑click deployment | ✅ | ✅ | ✅ |
 | Custom domain | ✅ | ✅ (Pro) | ✅ (Pro) |
