@@ -7,22 +7,22 @@ export type BuilderShowcaseCard = {
 
 export const BUILDER_SHOWCASE_CARDS: BuilderShowcaseCard[] = [
   {
-    title: "NPC AI SIM Editor",
-    image: "/images/screenshots/playcanvas-builder.svg",
-    href: "/wonder-build/playcanvas",
-    desc: "Real-time 3D world builder with physics, materials, WebGL shaders, and scene graph editing.",
-  },
-  {
     title: "WonderBuild",
     image: "/images/screenshots/puck-builder.svg",
-    href: "/wonder-build/studio",
-    desc: "Describe what you want — three AI agents generate complete websites, games, and dashboard UIs.",
+    href: "/wonder-build",
+    desc: "Create websites and web apps with AI, templates, visual editing, code, preview, and publish.",
   },
   {
-     title: "WonderSpace IDE",
-     image: "/images/screenshots/theia-builder.svg",
-     href: "/ide",
-     desc: "Cloud IDE for custom coding, debugging, and deployment flows with AI autocomplete.",
+    title: "WonderSpace",
+    image: "/images/screenshots/theia-builder.svg",
+    href: "/wonderspace",
+    desc: "Use a cloud development workspace with files, Git, terminal, and AI-assisted coding.",
+  },
+  {
+    title: "WonderPlay",
+    image: "/images/screenshots/playcanvas-builder.svg",
+    href: "/dashboard/3dhub",
+    desc: "Create realtime 3D scenes, games, worlds, assets, and intelligent characters.",
   },
 ];
 

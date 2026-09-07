@@ -68,14 +68,46 @@ const nextConfig = {
 
   async redirects() {
     return [
-      // Preview lives as a tab inside the website builder.
+      // WonderBuild has one user-facing flow: START -> BUILD (+ Preview) -> PUBLISH.
       {
         source: '/wonder-build/preview',
         destination: '/wonder-build/builder?tab=preview',
         permanent: false,
       },
+      {
+        source: '/wonder-build/studio',
+        destination: '/wonder-build',
+        permanent: false,
+      },
+      {
+        source: '/wonder-build/ai-builder',
+        destination: '/wonder-build',
+        permanent: false,
+      },
 
-      // Orphan standalone scene workspace index → canonical Project management.
+      // Legacy builder entry points stay compatible without appearing as separate products.
+      {
+        source: '/builder',
+        destination: '/wonder-build/builder',
+        permanent: true,
+      },
+      {
+        source: '/builder/3d',
+        destination: '/wonder-build/webgl',
+        permanent: true,
+      },
+      {
+        source: '/builder-ai',
+        destination: '/wonder-build',
+        permanent: true,
+      },
+      {
+        source: '/admin/editor',
+        destination: '/wonder-build',
+        permanent: true,
+      },
+
+      // Orphan standalone scene workspace index -> canonical Project management.
       // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {
         source: '/wonder-projects',

@@ -1,35 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/supabase/auth-context';
-import { logger } from '@/lib/logger';
+
+const LINKS = [
+  { label: 'Build', href: '/wonder-build' },
+  { label: 'Code', href: '/wonderspace' },
+  { label: '3D', href: '/dashboard/3dhub' },
+  { label: 'Docs', href: '/docs' },
+] as const;
 
 export default function Navbar() {
-  const pathname = usePathname();
   const { user, signOut } = useAuth();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-white">
             AI Wonderland
           </Link>
-          
-          <div className="hidden md:flex items-center gap-6">
-             <Link href="/wonder-build" className="text-white/70 hover:text-white">Build</Link>
-             <Link href="/wonderspace" className="text-white/70 hover:text-white">Code</Link>
-             <Link href="/wonder-build/playcanvas" className="text-white/70 hover:text-white">3D</Link>
-             <Link href="/docs" className="text-white/70 hover:text-white">Docs</Link>
-             <Link href="/community" className="text-white/70 hover:text-white">Community</Link>
+
+          <div className="hidden items-center gap-5 md:flex">
+            {LINKS.map((item) => (
+              <Link key={item.href} href={item.href} className="text-white/70 transition hover:text-white">
+                {item.label}
+              </Link>
+            ))}
+
             {user ? (
               <>
-                <Link href="/dashboard" className="text-white/70 hover:text-white">Dashboard</Link>
-                <button onClick={signOut} className="text-white/70 hover:text-white">Sign Out</button>
+                <Link href="/dashboard/projects" className="text-white/70 transition hover:text-white">Projects</Link>
+                <button onClick={() => void signOut()} className="text-white/70 transition hover:text-white">Sign Out</button>
               </>
             ) : (
-              <Link href="/public-pages/auth" className="text-white/70 hover:text-white">Sign In</Link>
+              <Link href="/public-pages/auth" className="text-white/70 transition hover:text-white">Sign In</Link>
             )}
           </div>
         </div>
