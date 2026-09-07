@@ -3,19 +3,26 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, ChevronDown, LayoutDashboard, LogOut, UserRound } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
 import { useAuth } from "@/lib/supabase/auth-context";
-import { type NavMenuItem, menuItems } from "./data";
+
+const PRIMARY_LINKS = [
+  { label: "Build", href: "/wonder-build" },
+  { label: "Code", href: "/wonderspace" },
+  { label: "3D", href: "/dashboard/3dhub" },
+  { label: "Docs", href: "/docs" },
+] as const;
 
 export default function HomepageNavbar({ scrolled }: { scrolled: boolean }) {
   const { user, loading: authLoading, signOut } = useAuth();
   const isAuthenticated = Boolean(user);
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     await signOut();
+    setIsMenuOpen(false);
+    router.push("/");
     router.refresh();
   };
 
@@ -23,111 +30,119 @@ export default function HomepageNavbar({ scrolled }: { scrolled: boolean }) {
     <nav
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "border-b border-white/10 bg-black/70 backdrop-blur-xl shadow-lg shadow-black/20"
-          : "bg-transparent"
+          ? "border-b border-white/10 bg-black/80 shadow-lg shadow-black/20 backdrop-blur-xl"
+          : "bg-black/20 backdrop-blur-sm"
       }`}
     >
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-5 sm:px-6">
-        <Link href={isAuthenticated ? "/dashboard/projects" : "/"} className="flex items-center gap-2">
-          <span className="text-sm font-extrabold tracking-tight text-white">Wonderland</span>
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
+        <Link href="/" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+          <span className="text-base font-black tracking-tight text-white">AI Wonderland</span>
         </Link>
-        <div className="flex items-center gap-3">
-          {isAuthenticated && !authLoading && (
+
+        <div className="hidden items-center gap-1 md:flex">
+          {PRIMARY_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!authLoading && isAuthenticated ? (
             <Link
               href="/dashboard/projects"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+              className="hidden items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-3.5 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex"
             >
-              <LayoutDashboard size={14} /> Dashboard
+              <LayoutDashboard size={15} /> Projects
+            </Link>
+          ) : !authLoading ? (
+            <Link
+              href="/public-pages/auth"
+              className="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:inline-flex"
+            >
+              Sign In
+            </Link>
+          ) : null}
+
+          {!authLoading && !isAuthenticated && (
+            <Link
+              href="/public-pages/auth?signup=true"
+              className="hidden rounded-xl bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-white/90 sm:inline-flex"
+            >
+              Start Free
             </Link>
           )}
+
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="rounded-lg p-2 text-white transition-colors hover:bg-white/10"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            className="rounded-lg p-2 text-white transition-colors hover:bg-white/10 md:hidden"
             aria-label="Toggle menu"
             aria-expanded={isMenuOpen}
           >
-            {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {isMenuOpen && (
-        <div className="absolute left-0 top-full max-h-[calc(100vh-3.5rem)] w-full overflow-y-auto border-b border-white/10 bg-black/95 shadow-2xl backdrop-blur-xl md:left-auto md:right-6 md:top-14 md:w-80 md:rounded-b-2xl md:border-x md:border-b">
-          <div className="flex flex-col gap-3 p-5">
-            {menuItems.map((menu: NavMenuItem) => {
-              const expanded = expandedCategory === menu.title;
-              return (
-                <div key={menu.title} className="overflow-hidden rounded-xl border border-transparent">
-                  <button
-                    onClick={() => setExpandedCategory(expanded ? null : menu.title)}
-                    className={`flex w-full items-center justify-between rounded-xl px-2 py-2.5 text-left font-semibold transition ${
-                      expanded ? "bg-white/[.05] text-white" : "text-white/90 hover:bg-white/[.035]"
-                    }`}
-                    aria-expanded={expanded}
-                  >
-                    <span className="text-[17px]">{menu.title}</span>
-                    <ChevronDown size={18} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
-                  </button>
-                  {expanded && (
-                    <div className="ml-3 mt-1 flex flex-col gap-1.5 border-l border-white/10 pl-3 pb-1">
-                      {menu.items.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className="rounded-lg px-2 py-2 text-sm text-white/60 transition hover:bg-white/[.04] hover:text-white"
-                        >
-                          <span className="mr-2" aria-hidden="true">{item.icon}</span>
-                          {item.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        <div className="border-t border-white/10 bg-black/95 px-5 py-5 shadow-2xl backdrop-blur-xl md:hidden">
+          <div className="mx-auto flex max-w-7xl flex-col gap-1">
+            {PRIMARY_LINKS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="rounded-xl px-3 py-3 text-base font-semibold text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                {item.label}
+              </Link>
+            ))}
 
-            <div className="mt-2 border-t border-white/10 pt-4">
+            <div className="mt-3 border-t border-white/10 pt-4">
               {authLoading ? (
                 <div className="h-11 w-full animate-pulse rounded-xl bg-white/10" />
               ) : isAuthenticated ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[.035] px-3 py-2.5">
-                    <UserRound size={16} className="shrink-0 text-purple-300" />
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5">
+                    <UserRound size={16} className="shrink-0 text-violet-300" />
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-[.12em] text-white/35">Signed in</div>
-                      <div className="truncate text-xs font-medium text-white/75">{user?.email || 'AI Wonderland account'}</div>
+                      <div className="truncate text-xs font-medium text-white/75">{user?.email || "AI Wonderland account"}</div>
                     </div>
                   </div>
                   <Link
                     href="/dashboard/projects"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-white/90"
                   >
-                    <LayoutDashboard size={16} /> Dashboard
+                    <LayoutDashboard size={16} /> Open Projects
                   </Link>
                   <button
-                    onClick={() => { void handleSignOut(); setIsMenuOpen(false); }}
+                    onClick={() => void handleSignOut()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[.03] px-4 py-2.5 text-sm text-white/55 transition hover:bg-white/[.07] hover:text-white"
                   >
                     <LogOut size={15} /> Sign Out
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/public-pages/auth"
                     onClick={() => setIsMenuOpen(false)}
-                    className="block w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white/20"
+                    className="rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-center text-sm font-semibold text-white"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/public-pages/auth?signup=true"
                     onClick={() => setIsMenuOpen(false)}
-                    className="block w-full rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:opacity-90"
+                    className="rounded-xl bg-white px-4 py-2.5 text-center text-sm font-bold text-black"
                   >
-                    Register
+                    Start Free
                   </Link>
                 </div>
               )}
