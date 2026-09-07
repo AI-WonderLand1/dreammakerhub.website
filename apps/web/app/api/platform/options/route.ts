@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { logger } from '@/lib/logger';
 
 type Option = {
   id: string;
@@ -16,9 +15,9 @@ function option(id: string, name: string, summary: string, href: string, status:
 export async function GET() {
   return NextResponse.json({
     ai: [
-      option("ai-builder", "Wonderbuild", "Build websites and games with AI agents. Describe it, watch three agents collaborate to generate, review, and deliver working code.", "/wonder-build/studio"),
+      option("wonderbuild", "WonderBuild", "Create websites and web apps with AI, templates, visual editing, code, preview, and publish.", "/wonder-build"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
-      option("playground", "Playground", "Train, create, and test AI modules.", "/wonder-build", "beta"),
+      option("playground", "AI Playground", "Test prompts, providers, models, and agent workflows.", "https://playground.dreammakerhub.website/", "beta"),
     ],
     agents: [
       option("dashboard-agents", "Dashboard Agents", "Configure and compare agent patterns for product tasks.", "/dashboard/agents"),
