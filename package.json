@@ -68,7 +68,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@gltf-transform/core": "^4.3.0",
     "@gltf-transform/extensions": "^4.3.0",
-    "@gltf-transform/functions": "^4.3.0",
+    "@gltf-transform/functions": "^4.5.0",
     "@google/generative-ai": "^0.24.1",
     "@heyputer/puter.js": "^2.5.3",
     "@kubernetes/client-node": "^1.4.0",
