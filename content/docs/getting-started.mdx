@@ -9,7 +9,7 @@ Learn how to set up your environment, install dependencies, and start building w
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20.19+
 - pnpm (recommended) or npm
 - Git
 
@@ -36,7 +36,7 @@ pnpm dev
 ```
 dreammakerhub.website/
 ├── apps/
-│   └── web/              # Next.js 14+ application
+│   └── web/              # Next.js application
 ├── packages/
 │   └── gesture-engine/   # Gesture recognition package
 ├── supabase/
@@ -46,10 +46,10 @@ dreammakerhub.website/
 
 ## First Steps
 
-1. **Create an account** - Sign up at the dashboard
-2. **Explore Playground** - Try AI modules at `/playground`
-3. **Build with Wonder-Build** - Generate UI at `/wonder-build/ai-builder`
-4. **Publish** - Deploy your projects from the dashboard
+1. **Create an account** - Sign in or register at `/public-pages/auth`.
+2. **Open Projects** - Your authenticated home is `/dashboard/projects`.
+3. **Choose what you are building** - Use `/wonder-build` for websites/apps, `/wonderspace` for code, or `/dashboard/3dhub` for 3D.
+4. **Build and finish** - WonderBuild follows **Start → Build (+ Preview) → Publish** instead of exposing separate AI-builder and preview routes.
 
 ## Environment Variables
 
