@@ -1,12 +1,10 @@
 import type { StaticImport } from "next/image";
 
 /**
- * Central navigation registry for AI Wonderland (DreamMakerHub, Inc.).
+ * Central navigation registry for AI Wonderland.
  *
- * Consumers should import the consolidated destinations (PRIMARY_NAV /
- * SECONDARY_NAV) instead of hardcoding link arrays in each component.
- * PAGES / getPagesByCategory are kept for the legacy GlobalNavigation /
- * QuadEngineShell surfaces.
+ * Public/global navigation should expose the product hubs, not every internal
+ * editor route. Advanced tools stay reachable from inside their product.
  */
 
 export type NavCategory = "builder" | "workspace" | "tools" | "community" | "docs";
@@ -38,27 +36,19 @@ export type SecondaryNavItem = {
 };
 
 export const PAGES: NavPage[] = [
-  // BUILD — WonderBuild website builder
-  { path: "/wonder-build", label: "WonderBuild Start", icon: "⚡", category: "builder", description: "Start a website from blank, a template, or AI." },
-  { path: "/wonder-build/templates", label: "Website Templates", icon: "📄", category: "builder", description: "Choose or generate a starting point, then open it in the WonderBuild editor." },
-  { path: "/wonder-build/builder", label: "WonderBuild Builder", icon: "🎨", category: "builder", description: "AI-assisted drag-and-drop website editor with design, code, preview, and publish." },
-  { path: "/wonder-build/agent", label: "Builder Agent", icon: "🤖", category: "builder", description: "Advanced agent-driven build surface. AI editing is also available inside the main builder." },
-  // CODE — WonderSpace
-  { path: "/wonderspace", label: "WonderSpace", icon: "💻", category: "workspace", description: "AI-powered development environment with agents and preview." },
-  { path: "/ide", label: "Cloud IDE", icon: "🖥️", category: "workspace", description: "Your private cloud workspace — VS Code, terminal, git." },
-  { path: "/wonderspace/ide", label: "New Workspace", icon: "🚀", category: "workspace", description: "Launch a named cloud IDE workspace." },
-  { path: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: "🤖", category: "workspace", description: "Chat with models, test prompts, and run agent workflows.", external: true },
-  // 3D — WonderPlay (intentionally unchanged by WonderBuild website-flow work)
-  { path: "/dashboard/3dhub", label: "NPC AI SIM", icon: "🎮", category: "tools", description: "Create 3D scenes, 360 views, games and movies — then open them in the PlayCanvas editor." },
-  { path: "/wonder-play", label: "WonderPlay App", icon: "🌐", category: "tools", description: "Launch the external NPC AI SIM runtime.", external: true },
-  // Community & docs
-  { path: "/community", label: "Community", icon: "👥", category: "community", description: "Join builders and office hours." },
-  { path: "/docs", label: "Docs", icon: "📖", category: "docs", description: "Read API and architecture docs." },
-  { path: "/tutorials", label: "Tutorials", icon: "🎓", category: "docs", description: "Guided walkthroughs." },
+  { path: "/wonder-build", label: "WonderBuild", icon: "⚡", category: "builder", description: "Start and manage website or web-app projects." },
+  { path: "/wonder-build/builder", label: "Website Builder", icon: "🎨", category: "builder", description: "AI-assisted visual editor with code, preview, and publish." },
+  { path: "/wonderspace", label: "WonderSpace", icon: "💻", category: "workspace", description: "AI-powered coding and development workspace." },
+  { path: "/ide", label: "Cloud IDE", icon: "🖥️", category: "workspace", description: "Private cloud workspace with files, terminal, and Git." },
+  { path: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: "🤖", category: "workspace", description: "Test prompts, providers, models, and agent workflows.", external: true },
+  { path: "/dashboard/3dhub", label: "WonderPlay", icon: "🎮", category: "tools", description: "Start and manage 3D scenes, games, worlds, and assets." },
+  { path: "/wonder-play", label: "NPC-AI-SIM", icon: "🧙", category: "tools", description: "Create and test intelligent 3D characters." },
+  { path: "/community", label: "Community", icon: "👥", category: "community", description: "Join builders and community discussions." },
+  { path: "/docs", label: "Docs", icon: "📖", category: "docs", description: "Read product and API documentation." },
 ];
 
 export function getPagesByCategory(category: NavCategory): NavPage[] {
-  return PAGES.filter((p) => p.category === category);
+  return PAGES.filter((page) => page.category === category);
 }
 
 export const PRIMARY_NAV: PrimaryNavItem[] = [
@@ -66,27 +56,26 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     id: "build",
     label: "Build",
     product: "WonderBuild",
-    tagline: "Start → Build + Preview → Publish",
+    tagline: "Websites & web apps",
     icon: "⚡",
     href: "/wonder-build",
     items: [
-      { label: "Start Website", href: "/wonder-build", description: "Start blank, choose a template, or generate with AI." },
-      { label: "Templates", href: "/wonder-build/templates", description: "Choose or generate a starting design." },
-      { label: "Website Builder", href: "/wonder-build/builder", description: "AI + drag-and-drop editor with Preview and Publish." },
+      { label: "WonderBuild", href: "/wonder-build", description: "Start from AI, a template, an existing project, or blank." },
+      { label: "Website Builder", href: "/wonder-build/builder", description: "Edit with AI, drag-and-drop, code, preview, and publish." },
+      { label: "Templates", href: "/wonder-build/templates", description: "Choose a starting design." },
     ],
   },
   {
     id: "code",
     label: "Code",
     product: "WonderSpace",
-    tagline: "IDE, repos & AI coding",
+    tagline: "Files, Git, terminal & AI",
     icon: "💻",
     href: "/wonderspace",
     items: [
-      { label: "WonderSpace", href: "/wonderspace", description: "AI-powered build hub with agents." },
-      { label: "Cloud IDE", href: "/ide", description: "VS Code, terminal & git in the cloud." },
-      { label: "New Workspace", href: "/wonderspace/ide", description: "Launch a named cloud workspace." },
-      { label: "Playground", href: "https://playground.dreammakerhub.website/", description: "Chat with models and run agent workflows.", external: true },
+      { label: "WonderSpace", href: "/wonderspace", description: "Open the development workspace." },
+      { label: "Cloud IDE", href: "/ide", description: "Use files, terminal, Git, and coding tools." },
+      { label: "AI Playground", href: "https://playground.dreammakerhub.website/", description: "Test models, prompts, and providers.", external: true },
     ],
   },
   {
@@ -97,45 +86,40 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     icon: "🎮",
     href: "/dashboard/3dhub",
     items: [
-      { label: "NPC AI SIM", href: "/dashboard/3dhub", description: "Create 3D scenes, 360 views, games and movies by prompt." },
-      { label: "PlayCanvas Editor", href: "/wonder-build/playcanvas", description: "Open the PlayCanvas scene editor for games and movies." },
-      { label: "WonderPlay App", href: "/wonder-play", description: "Launch the external WonderPlay runtime.", external: true },
+      { label: "WonderPlay", href: "/dashboard/3dhub", description: "Start and manage realtime 3D projects." },
+      { label: "NPC-AI-SIM", href: "/wonder-play", description: "Create, configure, test, and export intelligent characters." },
     ],
   },
 ];
 
 export const SECONDARY_NAV: SecondaryNavItem[] = [
   { label: "Projects", href: "/dashboard/projects", icon: "📁" },
-  { label: "Templates", href: "/wonder-build/templates", icon: "📄" },
-  { label: "Marketplace", href: "/marketplace", icon: "🛍️" },
-  { label: "Playground", href: "https://playground.dreammakerhub.website/", icon: "🤖", external: true },
   { label: "Docs", href: "/docs", icon: "📖" },
   { label: "Account", href: "/settings/account", icon: "👤" },
 ];
 
 /**
  * Maps an internal project `type` to its canonical workspace destination.
- * The visual builder is a single engine (WonderBuild); the project type only
- * configures which surface opens it.
  */
 const PROJECT_TYPE_TO_DESTINATION: Record<string, string> = {
   wonderbuild: "/wonder-build/builder",
   wonderbuild_ui: "/wonder-build/builder",
   website: "/wonder-build/builder",
   "landing-page": "/wonder-build/builder",
-  "landing_page": "/wonder-build/builder",
+  landing_page: "/wonder-build/builder",
   "web-app": "/wonder-build/builder",
   web_app: "/wonder-build/builder",
   app: "/wonder-build/builder",
   store: "/wonder-build/builder",
   custom: "/wonder-build/builder",
+  puck: "/wonder-build/builder",
   workspace: "/ide",
   code: "/ide",
   game: "/dashboard/3dhub",
   "3d": "/dashboard/3dhub",
   "3d_scene": "/dashboard/3dhub",
   playcanvas: "/wonder-build/playcanvas/editor/blank_canvas",
-  puck: "/wonder-build/builder",
+  npc: "/wonder-play",
 };
 
 export function resolveProjectDestination(projectType?: string | null): string {
