@@ -20,6 +20,29 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
+function sanitizeThumbnailUrl(src?: string): string {
+  if (!src) return '';
+  const value = src.trim();
+  if (!value) return '';
+
+  try {
+    const localBase = new URL('https://dreammakerhub.local');
+    const parsed = new URL(value, localBase);
+
+    if (parsed.origin === localBase.origin) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch {
+    return '';
+  }
+
+  return '';
+}
+
 interface CreatorStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -57,7 +80,7 @@ export const CreatorStudioModal: React.FC<CreatorStudioModalProps> = ({
 
     if (!name.trim()) return;
 
-    const thumbnail = customThumbnail.trim();
+    const thumbnail = sanitizeThumbnailUrl(customThumbnail);
 
     const elementsToUse: WonderBuildElement[] = useCurrentActiveElements
       ? currentActiveTemplate.elements
