@@ -6,6 +6,8 @@ import { Suspense } from 'react';
 import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
+const AUTH_CONFIG_ERROR = 'Authentication service is temporarily unavailable. Please refresh and try again.';
+
 function sanitizeRedirectPath(raw: string | null): string {
   if (!raw) return '/dashboard/projects';
   const trimmed = raw.trim();
@@ -13,6 +15,12 @@ function sanitizeRedirectPath(raw: string | null): string {
     return '/dashboard/projects';
   }
   return trimmed;
+}
+
+async function getConfiguredAuthClient() {
+  const config = await ensureSupabaseConfig();
+  if (!config) return null;
+  return createClient();
 }
 
 function AuthPageContent() {
@@ -26,16 +34,23 @@ function AuthPageContent() {
   useEffect(() => {
     let cancelled = false;
 
-    ensureSupabaseConfig().then(() => {
-      if (cancelled) return;
-      const supabase = createClient();
-      if (!supabase) return;
-      supabase.auth.getUser().then(({ data: { user: verified }, error }: { data: { user: any }, error: any }) => {
-        if (!cancelled && !error && verified) {
-          window.location.href = redirectTo;
+    getConfiguredAuthClient()
+      .then((supabase) => {
+        if (cancelled) return;
+        if (!supabase) {
+          logger.error('[auth] Supabase client unavailable after runtime configuration lookup');
+          return;
         }
+
+        return supabase.auth.getUser().then(({ data: { user: verified }, error: authError }) => {
+          if (!cancelled && !authError && verified) {
+            window.location.href = redirectTo;
+          }
+        });
+      })
+      .catch((authInitError) => {
+        logger.error('[auth] Authentication initialization failed:', authInitError);
       });
-    });
 
     return () => {
       cancelled = true;
@@ -46,46 +61,86 @@ function AuthPageContent() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await ensureSupabaseConfig();
-    const supabase = createClient();
-    if (!supabase) {
-      setError('Supabase not configured');
-      setLoading(false);
-      return;
-    }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-    } else {
+
+    try {
+      const supabase = await getConfiguredAuthClient();
+      if (!supabase) {
+        logger.error('[auth] Sign-in blocked because Supabase configuration could not be loaded');
+        setError(AUTH_CONFIG_ERROR);
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        logger.error('[auth] Supabase password sign-in failed:', signInError.message);
+        setError(signInError.message);
+        return;
+      }
+
       window.location.href = redirectTo;
+    } catch (signInFailure) {
+      logger.error('[auth] Unexpected sign-in failure:', signInFailure);
+      setError('Unable to reach the authentication service. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignUp = async () => {
     setError('');
     setLoading(true);
-    await ensureSupabaseConfig();
-    const supabase = createClient();
-    if (!supabase) {
-      setError('Supabase not configured');
-      setLoading(false);
-      return;
-    }
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-    } else {
+
+    try {
+      const supabase = await getConfiguredAuthClient();
+      if (!supabase) {
+        logger.error('[auth] Sign-up blocked because Supabase configuration could not be loaded');
+        setError(AUTH_CONFIG_ERROR);
+        return;
+      }
+
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) {
+        logger.error('[auth] Supabase sign-up failed:', signUpError.message);
+        setError(signUpError.message);
+        return;
+      }
+
       setError('Check your email for the confirmation link.');
+    } catch (signUpFailure) {
+      logger.error('[auth] Unexpected sign-up failure:', signUpFailure);
+      setError('Unable to reach the authentication service. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleOAuth = async (provider: 'github' | 'google') => {
-    await ensureSupabaseConfig();
-    const supabase = createClient();
-    if (!supabase) return;
-    await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin + redirectTo } });
+    setError('');
+    setLoading(true);
+
+    try {
+      const supabase = await getConfiguredAuthClient();
+      if (!supabase) {
+        logger.error(`[auth] ${provider} OAuth blocked because Supabase configuration could not be loaded`);
+        setError(AUTH_CONFIG_ERROR);
+        return;
+      }
+
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin + redirectTo },
+      });
+
+      if (oauthError) {
+        logger.error(`[auth] ${provider} OAuth failed:`, oauthError.message);
+        setError(oauthError.message);
+      }
+    } catch (oauthFailure) {
+      logger.error(`[auth] Unexpected ${provider} OAuth failure:`, oauthFailure);
+      setError('Unable to reach the authentication service. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -131,14 +186,16 @@ function AuthPageContent() {
 
           <div className="mt-4 flex gap-3">
             <button
-              onClick={() => handleOAuth('github')}
-              className="flex-1 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 transition"
+              onClick={() => void handleOAuth('github')}
+              disabled={loading}
+              className="flex-1 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 transition disabled:opacity-50"
             >
               GitHub
             </button>
             <button
-              onClick={() => handleOAuth('google')}
-              className="flex-1 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 transition"
+              onClick={() => void handleOAuth('google')}
+              disabled={loading}
+              className="flex-1 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 hover:bg-gray-700 transition disabled:opacity-50"
             >
               Google
             </button>
@@ -146,7 +203,7 @@ function AuthPageContent() {
 
           <p className="mt-4 text-gray-500 text-sm">
             No account?{' '}
-            <button onClick={handleSignUp} className="text-pink-400 hover:underline">
+            <button onClick={() => void handleSignUp()} disabled={loading} className="text-pink-400 hover:underline disabled:opacity-50">
               Sign Up
             </button>
           </p>
