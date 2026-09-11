@@ -32,6 +32,19 @@ function AuthPageContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const callbackError = searchParams.get('error');
+    if (callbackError) {
+      const messages: Record<string, string> = {
+        oauth_provider_error: 'The OAuth provider rejected the sign-in request.',
+        oauth_code_missing: 'The OAuth sign-in response was incomplete. Please try again.',
+        oauth_session_exchange_failed: 'Unable to create a login session from the OAuth response.',
+        oauth_callback_failed: 'OAuth sign-in could not be completed. Please try again.',
+      };
+      setError(messages[callbackError] || 'Authentication failed. Please try again.');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     let cancelled = false;
 
     getConfiguredAuthClient()
@@ -126,9 +139,12 @@ function AuthPageContent() {
         return;
       }
 
+      const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+      callbackUrl.searchParams.set('next', redirectTo);
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: window.location.origin + redirectTo },
+        options: { redirectTo: callbackUrl.toString() },
       });
 
       if (oauthError) {
