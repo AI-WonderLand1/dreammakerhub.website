@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 function isUsableSupabaseValue(value: string | undefined) {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
