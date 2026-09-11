@@ -1,101 +1,89 @@
 #!/usr/bin/env bash
-# deploy/upcloud/vm-deploy-docker.sh — Deploy all services via Docker Compose on UpCloud
+# Safe UpCloud web redeploy helper.
 #
-# Prerequisites:
-#   - SSH access to UpCloud VM (152.44.43.125)
-#   - apps/web/.env.production with real values
-#   - Docker and Docker Compose installed on VM
+# Production secrets are managed by GitHub Actions in
+# .github/workflows/deploy-upcloud.yml. That workflow writes the generated
+# environment bundle to /opt/dreammakerhub.website/.env with mode 600.
 #
-# Usage (run locally):
-#   export UPCLOUD_SERVER_IP=152.44.43.125
-#   export UPCLOUD_SSH_USER=ubuntu
-#   bash deploy/upcloud/vm-deploy-docker.sh
+# This helper NEVER creates, copies, prints, or downloads secrets. It only
+# redeploys the web image using the production .env already installed by the
+# GitHub Actions deployment.
+#
+# Usage on the UpCloud VM:
+#   sudo bash /opt/dreammakerhub.website/deploy/upcloud/vm-deploy-docker.sh
+#
+# Optional override:
+#   APP_DIR=/opt/dreammakerhub.website sudo -E bash deploy/upcloud/vm-deploy-docker.sh
 
-set -uo pipefail
+set -euo pipefail
 
-SERVER_IP="${UPCLOUD_SERVER_IP:-152.44.43.125}"
-SSH_USER="${UPCLOUD_SSH_USER:-ubuntu}"
-DOMAIN="${DOMAIN:-dreammakerhub.website}"
-EMAIL="${EMAIL:-aiwonderland111@gmail.com}"
-REPO_PATH="/home/${SSH_USER}/dreammakerhub.website"
+APP_DIR="${APP_DIR:-/opt/dreammakerhub.website}"
+BRANCH="${BRANCH:-Master}"
+COMPOSE_FILE="$APP_DIR/deploy/upcloud/docker-compose.web.yml"
+ENV_FILE="$APP_DIR/.env"
+PUBLIC_URL="${PUBLIC_URL:-https://dreammakerhub.website}"
 
-echo "=== [$(date -u)] UpCloud Docker deployment start ==="
-echo "Server: ${SERVER_IP}"
-echo "Domain: ${DOMAIN}"
+echo "=== DreamMakerHub UpCloud web redeploy ==="
+echo "App directory: $APP_DIR"
+echo "Branch: $BRANCH"
 
-# 1. Copy repo to server
-echo "=== Step 1: Sync repo to server ==="
-ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER_IP} << EOF
-  sudo apt-get update -y
-  sudo apt-get install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx curl
-  sudo usermod -aG docker ${SSH_USER} || true
-
-  if [ ! -d "${REPO_PATH}" ]; then
-    git clone https://github.com/<USER>/dreammakerhub.website.git ${REPO_PATH}
-  else
-    cd ${REPO_PATH} && git pull origin main
-  fi
-EOF
-
-# 2. Copy .env.production
-echo "=== Step 2: Copy environment file ==="
-if [ -f "apps/web/.env.production" ]; then
-  scp -o StrictHostKeyChecking=no apps/web/.env.production ${SSH_USER}@${SERVER_IP}:${REPO_PATH}/apps/web/.env.production
-else
-  echo "WARNING: apps/web/.env.production not found locally. You'll need to set it up on the server."
+if [ ! -d "$APP_DIR/.git" ]; then
+  echo "ERROR: $APP_DIR is not a Git checkout."
+  echo "Run the GitHub Actions workflow 'Deploy Main Site to UpCloud VM' first."
+  exit 1
 fi
 
-# 3. Build and start services
-echo "=== Step 3: Build and deploy Docker services ==="
-ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER_IP} << EOF
-  cd ${REPO_PATH}
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "ERROR: Missing Compose file: $COMPOSE_FILE"
+  exit 1
+fi
 
-  # Copy .env from .env.example
-  cp deploy/upcloud/.env.example .env
+if [ ! -s "$ENV_FILE" ]; then
+  echo "ERROR: Missing production environment file: $ENV_FILE"
+  echo "Do not create it from .env.example."
+  echo "Run the GitHub Actions deployment so GitHub Secrets can install it safely."
+  exit 1
+fi
 
-  # Build and start
-  docker compose -f deploy/upcloud/docker-compose.yml up -d --build
+# Do not print environment values. Only confirm the file is present.
+chmod 600 "$ENV_FILE"
+echo "Production environment file: present"
 
-  echo "=== Docker services started ==="
-  docker ps
-EOF
+# Keep the production checkout identical to the GitHub branch used by CI/CD.
+git -C "$APP_DIR" fetch origin "$BRANCH"
+git -C "$APP_DIR" reset --hard "origin/$BRANCH"
 
-# 4. Setup certbot challenge directory
-echo "=== Step 4: Setup certbot challenge directory ==="
-ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER_IP} << EOF
-  sudo mkdir -p /var/www/certbot
-  sudo chown -R www-data:www-data /var/www/certbot
-  mkdir -p ${REPO_PATH}/certbot
-  mkdir -p ${REPO_PATH}/certs
-EOF
+cd "$APP_DIR"
 
-# 5. TLS certificates (DNS-01 via Cloudflare)
-echo "=== Step 5: Request TLS certificates via DNS-01 ==="
-ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER_IP} << EOF
-  cd ${REPO_PATH}
+# The web-only Compose file reads ../../.env, which resolves to $APP_DIR/.env.
+docker compose -f "$COMPOSE_FILE" pull web
+docker compose -f "$COMPOSE_FILE" up -d --force-recreate --remove-orphans web
 
-  # Run certbot once to get initial certs
-  docker run --rm \
-    -v \${PWD}/certs:/etc/letsencrypt \
-    -v \${PWD}/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro \
-    -e CF_API_TOKEN=\${CLOUDFLARE_API_TOKEN} \
-    certbot/certbot certonly --dns-cloudflare \
-    --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
-    --dns-cloudflare-propagation-seconds 60 \
-    --non-interactive --agree-tos \
-    -m ${EMAIL} \
-    -d ${DOMAIN} -d www.${DOMAIN} \
-    -d coder.${DOMAIN} -d ide.${DOMAIN} \
-    -d *.coder.${DOMAIN} \
-    -d ai.${DOMAIN} || echo "Initial cert generation failed, will retry via certbot container"
-EOF
+echo
+echo "=== Container status ==="
+docker compose -f "$COMPOSE_FILE" ps web
 
-# 6. Restart services
-echo "=== Step 6: Restart services ==="
-ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER_IP} << EOF
-  cd ${REPO_PATH}
-  docker compose -f deploy/upcloud/docker-compose.yml restart nginx certbot
-EOF
+echo
+echo "=== Local health check ==="
+docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null'
+echo "Health endpoint: OK"
 
-echo "=== UpCloud Docker deployment done ==="
-echo "DNS records still need to point to ${SERVER_IP} in Cloudflare"
+echo
+echo "=== Supabase config route check ==="
+status="$(curl -sS -o /tmp/dreammakerhub-supabase-check.json -w '%{http_code}' "$PUBLIC_URL/api/config/supabase")"
+if [ "$status" = "404" ]; then
+  echo "ERROR: $PUBLIC_URL/api/config/supabase still returns 404."
+  echo "The public site is not serving the expected build."
+  rm -f /tmp/dreammakerhub-supabase-check.json
+  exit 1
+fi
+rm -f /tmp/dreammakerhub-supabase-check.json
+echo "Supabase config route HTTP status: $status"
+
+echo
+echo "=== Public homepage check ==="
+curl --fail --show-error --silent "$PUBLIC_URL/" >/dev/null
+echo "Homepage: OK"
+
+echo
+echo "Redeploy complete. Secrets remained in the GitHub-managed production .env and were not printed."
