@@ -12,6 +12,10 @@ permissions:
   contents: read
   packages: read
 
+concurrency:
+  group: deploy-upcloud-production
+  cancel-in-progress: true
+
 env:
   UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
   UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
@@ -32,151 +36,63 @@ jobs:
         with:
           ref: Master
 
-      - name: Validate deployment configuration
+      - name: Validate required production configuration
         shell: bash
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
         run: |
           set -euo pipefail
           test -n "$UPCLOUD_SERVER_IP" || { echo "Missing UpCloud server IP"; exit 1; }
-          test -n "$SSH_PRIVATE_KEY" || { echo "Missing GitHub Actions SSH secret: set UPCLOUD_SSH_KEY (preferred) or legacy UPLOAD_SSH_KEY"; exit 1; }
+          test -n "$SSH_PRIVATE_KEY" || { echo "Missing UPCLOUD_SSH_KEY/UPLOAD_SSH_KEY"; exit 1; }
 
-          missing=0
-          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL NEXTAUTH_SECRET; do
-            if [ -z "${!name:-}" ]; then
-              if [ "$name" = "NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
-                echo "Missing Supabase publishable key. Set NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY as an Actions variable/secret and grant this repository access."
-              elif [ "$name" = "NEXT_PUBLIC_SUPABASE_URL" ]; then
-                echo "Missing Supabase URL. Set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL as an Actions variable/secret and grant this repository access."
-              elif [ "$name" = "SUPABASE_SERVICE_ROLE_KEY" ]; then
-                echo "Missing Supabase service key. Set SUPABASE_SERVICE_ROLE_KEY (preferred) or SUPABASE_SERVICE_KEY and grant this repository access."
-              else
-                echo "Missing Actions secret $name. If it is an organization secret, grant AI-WonderLand1/dreammakerhub.website access to it."
-              fi
-              missing=1
-            fi
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL; do
+            test -n "${!name:-}" || { echo "Missing required GitHub Actions value: $name"; exit 1; }
           done
-          [ "$missing" -eq 0 ] || exit 1
 
           case "$NEXT_PUBLIC_SUPABASE_URL" in
             https://*.supabase.co) ;;
-            *) echo "NEXT_PUBLIC_SUPABASE_URL does not look like a Supabase project URL."; exit 1 ;;
+            *) echo "NEXT_PUBLIC_SUPABASE_URL is not a valid Supabase project URL"; exit 1 ;;
           esac
 
-          echo "Deploy target: ${UPCLOUD_SSH_USER}@${UPCLOUD_SERVER_IP}"
-          echo "Required production configuration is available to this repository."
+          echo "Required production configuration is available."
 
-      - name: Prepare production environment bundle
+      - name: Build environment patch from GitHub Actions
         shell: bash
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          CODER_API_TOKEN: ${{ secrets.CODER_API_TOKEN }}
-          CODER_API_URL: ${{ secrets.CODER_API_URL }}
-          NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID }}
-          NEXT_PUBLIC_WORKSPACE_DOMAIN: ${{ secrets.NEXT_PUBLIC_WORKSPACE_DOMAIN }}
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          OCI_VAULT_OCID: ${{ secrets.OCI_VAULT_OCID }}
-          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
-          NEXT_PUBLIC_GOOGLE_AI_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_AI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ALICE_API_KEY: ${{ secrets.ALICE_API_KEY }}
-          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
-          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          AGENT_API_URL: ${{ secrets.AGENT_API_URL }}
-          EXTENSION_ENCRYPTION_KEY: ${{ secrets.EXTENSION_ENCRYPTION_KEY }}
-          SECRETS_ENCRYPTION_KEY: ${{ secrets.SECRETS_ENCRYPTION_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          STRIPE_PRICE_PRO_ID: ${{ secrets.STRIPE_PRICE_PRO_ID }}
-          STRIPE_PRICE_PRO_YEARLY_ID: ${{ secrets.STRIPE_PRICE_PRO_YEARLY_ID }}
-          STRIPE_PRICE_TEAM_ID: ${{ secrets.STRIPE_PRICE_TEAM_ID }}
-          STRIPE_PRICE_TEAM_YEARLY_ID: ${{ secrets.STRIPE_PRICE_TEAM_YEARLY_ID }}
-          ADMIN_USER_IDS: ${{ secrets.ADMIN_USER_IDS }}
-          SPLAT_TRAINING_WEBHOOK: ${{ secrets.SPLAT_TRAINING_WEBHOOK }}
-          SPLAT_CALLBACK_SECRET: ${{ secrets.SPLAT_CALLBACK_SECRET }}
-          SIMPLE_RICK_API_KEY: ${{ secrets.SIMPLE_RICK_API_KEY }}
-          SPIRIT_GUIDE_API_KEY: ${{ secrets.SPIRIT_GUIDE_API_KEY }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
         run: |
           set -euo pipefail
           umask 077
-          ENV_FILE="$RUNNER_TEMP/dreammakerhub.env"
-          : > "$ENV_FILE"
+          PATCH_FILE="$RUNNER_TEMP/dreammakerhub.env.patch"
+          : > "$PATCH_FILE"
 
           write_env() {
             local key="$1"
-            local value="${2-}"
+            local value="$2"
             if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
-              echo "Secret $key contains a newline and cannot be written safely to the Docker env file."
+              echo "Value for $key contains a newline; refusing unsafe env serialization."
               exit 1
             fi
-            printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
+            printf '%s=%s\n' "$key" "$value" >> "$PATCH_FILE"
           }
-
-          write_env NODE_ENV production
-          write_env PORT 5000
-          write_env NEXT_PUBLIC_URL https://dreammakerhub.website
-          write_env NEXTAUTH_URL https://dreammakerhub.website
-          write_env NEXT_PUBLIC_CODER_ACCESS_URL https://coder.dreammakerhub.website
-          write_env DOMAIN dreammakerhub.website
 
           write_env NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
           write_env NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           write_env SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           write_env DATABASE_URL "$DATABASE_URL"
-          write_env NEXTAUTH_SECRET "$NEXTAUTH_SECRET"
-          write_env CODER_API_TOKEN "$CODER_API_TOKEN"
-          write_env CODER_API_URL "$CODER_API_URL"
-          write_env NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID "$NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID"
-          write_env NEXT_PUBLIC_WORKSPACE_DOMAIN "$NEXT_PUBLIC_WORKSPACE_DOMAIN"
-          write_env OPENCODE_API_KEY "$OPENCODE_API_KEY"
-          write_env OCI_VAULT_OCID "$OCI_VAULT_OCID"
-          write_env GOOGLE_AI_API_KEY "$GOOGLE_AI_API_KEY"
-          write_env NEXT_PUBLIC_GOOGLE_AI_API_KEY "$NEXT_PUBLIC_GOOGLE_AI_API_KEY"
-          write_env GROQ_API_KEY "$GROQ_API_KEY"
-          write_env GITHUB_MODELS_API_KEY "$GITHUB_MODELS_API_KEY"
-          write_env GEMINI_API_KEY "$GEMINI_API_KEY"
-          write_env ALICE_API_KEY "$ALICE_API_KEY"
-          write_env N8N_API_KEY "$N8N_API_KEY"
-          write_env N8N_WEBHOOK_URL "$N8N_WEBHOOK_URL"
-          write_env CEREBRAS_API_KEY "$CEREBRAS_API_KEY"
-          write_env OPENAI_API_KEY "$OPENAI_API_KEY"
-          write_env ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
-          write_env OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
-          write_env AGENT_API_URL "$AGENT_API_URL"
-          write_env EXTENSION_ENCRYPTION_KEY "$EXTENSION_ENCRYPTION_KEY"
-          write_env SECRETS_ENCRYPTION_KEY "$SECRETS_ENCRYPTION_KEY"
-          write_env STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
-          write_env NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
-          write_env STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
-          write_env STRIPE_PRICE_PRO_ID "$STRIPE_PRICE_PRO_ID"
-          write_env STRIPE_PRICE_PRO_YEARLY_ID "$STRIPE_PRICE_PRO_YEARLY_ID"
-          write_env STRIPE_PRICE_TEAM_ID "$STRIPE_PRICE_TEAM_ID"
-          write_env STRIPE_PRICE_TEAM_YEARLY_ID "$STRIPE_PRICE_TEAM_YEARLY_ID"
-          write_env ADMIN_USER_IDS "$ADMIN_USER_IDS"
-          write_env SPLAT_TRAINING_WEBHOOK "$SPLAT_TRAINING_WEBHOOK"
-          write_env SPLAT_CALLBACK_SECRET "$SPLAT_CALLBACK_SECRET"
-          write_env SIMPLE_RICK_API_KEY "$SIMPLE_RICK_API_KEY"
-          write_env SPIRIT_GUIDE_API_KEY "$SPIRIT_GUIDE_API_KEY"
-          write_env MONGODB_URI "$MONGODB_URI"
+          if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+            write_env OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
+          fi
 
-          chmod 600 "$ENV_FILE"
-          echo "Production environment bundle prepared without printing secret values."
+          chmod 600 "$PATCH_FILE"
+          echo "Environment patch prepared without printing secret values."
 
       - name: Set up SSH
         shell: bash
@@ -187,19 +103,20 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Install production environment on UpCloud
+      - name: Copy environment patch to UpCloud
         shell: bash
         run: |
           set -euo pipefail
-          scp "$RUNNER_TEMP/dreammakerhub.env" "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP:/tmp/dreammakerhub.env"
+          scp "$RUNNER_TEMP/dreammakerhub.env.patch" "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP:/tmp/dreammakerhub.env.patch"
 
-      - name: Deploy web image
+      - name: Deploy latest web image
         shell: bash
         run: |
           set -euo pipefail
           ssh "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'bash -s' <<'REMOTE'
             set -euo pipefail
             APP_DIR=/opt/dreammakerhub.website
+            COMPOSE=deploy/upcloud/docker-compose.yml
 
             if [ -d "$APP_DIR/.git" ]; then
               git -C "$APP_DIR" fetch origin Master
@@ -209,24 +126,47 @@ jobs:
               git clone --branch Master --single-branch https://github.com/AI-WonderLand1/dreammakerhub.website.git "$APP_DIR"
             fi
 
-            install -m 600 /tmp/dreammakerhub.env "$APP_DIR/.env"
-            rm -f /tmp/dreammakerhub.env
             cd "$APP_DIR"
+            umask 077
 
-            docker compose -f deploy/upcloud/docker-compose.web.yml pull
-            docker compose -f deploy/upcloud/docker-compose.web.yml up -d --remove-orphans
+            # Preserve the environment from the currently running production
+            # container when no persistent root env file exists yet.
+            if [ ! -s .env ] && docker inspect dreammaker-web >/dev/null 2>&1; then
+              docker inspect dreammaker-web \
+                --format '{{range .Config.Env}}{{println .}}{{end}}' \
+                | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' > .env
+            fi
+            touch .env
+            chmod 600 .env
 
-            docker compose -f deploy/upcloud/docker-compose.web.yml ps
-            docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null'
+            # Merge the GitHub-managed production values without printing them.
+            while IFS='=' read -r key value; do
+              [ -n "$key" ] || continue
+              tmp="$(mktemp)"
+              grep -v "^${key}=" .env > "$tmp" || true
+              printf '%s=%s\n' "$key" "$value" >> "$tmp"
+              mv "$tmp" .env
+              chmod 600 .env
+            done < /tmp/dreammakerhub.env.patch
+            rm -f /tmp/dreammakerhub.env.patch
+
+            docker compose --env-file .env -f "$COMPOSE" pull web
+            docker compose --env-file .env -f "$COMPOSE" up -d --no-deps --force-recreate web
+
+            docker compose --env-file .env -f "$COMPOSE" ps web
+            docker exec dreammaker-web sh -c 'curl -fsS --retry 10 --retry-delay 2 http://127.0.0.1:5000/health >/dev/null'
+            docker exec dreammaker-web sh -c 'curl -fsS --retry 10 --retry-delay 2 http://127.0.0.1:5000/api/config/supabase >/dev/null'
           REMOTE
 
-      - name: Verify public homepage
+      - name: Verify public deployment
         shell: bash
         run: |
-          curl --fail --show-error --silent --retry 5 --retry-delay 5 https://dreammakerhub.website/ >/dev/null
-          echo "DreamMakerHub homepage is responding from the production deployment."
+          set -euo pipefail
+          curl --fail --show-error --silent --retry 8 --retry-delay 3 https://dreammakerhub.website/ >/dev/null
+          curl --fail --show-error --silent --retry 8 --retry-delay 3 https://dreammakerhub.website/api/config/supabase >/dev/null
+          echo "Production homepage and Supabase configuration route are healthy."
 
-      - name: Clean local environment bundle
+      - name: Clean runner environment patch
         if: always()
         shell: bash
-        run: rm -f "$RUNNER_TEMP/dreammakerhub.env"
+        run: rm -f "$RUNNER_TEMP/dreammakerhub.env.patch"
