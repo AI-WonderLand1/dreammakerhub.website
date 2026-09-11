@@ -40,7 +40,7 @@ services:
   # --- Web App (Next.js) ---
   web:
     build:
-      context: .
+      context: ../..
       dockerfile: Dockerfile
     container_name: dreammaker-web
     restart: unless-stopped
@@ -64,7 +64,7 @@ services:
   # --- GLTF Optimizer ---
   optimizer:
     build:
-      context: ./packages/optimizer
+      context: ../../packages/optimizer
       dockerfile: Dockerfile
     container_name: optimizer
     restart: unless-stopped
