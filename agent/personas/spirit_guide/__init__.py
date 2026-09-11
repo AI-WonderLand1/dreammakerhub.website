@@ -51,23 +51,20 @@ class SpiritGuide:
             messages.append({"role": "system", "content": f"Ancient Memory flows into this moment:\n{full_context}"})
         messages.append({"role": "user", "content": question})
 
-        try:
-            response = completion(
-                model=SPIRIT_GUIDE_MODEL,
-                messages=messages,
-                temperature=0.8,
-                max_tokens=512,
-                api_key=self.api_key,
-            )
-            answer = response.choices[0].message.content
+        response = completion(
+            model=SPIRIT_GUIDE_MODEL,
+            messages=messages,
+            temperature=0.8,
+            max_tokens=512,
+            api_key=self.api_key,
+        )
+        answer = response.choices[0].message.content
 
-            self.memory.store(user_id, f"seeking: {question[:50]}", answer, importance=0.7)
-            self.neurolink.add_node("vision", {"question": question, "insight": answer[:200]})
+        self.memory.store(user_id, f"seeking: {question[:50]}", answer, importance=0.7)
+        self.neurolink.add_node("vision", {"question": question, "insight": answer[:200]})
 
-            self.conversation_history.append({"seeker": question, "guide": answer})
-            return answer
-        except Exception as e:
-            return f"The currents of fate stir uneasily: {str(e)}"
+        self.conversation_history.append({"seeker": question, "guide": answer})
+        return answer
 
     def _find_related_patterns(self, question: str) -> str:
         nodes = self.neurolink.query({"type": "vision"}, limit=3)
