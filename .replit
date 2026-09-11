@@ -40,10 +40,3 @@ externalPort = 80
 localPort = 8080
 externalPort = 8080
 exposeLocalhost = true
-
-[userenv]
-
-[userenv.shared]
-NEXT_PUBLIC_SUPABASE_URL = "https://hhdduixckgllodixrejp.supabase.co"
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY = "sb_publishable_C4kQtW2q8KD2vDVoA8orFw_4s_IjPjC"
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_C4kQtW2q8KD2vDVoA8orFw_4s_IjPjC"
