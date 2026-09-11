@@ -33,7 +33,7 @@ function sanitizeThumbnailUrl(src?: string): string {
       return `${parsed.pathname}${parsed.search}${parsed.hash}`;
     }
 
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+    if (parsed.protocol === 'https:') {
       return parsed.toString();
     }
   } catch {
