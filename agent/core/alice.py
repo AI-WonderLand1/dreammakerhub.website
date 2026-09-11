@@ -78,21 +78,18 @@ class AliceAgent:
         
         if not self.client:
             return "Error: No API key configured. Set GEMINI_API_KEY environment variable."
-        
-        try:
-            response = self.client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=[full_prompt]
-            )
-            answer = response.text
-            key_concepts = self._extract_key_concepts(user_input, answer)
-            for concept, importance in key_concepts:
-                self.memory.store(user_id, concept, answer, importance)
-                self.neurolink.add_node("concept", {"query": concept, "answer": answer[:200]})
-            self.conversation_history.append({"user": user_input, "alice": answer})
-            return answer
-        except Exception as e:
-            return f"Error: {str(e)}"
+
+        response = self.client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[full_prompt]
+        )
+        answer = response.text
+        key_concepts = self._extract_key_concepts(user_input, answer)
+        for concept, importance in key_concepts:
+            self.memory.store(user_id, concept, answer, importance)
+            self.neurolink.add_node("concept", {"query": concept, "answer": answer[:200]})
+        self.conversation_history.append({"user": user_input, "alice": answer})
+        return answer
     
     def _extract_key_concepts(self, question: str, answer: str) -> list:
         concepts = []

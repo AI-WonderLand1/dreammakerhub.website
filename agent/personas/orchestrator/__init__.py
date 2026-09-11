@@ -57,33 +57,27 @@ class Orchestrator:
             messages.append({"role": "system", "content": f"Current operational status:\n{full_context}"})
         messages.append({"role": "user", "content": goal})
 
-        try:
-            response = completion(
-                model=ORCHESTRATOR_MODEL,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=1024,
-                api_key=self.api_key,
-            )
-            answer = response.choices[0].message.content
+        response = completion(
+            model=ORCHESTRATOR_MODEL,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1024,
+            api_key=self.api_key,
+        )
+        answer = response.choices[0].message.content
 
-            self.memory.store(user_id, f"task: {goal[:50]}", answer, importance=0.9)
-            self.neurolink.add_node("mission", {"goal": goal, "execution": answer[:200]})
+        self.memory.store(user_id, f"task: {goal[:50]}", answer, importance=0.9)
+        self.neurolink.add_node("mission", {"goal": goal, "execution": answer[:200]})
 
-            return answer
-        except Exception as e:
-            return f"Execution error: {str(e)}"
+        return answer
 
     def analyze_and_plan(self, repo_path: str) -> str:
-        try:
-            structure = self.repo_analyzer.analyze(repo_path)
-            summary = self.repo_analyzer.generate_summary(structure)
+        structure = self.repo_analyzer.analyze(repo_path)
+        summary = self.repo_analyzer.generate_summary(structure)
 
-            self.memory.store("system", f"repo: {repo_path}", summary, importance=0.8)
+        self.memory.store("system", f"repo: {repo_path}", summary, importance=0.8)
 
-            return summary
-        except Exception as e:
-            return f"Analysis failed: {str(e)}"
+        return summary
 
     def get_status(self, user_id: str = "worker") -> dict:
         memories = self.memory.recall(user_id, limit=20)

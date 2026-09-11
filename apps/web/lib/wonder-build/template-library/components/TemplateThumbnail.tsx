@@ -15,22 +15,31 @@ function safeImageSrc(src?: string): string | undefined {
   const value = src.trim();
   if (!value) return undefined;
 
-  try {
-    const localBase = new URL('https://dreammakerhub.local');
-    const parsed = new URL(value, localBase);
-
-    if (parsed.origin === localBase.origin) {
-      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  // Keep local assets relative to this site, but reject protocol-relative URLs.
+  if (value.startsWith('/') && !value.startsWith('//')) {
+    try {
+      const localBase = new URL('https://dreammakerhub.local');
+      const parsed = new URL(value, localBase);
+      if (parsed.origin === localBase.origin) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return undefined;
     }
-
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return parsed.toString();
-    }
-  } catch {
     return undefined;
   }
 
-  return undefined;
+  // CodeQL recognizes an explicit trusted-prefix check as a URL-flow barrier.
+  // Remote thumbnails are HTTPS-only; javascript:, data:, blob:, and http: are rejected.
+  if (!value.startsWith('https://')) return undefined;
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:') return undefined;
+    return parsed.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function PreviewElement({ element }: { element: WonderBuildElement }) {
