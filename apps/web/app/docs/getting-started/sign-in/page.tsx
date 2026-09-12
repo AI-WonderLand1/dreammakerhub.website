@@ -7,7 +7,7 @@ import {
   ChevronRight,
   CircleHelp,
   ExternalLink,
-  Github,
+  GitBranch,
   KeyRound,
   LogIn,
   Route,
@@ -161,7 +161,7 @@ export default function SignInDocsPage() {
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 p-5">
-                  <Github className="h-6 w-6" />
+                  <GitBranch className="h-6 w-6" />
                   <h3 className="mt-4 font-bold">GitHub</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, finish GitHub authorization, and allow the browser to return to DreamMakerHub.</p>
                 </div>
