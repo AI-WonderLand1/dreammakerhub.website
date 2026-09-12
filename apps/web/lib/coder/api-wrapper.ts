@@ -1,7 +1,6 @@
 // Coder API Client
 // Unified interface to Coder API with proper error handling and URL construction
 
-import crypto from 'crypto';
 import { getClient } from '@/lib/supabase-service';
 import type { CoderWorkspace, CoderWorkspaceHealth, CreateWorkspaceRequest, ProvisionOptions, AppWorkspaceStatus } from './types';
 import { logger } from '@/lib/logger';
@@ -49,13 +48,13 @@ export class CoderAPIWrapper {
    * Supports Coder IDE and WonderSpace IDE templates
    */
   async createWorkspace(userId: string, options: CreateWorkspaceRequest): Promise<CoderWorkspace> {
-    // Generate workspace ID
-    const workspaceId = crypto.randomUUID();
-    const timestamp = Date.now();
-    
     try {
-      // Make request to Coder API using user-scoped endpoint
-      const response = await this.makeApiRequest(`/api/v2/users/${userId}/workspaces`, 'POST', options);
+      const owner = process.env.CODER_WORKSPACE_OWNER || 'me';
+      const templateId = await this.resolveTemplateId(options.template_id);
+      const response = await this.makeApiRequest(`/api/v2/users/${encodeURIComponent(owner)}/workspaces`, 'POST', {
+        ...options,
+        template_id: templateId,
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -63,84 +62,24 @@ export class CoderAPIWrapper {
       }
       
       const coderWorkspace = await response.json();
-      
-      // Construct the workspace URL using official Coder URL pattern
-      const workspaceUrl = this.buildWorkspaceUrl(coderWorkspace.name);
-      
-      // Store workspace metadata in Supabase for persistence
-      const workspaceData: CoderWorkspace = {
-        id: workspaceId,
-        name: options.name,
-        owner_id: userId,
-        owner_name: userId, // Could be populated if available
-        owner_avatar_url: '',
-        template_id: coderWorkspace.template_id || options.template_id || '',
-        template_name: 'wonderspace-ide',
-        template_version_id: coderWorkspace.template_version_id || '',
-        template_display_name: 'WonderSpace IDE',
-        template_icon: '',
-        status: 'starting', // Initial status from API
-        health: { healthy: true, failing_agents: [] },
-        last_used_at: '',
-        next_start_at: '',
-        deleting_at: '',
-        dormant_at: '',
-        latest_build: coderWorkspace.latest_build,
-        latest_app_status: 'provisioning',
-        url: workspaceUrl,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        ttl_ms: options.ttl_ms || 0,
-        organization_id: userId,
-        organization_name: 'DreamMakerHub',
-      };
+      if (!coderWorkspace?.id || !coderWorkspace?.name) {
+        throw new Error('Coder returned an invalid workspace response');
+      }
+
+      const workspaceData = this.parseWorkspaceResponse(coderWorkspace, userId);
       
       // Store in Supabase for real-time updates
       await this.storeWorkspace(userId, workspaceData);
       
-      // Poll for workspace to be ready
-      await this.waitForWorkspaceReady(workspaceId, userId, 60000);
+      // Poll Coder using the ID returned by Coder, not a locally generated ID.
+      const readyWorkspace = await this.waitForWorkspaceReady(coderWorkspace.id, userId, 60000);
+      await this.updateWorkspace(userId, readyWorkspace);
       
-      // Update status to running
-      workspaceData.status = 'running';
-      workspaceData.latest_app_status = 'running';
-      workspaceData.updated_at = new Date().toISOString();
-      await this.updateWorkspace(userId, workspaceData);
-      
-      logger.info(`[CoderAPIWrapper] Workspace created successfully: ${options.name} (${workspaceId})`);
-      return workspaceData;
+      logger.info(`[CoderAPIWrapper] Workspace created successfully: ${options.name} (${coderWorkspace.id})`);
+      return readyWorkspace;
       
     } catch (error) {
       logger.error(`[CoderAPIWrapper] Failed to create workspace:`, error);
-      
-      // Store error state
-      await this.storeWorkspace(userId, {
-        id: workspaceId,
-        name: options.name,
-        owner_id: userId,
-        owner_name: userId,
-        owner_avatar_url: '',
-        template_id: options.template_id || '',
-        template_name: 'wonderspace-ide',
-        template_version_id: '',
-        template_display_name: 'WonderSpace IDE',
-        template_icon: '',
-        status: 'failed',
-        health: { healthy: false, failing_agents: [] },
-        last_used_at: '',
-        next_start_at: '',
-        deleting_at: '',
-        dormant_at: '',
-        latest_build: { id: '', build_number: 0, status: 'failed', started_at: '', finished_at: '', resources: [], creator_id: '', template_version_id: '', has_ai_task: false },
-        latest_app_status: 'error',
-        url: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        ttl_ms: 0,
-        organization_id: userId,
-        organization_name: 'DreamMakerHub',
-      });
-      
       throw error;
     }
   }
@@ -149,7 +88,7 @@ export class CoderAPIWrapper {
    * Wait for workspace to be ready
    * Polls Coder API until workspace status is 'running'
    */
-  private async waitForWorkspaceReady(workspaceId: string, userId: string, timeoutMs: number = 60000): Promise<void> {
+  private async waitForWorkspaceReady(workspaceId: string, userId: string, timeoutMs: number = 60000): Promise<CoderWorkspace> {
     const startTime = Date.now();
     const pollInterval = 2000; // Poll every 2 seconds
     
@@ -164,7 +103,7 @@ export class CoderAPIWrapper {
         
         if (workspace.status === 'running') {
           logger.info(`[CoderAPIWrapper] Workspace ready: ${workspaceId}`);
-          return;
+          return workspace;
         }
         
         if (workspace.status === 'failed') {
@@ -175,7 +114,9 @@ export class CoderAPIWrapper {
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         
       } catch (error) {
-        // Continue polling unless it's an unrecoverable error
+        if (error instanceof Error && error.message.startsWith('Workspace failed:')) {
+          throw error;
+        }
         logger.warn(`[CoderAPIWrapper] Error checking workspace status:`, error);
         await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
@@ -242,28 +183,31 @@ export class CoderAPIWrapper {
    * Parse Coder API response into our standardized workspace format
    */
   private parseWorkspaceResponse(coderWorkspace: any, userId: string): CoderWorkspace {
-    // Construct the workspace URL using official Coder URL pattern
-    const workspaceUrl = this.buildWorkspaceUrl(coderWorkspace.name);
+    const ownerName = coderWorkspace.owner_name || coderWorkspace.owner_id || userId;
+    const workspaceUrl = this.buildWorkspaceUrl(ownerName, coderWorkspace.name);
+    const reportedStatus = coderWorkspace.status;
+    const buildStatus = coderWorkspace.latest_build?.status;
+    const status = reportedStatus || (buildStatus === 'succeeded' ? 'running' : buildStatus === 'running' ? 'starting' : buildStatus) || 'pending';
     
     return {
       id: coderWorkspace.id,
       name: coderWorkspace.name,
       owner_id: coderWorkspace.owner_id || userId,
-      owner_name: coderWorkspace.owner_name || coderWorkspace.owner_id || userId,
+      owner_name: ownerName,
       owner_avatar_url: coderWorkspace.owner_avatar_url || '',
       template_id: coderWorkspace.template_id,
       template_name: coderWorkspace.template_name || 'wonderspace-ide',
       template_version_id: coderWorkspace.template_version_id || '',
       template_display_name: 'WonderSpace IDE',
       template_icon: '',
-      status: coderWorkspace.status,
+      status,
       health: coderWorkspace.health || { healthy: true, failing_agents: [] },
       last_used_at: coderWorkspace.last_used_at || '',
       next_start_at: coderWorkspace.next_start_at || '',
       deleting_at: coderWorkspace.deleting_at || '',
       dormant_at: coderWorkspace.dormant_at || '',
       latest_build: coderWorkspace.latest_build,
-      latest_app_status: this.mapStatusToAppStatus(coderWorkspace.status),
+      latest_app_status: this.mapStatusToAppStatus(status),
       url: workspaceUrl,
       created_at: coderWorkspace.created_at,
       updated_at: coderWorkspace.updated_at,
@@ -276,22 +220,37 @@ export class CoderAPIWrapper {
   /**
    * Build workspace URL using official Coder URL pattern
    */
-  buildWorkspaceUrl(workspaceName: string): string {
-    // Construct URL based on template and workspace name
-    return `${this.CODER_ACCESS_URL}/${workspaceName}`;
+  buildWorkspaceUrl(ownerName: string, workspaceName: string): string {
+    return `${this.CODER_ACCESS_URL}/@${encodeURIComponent(ownerName)}/${encodeURIComponent(workspaceName)}`;
   }
 
   /**
    * Build IDE URL that redirects to Coder workspace
    */
   buildIDEUrl(workspace: CoderWorkspace): string {
-    if (workspace.template_id === 'wonderspace-ide') {
-      // Use WonderSpace AI-powered IDE
-      return `${workspace.url}/wonderspace`;
+    return workspace.url;
+  }
+
+  private async resolveTemplateId(templateIdOrName?: string): Promise<string> {
+    if (!templateIdOrName) {
+      throw new Error('Coder template is not configured');
     }
-    
-    // Default to Coder IDE
-    return `${workspace.url}/code-server`;
+
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(templateIdOrName)) {
+      return templateIdOrName;
+    }
+
+    const response = await this.makeApiRequest(`/api/v2/templates?q=${encodeURIComponent(`name:${templateIdOrName}`)}`, 'GET');
+    if (!response.ok) {
+      throw new Error(`Failed to resolve Coder template "${templateIdOrName}"`);
+    }
+
+    const data = await response.json();
+    const template = data.templates?.find((item: { name?: string }) => item.name === templateIdOrName);
+    if (!template?.id) {
+      throw new Error(`Coder template "${templateIdOrName}" was not found`);
+    }
+    return template.id;
   }
 
   /**
@@ -420,8 +379,9 @@ export class CoderAPIWrapper {
   private mapStatusToAppStatus(coderStatus: string): AppWorkspaceStatus {
     switch (coderStatus) {
       case 'running':
-      case 'start_error':
         return 'running';
+      case 'start_error':
+        return 'error';
       case 'stopped':
       case 'stopping':
         return 'stopped';
@@ -536,7 +496,7 @@ export class CoderAPIWrapper {
     if (this.config.apiKey) {
       options.headers = {
         ...options.headers,
-        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Coder-Session-Token': this.config.apiKey,
       };
     }
     
@@ -561,7 +521,7 @@ export class CoderAPIWrapper {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await this.makeApiRequest('/api/v2/health', 'GET');
+      const response = await this.makeApiRequest('/api/v2/buildinfo', 'GET');
       return response.ok;
     } catch {
       return false;
