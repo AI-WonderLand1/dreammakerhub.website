@@ -4,14 +4,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
+  BarChart3,
+  BookOpen,
+  Bot,
+  CircleDot,
   Clock3,
   Code2,
   Copy,
   Download,
   ExternalLink,
+  GitPullRequest,
   Globe2,
   HardDrive,
+  MessageSquare,
+  PanelsTopLeft,
   Pencil,
+  PlayCircle,
+  Settings,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import WonderRealtimeWidget from "@/app/(workspace)/dashboard/components/WonderRealtimeWidget";
@@ -211,15 +221,20 @@ export default function ProjectHubPage() {
   const builderHref = is3dType(tool)
     ? `/dashboard/3dhub?projectId=${encodeURIComponent(project.id)}`
     : `/wonder-build/builder?projectId=${encodeURIComponent(project.id)}`;
+  const projectQuery = `projectId=${encodeURIComponent(project.id)}`;
 
-  const tabs = [
-    ["Overview", `/dashboard/projects/${project.id}`],
-    ["Files", `/dashboard/projects/${project.id}/files`],
-    ["Pages", `/dashboard/projects/${project.id}/pages`],
-    ["Assets", `/3d-library?projectId=${encodeURIComponent(project.id)}`],
-    ["Deployments", `/dashboard/projects/${project.id}/pages`],
-    ["Collaborators", "/dashboard/collaboration"],
-    ["Settings", "/dashboard/settings"],
+  const repoTabs = [
+    { label: "Code", href: `/dashboard/projects/${project.id}`, icon: Code2, active: true },
+    { label: "Issues", href: `/dashboard/support?${projectQuery}`, icon: CircleDot },
+    { label: "Pull requests", href: `/dashboard/collaboration?${projectQuery}&view=reviews`, icon: GitPullRequest },
+    { label: "Agents", href: `/dashboard/agents?${projectQuery}`, icon: Bot },
+    { label: "Discussions", href: `/dashboard/collaboration?${projectQuery}`, icon: MessageSquare },
+    { label: "Actions", href: `/dashboard/usage?${projectQuery}`, icon: PlayCircle },
+    { label: "Projects", href: "/dashboard#projects", icon: PanelsTopLeft },
+    { label: "Wiki", href: "/docs", icon: BookOpen },
+    { label: "Security & quality", href: `/dashboard/aetherguard?${projectQuery}`, icon: ShieldCheck },
+    { label: "Insights", href: `/dashboard/analytics?${projectQuery}`, icon: BarChart3 },
+    { label: "Settings", href: `/dashboard/settings?${projectQuery}`, icon: Settings },
   ];
 
   return (
@@ -269,14 +284,16 @@ export default function ProjectHubPage() {
             </div>
           </section>
 
-          <nav className="mb-4 flex gap-7 overflow-x-auto border-b border-white/10 text-sm text-white/50">
-            {tabs.map(([label, href], index) => (
+          <nav className="mb-4 flex items-center gap-1 overflow-x-auto border-b border-white/10 text-sm text-white/60">
+            {repoTabs.map(({ label, href, icon: TabIcon, active }) => (
               <Link
                 key={label}
                 href={href}
-                className={`whitespace-nowrap px-1 py-3 hover:text-white ${index === 0 ? "border-b-2 border-violet-500 font-semibold text-violet-300" : ""}`}
+                aria-current={active ? "page" : undefined}
+                className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 transition hover:bg-white/[.035] hover:text-white ${active ? "border-violet-500 font-semibold text-white" : "border-transparent"}`}
               >
-                {label}
+                <TabIcon size={17}/>
+                <span>{label}</span>
               </Link>
             ))}
           </nav>
