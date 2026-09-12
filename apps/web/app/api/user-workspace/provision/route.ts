@@ -19,7 +19,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
   const podName = body.podName?.trim();
   const podType = body.podType as string || 'ide';
   const cpu = body.cpu as number || 2;
@@ -29,9 +32,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Pod name is required' }, { status: 400 });
   }
 
-  if (!/^[a-z0-9][a-z0-9-]{1,60}[a-z0-9]$/.test(podName)) {
+  if (!/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(podName)) {
     return NextResponse.json(
-      { error: 'Pod name must be 3-62 characters, lowercase alphanumeric and hyphens only' },
+      { error: 'Pod name must be 3-32 characters, lowercase alphanumeric and hyphens only' },
       { status: 400 }
     );
   }
@@ -44,14 +47,30 @@ export async function POST(request: Request) {
   }
 
   const templateId = TEMPLATE_MAP[podType];
+  const coderApiUrl = process.env.CODER_API_URL;
+  const coderApiToken = process.env.CODER_API_TOKEN;
+
+  if (!coderApiUrl || !coderApiToken) {
+    return NextResponse.json(
+      { error: 'WonderSpace cloud IDE is not configured on the server' },
+      { status: 503 }
+    );
+  }
 
   try {
-    const sshKey = await getUserSSHKey(user.id, user.email || user.id);
-
     const coder = new CoderAPIWrapper({
-      apiUrl: process.env.CODER_API_URL || process.env.NEXT_PUBLIC_CODER_API_URL || 'http://212.2.240.19.nip.io',
-      apiKey: process.env.CODER_API_TOKEN,
+      apiUrl: coderApiUrl,
+      apiKey: coderApiToken,
     });
+
+    if (!(await coder.healthCheck())) {
+      return NextResponse.json(
+        { error: 'WonderSpace cloud IDE is temporarily unavailable' },
+        { status: 503 }
+      );
+    }
+
+    const sshKey = await getUserSSHKey(user.id, user.email || user.id);
     
     const { workspace, ideUrl } = await coder.createWorkspaceForApp(
       user.id,
