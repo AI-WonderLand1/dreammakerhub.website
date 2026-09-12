@@ -9,9 +9,9 @@ type SupabasePublicConfig = {
 
 let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
 let supabaseAnonKey = (
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )?.trim()
 
 function isUsableSupabaseValue(value: string | undefined) {
