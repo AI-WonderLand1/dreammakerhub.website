@@ -116,7 +116,7 @@ jobs:
           ssh "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'bash -s' <<'REMOTE'
             set -euo pipefail
             APP_DIR=/opt/dreammakerhub.website
-            COMPOSE=deploy/upcloud/docker-compose.yml
+            COMPOSE=deploy/upcloud/docker-compose.web.yml
 
             if [ -d "$APP_DIR/.git" ]; then
               git -C "$APP_DIR" fetch origin Master
@@ -150,10 +150,20 @@ jobs:
             done < /tmp/dreammakerhub.env.patch
             rm -f /tmp/dreammakerhub.env.patch
 
+            # Pull first so the old site stays up while the image downloads.
             docker compose --env-file .env -f "$COMPOSE" pull web
-            docker compose --env-file .env -f "$COMPOSE" up -d --no-deps --force-recreate web
 
+            # The old web container was created by a different/manual Compose
+            # path. Remove only that web container after the replacement image
+            # is local, then recreate it under the canonical web Compose stack.
+            if docker inspect dreammaker-web >/dev/null 2>&1; then
+              echo "Replacing existing dreammaker-web container"
+              docker rm -f dreammaker-web
+            fi
+
+            docker compose --env-file .env -f "$COMPOSE" up -d --no-deps web
             docker compose --env-file .env -f "$COMPOSE" ps web
+
             docker exec dreammaker-web sh -c 'curl -fsS --retry 10 --retry-delay 2 http://127.0.0.1:5000/health >/dev/null'
             docker exec dreammaker-web sh -c 'curl -fsS --retry 10 --retry-delay 2 http://127.0.0.1:5000/api/config/supabase >/dev/null'
           REMOTE
