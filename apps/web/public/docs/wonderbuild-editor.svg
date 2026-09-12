@@ -1,45 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#0B1220"/>
-      <stop offset="1" stop-color="#111827"/>
-    </linearGradient>
-    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#4F46E5"/>
-      <stop offset="0.52" stop-color="#7C3AED"/>
-      <stop offset="1" stop-color="#0EA5E9"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#020617" flood-opacity="0.45"/>
-    </filter>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050816"/><stop offset="1" stop-color="#0B1022"/></linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6D28D9"/><stop offset="0.52" stop-color="#7C3AED"/><stop offset="1" stop-color="#0891B2"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#000" flood-opacity="0.48"/></filter>
   </defs>
-  <rect width="1440" height="820" rx="34" fill="url(#bg)"/>
-  <rect x="36" y="34" width="1368" height="752" rx="26" fill="#F8FAFC" filter="url(#shadow)"/>
-  <rect x="36" y="34" width="1368" height="64" rx="26" fill="#0F172A"/>
-  <circle cx="74" cy="66" r="8" fill="#EF4444"/><circle cx="100" cy="66" r="8" fill="#F59E0B"/><circle cx="126" cy="66" r="8" fill="#22C55E"/>
-  <text x="178" y="73" fill="#F8FAFC" font-family="Arial, sans-serif" font-size="22" font-weight="700">WonderBuild</text>
-  <rect x="1070" y="50" width="120" height="34" rx="10" fill="#1E293B"/><text x="1098" y="72" fill="#CBD5E1" font-family="Arial" font-size="14">Preview</text>
-  <rect x="1202" y="50" width="156" height="34" rx="10" fill="#2563EB"/><text x="1250" y="72" fill="white" font-family="Arial" font-size="14" font-weight="700">Publish</text>
-  <rect x="36" y="98" width="230" height="688" fill="#111827"/>
-  <text x="68" y="144" fill="#94A3B8" font-family="Arial" font-size="13" font-weight="700">PROJECT</text>
-  <g fill="#E2E8F0" font-family="Arial" font-size="17">
-    <text x="74" y="194">Pages</text><text x="74" y="242">Components</text><text x="74" y="290">Assets</text><text x="74" y="338">AI Tools</text><text x="74" y="386">Design</text><text x="74" y="434">Settings</text>
-  </g>
-  <rect x="54" y="160" width="194" height="50" rx="12" fill="#1D4ED8" fill-opacity="0.28" stroke="#2563EB"/>
-  <circle cx="72" cy="185" r="6" fill="#60A5FA"/>
-  <rect x="266" y="98" width="886" height="688" fill="#E2E8F0"/>
-  <rect x="298" y="128" width="822" height="626" rx="20" fill="white"/>
-  <rect x="330" y="162" width="758" height="448" rx="22" fill="url(#hero)"/>
-  <circle cx="978" cy="232" r="84" fill="#FFFFFF" fill-opacity="0.08"/><circle cx="438" cy="510" r="120" fill="#FFFFFF" fill-opacity="0.06"/>
-  <text x="410" y="330" fill="white" font-family="Arial" font-size="56" font-weight="800">Build Without Limits</text>
-  <text x="472" y="382" fill="#DBEAFE" font-family="Arial" font-size="24">Create websites and apps with AI</text>
-  <rect x="612" y="430" width="190" height="54" rx="14" fill="white"/><text x="666" y="464" fill="#1D4ED8" font-family="Arial" font-size="18" font-weight="700">Get Started</text>
-  <rect x="330" y="638" width="230" height="82" rx="16" fill="#F8FAFC" stroke="#CBD5E1"/><rect x="580" y="638" width="230" height="82" rx="16" fill="#F8FAFC" stroke="#CBD5E1"/><rect x="830" y="638" width="258" height="82" rx="16" fill="#F8FAFC" stroke="#CBD5E1"/>
-  <text x="358" y="674" fill="#0F172A" font-family="Arial" font-size="17" font-weight="700">Hero section</text><text x="358" y="699" fill="#64748B" font-family="Arial" font-size="13">Selected on canvas</text>
-  <text x="608" y="674" fill="#0F172A" font-family="Arial" font-size="17" font-weight="700">AI edit</text><text x="608" y="699" fill="#64748B" font-family="Arial" font-size="13">Change with a prompt</text>
-  <text x="858" y="674" fill="#0F172A" font-family="Arial" font-size="17" font-weight="700">Responsive</text><text x="858" y="699" fill="#64748B" font-family="Arial" font-size="13">Desktop · Tablet · Mobile</text>
-  <rect x="1152" y="98" width="252" height="688" fill="#F8FAFC"/>
-  <text x="1182" y="146" fill="#0F172A" font-family="Arial" font-size="18" font-weight="700">Properties</text>
-  <g fill="#64748B" font-family="Arial" font-size="13"><text x="1182" y="194">Layout</text><text x="1182" y="286">Spacing</text><text x="1182" y="378">Typography</text><text x="1182" y="470">Background</text></g>
-  <g fill="#E2E8F0"><rect x="1182" y="208" width="192" height="46" rx="10"/><rect x="1182" y="300" width="192" height="46" rx="10"/><rect x="1182" y="392" width="192" height="46" rx="10"/><rect x="1182" y="484" width="192" height="46" rx="10"/></g>
+  <rect width="1440" height="820" rx="32" fill="url(#bg)"/>
+  <rect x="30" y="28" width="1380" height="764" rx="24" fill="#080D1B" stroke="#20283B" filter="url(#shadow)"/>
+
+  <!-- top toolbar -->
+  <rect x="30" y="28" width="1380" height="58" rx="24" fill="#080B15"/>
+  <rect x="48" y="41" width="34" height="34" rx="9" fill="#6D28D9"/><text x="58" y="64" fill="white" font-family="Arial" font-size="15" font-weight="700">W</text>
+  <text x="94" y="54" fill="#F8FAFC" font-family="Arial" font-size="12" font-weight="700">WonderBuild</text><text x="94" y="70" fill="#6EE7B7" font-family="Arial" font-size="9">✓ Autosave</text>
+  <rect x="204" y="42" width="60" height="30" rx="7" fill="#7C3AED" fill-opacity=".20"/><text x="219" y="61" fill="#DDD6FE" font-family="Arial" font-size="10" font-weight="700">Design</text>
+  <rect x="268" y="42" width="54" height="30" rx="7" fill="#111827"/><text x="283" y="61" fill="#64748B" font-family="Arial" font-size="10">Code</text>
+  <rect x="560" y="41" width="142" height="32" rx="9" fill="#0B1020" stroke="#1E293B"/><text x="577" y="61" fill="#C4B5FD" font-family="Arial" font-size="10">Desktop   Tablet   Mobile</text>
+  <rect x="710" y="41" width="66" height="32" rx="9" fill="#0B1020" stroke="#1E293B"/><text x="726" y="61" fill="#94A3B8" font-family="Arial" font-size="10">100%</text>
+  <rect x="782" y="41" width="78" height="32" rx="9" fill="#0B1020" stroke="#1E293B"/><text x="795" y="61" fill="#94A3B8" font-family="Arial" font-size="10">Grid  Snap</text>
+  <text x="1058" y="61" fill="#94A3B8" font-family="Arial" font-size="10">↶  ↷   Assets</text>
+  <rect x="1190" y="41" width="78" height="32" rx="9" fill="#111827" stroke="#334155"/><text x="1209" y="61" fill="#E2E8F0" font-family="Arial" font-size="10" font-weight="700">Preview</text>
+  <rect x="1278" y="41" width="108" height="32" rx="9" fill="#7C3AED"/><text x="1313" y="61" fill="white" font-family="Arial" font-size="10" font-weight="700">Publish</text>
+
+  <!-- left panel -->
+  <rect x="30" y="86" width="278" height="706" fill="#0A0F1D"/>
+  <rect x="44" y="101" width="250" height="38" rx="9" fill="#0D1424" stroke="#1F2937"/>
+  <g fill="#A78BFA" font-family="Arial" font-size="10" font-weight="700"><text x="55" y="124">Pages</text><text x="104" y="124">Insert</text><text x="150" y="124">CMS</text><text x="187" y="124">Assets</text><text x="236" y="124">Components</text></g>
+  <text x="54" y="173" fill="#94A3B8" font-family="Arial" font-size="10" font-weight="700">PAGES</text>
+  <rect x="48" y="188" width="244" height="42" rx="8" fill="#7C3AED" fill-opacity=".14" stroke="#7C3AED" stroke-opacity=".35"/>
+  <text x="64" y="213" fill="#EDE9FE" font-family="Arial" font-size="12" font-weight="700">Home</text><text x="245" y="213" fill="#A78BFA" font-family="Arial" font-size="9">ACTIVE</text>
+  <rect x="48" y="240" width="244" height="38" rx="8" fill="#0D1424"/><text x="64" y="264" fill="#CBD5E1" font-family="Arial" font-size="11">About</text>
+  <rect x="48" y="288" width="244" height="38" rx="8" fill="#0D1424"/><text x="64" y="312" fill="#CBD5E1" font-family="Arial" font-size="11">Contact</text>
+
+  <!-- canvas workspace -->
+  <rect x="308" y="86" width="820" height="706" fill="#050914"/>
+  <g opacity=".28" stroke="#7C3AED" stroke-width="1"><path d="M340 86V792M388 86V792M436 86V792M484 86V792M532 86V792M580 86V792M628 86V792M676 86V792M724 86V792M772 86V792M820 86V792M868 86V792M916 86V792M964 86V792M1012 86V792M1060 86V792"/><path d="M308 126H1128M308 174H1128M308 222H1128M308 270H1128M308 318H1128M308 366H1128M308 414H1128M308 462H1128M308 510H1128M308 558H1128M308 606H1128M308 654H1128M308 702H1128M308 750H1128"/></g>
+  <rect x="352" y="112" width="732" height="644" rx="18" fill="#F8FAFC"/>
+  <rect x="382" y="144" width="672" height="360" rx="18" fill="url(#hero)" stroke="#A78BFA" stroke-width="3"/>
+  <text x="451" y="292" fill="white" font-family="Arial" font-size="44" font-weight="800">Build Without Limits</text>
+  <text x="514" y="337" fill="#DDD6FE" font-family="Arial" font-size="20">Create, edit, preview, publish.</text>
+  <rect x="602" y="378" width="188" height="50" rx="12" fill="white"/><text x="652" y="409" fill="#6D28D9" font-family="Arial" font-size="16" font-weight="700">Get Started</text>
+  <rect x="559" y="105" width="318" height="34" rx="9" fill="#080D1B" stroke="#8B5CF6" stroke-opacity=".55"/>
+  <text x="577" y="127" fill="#C4B5FD" font-family="Arial" font-size="9" font-weight="700">HERO</text><text x="631" y="127" fill="#CBD5E1" font-family="Arial" font-size="9">Design</text><text x="689" y="127" fill="#DDD6FE" font-family="Arial" font-size="9" font-weight="700">✦ AI</text><text x="742" y="127" fill="#CBD5E1" font-family="Arial" font-size="9">Duplicate</text><text x="811" y="127" fill="#FCA5A5" font-family="Arial" font-size="9">Delete</text>
+  <rect x="1045" y="495" width="13" height="13" rx="3" fill="#8B5CF6" stroke="#DDD6FE"/>
+  <rect x="382" y="532" width="208" height="92" rx="12" fill="#EEF2FF" stroke="#C7D2FE"/><rect x="608" y="532" width="208" height="92" rx="12" fill="#ECFEFF" stroke="#A5F3FC"/><rect x="834" y="532" width="220" height="92" rx="12" fill="#F5F3FF" stroke="#DDD6FE"/>
+  <text x="404" y="568" fill="#0F172A" font-family="Arial" font-size="14" font-weight="700">Select anything</text><text x="404" y="591" fill="#64748B" font-family="Arial" font-size="11">Click to edit</text>
+  <text x="630" y="568" fill="#0F172A" font-family="Arial" font-size="14" font-weight="700">Drag + resize</text><text x="630" y="591" fill="#64748B" font-family="Arial" font-size="11">Snap when needed</text>
+  <text x="856" y="568" fill="#0F172A" font-family="Arial" font-size="14" font-weight="700">AI on selection</text><text x="856" y="591" fill="#64748B" font-family="Arial" font-size="11">Edit in context</text>
+
+  <!-- right inspector -->
+  <rect x="1128" y="86" width="282" height="706" fill="#0A0F1D"/>
+  <rect x="1142" y="101" width="254" height="38" rx="9" fill="#0D1424" stroke="#1F2937"/>
+  <g font-family="Arial" font-size="10" font-weight="700"><text x="1161" y="124" fill="#A78BFA">Content</text><text x="1223" y="124" fill="#94A3B8">Interactions</text><text x="1304" y="124" fill="#94A3B8">AI</text></g>
+  <text x="1152" y="174" fill="#F8FAFC" font-family="Arial" font-size="12" font-weight="700">Hero Section</text>
+  <g fill="#94A3B8" font-family="Arial" font-size="10"><text x="1152" y="211">Content</text><text x="1152" y="300">Layout</text><text x="1152" y="389">Style</text><text x="1152" y="478">Responsive</text></g>
+  <g fill="#111827" stroke="#1F2937"><rect x="1150" y="224" width="232" height="50" rx="8"/><rect x="1150" y="313" width="232" height="50" rx="8"/><rect x="1150" y="402" width="232" height="50" rx="8"/><rect x="1150" y="491" width="232" height="50" rx="8"/></g>
+  <text x="1162" y="254" fill="#CBD5E1" font-family="Arial" font-size="10">Edit selected element</text><text x="1162" y="343" fill="#CBD5E1" font-family="Arial" font-size="10">Size · spacing · position</text><text x="1162" y="432" fill="#CBD5E1" font-family="Arial" font-size="10">Color · type · effects</text><text x="1162" y="521" fill="#CBD5E1" font-family="Arial" font-size="10">Desktop · tablet · mobile</text>
 </svg>
