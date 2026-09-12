@@ -9,16 +9,13 @@ import {
   Copy,
   Download,
   ExternalLink,
-  FileText,
-  Folder,
-  Gamepad2,
   Globe2,
   HardDrive,
   Pencil,
-  Settings,
   Users,
 } from "lucide-react";
 import WonderRealtimeWidget from "@/app/(workspace)/dashboard/components/WonderRealtimeWidget";
+import RepositoryFileBrowser from "./RepositoryFileBrowser";
 
 type Project = {
   id: string;
@@ -35,12 +32,6 @@ type Project = {
   lastPublishId?: string | null;
 };
 
-type SitePage = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
 type PublishedPage = {
   id: string;
   published?: boolean;
@@ -54,13 +45,6 @@ type PublishedPage = {
   } | null;
 };
 
-type FileSummary = {
-  name: string;
-  kind: "folder" | "file";
-  count?: number;
-  size?: number;
-};
-
 const is3dType = (tool?: string | null) =>
   ["game", "3d_scene", "playcanvas"].includes(tool || "");
 
@@ -68,12 +52,6 @@ const typeLabel = (tool?: string | null) => {
   if (is3dType(tool)) return "3D Experience";
   if (tool === "workspace") return "IDE Project";
   return "Website";
-};
-
-const projectIcon = (tool?: string | null) => {
-  if (is3dType(tool)) return Gamepad2;
-  if (tool === "workspace") return Code2;
-  return Globe2;
 };
 
 const formatDate = (value?: string) => {
@@ -102,56 +80,12 @@ const formatBytes = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-function summarizeFiles(files: Record<string, string>): FileSummary[] {
-  const folders = new Map<string, number>();
-  const topFiles: FileSummary[] = [];
-  const encoder = new TextEncoder();
-
-  for (const [path, content] of Object.entries(files)) {
-    const normalized = path.replace(/^\/+/, "");
-    if (!normalized) continue;
-    const [head, ...rest] = normalized.split("/");
-    if (rest.length > 0) {
-      folders.set(head, (folders.get(head) || 0) + 1);
-    } else {
-      topFiles.push({ name: head, kind: "file", size: encoder.encode(content || "").byteLength });
-    }
-  }
-
-  return [
-    ...Array.from(folders.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, count]) => ({ name, kind: "folder" as const, count })),
-    ...topFiles.sort((a, b) => a.name.localeCompare(b.name)),
-  ].slice(0, 7);
-}
-
-function extractPages(files: Record<string, string>): SitePage[] {
-  const raw = files["builder-state.json"];
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as { pages?: unknown };
-    if (!Array.isArray(parsed.pages)) return [];
-    return parsed.pages
-      .filter((page): page is Record<string, unknown> => Boolean(page && typeof page === "object"))
-      .map((page) => ({
-        id: typeof page.id === "string" ? page.id : "",
-        name: typeof page.name === "string" ? page.name : "Untitled",
-        slug: typeof page.slug === "string" ? page.slug : "",
-      }))
-      .filter((page) => page.id);
-  } catch {
-    return [];
-  }
-}
-
 export default function ProjectHubPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
   const [project, setProject] = useState<Project | null>(null);
   const [files, setFiles] = useState<Record<string, string>>({});
-  const [pages, setPages] = useState<SitePage[]>([]);
   const [publishedPageIds, setPublishedPageIds] = useState<string[]>([]);
   const [workspaceName, setWorkspaceName] = useState("Personal Workspace");
   const [onlineCount, setOnlineCount] = useState(0);
@@ -176,9 +110,10 @@ export default function ProjectHubPage() {
 
       if (filesResponse.ok) {
         const fileData = await filesResponse.json().catch(() => ({}));
-        const nextFiles = fileData?.files && typeof fileData.files === "object" ? fileData.files as Record<string, string> : {};
+        const nextFiles = fileData?.files && typeof fileData.files === "object"
+          ? fileData.files as Record<string, string>
+          : {};
         setFiles(nextFiles);
-        setPages(extractPages(nextFiles));
       }
 
       if (publishedResponse.ok) {
@@ -210,11 +145,14 @@ export default function ProjectHubPage() {
     void loadProjectData(true);
   }, [loadProjectData]);
 
-  const fileSummary = useMemo(() => summarizeFiles(files), [files]);
   const storageBytes = useMemo(() => {
     const encoder = new TextEncoder();
-    return Object.values(files).reduce((total, content) => total + encoder.encode(content || "").byteLength, 0);
+    return Object.values(files).reduce(
+      (total, content) => total + encoder.encode(content || "").byteLength,
+      0,
+    );
   }, [files]);
+
   const isPublished = publishedPageIds.length > 0 || Boolean(project?.publishEnabled || project?.lastPublishId);
 
   async function duplicateProject() {
@@ -225,10 +163,15 @@ export default function ProjectHubPage() {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: `${project.name} Copy`, tool: project.tool || project.type || "wonderbuild" }),
+        body: JSON.stringify({
+          name: `${project.name} Copy`,
+          tool: project.tool || project.type || "wonderbuild",
+        }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.project?.id) throw new Error(data?.message || "Failed to duplicate project");
+      if (!response.ok || !data?.project?.id) {
+        throw new Error(data?.message || "Failed to duplicate project");
+      }
 
       if (Object.keys(files).length > 0) {
         const copyResponse = await fetch(`/api/projects/${encodeURIComponent(data.project.id)}/files`, {
@@ -251,16 +194,20 @@ export default function ProjectHubPage() {
     window.location.href = `/api/projects/${projectId}/export?format=zip`;
   }
 
-  if (loading) return <div className="p-8 text-sm text-white/50 animate-pulse">Loading project...</div>;
-  if (!project) return (
-    <div className="p-8">
-      <p className="mb-3 text-red-300">{error || "Project not found"}</p>
-      <Link href="/dashboard" className="text-sm text-blue-400">← Back to workspace</Link>
-    </div>
-  );
+  if (loading) {
+    return <div className="p-8 text-sm text-white/50 animate-pulse">Loading project...</div>;
+  }
+
+  if (!project) {
+    return (
+      <div className="p-8">
+        <p className="mb-3 text-red-300">{error || "Project not found"}</p>
+        <Link href="/dashboard" className="text-sm text-blue-400">← Back to workspace</Link>
+      </div>
+    );
+  }
 
   const tool = project.tool || project.type || "wonderbuild";
-  const Icon = projectIcon(tool);
   const builderHref = is3dType(tool)
     ? `/dashboard/3dhub?projectId=${encodeURIComponent(project.id)}`
     : `/wonder-build/builder?projectId=${encodeURIComponent(project.id)}`;
@@ -302,7 +249,9 @@ export default function ProjectHubPage() {
                 <span className="rounded-full border border-blue-500/50 bg-blue-500/10 px-2.5 py-1 text-[11px] text-blue-300">{typeLabel(tool)}</span>
                 <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/55">{isPublished ? "Published" : "Draft"}</span>
               </div>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/55">{project.description || `Manage, edit, preview, and publish ${project.name} from one project dashboard.`}</p>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/55">
+                {project.description || `Manage, edit, preview, and publish ${project.name} from one project dashboard.`}
+              </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Link href={builderHref} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
                   <Pencil size={15}/> Open in {is3dType(tool) ? "3D Studio" : "WonderBuild"}
@@ -322,13 +271,19 @@ export default function ProjectHubPage() {
 
           <nav className="mb-4 flex gap-7 overflow-x-auto border-b border-white/10 text-sm text-white/50">
             {tabs.map(([label, href], index) => (
-              <Link key={label} href={href} className={`whitespace-nowrap px-1 py-3 hover:text-white ${index === 0 ? "border-b-2 border-violet-500 font-semibold text-violet-300" : ""}`}>
+              <Link
+                key={label}
+                href={href}
+                className={`whitespace-nowrap px-1 py-3 hover:text-white ${index === 0 ? "border-b-2 border-violet-500 font-semibold text-violet-300" : ""}`}
+              >
                 {label}
               </Link>
             ))}
           </nav>
 
-          {error && <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>
+          )}
 
           <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
@@ -338,93 +293,79 @@ export default function ProjectHubPage() {
               [Users, "Collaborators", onlineCount > 0 ? `${onlineCount} online` : "Owner", "text-cyan-400"],
             ].map(([CardIcon, label, value, color]) => (
               <div key={String(label)} className="flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-[#0d1625] p-4">
-                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/5 ${String(color)}`}><CardIcon size={20}/></span>
-                <span className="min-w-0"><small className="block text-white/40">{String(label)}</small><b className="block truncate text-sm">{String(value)}</b></span>
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/5 ${String(color)}`}>
+                  <CardIcon size={20}/>
+                </span>
+                <span className="min-w-0">
+                  <small className="block text-white/40">{String(label)}</small>
+                  <b className="block truncate text-sm">{String(value)}</b>
+                </span>
               </div>
             ))}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,.8fr)]">
-            <section className="overflow-hidden rounded-xl border border-white/10 bg-[#0d1625]">
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                <h2 className="font-bold">Live Preview</h2>
-                <Link href={`/preview/${project.id}`} className="text-blue-400"><ExternalLink size={15}/></Link>
-              </div>
-              <div className="h-[430px] bg-[#07101b]">
-                <iframe
-                  src={`/preview/${encodeURIComponent(project.id)}`}
-                  title={`${project.name} live preview`}
-                  className="h-full w-full border-0 bg-[#08111e]"
-                  loading="lazy"
-                />
-              </div>
-            </section>
-
-            <div className="space-y-4">
-              <section className="rounded-xl border border-white/10 bg-[#0d1625]">
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                  <h2 className="font-bold">Project Files</h2>
-                  <Link href={`/dashboard/projects/${project.id}/files`} className="text-xs text-blue-400">View all files →</Link>
-                </div>
-                <div className="divide-y divide-white/5 px-4">
-                  {fileSummary.length === 0 ? (
-                    <p className="py-5 text-xs text-white/35">No project files yet.</p>
-                  ) : fileSummary.map((entry) => {
-                    const FileIcon = entry.kind === "folder" ? Folder : FileText;
-                    return (
-                      <Link key={`${entry.kind}-${entry.name}`} href={`/dashboard/projects/${project.id}/files`} className="flex items-center gap-2 py-2.5 text-sm text-white/65 hover:text-white">
-                        <FileIcon size={15} className={entry.kind === "folder" ? "text-blue-400" : "text-white/45"}/>
-                        <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-                        <span className="text-[10px] text-white/35">{entry.kind === "folder" ? `${entry.count} items` : formatBytes(entry.size || 0)}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className="rounded-xl border border-white/10 bg-[#0d1625]">
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                  <h2 className="font-bold">Pages</h2>
-                  <Link href={`/dashboard/projects/${project.id}/pages`} className="text-xs text-blue-400">Manage pages →</Link>
-                </div>
-                <div className="space-y-2 p-4 text-sm">
-                  {pages.length === 0 ? (
-                    <p className="py-2 text-xs text-white/35">No WonderBuild pages saved yet.</p>
-                  ) : pages.slice(0, 5).map((page) => {
-                    const published = publishedPageIds.includes(page.id);
-                    return (
-                      <div key={page.id} className="flex items-center justify-between gap-3 text-white/65">
-                        <span className="flex min-w-0 items-center gap-2"><FileText size={14} className="text-white/35"/><span className="truncate">{page.name}</span></span>
-                        <span className={published ? "text-emerald-400" : "text-white/35"}>{published ? "Published" : "Draft"}</span>
-                      </div>
-                    );
-                  })}
-                  <Link href={builderHref} className="mt-3 inline-flex items-center gap-2 text-xs text-blue-400">+ Add new page</Link>
-                </div>
-              </section>
-            </div>
-          </div>
+          <RepositoryFileBrowser
+            projectId={project.id}
+            files={files}
+            updatedLabel={formatRelativeTime(project.updatedAt || project.updated_at)}
+          />
         </main>
 
         <aside className="space-y-4">
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
-            <div className="mb-4 flex items-center justify-between"><h2 className="font-bold">Project Details</h2><Link href="/dashboard/settings" className="text-xs text-blue-400">Edit</Link></div>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-bold">Project Details</h2>
+              <Link href="/dashboard/settings" className="text-xs text-blue-400">Edit</Link>
+            </div>
             <dl className="divide-y divide-white/10 text-sm">
-              <div className="flex justify-between gap-3 py-3"><dt className="text-white/40">Project ID</dt><dd className="flex items-center gap-2 font-mono text-xs"><span>{project.id.slice(0, 12)}</span><button type="button" onClick={() => navigator.clipboard?.writeText(project.id)} className="text-white/35 hover:text-white" aria-label="Copy project ID"><Copy size={13}/></button></dd></div>
+              <div className="flex justify-between gap-3 py-3">
+                <dt className="text-white/40">Project ID</dt>
+                <dd className="flex items-center gap-2 font-mono text-xs">
+                  <span>{project.id.slice(0, 12)}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(project.id)}
+                    className="text-white/35 hover:text-white"
+                    aria-label="Copy project ID"
+                  >
+                    <Copy size={13}/>
+                  </button>
+                </dd>
+              </div>
               <div className="flex justify-between gap-3 py-3"><dt className="text-white/40">Workspace</dt><dd className="text-right">{workspaceName}</dd></div>
               <div className="flex justify-between gap-3 py-3"><dt className="text-white/40">Created</dt><dd>{formatDate(project.createdAt || project.created_at)}</dd></div>
               <div className="flex justify-between gap-3 py-3"><dt className="text-white/40">Project type</dt><dd>{typeLabel(tool)}</dd></div>
               <div className="flex justify-between gap-3 py-3"><dt className="text-white/40">Status</dt><dd className={isPublished ? "text-emerald-400" : "text-white/60"}>{isPublished ? "Published" : "Draft"}</dd></div>
-              {project.description && <div className="py-3"><dt className="mb-2 text-white/40">Description</dt><dd className="text-xs leading-5 text-white/65">{project.description}</dd></div>}
+              {project.description && (
+                <div className="py-3">
+                  <dt className="mb-2 text-white/40">Description</dt>
+                  <dd className="text-xs leading-5 text-white/65">{project.description}</dd>
+                </div>
+              )}
             </dl>
           </section>
 
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <h2 className="mb-3 font-bold">Quick Actions</h2>
             <div className="space-y-2">
-              <button type="button" onClick={() => void duplicateProject()} disabled={duplicating} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5 disabled:opacity-50"><Copy size={15}/>{duplicating ? "Duplicating..." : "Duplicate project"}</button>
-              <button type="button" onClick={downloadZip} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5"><Download size={15}/> Export project</button>
-              <Link href="/dashboard/collaboration" className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5"><Users size={15}/> Invite collaborator</Link>
+              <button
+                type="button"
+                onClick={() => void duplicateProject()}
+                disabled={duplicating}
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5 disabled:opacity-50"
+              >
+                <Copy size={15}/>{duplicating ? "Duplicating..." : "Duplicate project"}
+              </button>
+              <button
+                type="button"
+                onClick={downloadZip}
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5"
+              >
+                <Download size={15}/> Export project
+              </button>
+              <Link href="/dashboard/collaboration" className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
+                <Users size={15}/> Invite collaborator
+              </Link>
             </div>
           </section>
 
