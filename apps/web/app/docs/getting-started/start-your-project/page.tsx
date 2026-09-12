@@ -94,7 +94,7 @@ export default function StartYourProjectDocsPage() {
 
           <p className="mt-8 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Build Your Project</p>
           <nav className="mt-3 space-y-1 text-sm text-slate-400">
-            <a href="#wonderbuild" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderBuild</a>
+            <Link href="/docs/wonderbuild/start" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderBuild</Link>
             <a href="#wonderspace" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderSpace</a>
             <a href="#wonderplay" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderPlay</a>
             <a href="#npc" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">NPC-AI-SIM</a>
@@ -259,13 +259,16 @@ export default function StartYourProjectDocsPage() {
               <div className="rounded-3xl bg-slate-950 p-7 text-white sm:p-8">
                 <CheckCircle2 className="h-7 w-7 text-emerald-400" />
                 <h2 className="mt-4 text-2xl font-black">You chose your build path</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-300">The next documentation level is Build Your Project. Each product will get its own detailed pages for the actual controls, workflow, images, and troubleshooting instead of dumping everything into one giant article.</p>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-300">The next documentation level is Build Your Project. WonderBuild now has its own Start page, and the rest of its editor documentation will be added one section at a time.</p>
+                <Link href="/docs/wonderbuild/start" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold hover:bg-violet-500">
+                  Continue to WonderBuild Start <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
             </section>
 
             <div className="mt-12 flex items-center justify-between border-t border-slate-200 pt-7 text-sm">
               <Link href="/docs/getting-started/sign-in" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" /> Sign In</Link>
-              <Link href="#wonderbuild" className="inline-flex items-center gap-2 font-semibold text-blue-700">Choose a builder <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/docs/wonderbuild/start" className="inline-flex items-center gap-2 font-semibold text-violet-700">WonderBuild Start <ArrowRight className="h-4 w-4" /></Link>
             </div>
           </article>
         </main>
