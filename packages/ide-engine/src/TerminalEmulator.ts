@@ -96,6 +96,8 @@ export class TerminalEmulator {
       this.shellInputWriter = null;
     }
 
+    this.shellProcess?.kill();
+
     if (this.outputPipePromise) {
       await this.outputPipePromise;
       this.outputPipePromise = null;
@@ -119,6 +121,11 @@ export class TerminalEmulator {
 
   focus(): void {
     this.terminal?.focus();
+  }
+
+  async sendInput(data: string): Promise<void> {
+    if (!this.shellInputWriter) throw new Error('Terminal shell is not attached');
+    await this.shellInputWriter.write(data);
   }
 
   async dispose(): Promise<void> {

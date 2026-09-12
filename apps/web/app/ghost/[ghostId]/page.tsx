@@ -23,6 +23,8 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
   const [fileContent, setFileContent] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [fileCount, setFileCount] = useState(0);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   const openFile = useCallback(async (filePath: string) => {
     if (!wcManager.isReady()) return;
@@ -30,10 +32,36 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
       const content = await wcManager.readFile(filePath);
       setActiveFile(filePath);
       setFileContent(content);
+      setIsDirty(false);
     } catch (err) {
       logger.error("Failed to read file:", err);
     }
   }, []);
+
+  const saveFile = useCallback(async () => {
+    if (!activeFile || !wcManager.isReady()) return;
+    try {
+      await wcManager.writeFile(activeFile, fileContent);
+      setIsDirty(false);
+    } catch (err) {
+      logger.error("Failed to save file:", err);
+      setError("Failed to save the current file");
+    }
+  }, [activeFile, fileContent]);
+
+  const runProject = useCallback(async () => {
+    if (!termEmulator.current || isRunning) return;
+    setIsRunning(true);
+    setPreviewUrl("");
+    try {
+      if (isDirty) await saveFile();
+      await termEmulator.current.sendInput("npm install && npm run dev\r");
+    } catch (err) {
+      logger.error("Failed to run project:", err);
+      setError("Failed to start the project");
+      setIsRunning(false);
+    }
+  }, [isDirty, isRunning, saveFile]);
 
   const refreshFileTree = useCallback(async () => {
     if (!wcManager.isReady()) return;
@@ -86,6 +114,7 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
 
         wcManager.onServerReady((_port, url) => {
           setPreviewUrl(url);
+          setIsRunning(false);
         });
 
         if (termEmulator.current) {
@@ -122,7 +151,7 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
     for (const node of nodes) {
       if (node.type === "directory") {
         result.push(
-          <div key={node.name}>
+          <div key={node.path}>
             <div
               className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#21262d] rounded cursor-pointer text-sm"
               style={{ paddingLeft: `${12 + depth * 16}px` }}
@@ -136,10 +165,10 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
       } else {
         result.push(
           <div
-            key={node.name}
-            onClick={() => openFile(node.name)}
+            key={node.path}
+            onClick={() => openFile(node.path)}
             className={`flex items-center gap-2 px-3 py-1.5 hover:bg-[#21262d] rounded cursor-pointer text-sm ${
-              activeFile === node.name ? "bg-blue-500/10 text-blue-400" : "text-gray-400"
+              activeFile === node.path ? "bg-blue-500/10 text-blue-400" : "text-gray-400"
             }`}
             style={{ paddingLeft: `${12 + depth * 16}px` }}
           >
@@ -182,6 +211,24 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
+          {status === "ready" && (
+            <>
+              <button
+                onClick={saveFile}
+                disabled={!activeFile || !isDirty}
+                className="rounded bg-[#21262d] px-3 py-1 text-gray-300 hover:bg-[#30363d] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Save
+              </button>
+              <button
+                onClick={runProject}
+                disabled={isRunning}
+                className="rounded bg-green-600 px-3 py-1 font-semibold text-white hover:bg-green-500 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isRunning ? "Starting…" : "Run"}
+              </button>
+            </>
+          )}
           <span>{fileCount} files</span>
           <span>•</span>
           <span>Ghost ID: {params.ghostId.slice(0, 8)}...</span>
@@ -237,7 +284,16 @@ export default function GhostPage({ params }: { params: { ghostId: string } }) {
               {activeFile ? (
                 <textarea
                   value={fileContent}
-                  readOnly
+                  onChange={(event) => {
+                    setFileContent(event.target.value);
+                    setIsDirty(true);
+                  }}
+                  onKeyDown={(event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+                      event.preventDefault();
+                      void saveFile();
+                    }
+                  }}
                   className="w-full h-full bg-[#0d1117] text-[#c9d1d9] p-4 font-mono text-sm resize-none focus:outline-none border-none"
                   style={{ tabSize: 2 }}
                   spellCheck={false}
