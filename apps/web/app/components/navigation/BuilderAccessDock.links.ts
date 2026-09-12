@@ -16,10 +16,10 @@ export const BUILDER_LINKS: BuilderDockLink[] = [
     description: "AI-powered website builder",
   },
   {
-    label: "Cloud IDE",
-    href: "/ide",
+    label: "WonderSpace",
+    href: "/wonderspace",
     icon: Code,
-    description: "Full cloud-based development environment (code-server)",
+    description: "Private cloud development environment with files, terminal, Git, and AI coding tools",
   },
   {
     label: "AI Playground",
