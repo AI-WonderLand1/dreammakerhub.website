@@ -14,7 +14,6 @@ export const menuItems: NavMenuItem[] = [
     title: "Code",
     items: [
       { name: "WonderSpace", href: "/wonderspace", icon: "💻" },
-      { name: "Cloud IDE", href: "/ide", icon: "🖥️" },
       { name: "AI Playground", href: "https://playground.dreammakerhub.website/", icon: "🤖" },
     ],
   },
