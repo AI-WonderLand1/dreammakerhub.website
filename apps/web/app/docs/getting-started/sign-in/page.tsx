@@ -1,0 +1,265 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
+  ExternalLink,
+  Github,
+  KeyRound,
+  LogIn,
+  Route,
+  ShieldCheck,
+} from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Sign In | DreamMakerHub Docs',
+  description: 'Sign in to DreamMakerHub and open your projects.',
+};
+
+const toc = [
+  ['Before you sign in', '#before-you-sign-in'],
+  ['Sign in with email', '#email-sign-in'],
+  ['Use GitHub or Google', '#oauth'],
+  ['Where you go next', '#redirects'],
+  ['If something goes wrong', '#troubleshooting'],
+  ['What happens next', '#next'],
+] as const;
+
+function AuthPreview() {
+  return (
+    <div className="overflow-hidden rounded-3xl border border-slate-800 bg-black p-5 shadow-2xl sm:p-8">
+      <div className="mx-auto max-w-md text-center">
+        <div className="mb-6 inline-flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 text-sm font-black text-white">AI</div>
+          <span className="text-xl font-bold text-white">AI Wonderland</span>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-left">
+          <div className="text-center">
+            <p className="text-xl font-bold text-white">Welcome</p>
+            <p className="mt-1 text-sm text-slate-400">Sign in to continue building</p>
+          </div>
+          <div className="mt-6 space-y-3">
+            <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-500">Email</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-500">Password</div>
+            <div className="rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-3 text-center text-sm font-bold text-white">Sign In</div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-center text-sm text-white">GitHub</div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-center text-sm text-white">Google</div>
+          </div>
+          <p className="mt-4 text-center text-sm text-slate-500">No account? <span className="font-semibold text-pink-400">Sign Up</span></p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-4">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-sm font-black text-white">{number}</span>
+      <div>
+        <h3 className="font-bold text-slate-950">{title}</h3>
+        <div className="mt-1 text-sm leading-6 text-slate-600">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignInDocsPage() {
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
+          <Link href="/docs" className="flex items-center gap-2 font-black tracking-tight">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600">D</span>
+            <span>DreamMakerHub <span className="font-medium text-slate-400">Docs</span></span>
+          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/support" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">Help</Link>
+            <Link href="/public-pages/auth" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500">Open Sign In</Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_230px]">
+        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] overflow-y-auto border-r border-slate-800 px-4 py-7 lg:block">
+          <p className="px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Getting Started</p>
+          <nav className="mt-3 space-y-1 text-sm">
+            <Link href="/docs/getting-started/sign-up" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">1. Sign Up</Link>
+            <Link href="/docs/getting-started/sign-in" className="block rounded-lg bg-blue-600/15 px-3 py-2 font-semibold text-blue-300">2. Sign In</Link>
+            <Link href="/docs#start-project" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">3. Start Your Project</Link>
+          </nav>
+
+          <p className="mt-8 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Build Your Project</p>
+          <nav className="mt-3 space-y-1 text-sm text-slate-400">
+            <Link href="/docs#wonderbuild" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderBuild</Link>
+            <Link href="/wonderspace" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderSpace</Link>
+            <Link href="/dashboard/3dhub" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">3D</Link>
+          </nav>
+        </aside>
+
+        <main className="min-w-0 bg-white text-slate-950">
+          <article className="mx-auto max-w-4xl px-5 py-9 sm:px-8 lg:px-10 lg:py-12">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+              <Link href="/docs" className="hover:text-blue-600">Docs</Link>
+              <ChevronRight className="h-4 w-4" />
+              <span>Getting Started</span>
+              <ChevronRight className="h-4 w-4" />
+              <span className="font-medium text-slate-700">Sign In</span>
+            </div>
+
+            <div className="mt-7 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">
+                <LogIn className="h-4 w-4" /> Step 2
+              </div>
+              <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Sign in and return to your projects</h1>
+              <p className="mt-4 text-lg leading-8 text-slate-600">Use the account you already created. DreamMakerHub signs you in, checks your session, and normally sends you to Projects unless you were headed to another protected part of the app.</p>
+            </div>
+
+            <section id="before-you-sign-in" className="scroll-mt-28 pt-12">
+              <h2 className="text-2xl font-black">Before you sign in</h2>
+              <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+                <div className="flex gap-3">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+                  <div>
+                    <p className="font-bold text-slate-950">Use the same account method you created.</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">If you registered with email and password, use those credentials. If you used GitHub or Google, use that provider again. If you just created an email account, complete the confirmation step first.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="email-sign-in" className="scroll-mt-28 pt-14">
+              <h2 className="text-3xl font-black tracking-tight">Sign in with email and password</h2>
+              <p className="mt-3 leading-7 text-slate-600">The current DreamMakerHub account page has an Email field, a Password field, and a Sign In button.</p>
+
+              <div className="mt-7"><AuthPreview /></div>
+
+              <div className="mt-8 space-y-6">
+                <Step number={1} title="Open the account page">
+                  Open <Link href="/public-pages/auth" className="font-semibold text-blue-700 underline underline-offset-4">DreamMakerHub Sign In</Link>. If you already have an active verified session, the page may redirect you before the form appears.
+                </Step>
+                <Step number={2} title="Enter your email">
+                  Use the email connected to your DreamMakerHub account.
+                </Step>
+                <Step number={3} title="Enter your password">
+                  Enter the password for that account. The password stays hidden in the password field while you type.
+                </Step>
+                <Step number={4} title="Select Sign In">
+                  DreamMakerHub submits the email and password to the authentication service. If the credentials are rejected, the returned error is shown underneath the fields.
+                </Step>
+              </div>
+            </section>
+
+            <section id="oauth" className="scroll-mt-28 pt-14">
+              <h2 className="text-3xl font-black tracking-tight">Sign in with GitHub or Google</h2>
+              <p className="mt-3 leading-7 text-slate-600">The account page currently supports GitHub and Google buttons. Those are the only provider buttons shown on the current screen.</p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <Github className="h-6 w-6" />
+                  <h3 className="mt-4 font-bold">GitHub</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, finish GitHub authorization, and allow the browser to return to DreamMakerHub.</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <div className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 text-xs font-black">G</div>
+                  <h3 className="mt-4 font-bold">Google</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose Google, select the Google account you use with DreamMakerHub, and complete the provider flow.</p>
+                </div>
+              </div>
+            </section>
+
+            <section id="redirects" className="scroll-mt-28 pt-14">
+              <h2 className="text-3xl font-black tracking-tight">Where you go after sign in</h2>
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <div className="flex gap-3">
+                  <Route className="mt-0.5 h-6 w-6 shrink-0 text-blue-700" />
+                  <div>
+                    <p className="font-bold">Normal destination: Projects</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">When there is no other destination, DreamMakerHub sends a successful sign-in to <Link href="/dashboard/projects" className="font-semibold text-blue-700 underline underline-offset-4">your Projects dashboard</Link>.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">If another protected DreamMakerHub page sent you to sign in, the site can return you to that internal destination after authentication.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="troubleshooting" className="scroll-mt-28 pt-14">
+              <div className="flex items-center gap-3">
+                <CircleHelp className="h-7 w-7 text-amber-600" />
+                <h2 className="text-3xl font-black tracking-tight">If something goes wrong</h2>
+              </div>
+
+              <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
+                <div className="p-5">
+                  <h3 className="font-bold">The account page immediately sends me somewhere else</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">That usually means DreamMakerHub found an active verified session. It redirects signed-in users to the requested destination, or to Projects when no other destination was requested.</p>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold">My email or password is rejected</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Check that you are using the account you originally created and that the email is typed correctly. DreamMakerHub displays the authentication service's returned error underneath the form instead of silently failing.</p>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold">I just signed up and cannot sign in</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">If you used email and password, finish the email confirmation step from Sign Up first, then return to the account page.</p>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold">“Authentication service is temporarily unavailable”</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Refresh and try again. This message means the account page could not load the authentication configuration, so repeatedly entering different credentials will not solve that service problem.</p>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold">GitHub or Google fails</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Return to the account page and retry. DreamMakerHub currently reports provider rejection, missing OAuth responses, session-exchange failures, and callback failures on the account screen.</p>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold">I forgot my password</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">The current account screen does not show a password-reset control. Do not create a second account just to get around the problem. Use the Support Center for help until a password-recovery flow is exposed in the product.</p>
+                </div>
+              </div>
+
+              <Link href="/support" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold hover:border-blue-400 hover:text-blue-700">
+                Open Support Center <ExternalLink className="h-4 w-4" />
+              </Link>
+            </section>
+
+            <section id="next" className="scroll-mt-28 pt-14">
+              <div className="rounded-3xl bg-slate-950 p-7 text-white sm:p-8">
+                <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+                <h2 className="mt-4 text-2xl font-black">What happens next</h2>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-300">Once you are signed in, the next documentation step is Start Your Project. That section will help you choose the actual DreamMakerHub build system for what you want to make, instead of teaching you how DreamMakerHub itself is built.</p>
+                <Link href="/docs#start-project" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold hover:bg-blue-500">
+                  Next: Start Your Project <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </section>
+
+            <div className="mt-12 flex items-center justify-between border-t border-slate-200 pt-7 text-sm">
+              <Link href="/docs/getting-started/sign-up" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" /> Sign Up</Link>
+              <Link href="/docs#start-project" className="inline-flex items-center gap-2 font-semibold text-blue-700">Start Your Project <ArrowRight className="h-4 w-4" /></Link>
+            </div>
+          </article>
+        </main>
+
+        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] overflow-y-auto border-l border-slate-200 bg-white px-5 py-8 text-slate-950 xl:block">
+          <p className="text-sm font-black">On this page</p>
+          <nav className="mt-4 space-y-3 border-l border-slate-200 pl-4 text-sm">
+            {toc.map(([label, href]) => (
+              <a key={href} href={href} className="block text-slate-500 hover:text-blue-700">{label}</a>
+            ))}
+          </nav>
+          <div className="mt-8 border-t border-slate-200 pt-6">
+            <p className="text-sm font-black">Need help?</p>
+            <Link href="/support" className="mt-3 flex items-center gap-2 text-sm text-slate-600 hover:text-blue-700"><CircleHelp className="h-4 w-4" /> Support Center</Link>
+          </div>
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <KeyRound className="h-5 w-5 text-amber-700" />
+            <p className="mt-2 text-xs leading-5 text-amber-900">No reset button is currently shown on the sign-in screen. The docs will not pretend otherwise.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
