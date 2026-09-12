@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/supabase/auth-context";
 import {
+  Bell,
   Box,
   ChevronDown,
   Code2,
@@ -27,6 +28,12 @@ type Project = {
   type?: string | null;
 };
 
+const projectTypeLabel = (value?: string | null) => {
+  if (["game", "3d_scene", "playcanvas"].includes(value || "")) return "3D Experience";
+  if (value === "workspace") return "IDE Project";
+  return "Website";
+};
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,6 +42,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
 
   useEffect(() => {
     if (loading) return;
@@ -42,6 +50,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       router.replace(`/public-pages/auth?redirectTo=${encodeURIComponent(pathname || "/dashboard")}`);
     }
   }, [loading, pathname, router, user]);
+
+  useEffect(() => {
+    setSearchValue(searchParams.get("q") || "");
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) return;
@@ -76,18 +88,23 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     user?.email?.split("@")[0] ||
     "Account";
   const workspaceName = `${displayName}'s Workspace`;
-  const projectSuffix = currentProject ? `?projectId=${encodeURIComponent(currentProject.id)}` : "";
   const isProjectRoute = pathname.startsWith("/dashboard/projects/");
+
+  const withProject = (href: string) => {
+    if (!currentProject) return href;
+    const separator = href.includes("?") ? "&" : "?";
+    return `${href}${separator}projectId=${encodeURIComponent(currentProject.id)}`;
+  };
 
   const items = [
     { href: "/dashboard", label: "Home", icon: Home },
     { href: "/dashboard#projects", label: "Projects", icon: Folder },
     { href: "/templates", label: "Templates", icon: LayoutTemplate },
-    { href: `/wonder-build${projectSuffix}`, label: "WonderBuild", icon: Pencil },
-    { href: `/wonderspace${projectSuffix}`, label: "WonderSpace IDE", icon: Code2 },
-    { href: "/3d-library", label: "3D Assets", icon: Box },
-    { href: "/dashboard/collaboration", label: "Team", icon: Users },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: withProject("/wonder-build/builder"), label: "WonderBuild", icon: Pencil },
+    { href: withProject("/wonderspace"), label: "WonderSpace IDE", icon: Code2 },
+    { href: withProject("/3d-library"), label: "3D Assets", icon: Box },
+    { href: withProject("/dashboard/collaboration"), label: "Team", icon: Users },
+    { href: withProject("/dashboard/settings"), label: "Settings", icon: Settings },
   ];
 
   const isActive = (href: string) => {
@@ -97,10 +114,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return pathname === pathOnly || pathname.startsWith(`${pathOnly}/`);
   };
 
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchValue.trim();
+    router.push(query ? `/dashboard?q=${encodeURIComponent(query)}#projects` : "/dashboard#projects");
+  };
+
   if (loading) {
     return <div className="grid min-h-screen place-items-center bg-[#06101c] text-sm text-white/50">Loading...</div>;
   }
   if (!user) return null;
+
+  const activityHref = currentProject
+    ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}#project-activity`
+    : "/dashboard#workspace-activity";
 
   return (
     <div className="min-h-screen bg-[#06101c] text-white">
@@ -110,26 +137,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </button>
 
         <div className="mx-auto flex w-full max-w-[1640px] items-center justify-between gap-4">
-          <div className="relative w-full max-w-[700px]">
+          <form onSubmit={submitSearch} className="relative w-full max-w-[700px]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
             <input
-              aria-label="Search"
-              placeholder="Search projects, templates, assets, or people..."
-              className="h-11 w-full rounded-lg border border-white/15 bg-[#0a1626] pl-11 pr-12 text-sm outline-none placeholder:text-white/35 focus:border-blue-500/60"
+              aria-label="Search projects"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="Search projects..."
+              className="h-11 w-full rounded-lg border border-white/15 bg-[#0a1626] pl-11 pr-16 text-sm outline-none placeholder:text-white/35 focus:border-blue-500/60"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-white/10 px-2 py-1 text-[10px] text-white/35">⌘ K</span>
-          </div>
+            <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/10 px-2 py-1 text-[10px] text-white/45 hover:bg-white/5 hover:text-white">
+              Enter
+            </button>
+          </form>
 
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link href="/dashboard?create=project#projects" className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-blue-950/20">
               <Plus size={16} /> <span className="hidden sm:inline">Create</span><ChevronDown size={13} className="hidden sm:block" />
             </Link>
-            <span className="relative hidden h-9 w-9 place-items-center rounded-full border border-white/10 text-white/70 md:grid">●<span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-400" /></span>
-            <div className="hidden items-center gap-2 sm:flex">
+            <Link href={activityHref} aria-label="Recent activity" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/65 hover:bg-white/5 hover:text-white">
+              <Bell size={18} />
+            </Link>
+            <Link href={withProject("/dashboard/settings")} className="hidden items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-white/5 sm:flex" aria-label="Account settings">
               <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-blue-600 text-sm font-bold ring-1 ring-white/20">{displayName.charAt(0).toUpperCase()}</span>
               <span className="max-w-32 truncate text-sm font-semibold">{displayName}</span>
               <ChevronDown size={14} className="text-white/45" />
-            </div>
+            </Link>
           </div>
         </div>
       </header>
@@ -147,14 +180,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="space-y-2 p-4">
-          <div className="rounded-xl border border-white/15 bg-[#0d1a2b] p-3">
+          <Link href="/dashboard" className="block rounded-xl border border-white/15 bg-[#0d1a2b] p-3 hover:border-violet-500/35 hover:bg-[#101d30]">
             <p className="text-[9px] font-bold uppercase tracking-wider text-white/35">Workspace</p>
             <div className="mt-2 flex items-center gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-600 text-sm font-bold">{displayName.charAt(0).toUpperCase()}</span>
               <span className="min-w-0 flex-1"><b className="block truncate text-xs">{workspaceName}</b><span className="text-[10px] text-white/40">Personal workspace</span></span>
               <ChevronDown size={13} className="text-white/40" />
             </div>
-          </div>
+          </Link>
 
           {!isProjectRoute && (
             <div className="rounded-xl border border-white/10 bg-[#0b1726] p-2">
@@ -165,8 +198,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <span className="text-blue-400">✓</span>
               </div>
               <p className="px-2 pb-1 pt-3 text-[10px] font-semibold text-white/45">Organization <span className="font-normal text-white/25">(Optional)</span></p>
+              <p className="px-2 pb-2 text-[10px] leading-4 text-white/35">No organization workspace is connected yet.</p>
               <Link href="/dashboard/collaboration" className="mt-1 flex items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs text-white/65 hover:bg-white/5 hover:text-white">
-                <Plus size={13} /> Create organization
+                <Users size={13} /> Open team tools
               </Link>
             </div>
           )}
@@ -178,7 +212,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <p className="px-2 pb-1 text-[10px] text-white/35">Current Project</p>
                 <button type="button" onClick={() => setProjectMenuOpen((open) => !open)} className="flex w-full items-center gap-2 rounded-lg bg-blue-500/10 px-2 py-2 text-left">
                   <span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-600/25"><Folder size={17} /></span>
-                  <span className="min-w-0 flex-1"><b className="block truncate text-xs">{currentProject.name}</b><span className="text-[10px] text-white/40">{currentProject.tool || currentProject.type || "Project"}</span></span>
+                  <span className="min-w-0 flex-1"><b className="block truncate text-xs">{currentProject.name}</b><span className="text-[10px] text-white/40">{projectTypeLabel(currentProject.tool || currentProject.type)}</span></span>
                   <ChevronDown size={13} className="text-white/40" />
                 </button>
 

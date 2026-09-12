@@ -218,10 +218,12 @@ export default function ProjectHubPage() {
   }
 
   const tool = project.tool || project.type || "wonderbuild";
+  const isCodeProject = tool === "workspace";
   const builderHref = is3dType(tool)
     ? `/dashboard/3dhub?projectId=${encodeURIComponent(project.id)}`
     : `/wonder-build/builder?projectId=${encodeURIComponent(project.id)}`;
   const projectQuery = `projectId=${encodeURIComponent(project.id)}`;
+  const collaboratorCount = Math.max(1, onlineCount);
 
   const repoTabs = [
     { label: "Code", href: `/dashboard/projects/${project.id}`, icon: Code2, active: true },
@@ -249,12 +251,18 @@ export default function ProjectHubPage() {
         <main className="min-w-0">
           <section className="mb-3 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
             <div className="relative h-48 overflow-hidden rounded-xl border border-white/10 bg-[#0b1422]">
-              <iframe
-                src={`/preview/${encodeURIComponent(project.id)}`}
-                title={`${project.name} preview thumbnail`}
-                className="h-full w-full border-0 bg-[#08111e] pointer-events-none"
-                loading="lazy"
-              />
+              {isCodeProject ? (
+                <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_72%_28%,rgba(59,130,246,.25),transparent_34%),linear-gradient(145deg,#10182a,#07111d)]">
+                  <div className="text-center"><Code2 className="mx-auto text-blue-300" size={44}/><p className="mt-3 text-sm font-semibold text-white/70">Code / IDE project</p></div>
+                </div>
+              ) : (
+                <iframe
+                  src={`/preview/${encodeURIComponent(project.id)}`}
+                  title={`${project.name} preview thumbnail`}
+                  className="h-full w-full border-0 bg-[#08111e] pointer-events-none"
+                  loading="lazy"
+                />
+              )}
               <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
             </div>
 
@@ -265,21 +273,31 @@ export default function ProjectHubPage() {
                 <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/55">{isPublished ? "Published" : "Draft"}</span>
               </div>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-white/55">
-                {project.description || `Manage, edit, preview, and publish ${project.name} from one project dashboard.`}
+                {project.description || `Manage ${project.name} from one project dashboard.`}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <Link href={builderHref} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
-                  <Pencil size={15}/> Open in {is3dType(tool) ? "3D Studio" : "WonderBuild"}
-                </Link>
+                {isCodeProject ? (
+                  <Link href={`/dashboard/projects/${project.id}/files`} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
+                    <Code2 size={15}/> Open Files
+                  </Link>
+                ) : (
+                  <Link href={builderHref} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
+                    <Pencil size={15}/> Open in {is3dType(tool) ? "3D Studio" : "WonderBuild"}
+                  </Link>
+                )}
                 <Link href={`/wonderspace?projectId=${encodeURIComponent(project.id)}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
                   <Code2 size={15}/> Open in WonderSpace IDE
                 </Link>
-                <Link href={`/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
-                  <ExternalLink size={15}/> Preview
-                </Link>
-                <Link href={`/dashboard/projects/${project.id}/pages`} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold hover:bg-blue-500">
-                  <Globe2 size={15}/> Publish
-                </Link>
+                {!isCodeProject && (
+                  <Link href={`/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
+                    <ExternalLink size={15}/> Preview
+                  </Link>
+                )}
+                {!isCodeProject && (
+                  <Link href={`/dashboard/projects/${project.id}/pages`} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold hover:bg-blue-500">
+                    <Globe2 size={15}/> Publish
+                  </Link>
+                )}
               </div>
             </div>
           </section>
@@ -307,7 +325,7 @@ export default function ProjectHubPage() {
               [Clock3, "Last saved", formatRelativeTime(project.updatedAt || project.updated_at), "text-emerald-400"],
               [Globe2, "Deployment", isPublished ? "Published" : "Not published", "text-amber-400"],
               [HardDrive, "Storage", formatBytes(storageBytes), "text-violet-400"],
-              [Users, "Collaborators", onlineCount > 0 ? `${onlineCount} online` : "Owner", "text-cyan-400"],
+              [Users, "Collaborators", String(collaboratorCount), "text-cyan-400"],
             ].map(([CardIcon, label, value, color]) => (
               <div key={String(label)} className="flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-[#0d1625] p-4">
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/5 ${String(color)}`}>
@@ -332,7 +350,7 @@ export default function ProjectHubPage() {
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-bold">Project Details</h2>
-              <Link href="/dashboard/settings" className="text-xs text-blue-400">Edit</Link>
+              <Link href={`/dashboard/settings?${projectQuery}`} className="text-xs text-blue-400">Edit</Link>
             </div>
             <dl className="divide-y divide-white/10 text-sm">
               <div className="flex justify-between gap-3 py-3">
@@ -380,20 +398,22 @@ export default function ProjectHubPage() {
               >
                 <Download size={15}/> Export project
               </button>
-              <Link href="/dashboard/collaboration" className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
+              <Link href={`/dashboard/collaboration?${projectQuery}`} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
                 <Users size={15}/> Invite collaborator
               </Link>
             </div>
           </section>
 
-          <WonderRealtimeWidget
-            projectId={project.id}
-            title="Recent Activity"
-            compact
-            showTestButton={false}
-            onActivity={() => void loadProjectData(false)}
-            onPresenceChange={(users) => setOnlineCount(users.length)}
-          />
+          <div id="project-activity">
+            <WonderRealtimeWidget
+              projectId={project.id}
+              title="Recent Activity"
+              compact
+              showTestButton={false}
+              onActivity={() => void loadProjectData(false)}
+              onPresenceChange={(users) => setOnlineCount(users.length)}
+            />
+          </div>
         </aside>
       </div>
     </div>
