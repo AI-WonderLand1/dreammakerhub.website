@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-opacity="0.3"/></filter>
+  </defs>
+  <rect width="960" height="540" rx="28" fill="url(#bg)"/>
+  <rect x="48" y="44" width="864" height="452" rx="20" fill="#F8FAFC"/>
+  <rect x="48" y="44" width="864" height="52" rx="20" fill="#111827"/>
+  <circle cx="78" cy="70" r="6" fill="#EF4444"/><circle cx="99" cy="70" r="6" fill="#F59E0B"/><circle cx="120" cy="70" r="6" fill="#22C55E"/>
+  <rect x="74" y="122" width="160" height="346" rx="14" fill="#111827"/>
+  <rect x="92" y="150" width="124" height="34" rx="8" fill="#1D4ED8" fill-opacity="0.35"/>
+  <rect x="92" y="206" width="100" height="12" rx="6" fill="#475569"/><rect x="92" y="240" width="116" height="12" rx="6" fill="#475569"/><rect x="92" y="274" width="88" height="12" rx="6" fill="#475569"/>
+  <rect x="260" y="122" width="626" height="346" rx="18" fill="#E2E8F0"/>
+  <rect x="288" y="150" width="570" height="240" rx="18" fill="#2563EB"/>
+  <circle cx="573" cy="270" r="52" fill="white" fill-opacity="0.94" filter="url(#shadow)"/>
+  <path d="M557 241L602 270L557 299V241Z" fill="#2563EB"/>
+  <rect x="288" y="416" width="206" height="18" rx="9" fill="#94A3B8"/><rect x="512" y="416" width="130" height="18" rx="9" fill="#CBD5E1"/>
+  <text x="74" y="520" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="18" font-weight="700">DreamMakerHub · Start your first project</text>
+</svg>
