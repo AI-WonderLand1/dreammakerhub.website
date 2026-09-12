@@ -276,15 +276,23 @@ export default function ProjectHubPage() {
                 {project.description || `Manage ${project.name} from one project dashboard.`}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <Link href={builderHref} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
-                  <Pencil size={15}/> Open in {is3dType(tool) ? "3D Studio" : "WonderBuild"}
-                </Link>
+                {isCodeProject ? (
+                  <Link href={`/dashboard/projects/${project.id}/files`} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
+                    <Code2 size={15}/> Open Files
+                  </Link>
+                ) : (
+                  <Link href={builderHref} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
+                    <Pencil size={15}/> Open in {is3dType(tool) ? "3D Studio" : "WonderBuild"}
+                  </Link>
+                )}
                 <Link href={`/wonderspace?projectId=${encodeURIComponent(project.id)}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
                   <Code2 size={15}/> Open in WonderSpace IDE
                 </Link>
-                <Link href={isCodeProject ? `/dashboard/projects/${project.id}/files` : `/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
-                  <ExternalLink size={15}/> {isCodeProject ? "Files" : "Preview"}
-                </Link>
+                {!isCodeProject && (
+                  <Link href={`/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
+                    <ExternalLink size={15}/> Preview
+                  </Link>
+                )}
                 {!isCodeProject && (
                   <Link href={`/dashboard/projects/${project.id}/pages`} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold hover:bg-blue-500">
                     <Globe2 size={15}/> Publish
