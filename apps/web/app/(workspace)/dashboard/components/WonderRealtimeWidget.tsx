@@ -10,7 +10,7 @@ type PresenceUser = {
   name?: string;
 };
 
-type ActivityItem = {
+export type WonderActivityItem = {
   ts: number;
   type: string;
   message: string;
@@ -24,16 +24,36 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export default function WonderRealtimeWidget(props: {
   projectId?: string | null;
   title?: string;
+  compact?: boolean;
+  showTestButton?: boolean;
+  onActivity?: (item: WonderActivityItem) => void;
+  onPresenceChange?: (online: PresenceUser[]) => void;
 }) {
-  const { projectId, title = "Live activity" } = props;
+  const {
+    projectId,
+    title = "Live activity",
+    compact = false,
+    showTestButton = true,
+    onActivity,
+    onPresenceChange,
+  } = props;
 
   const [status, setStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
   const [online, setOnline] = useState<PresenceUser[]>([]);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [activity, setActivity] = useState<WonderActivityItem[]>([]);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const activityCallbackRef = useRef(onActivity);
+  const presenceCallbackRef = useRef(onPresenceChange);
+
+  useEffect(() => {
+    activityCallbackRef.current = onActivity;
+  }, [onActivity]);
+
+  useEffect(() => {
+    presenceCallbackRef.current = onPresenceChange;
+  }, [onPresenceChange]);
 
   const me = useMemo<PresenceUser>(() => {
-    // Default: anonymous guest (replaced with the signed-in user once loaded).
     const id = `guest-${crypto.randomUUID().slice(0, 8)}`;
     return { userId: id, name: "Guest" };
   }, []);
@@ -60,14 +80,12 @@ export default function WonderRealtimeWidget(props: {
   useEffect(() => {
     if (!supabaseUrl || !supabaseAnonKey) {
       setStatus("error");
-      setActivity((a) => [
-        { ts: Date.now(), type: "error", message: "Missing NEXT_PUBLIC_SUPABASE_URL / ANON_KEY" },
-        ...a,
-      ]);
+      const item = { ts: Date.now(), type: "error", message: "Missing NEXT_PUBLIC_SUPABASE_URL / ANON_KEY" };
+      setActivity((a) => [item, ...a]);
+      activityCallbackRef.current?.(item);
       return;
     }
 
-    // cleanup old channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
@@ -75,9 +93,7 @@ export default function WonderRealtimeWidget(props: {
 
     setStatus("connecting");
 
-    // If no projectId, we can still run a global dashboard channel
     const room = projectId ? `wonder:dash:${projectId}` : "wonder:dash:global";
-
     const channel = supabase.channel(room, {
       config: {
         presence: { key: meState.userId },
@@ -85,15 +101,17 @@ export default function WonderRealtimeWidget(props: {
       },
     });
 
-    // Broadcast activity events (fast)
     channel.on("broadcast", { event: "wb" }, (msg) => {
       const payload = (msg.payload ?? {}) as { type?: string; message?: string; from?: string };
-      const t = payload.type ?? "event";
-      const m = payload.message ?? JSON.stringify(payload);
-      setActivity((a) => [{ ts: Date.now(), type: t, message: m }, ...a].slice(0, 30));
+      const item = {
+        ts: Date.now(),
+        type: payload.type ?? "event",
+        message: payload.message ?? JSON.stringify(payload),
+      };
+      setActivity((a) => [item, ...a].slice(0, 30));
+      activityCallbackRef.current?.(item);
     });
 
-    // Presence: online users
     channel.on("presence", { event: "sync" }, () => {
       const state = channel.presenceState() as Record<string, PresenceUser[]>;
       const flattened: PresenceUser[] = [];
@@ -101,23 +119,21 @@ export default function WonderRealtimeWidget(props: {
         const arr = state[key] || [];
         for (const u of arr) flattened.push(u);
       }
-      // Deduplicate by userId
       const map = new Map<string, PresenceUser>();
       for (const u of flattened) map.set(u.userId, u);
-      setOnline(Array.from(map.values()));
+      const nextOnline = Array.from(map.values());
+      setOnline(nextOnline);
+      presenceCallbackRef.current?.(nextOnline);
     });
 
-    // Optional: listen to db updates just to show “something changed”
-    // Adjust table/column if you want; or remove this block.
     if (projectId) {
       channel.on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "projects", filter: `id=eq.${projectId}` },
         () => {
-          setActivity((a) => [
-            { ts: Date.now(), type: "db", message: "Project updated" },
-            ...a,
-          ].slice(0, 30));
+          const item = { ts: Date.now(), type: "db", message: "Project updated" };
+          setActivity((a) => [item, ...a].slice(0, 30));
+          activityCallbackRef.current?.(item);
         }
       );
     }
@@ -126,7 +142,6 @@ export default function WonderRealtimeWidget(props: {
       if (s === "SUBSCRIBED") {
         setStatus("live");
         await channel.track(meState);
-        // Announce join
         await channel.send({
           type: "broadcast",
           event: "wb",
@@ -156,63 +171,76 @@ export default function WonderRealtimeWidget(props: {
     });
   };
 
+  if (compact) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-bold">{title}</h2>
+          <div className="flex items-center gap-2 text-[11px] text-white/45">
+            <span className={`h-2 w-2 rounded-full ${status === "live" ? "bg-emerald-400" : status === "error" ? "bg-red-400" : "bg-amber-400"}`} />
+            {status === "live" ? `${online.length} online` : status}
+          </div>
+        </div>
+        <div className="mt-4 space-y-3">
+          {activity.length === 0 ? (
+            <div className="rounded-lg border border-white/5 bg-white/[.025] px-3 py-4 text-xs text-white/35">No live activity yet.</div>
+          ) : (
+            activity.slice(0, 6).map((it) => (
+              <div key={it.ts + it.type + it.message} className="flex gap-3 border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-400" />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-white/75">{it.message}</p>
+                  <p className="mt-1 text-[10px] text-white/35">{new Date(it.ts).toLocaleTimeString()} · {it.type}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-white/10 bg-[#0b0b0f] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[11px] font-black uppercase tracking-[0.22em] text-white/70">
-            {title}
-          </div>
-          <div className="text-[11px] text-white/40 mt-1">
+          <div className="text-[11px] font-black uppercase tracking-[0.22em] text-white/70">{title}</div>
+          <div className="mt-1 text-[11px] text-white/40">
             Status:{" "}
-            <span className={status === "live" ? "text-emerald-400" : "text-white/60"}>
-              {status}
-            </span>
+            <span className={status === "live" ? "text-emerald-400" : "text-white/60"}>{status}</span>
             {projectId ? ` • Project: ${projectId}` : " • Global"}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={sendTest}
-          className="text-[11px] px-3 py-1 rounded-lg border border-white/10 hover:border-white/20 text-white/70"
-        >
-          Send ping
-        </button>
+        {showTestButton && (
+          <button type="button" onClick={sendTest} className="rounded-lg border border-white/10 px-3 py-1 text-[11px] text-white/70 hover:border-white/20">
+            Send ping
+          </button>
+        )}
       </div>
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="md:col-span-1 rounded-lg border border-white/10 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
-            Online
-          </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-white/10 p-3 md:col-span-1">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Online</div>
           <div className="mt-2 space-y-1">
             {online.length === 0 ? (
               <div className="text-[11px] text-white/35">No one online</div>
             ) : (
-              online.map((u) => (
-                <div key={u.userId} className="text-[11px] text-white/70">
-                  {u.name ?? u.userId}
-                </div>
-              ))
+              online.map((u) => <div key={u.userId} className="text-[11px] text-white/70">{u.name ?? u.userId}</div>)
             )}
           </div>
         </div>
 
-        <div className="md:col-span-2 rounded-lg border border-white/10 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
-            Activity
-          </div>
-          <div className="mt-2 space-y-2 max-h-56 overflow-auto custom-scrollbar">
+        <div className="rounded-lg border border-white/10 p-3 md:col-span-2">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Activity</div>
+          <div className="custom-scrollbar mt-2 max-h-56 space-y-2 overflow-auto">
             {activity.length === 0 ? (
               <div className="text-[11px] text-white/35">No events yet</div>
             ) : (
               activity.map((it) => (
                 <div key={it.ts + it.type + it.message} className="text-[11px] text-white/70">
-                  <span className="text-white/40 mr-2">
-                    {new Date(it.ts).toLocaleTimeString()}
-                  </span>
-                  <span className="text-cyan-300 mr-2">[{it.type}]</span>
+                  <span className="mr-2 text-white/40">{new Date(it.ts).toLocaleTimeString()}</span>
+                  <span className="mr-2 text-cyan-300">[{it.type}]</span>
                   {it.message}
                 </div>
               ))
