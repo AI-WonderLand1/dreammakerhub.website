@@ -4,8 +4,8 @@ import { usePathname } from 'next/navigation';
 import Footer from '@/components/Footer';
 
 /**
- * Marketing chrome should not leak into full-screen WonderBuild website-builder
- * surfaces. Keep unrelated WonderPlay/3D routes unchanged.
+ * Marketing chrome should not leak into full-screen product surfaces such as
+ * WonderBuild or the dedicated documentation center.
  */
 export default function RouteAwareFooter() {
   const pathname = usePathname();
@@ -18,7 +18,9 @@ export default function RouteAwareFooter() {
     pathname === '/builder' ||
     pathname.startsWith('/builder/');
 
-  if (isWonderBuildWebsiteSurface) return null;
+  const isDocsSurface = pathname === '/docs' || pathname.startsWith('/docs/');
+
+  if (isWonderBuildWebsiteSurface || isDocsSurface) return null;
 
   return <Footer />;
 }
