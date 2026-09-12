@@ -79,6 +79,7 @@ export default function WonderBuildStartDocsPage() {
           <p className="mt-8 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">WonderBuild</p>
           <nav className="mt-3 space-y-1 text-sm">
             <Link href="/docs/wonderbuild/start" className="block rounded-lg bg-violet-500/15 px-3 py-2 font-semibold text-violet-300">Start</Link>
+            <Link href="/docs/wonderbuild/editor" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">Editor Basics</Link>
           </nav>
 
           <p className="mt-8 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Other Build Paths</p>
@@ -130,7 +131,7 @@ export default function WonderBuildStartDocsPage() {
               </div>
 
               <div className="mt-8">
-                <ProductPreview src="/images/screenshots/puck-builder.svg" alt="WonderBuild visual builder preview" />
+                <ProductPreview src="/docs/wonderbuild-editor.svg" alt="WonderBuild visual builder preview" />
               </div>
             </section>
 
@@ -243,7 +244,8 @@ export default function WonderBuildStartDocsPage() {
               <div className="rounded-3xl bg-slate-950 p-7 text-white sm:p-8">
                 <CheckCircle2 className="h-7 w-7 text-emerald-400" />
                 <h2 className="mt-4 text-2xl font-black">What happens next</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-300">Once the project opens, you are in the Build part of WonderBuild. The next documentation pages will cover the editor itself one piece at a time: canvas, navigation, pages, components, content, assets, AI editing, responsive controls, preview, and publish.</p>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-300">Once the project opens, you are in the Build part of WonderBuild. Continue with Editor Basics to learn the toolbar, panels, canvas, inspector, responsive controls, saving, and the normal editing workflow.</p>
+                <Link href="/docs/wonderbuild/editor" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold hover:bg-violet-500">Continue to Editor Basics <ArrowRight className="h-4 w-4" /></Link>
               </div>
 
               <div className="mt-8">
@@ -295,7 +297,7 @@ export default function WonderBuildStartDocsPage() {
 
             <div className="mt-12 flex items-center justify-between border-t border-slate-200 pt-7 text-sm">
               <Link href="/docs/getting-started/start-your-project" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-violet-700"><ArrowLeft className="h-4 w-4" /> Start Your Project</Link>
-              <span className="inline-flex items-center gap-2 font-semibold text-slate-400">Next: Editor basics <ArrowRight className="h-4 w-4" /></span>
+              <Link href="/docs/wonderbuild/editor" className="inline-flex items-center gap-2 font-semibold text-violet-700">Editor Basics <ArrowRight className="h-4 w-4" /></Link>
             </div>
           </article>
         </main>
