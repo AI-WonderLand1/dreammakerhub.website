@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   ChevronRight,
@@ -24,8 +23,21 @@ import {
 
 export const metadata: Metadata = {
   title: 'WonderBuild Editor Basics | DreamMakerHub Docs',
-  description: 'Learn the WonderBuild editor layout, canvas, panels, responsive controls, saving, and basic editing workflow.',
+  description: 'Learn the WonderBuild editor layout, canvas, panels, responsive controls, saving, preview, and publishing workflow.',
 };
+
+const sidebarWonderBuild = [
+  ['Start', '/docs/wonderbuild/start'],
+  ['Editor Basics', '/docs/wonderbuild/editor'],
+  ['Pages', '/docs#pages'],
+  ['Components', '/docs#components'],
+  ['Content & CMS', '/docs#content'],
+  ['Assets', '/docs#assets'],
+  ['AI Editing', '/docs#ai-editing'],
+  ['Responsive Design', '/docs#responsive'],
+  ['Preview', '/docs#preview'],
+  ['Publish', '/docs#publish'],
+] as const;
 
 const toc = [
   ['Open the editor', '#open'],
@@ -37,7 +49,7 @@ const toc = [
   ['Responsive controls', '#responsive'],
   ['Design, Code, and Preview', '#modes'],
   ['Save, undo, and shortcuts', '#saving'],
-  ['If something goes wrong', '#troubleshooting'],
+  ['Troubleshooting', '#troubleshooting'],
 ] as const;
 
 function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
@@ -71,8 +83,8 @@ export default function WonderBuildEditorDocsPage() {
             <span>DreamMakerHub <span className="font-medium text-slate-400">Docs</span></span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/dashboard/projects" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">My Projects</Link>
-            <Link href="/wonder-build" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500">Open WonderBuild</Link>
+            <Link href="/docs#wonderbuild" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">WonderBuild Docs</Link>
+            <Link href="/wonder-build" className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500">Open WonderBuild <ExternalLink className="h-3.5 w-3.5" /></Link>
           </div>
         </div>
       </header>
@@ -88,14 +100,22 @@ export default function WonderBuildEditorDocsPage() {
 
           <p className="mt-8 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">WonderBuild</p>
           <nav className="mt-3 space-y-1 text-sm">
-            <Link href="/docs/wonderbuild/start" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">Start</Link>
-            <Link href="/docs/wonderbuild/editor" className="block rounded-lg bg-violet-500/15 px-3 py-2 font-semibold text-violet-300">Editor Basics</Link>
-            <span className="block px-3 py-2 text-slate-600">Pages</span>
-            <span className="block px-3 py-2 text-slate-600">Components</span>
-            <span className="block px-3 py-2 text-slate-600">Assets</span>
-            <span className="block px-3 py-2 text-slate-600">AI Editing</span>
-            <span className="block px-3 py-2 text-slate-600">Preview</span>
-            <span className="block px-3 py-2 text-slate-600">Publish</span>
+            {sidebarWonderBuild.map(([label, href], index) => (
+              <Link
+                key={label}
+                href={href}
+                className={`block rounded-lg px-3 py-2 ${index === 1 ? 'bg-violet-500/15 font-semibold text-violet-300' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          <p className="mt-8 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Other Build Paths</p>
+          <nav className="mt-3 space-y-1 text-sm text-slate-400">
+            <Link href="/docs#wonderspace" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderSpace</Link>
+            <Link href="/docs#wonderplay" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">WonderPlay / 3D Hub</Link>
+            <Link href="/docs#projects" className="block rounded-lg px-3 py-2 hover:bg-slate-900 hover:text-white">Existing Projects</Link>
           </nav>
         </aside>
 
@@ -114,91 +134,64 @@ export default function WonderBuildEditorDocsPage() {
                 <MousePointer2 className="h-4 w-4" /> WonderBuild · Build
               </div>
               <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Learn the WonderBuild editor</h1>
-              <p className="mt-4 text-lg leading-8 text-slate-600">This is the main workspace where you edit a WonderBuild project. You can work visually on the canvas, switch to code, preview the result, use AI on selected elements, and publish from the same editor.</p>
+              <p className="mt-4 text-lg leading-8 text-slate-600">The editor keeps Design, Code, Preview, Pages, Assets, Components, the selected-element inspector, responsive controls, and Publish in one workspace.</p>
             </div>
 
             <section id="open" className="scroll-mt-28 pt-12">
               <h2 className="text-3xl font-black tracking-tight">Open the editor</h2>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">A new WonderBuild project normally opens the editor automatically. For an existing project, open it from My Projects rather than starting another copy.</p>
               <div className="mt-7 space-y-6">
-                <Step number={1} title="Open your WonderBuild project">
-                  Create one from <Link href="/docs/wonderbuild/start" className="font-semibold text-violet-700 underline underline-offset-4">WonderBuild Start</Link> or open an existing WonderBuild project from <Link href="/dashboard/projects" className="font-semibold text-blue-700 underline underline-offset-4">My Projects</Link>.
-                </Step>
-                <Step number={2} title="Wait for the project to open">
-                  While the project is being checked, the editor displays <strong>Opening WonderBuild…</strong>. When the project is ready, the Design workspace appears.
-                </Step>
-                <Step number={3} title="Start in Design mode">
-                  Design is the normal visual-editing mode. Code and Preview are available from the top toolbar when you need them.
-                </Step>
+                <Step number={1} title="Start or reopen a project">Create one through <Link href="/docs/wonderbuild/start" className="font-semibold text-violet-700 underline underline-offset-4">WonderBuild Start docs</Link>, or reopen an existing project from My Projects.</Step>
+                <Step number={2} title="Wait for the project check">When WonderBuild has a project ID, the editor checks the project before showing the workspace. While that happens, it can display <strong>Opening WonderBuild…</strong>.</Step>
+                <Step number={3} title="Begin in Design mode">Design is the normal visual workspace. Code and Preview are available from the same top toolbar.</Step>
               </div>
             </section>
 
             <section id="layout" className="scroll-mt-28 pt-16">
-              <div className="flex items-center gap-3">
-                <LayoutPanelTop className="h-7 w-7 text-violet-700" />
-                <h2 className="text-3xl font-black tracking-tight">Editor layout</h2>
-              </div>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The visual editor is split into four practical areas: the top toolbar, left tools, the center canvas, and the right inspector.</p>
+              <div className="flex items-center gap-3"><LayoutPanelTop className="h-7 w-7 text-violet-700" /><h2 className="text-3xl font-black tracking-tight">Editor layout</h2></div>
+              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The workspace is divided into the top toolbar, left tools, center canvas, and right inspector.</p>
               <div className="mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-3 shadow-2xl sm:p-4">
-                <img src="/docs/wonderbuild-editor.svg" alt="WonderBuild editor showing the top toolbar, left tools, center canvas, and right inspector" className="h-auto w-full rounded-2xl" />
+                <img src="/docs/wonderbuild-editor.svg" alt="WonderBuild editor showing top toolbar, left tools, center canvas, and right inspector" className="h-auto w-full rounded-2xl" />
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <ToolCard title="Top toolbar">Switch modes, change device size and zoom, toggle panels, undo or redo, open Assets, Preview, and Publish.</ToolCard>
+                <ToolCard title="Top toolbar">Switch Design, Code, or Preview; change device size and zoom; toggle grid and snapping; undo or redo; open Assets; and publish.</ToolCard>
                 <ToolCard title="Left tools">Open Pages, Insert, CMS, Assets, or Components.</ToolCard>
-                <ToolCard title="Canvas">Select, move, resize, duplicate, delete, and visually arrange the elements in the active page.</ToolCard>
+                <ToolCard title="Canvas">Select, move, resize, duplicate, delete, and arrange elements on the active page.</ToolCard>
                 <ToolCard title="Right inspector">Edit the selected element through Content, Interactions, or AI.</ToolCard>
               </div>
             </section>
 
             <section id="toolbar" className="scroll-mt-28 pt-16">
               <h2 className="text-3xl font-black tracking-tight">Use the top toolbar</h2>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The toolbar stays at the top of the editor and is the fastest way to move between the major parts of the build workflow.</p>
               <div className="mt-7 grid gap-4 md:grid-cols-2">
-                <ToolCard title="Project name + Autosave">The left side shows the current project name and an Autosave status indicator.</ToolCard>
-                <ToolCard title="Design / Code"><strong>Design</strong> shows the visual editor. <strong>Code</strong> opens the code workspace for the project.</ToolCard>
-                <ToolCard title="Desktop / Tablet / Mobile">Change the canvas breakpoint without leaving the editor so you can inspect the project at different device widths.</ToolCard>
-                <ToolCard title="Zoom, Grid, Snap">Change canvas zoom, show or hide the grid, and enable snapping while resizing or aligning elements.</ToolCard>
-                <ToolCard title="Undo / Redo">Reverse or restore recent editor changes. The buttons are also available as keyboard shortcuts.</ToolCard>
-                <ToolCard title="Assets / Preview / Publish">Open the asset panel directly, inspect the project in Preview mode, or open the Publish flow.</ToolCard>
+                <ToolCard title="Project + Autosave">The left side shows the project name and autosave status.</ToolCard>
+                <ToolCard title="Design / Code">Design opens the visual builder. Code switches to the code workspace for the same project.</ToolCard>
+                <ToolCard title="Desktop / Tablet / Mobile">Change the active breakpoint without leaving the editor.</ToolCard>
+                <ToolCard title="Zoom / Grid / Snap">Change canvas zoom, toggle the visible grid, and enable snapping to the 8-pixel grid and alignment guides.</ToolCard>
+                <ToolCard title="Undo / Redo">Reverse or restore recent changes from the toolbar or keyboard shortcuts.</ToolCard>
+                <ToolCard title="Assets / Preview / Publish">Open Assets, switch to Preview mode, or open the Publish modal.</ToolCard>
               </div>
             </section>
 
             <section id="left-tools" className="scroll-mt-28 pt-16">
-              <div className="flex items-center gap-3">
-                <LayoutPanelLeft className="h-7 w-7 text-blue-700" />
-                <h2 className="text-3xl font-black tracking-tight">Use the left tools</h2>
-              </div>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The left side controls what you can add to or manage in the current project. The panel can be hidden from the toolbar when you need more canvas space.</p>
+              <div className="flex items-center gap-3"><LayoutPanelLeft className="h-7 w-7 text-blue-700" /><h2 className="text-3xl font-black tracking-tight">Use the left tools</h2></div>
               <div className="mt-7 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
-                <div className="p-5"><h3 className="font-bold">Pages</h3><p className="mt-2 text-sm leading-6 text-slate-600">Manage the pages in the current WonderBuild project and switch the active page. The full Pages workflow gets its own documentation section next.</p></div>
-                <div className="p-5"><h3 className="font-bold">Insert</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open the component library and drag available blocks onto the canvas.</p></div>
-                <div className="p-5"><h3 className="font-bold">CMS</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open the current CMS tools for content that is managed as structured data rather than placed manually on one page.</p></div>
-                <div className="p-5"><h3 className="font-bold">Assets</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open the project asset library. The Assets button in the top toolbar opens this same left-panel destination.</p></div>
-                <div className="p-5"><h3 className="font-bold">Components</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open saved or reusable components for the project.</p></div>
+                <div className="p-5"><h3 className="font-bold">Pages</h3><p className="mt-2 text-sm leading-6 text-slate-600">Create, search, switch, and rename site pages. The Pages panel also contains the layer view for the active page. <Link href="/docs#pages" className="font-semibold text-blue-700 underline underline-offset-4">Read Pages docs</Link>.</p></div>
+                <div className="p-5"><h3 className="font-bold">Insert</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open the block library and place available blocks on the current canvas.</p></div>
+                <div className="p-5"><h3 className="font-bold">CMS</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open structured-content tools for data that should not live only inside one manually placed element.</p></div>
+                <div className="p-5"><h3 className="font-bold">Assets</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open the project asset library. The Assets button in the top toolbar opens this same destination. <Link href="/docs#assets" className="font-semibold text-blue-700 underline underline-offset-4">Read Assets docs</Link>.</p></div>
+                <div className="p-5"><h3 className="font-bold">Components</h3><p className="mt-2 text-sm leading-6 text-slate-600">Open saved and reusable project components. <Link href="/docs#components" className="font-semibold text-blue-700 underline underline-offset-4">Read Components docs</Link>.</p></div>
               </div>
             </section>
 
             <section id="canvas" className="scroll-mt-28 pt-16">
               <h2 className="text-3xl font-black tracking-tight">Work on the canvas</h2>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The canvas is the visual page you are editing. Most day-to-day WonderBuild work starts by selecting something on the canvas and then changing it.</p>
               <div className="mt-7 space-y-6">
-                <Step number={1} title="Select an element">
-                  Click an element on the canvas. A selected element receives a visible selection outline and becomes the target for the inspector and AI tools.
-                </Step>
-                <Step number={2} title="Use the quick actions">
-                  A selected element shows quick actions above it for opening the design inspector, editing that selection with AI, duplicating it, or deleting it.
-                </Step>
-                <Step number={3} title="Move an element">
-                  Drag an existing element to reposition it. Containers can accept child elements, and WonderBuild prevents a parent from being dropped into one of its own descendants.
-                </Step>
-                <Step number={4} title="Resize an element">
-                  Drag the resize handle at the lower-right of a selected element. When Snap is enabled, resizing follows the 8-pixel grid and can show alignment guides.
-                </Step>
-                <Step number={5} title="Deselect when you are finished">
-                  Click empty canvas space or press Escape. This clears the current selection.
-                </Step>
+                <Step number={1} title="Select an element">Click an element so it becomes the target for the inspector and selected-element actions.</Step>
+                <Step number={2} title="Use quick actions">A selected element can expose quick actions for Design, AI, Duplicate, and Delete.</Step>
+                <Step number={3} title="Move it">Drag the selected element. Containers can accept children, and WonderBuild prevents invalid parent-to-descendant drops.</Step>
+                <Step number={4} title="Resize it">Use the resize handle. With Snap enabled, resizing follows the grid and alignment guides.</Step>
+                <Step number={5} title="Deselect">Click empty canvas space or press Escape.</Step>
               </div>
-
               <div className="mt-7 grid gap-3 sm:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 p-4 text-center"><PanelRight className="mx-auto h-5 w-5 text-violet-700"/><p className="mt-2 text-xs font-bold">Design</p></div>
                 <div className="rounded-xl border border-slate-200 p-4 text-center"><Sparkles className="mx-auto h-5 w-5 text-violet-700"/><p className="mt-2 text-xs font-bold">AI</p></div>
@@ -208,103 +201,80 @@ export default function WonderBuildEditorDocsPage() {
             </section>
 
             <section id="inspector" className="scroll-mt-28 pt-16">
-              <div className="flex items-center gap-3">
-                <PanelRight className="h-7 w-7 text-violet-700" />
-                <h2 className="text-3xl font-black tracking-tight">Use the right inspector</h2>
-              </div>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The right side edits the currently selected element. If nothing is selected, the panel tells you to select an element on the canvas first.</p>
+              <div className="flex items-center gap-3"><PanelRight className="h-7 w-7 text-violet-700" /><h2 className="text-3xl font-black tracking-tight">Use the right inspector</h2></div>
+              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The right side edits the selected element. WonderBuild normalizes the inspector to three tabs: Content, Interactions, and AI.</p>
               <div className="mt-7 grid gap-4 md:grid-cols-3">
-                <ToolCard title="Content">Edit the selected element’s available content, layout, styles, responsive properties, and element-specific settings. Images expose additional image controls and filters.</ToolCard>
-                <ToolCard title="Interactions">Open interaction settings for the selected element. Detailed interaction workflows will be documented separately rather than squeezed into this basics page.</ToolCard>
-                <ToolCard title="AI">Send the selected element into the AI assistant so changes can be made with that element as the editing context.</ToolCard>
-              </div>
-              <div className="mt-6 rounded-2xl border border-violet-200 bg-violet-50 p-5">
-                <p className="font-bold">The inspector follows your selection.</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">If the right panel looks empty or says to select an element, click the text, image, section, button, or other element you actually want to edit on the canvas.</p>
+                <ToolCard title="Content">Edit the selected element’s content and design-facing properties.</ToolCard>
+                <ToolCard title="Interactions">Configure behavior for the selected element.</ToolCard>
+                <ToolCard title="AI">Send the selected element to the AI-assisted editing flow. <Link href="/docs#ai-editing" className="font-semibold text-violet-700 underline underline-offset-4">Read AI Editing docs</Link>.</ToolCard>
               </div>
             </section>
 
             <section id="responsive" className="scroll-mt-28 pt-16">
-              <h2 className="text-3xl font-black tracking-tight">Check responsive layouts while you build</h2>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The toolbar gives you Desktop, Tablet, and Mobile canvas buttons. The inspector also has responsive breakpoint controls for the selected element.</p>
+              <h2 className="text-3xl font-black tracking-tight">Responsive controls</h2>
+              <p className="mt-3 max-w-3xl leading-7 text-slate-600">Use the device controls in the top toolbar to inspect the active page at desktop, tablet, and mobile breakpoints.</p>
               <div className="mt-7 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 p-5"><Monitor className="h-6 w-6 text-blue-700"/><h3 className="mt-3 font-bold">Desktop</h3><p className="mt-2 text-sm leading-6 text-slate-600">Use the widest normal editing view for desktop layouts.</p></div>
-                <div className="rounded-2xl border border-slate-200 p-5"><Tablet className="h-6 w-6 text-violet-700"/><h3 className="mt-3 font-bold">Tablet</h3><p className="mt-2 text-sm leading-6 text-slate-600">Check how sections and spacing behave at tablet width.</p></div>
-                <div className="rounded-2xl border border-slate-200 p-5"><Smartphone className="h-6 w-6 text-fuchsia-700"/><h3 className="mt-3 font-bold">Mobile</h3><p className="mt-2 text-sm leading-6 text-slate-600">Inspect the narrow mobile canvas before publishing.</p></div>
+                <div className="rounded-2xl border border-slate-200 p-5 text-center"><Monitor className="mx-auto h-7 w-7 text-violet-700"/><p className="mt-3 font-black">Desktop</p></div>
+                <div className="rounded-2xl border border-slate-200 p-5 text-center"><Tablet className="mx-auto h-7 w-7 text-violet-700"/><p className="mt-3 font-black">Tablet</p></div>
+                <div className="rounded-2xl border border-slate-200 p-5 text-center"><Smartphone className="mx-auto h-7 w-7 text-violet-700"/><p className="mt-3 font-black">Mobile</p></div>
               </div>
-              <p className="mt-5 text-sm leading-6 text-slate-600">The canvas itself uses approximately 1180px for Desktop, 768px for Tablet, and 375px for Mobile. A wider breakpoint also exists in the inspector for element styling.</p>
+              <p className="mt-5 text-sm leading-6 text-slate-600">For the complete breakpoint workflow, use the <Link href="/docs#responsive" className="font-semibold text-blue-700 underline underline-offset-4">Responsive Design documentation</Link>.</p>
             </section>
 
             <section id="modes" className="scroll-mt-28 pt-16">
-              <h2 className="text-3xl font-black tracking-tight">Design, Code, and Preview are views of the same project</h2>
+              <h2 className="text-3xl font-black tracking-tight">Design, Code, and Preview</h2>
               <div className="mt-7 grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-violet-200 bg-violet-50 p-5"><MousePointer2 className="h-6 w-6 text-violet-700"/><h3 className="mt-3 font-black">Design</h3><p className="mt-2 text-sm leading-6 text-slate-600">The drag-and-drop visual editor with the left tools, canvas, and inspector.</p></div>
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5"><Code2 className="h-6 w-6 text-blue-700"/><h3 className="mt-3 font-black">Code</h3><p className="mt-2 text-sm leading-6 text-slate-600">Switches the main workspace to WonderBuild’s code environment. You do not need to use Code mode for normal visual editing.</p></div>
-                <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5"><Eye className="h-6 w-6 text-cyan-700"/><h3 className="mt-3 font-black">Preview</h3><p className="mt-2 text-sm leading-6 text-slate-600">Shows the project preview inside the builder so you can inspect the result without leaving the workflow.</p></div>
+                <ToolCard title="Design">The normal visual builder with canvas and panels.</ToolCard>
+                <ToolCard title="Code"><Code2 className="mb-2 h-5 w-5 text-violet-700" />Switch to the project code workspace.</ToolCard>
+                <ToolCard title="Preview"><Eye className="mb-2 h-5 w-5 text-violet-700" />Switch the builder into live Preview mode before publishing. <Link href="/docs#preview" className="font-semibold text-violet-700 underline underline-offset-4">Read Preview docs</Link>.</ToolCard>
               </div>
             </section>
 
             <section id="saving" className="scroll-mt-28 pt-16">
-              <div className="flex items-center gap-3">
-                <Save className="h-7 w-7 text-emerald-700" />
-                <h2 className="text-3xl font-black tracking-tight">Save, undo, redo, and useful shortcuts</h2>
-              </div>
-              <p className="mt-3 max-w-3xl leading-7 text-slate-600">The toolbar displays Autosave, and you can also save explicitly from the keyboard. The editor has direct shortcuts for the most common actions.</p>
-              <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200">
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Undo</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Ctrl/Cmd + Z</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Redo</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Ctrl/Cmd + Y</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Save project</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Ctrl/Cmd + S</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Duplicate selected element</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Ctrl/Cmd + D</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Delete selected element</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Delete / Backspace</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Deselect / close shortcuts</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Escape</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Zoom in / out</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Ctrl/Cmd + +/-</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-200 p-4 text-sm"><span className="font-semibold">Reset zoom</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">Ctrl/Cmd + 0</kbd></div>
-                <div className="grid grid-cols-[1fr_auto] gap-4 p-4 text-sm"><span className="font-semibold">Open keyboard shortcut panel</span><kbd className="rounded bg-slate-100 px-2 py-1 font-mono text-xs">?</kbd></div>
+              <div className="flex items-center gap-3"><Save className="h-7 w-7 text-blue-700" /><h2 className="text-3xl font-black tracking-tight">Save, undo, and shortcuts</h2></div>
+              <div className="mt-7 grid gap-4 md:grid-cols-2">
+                <ToolCard title="Save">Ctrl/Cmd + S saves locally when there is no project ID. With a project ID, WonderBuild saves the project and attempts to create a revision.</ToolCard>
+                <ToolCard title="Undo / Redo">Ctrl/Cmd + Z runs Undo. Ctrl/Cmd + Y runs Redo.</ToolCard>
+                <ToolCard title="Duplicate">Ctrl/Cmd + D duplicates the selected element.</ToolCard>
+                <ToolCard title="Delete / Escape">Delete or Backspace removes the selected element. Escape clears the selection, or closes the shortcuts modal when it is open.</ToolCard>
               </div>
             </section>
 
             <section id="troubleshooting" className="scroll-mt-28 pt-16">
-              <div className="flex items-center gap-3">
-                <CircleHelp className="h-7 w-7 text-amber-600" />
-                <h2 className="text-3xl font-black tracking-tight">If something goes wrong</h2>
+              <div className="rounded-3xl border border-amber-200 bg-amber-50 p-7 sm:p-8">
+                <CircleHelp className="h-7 w-7 text-amber-700" />
+                <h2 className="mt-4 text-3xl font-black">Troubleshooting</h2>
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-amber-200 bg-white/80 p-4"><p className="font-bold">A page feature needs more detail</p><p className="mt-1 text-sm leading-6 text-slate-600">Use the WonderBuild sidebar links. Pages, Components, Content, Assets, AI, responsive, Preview, and Publish now open real documentation instead of dead labels.</p></div>
+                  <div className="rounded-xl border border-amber-200 bg-white/80 p-4"><p className="font-bold">Publish says save first</p><p className="mt-1 text-sm leading-6 text-slate-600">Publishing the site requires a saved project ID. Save or reopen the project, then open Publish again.</p></div>
+                </div>
               </div>
-              <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
-                <div className="p-5"><h3 className="font-bold">I see “Project not found”</h3><p className="mt-2 text-sm leading-6 text-slate-600">The editor could not find that project or your account does not have access to it. Use the <strong>Back to Projects</strong> button and open the project from My Projects instead of editing the URL manually.</p></div>
-                <div className="p-5"><h3 className="font-bold">The left tools disappeared</h3><p className="mt-2 text-sm leading-6 text-slate-600">Use the left-panel button in the top toolbar to show the tools again.</p></div>
-                <div className="p-5"><h3 className="font-bold">The inspector is empty</h3><p className="mt-2 text-sm leading-6 text-slate-600">Select an element on the canvas. The right inspector only has element-specific controls when something is selected.</p></div>
-                <div className="p-5"><h3 className="font-bold">I cannot see the visual canvas</h3><p className="mt-2 text-sm leading-6 text-slate-600">Check the top toolbar. If Code or Preview is active, switch back to <strong>Design</strong>.</p></div>
-                <div className="p-5"><h3 className="font-bold">Everything looks too large or too small</h3><p className="mt-2 text-sm leading-6 text-slate-600">Use the zoom selector in the toolbar or press Ctrl/Cmd + 0 to return to 100% zoom.</p></div>
-                <div className="p-5"><h3 className="font-bold">I resized something and it keeps snapping</h3><p className="mt-2 text-sm leading-6 text-slate-600">Snap is enabled. Turn off <strong>Snap</strong> in the top toolbar when you want free resizing instead of the 8-pixel grid and alignment guides.</p></div>
-                <div className="p-5"><h3 className="font-bold">I deleted or changed the wrong thing</h3><p className="mt-2 text-sm leading-6 text-slate-600">Use Undo in the toolbar or Ctrl/Cmd + Z before continuing.</p></div>
-              </div>
-              <Link href="/support" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold hover:border-violet-400 hover:text-violet-700">
-                Open Support Center <ExternalLink className="h-4 w-4" />
+            </section>
+
+            <div className="mt-16 grid gap-3 border-t border-slate-200 pt-8 sm:grid-cols-2">
+              <Link href="/docs/wonderbuild/start" className="rounded-2xl border border-slate-200 p-5 transition hover:border-violet-300 hover:bg-violet-50/40">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Previous</span>
+                <p className="mt-2 font-bold">Start a WonderBuild project</p>
               </Link>
-            </section>
-
-            <section className="pt-14">
-              <div className="rounded-3xl bg-slate-950 p-7 text-white sm:p-8">
-                <CheckCircle2 className="h-7 w-7 text-emerald-400" />
-                <h2 className="mt-4 text-2xl font-black">Next: Pages</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-300">Once the editor layout makes sense, the next WonderBuild section will cover the Pages panel in detail: creating pages, switching pages, renaming them, homepage behavior, deleting pages, and what to do when page content does not look right.</p>
-              </div>
-            </section>
-
-            <div className="mt-12 flex items-center justify-between border-t border-slate-200 pt-7 text-sm">
-              <Link href="/docs/wonderbuild/start" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-violet-700"><ArrowLeft className="h-4 w-4" /> WonderBuild Start</Link>
-              <span className="inline-flex items-center gap-2 font-semibold text-slate-400">Pages <ArrowRight className="h-4 w-4" /></span>
+              <Link href="/docs#pages" className="rounded-2xl border border-violet-200 bg-violet-50 p-5 text-right transition hover:border-violet-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-violet-500">Next</span>
+                <p className="mt-2 font-bold text-violet-950">Manage Pages →</p>
+              </Link>
             </div>
           </article>
         </main>
 
-        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] overflow-y-auto border-l border-slate-200 bg-white px-5 py-8 text-slate-950 xl:block">
-          <p className="text-sm font-black">On this page</p>
-          <nav className="mt-4 space-y-3 border-l border-slate-200 pl-4 text-sm">
-            {toc.map(([label, href]) => <a key={href} href={href} className="block text-slate-500 hover:text-violet-700">{label}</a>)}
+        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] border-l border-slate-200 bg-white px-5 py-8 xl:block">
+          <p className="text-sm font-black text-slate-900">On this page</p>
+          <nav className="mt-4 space-y-1 border-l border-slate-200 pl-4" aria-label="On this page">
+            {toc.map(([label, href], index) => (
+              <a key={label} href={href} className={`block py-1.5 text-sm transition hover:text-violet-700 ${index === 0 ? 'font-semibold text-violet-700' : 'text-slate-500'}`}>{label}</a>
+            ))}
           </nav>
-          <div className="mt-8 border-t border-slate-200 pt-6">
-            <p className="text-sm font-black">Need help?</p>
-            <Link href="/support" className="mt-3 flex items-center gap-2 text-sm text-slate-600 hover:text-violet-700"><CircleHelp className="h-4 w-4" /> Support Center</Link>
+          <div className="mt-8 rounded-2xl border border-slate-200 p-4">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <p className="mt-3 text-sm font-bold text-slate-900">Docs links stay in Docs</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Only the explicit “Open WonderBuild” button leaves documentation and launches the product.</p>
           </div>
         </aside>
       </div>
