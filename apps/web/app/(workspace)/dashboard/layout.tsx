@@ -13,7 +13,6 @@ import {
   LayoutTemplate,
   Folder,
   Pencil, 
-  Code2, 
   Play, 
   Settings,
   Users,
@@ -65,7 +64,7 @@ type Project = {
     game: { editor: "/dashboard/3dhub", label: "NPC AI SIM" },
     "3d_scene": { editor: "/dashboard/3dhub", label: "NPC AI SIM" },
     web_app: { editor: "/wonder-build/builder", label: "Wonderbuild" },
-    workspace: { editor: "/ide", label: "IDE" },
+    workspace: { editor: "/wonderspace", label: "WonderSpace" },
   };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -93,8 +92,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     {
       label: "Code",
       items: [
-        { href: "/wonderspace", label: "WonderSpace", icon: Code2 },
-        { href: "/ide", label: "Cloud IDE", icon: Terminal },
+        { href: "/wonderspace", label: "WonderSpace", icon: Terminal },
         { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
       ],
     },
@@ -408,7 +406,7 @@ function VoiceSearchButton() {
         else if (lower.includes("3d") || lower.includes("studio")) router.push("/dashboard/3dhub");
         else if (lower.includes("npc-ai-sim") || lower.includes("playcanvas")) router.push("/wonder-build/playcanvas");
         else if (lower.includes("project")) router.push("/dashboard/projects");
-        else if (lower.includes("ide") || lower.includes("code")) router.push("/wonderspace/ide");
+        else if (lower.includes("ide") || lower.includes("code") || lower.includes("wonderspace")) router.push("/wonderspace");
         else if (lower.includes("setting")) router.push("/settings");
         else if (lower.includes("usage") || lower.includes("token")) router.push("/dashboard/usage");
         else alert(`Voice command "${final}" not recognized. Try "wonderbuild", "npc-ai-sim", "projects", or "settings".`);
