@@ -5,18 +5,27 @@ import { useMemo, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
+  Bot,
   Box,
+  Braces,
   ChevronDown,
   ChevronRight,
   CircleHelp,
   Cloud,
   Code2,
   ExternalLink,
+  Eye,
+  FileText,
   FolderOpen,
+  Gamepad2,
+  Layers3,
   Menu,
   MonitorPlay,
-  Play,
+  Package,
+  Palette,
+  Rocket,
   Search,
+  Smartphone,
   Sparkles,
   ThumbsDown,
   ThumbsUp,
@@ -39,111 +48,201 @@ type NavGroup = {
 const topTabs = [
   { label: 'Overview', href: '#overview' },
   { label: 'WonderBuild', href: '#wonderbuild' },
-  { label: 'WonderSpace', href: '#start-project' },
-  { label: 'AI', href: '#start-project' },
-  { label: '3D', href: '#start-project' },
-  { label: 'Cloud & Storage', href: '#build-project' },
-  { label: 'Developer', href: '/api-reference' },
-  { label: 'Account', href: '#sign-up' },
-  { label: 'Help', href: '/faq' },
+  { label: 'WonderSpace', href: '#wonderspace' },
+  { label: 'AI', href: '#ai-editing' },
+  { label: '3D', href: '#wonderplay' },
+  { label: 'Cloud & Storage', href: '#projects' },
+  { label: 'Developer', href: '#developer' },
+  { label: 'Account', href: '#account' },
+  { label: 'Help', href: '#help' },
 ] as const;
 
 const navGroups: NavGroup[] = [
   {
     label: 'Getting Started',
     items: [
-      { label: '1. Sign Up', href: '#sign-up' },
-      { label: '2. Sign In', href: '#sign-in' },
-      { label: '3. Start Your Project', href: '#start-project' },
-      { label: 'Build a Website / App', href: '#wonderbuild', indent: true },
-      { label: 'Build with Code', href: '/wonderspace', indent: true },
-      { label: 'Build a 3D Experience', href: '/dashboard/3dhub', indent: true },
-      { label: 'Open an Existing Project', href: '/dashboard/projects', indent: true },
+      { label: '1. Sign Up', href: '/docs/getting-started/sign-up' },
+      { label: '2. Sign In', href: '/docs/getting-started/sign-in' },
+      { label: '3. Start Your Project', href: '/docs/getting-started/start-your-project' },
+      { label: 'Build a Website / App', href: '/docs/wonderbuild/start', indent: true },
+      { label: 'Build with Code', href: '#wonderspace', indent: true },
+      { label: 'Build a 3D Experience', href: '#wonderplay', indent: true },
+      { label: 'Open an Existing Project', href: '#projects', indent: true },
     ],
   },
   {
-    label: 'Build Your Project',
+    label: 'WonderBuild',
     items: [
       { label: 'WonderBuild Overview', href: '#wonderbuild' },
-      { label: 'Choose a Template', href: '#ways-to-start', indent: true },
-      { label: 'Start with AI', href: '#ways-to-start', indent: true },
-      { label: 'The Editor', href: '#editor', indent: true },
-      { label: 'Pages', href: '#build-project', indent: true },
-      { label: 'Components', href: '#build-project', indent: true },
-      { label: 'Content', href: '#build-project', indent: true },
-      { label: 'Assets', href: '#build-project', indent: true },
-      { label: 'AI Editing', href: '#build-project', indent: true },
-      { label: 'Responsive Design', href: '#build-project', indent: true },
-      { label: 'Preview', href: '#build-project', indent: true },
-      { label: 'Publish', href: '#build-project', indent: true },
+      { label: 'Choose a Template', href: '/docs/wonderbuild/start#template', indent: true },
+      { label: 'Start with AI', href: '/docs/wonderbuild/start#ai', indent: true },
+      { label: 'The Editor', href: '/docs/wonderbuild/editor', indent: true },
+      { label: 'Pages', href: '#pages', indent: true },
+      { label: 'Components', href: '#components', indent: true },
+      { label: 'Content & CMS', href: '#content', indent: true },
+      { label: 'Assets', href: '#assets', indent: true },
+      { label: 'AI Editing', href: '#ai-editing', indent: true },
+      { label: 'Responsive Design', href: '#responsive', indent: true },
+      { label: 'Preview', href: '#preview', indent: true },
+      { label: 'Publish', href: '#publish', indent: true },
     ],
   },
   {
     label: 'More Tools',
     items: [
-      { label: 'WonderSpace', href: '/wonderspace' },
-      { label: '3D Hub', href: '/dashboard/3dhub' },
-      { label: 'API Reference', href: '/api-reference' },
-      { label: 'Tutorials', href: '/tutorials' },
-      { label: 'FAQ', href: '/faq' },
+      { label: 'WonderSpace', href: '#wonderspace' },
+      { label: 'WonderPlay / 3D Hub', href: '#wonderplay' },
+      { label: 'API Reference', href: '#developer' },
+      { label: 'Tutorials', href: '#tutorials' },
+      { label: 'FAQ & Help', href: '#help' },
     ],
   },
 ];
 
 const onThisPage = [
   { label: 'Overview', href: '#overview' },
-  { label: 'Sign up', href: '#sign-up' },
-  { label: 'Sign in', href: '#sign-in' },
-  { label: 'Start your project', href: '#start-project' },
   { label: 'WonderBuild', href: '#wonderbuild' },
-  { label: 'Ways to start', href: '#ways-to-start' },
-  { label: 'Step-by-step', href: '#step-by-step' },
-  { label: 'If something goes wrong', href: '#troubleshooting' },
+  { label: 'Pages', href: '#pages' },
+  { label: 'Components', href: '#components' },
+  { label: 'Content & CMS', href: '#content' },
+  { label: 'Assets', href: '#assets' },
+  { label: 'AI Editing', href: '#ai-editing' },
+  { label: 'Responsive', href: '#responsive' },
+  { label: 'Preview', href: '#preview' },
+  { label: 'Publish', href: '#publish' },
 ];
 
 const projectChoices = [
   {
     icon: Wand2,
     title: 'Website or App',
-    description: 'Use WonderBuild for AI-assisted visual building, templates, pages, preview, and publishing.',
-    href: '/wonder-build',
-    action: 'Open WonderBuild',
+    description: 'Follow the WonderBuild docs for AI-assisted visual building, templates, pages, preview, and publishing.',
+    href: '#wonderbuild',
+    action: 'Read WonderBuild docs',
   },
   {
     icon: Code2,
     title: 'Code Project',
-    description: 'Use WonderSpace when you want direct code, project files, terminal access, and development tools.',
-    href: '/wonderspace',
-    action: 'Open WonderSpace',
+    description: 'Read how WonderSpace is used for files, terminal access, Git, and the cloud IDE workflow.',
+    href: '#wonderspace',
+    action: 'Read WonderSpace docs',
   },
   {
     icon: Box,
     title: '3D Experience',
-    description: 'Use the 3D Hub for spatial projects, 3D assets, previews, and related creative tools.',
-    href: '/dashboard/3dhub',
-    action: 'Open 3D Hub',
+    description: 'Read the current WonderPlay / 3D Hub workflow before opening the 3D tools.',
+    href: '#wonderplay',
+    action: 'Read 3D docs',
   },
   {
     icon: FolderOpen,
     title: 'Existing Project',
-    description: 'Return to a project you already started and continue from your projects dashboard.',
-    href: '/dashboard/projects',
-    action: 'View Projects',
+    description: 'Learn how saved projects are reopened and continued from the Projects dashboard.',
+    href: '#projects',
+    action: 'Read project docs',
   },
 ] as const;
 
-const buildTopics = [
-  'Editor basics',
-  'Pages',
-  'Components',
-  'Text & content',
-  'Images & assets',
-  'AI editing',
-  'Design controls',
-  'Responsive layout',
-  'Preview',
-  'Publish',
-];
+const wonderBuildTopics = [
+  {
+    id: 'pages',
+    icon: FileText,
+    title: 'Pages',
+    summary: 'Manage the pages that belong to one WonderBuild website without creating a second project.',
+    steps: [
+      'Open Pages from the left tool rail.',
+      'Use the + button to create a new page. New pages start as “Untitled Page”.',
+      'Click a page to make it active. WonderBuild swaps the canvas to that page’s saved elements.',
+      'Double-click the page name, or use the pencil button, to rename it. Enter saves the name and Escape cancels the rename.',
+      'Use Search pages to filter by page name or slug. The lower half of the Pages panel shows the active page layers.',
+    ],
+  },
+  {
+    id: 'components',
+    icon: Layers3,
+    title: 'Components',
+    summary: 'Add building blocks to the canvas and reuse saved components from the same left-side tool area.',
+    steps: [
+      'Open Insert to browse blocks that can be placed on the page.',
+      'Drag an available block onto the canvas or into a container that accepts children.',
+      'Use Components to open saved or reusable components for the current project.',
+      'Select the placed element on the canvas to edit it with the inspector, duplicate it, move it, resize it, or delete it.',
+    ],
+  },
+  {
+    id: 'content',
+    icon: Palette,
+    title: 'Content & CMS',
+    summary: 'Edit a selected element directly, or use CMS when the content belongs in structured data instead of one manually placed block.',
+    steps: [
+      'Select an element on the canvas so the right inspector has a target.',
+      'Use the Content inspector for the selected element’s editable content and design properties.',
+      'Use Interactions when the selected element needs behavior instead of only visual changes.',
+      'Open CMS from the left tool rail for structured content managed outside a single manually placed element.',
+    ],
+  },
+  {
+    id: 'assets',
+    icon: Package,
+    title: 'Assets',
+    summary: 'Use the project asset library from either the left tool rail or the Assets shortcut in the top toolbar.',
+    steps: [
+      'Click Assets in the top toolbar or choose Assets from the left tool rail.',
+      'The toolbar shortcut automatically returns the editor to Design mode and opens the Assets panel.',
+      'Choose the project asset you need, then continue editing the placed element on the canvas.',
+      'Treat inserted 3D media as website content: position it, size it, preview it, and publish it with the page rather than switching to a separate scene editor.',
+    ],
+  },
+  {
+    id: 'ai-editing',
+    icon: Sparkles,
+    title: 'AI Editing',
+    summary: 'AI editing is tied to the selected element so changes have a clear target instead of modifying the whole project blindly.',
+    steps: [
+      'Select the element you want AI to work on.',
+      'Open the AI option from the selected-element quick actions or the AI tab in the right inspector.',
+      'Describe the change for that selection and review the result in the same editor.',
+      'Use Undo if the generated change is not what you wanted.',
+    ],
+  },
+  {
+    id: 'responsive',
+    icon: Smartphone,
+    title: 'Responsive Design',
+    summary: 'Check the same page at desktop, tablet, and mobile breakpoints without leaving the builder.',
+    steps: [
+      'Use Desktop, Tablet, or Mobile in the top toolbar to change the active canvas breakpoint.',
+      'Adjust the canvas zoom when you need more or less working space.',
+      'Toggle Grid when you want a visible layout guide.',
+      'Toggle Snap when you want resizing to follow the 8-pixel grid and alignment guides.',
+    ],
+  },
+  {
+    id: 'preview',
+    icon: Eye,
+    title: 'Preview',
+    summary: 'Switch from editing to the live preview mode using the Preview button in the top toolbar.',
+    steps: [
+      'Finish the current edit and click Preview in the top toolbar.',
+      'WonderBuild switches the builder mode from Design or Code to Preview.',
+      'Check layout, links, content, and the device widths you care about before publishing.',
+      'Return to Design when you need to change the canvas again.',
+    ],
+  },
+  {
+    id: 'publish',
+    icon: Rocket,
+    title: 'Publish',
+    summary: 'Publish the complete saved WonderBuild site, or export the current work instead.',
+    steps: [
+      'Click Publish in the top toolbar to open the Publish modal.',
+      'Choose Publish Site to publish every page, including page names, slugs, page content, and the project theme.',
+      'Choose Active HTML when you only need the current page exported as HTML.',
+      'Choose Site JSON when you want the current WonderBuild site state exported as JSON.',
+      'A site publish requires a saved project ID. If the project has not been saved as a project yet, WonderBuild tells you to save it first.',
+    ],
+  },
+] as const;
 
 function DocsLogo() {
   return (
@@ -182,31 +281,51 @@ function Sidebar({ search, onNavigate }: { search: string; onNavigate?: () => vo
               <ChevronDown className="h-4 w-4 text-slate-600" />
             </div>
             <div className="space-y-1">
-              {group.items.map((item) => {
-                const externalToDocs = item.href.startsWith('/') && !item.href.startsWith('/docs');
-                return (
-                  <Link
-                    key={`${group.label}-${item.label}`}
-                    href={item.href}
-                    onClick={onNavigate}
-                    className={`group flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-                      item.label === '3. Start Your Project' || item.label === 'WonderBuild Overview'
-                        ? 'bg-blue-600/15 font-semibold text-blue-300'
-                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                    } ${item.indent ? 'ml-4 border-l border-slate-800 pl-4' : ''}`}
-                  >
-                    <span>{item.label}</span>
-                    {externalToDocs ? (
-                      <ExternalLink className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-60" />
-                    ) : null}
-                  </Link>
-                );
-              })}
+              {group.items.map((item) => (
+                <Link
+                  key={`${group.label}-${item.label}`}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={`block rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white ${
+                    item.indent ? 'ml-4 border-l border-slate-800 pl-4' : ''
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </section>
         ))
       )}
     </nav>
+  );
+}
+
+function TopicSection({ topic }: { topic: (typeof wonderBuildTopics)[number] }) {
+  const Icon = topic.icon;
+  return (
+    <section id={topic.id} className="scroll-mt-36 border-t border-slate-200 pt-14">
+      <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr]">
+        <div>
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white">
+            <Icon className="h-6 w-6" />
+          </span>
+          <h2 className="mt-5 text-3xl font-black tracking-tight">{topic.title}</h2>
+          <p className="mt-3 leading-7 text-slate-600">{topic.summary}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-600">How it works now</p>
+          <ol className="mt-4 space-y-4">
+            {topic.steps.map((step, index) => (
+              <li key={step} className="flex gap-3 text-sm leading-6 text-slate-700">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-600 text-xs font-black text-white">{index + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -258,11 +377,7 @@ export default function DocsPage() {
             <Link
               key={tab.label}
               href={tab.href}
-              className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm transition ${
-                tab.label === 'Overview'
-                  ? 'border-blue-500 font-semibold text-blue-400'
-                  : 'border-transparent text-slate-300 hover:border-slate-600 hover:text-white'
-              }`}
+              className="whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm text-slate-300 transition hover:border-slate-600 hover:text-white"
             >
               {tab.label}
             </Link>
@@ -304,63 +419,53 @@ export default function DocsPage() {
             <div className="mb-7 flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <Link href="/docs" className="hover:text-blue-600">Docs</Link>
               <ChevronRight className="h-4 w-4" />
-              <span>Getting Started</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="font-medium text-slate-700">Start Your Project</span>
+              <span className="font-medium text-slate-700">Overview</span>
             </div>
 
             <section id="overview" className="scroll-mt-36">
               <div className="mb-8 max-w-3xl">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                  <Sparkles className="h-4 w-4" /> Start here
+                  <Sparkles className="h-4 w-4" /> Documentation home
                 </div>
-                <h1 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Build your first DreamMakerHub project</h1>
+                <h1 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Build with DreamMakerHub without leaving the docs by accident</h1>
                 <p className="mt-4 text-lg leading-8 text-slate-600">
-                  Follow the same path you use in the product: create your account, sign in, choose what you want to build, then follow the documentation for that builder from start to publish.
+                  The documentation navigation stays inside documentation. Product-launch buttons are labeled separately, so reading the next step no longer throws you into an editor or dashboard.
                 </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <a id="sign-up" href="/public-pages/auth" className="group scroll-mt-36 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg">
+              <div id="account" className="grid scroll-mt-36 gap-4 md:grid-cols-3">
+                <Link href="/docs/getting-started/sign-up" className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg">
                   <div className="mb-5 flex items-center justify-between">
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-white"><UserPlus className="h-5 w-5" /></span>
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Step 1</span>
                   </div>
                   <h2 className="text-lg font-bold">Sign Up</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Create your account so projects, files, builder state, and publishing can be connected to you.</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Create account <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
-                </a>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Read the account-creation instructions first.</p>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Read Sign Up docs <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                </Link>
 
-                <a id="sign-in" href="/public-pages/auth" className="group scroll-mt-36 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg">
+                <Link href="/docs/getting-started/sign-in" className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg">
                   <div className="mb-5 flex items-center justify-between">
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white"><ArrowRight className="h-5 w-5" /></span>
                     <span className="text-xs font-black uppercase tracking-wider text-slate-400">Step 2</span>
                   </div>
                   <h2 className="text-lg font-bold">Sign In</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Sign in to open your project dashboard and continue work you already started.</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Sign in <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
-                </a>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Read the sign-in and session instructions without leaving Docs.</p>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Read Sign In docs <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                </Link>
 
-                <a id="start-project" href="#choose-project" className="group scroll-mt-36 rounded-2xl border border-blue-300 bg-blue-50 p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
+                <Link href="/docs/getting-started/start-your-project" className="group rounded-2xl border border-blue-300 bg-blue-50 p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
                   <div className="mb-5 flex items-center justify-between">
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-white"><Wand2 className="h-5 w-5" /></span>
                     <span className="text-xs font-black uppercase tracking-wider text-blue-500">Step 3</span>
                   </div>
                   <h2 className="text-lg font-bold">Start Your Project</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose the actual DreamMakerHub tool that matches what you are trying to build.</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Choose a builder <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
-                </a>
-              </div>
-            </section>
-
-            <section id="choose-project" className="scroll-mt-36 pt-16">
-              <div className="max-w-3xl">
-                <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-600">Start your project</p>
-                <h2 className="mt-2 text-3xl font-black tracking-tight">What are you building?</h2>
-                <p className="mt-3 text-base leading-7 text-slate-600">Pick the project type first. Each builder gets its own detailed documentation instead of forcing every feature into one giant page.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose the right builder from the documentation before opening the product.</p>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Read project-start docs <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+                </Link>
               </div>
 
-              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
                 {projectChoices.map((choice) => {
                   const Icon = choice.icon;
                   return (
@@ -384,11 +489,13 @@ export default function DocsPage() {
                 <div className="grid lg:grid-cols-[0.8fr_1.2fr]">
                   <div className="flex flex-col justify-center p-7 text-white sm:p-9">
                     <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-400">WonderBuild</p>
-                    <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Turn an idea into a real website or app</h2>
-                    <p className="mt-4 leading-7 text-slate-300">Start with AI, a template, or a blank project. Then use the visual editor, pages, components, assets, responsive controls, preview, and publishing workflow.</p>
-                    <Link href="/wonder-build" className="mt-7 inline-flex w-fit items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold transition hover:bg-blue-500">
-                      Start a WonderBuild Project <ArrowRight className="h-4 w-4" />
-                    </Link>
+                    <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Website and web-app builder</h2>
+                    <p className="mt-4 leading-7 text-slate-300">Start blank, from a template, or with AI. All three paths lead to the same WonderBuild editor, where pages, components, content, assets, AI edits, responsive controls, preview, and publishing live together.</p>
+                    <div className="mt-7 flex flex-wrap gap-3">
+                      <Link href="/docs/wonderbuild/start" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold transition hover:bg-blue-500">Read Start docs <ArrowRight className="h-4 w-4" /></Link>
+                      <Link href="/docs/wonderbuild/editor" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-bold transition hover:bg-white/5">Read Editor docs <ArrowRight className="h-4 w-4" /></Link>
+                      <Link href="/wonder-build" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-bold transition hover:bg-white/5">Open WonderBuild <ExternalLink className="h-4 w-4" /></Link>
+                    </div>
                   </div>
                   <div className="relative min-h-[330px] bg-slate-900 p-5 lg:min-h-[410px]">
                     <img src="/docs/wonderbuild-editor.svg" alt="WonderBuild visual editor with pages, canvas, and properties panels" className="h-full w-full rounded-2xl object-cover object-center" />
@@ -397,117 +504,71 @@ export default function DocsPage() {
               </div>
             </section>
 
-            <section id="ways-to-start" className="scroll-mt-36 pt-14">
-              <h2 className="text-3xl font-black tracking-tight">Ways to start</h2>
-              <p className="mt-2 text-slate-600">Use the starting method that fits the project. You can change and customize the result afterward.</p>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {[
-                  ['Start with AI', 'Describe what you want and use AI to create the first version.', Sparkles],
-                  ['Choose a Template', 'Start from a designed layout and customize the content and structure.', MonitorPlay],
-                  ['Start Blank', 'Begin with an empty canvas when you want full control from the first element.', FolderOpen],
-                ].map(([title, description, Icon]) => {
-                  const IconComponent = Icon as typeof Sparkles;
-                  return (
-                    <Link key={title as string} href="/wonder-build" className="group rounded-2xl border border-slate-200 p-5 transition hover:border-blue-300 hover:bg-blue-50/50">
-                      <IconComponent className="h-6 w-6 text-blue-600" />
-                      <h3 className="mt-4 font-bold">{title as string}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{description as string}</p>
-                      <ArrowRight className="mt-4 h-4 w-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-blue-600" />
-                    </Link>
-                  );
-                })}
+            <div className="mt-16 space-y-14">
+              {wonderBuildTopics.map((topic) => <TopicSection key={topic.id} topic={topic} />)}
+            </div>
+
+            <section id="wonderspace" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-blue-200 bg-blue-50 p-7 sm:p-8">
+                <Code2 className="h-8 w-8 text-blue-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-blue-700">WonderSpace</p>
+                <h2 className="mt-2 text-3xl font-black">Code projects and cloud development</h2>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-600">WonderSpace is the code-project path. The current project documentation describes it as the place for project files, terminal access, Git, a VS Code-style cloud IDE, and AI-assisted coding. Opening WonderSpace launches the workspace flow rather than the visual website builder.</p>
+                <Link href="/wonderspace" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-bold text-white hover:bg-blue-600">Open WonderSpace <ExternalLink className="h-4 w-4" /></Link>
               </div>
             </section>
 
-            <section id="step-by-step" className="scroll-mt-36 pt-16">
-              <div className="grid gap-8 lg:grid-cols-[1fr_0.95fr] lg:items-start">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-600">Step-by-step</p>
-                  <h2 className="mt-2 text-3xl font-black tracking-tight">From project start to publish</h2>
-                  <p className="mt-3 leading-7 text-slate-600">The deeper docs will split each stage into its own pages so users can learn one task at a time without losing the overall workflow.</p>
-
-                  <div className="mt-7 space-y-5">
-                    {[
-                      ['1', 'Create your project', 'Open WonderBuild and choose how you want to start.'],
-                      ['2', 'Build the first version', 'Use AI, a template, or a blank canvas.'],
-                      ['3', 'Customize it', 'Work through pages, components, content, assets, AI edits, and design.'],
-                      ['4', 'Preview everything', 'Check layout, links, desktop, tablet, and mobile before publishing.'],
-                      ['5', 'Publish', 'Put the project live, then return whenever you need to update it.'],
-                    ].map(([number, title, description]) => (
-                      <div key={number} className="flex gap-4">
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-sm font-black text-white">{number}</span>
-                        <div>
-                          <h3 className="font-bold">{title}</h3>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Link href="/tutorials" className="group overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-lg">
-                  <div className="relative aspect-video overflow-hidden">
-                    <img src="/docs/getting-started-video.svg" alt="DreamMakerHub getting started video preview" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" />
-                    <span className="absolute inset-0 grid place-items-center bg-slate-950/10">
-                      <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-blue-700 shadow-2xl transition group-hover:scale-110"><Play className="ml-1 h-7 w-7 fill-current" /></span>
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4 p-5 text-white">
-                    <div>
-                      <p className="font-bold">Watch the getting-started walkthrough</p>
-                      <p className="mt-1 text-sm text-slate-400">Open the tutorial library for visual walkthroughs.</p>
-                    </div>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-blue-400" />
-                  </div>
-                </Link>
+            <section id="wonderplay" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-cyan-200 bg-cyan-50 p-7 sm:p-8">
+                <Gamepad2 className="h-8 w-8 text-cyan-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-cyan-700">WonderPlay / 3D Hub</p>
+                <h2 className="mt-2 text-3xl font-black">3D, panoramas, games, and movie tools</h2>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-600">The current 3D Hub documentation lists 3D Factory, 360 View, Game Builder, and Movie Maker as the major studio areas. Use this path when the project itself is 3D-focused. A 3D asset used inside WonderBuild is still treated as page content and does not require leaving WonderBuild for a scene editor.</p>
+                <Link href="/dashboard/3dhub" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-5 py-3 text-sm font-bold text-white hover:bg-cyan-600">Open 3D Hub <ExternalLink className="h-4 w-4" /></Link>
               </div>
             </section>
 
-            <section id="editor" className="scroll-mt-36 pt-16">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="max-w-2xl">
-                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-600">Build your project</p>
-                    <h2 className="mt-2 text-3xl font-black tracking-tight">The big section becomes many focused pages</h2>
-                    <p className="mt-3 leading-7 text-slate-600">Each topic gets screenshots, exact steps, what should happen next, and troubleshooting for the common ways it can fail.</p>
-                  </div>
-                  <Link href="/wonder-build" className="inline-flex items-center gap-2 font-bold text-blue-700">Open WonderBuild <ArrowRight className="h-4 w-4" /></Link>
-                </div>
-                <div id="build-project" className="mt-7 grid scroll-mt-36 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  {buildTopics.map((topic, index) => (
-                    <div key={topic} className="rounded-xl border border-slate-200 bg-white p-4">
-                      <span className="text-xs font-black text-blue-600">{String(index + 1).padStart(2, '0')}</span>
-                      <p className="mt-2 text-sm font-bold">{topic}</p>
-                    </div>
-                  ))}
-                </div>
+            <section id="projects" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-7 sm:p-8">
+                <FolderOpen className="h-8 w-8 text-slate-800" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Projects</p>
+                <h2 className="mt-2 text-3xl font-black">Continue a project you already started</h2>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-600">Use the Projects dashboard when the project already exists. The current flow lists saved projects and provides actions for opening the editor or related project destinations instead of forcing you through the new-project start flow again.</p>
+                <Link href="/dashboard/projects" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800">Open My Projects <ExternalLink className="h-4 w-4" /></Link>
               </div>
             </section>
 
-            <section id="troubleshooting" className="scroll-mt-36 pt-16">
-              <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 sm:p-8">
-                <div className="flex gap-4">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-500 text-white"><CircleHelp className="h-6 w-6" /></span>
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-amber-700">If this happens</p>
-                    <h2 className="mt-1 text-2xl font-black tracking-tight">Troubleshooting belongs on the page where the problem happens</h2>
-                    <p className="mt-3 leading-7 text-slate-700">Publishing issues will be explained on publishing pages. Page problems will be explained on Pages pages. Asset failures will be handled with the asset instructions. Users should not have to leave the task they are doing just to discover how to fix it.</p>
-                  </div>
-                </div>
+            <section id="developer" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-violet-200 bg-violet-50 p-7 sm:p-8">
+                <Braces className="h-8 w-8 text-violet-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-violet-700">Developer</p>
+                <h2 className="mt-2 text-3xl font-black">API reference is a separate reference surface</h2>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-600">The Docs navigation now brings you here first instead of silently routing you away. Use the explicit button below when you actually want to open the API Reference.</p>
+                <Link href="/api-reference" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-700 px-5 py-3 text-sm font-bold text-white hover:bg-violet-600">Open API Reference <ExternalLink className="h-4 w-4" /></Link>
+              </div>
+            </section>
 
+            <section id="tutorials" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-slate-200 p-7 sm:p-8">
+                <MonitorPlay className="h-8 w-8 text-blue-700" />
+                <h2 className="mt-4 text-3xl font-black">Tutorials</h2>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-600">Tutorials are the visual walkthrough library. This Docs menu keeps you on this page; the button below opens that separate library only when you choose to leave the documentation page.</p>
+                <Link href="/tutorials" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-900 hover:bg-slate-50">Open Tutorials <ExternalLink className="h-4 w-4" /></Link>
+              </div>
+            </section>
+
+            <section id="help" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-amber-200 bg-amber-50 p-7 sm:p-8">
+                <CircleHelp className="h-8 w-8 text-amber-700" />
+                <h2 className="mt-4 text-3xl font-black">Help and troubleshooting</h2>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-700">Feature-specific problems belong beside the feature instructions so users do not have to hunt through unrelated pages. The FAQ remains available as a separate destination for broader questions.</p>
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
-                  {[
-                    ['The button is disabled', 'Explain what requirement is missing and exactly where to fix it.'],
-                    ['Something did not save', 'Show save status, retry steps, and where to check project state.'],
-                    ['Preview looks wrong', 'Walk through responsive settings, stale preview, and asset checks.'],
-                    ['Publishing fails', 'Explain build errors, retry steps, rollback, and where to get help.'],
-                  ].map(([title, description]) => (
-                    <div key={title} className="rounded-xl border border-amber-200 bg-white/80 p-4">
-                      <h3 className="font-bold text-slate-900">{title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
-                    </div>
-                  ))}
+                  <div className="rounded-xl border border-amber-200 bg-white/80 p-4"><h3 className="font-bold">Page did not switch</h3><p className="mt-1 text-sm leading-6 text-slate-600">Confirm you clicked a page in the Pages panel and that it became the active page before editing the canvas.</p></div>
+                  <div className="rounded-xl border border-amber-200 bg-white/80 p-4"><h3 className="font-bold">Preview looks wrong</h3><p className="mt-1 text-sm leading-6 text-slate-600">Return to Design, check Desktop / Tablet / Mobile, then reopen Preview.</p></div>
+                  <div className="rounded-xl border border-amber-200 bg-white/80 p-4"><h3 className="font-bold">Publish says save first</h3><p className="mt-1 text-sm leading-6 text-slate-600">Site publishing requires a saved project ID. Save the work as a project, then reopen Publish.</p></div>
+                  <div className="rounded-xl border border-amber-200 bg-white/80 p-4"><h3 className="font-bold">Need general help</h3><p className="mt-1 text-sm leading-6 text-slate-600">Open the FAQ for questions that are not tied to one editor feature.</p></div>
                 </div>
+                <Link href="/faq" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-white px-5 py-3 text-sm font-bold text-amber-900 hover:border-amber-500">Open FAQ <ExternalLink className="h-4 w-4" /></Link>
               </div>
             </section>
 
@@ -515,7 +576,7 @@ export default function DocsPage() {
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-bold">Was this page helpful?</p>
-                  <p className="mt-1 text-sm text-slate-500">Feedback will help prioritize which docs need more screenshots and troubleshooting detail.</p>
+                  <p className="mt-1 text-sm text-slate-500">Use this to mark whether the overview was useful.</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setFeedback('yes')} className={`grid h-11 w-12 place-items-center rounded-xl border transition ${feedback === 'yes' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-slate-300'}`} aria-label="This page was helpful"><ThumbsUp className="h-5 w-5" /></button>
@@ -524,13 +585,13 @@ export default function DocsPage() {
               </div>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <Link href="/public-pages/auth" className="rounded-2xl border border-slate-200 p-5 transition hover:border-blue-300 hover:bg-blue-50/40">
+                <Link href="/docs/getting-started/sign-in" className="rounded-2xl border border-slate-200 p-5 transition hover:border-blue-300 hover:bg-blue-50/40">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Previous</span>
-                  <p className="mt-2 font-bold">Sign in to DreamMakerHub</p>
+                  <p className="mt-2 font-bold">Sign in documentation</p>
                 </Link>
-                <Link href="/wonder-build" className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-right transition hover:border-blue-400">
+                <Link href="/docs/wonderbuild/start" className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-right transition hover:border-blue-400">
                   <span className="text-xs font-bold uppercase tracking-wider text-blue-500">Next</span>
-                  <p className="mt-2 font-bold text-blue-900">Start building with WonderBuild →</p>
+                  <p className="mt-2 font-bold text-blue-900">Start a WonderBuild project →</p>
                 </Link>
               </div>
             </section>
@@ -550,16 +611,16 @@ export default function DocsPage() {
           <div className="mt-8 border-t border-slate-200 pt-6">
             <p className="font-bold">Need help?</p>
             <div className="mt-3 space-y-3 text-sm">
-              <Link href="/faq" className="flex items-center gap-2 text-slate-600 transition hover:text-blue-700"><CircleHelp className="h-4 w-4" /> FAQ</Link>
-              <Link href="/tutorials" className="flex items-center gap-2 text-slate-600 transition hover:text-blue-700"><MonitorPlay className="h-4 w-4" /> Tutorials</Link>
-              <Link href="/api-reference" className="flex items-center gap-2 text-slate-600 transition hover:text-blue-700"><Code2 className="h-4 w-4" /> API Reference</Link>
+              <a href="#help" className="flex items-center gap-2 text-slate-600 transition hover:text-blue-700"><CircleHelp className="h-4 w-4" /> Help</a>
+              <a href="#tutorials" className="flex items-center gap-2 text-slate-600 transition hover:text-blue-700"><MonitorPlay className="h-4 w-4" /> Tutorials</a>
+              <a href="#developer" className="flex items-center gap-2 text-slate-600 transition hover:text-blue-700"><Code2 className="h-4 w-4" /> API Reference info</a>
             </div>
           </div>
 
           <div className="mt-8 rounded-2xl border border-slate-200 p-4">
             <Cloud className="h-5 w-5 text-blue-600" />
-            <p className="mt-3 text-sm font-bold">Workflow-first docs</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Every major build system will get its own focused pages, screenshots, videos, next steps, and fixes.</p>
+            <p className="mt-3 text-sm font-bold">Docs navigation stays in Docs</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Only buttons explicitly labeled to open the app, API reference, tutorial library, or FAQ leave this documentation page.</p>
           </div>
         </aside>
       </div>
