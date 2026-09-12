@@ -7,7 +7,7 @@ import {
   ChevronRight,
   CircleHelp,
   ExternalLink,
-  Github,
+  GitBranch,
   Mail,
   ShieldCheck,
   UserPlus,
@@ -167,7 +167,7 @@ export default function SignUpDocsPage() {
               <h2 className="text-3xl font-black tracking-tight">Use GitHub or Google instead</h2>
               <p className="mt-3 leading-7 text-slate-600">The current account page also provides GitHub and Google buttons. Selecting one sends you to that provider and then returns you to DreamMakerHub.</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 p-5"><Github className="h-6 w-6" /><h3 className="mt-4 font-bold">GitHub</h3><p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, complete authorization, then return to DreamMakerHub.</p></div>
+                <div className="rounded-2xl border border-slate-200 p-5"><GitBranch className="h-6 w-6" /><h3 className="mt-4 font-bold">GitHub</h3><p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, complete authorization, then return to DreamMakerHub.</p></div>
                 <div className="rounded-2xl border border-slate-200 p-5"><div className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 text-xs font-black">G</div><h3 className="mt-4 font-bold">Google</h3><p className="mt-2 text-sm leading-6 text-slate-600">Choose Google, select your account, finish the provider flow, and return to DreamMakerHub.</p></div>
               </div>
             </section>
