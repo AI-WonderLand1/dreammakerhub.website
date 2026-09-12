@@ -208,23 +208,6 @@ export default function Homepage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 bg-[#05060a]">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-9 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <Link href="/" className="text-lg font-black text-white">AI Wonderland</Link>
-            <p className="mt-1 text-sm text-white/40">Build websites, code, and 3D experiences with AI.</p>
-          </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-white/55">
-            <Link className="hover:text-white" href="/wonder-build">Build</Link>
-            <Link className="hover:text-white" href="/wonderspace">Code</Link>
-            <Link className="hover:text-white" href="/dashboard/3dhub">3D</Link>
-            <Link className="hover:text-white" href="/dashboard/projects">Projects</Link>
-            <Link className="hover:text-white" href="/docs">Docs</Link>
-            <Link className="hover:text-white" href="/about">About</Link>
-            <Link className="hover:text-white" href="/privacy">Privacy</Link>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }
