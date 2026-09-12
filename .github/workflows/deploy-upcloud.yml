@@ -153,9 +153,7 @@ jobs:
             # Pull first so the old site stays up while the image downloads.
             docker compose --env-file .env -f "$COMPOSE" pull web
 
-            # The old web container was created by a different/manual Compose
-            # path. Remove only that web container after the replacement image
-            # is local, then recreate it under the canonical web Compose stack.
+            # Remove only the stale web container after the replacement image is local.
             if docker inspect dreammaker-web >/dev/null 2>&1; then
               echo "Replacing existing dreammaker-web container"
               docker rm -f dreammaker-web
@@ -164,16 +162,41 @@ jobs:
             docker compose --env-file .env -f "$COMPOSE" up -d --no-deps web
             docker compose --env-file .env -f "$COMPOSE" ps web
 
-            docker exec dreammaker-web sh -c 'curl -fsS --retry 10 --retry-delay 2 http://127.0.0.1:5000/health >/dev/null'
-            docker exec dreammaker-web sh -c 'curl -fsS --retry 10 --retry-delay 2 http://127.0.0.1:5000/api/config/supabase >/dev/null'
+            # Next.js needs a few seconds before port 5000 accepts connections.
+            # Wait up to 60 seconds and show container logs on failure.
+            ready=0
+            for attempt in $(seq 1 30); do
+              state="$(docker inspect --format '{{.State.Status}}' dreammaker-web 2>/dev/null || true)"
+              if [ "$state" != "running" ]; then
+                echo "dreammaker-web left the running state: ${state:-missing}"
+                docker logs --tail 100 dreammaker-web 2>&1 || true
+                exit 1
+              fi
+
+              if docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null' 2>/dev/null; then
+                ready=1
+                break
+              fi
+
+              echo "Waiting for Next.js readiness (${attempt}/30)"
+              sleep 2
+            done
+
+            if [ "$ready" -ne 1 ]; then
+              echo "Next.js did not become ready within 60 seconds"
+              docker logs --tail 100 dreammaker-web 2>&1 || true
+              exit 1
+            fi
+
+            docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/api/config/supabase >/dev/null'
           REMOTE
 
       - name: Verify public deployment
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --show-error --silent --retry 8 --retry-delay 3 https://dreammakerhub.website/ >/dev/null
-          curl --fail --show-error --silent --retry 8 --retry-delay 3 https://dreammakerhub.website/api/config/supabase >/dev/null
+          curl --fail --show-error --silent --retry 8 --retry-delay 3 --retry-all-errors https://dreammakerhub.website/ >/dev/null
+          curl --fail --show-error --silent --retry 8 --retry-delay 3 --retry-all-errors https://dreammakerhub.website/api/config/supabase >/dev/null
           echo "Production homepage and Supabase configuration route are healthy."
 
       - name: Clean runner environment patch
