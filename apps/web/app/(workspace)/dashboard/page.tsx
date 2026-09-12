@@ -8,6 +8,7 @@ import {
   Box,
   ChevronDown,
   Clock3,
+  Code2,
   Folder,
   Gamepad2,
   Globe2,
@@ -34,7 +35,7 @@ type ProjectType = "wonderbuild" | "game" | "workspace";
 
 const projectIcon = (type?: string | null) => {
   if (["game", "3d_scene", "playcanvas"].includes(type || "")) return Gamepad2;
-  if (type === "workspace") return Box;
+  if (type === "workspace") return Code2;
   return Globe2;
 };
 
@@ -54,6 +55,12 @@ const relativeDate = (value?: string) => {
   if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
   const days = Math.round(hours / 24);
   return `${days} day${days === 1 ? "" : "s"} ago`;
+};
+
+const projectTimestamp = (project: Project) => {
+  const raw = project.updatedAt || project.updated_at;
+  const time = raw ? new Date(raw).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
 };
 
 export default function DashboardPage() {
@@ -106,7 +113,7 @@ export default function DashboardPage() {
         ]);
 
         if (projectsResponse.ok) {
-          const data = await projectsResponse.json();
+          const data = await projectsResponse.json().catch(() => ({}));
           setProjects(Array.isArray(data.projects) ? data.projects : []);
         }
 
@@ -122,11 +129,28 @@ export default function DashboardPage() {
     load().catch(() => setLoading(false));
   }, [router]);
 
-  const recentProjects = useMemo(() => projects.slice(0, 3), [projects]);
-  const visibleProjects = showAllProjects ? projects : projects.slice(0, 6);
+  const sortedProjects = useMemo(
+    () => [...projects].sort((a, b) => projectTimestamp(b) - projectTimestamp(a)),
+    [projects],
+  );
+  const query = (searchParams.get("q") || "").trim().toLowerCase();
+  const filteredProjects = useMemo(() => {
+    if (!query) return sortedProjects;
+    return sortedProjects.filter((project) => {
+      const type = project.tool || project.type;
+      return [project.name, project.description || "", projectLabel(type)]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [query, sortedProjects]);
+  const recentProjects = useMemo(() => sortedProjects.slice(0, 3), [sortedProjects]);
+  const visibleProjects = showAllProjects ? filteredProjects : filteredProjects.slice(0, 6);
   const workspaceName = `${displayName}'s Workspace`;
-  const mostRecentProject = recentProjects[0] || null;
-  const lastActive = mostRecentProject ? relativeDate(mostRecentProject.updatedAt || mostRecentProject.updated_at) : "No activity yet";
+  const mostRecentProject = sortedProjects[0] || null;
+  const lastActive = mostRecentProject
+    ? relativeDate(mostRecentProject.updatedAt || mostRecentProject.updated_at)
+    : "No activity yet";
 
   const openCreate = () => {
     setCreateError("");
@@ -179,7 +203,10 @@ export default function DashboardPage() {
             <span className="grid h-7 w-7 place-items-center text-white/70">⌂</span>
             <button
               type="button"
-              onClick={() => setWorkspaceOpen((open) => !open)}
+              onClick={() => {
+                setWorkspaceOpen((open) => !open);
+                setProjectOpen(false);
+              }}
               className="inline-flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-white/5"
             >
               {workspaceName}
@@ -188,7 +215,10 @@ export default function DashboardPage() {
             <span className="text-white/25">›</span>
             <button
               type="button"
-              onClick={() => setProjectOpen((open) => !open)}
+              onClick={() => {
+                setProjectOpen((open) => !open);
+                setWorkspaceOpen(false);
+              }}
               className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 font-medium text-white/90 hover:bg-white/10"
             >
               {mostRecentProject?.name || "Select project"} <ChevronDown size={14} />
@@ -203,9 +233,9 @@ export default function DashboardPage() {
                 </button>
                 <div className="my-3 border-t border-white/10" />
                 <p className="px-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Organization (optional)</p>
-                <p className="px-2 py-2 text-xs leading-5 text-white/45">Create or manage organization workspaces from Team.</p>
+                <p className="px-2 py-2 text-xs leading-5 text-white/45">No organization workspace is connected yet. Team tools remain available without pretending an organization already exists.</p>
                 <Link href="/dashboard/collaboration" className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs hover:bg-white/5">
-                  <Plus size={14} /> Create organization
+                  <Users size={14} /> Open team tools
                 </Link>
               </div>
             )}
@@ -213,12 +243,13 @@ export default function DashboardPage() {
             {projectOpen && (
               <div className="absolute left-48 top-11 z-30 w-80 rounded-xl border border-white/15 bg-[#0c1524] p-2 shadow-2xl">
                 <p className="px-3 py-2 text-xs text-white/45">Choose a project in {workspaceName}</p>
-                {projects.length ? projects.slice(0, 8).map((project) => {
-                  const Icon = projectIcon(project.tool || project.type);
+                {sortedProjects.length ? sortedProjects.slice(0, 8).map((project) => {
+                  const type = project.tool || project.type;
+                  const Icon = projectIcon(type);
                   return (
                     <Link key={project.id} href={`/dashboard/projects/${project.id}`} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-violet-500/15 ${project.id === mostRecentProject?.id ? "bg-blue-500/10" : ""}`}>
                       <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/10 text-blue-300"><Icon size={16} /></span>
-                      <span className="min-w-0 flex-1 truncate">{project.name}</span>
+                      <span className="min-w-0 flex-1"><span className="block truncate">{project.name}</span><span className="block text-[10px] text-white/35">{projectLabel(type)}</span></span>
                       {project.id === mostRecentProject?.id && <span className="text-violet-400">✓</span>}
                     </Link>
                   );
@@ -269,13 +300,20 @@ export default function DashboardPage() {
           </div>
 
           <section id="projects">
-            <div className="mb-4 flex items-end justify-between gap-4">
-              <div><h2 className="text-xl font-bold">Your Projects</h2><p className="text-sm text-white/45">Select a project to open, preview, or publish.</p></div>
-              {projects.length > 3 && (
-                <button type="button" onClick={() => setShowAllProjects((value) => !value)} className="text-xs text-blue-400 hover:underline">
-                  {showAllProjects ? "Show recent" : "View all projects →"}
-                </button>
-              )}
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold">Your Projects</h2>
+                <p className="text-sm text-white/45">Select a project to open its dashboard.</p>
+                {query && <p className="mt-1 text-xs text-violet-300">Showing matches for “{searchParams.get("q")}”</p>}
+              </div>
+              <div className="flex items-center gap-3">
+                {query && <Link href="/dashboard#projects" className="text-xs text-white/50 hover:text-white">Clear search</Link>}
+                {filteredProjects.length > 6 && (
+                  <button type="button" onClick={() => setShowAllProjects((value) => !value)} className="text-xs text-blue-400 hover:underline">
+                    {showAllProjects ? "Show recent" : "View all projects →"}
+                  </button>
+                )}
+              </div>
             </div>
 
             {loading ? (
@@ -287,27 +325,45 @@ export default function DashboardPage() {
                 <p className="mt-2 text-sm text-white/45">Create it here, then land directly on its project dashboard.</p>
                 <button type="button" onClick={openCreate} className="mt-5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold">New Project</button>
               </div>
+            ) : filteredProjects.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.025] p-10 text-center">
+                <Folder className="mx-auto mb-3 text-white/30" size={32} />
+                <h3 className="font-semibold">No projects match that search</h3>
+                <p className="mt-2 text-sm text-white/40">Try a project name, description, or project type.</p>
+                <Link href="/dashboard#projects" className="mt-4 inline-block text-sm text-blue-400 hover:underline">Clear search</Link>
+              </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {visibleProjects.map((project, index) => {
+                {visibleProjects.map((project) => {
                   const type = project.tool || project.type;
                   const Icon = projectIcon(type);
+                  const isCodeProject = type === "workspace";
                   return (
-                    <article key={project.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0d1625] transition hover:-translate-y-0.5 hover:border-violet-500/40">
-                      <Link href={`/dashboard/projects/${project.id}`} className={`relative block h-40 overflow-hidden bg-[radial-gradient(circle_at_70%_30%,rgba(124,58,237,.7),transparent_25%),linear-gradient(135deg,#172554,#090f1b)] p-5 ${index % 3 === 1 ? "hue-rotate-90" : index % 3 === 2 ? "hue-rotate-180" : ""}`}>
-                        <div className="absolute inset-x-0 bottom-0 h-2/3 [clip-path:polygon(0_75%,18%_55%,31%_72%,47%_35%,64%_68%,78%_45%,100%_70%,100%_100%,0_100%)] bg-gradient-to-t from-violet-700/50 via-blue-700/20 to-transparent" />
-                        <span className="relative inline-flex rounded-lg bg-black/25 p-2"><Icon size={22} /></span>
-                        <p className="relative mt-8 text-xl font-black tracking-tight">{project.name}</p>
+                    <article key={project.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0d1625] transition hover:-translate-y-0.5 hover:border-violet-500/35">
+                      <Link href={`/dashboard/projects/${project.id}`} className="relative block h-40 overflow-hidden border-b border-white/10 bg-[#08111e]">
+                        {isCodeProject ? (
+                          <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_70%_30%,rgba(59,130,246,.25),transparent_35%),linear-gradient(145deg,#10182a,#07111d)]">
+                            <div className="text-center"><Code2 className="mx-auto text-blue-300" size={40}/><p className="mt-3 text-sm font-semibold text-white/75">Open project code</p></div>
+                          </div>
+                        ) : (
+                          <iframe
+                            src={`/preview/${encodeURIComponent(project.id)}`}
+                            title={`${project.name} preview`}
+                            className="h-full w-full border-0 bg-[#08111e] pointer-events-none"
+                            loading="lazy"
+                          />
+                        )}
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07101b]/65 via-transparent to-transparent" />
                       </Link>
                       <div className="p-4">
                         <div className="flex items-center gap-2"><Icon size={17} className="text-violet-300" /><h3 className="truncate font-bold">{project.name}</h3></div>
                         <span className="mt-2 inline-block rounded-full border border-blue-500/40 px-2 py-0.5 text-[10px] text-blue-300">{projectLabel(type)}</span>
-                        {project.description && <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-white/45">{project.description}</p>}
+                        <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-white/45">{project.description || "No description yet."}</p>
                         <p className="mt-3 text-xs text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
                           <Link href={`/dashboard/projects/${project.id}`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">Open</Link>
-                          <Link href={`/preview/${project.id}`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Preview</Link>
-                          <Link href={`/dashboard/projects/${project.id}/pages`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Publish</Link>
+                          <Link href={isCodeProject ? `/dashboard/projects/${project.id}/files` : `/preview/${project.id}`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{isCodeProject ? "Files" : "Preview"}</Link>
+                          <Link href={isCodeProject ? `/wonderspace?projectId=${encodeURIComponent(project.id)}` : `/dashboard/projects/${project.id}/pages`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{isCodeProject ? "IDE" : "Publish"}</Link>
                         </div>
                       </div>
                     </article>
@@ -324,7 +380,7 @@ export default function DashboardPage() {
             <div className="divide-y divide-white/10">
               {recentProjects.map((project) => {
                 const Icon = projectIcon(project.tool || project.type);
-                return <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="flex items-center gap-3 py-3"><span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-500/10 text-blue-400"><Icon size={17} /></span><span className="min-w-0"><b className="block truncate text-sm">{project.name}</b><span className="text-[11px] text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</span></span></Link>;
+                return <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="flex items-center gap-3 py-3 hover:text-white"><span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-500/10 text-blue-400"><Icon size={17} /></span><span className="min-w-0"><b className="block truncate text-sm">{project.name}</b><span className="text-[11px] text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</span></span></Link>;
               })}
               {!loading && !recentProjects.length && <p className="py-4 text-xs text-white/40">No recent projects</p>}
             </div>
@@ -333,7 +389,7 @@ export default function DashboardPage() {
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <div className="flex items-center justify-between"><h2 className="font-bold">Workspace Members</h2><Link href="/dashboard/collaboration" className="text-[11px] text-blue-400">Manage</Link></div>
             <div className="mt-4 flex items-center gap-3"><span className="relative grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600 font-bold">{displayName.charAt(0).toUpperCase()}<span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0d1625] bg-emerald-400" /></span><span className="min-w-0"><b className="block text-sm">{displayName}</b><span className="block truncate text-[11px] text-white/40">{email}</span></span></div>
-            <Link href="/dashboard/collaboration" className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs hover:bg-white/5"><Users size={14}/> Invite members</Link>
+            <Link href="/dashboard/collaboration" className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs hover:bg-white/5"><Users size={14}/> Team tools</Link>
           </section>
 
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
@@ -343,7 +399,7 @@ export default function DashboardPage() {
               <Link href="/templates" className="flex items-center gap-2 hover:text-white"><LayoutTemplate size={15} /> Templates</Link>
               <Link href="/3d-library" className="flex items-center gap-2 hover:text-white"><Box size={15} /> 3D Assets</Link>
               <Link href="/dashboard/collaboration" className="flex items-center gap-2 hover:text-white"><Users size={15} /> Team & Community</Link>
-              <Link href="/support" className="flex items-center gap-2 hover:text-white"><Sparkles size={15} /> Help & Support</Link>
+              <Link href="/dashboard/support" className="flex items-center gap-2 hover:text-white"><Sparkles size={15} /> Help & Support</Link>
             </div>
           </section>
 
@@ -378,7 +434,7 @@ export default function DashboardPage() {
               {([
                 ["wonderbuild", "Website", Globe2],
                 ["game", "3D / Game", Gamepad2],
-                ["workspace", "Code / IDE", Box],
+                ["workspace", "Code / IDE", Code2],
               ] as const).map(([value, label, Icon]) => (
                 <button
                   key={value}
