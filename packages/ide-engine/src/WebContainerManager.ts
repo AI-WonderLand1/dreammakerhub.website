@@ -63,7 +63,6 @@ app.listen(PORT, () => {
 
 export interface FileNode {
   name: string;
-  path: string;
   type: 'file' | 'directory';
   children?: FileNode[];
 }
@@ -156,9 +155,9 @@ export class WebContainerManager {
 
       if (entry.isDirectory()) {
         const children = await this.buildTree(wc, fullPath);
-        nodes.push({ name, path: fullPath, type: 'directory', children });
+        nodes.push({ name, type: 'directory', children });
       } else {
-        nodes.push({ name, path: fullPath, type: 'file' });
+        nodes.push({ name, type: 'file' });
       }
     }
 
