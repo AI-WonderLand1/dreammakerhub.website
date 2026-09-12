@@ -15,14 +15,11 @@ import {
   Monitor,
   MousePointer2,
   PanelRight,
-  Redo2,
   Save,
   Smartphone,
   Sparkles,
   Tablet,
   Trash2,
-  Undo2,
-  ZoomIn,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
