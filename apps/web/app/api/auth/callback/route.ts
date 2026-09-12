@@ -3,11 +3,11 @@ import { createSupabaseServerClient } from '@/app/utils/supabase/server';
 import { logger } from '@/lib/logger';
 
 function sanitizeRedirectPath(raw: string | null): string {
-  if (!raw) return '/dashboard/projects';
+  if (!raw) return '/dashboard';
 
   const trimmed = raw.trim();
   if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('://')) {
-    return '/dashboard/projects';
+    return '/dashboard';
   }
 
   return trimmed;
