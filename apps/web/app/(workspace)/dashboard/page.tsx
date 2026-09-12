@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [assetCount, setAssetCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
@@ -99,10 +100,19 @@ export default function DashboardPage() {
       setEmail(user.email || "");
 
       try {
-        const response = await fetch("/api/projects");
-        if (response.ok) {
-          const data = await response.json();
+        const [projectsResponse, assetsResponse] = await Promise.all([
+          fetch("/api/projects"),
+          fetch("/api/assets/user"),
+        ]);
+
+        if (projectsResponse.ok) {
+          const data = await projectsResponse.json();
           setProjects(Array.isArray(data.projects) ? data.projects : []);
+        }
+
+        if (assetsResponse.ok) {
+          const assetData = await assetsResponse.json().catch(() => ({}));
+          setAssetCount(Array.isArray(assetData.assets) ? assetData.assets.length : 0);
         }
       } finally {
         setLoading(false);
@@ -115,6 +125,8 @@ export default function DashboardPage() {
   const recentProjects = useMemo(() => projects.slice(0, 3), [projects]);
   const visibleProjects = showAllProjects ? projects : projects.slice(0, 6);
   const workspaceName = `${displayName}'s Workspace`;
+  const mostRecentProject = recentProjects[0] || null;
+  const lastActive = mostRecentProject ? relativeDate(mostRecentProject.updatedAt || mostRecentProject.updated_at) : "No activity yet";
 
   const openCreate = () => {
     setCreateError("");
@@ -155,37 +167,35 @@ export default function DashboardPage() {
   const statCards = [
     { icon: Folder, value: String(projects.length), label: "Projects", className: "text-blue-400" },
     { icon: Users, value: "1", label: "Member", className: "text-emerald-400" },
-    { icon: Box, value: "—", label: "3D Assets", className: "text-amber-400" },
-    { icon: Clock3, value: "Today", label: "Last active", className: "text-cyan-400" },
+    { icon: Box, value: assetCount === null ? "—" : String(assetCount), label: "3D Assets", className: "text-amber-400" },
+    { icon: Clock3, value: lastActive, label: "Last active", className: "text-cyan-400" },
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#080e19] text-white">
-      <div className="grid gap-5 xl:grid-cols-[1fr_260px]">
+    <div className="min-h-[calc(100vh-4.5rem)] bg-[#07101b] text-white">
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_290px]">
         <main className="min-w-0">
-          <div className="relative mb-5 flex flex-wrap items-center gap-2 text-sm text-white/65">
+          <div className="relative mb-4 flex flex-wrap items-center gap-2 text-sm text-white/65">
+            <span className="grid h-7 w-7 place-items-center text-white/70">⌂</span>
             <button
               type="button"
               onClick={() => setWorkspaceOpen((open) => !open)}
-              className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/5"
+              className="inline-flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-white/5"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600 font-bold">
-                {displayName.charAt(0).toUpperCase()}
-              </span>
               {workspaceName}
               <ChevronDown size={14} />
             </button>
-            <span className="text-white/25">/</span>
+            <span className="text-white/25">›</span>
             <button
               type="button"
               onClick={() => setProjectOpen((open) => !open)}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-white/90 hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 font-medium text-white/90 hover:bg-white/10"
             >
-              Select project <ChevronDown size={14} />
+              {mostRecentProject?.name || "Select project"} <ChevronDown size={14} />
             </button>
 
             {workspaceOpen && (
-              <div className="absolute left-0 top-11 z-30 w-80 rounded-xl border border-white/15 bg-[#0c1524] p-3 shadow-2xl">
+              <div className="absolute left-7 top-11 z-30 w-80 rounded-xl border border-white/15 bg-[#0c1524] p-3 shadow-2xl">
                 <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Personal</p>
                 <button type="button" onClick={() => setWorkspaceOpen(false)} className="flex w-full items-center gap-3 rounded-lg bg-violet-500/15 p-3 text-left">
                   <UserRound size={18} className="text-violet-300" />
@@ -193,21 +203,23 @@ export default function DashboardPage() {
                 </button>
                 <div className="my-3 border-t border-white/10" />
                 <p className="px-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Organization (optional)</p>
-                <p className="px-2 py-2 text-xs leading-5 text-white/45">Organization workspaces are managed from Team.</p>
+                <p className="px-2 py-2 text-xs leading-5 text-white/45">Create or manage organization workspaces from Team.</p>
                 <Link href="/dashboard/collaboration" className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs hover:bg-white/5">
-                  <Plus size={14} /> Manage organizations
+                  <Plus size={14} /> Create organization
                 </Link>
               </div>
             )}
 
             {projectOpen && (
-              <div className="absolute left-44 top-11 z-30 w-72 rounded-xl border border-white/15 bg-[#0c1524] p-2 shadow-2xl">
-                <p className="px-2 py-2 text-xs text-white/45">Choose a project in {workspaceName}</p>
+              <div className="absolute left-48 top-11 z-30 w-80 rounded-xl border border-white/15 bg-[#0c1524] p-2 shadow-2xl">
+                <p className="px-3 py-2 text-xs text-white/45">Choose a project in {workspaceName}</p>
                 {projects.length ? projects.slice(0, 8).map((project) => {
                   const Icon = projectIcon(project.tool || project.type);
                   return (
-                    <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-violet-500/15">
-                      <Icon size={16} className="text-violet-300" /> {project.name}
+                    <Link key={project.id} href={`/dashboard/projects/${project.id}`} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-violet-500/15 ${project.id === mostRecentProject?.id ? "bg-blue-500/10" : ""}`}>
+                      <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/10 text-blue-300"><Icon size={16} /></span>
+                      <span className="min-w-0 flex-1 truncate">{project.name}</span>
+                      {project.id === mostRecentProject?.id && <span className="text-violet-400">✓</span>}
                     </Link>
                   );
                 }) : <p className="px-3 py-3 text-sm text-white/40">No projects yet</p>}
@@ -218,46 +230,48 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_78%_45%,rgba(99,102,241,.24),transparent_34%),linear-gradient(120deg,#111827,#07111e)] p-6">
-            <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_82%_55%,rgba(124,58,237,.26),transparent_30%),radial-gradient(circle_at_92%_42%,rgba(56,189,248,.15),transparent_20%),linear-gradient(120deg,#111827,#07111e)] p-6 lg:p-7">
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-2/5 opacity-65 [clip-path:polygon(100%_34%,88%_42%,76%_38%,65%_56%,52%_46%,38%_67%,25%_58%,0_82%,100%_100%)] bg-gradient-to-t from-violet-700/40 via-blue-700/20 to-transparent" />
+            <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-2xl font-black">
+                <div className="mb-3 flex items-center gap-4">
+                  <div className="grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-2xl font-black shadow-lg shadow-violet-950/30">
                     {displayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h1 className="text-3xl font-black tracking-tight">{workspaceName}</h1>
+                    <h1 className="text-3xl font-black tracking-tight lg:text-4xl">{workspaceName}</h1>
                     <p className="text-sm text-violet-200/70">Personal workspace</p>
                   </div>
                 </div>
-                <p className="max-w-xl text-sm text-white/55">Build, create, and bring your ideas to life. Pick a project below to continue.</p>
+                <p className="max-w-xl text-sm text-white/55">Build, create, and bring your ideas to life.</p>
               </div>
-              <button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/40">
-                <Plus size={16} /> New Project
+              <button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-5 py-3 text-sm font-bold shadow-lg shadow-violet-950/40">
+                <Plus size={17} /> New Project
               </button>
             </div>
           </section>
 
-          <nav className="mb-4 flex gap-6 border-b border-white/10 px-1 pt-4 text-sm text-white/55">
+          <nav className="mb-5 flex gap-7 overflow-x-auto border-b border-white/10 px-1 pt-3 text-sm text-white/55">
             <a href="#overview" className="border-b-2 border-violet-500 px-1 py-3 font-semibold text-violet-300">Overview</a>
             <a href="#projects" className="px-1 py-3 hover:text-white">Projects</a>
             <Link href="/dashboard/collaboration" className="px-1 py-3 hover:text-white">Members</Link>
+            <a href="#workspace-activity" className="px-1 py-3 hover:text-white">Activity</a>
             <Link href="/dashboard/settings" className="px-1 py-3 hover:text-white">Settings</Link>
           </nav>
 
-          <div id="overview" className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div id="overview" className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {statCards.map(({ icon: Icon, value, label, className }) => (
-              <div key={label} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[.035] p-4">
-                <div className={`grid h-10 w-10 place-items-center rounded-lg bg-white/5 ${className}`}><Icon size={20} /></div>
-                <div><b className="block text-lg">{value}</b><span className="text-xs text-white/45">{label}</span></div>
+              <div key={label} className="flex min-h-24 items-center gap-4 rounded-xl border border-white/10 bg-[#0d1625] p-4">
+                <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/5 ${className}`}><Icon size={23} /></div>
+                <div className="min-w-0"><b className="block truncate text-xl">{value}</b><span className="text-xs text-white/45">{label}</span></div>
               </div>
             ))}
           </div>
 
           <section id="projects">
-            <div className="mb-3 flex items-end justify-between gap-4">
-              <div><h2 className="text-xl font-bold">Your Projects</h2><p className="text-sm text-white/45">Select a project to open its dashboard.</p></div>
-              {projects.length > 6 && (
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div><h2 className="text-xl font-bold">Your Projects</h2><p className="text-sm text-white/45">Select a project to open, preview, or publish.</p></div>
+              {projects.length > 3 && (
                 <button type="button" onClick={() => setShowAllProjects((value) => !value)} className="text-xs text-blue-400 hover:underline">
                   {showAllProjects ? "Show recent" : "View all projects →"}
                 </button>
@@ -265,7 +279,7 @@ export default function DashboardPage() {
             </div>
 
             {loading ? (
-              <div className="grid gap-4 md:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-72 animate-pulse rounded-xl bg-white/5" />)}</div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-80 animate-pulse rounded-xl bg-white/5" />)}</div>
             ) : projects.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.025] p-12 text-center">
                 <WandSparkles className="mx-auto mb-4 text-violet-400" size={36} />
@@ -274,23 +288,24 @@ export default function DashboardPage() {
                 <button type="button" onClick={openCreate} className="mt-5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold">New Project</button>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {visibleProjects.map((project, index) => {
                   const type = project.tool || project.type;
                   const Icon = projectIcon(type);
                   return (
                     <article key={project.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0d1625] transition hover:-translate-y-0.5 hover:border-violet-500/40">
-                      <Link href={`/dashboard/projects/${project.id}`} className={`block h-36 bg-[radial-gradient(circle_at_70%_30%,rgba(124,58,237,.7),transparent_25%),linear-gradient(135deg,#172554,#090f1b)] p-5 ${index % 3 === 1 ? "hue-rotate-90" : index % 3 === 2 ? "hue-rotate-180" : ""}`}>
-                        <span className="inline-flex rounded-lg bg-black/25 p-2"><Icon size={22} /></span>
-                        <p className="mt-7 text-xl font-black tracking-tight">{project.name}</p>
+                      <Link href={`/dashboard/projects/${project.id}`} className={`relative block h-40 overflow-hidden bg-[radial-gradient(circle_at_70%_30%,rgba(124,58,237,.7),transparent_25%),linear-gradient(135deg,#172554,#090f1b)] p-5 ${index % 3 === 1 ? "hue-rotate-90" : index % 3 === 2 ? "hue-rotate-180" : ""}`}>
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 [clip-path:polygon(0_75%,18%_55%,31%_72%,47%_35%,64%_68%,78%_45%,100%_70%,100%_100%,0_100%)] bg-gradient-to-t from-violet-700/50 via-blue-700/20 to-transparent" />
+                        <span className="relative inline-flex rounded-lg bg-black/25 p-2"><Icon size={22} /></span>
+                        <p className="relative mt-8 text-xl font-black tracking-tight">{project.name}</p>
                       </Link>
                       <div className="p-4">
-                        <div className="flex items-center gap-2"><Icon size={17} className="text-violet-300" /><h3 className="font-bold">{project.name}</h3></div>
+                        <div className="flex items-center gap-2"><Icon size={17} className="text-violet-300" /><h3 className="truncate font-bold">{project.name}</h3></div>
                         <span className="mt-2 inline-block rounded-full border border-blue-500/40 px-2 py-0.5 text-[10px] text-blue-300">{projectLabel(type)}</span>
-                        {project.description && <p className="mt-2 line-clamp-2 text-xs text-white/45">{project.description}</p>}
+                        {project.description && <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-white/45">{project.description}</p>}
                         <p className="mt-3 text-xs text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
-                          <Link href={`/dashboard/projects/${project.id}`} className="rounded-md bg-violet-600 px-2 py-2 text-center text-xs font-semibold">Open</Link>
+                          <Link href={`/dashboard/projects/${project.id}`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">Open</Link>
                           <Link href={`/preview/${project.id}`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Preview</Link>
                           <Link href={`/dashboard/projects/${project.id}/pages`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Publish</Link>
                         </div>
@@ -304,12 +319,12 @@ export default function DashboardPage() {
         </main>
 
         <aside className="space-y-4">
-          <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
+          <section id="workspace-activity" className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <div className="mb-3 flex items-center justify-between"><h2 className="font-bold">Recent Projects</h2><a href="#projects" className="text-[11px] text-blue-400">View all</a></div>
             <div className="divide-y divide-white/10">
               {recentProjects.map((project) => {
                 const Icon = projectIcon(project.tool || project.type);
-                return <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="flex items-center gap-3 py-3"><span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-500/10 text-blue-400"><Icon size={17} /></span><span className="min-w-0"><b className="block truncate text-sm">{project.name}</b><span className="text-[11px] text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</span></span></Link>;
+                return <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="flex items-center gap-3 py-3"><span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-500/10 text-blue-400"><Icon size={17} /></span><span className="min-w-0"><b className="block truncate text-sm">{project.name}</b><span className="text-[11px] text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</span></span></Link>;
               })}
               {!loading && !recentProjects.length && <p className="py-4 text-xs text-white/40">No recent projects</p>}
             </div>
@@ -317,7 +332,8 @@ export default function DashboardPage() {
 
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <div className="flex items-center justify-between"><h2 className="font-bold">Workspace Members</h2><Link href="/dashboard/collaboration" className="text-[11px] text-blue-400">Manage</Link></div>
-            <div className="mt-4 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600 font-bold">{displayName.charAt(0).toUpperCase()}</span><span className="min-w-0"><b className="block text-sm">{displayName}</b><span className="block truncate text-[11px] text-white/40">{email}</span></span></div>
+            <div className="mt-4 flex items-center gap-3"><span className="relative grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-600 font-bold">{displayName.charAt(0).toUpperCase()}<span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0d1625] bg-emerald-400" /></span><span className="min-w-0"><b className="block text-sm">{displayName}</b><span className="block truncate text-[11px] text-white/40">{email}</span></span></div>
+            <Link href="/dashboard/collaboration" className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs hover:bg-white/5"><Users size={14}/> Invite members</Link>
           </section>
 
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
@@ -326,8 +342,15 @@ export default function DashboardPage() {
               <Link href="/docs" className="flex items-center gap-2 hover:text-white"><Folder size={15} /> Documentation</Link>
               <Link href="/templates" className="flex items-center gap-2 hover:text-white"><LayoutTemplate size={15} /> Templates</Link>
               <Link href="/3d-library" className="flex items-center gap-2 hover:text-white"><Box size={15} /> 3D Assets</Link>
+              <Link href="/dashboard/collaboration" className="flex items-center gap-2 hover:text-white"><Users size={15} /> Team & Community</Link>
               <Link href="/support" className="flex items-center gap-2 hover:text-white"><Sparkles size={15} /> Help & Support</Link>
             </div>
+          </section>
+
+          <section className="relative overflow-hidden rounded-xl border border-violet-500/20 bg-[radial-gradient(circle_at_85%_20%,rgba(99,102,241,.48),transparent_30%),linear-gradient(145deg,#18163b,#0c1730)] p-5">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 [clip-path:polygon(0_72%,20%_40%,38%_75%,58%_30%,78%_68%,100%_45%,100%_100%,0_100%)] bg-violet-700/25" />
+            <blockquote className="relative z-10 text-sm italic leading-6 text-white/80">“A more imaginative world is a kinder world.”</blockquote>
+            <p className="relative z-10 mt-3 text-xs text-violet-300">— DreamMakerHub</p>
           </section>
         </aside>
       </div>

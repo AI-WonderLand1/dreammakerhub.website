@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import { FileTree, FileNode, buildTree } from '@/components/file-manager/FileTree';
+import { useParams, useSearchParams } from 'next/navigation';
+import { FileTree, buildTree } from '@/components/file-manager/FileTree';
 import { CodeEditor } from '@/components/file-manager/CodeEditor';
 import { FileManagerToolbar } from '@/components/file-manager/FileManagerToolbar';
 import { BreadcrumbBar } from '@/components/file-manager/BreadcrumbBar';
@@ -11,7 +11,9 @@ import { broadcastFileEvent } from '@/lib/realtime/events';
 
 export default function FileManagerPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const projectId = params.id as string;
+  const requestedPath = searchParams.get('path');
 
   const [files, setFiles] = useState<Record<string, string>>({});
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -25,14 +27,19 @@ export default function FileManagerPage() {
       const res = await fetch(`/api/projects/${projectId}/files`);
       const data = await res.json();
       if (data.files) {
-        setFiles(data.files);
+        const nextFiles = data.files as Record<string, string>;
+        setFiles(nextFiles);
+        if (requestedPath && Object.prototype.hasOwnProperty.call(nextFiles, requestedPath)) {
+          setSelectedPath(requestedPath);
+          setFileContent(nextFiles[requestedPath] || '');
+        }
       }
     } catch (err) {
       console.error('Failed to load files:', err);
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, requestedPath]);
 
   useEffect(() => {
     loadFiles();
@@ -185,7 +192,6 @@ export default function FileManagerPage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      {/* Left: File Tree */}
       <div className="w-64 flex-shrink-0 border-r border-white/10 bg-[#0a0e1a]">
         <FileManagerToolbar
           onNewFile={() => handleNewFile()}
@@ -208,7 +214,6 @@ export default function FileManagerPage() {
         </div>
       </div>
 
-      {/* Right: Editor */}
       <div className="flex-1 flex flex-col bg-[#1e1e1e]">
         <BreadcrumbBar path={selectedPath} onNavigate={handleSelect} />
         <div className="flex-1">
