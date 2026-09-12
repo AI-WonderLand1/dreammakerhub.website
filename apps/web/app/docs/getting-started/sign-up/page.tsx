@@ -89,7 +89,7 @@ export default function SignUpDocsPage() {
           <p className="px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Getting Started</p>
           <nav className="mt-3 space-y-1 text-sm">
             <Link href="/docs/getting-started/sign-up" className="block rounded-lg bg-blue-600/15 px-3 py-2 font-semibold text-blue-300">1. Sign Up</Link>
-            <Link href="/docs#sign-in" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">2. Sign In</Link>
+            <Link href="/docs/getting-started/sign-in" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">2. Sign In</Link>
             <Link href="/docs#start-project" className="block rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-900">3. Start Your Project</Link>
           </nav>
 
@@ -135,31 +135,18 @@ export default function SignUpDocsPage() {
             <section id="create-account" className="scroll-mt-28 pt-14">
               <h2 className="text-3xl font-black tracking-tight">Create your account</h2>
               <p className="mt-3 leading-7 text-slate-600">The current account screen uses the same email and password fields for sign in and sign up.</p>
-
-              <div className="mt-7">
-                <AuthPreview />
-              </div>
-
+              <div className="mt-7"><AuthPreview /></div>
               <div className="mt-8 space-y-6">
-                <Step number={1} title="Open the account page">
-                  Go to <Link href="/public-pages/auth" className="font-semibold text-blue-700 underline underline-offset-4">DreamMakerHub Sign In</Link>. If you are already signed in, DreamMakerHub may send you directly to your Projects dashboard instead.
-                </Step>
-                <Step number={2} title="Enter your email">
-                  Type the email address you want connected to the account.
-                </Step>
-                <Step number={3} title="Enter your password">
-                  Enter the password you want to use. If the authentication service rejects the password, the account screen displays the returned error underneath the fields.
-                </Step>
-                <Step number={4} title="Click Sign Up">
-                  The <strong>Sign Up</strong> action is underneath the Sign In button beside “No account?”. It uses the email and password already entered in the fields.
-                </Step>
+                <Step number={1} title="Open the account page">Go to <Link href="/public-pages/auth" className="font-semibold text-blue-700 underline underline-offset-4">DreamMakerHub Sign In</Link>. If you already have an active session, DreamMakerHub may send you directly to Projects.</Step>
+                <Step number={2} title="Enter your email">Type the email address you want connected to the account.</Step>
+                <Step number={3} title="Enter your password">Enter the password you want to use. If the authentication service rejects it, the returned error appears underneath the fields.</Step>
+                <Step number={4} title="Click Sign Up">The <strong>Sign Up</strong> action is underneath the Sign In button beside “No account?”. It uses the email and password already entered.</Step>
               </div>
             </section>
 
             <section id="confirm-email" className="scroll-mt-28 pt-14">
               <h2 className="text-3xl font-black tracking-tight">Confirm your email</h2>
               <p className="mt-3 leading-7 text-slate-600">When signup is accepted, the account screen displays <strong>“Check your email for the confirmation link.”</strong></p>
-
               <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
                 <div className="flex gap-3">
                   <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-emerald-700" />
@@ -169,7 +156,7 @@ export default function SignUpDocsPage() {
                       <li>1. Open the inbox for the email you entered.</li>
                       <li>2. Open the DreamMakerHub confirmation email.</li>
                       <li>3. Follow the confirmation link.</li>
-                      <li>4. Return to DreamMakerHub and sign in if you are not already signed in.</li>
+                      <li>4. Return to DreamMakerHub and sign in if needed.</li>
                     </ol>
                   </div>
                 </div>
@@ -178,85 +165,44 @@ export default function SignUpDocsPage() {
 
             <section id="oauth" className="scroll-mt-28 pt-14">
               <h2 className="text-3xl font-black tracking-tight">Use GitHub or Google instead</h2>
-              <p className="mt-3 leading-7 text-slate-600">The current account page also provides GitHub and Google buttons. Selecting one sends you to that provider to continue authentication, then returns you to DreamMakerHub.</p>
-
+              <p className="mt-3 leading-7 text-slate-600">The current account page also provides GitHub and Google buttons. Selecting one sends you to that provider and then returns you to DreamMakerHub.</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 p-5">
-                  <Github className="h-6 w-6" />
-                  <h3 className="mt-4 font-bold">GitHub</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub on the account screen, complete GitHub’s authorization flow, then allow DreamMakerHub to return you to the site.</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 p-5">
-                  <div className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 text-xs font-black">G</div>
-                  <h3 className="mt-4 font-bold">Google</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose Google, select the account you want to use, finish the provider flow, and return to DreamMakerHub.</p>
-                </div>
+                <div className="rounded-2xl border border-slate-200 p-5"><Github className="h-6 w-6" /><h3 className="mt-4 font-bold">GitHub</h3><p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, complete authorization, then return to DreamMakerHub.</p></div>
+                <div className="rounded-2xl border border-slate-200 p-5"><div className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 text-xs font-black">G</div><h3 className="mt-4 font-bold">Google</h3><p className="mt-2 text-sm leading-6 text-slate-600">Choose Google, select your account, finish the provider flow, and return to DreamMakerHub.</p></div>
               </div>
             </section>
 
             <section id="troubleshooting" className="scroll-mt-28 pt-14">
-              <div className="flex items-center gap-3">
-                <CircleHelp className="h-7 w-7 text-amber-600" />
-                <h2 className="text-3xl font-black tracking-tight">If something goes wrong</h2>
-              </div>
-
+              <div className="flex items-center gap-3"><CircleHelp className="h-7 w-7 text-amber-600" /><h2 className="text-3xl font-black tracking-tight">If something goes wrong</h2></div>
               <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
-                <div className="p-5">
-                  <h3 className="font-bold">The page sends me straight to Projects</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">You already have a verified active session. DreamMakerHub checks for an existing signed-in user when the account page loads and redirects authenticated users to their destination.</p>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold">“Authentication service is temporarily unavailable”</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Refresh the account page and try again. If the message continues, the authentication configuration or service is unavailable, so repeatedly changing your password will not fix it.</p>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold">I do not see the confirmation email</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Check Spam, Junk, Promotions, and the exact inbox you entered. If it still does not arrive, return to the account page and try again or use the Support Center rather than creating several different accounts.</p>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold">GitHub or Google returns an error</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Return to the DreamMakerHub account page and retry. The current site reports provider rejection, incomplete OAuth responses, session-exchange failures, and callback failures directly on the account screen.</p>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold">I already have an account</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Do not create another one. Use the Sign In button with the account you already created.</p>
-                </div>
+                <div className="p-5"><h3 className="font-bold">The page sends me straight to Projects</h3><p className="mt-2 text-sm leading-6 text-slate-600">You already have an active verified session, so DreamMakerHub redirects you to your destination.</p></div>
+                <div className="p-5"><h3 className="font-bold">“Authentication service is temporarily unavailable”</h3><p className="mt-2 text-sm leading-6 text-slate-600">Refresh and try again. If it continues, the authentication service or configuration is unavailable.</p></div>
+                <div className="p-5"><h3 className="font-bold">I do not see the confirmation email</h3><p className="mt-2 text-sm leading-6 text-slate-600">Check Spam, Junk, Promotions, and the exact inbox you entered. If it still does not arrive, use the Support Center instead of creating several accounts.</p></div>
+                <div className="p-5"><h3 className="font-bold">GitHub or Google returns an error</h3><p className="mt-2 text-sm leading-6 text-slate-600">Return to the account page and retry. DreamMakerHub reports provider and callback failures on the account screen.</p></div>
               </div>
-
-              <Link href="/support" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold hover:border-blue-400 hover:text-blue-700">
-                Open Support Center <ExternalLink className="h-4 w-4" />
-              </Link>
+              <Link href="/support" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold hover:border-blue-400 hover:text-blue-700">Open Support Center <ExternalLink className="h-4 w-4" /></Link>
             </section>
 
             <section id="next" className="scroll-mt-28 pt-14">
               <div className="rounded-3xl bg-slate-950 p-7 text-white sm:p-8">
                 <ShieldCheck className="h-7 w-7 text-blue-400" />
                 <h2 className="mt-4 text-2xl font-black">What happens next</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-300">After the account is confirmed, the next step in the DreamMakerHub workflow is signing in. Once signed in, the normal destination is your Projects dashboard unless you were sent to the account page from another protected part of the site.</p>
-                <Link href="/docs#sign-in" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold hover:bg-blue-500">
-                  Next: Sign In <ArrowRight className="h-4 w-4" />
-                </Link>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-300">After the account is confirmed, the next step is signing in. Once signed in, the normal destination is Projects unless another protected DreamMakerHub page sent you to the account screen.</p>
+                <Link href="/docs/getting-started/sign-in" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold hover:bg-blue-500">Next: Sign In <ArrowRight className="h-4 w-4" /></Link>
               </div>
             </section>
 
             <div className="mt-12 flex items-center justify-between border-t border-slate-200 pt-7 text-sm">
               <Link href="/docs" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" /> Docs home</Link>
-              <Link href="/docs#sign-in" className="inline-flex items-center gap-2 font-semibold text-blue-700">Sign In <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/docs/getting-started/sign-in" className="inline-flex items-center gap-2 font-semibold text-blue-700">Sign In <ArrowRight className="h-4 w-4" /></Link>
             </div>
           </article>
         </main>
 
         <aside className="sticky top-16 hidden h-[calc(100vh-64px)] overflow-y-auto border-l border-slate-200 bg-white px-5 py-8 text-slate-950 xl:block">
           <p className="text-sm font-black">On this page</p>
-          <nav className="mt-4 space-y-3 border-l border-slate-200 pl-4 text-sm">
-            {toc.map(([label, href]) => (
-              <a key={href} href={href} className="block text-slate-500 hover:text-blue-700">{label}</a>
-            ))}
-          </nav>
-          <div className="mt-8 border-t border-slate-200 pt-6">
-            <p className="text-sm font-black">Need help?</p>
-            <Link href="/support" className="mt-3 flex items-center gap-2 text-sm text-slate-600 hover:text-blue-700"><CircleHelp className="h-4 w-4" /> Support Center</Link>
-          </div>
+          <nav className="mt-4 space-y-3 border-l border-slate-200 pl-4 text-sm">{toc.map(([label, href]) => <a key={href} href={href} className="block text-slate-500 hover:text-blue-700">{label}</a>)}</nav>
+          <div className="mt-8 border-t border-slate-200 pt-6"><p className="text-sm font-black">Need help?</p><Link href="/support" className="mt-3 flex items-center gap-2 text-sm text-slate-600 hover:text-blue-700"><CircleHelp className="h-4 w-4" /> Support Center</Link></div>
         </aside>
       </div>
     </div>
