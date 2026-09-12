@@ -33,12 +33,12 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
   },
   {
     id: "wonderspace-ide",
-    title: "WonderSpace IDE",
-    description: "Full browser-based IDE with WebContainer. Code, run, and deploy from anywhere. Integrated AI autocomplete, debugging, and Git support.",
+    title: "WonderSpace",
+    description: "Private browser-based cloud workspace for coding with files, terminal, Git, and AI-assisted development tools.",
     image: "/images/screenshots/theia-builder.svg",
-    href: "/ide",
+    href: "/wonderspace",
     gradient: "from-amber-600/20 to-orange-600/10",
-    badge: "Cloud IDE",
+    badge: "Cloud Workspace",
   },
   {
     id: "ai-wonder",
