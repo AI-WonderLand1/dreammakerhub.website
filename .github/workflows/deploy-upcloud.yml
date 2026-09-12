@@ -67,6 +67,10 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CODER_API_URL: ${{ vars.CODER_API_URL || secrets.CODER_API_URL }}
+          CODER_ACCESS_URL: ${{ vars.CODER_ACCESS_URL || secrets.CODER_ACCESS_URL }}
+          CODER_API_TOKEN: ${{ secrets.CODER_API_TOKEN }}
+          CODER_WORKSPACE_OWNER: ${{ vars.CODER_WORKSPACE_OWNER || secrets.CODER_WORKSPACE_OWNER }}
         run: |
           set -euo pipefail
           umask 077
@@ -89,6 +93,18 @@ jobs:
           write_env DATABASE_URL "$DATABASE_URL"
           if [ -n "${OPENROUTER_API_KEY:-}" ]; then
             write_env OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
+          fi
+          if [ -n "${CODER_API_URL:-}" ]; then
+            write_env CODER_API_URL "$CODER_API_URL"
+          fi
+          if [ -n "${CODER_ACCESS_URL:-}" ]; then
+            write_env CODER_ACCESS_URL "$CODER_ACCESS_URL"
+          fi
+          if [ -n "${CODER_API_TOKEN:-}" ]; then
+            write_env CODER_API_TOKEN "$CODER_API_TOKEN"
+          fi
+          if [ -n "${CODER_WORKSPACE_OWNER:-}" ]; then
+            write_env CODER_WORKSPACE_OWNER "$CODER_WORKSPACE_OWNER"
           fi
 
           chmod 600 "$PATCH_FILE"

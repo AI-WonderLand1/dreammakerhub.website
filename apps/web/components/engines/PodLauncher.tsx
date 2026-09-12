@@ -133,12 +133,12 @@ export default function PodLauncher({
                   onChange={(e) => setPodName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                   placeholder={defaultPodName}
                   className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  maxLength={62}
+                  maxLength={32}
                   autoComplete="off"
                   spellCheck={false}
                 />
                 <p className="mt-1.5 text-xs text-gray-500">
-                  Lowercase letters, numbers, and hyphens. 3-62 characters.
+                  Lowercase letters, numbers, and hyphens. 3-32 characters.
                 </p>
               </div>
 
