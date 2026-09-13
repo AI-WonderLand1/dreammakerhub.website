@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
+  Bot,
   Box,
   ChevronDown,
   Clock3,
@@ -31,18 +32,36 @@ type Project = {
   updated_at?: string;
 };
 
-type ProjectType = "wonderbuild" | "game" | "workspace";
+type ProjectType = "wonderbuild" | "game" | "workspace" | "npc" | "ai";
+
+const normalizedType = (type?: string | null) => (type || "").toLowerCase();
 
 const projectIcon = (type?: string | null) => {
-  if (["game", "3d_scene", "playcanvas"].includes(type || "")) return Gamepad2;
-  if (type === "workspace") return Code2;
+  const value = normalizedType(type);
+  if (["game", "3d", "3d_scene", "playcanvas"].includes(value)) return Gamepad2;
+  if (["workspace", "code"].includes(value)) return Code2;
+  if (value === "npc") return Bot;
+  if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(value)) return Sparkles;
   return Globe2;
 };
 
 const projectLabel = (type?: string | null) => {
-  if (["game", "3d_scene", "playcanvas"].includes(type || "")) return "3D Experience";
-  if (type === "workspace") return "IDE Project";
+  const value = normalizedType(type);
+  if (["game", "3d", "3d_scene", "playcanvas"].includes(value)) return "3D Experience";
+  if (["workspace", "code"].includes(value)) return "Code / IDE";
+  if (value === "npc") return "NPC AI";
+  if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(value)) return "AI App";
   return "Website";
+};
+
+const projectToolAction = (type: string | null | undefined, projectId: string) => {
+  const value = normalizedType(type);
+  const projectQuery = `projectId=${encodeURIComponent(projectId)}`;
+  if (["workspace", "code"].includes(value)) return { label: "IDE", href: `/wonderspace?${projectQuery}` };
+  if (["game", "3d", "3d_scene", "playcanvas"].includes(value)) return { label: "3D Studio", href: `/dashboard/3dhub?${projectQuery}` };
+  if (value === "npc") return { label: "NPC Studio", href: `/wonder-play?${projectQuery}` };
+  if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(value)) return { label: "AI Tools", href: `/dashboard/agents?${projectQuery}` };
+  return { label: "WonderBuild", href: `/wonder-build/builder?${projectQuery}` };
 };
 
 const relativeDate = (value?: string) => {
@@ -303,7 +322,7 @@ export default function DashboardPage() {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold">Your Projects</h2>
-                <p className="text-sm text-white/45">Select a project to open its dashboard.</p>
+                <p className="text-sm text-white/45">All project types stay together here. Select one to open its project dashboard and files.</p>
                 {query && <p className="mt-1 text-xs text-violet-300">Showing matches for “{searchParams.get("q")}”</p>}
               </div>
               <div className="flex items-center gap-3">
@@ -336,22 +355,24 @@ export default function DashboardPage() {
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {visibleProjects.map((project) => {
                   const type = project.tool || project.type;
+                  const value = normalizedType(type);
                   const Icon = projectIcon(type);
-                  const isCodeProject = type === "workspace";
+                  const previewable = !["workspace", "code", "npc", "ai", "ai_app", "ai-playground", "ai_playground"].includes(value);
+                  const toolAction = projectToolAction(type, project.id);
                   return (
                     <article key={project.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0d1625] transition hover:-translate-y-0.5 hover:border-violet-500/35">
                       <Link href={`/dashboard/projects/${project.id}`} className="relative block h-40 overflow-hidden border-b border-white/10 bg-[#08111e]">
-                        {isCodeProject ? (
-                          <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_70%_30%,rgba(59,130,246,.25),transparent_35%),linear-gradient(145deg,#10182a,#07111d)]">
-                            <div className="text-center"><Code2 className="mx-auto text-blue-300" size={40}/><p className="mt-3 text-sm font-semibold text-white/75">Open project code</p></div>
-                          </div>
-                        ) : (
+                        {previewable ? (
                           <iframe
                             src={`/preview/${encodeURIComponent(project.id)}`}
                             title={`${project.name} preview`}
                             className="h-full w-full border-0 bg-[#08111e] pointer-events-none"
                             loading="lazy"
                           />
+                        ) : (
+                          <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_70%_30%,rgba(99,102,241,.25),transparent_35%),linear-gradient(145deg,#10182a,#07111d)]">
+                            <div className="text-center"><Icon className="mx-auto text-violet-300" size={40}/><p className="mt-3 text-sm font-semibold text-white/75">{projectLabel(type)}</p></div>
+                          </div>
                         )}
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07101b]/65 via-transparent to-transparent" />
                       </Link>
@@ -362,8 +383,8 @@ export default function DashboardPage() {
                         <p className="mt-3 text-xs text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
                           <Link href={`/dashboard/projects/${project.id}`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">Open</Link>
-                          <Link href={isCodeProject ? `/dashboard/projects/${project.id}/files` : `/preview/${project.id}`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{isCodeProject ? "Files" : "Preview"}</Link>
-                          <Link href={isCodeProject ? `/wonderspace?projectId=${encodeURIComponent(project.id)}` : `/dashboard/projects/${project.id}/pages`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{isCodeProject ? "IDE" : "Publish"}</Link>
+                          <Link href={`/dashboard/projects/${project.id}#files`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Files</Link>
+                          <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
                         </div>
                       </div>
                     </article>
@@ -415,7 +436,7 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.currentTarget === event.target) closeCreate(); }}>
           <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#0b1626] p-5 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div><h2 className="text-xl font-bold">New Project</h2><p className="mt-1 text-sm text-white/45">Create it here. No extra setup page.</p></div>
+              <div><h2 className="text-xl font-bold">New Project</h2><p className="mt-1 text-sm text-white/45">Pick the project type here, then land directly on the same project dashboard.</p></div>
               <button type="button" onClick={closeCreate} className="rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-white"><X size={18} /></button>
             </div>
 
@@ -430,11 +451,13 @@ export default function DashboardPage() {
             />
 
             <p className="mb-2 mt-5 text-xs font-semibold text-white/60">Project type</p>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {([
                 ["wonderbuild", "Website", Globe2],
-                ["game", "3D / Game", Gamepad2],
                 ["workspace", "Code / IDE", Code2],
+                ["game", "3D / Game", Gamepad2],
+                ["npc", "NPC AI", Bot],
+                ["ai", "AI App", Sparkles],
               ] as const).map(([value, label, Icon]) => (
                 <button
                   key={value}
