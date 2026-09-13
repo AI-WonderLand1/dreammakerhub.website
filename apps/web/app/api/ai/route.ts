@@ -1,4 +1,4 @@
-import { runModel } from "@/core/ai/runModel"
+import { runModel } from "../../../core/ai/runModel"
 import { NextResponse } from "next/server"
 import { requireUserId } from "@/lib/auth"
 import { logUsage } from "@/lib/usage/log"
@@ -24,10 +24,14 @@ export async function POST(req: Request) {
   const sanitizedMessage = sanitizeInput(message);
 
   try {
-    // runModel strips the first compatibility prefix. Using
-    // openrouter/openrouter/auto therefore sends the current OpenRouter
-    // Auto Router slug (openrouter/auto) instead of pinning WonderBuild to an
-    // old provider model that may disappear.
+    // Use the web app's OpenRouter runtime directly. The @/core alias points at
+    // engine/core, whose legacy provider contract reports errors as booleans
+    // (for example { error: true }), which caused AI Assist to literally show
+    // "I could not apply that request. true" instead of using the resilient
+    // OpenRouter fallback path below.
+    //
+    // runModel strips the first compatibility prefix, so this resolves to the
+    // current OpenRouter Auto Router slug (openrouter/auto).
     const result = await runModel({
       model: "openrouter/openrouter/auto",
       messages: [{ role: "user", content: sanitizedMessage }],
@@ -50,7 +54,8 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ text: result.text })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "AI error" }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "AI error";
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
