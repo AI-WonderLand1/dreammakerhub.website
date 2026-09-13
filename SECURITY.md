@@ -14,11 +14,11 @@ We appreciate responsible security research and reports that help improve the pl
 
 DreamMakerHub.website is under active development.
 
-Security fixes are generally applied to the latest supported version of the main branch.
+Security fixes are generally applied to the latest supported version of the `Master` branch.
 
 | Version                        | Supported  |
 | ------------------------------ | ---------- |
-| Latest `main` branch           | ✅ Yes      |
+| Latest `Master` branch         | ✅ Yes      |
 | Current production release     | ✅ Yes      |
 | Older development branches     | ⚠️ Limited |
 | Abandoned or archived branches | ❌ No       |
