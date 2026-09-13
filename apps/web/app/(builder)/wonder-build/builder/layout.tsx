@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import ProjectResolverGate from './ProjectResolverGate';
 
 export const metadata: Metadata = {
   title: 'WonderBuild Website Builder | AI Wonderland',
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <ProjectResolverGate>{children}</ProjectResolverGate>;
 }
