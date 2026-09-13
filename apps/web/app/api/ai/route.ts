@@ -2,7 +2,6 @@ import { runModel } from "@/core/ai/runModel"
 import { NextResponse } from "next/server"
 import { requireUserId } from "@/lib/auth"
 import { logUsage } from "@/lib/usage/log"
-import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
@@ -18,16 +17,22 @@ export async function POST(req: Request) {
 
   const { message } = await req.json()
 
-  if (!message) {
+  if (typeof message !== 'string' || !message.trim()) {
     return NextResponse.json({ error: "Message is required" }, { status: 400 })
   }
 
   const sanitizedMessage = sanitizeInput(message);
 
   try {
+    // runModel strips the first compatibility prefix. Using
+    // openrouter/openrouter/auto therefore sends the current OpenRouter
+    // Auto Router slug (openrouter/auto) instead of pinning WonderBuild to an
+    // old provider model that may disappear.
     const result = await runModel({
-      model: "openrouter/google/gemini-flash-1.5",
-      messages: [{ role: "user", content: sanitizedMessage }]
+      model: "openrouter/openrouter/auto",
+      messages: [{ role: "user", content: sanitizedMessage }],
+      temperature: 0.35,
+      maxTokens: 3000,
     })
 
     if (result.error || !result.text) {
@@ -41,7 +46,7 @@ export async function POST(req: Request) {
       userId,
       action: "ai.token",
       apiCalls: 1,
-      tokensUsed: Math.ceil(((sanitizedMessage.length + result.text.length) / 4)),
+      tokensUsed: result.tokens || Math.ceil(((sanitizedMessage.length + result.text.length) / 4)),
     })
 
     return NextResponse.json({ text: result.text })
