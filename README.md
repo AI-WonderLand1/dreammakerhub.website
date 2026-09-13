@@ -1,51 +1,149 @@
-# AI Wonderland — Visual Builder & 3D Suite
+# DreamMakerHub.website
 
-Build websites, apps, and interactive 3D experiences entirely by describing what you want. AI Wonderland combines a visual drag-and-drop builder, a cloud IDE, and a 3D scene creator into one workflow.
+DreamMakerHub is the main AI Wonderland platform repository. It owns the account and project shell, WonderBuild website builder, project tooling, cloud-development integration, platform APIs, and the main 3D/world-authoring surface.
 
-## ✨ What you can build
+## Repository role
 
-- **Visual Builder** — Drag-and-drop canvas, components, and live preview. Generate websites and landing pages without writing code.
-- **Cloud IDE** — Write, run, and debug code in the cloud. VS Code–compatible environment with AI agents and preview.
-- **3D Suite** — Create 3D scenes, games, and NPCs with PlayCanvas integration. Open creations directly in the PlayCanvas editor.
+This repository contains:
 
-## 🏗️ Core capabilities
+- authentication and project entry flows
+- dashboard and project management
+- project-scoped files and code tooling
+- WonderBuild website builder
+- cloud IDE/workspace integration
+- platform APIs and deployment integration
+- Vanguard Engine 1 / 3D tooling, with PlayCanvas/WebGL used as current renderer/runtime technology where applicable
 
-| Feature | Builder | IDE | 3D |
-|---|---|---|---|
-| Drag‑and‑drop interface | ✅ | ❌ | ❌ |
-| AI‑agent build loop | ✅ | ✅ | ❌ |
-| vanguard editor | ❌ | ❌ | ✅ |
-| Cloud workspace & git | ❌ | ✅ | ❌ |
-| 1‑click deployment | ✅ | ✅ | ✅ |
-| Custom domain | ✅ | ✅ (Pro) | ✅ (Pro) |
+Related repositories:
 
-## 📦 Plans
+- `AI-PLAYGROUND` owns multi-model AI and visual workflow/orchestration tooling.
+- `NPC-AI-SIM` owns NPC cognition, personality, perception, memory, actions, voice configuration, and NPC brain/runtime contracts.
 
-| Tier | Price | Includes |
-|---|---|---|
-| **Nomad** | Free | 1 active project, 5 AI chats/day, community support |
-| **Architect** | $39/mo | Unlimited AI chats, NPC AI SIM Engine, 1‑click deployment, custom domain |
-| **Guild** | $129/mo | Everything in Architect + team seats, shared asset library, always‑on runners |
+These boundaries are intentional. The specialized repositories integrate with DreamMakerHub instead of duplicating the whole platform.
 
-## 🚀 Quick start
+## WonderBuild product model
 
-1. **[Sign in](/public-pages/auth)** — Get started in seconds
-2. **Build** — Use the visual builder, IDE, or 3D suite
-3. **Deploy** — One‑click deployment to your custom domain
+WonderBuild is being consolidated around one three-step website-building flow:
 
-## 📚 Docs & Resources
+```text
+LOGIN / REGISTER
+      ↓
+DASHBOARD / PROJECTS
+      ↓
+1. START
+   - Blank website
+   - Choose template
+   - Generate with AI
+      ↓
+2. BUILD
+   - Drag/drop
+   - AI editing
+   - Pages / CMS / assets / components
+   - Code when needed
+   - Preview inside the editor
+      ↓
+3. PUBLISH
+   - Domain
+   - SEO / validation
+   - Go live
+```
 
-- [Documentation](/docs)
-- [API Reference](/api-reference)
-- [Templates](/wonder-build)
-- [Community](/community)
+Authentication and project selection are outside the three builder steps. Internal work such as project creation, autosave, revisions, adapters, and deployment plumbing should not become extra user-facing steps.
+
+### WonderBuild 3D guardrail
+
+WonderBuild is a website builder, not a game/world editor.
+
+It can use images, video, generated graphics, GLB/GLTF models, product viewers, and simple interactive 3D web components as normal website content. Game-level editing, gameplay systems, physics authoring, and NPC simulation belong outside WonderBuild.
+
+See [`TODO.md`](TODO.md) for the current WonderBuild implementation checklist and UX source of truth.
+
+## Tech stack
+
+The repository is an npm-workspace monorepo built primarily with:
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Prisma + PostgreSQL
+- Supabase
+- Stripe
+- dnd-kit
+- Monaco / WebContainers
+- Three.js
+- PlayCanvas
+- Kubernetes/Coder integration
+
+## Local development
+
+### Requirements
+
+- Node.js 20.19.0 (see [`.nvmrc`](.nvmrc))
+- npm
+
+### Install
+
+```bash
+git clone https://github.com/AI-WonderLand1/dreammakerhub.website.git
+cd dreammakerhub.website
+npm install
+cp .env.example .env.local
+```
+
+Configure the services you intend to use, then run:
+
+```bash
+npm run dev
+```
+
+Build and test with:
+
+```bash
+npm run build
+npm test
+```
+
+## Production deployment
+
+The current main-site production path is GitHub Actions + GHCR + UpCloud:
+
+```text
+Master
+  ↓
+Build & Push Web Image
+  ↓
+GitHub Container Registry
+  ↓
+Deploy Main Site to UpCloud VM
+  ↓
+Docker Compose
+  ↓
+health checks
+  ↓
+public HTTPS verification
+```
+
+Relevant files:
+
+- [`.github/workflows/web-image.yml`](.github/workflows/web-image.yml)
+- [`.github/workflows/deploy-upcloud.yml`](.github/workflows/deploy-upcloud.yml)
+- [`deploy/upcloud/docker-compose.yml`](deploy/upcloud/docker-compose.yml)
+
+## Current status
+
+This repository is under active development. WonderBuild is still being consolidated around its canonical three-step experience, and external integrations depend on the matching services being configured in the deployment environment.
+
+The website builder and the 3D/world tooling are separate product surfaces even though they live in the same platform repository.
+
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for vulnerability reporting and security policy. Do not commit real credentials, keep privileged service configuration on the server, and review database/internal-service network exposure before production deployment.
 
 ## License
 
 Prosperity Public License 3.0.0. See [`LICENSE`](LICENSE) for the full terms.
 
----
+## Sponsorship
 
-*AI Wonderland. Build anything. Just by describing it.*
-
-*Founding Sponsorship Program [available here](/SPONSORSHIP.md).*
+See [`SPONSORSHIP.md`](SPONSORSHIP.md) for the founding sponsorship program.
