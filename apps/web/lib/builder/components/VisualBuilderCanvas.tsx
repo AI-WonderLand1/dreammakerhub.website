@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Copy, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
+import { Copy, GripVertical, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import { useBuilderStore } from '../store';
 import type { CanvasElement } from '../types';
 import { renderElement as renderElementCtx } from '../renderers';
@@ -32,6 +32,7 @@ function buildElementCtx(
 
   const baseProps = {
     key: el.id,
+    draggable: false,
     onClick: (event: React.MouseEvent) => {
       event.stopPropagation();
       selectElement(el.id);
@@ -107,7 +108,15 @@ function SortableBlock({
   const [guideY, setGuideY] = useState(false);
   const [sizeLabel, setSizeLabel] = useState('');
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: el.id,
     data: { type: 'canvas', parentId },
   });
@@ -126,6 +135,8 @@ function SortableBlock({
     opacity: isDragging ? 0.35 : 1,
     position: 'relative',
     zIndex: isDragging ? 100 : isSelected ? 30 : undefined,
+    touchAction: 'none',
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   const openPanel = (tab: 'content' | 'ai') => {
@@ -209,7 +220,13 @@ function SortableBlock({
   };
 
   return (
-    <div ref={setCombinedRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setCombinedRef}
+      style={style}
+      {...listeners}
+      onDragStart={(event) => event.preventDefault()}
+      className="group/wb-sortable"
+    >
       {guideX && (
         <div className="pointer-events-none absolute -right-px top-[-1000px] z-[70] h-[2000px] w-px bg-cyan-300/85 shadow-[0_0_8px_rgba(103,232,249,.65)]" aria-hidden="true" />
       )}
@@ -225,6 +242,22 @@ function SortableBlock({
             onClick={(event) => event.stopPropagation()}
             aria-label={`${el.name} quick actions`}
           >
+            <button
+              ref={setActivatorNodeRef}
+              type="button"
+              {...attributes}
+              {...listeners}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                selectElement(el.id);
+              }}
+              className="flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-white/45 transition hover:bg-white/[.06] hover:text-white active:cursor-grabbing"
+              title={`Drag ${el.name}`}
+              aria-label={`Drag ${el.name}`}
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </button>
             <span className="max-w-28 truncate px-2 text-[8px] font-black uppercase tracking-[.1em] text-violet-100/60">
               {el.name}
             </span>
