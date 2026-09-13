@@ -4,62 +4,62 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const pathAliases = {
-    '@app': join(__dirname, 'app'),
-    '@builder': join(__dirname, 'app/(builder)/wonder-build'),
-    '@/core': join(__dirname, '../../engine/core'),
-    '@core': join(__dirname, '../../engine/core'),
-    '@engine': join(__dirname, '../../engine'),
-    '@aetherguard': join(__dirname, '../../infra/aetherguard'),
-    '@ai-modules': join(__dirname, 'ai-modules'),
-    '@/ai-modules': join(__dirname, 'ai-modules'),
-    '@styles': join(__dirname, 'styles'),
-    '@/styles': join(__dirname, 'styles'),
-    '@data': join(__dirname, 'data'),
-    '@/data': join(__dirname, 'data'),
-    '@utils': [join(__dirname, 'app/utils'), join(__dirname, 'utils')],
-    '@/components': join(__dirname, 'components'),
-    '@runners': join(__dirname, '../../runners'),
-    '@infra': join(__dirname, '../../infra'),
-    '@infra/*': join(__dirname, '../../infra/*'),
-    '@infra/services': join(__dirname, '../../infra/services'),
-    '@infra/lib': join(__dirname, '../../infra/lib'),
-    '@/infra': join(__dirname, '../../infra'),
-    '@/infra/*': join(__dirname, '../../infra/*'),
-    '@services': join(__dirname, '../../infra/services'),
-    '@lib': join(__dirname, './lib'),
-    '@lib/*': join(__dirname, './lib/*'),
-    '@/lib': join(__dirname, './lib'),
-    '@/lib/*': join(__dirname, './lib/*'),
-    '@types': join(__dirname, '../../types'),
-    '@/ai-modules/EgyptianVoiceModule': join(__dirname, 'ai-modules/EgyptianVoiceModule'),
-    '@/engine/core': join(__dirname, '../../engine/core'),
-    '@/engine/core/ai': join(__dirname, '../../engine/core/ai'),
-    '@/engine/core/ai/providers': join(__dirname, '../../engine/core/ai/providers'),
-    '@/engine/core/ai/providers/index': join(__dirname, '../../engine/core/ai/providers/index'),
-    '@/engine/core/ai/runModel': join(__dirname, '../../engine/core/ai/runModel'),
-    '@/core/aetherguard/autofix': join(__dirname, '../../infra/aetherguard/autofix'),
-    '@/core/aetherguard/checks/deadcode': join(__dirname, '../../infra/aetherguard/checks/deadcode'),
-    '@/core/aetherguard/checks/deps': join(__dirname, '../../infra/aetherguard/checks/deps'),
-    '@/core/aetherguard/checks/eslint': join(__dirname, '../../infra/aetherguard/checks/eslint'),
-    '@/core/aetherguard/checks/typecheck': join(__dirname, '../../infra/aetherguard/checks/typecheck'),
-    '@/core/aetherguard/repairs': join(__dirname, '../../infra/aetherguard/repairs'),
-    '@/core/ai/bridge': join(__dirname, '../../engine/core/ai/bridge'),
-    '@/core/ai/modules/registry': join(__dirname, '../../engine/core/ai/modules/registry'),
-    '@/core/ai/personas': join(__dirname, '../../engine/core/ai/personas'),
-    '@/core/ai/pipeline-v1/runtime/pipeline': join(__dirname, '../../engine/core/ai/pipeline-v1/runtime/pipeline'),
-    '@/core/ai/promptBuilder': join(__dirname, '../../engine/core/ai/promptBuilder'),
-    '@/core/ai/providers/groq': join(__dirname, '../../engine/core/ai/providers/groq'),
-    '@/core/ai/providers/opencode': join(__dirname, '../../engine/core/ai/providers/opencode'),
-    '@/core/ai/providers/openrouter': join(__dirname, '../../engine/core/ai/providers/openrouter'),
-    '@/core/ai/runModel': join(__dirname, '../../engine/core/ai/runModel'),
-    '@/data/templates': join(__dirname, 'data/templates'),
-    '@/infra/lib/supabase/server-client': join(__dirname, '../../infra/lib/supabase/server-client'),
-    '@/infra/services/jobs/orchestrateScenePipeline': join(__dirname, '../../infra/services/jobs/orchestrateScenePipeline'),
-    '@/infra/services/storage/promoteTempScene': join(__dirname, '../../infra/services/storage/promoteTempScene'),
-    '@/infra/services/storage/provider': join(__dirname, '../../infra/services/storage/provider'),
-    '@/runners/aetherguardWorker': join(__dirname, '../../runners/aetherguardWorker'),
-    '@/runners/registry.worker': join(__dirname, '../../runners/registry.worker'),
-  };
+  '@app': join(__dirname, 'app'),
+  '@builder': join(__dirname, 'app/(builder)/wonder-build'),
+  '@/core': join(__dirname, '../../engine/core'),
+  '@core': join(__dirname, '../../engine/core'),
+  '@engine': join(__dirname, '../../engine'),
+  '@aetherguard': join(__dirname, '../../infra/aetherguard'),
+  '@ai-modules': join(__dirname, 'ai-modules'),
+  '@/ai-modules': join(__dirname, 'ai-modules'),
+  '@styles': join(__dirname, 'styles'),
+  '@/styles': join(__dirname, 'styles'),
+  '@data': join(__dirname, 'data'),
+  '@/data': join(__dirname, 'data'),
+  '@utils': [join(__dirname, 'app/utils'), join(__dirname, 'utils')],
+  '@/components': join(__dirname, 'components'),
+  '@runners': join(__dirname, '../../runners'),
+  '@infra': join(__dirname, '../../infra'),
+  '@infra/*': join(__dirname, '../../infra/*'),
+  '@infra/services': join(__dirname, '../../infra/services'),
+  '@infra/lib': join(__dirname, '../../infra/lib'),
+  '@/infra': join(__dirname, '../../infra'),
+  '@/infra/*': join(__dirname, '../../infra/*'),
+  '@services': join(__dirname, '../../infra/services'),
+  '@lib': join(__dirname, './lib'),
+  '@lib/*': join(__dirname, './lib/*'),
+  '@/lib': join(__dirname, './lib'),
+  '@/lib/*': join(__dirname, './lib/*'),
+  '@types': join(__dirname, '../../types'),
+  '@/ai-modules/EgyptianVoiceModule': join(__dirname, 'ai-modules/EgyptianVoiceModule'),
+  '@/engine/core': join(__dirname, '../../engine/core'),
+  '@/engine/core/ai': join(__dirname, '../../engine/core/ai'),
+  '@/engine/core/ai/providers': join(__dirname, '../../engine/core/ai/providers'),
+  '@/engine/core/ai/providers/index': join(__dirname, '../../engine/core/ai/providers/index'),
+  '@/engine/core/ai/runModel': join(__dirname, '../../engine/core/ai/runModel'),
+  '@/core/aetherguard/autofix': join(__dirname, '../../infra/aetherguard/autofix'),
+  '@/core/aetherguard/checks/deadcode': join(__dirname, '../../infra/aetherguard/checks/deadcode'),
+  '@/core/aetherguard/checks/deps': join(__dirname, '../../infra/aetherguard/checks/deps'),
+  '@/core/aetherguard/checks/eslint': join(__dirname, '../../infra/aetherguard/checks/eslint'),
+  '@/core/aetherguard/checks/typecheck': join(__dirname, '../../infra/aetherguard/checks/typecheck'),
+  '@/core/aetherguard/repairs': join(__dirname, '../../infra/aetherguard/repairs'),
+  '@/core/ai/bridge': join(__dirname, '../../engine/core/ai/bridge'),
+  '@/core/ai/modules/registry': join(__dirname, '../../engine/core/ai/modules/registry'),
+  '@/core/ai/personas': join(__dirname, '../../engine/core/ai/personas'),
+  '@/core/ai/pipeline-v1/runtime/pipeline': join(__dirname, '../../engine/core/ai/pipeline-v1/runtime/pipeline'),
+  '@/core/ai/promptBuilder': join(__dirname, '../../engine/core/ai/promptBuilder'),
+  '@/core/ai/providers/groq': join(__dirname, '../../engine/core/ai/providers/groq'),
+  '@/core/ai/providers/opencode': join(__dirname, '../../engine/core/ai/providers/opencode'),
+  '@/core/ai/providers/openrouter': join(__dirname, '../../engine/core/ai/providers/openrouter'),
+  '@/core/ai/runModel': join(__dirname, '../../engine/core/ai/runModel'),
+  '@/data/templates': join(__dirname, 'data/templates'),
+  '@/infra/lib/supabase/server-client': join(__dirname, '../../infra/lib/supabase/server-client'),
+  '@/infra/services/jobs/orchestrateScenePipeline': join(__dirname, '../../infra/services/jobs/orchestrateScenePipeline'),
+  '@/infra/services/storage/promoteTempScene': join(__dirname, '../../infra/services/storage/promoteTempScene'),
+  '@/infra/services/storage/provider': join(__dirname, '../../infra/services/storage/provider'),
+  '@/runners/aetherguardWorker': join(__dirname, '../../runners/aetherguardWorker'),
+  '@/runners/registry.worker': join(__dirname, '../../runners/registry.worker'),
+};
 
 const appUrl = process.env.NEXT_PUBLIC_URL || 'https://dreammakerhub.website';
 
@@ -68,7 +68,6 @@ const nextConfig = {
 
   async redirects() {
     return [
-      // WonderBuild has one user-facing flow: START -> BUILD (+ Preview) -> PUBLISH.
       {
         source: '/wonder-build/preview',
         destination: '/wonder-build/builder?tab=preview',
@@ -84,8 +83,6 @@ const nextConfig = {
         destination: '/wonder-build',
         permanent: false,
       },
-
-      // Legacy builder entry points stay compatible without appearing as separate products.
       {
         source: '/builder',
         destination: '/wonder-build/builder',
@@ -106,9 +103,6 @@ const nextConfig = {
         destination: '/wonder-build',
         permanent: true,
       },
-
-      // Orphan standalone scene workspace index -> canonical Project management.
-      // NOTE: /wonder-projects/[projectId] stays live (runtime control, files, export).
       {
         source: '/wonder-projects',
         destination: '/dashboard/projects',
@@ -145,41 +139,11 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            webgl: {
-              test: /[\\/]node_modules[\\/](three|@react-three|babylon)/,
-              name: 'chunk-webgl',
-              priority: 30,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-            editors: {
-              test: /[\\/]node_modules[\\/](monaco|codemirror|ace)/,
-              name: 'chunk-editors',
-              priority: 25,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'chunk-vendors',
-              priority: 10,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-          },
-        },
-      };
-    }
-
+  webpack: (config) => {
+    // Do not replace Next.js client splitChunks/cacheGroups here.
+    // Next owns the runtime/CSS chunk graph and its generated asset tags.
+    // Overriding it caused production HTML to reference CSS as a script and
+    // generated fixed chunk-vendors URLs that could disappear between builds.
     config.parallelism = 1;
 
     config.resolve.alias = {
