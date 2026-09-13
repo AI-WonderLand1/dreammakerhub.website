@@ -58,7 +58,7 @@ word-break: break-word !important;
 
       <div className="space-y-6">
         <div>
-          <p>This Privacy Notice for <strong>AI-WONDERLAND INOVATION</strong> (doing business as <a href="mailto:aiwonderland@zohomail.com">aiwonderland@zohomail.com</a>), describes how and why we may access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:</p>
+          <p>This Privacy Notice for <strong>AI-WONDERLAND INOVATION</strong> (contact: <a href="mailto:contact@dreammakerhub.website">contact@dreammakerhub.website</a>), describes how and why we may access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:</p>
           <ul className="mt-2">
             <li>Visit our website at <a href="https://dreammakerhub.website" target="_blank">https://dreammakerhub.website</a></li>
             <li>Engage with us in other related ways, including any marketing or events</li>
@@ -184,7 +184,7 @@ word-break: break-word !important;
 
         <div id="contact">
           <h2 className="text-xl font-bold">14. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?</h2>
-          <p>If you have questions or comments about this notice, you may email us at <a href="mailto:aiwonderland@zohomail.com">aiwonderland@zohomail.com</a> or contact us by post at:</p>
+          <p>If you have questions or comments about this notice, you may email us at <a href="mailto:contact@dreammakerhub.website">contact@dreammakerhub.website</a> or contact us by post at:</p>
           <p>
             AI-WONDERLAND INOVATION<br />
             13486 n 1300th st, 13486 n 1300th st<br />

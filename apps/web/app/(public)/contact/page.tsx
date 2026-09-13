@@ -11,7 +11,7 @@ export default function ContactPage() {
           <p className="text-xs uppercase tracking-[0.25em] text-slate-400">WONDERSPACE</p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">Get in touch</h1>
           <p className="max-w-2xl text-slate-300">
-            Reach the team for support, partnerships, or security disclosures. We respond within one business day.
+            Reach the team for support, partnerships, general questions, or security disclosures. We respond within one business day.
           </p>
         </header>
 
@@ -21,19 +21,19 @@ export default function ContactPage() {
               <Headphones className="h-4 w-4 text-sky-300" />
               Support
             </div>
-            <p className="mt-2 text-sm text-slate-300">Open a ticket for product help or account issues.</p>
-            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="/support">
-              Go to support →
+            <p className="mt-2 text-sm text-slate-300">Product help, billing questions, refunds, or account issues.</p>
+            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:support@dreammakerhub.website">
+              support@dreammakerhub.website
             </a>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-inner shadow-sky-500/5">
             <div className="flex items-center gap-2 text-sm text-slate-200">
               <Sparkles className="h-4 w-4 text-sky-300" />
-              Partnerships
+              Business & Partnerships
             </div>
-            <p className="mt-2 text-sm text-slate-300">Integrations, co-marketing, or enterprise pilots.</p>
-            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:partners@ai-wonderland.com">
-              partners@ai-wonderland.com
+            <p className="mt-2 text-sm text-slate-300">Integrations, partnerships, enterprise pilots, or business inquiries.</p>
+            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:contact@dreammakerhub.website">
+              contact@dreammakerhub.website
             </a>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-inner shadow-sky-500/5">
@@ -42,8 +42,8 @@ export default function ContactPage() {
               Security
             </div>
             <p className="mt-2 text-sm text-slate-300">Report vulnerabilities or request a security review.</p>
-            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:security@ai-wonderland.com">
-              security@ai-wonderland.com
+            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:security@dreammakerhub.website">
+              security@dreammakerhub.website
             </a>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-inner shadow-sky-500/5">
@@ -51,9 +51,9 @@ export default function ContactPage() {
               <Mail className="h-4 w-4 text-sky-300" />
               General
             </div>
-            <p className="mt-2 text-sm text-slate-300">Questions about pricing, roadmap, or speaking.</p>
-            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:hello@ai-wonderland.com">
-              hello@ai-wonderland.com
+            <p className="mt-2 text-sm text-slate-300">General questions, feedback, pricing, roadmap, or speaking inquiries.</p>
+            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:hello@dreammakerhub.website">
+              hello@dreammakerhub.website
             </a>
           </div>
         </section>
@@ -67,9 +67,9 @@ export default function ContactPage() {
             </div>
           </div>
           <ul className="mt-3 space-y-2 text-sm text-slate-300">
-            <li>Support tickets: acknowledgement in minutes, resolution updates within one business day.</li>
+            <li>Support requests: acknowledgement as soon as possible, with updates within one business day.</li>
             <li>Security reports: triage within 24 hours and coordinated disclosure where applicable.</li>
-            <li>Partnership inquiries: responses within two business days.</li>
+            <li>Business and partnership inquiries: responses within two business days.</li>
           </ul>
         </section>
       </div>

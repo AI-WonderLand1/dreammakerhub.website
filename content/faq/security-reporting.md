@@ -4,4 +4,4 @@ category: "Security"
 order: 6
 ---
 
-Email security@ai-wonderland.com with details and steps to reproduce. We respond within one business day.
+Email security@dreammakerhub.website with details and steps to reproduce. We respond within one business day.
