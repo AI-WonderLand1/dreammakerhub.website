@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/infra/lib/supabase/server-client';
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { logger } from '@/lib/logger';
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const finalSlug = slug || slugify(title || 'Untitled Page');
     const finalTitle = title || 'Untitled Page';
 
-    const supabase = createClient();
+    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from('pages')
       .insert({
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     const published = searchParams.get('published');
     const search = searchParams.get('search');
 
-    const supabase = createClient();
+    const supabase = await createSupabaseServerClient();
     let query = supabase
       .from('pages')
       .select('*', { count: 'exact' })
