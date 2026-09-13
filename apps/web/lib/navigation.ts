@@ -36,8 +36,8 @@ export type SecondaryNavItem = {
 };
 
 export const PAGES: NavPage[] = [
-  { path: "/wonder-build", label: "WonderBuild", icon: "⚡", category: "builder", description: "Start and manage website or web-app projects." },
-  { path: "/wonder-build/builder", label: "Website Builder", icon: "🎨", category: "builder", description: "AI-assisted visual editor with code, preview, and publish." },
+  { path: "/wonder-build", label: "WonderBuild", icon: "⚡", category: "builder", description: "Template → Build → Publish website and web-app projects." },
+  { path: "/wonder-build/builder", label: "Website Builder", icon: "🎨", category: "builder", description: "AI-assisted visual editor with drag-and-drop, code, preview, and publish." },
   { path: "/wonderspace", label: "WonderSpace", icon: "💻", category: "workspace", description: "Private cloud development workspace with files, terminal, Git, and AI coding tools." },
   { path: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: "🤖", category: "workspace", description: "Test prompts, providers, models, and agent workflows.", external: true },
   { path: "/dashboard/3dhub", label: "WonderPlay", icon: "🎮", category: "tools", description: "Start and manage 3D scenes, games, worlds, and assets." },
@@ -55,13 +55,12 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     id: "build",
     label: "Build",
     product: "WonderBuild",
-    tagline: "Websites & web apps",
+    tagline: "Template → Build → Publish",
     icon: "⚡",
     href: "/wonder-build",
     items: [
-      { label: "WonderBuild", href: "/wonder-build", description: "Start from AI, a template, an existing project, or blank." },
-      { label: "Website Builder", href: "/wonder-build/builder", description: "Edit with AI, drag-and-drop, code, preview, and publish." },
-      { label: "Templates", href: "/wonder-build/templates", description: "Choose a starting design." },
+      { label: "1. Template", href: "/wonder-build", description: "Choose a template, generate with AI, or start blank." },
+      { label: "2. Build", href: "/wonder-build/builder", description: "Edit with AI, drag-and-drop, code, pages, assets, and preview. Publish is the final action inside this editor." },
     ],
   },
   {
@@ -91,14 +90,12 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 ];
 
 export const SECONDARY_NAV: SecondaryNavItem[] = [
-  { label: "Projects", href: "/dashboard/projects", icon: "📁" },
+  { label: "Projects", href: "/dashboard#projects", icon: "📁" },
   { label: "Docs", href: "/docs", icon: "📖" },
   { label: "Account", href: "/settings/account", icon: "👤" },
 ];
 
-/**
- * Maps an internal project `type` to its canonical workspace destination.
- */
+/** Maps an internal project `type` to its canonical workspace destination. */
 const PROJECT_TYPE_TO_DESTINATION: Record<string, string> = {
   wonderbuild: "/wonder-build/builder",
   wonderbuild_ui: "/wonder-build/builder",
