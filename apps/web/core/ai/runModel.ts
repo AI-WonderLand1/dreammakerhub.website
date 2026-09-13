@@ -17,10 +17,20 @@ export type RunModelResult = {
   error?: string;
 };
 
+type OpenRouterResult = {
+  ok: boolean;
+  status?: number;
+  text?: string;
+  tokens?: number;
+  error?: string;
+};
+
 const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 
-/** Statuses where trying the free default model makes sense (no credits, bad slug, rate limit). */
-const FALLBACK_STATUSES = new Set([402, 403, 404, 429]);
+// Retry the free model for the common cases where Auto Router or a requested
+// model cannot serve the request. An invalid key (401) is intentionally not
+// retried because changing models cannot fix authentication.
+const FALLBACK_STATUSES = new Set([400, 402, 403, 404, 408, 409, 429, 500, 502, 503, 504]);
 
 function normalizeModel(model?: string): string {
   if (!model) return DEFAULT_MODEL;
@@ -29,12 +39,23 @@ function normalizeModel(model?: string): string {
   return m || DEFAULT_MODEL;
 }
 
+function providerErrorMessage(data: unknown): string | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  const error = (data as { error?: unknown }).error;
+  if (typeof error === 'string' && error.trim()) return error.trim();
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message.trim();
+  }
+  return undefined;
+}
+
 async function callOpenRouter(
   apiKey: string,
   model: string,
   messages: RunModelMessage[],
   opts: RunModelOptions
-): Promise<{ ok: boolean; status?: number; text?: string; tokens?: number }> {
+): Promise<OpenRouterResult> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -52,13 +73,30 @@ async function callOpenRouter(
     }),
   });
 
-  if (!res.ok) return { ok: false, status: res.status };
+  const data = await res.json().catch(() => null) as any;
+  const providerError = providerErrorMessage(data);
 
-  const data = await res.json();
-  const text: string = data?.choices?.[0]?.message?.content ?? '';
+  if (!res.ok || providerError) {
+    const providerCode = Number(data?.error?.code);
+    return {
+      ok: false,
+      status: Number.isFinite(providerCode) && providerCode >= 400 ? providerCode : res.status,
+      error: providerError || `OpenRouter request failed (${res.status})`,
+    };
+  }
+
+  const text = typeof data?.choices?.[0]?.message?.content === 'string'
+    ? data.choices[0].message.content.trim()
+    : '';
+
+  if (!text) {
+    return { ok: false, status: 502, error: 'OpenRouter returned an empty response' };
+  }
+
   const tokens: number =
     data?.usage?.total_tokens ??
     Math.ceil(messages.reduce((n, m) => n + m.content.length, text.length) / 4);
+
   return { ok: true, text, tokens };
 }
 
@@ -76,7 +114,7 @@ export async function runModel(
   const apiKey = process.env.OPENROUTER_API_KEY || opts.userApiKey;
   if (!apiKey) {
     logger.error('runModel: OPENROUTER_API_KEY missing');
-    return { text: '', tokens: 0, error: 'AI provider not configured' };
+    return { text: '', tokens: 0, error: 'AI provider is not configured: OPENROUTER_API_KEY is missing' };
   }
 
   const messages: RunModelMessage[] = [
@@ -91,8 +129,7 @@ export async function runModel(
   try {
     let out = await callOpenRouter(apiKey, model, messages, opts);
 
-    // Auto-fallback to the free default when the requested model can't serve.
-    if (!out.ok && FALLBACK_STATUSES.has(out.status!) && model !== DEFAULT_MODEL) {
+    if (!out.ok && FALLBACK_STATUSES.has(out.status ?? 0) && model !== DEFAULT_MODEL) {
       logger.warn(`runModel: ${model} unavailable (${out.status}), falling back to ${DEFAULT_MODEL}`);
       out = await callOpenRouter(apiKey, DEFAULT_MODEL, messages, opts);
     }
@@ -100,17 +137,19 @@ export async function runModel(
     if (!out.ok) {
       const hint =
         out.status === 401
-          ? ' — check OPENROUTER_API_KEY'
+          ? ' Check OPENROUTER_API_KEY.'
           : out.status === 402
-            ? ' — OpenRouter account needs credits'
+            ? ' OpenRouter account needs credits or access to a free model.'
             : '';
-      logger.error(`runModel: OpenRouter error ${out.status}${hint} on ${model}`);
-      return { text: '', tokens: 0, error: `AI provider error (${out.status})${hint}` };
+      const error = `${out.error || `AI provider error (${out.status ?? 'unknown'})`}${hint}`;
+      logger.error(`runModel: ${error}`);
+      return { text: '', tokens: 0, error };
     }
 
     return { text: out.text ?? '', tokens: out.tokens ?? 0 };
-  } catch (err: any) {
-    logger.error('runModel failed:', err?.message);
-    return { text: '', tokens: 0, error: 'AI request failed' };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown provider error';
+    logger.error('runModel failed:', message);
+    return { text: '', tokens: 0, error: `AI request failed: ${message}` };
   }
 }
