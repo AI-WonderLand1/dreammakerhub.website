@@ -22,7 +22,7 @@ const faqs: Faq[] = [
   {
     question: "Do you store my prompts and outputs?",
     answer:
-      "We retain prompts and outputs only for session continuity and debugging. You can request deletion via support, and enterprise tenants can disable retention.",
+      "We retain prompts and outputs only for session continuity and debugging. You can request deletion at support@dreammakerhub.website, and enterprise tenants can disable retention.",
     category: "Security",
   },
   {
@@ -33,7 +33,7 @@ const faqs: Faq[] = [
   },
   {
     question: "How do I report a security issue?",
-    answer: "Email security@ai-wonderland.com with details and steps to reproduce. We respond within one business day.",
+    answer: "Email security@dreammakerhub.website with details and steps to reproduce. We respond within one business day.",
     category: "Security",
   },
 ];
@@ -122,7 +122,7 @@ export default function FaqPage() {
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-300">
-            Open a ticket at /support for account, billing, or product questions. We respond within one business day.
+            Email support@dreammakerhub.website for account, billing, or product questions. We respond within one business day.
           </p>
         </div>
       </div>
