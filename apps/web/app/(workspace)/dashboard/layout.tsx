@@ -13,6 +13,7 @@ import {
   Folder,
   Home,
   LayoutTemplate,
+  Library,
   Menu,
   Pencil,
   Plus,
@@ -45,6 +46,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [librariesOpen, setLibrariesOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
 
   useEffect(() => {
@@ -99,14 +101,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return `${href}${separator}projectId=${encodeURIComponent(currentProject.id)}`;
   };
 
-  const items = [
+  const primaryItems = [
     { href: "/dashboard", label: "Home", icon: Home },
     { href: "/dashboard#projects", label: "Projects", icon: Folder },
-    { href: "/wonder-build/templates", label: "Templates", icon: LayoutTemplate },
+  ];
+
+  const libraryItems = [
+    { href: "/wonder-build/templates", label: "Template Library", icon: LayoutTemplate },
+    { href: withProject("/library"), label: "Asset Library", icon: Folder },
+    { href: withProject("/3d-library"), label: "3D Asset Library", icon: Box },
+    { href: "/ai-modules", label: "AI Modules", icon: Bot },
+  ];
+
+  const toolItems = [
     { href: withProject("/wonder-build/builder"), label: "WonderBuild", icon: Pencil },
     { href: withProject("/wonderspace"), label: "WonderSpace IDE", icon: Code2 },
     { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
-    { href: withProject("/3d-library"), label: "3D Assets", icon: Box },
     { href: withProject("/dashboard/collaboration"), label: "Team", icon: Users },
     { href: withProject("/dashboard/settings"), label: "Settings", icon: Settings },
   ];
@@ -118,6 +128,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const pathOnly = href.split("?")[0].split("#")[0];
     return pathname === pathOnly || pathname.startsWith(`${pathOnly}/`);
   };
+
+  const libraryActive = libraryItems.some(({ href }) => isActive(href));
+
+  useEffect(() => {
+    if (libraryActive) setLibrariesOpen(true);
+  }, [libraryActive]);
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -133,6 +149,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const activityHref = currentProject
     ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}#project-activity`
     : "/dashboard#workspace-activity";
+
+  const renderNavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Home }) => (
+    <Link
+      key={`${label}-${href}`}
+      href={href}
+      onClick={() => setMobileOpen(false)}
+      className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive(href) ? "bg-blue-600/25 text-white shadow-[inset_3px_0_0_#a855f7]" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+    >
+      <Icon size={18} /> {label}
+    </Link>
+  );
 
   return (
     <div className="min-h-screen bg-[#06101c] text-white">
@@ -231,16 +258,37 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <nav className="px-3 pb-3">
-            {items.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={`${label}-${href}`}
-                href={href}
-                onClick={() => setMobileOpen(false)}
-                className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive(href) ? "bg-blue-600/25 text-white shadow-[inset_3px_0_0_#a855f7]" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+            {primaryItems.map(renderNavLink)}
+
+            <div className="mb-1">
+              <button
+                type="button"
+                onClick={() => setLibrariesOpen((open) => !open)}
+                aria-expanded={librariesOpen}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${libraryActive ? "bg-blue-600/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
               >
-                <Icon size={18} /> {label}
-              </Link>
-            ))}
+                <Library size={18} />
+                <span className="flex-1 text-left">Libraries</span>
+                <ChevronDown size={14} className={`transition-transform ${librariesOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {librariesOpen && (
+                <div className="ml-5 mt-1 border-l border-white/10 pl-2">
+                  {libraryItems.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={`${label}-${href}`}
+                      href={href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition ${isActive(href) ? "bg-violet-500/15 text-violet-200" : "text-white/50 hover:bg-white/5 hover:text-white"}`}
+                    >
+                      <Icon size={15} /> {label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {toolItems.map(renderNavLink)}
           </nav>
 
           <div className="mx-4 mb-4 overflow-hidden rounded-xl border border-violet-500/30 bg-[radial-gradient(circle_at_80%_20%,rgba(99,102,241,.55),transparent_35%),linear-gradient(135deg,#1e1b4b,#0b1630)] p-4">
