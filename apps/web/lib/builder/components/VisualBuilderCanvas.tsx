@@ -10,20 +10,15 @@ import type { CanvasElement } from '../types';
 import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
 import { CANVAS_ROOT_ID, acceptsChildren } from '../dnd-utils';
-
-const FREE_POSITION_KEY = '--wb-free-position';
-const FREE_HEIGHT_KEY = '--wb-free-height';
-
-function isFreePositioned(el: CanvasElement): boolean {
-  return String(el.styles?.[FREE_POSITION_KEY] || '') === '1';
-}
-
-function pixelNumber(value: unknown, fallback = 0): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value !== 'string') return fallback;
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
+import {
+  FREE_HEIGHT_KEY,
+  FREE_ORIGIN_POSITION_KEY,
+  FREE_ORIGIN_WIDTH_KEY,
+  FREE_POSITION_KEY,
+  isFreePositioned,
+  pixelNumber,
+  tryPuzzleDock,
+} from '../puzzle-docking';
 
 function buildElementCtx(
   el: CanvasElement,
@@ -197,10 +192,20 @@ function SortableBlock({
     const parentWidth = parentRect.width / scale;
     const parentHeight = parentRect.height / scale;
     const alignmentThreshold = 6;
+    const originPosition = freePositioned
+      ? String(el.styles?.[FREE_ORIGIN_POSITION_KEY] || '')
+      : String(el.styles?.position || '');
+    const originWidth = freePositioned
+      ? String(el.styles?.[FREE_ORIGIN_WIDTH_KEY] || '')
+      : String(el.styles?.width || '');
+    let moved = false;
 
     setIsFreeMoving(true);
 
     const onMove = (moveEvent: PointerEvent) => {
+      const pointerDistance = Math.hypot(moveEvent.clientX - startPointerX, moveEvent.clientY - startPointerY);
+      if (pointerDistance > 3) moved = true;
+
       let x = startX + (moveEvent.clientX - startPointerX) / scale;
       let y = startY + (moveEvent.clientY - startPointerY) / scale;
       let alignedX = false;
@@ -234,13 +239,20 @@ function SortableBlock({
         width: `${Math.round(startWidth)}px`,
         [FREE_POSITION_KEY]: '1',
         [FREE_HEIGHT_KEY]: `${Math.round(startHeight)}px`,
+        [FREE_ORIGIN_POSITION_KEY]: originPosition,
+        [FREE_ORIGIN_WIDTH_KEY]: originWidth,
       });
     };
 
-    const cleanup = () => {
+    const cleanup = (endEvent: PointerEvent) => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', cleanup);
       window.removeEventListener('pointercancel', cleanup);
+
+      if (endEvent.type === 'pointerup' && moved) {
+        tryPuzzleDock(el.id, endEvent.clientX, endEvent.clientY);
+      }
+
       setIsFreeMoving(false);
       setGuideX(false);
       setGuideY(false);
@@ -330,6 +342,7 @@ function SortableBlock({
   return (
     <div
       ref={setCombinedRef}
+      data-wb-element-id={el.id}
       style={style}
       {...listeners}
       onDragStart={(event) => event.preventDefault()}
@@ -359,8 +372,8 @@ function SortableBlock({
                 selectElement(el.id);
               }}
               className="flex h-7 w-7 cursor-move items-center justify-center rounded-md text-white/45 transition hover:bg-white/[.06] hover:text-white active:cursor-grabbing"
-              title={`Move ${el.name} freely`}
-              aria-label={`Move ${el.name} freely`}
+              title={`Move ${el.name}; compatible pieces snap together`}
+              aria-label={`Move ${el.name}; compatible pieces snap together`}
             >
               <GripVertical className="h-3.5 w-3.5" />
             </button>
@@ -554,7 +567,7 @@ export default function VisualBuilderCanvas() {
                   <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10 text-xl">✦</div>
                   <h3 className="text-sm font-bold text-violet-100">Start building this page</h3>
                   <p className="mt-1.5 text-[10px] leading-relaxed text-white/35">Drag a block from Insert onto the page, or ask AI Assist to create one. Both use this same live page state.</p>
-                  <p className="mt-3 text-[9px] text-white/20">Select an element, then use its grip to move freely · Ctrl/⌘ + wheel to zoom · middle mouse to pan</p>
+                  <p className="mt-3 text-[9px] text-white/20">Move blocks like puzzle pieces: compatible containers snap them in · Ctrl/⌘ + wheel to zoom · middle mouse to pan</p>
                 </div>
               </div>
             ) : (
