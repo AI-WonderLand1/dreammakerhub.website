@@ -12,21 +12,35 @@ function LibraryBlockItem({ block }: { block: BlockDefinition }) {
     data: { type: 'palette', block },
   });
 
+  const insertAtRoot = (event: React.MouseEvent | React.PointerEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    useBuilderStore.getState().addElement(blockToElement(block));
+  };
+
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      onClick={() => useBuilderStore.getState().addElement(blockToElement(block))}
       className={`wb-builder-library-item group flex cursor-grab items-center gap-3 rounded-xl border p-2.5 transition-all active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
-      title={block.description}
+      title={`Drag ${block.name} onto the canvas`}
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-300/10 bg-gradient-to-br from-violet-500/10 to-blue-500/[.055] text-lg shadow-inner shadow-black/20">{block.icon}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[11px] font-black text-white/80 transition group-hover:text-white">{block.name}</p>
         <p className="mt-0.5 truncate text-[9px] text-white/25">{block.description}</p>
       </div>
-      <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-white/8 bg-white/[.035] text-[10px] font-black text-white/20 opacity-0 transition group-hover:border-violet-300/20 group-hover:bg-violet-500/10 group-hover:text-violet-200 group-hover:opacity-100">+</span>
+      <button
+        type="button"
+        onPointerDown={insertAtRoot}
+        onClick={insertAtRoot}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-white/[.035] text-[12px] font-black text-white/35 opacity-70 transition hover:border-violet-300/30 hover:bg-violet-500/15 hover:text-violet-100 group-hover:opacity-100"
+        title={`Insert ${block.name} at the page root`}
+        aria-label={`Insert ${block.name} at the page root`}
+      >
+        +
+      </button>
     </div>
   );
 }
@@ -86,7 +100,7 @@ export default function ComponentLibrary() {
         {filtered.map((block) => <LibraryBlockItem key={block.type} block={block} />)}
       </div>
 
-      <div className="shrink-0 border-t border-white/8 bg-black/10 p-2.5 text-center text-[8px] font-semibold uppercase tracking-[.14em] text-white/15">Drag to canvas · click to insert</div>
+      <div className="shrink-0 border-t border-white/8 bg-black/10 p-2.5 text-center text-[8px] font-semibold uppercase tracking-[.14em] text-white/15">Drag card to canvas · + inserts at root</div>
     </div>
   );
 }
