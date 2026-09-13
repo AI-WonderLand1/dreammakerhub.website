@@ -102,7 +102,7 @@ export default function CareersPage() {
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-300">
-            Email careers@ai-wonderland.com with a brief note, links to shipped work, and why you want to build calm AI
+            Email <a className="text-sky-200 hover:text-sky-100" href="mailto:contact@dreammakerhub.website">contact@dreammakerhub.website</a> with a brief note, links to shipped work, and why you want to build calm AI
             tools. We review every application.
           </p>
         </section>
