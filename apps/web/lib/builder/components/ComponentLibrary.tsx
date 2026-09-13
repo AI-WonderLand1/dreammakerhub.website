@@ -12,7 +12,7 @@ function LibraryBlockItem({ block }: { block: BlockDefinition }) {
     data: { type: 'palette', block },
   });
 
-  const insertAtRoot = (event: React.MouseEvent | React.PointerEvent) => {
+  const insertAtRoot = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     useBuilderStore.getState().addElement(blockToElement(block));
@@ -33,7 +33,7 @@ function LibraryBlockItem({ block }: { block: BlockDefinition }) {
       </div>
       <button
         type="button"
-        onPointerDown={insertAtRoot}
+        onPointerDown={(event) => event.stopPropagation()}
         onClick={insertAtRoot}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-white/[.035] text-[12px] font-black text-white/35 opacity-70 transition hover:border-violet-300/30 hover:bg-violet-500/15 hover:text-violet-100 group-hover:opacity-100"
         title={`Insert ${block.name} at the page root`}
