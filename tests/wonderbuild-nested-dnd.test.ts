@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBuilderStore } from '../apps/web/lib/builder/store';
+import { findElementInfo, isDescendantOf } from '../apps/web/lib/builder/dnd-utils';
 import type { CanvasElement, SitePage } from '../apps/web/lib/builder/types';
 
 function block(id: string, type = 'text', name = id, children?: CanvasElement[]): CanvasElement {
@@ -67,6 +68,29 @@ describe('WonderBuild nested drag/drop state', () => {
     const state = useBuilderStore.getState();
     expect(state.elements.map((item) => item.id)).toEqual(['section']);
     expect(find(state.elements, 'target')?.children?.map((item) => item.id)).toEqual(['button']);
+  });
+
+  it('resolves the immediate parent of a deeply nested drop target', () => {
+    const button = block('button', 'button', 'Button');
+    const column = block('column', 'column', 'Column', [button]);
+    const container = block('container', 'container', 'Container', [column]);
+    const section = block('section', 'section', 'Section', [container]);
+
+    const info = findElementInfo([section], 'button');
+
+    expect(info?.parentId).toBe('column');
+    expect(info?.index).toBe(0);
+  });
+
+  it('detects descendants at arbitrary depth so parents cannot be dropped into their own tree', () => {
+    const button = block('button', 'button', 'Button');
+    const column = block('column', 'column', 'Column', [button]);
+    const container = block('container', 'container', 'Container', [column]);
+    const section = block('section', 'section', 'Section', [container]);
+
+    expect(isDescendantOf([section], 'button', 'section')).toBe(true);
+    expect(isDescendantOf([section], 'column', 'section')).toBe(true);
+    expect(isDescendantOf([section], 'section', 'button')).toBe(false);
   });
 
   it('falls back to the page root if a stale drop target disappears', () => {

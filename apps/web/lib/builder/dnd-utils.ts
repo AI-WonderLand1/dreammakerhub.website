@@ -23,13 +23,25 @@ export interface ElementInfo {
   index: number;
 }
 
-export function findElementInfo(elements: CanvasElement[], id: string): ElementInfo | null {
+/**
+ * Resolve an element and its immediate parent at any nesting depth.
+ *
+ * The previous implementation overwrote the nested parent with the top-level
+ * ancestor while unwinding recursion. That made a deeply nested block appear
+ * to live one or more levels higher than it really did, so drag/drop could
+ * move it into the wrong container.
+ */
+export function findElementInfo(
+  elements: CanvasElement[],
+  id: string,
+  parentId: string | null = null,
+): ElementInfo | null {
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i];
-    if (el.id === id) return { el, parentId: null, index: i };
+    if (el.id === id) return { el, parentId, index: i };
     if (el.children?.length) {
-      const nested = findElementInfo(el.children, id);
-      if (nested) return { el: nested.el, parentId: el.id, index: nested.index };
+      const nested = findElementInfo(el.children, id, el.id);
+      if (nested) return nested;
     }
   }
   return null;
@@ -46,15 +58,25 @@ export function findElementById(elements: CanvasElement[], id: string): CanvasEl
   return null;
 }
 
-export function isDescendantOf(elements: CanvasElement[], id: string, ancestorId: string): boolean {
+function containsElement(elements: CanvasElement[] | undefined, id: string): boolean {
+  if (!elements?.length) return false;
   for (const el of elements) {
-    if (el.id === id) return false;
-    if (el.id === ancestorId) {
-      return el.children?.some((c) => c.id === id || isDescendantOf([c], id, ancestorId)) ?? false;
-    }
-    if (el.children?.length && isDescendantOf(el.children, id, ancestorId)) return true;
+    if (el.id === id) return true;
+    if (containsElement(el.children, id)) return true;
   }
   return false;
+}
+
+/**
+ * True when `id` is anywhere below `ancestorId`.
+ *
+ * This is used to stop a container from being dropped into one of its own
+ * descendants, which would otherwise create an invalid/cyclic builder tree.
+ */
+export function isDescendantOf(elements: CanvasElement[], id: string, ancestorId: string): boolean {
+  if (id === ancestorId) return false;
+  const ancestor = findElementById(elements, ancestorId);
+  return ancestor ? containsElement(ancestor.children, id) : false;
 }
 
 export function blockToCanvasElement(block: BlockDefinition): CanvasElement {
