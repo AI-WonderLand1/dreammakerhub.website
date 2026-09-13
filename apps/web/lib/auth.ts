@@ -1,5 +1,5 @@
+import { createServerClient } from '@supabase/ssr';
 import { createClient } from "@supabase/supabase-js";
-import { logger } from '@/lib/logger';
 
 export interface AuthUser {
   id: string;
@@ -8,45 +8,71 @@ export interface AuthUser {
   plan: string | null;
 }
 
-/**
- * Extract Supabase JWT from Authorization header or cookie.
- */
-function extractToken(req: Request): string | null {
-  const authHeader = req.headers.get("authorization");
-  const cookieHeader = req.headers.get("cookie");
+type RequestCookie = { name: string; value: string };
 
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.slice(7);
-  }
-
-  if (cookieHeader) {
-    const m = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/);
-    if (m) {
-      try {
-        return JSON.parse(decodeURIComponent(m[1])).access_token;
-      } catch {}
-    }
-  }
-
-  return null;
+function parseCookieHeader(header: string | null): RequestCookie[] {
+  if (!header) return [];
+  return header
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const separator = part.indexOf('=');
+      if (separator < 0) return { name: part, value: '' };
+      return {
+        name: part.slice(0, separator).trim(),
+        value: part.slice(separator + 1).trim(),
+      };
+    })
+    .filter((cookie) => cookie.name.length > 0);
 }
 
 /**
- * Server-side auth: extract token, verify with Supabase, return userId or null.
- * Use in API routes: `const userId = await requireUserId(req); if (!userId) return unauthorized;`
+ * Server-side auth for API routes.
+ *
+ * Current @supabase/ssr releases may store the session in chunked/base64
+ * cookies (for example sb-...-auth-token.0/.1), so do not manually parse a
+ * single auth-token cookie here. Let createServerClient reconstruct the same
+ * cookie format the browser client writes.
  */
 export async function requireUserId(req: Request): Promise<string | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseAnonKey = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )?.trim();
+
   if (!supabaseUrl || !supabaseAnonKey) return null;
 
-  const token = extractToken(req);
-  if (!token) return null;
+  const authHeader = req.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (!token) return null;
 
-  const sb = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: { user } } = await supabase.auth.getUser(token);
+    return user?.id ?? null;
+  }
+
+  const requestCookies = parseCookieHeader(req.headers.get('cookie'));
+  if (!requestCookies.length) return null;
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return requestCookies;
+      },
+      // API authorization only needs to read/verify the request session.
+      // Session refresh is handled by the normal app middleware/auth flow.
+      setAll() {},
+    },
   });
-  const { data: { user } } = await sb.auth.getUser();
+
+  const { data: { user } } = await supabase.auth.getUser();
   return user?.id ?? null;
 }
 
