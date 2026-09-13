@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CopyPlus, Layers3, Save, Trash2 } from 'lucide-react';
+import { CopyPlus, Layers3, MousePointer2, Save, Trash2 } from 'lucide-react';
 import { useBuilderStore } from '../store';
 import type { CanvasElement } from '../types';
 
 const COMPONENTS_FILE = 'wonderbuild/components.json';
+const LOCAL_COMPONENTS_KEY = 'wonderbuild:components:local';
 
 type SavedComponent = {
   id: string;
@@ -18,6 +19,11 @@ type SavedComponentsState = {
   components: SavedComponent[];
 };
 
+type FlatElement = {
+  element: CanvasElement;
+  depth: number;
+};
+
 function findElement(elements: CanvasElement[], id: string | null): CanvasElement | null {
   if (!id) return null;
   for (const element of elements) {
@@ -26,6 +32,23 @@ function findElement(elements: CanvasElement[], id: string | null): CanvasElemen
     if (nested) return nested;
   }
   return null;
+}
+
+function flattenElements(elements: CanvasElement[], depth = 0): FlatElement[] {
+  return elements.flatMap((element) => [
+    { element, depth },
+    ...flattenElements(element.children || [], depth + 1),
+  ]);
+}
+
+function parseSavedComponents(raw: string | null): SavedComponent[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as SavedComponentsState;
+    return parsed?.version === 1 && Array.isArray(parsed.components) ? parsed.components : [];
+  } catch {
+    return [];
+  }
 }
 
 function cloneWithFreshIds(element: CanvasElement): CanvasElement {
@@ -44,6 +67,7 @@ export default function SavedComponentsPanel({ projectId }: { projectId: string 
   const addElement = useBuilderStore((state) => state.addElement);
   const selectElement = useBuilderStore((state) => state.selectElement);
   const selected = useMemo(() => findElement(elements, selectedId), [elements, selectedId]);
+  const pageElements = useMemo(() => flattenElements(elements), [elements]);
 
   const [components, setComponents] = useState<SavedComponent[]>([]);
   const [name, setName] = useState('');
@@ -51,20 +75,24 @@ export default function SavedComponentsPanel({ projectId }: { projectId: string 
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId) {
+      setComponents(parseSavedComponents(window.localStorage.getItem(LOCAL_COMPONENTS_KEY)));
+      setStatus('Local draft');
+      return;
+    }
+
     let cancelled = false;
+    setStatus(null);
     fetch(`/api/projects/${encodeURIComponent(projectId)}/files`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (cancelled) return;
         const raw = data?.files?.[COMPONENTS_FILE];
-        if (typeof raw !== 'string') return;
-        try {
-          const parsed = JSON.parse(raw) as SavedComponentsState;
-          if (parsed?.version === 1 && Array.isArray(parsed.components)) setComponents(parsed.components);
-        } catch {}
+        setComponents(typeof raw === 'string' ? parseSavedComponents(raw) : []);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setStatus('Could not load');
+      });
     return () => {
       cancelled = true;
     };
@@ -72,11 +100,21 @@ export default function SavedComponentsPanel({ projectId }: { projectId: string 
 
   const persist = async (next: SavedComponent[]) => {
     setComponents(next);
-    if (!projectId) return;
+    const payload: SavedComponentsState = { version: 1, components: next };
+
+    if (!projectId) {
+      try {
+        window.localStorage.setItem(LOCAL_COMPONENTS_KEY, JSON.stringify(payload));
+        setStatus('Saved locally');
+      } catch {
+        setStatus('Local save failed');
+      }
+      return;
+    }
+
     setSaving(true);
     setStatus(null);
     try {
-      const payload: SavedComponentsState = { version: 1, components: next };
       const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,7 +168,7 @@ export default function SavedComponentsPanel({ projectId }: { projectId: string 
 
         <div className="mt-3 rounded-lg border border-white/7 bg-white/[.02] p-2.5">
           <p className="text-[9px] font-semibold text-white/45">
-            {selected ? `Selected: ${selected.name}` : 'Select a section or element on the canvas to save it.'}
+            {selected ? `Selected: ${selected.name}` : 'Choose an item below or click an element on the canvas.'}
           </p>
           <div className="mt-2 flex gap-1.5">
             <input
@@ -153,6 +191,42 @@ export default function SavedComponentsPanel({ projectId }: { projectId: string 
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <span className="text-[8px] font-black uppercase tracking-[.16em] text-white/25">Current page</span>
+          <span className="text-[8px] text-white/20">{pageElements.length}</span>
+        </div>
+
+        <div className="space-y-1">
+          {pageElements.slice(0, 30).map(({ element, depth }) => (
+            <button
+              key={element.id}
+              type="button"
+              onClick={() => selectElement(element.id)}
+              className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left transition ${
+                selectedId === element.id
+                  ? 'border-violet-400/30 bg-violet-500/10 text-white'
+                  : 'border-white/5 bg-white/[.015] text-white/55 hover:border-violet-300/15 hover:bg-violet-500/[.035]'
+              }`}
+              style={{ paddingLeft: `${8 + Math.min(depth, 5) * 10}px` }}
+            >
+              <MousePointer2 size={10} className="shrink-0 text-violet-300/55" />
+              <span className="min-w-0 flex-1 truncate text-[9px] font-semibold">{element.name}</span>
+              <span className="truncate text-[7px] text-white/20">{element.type}</span>
+            </button>
+          ))}
+
+          {pageElements.length === 0 && (
+            <div className="rounded-lg border border-dashed border-white/8 p-4 text-center text-[9px] leading-5 text-white/25">
+              Add something to the canvas, then save it here as a reusable component.
+            </div>
+          )}
+        </div>
+
+        <div className="mb-2 mt-4 flex items-center justify-between px-1">
+          <span className="text-[8px] font-black uppercase tracking-[.16em] text-white/25">Saved components</span>
+          <span className="text-[8px] text-white/20">{components.length}</span>
+        </div>
+
         <div className="space-y-1.5">
           {components.map((component) => (
             <article key={component.id} className="group flex items-center gap-2 rounded-lg border border-white/7 bg-white/[.02] p-2.5 hover:border-violet-300/18 hover:bg-violet-500/[.035]">
@@ -182,8 +256,8 @@ export default function SavedComponentsPanel({ projectId }: { projectId: string 
           ))}
 
           {components.length === 0 && (
-            <div className="rounded-lg border border-dashed border-white/8 p-6 text-center text-[9px] leading-5 text-white/25">
-              Saved sections and components will appear here and can be inserted on any page in this project.
+            <div className="rounded-lg border border-dashed border-white/8 p-5 text-center text-[9px] leading-5 text-white/25">
+              Nothing saved yet. Select an item above, give it a name, and press Save.
             </div>
           )}
         </div>
