@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
@@ -55,12 +55,17 @@ type PublishedPage = {
   } | null;
 };
 
-const is3dType = (tool?: string | null) =>
-  ["game", "3d_scene", "playcanvas"].includes(tool || "");
+const normalizeType = (tool?: string | null) => (tool || "").toLowerCase();
+const is3dType = (tool?: string | null) => ["game", "3d", "3d_scene", "playcanvas"].includes(normalizeType(tool));
+const isCodeType = (tool?: string | null) => ["workspace", "code"].includes(normalizeType(tool));
+const isNpcType = (tool?: string | null) => normalizeType(tool) === "npc";
+const isAiType = (tool?: string | null) => ["ai", "ai_app", "ai-playground", "ai_playground"].includes(normalizeType(tool));
 
 const typeLabel = (tool?: string | null) => {
   if (is3dType(tool)) return "3D Experience";
-  if (tool === "workspace") return "IDE Project";
+  if (isCodeType(tool)) return "Code / IDE";
+  if (isNpcType(tool)) return "NPC AI";
+  if (isAiType(tool)) return "AI App";
   return "Website";
 };
 
@@ -93,6 +98,7 @@ const formatBytes = (bytes: number) => {
 export default function ProjectHubPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params.id as string;
   const [project, setProject] = useState<Project | null>(null);
   const [files, setFiles] = useState<Record<string, string>>({});
@@ -218,15 +224,26 @@ export default function ProjectHubPage() {
   }
 
   const tool = project.tool || project.type || "wonderbuild";
-  const isCodeProject = tool === "workspace";
-  const builderHref = is3dType(tool)
-    ? `/dashboard/3dhub?projectId=${encodeURIComponent(project.id)}`
-    : `/wonder-build/builder?projectId=${encodeURIComponent(project.id)}`;
+  const isCodeProject = isCodeType(tool);
+  const isNpcProject = isNpcType(tool);
+  const isAiProject = isAiType(tool);
+  const is3dProject = is3dType(tool);
+  const canPreview = !isCodeProject && !isNpcProject && !isAiProject;
   const projectQuery = `projectId=${encodeURIComponent(project.id)}`;
-  const collaboratorCount = Math.max(1, onlineCount);
+  const collaboratorCount = onlineCount;
+
+  const primaryAction = isCodeProject
+    ? { href: "#files", label: "Manage Files", icon: Code2 }
+    : isNpcProject
+      ? { href: `/wonder-play?${projectQuery}`, label: "Open NPC Studio", icon: Bot }
+      : isAiProject
+        ? { href: `/dashboard/agents?${projectQuery}`, label: "Open AI Tools", icon: Bot }
+        : is3dProject
+          ? { href: `/dashboard/3dhub?${projectQuery}`, label: "Open 3D Studio", icon: Pencil }
+          : { href: `/wonder-build/builder?${projectQuery}`, label: "Open WonderBuild", icon: Pencil };
 
   const repoTabs = [
-    { label: "Code", href: `/dashboard/projects/${project.id}`, icon: Code2, active: true },
+    { label: "Code", href: `/dashboard/projects/${project.id}#files`, icon: Code2, active: true },
     { label: "Issues", href: `/dashboard/support?${projectQuery}`, icon: CircleDot },
     { label: "Pull requests", href: `/dashboard/collaboration?${projectQuery}&view=reviews`, icon: GitPullRequest },
     { label: "Agents", href: `/dashboard/agents?${projectQuery}`, icon: Bot },
@@ -238,6 +255,8 @@ export default function ProjectHubPage() {
     { label: "Insights", href: `/dashboard/analytics?${projectQuery}`, icon: BarChart3 },
     { label: "Settings", href: `/dashboard/settings?${projectQuery}`, icon: Settings },
   ];
+
+  const PrimaryIcon = primaryAction.icon;
 
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-[#07101b] text-white">
@@ -251,9 +270,12 @@ export default function ProjectHubPage() {
         <main className="min-w-0">
           <section className="mb-3 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
             <div className="relative h-48 overflow-hidden rounded-xl border border-white/10 bg-[#0b1422]">
-              {isCodeProject ? (
+              {isCodeProject || isNpcProject || isAiProject ? (
                 <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_72%_28%,rgba(59,130,246,.25),transparent_34%),linear-gradient(145deg,#10182a,#07111d)]">
-                  <div className="text-center"><Code2 className="mx-auto text-blue-300" size={44}/><p className="mt-3 text-sm font-semibold text-white/70">Code / IDE project</p></div>
+                  <div className="text-center">
+                    {isNpcProject || isAiProject ? <Bot className="mx-auto text-violet-300" size={44}/> : <Code2 className="mx-auto text-blue-300" size={44}/>} 
+                    <p className="mt-3 text-sm font-semibold text-white/70">{typeLabel(tool)}</p>
+                  </div>
                 </div>
               ) : (
                 <iframe
@@ -276,24 +298,18 @@ export default function ProjectHubPage() {
                 {project.description || `Manage ${project.name} from one project dashboard.`}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                {isCodeProject ? (
-                  <Link href={`/dashboard/projects/${project.id}/files`} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
-                    <Code2 size={15}/> Open Files
-                  </Link>
-                ) : (
-                  <Link href={builderHref} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
-                    <Pencil size={15}/> Open in {is3dType(tool) ? "3D Studio" : "WonderBuild"}
-                  </Link>
-                )}
+                <Link href={primaryAction.href} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
+                  <PrimaryIcon size={15}/> {primaryAction.label}
+                </Link>
                 <Link href={`/wonderspace?projectId=${encodeURIComponent(project.id)}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
                   <Code2 size={15}/> Open in WonderSpace IDE
                 </Link>
-                {!isCodeProject && (
+                {canPreview && (
                   <Link href={`/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
                     <ExternalLink size={15}/> Preview
                   </Link>
                 )}
-                {!isCodeProject && (
+                {canPreview && (
                   <Link href={`/dashboard/projects/${project.id}/pages`} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold hover:bg-blue-500">
                     <Globe2 size={15}/> Publish
                   </Link>
@@ -325,7 +341,7 @@ export default function ProjectHubPage() {
               [Clock3, "Last saved", formatRelativeTime(project.updatedAt || project.updated_at), "text-emerald-400"],
               [Globe2, "Deployment", isPublished ? "Published" : "Not published", "text-amber-400"],
               [HardDrive, "Storage", formatBytes(storageBytes), "text-violet-400"],
-              [Users, "Collaborators", String(collaboratorCount), "text-cyan-400"],
+              [Users, "Online now", String(collaboratorCount), "text-cyan-400"],
             ].map(([CardIcon, label, value, color]) => (
               <div key={String(label)} className="flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-[#0d1625] p-4">
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/5 ${String(color)}`}>
@@ -341,8 +357,11 @@ export default function ProjectHubPage() {
 
           <RepositoryFileBrowser
             projectId={project.id}
+            projectType={tool}
             files={files}
+            initialPath={searchParams.get("path")}
             updatedLabel={formatRelativeTime(project.updatedAt || project.updated_at)}
+            onFilesChange={setFiles}
           />
         </main>
 
@@ -383,6 +402,9 @@ export default function ProjectHubPage() {
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <h2 className="mb-3 font-bold">Quick Actions</h2>
             <div className="space-y-2">
+              <a href="#files" className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
+                <Code2 size={15}/> Manage project files
+              </a>
               <button
                 type="button"
                 onClick={() => void duplicateProject()}
