@@ -18,7 +18,7 @@ export default function TermsPage() {
         We are AI-Wonderland Innovation ("Company," "we," "us," "our"). We operate dreammakerhub.website and any other related products and services that refer or link to these legal terms (the "Legal Terms").
       </p>
       <p>
-        You can contact us by email at <a href="mailto:aiwonderland@zohomail.com">aiwonderland@zohomail.com</a> or by mail to:
+        You can contact us by email at <a href="mailto:contact@dreammakerhub.website">contact@dreammakerhub.website</a> or by mail to:
       </p>
       <p>
         AI-Wonderland Innovation<br />
@@ -161,7 +161,7 @@ export default function TermsPage() {
         13486 n 1300th st<br />
         Marshall, IL 62441<br />
         United States<br />
-        Email: <a href="mailto:aiwonderland@zohomail.com">aiwonderland@zohomail.com</a>
+        Email: <a href="mailto:contact@dreammakerhub.website">contact@dreammakerhub.website</a>
       </p>
     </div>
   </div>
