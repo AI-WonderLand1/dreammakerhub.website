@@ -78,6 +78,18 @@ function PublishedElement({ element }: { element: CanvasElement }) {
   const rootRef = useRef<HTMLElement | null>(null);
   const [scrollVisible, setScrollVisible] = useState(scrollEffect === 'none');
 
+  // Free-positioned descendants use absolute coordinates. Make ordinary
+  // container blocks their positioning context without disturbing an element
+  // that intentionally uses absolute/fixed positioning itself.
+  if (
+    safeElement.children?.length &&
+    style.position !== 'absolute' &&
+    style.position !== 'fixed' &&
+    style.position !== 'sticky'
+  ) {
+    style.position = 'relative';
+  }
+
   const children = safeElement.children?.map((child) => (
     <PublishedElement key={child.id} element={child} />
   ));
@@ -165,6 +177,17 @@ function PublishedElement({ element }: { element: CanvasElement }) {
   });
 }
 
+function publishedMinHeight(elements: CanvasElement[]): number {
+  let maxBottom = 0;
+  for (const element of elements) {
+    if (String(element.styles?.['--wb-free-position'] || '') !== '1') continue;
+    const top = Number.parseFloat(String(element.styles?.top || '0')) || 0;
+    const height = Number.parseFloat(String(element.styles?.['--wb-free-height'] || element.styles?.height || '0')) || 0;
+    maxBottom = Math.max(maxBottom, top + height + 64);
+  }
+  return Math.ceil(maxBottom);
+}
+
 export default function PublishedBuilderPage({
   elements,
   theme,
@@ -172,14 +195,16 @@ export default function PublishedBuilderPage({
   elements: CanvasElement[];
   theme?: BuilderTheme;
 }) {
+  const freePositionHeight = publishedMinHeight(elements);
   const rootStyle: CSSProperties = {
     backgroundColor: theme?.colors?.background || '#ffffff',
     color: theme?.colors?.text || '#0f172a',
     fontFamily: theme?.fonts?.body || 'Inter, system-ui, sans-serif',
+    ...(freePositionHeight > 0 ? { minHeight: `${Math.max(freePositionHeight, 800)}px` } : {}),
   };
 
   return (
-    <main className="min-h-screen w-full" style={rootStyle}>
+    <main className="relative min-h-screen w-full" style={rootStyle}>
       <style>{`
         .wb-interactive { cursor: pointer; }
         .wb-hover-lift, .wb-hover-scale, .wb-hover-glow { transition: transform .22s ease, box-shadow .22s ease, filter .22s ease; }

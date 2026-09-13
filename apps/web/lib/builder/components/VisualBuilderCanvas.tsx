@@ -11,14 +11,41 @@ import { renderElement as renderElementCtx } from '../renderers';
 import type { RendererCtx } from '../renderers/types';
 import { CANVAS_ROOT_ID, acceptsChildren } from '../dnd-utils';
 
+const FREE_POSITION_KEY = '--wb-free-position';
+const FREE_HEIGHT_KEY = '--wb-free-height';
+
+function isFreePositioned(el: CanvasElement): boolean {
+  return String(el.styles?.[FREE_POSITION_KEY] || '') === '1';
+}
+
+function pixelNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'string') return fallback;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function buildElementCtx(
   el: CanvasElement,
   selectedId: string | null,
   selectElement: (id: string | null) => void,
 ): RendererCtx {
   const isSelected = selectedId === el.id;
+  const freePositioned = isFreePositioned(el);
+  const elementStyles: React.CSSProperties = { ...(el.styles as React.CSSProperties) };
+
+  // Free-canvas coordinates belong to the sortable wrapper. Keeping them on the
+  // rendered block too would position the same element twice in the editor.
+  if (freePositioned) {
+    elementStyles.position = 'relative';
+    elementStyles.left = undefined;
+    elementStyles.top = undefined;
+    elementStyles.right = undefined;
+    elementStyles.bottom = undefined;
+  }
+
   const style: React.CSSProperties = {
-    ...(el.styles as React.CSSProperties),
+    ...elementStyles,
     position: 'relative',
     cursor: 'pointer',
     outline: isSelected ? '1.5px solid #8b5cf6' : '1px solid transparent',
@@ -95,6 +122,7 @@ function SortableBlock({
   selectElement: (id: string | null) => void;
 }) {
   const isSelected = selectedId === el.id;
+  const freePositioned = isFreePositioned(el);
   const setRightPanelOpen = useBuilderStore((state) => state.setRightPanelOpen);
   const setRightPanelTab = useBuilderStore((state) => state.setRightPanelTab);
   const removeElement = useBuilderStore((state) => state.removeElement);
@@ -104,15 +132,14 @@ function SortableBlock({
   const snapToGrid = useBuilderStore((state) => state.snapToGrid);
   const blockRef = useRef<HTMLDivElement | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [isFreeMoving, setIsFreeMoving] = useState(false);
   const [guideX, setGuideX] = useState(false);
   const [guideY, setGuideY] = useState(false);
   const [sizeLabel, setSizeLabel] = useState('');
 
   const {
-    attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -131,17 +158,97 @@ function SortableBlock({
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isFreeMoving ? undefined : transition,
     opacity: isDragging ? 0.35 : 1,
-    position: 'relative',
-    zIndex: isDragging ? 100 : isSelected ? 30 : undefined,
+    position: freePositioned ? 'absolute' : 'relative',
+    left: freePositioned ? el.styles.left : undefined,
+    top: freePositioned ? el.styles.top : undefined,
+    width: freePositioned ? el.styles.width : undefined,
+    zIndex: isDragging || isFreeMoving ? 100 : isSelected ? 30 : undefined,
     touchAction: 'none',
-    cursor: isDragging ? 'grabbing' : 'grab',
+    cursor: isDragging || isFreeMoving ? 'grabbing' : 'grab',
   };
 
   const openPanel = (tab: 'content' | 'ai') => {
     setRightPanelOpen(true);
     setRightPanelTab(tab);
+  };
+
+  const beginFreeMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    selectElement(el.id);
+
+    const node = blockRef.current;
+    const parent = node?.parentElement;
+    if (!node || !parent) return;
+
+    const rect = node.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+    const scale = Math.max(zoom, 0.1);
+    const startPointerX = event.clientX;
+    const startPointerY = event.clientY;
+    const measuredX = (rect.left - parentRect.left) / scale;
+    const measuredY = (rect.top - parentRect.top) / scale;
+    const startX = freePositioned ? pixelNumber(el.styles.left, measuredX) : measuredX;
+    const startY = freePositioned ? pixelNumber(el.styles.top, measuredY) : measuredY;
+    const startWidth = Math.max(24, rect.width / scale);
+    const startHeight = Math.max(24, rect.height / scale);
+    const parentWidth = parentRect.width / scale;
+    const parentHeight = parentRect.height / scale;
+    const alignmentThreshold = 6;
+
+    setIsFreeMoving(true);
+
+    const onMove = (moveEvent: PointerEvent) => {
+      let x = startX + (moveEvent.clientX - startPointerX) / scale;
+      let y = startY + (moveEvent.clientY - startPointerY) / scale;
+      let alignedX = false;
+      let alignedY = false;
+
+      if (snapToGrid) {
+        x = Math.round(x / 8) * 8;
+        y = Math.round(y / 8) * 8;
+
+        const xTargets = [0, (parentWidth - startWidth) / 2, parentWidth - startWidth];
+        const yTargets = [0, (parentHeight - startHeight) / 2, parentHeight - startHeight];
+        const xMatch = xTargets.find((target) => Math.abs(x - target) <= alignmentThreshold);
+        const yMatch = yTargets.find((target) => Math.abs(y - target) <= alignmentThreshold);
+
+        if (xMatch != null) {
+          x = xMatch;
+          alignedX = true;
+        }
+        if (yMatch != null) {
+          y = yMatch;
+          alignedY = true;
+        }
+      }
+
+      setGuideX(alignedX);
+      setGuideY(alignedY);
+      updateElementStyles(el.id, {
+        position: 'absolute',
+        left: `${Math.round(x)}px`,
+        top: `${Math.round(y)}px`,
+        width: `${Math.round(startWidth)}px`,
+        [FREE_POSITION_KEY]: '1',
+        [FREE_HEIGHT_KEY]: `${Math.round(startHeight)}px`,
+      });
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', cleanup);
+      window.removeEventListener('pointercancel', cleanup);
+      setIsFreeMoving(false);
+      setGuideX(false);
+      setGuideY(false);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', cleanup, { once: true });
+    window.addEventListener('pointercancel', cleanup, { once: true });
   };
 
   const beginResize = (event: React.PointerEvent<HTMLButtonElement>) => {
@@ -201,6 +308,7 @@ function SortableBlock({
       updateElementStyles(el.id, {
         width: `${roundedWidth}px`,
         height: `${roundedHeight}px`,
+        ...(freePositioned ? { [FREE_HEIGHT_KEY]: `${roundedHeight}px` } : {}),
       });
     };
 
@@ -243,18 +351,16 @@ function SortableBlock({
             aria-label={`${el.name} quick actions`}
           >
             <button
-              ref={setActivatorNodeRef}
               type="button"
-              {...attributes}
-              {...listeners}
+              onPointerDown={beginFreeMove}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
                 selectElement(el.id);
               }}
-              className="flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-white/45 transition hover:bg-white/[.06] hover:text-white active:cursor-grabbing"
-              title={`Drag ${el.name}`}
-              aria-label={`Drag ${el.name}`}
+              className="flex h-7 w-7 cursor-move items-center justify-center rounded-md text-white/45 transition hover:bg-white/[.06] hover:text-white active:cursor-grabbing"
+              title={`Move ${el.name} freely`}
+              aria-label={`Move ${el.name} freely`}
             >
               <GripVertical className="h-3.5 w-3.5" />
             </button>
@@ -327,6 +433,17 @@ const BREAKPOINT_WIDTHS: Record<string, string> = {
   wide: '1366px',
 };
 
+function canvasContentHeight(elements: CanvasElement[]): number {
+  let maxBottom = 820;
+  for (const element of elements) {
+    if (!isFreePositioned(element)) continue;
+    const top = pixelNumber(element.styles.top, 0);
+    const height = pixelNumber(element.styles[FREE_HEIGHT_KEY], pixelNumber(element.styles.height, 200));
+    maxBottom = Math.max(maxBottom, top + Math.max(height, 24) + 64);
+  }
+  return Math.ceil(maxBottom);
+}
+
 export default function VisualBuilderCanvas() {
   const {
     elements,
@@ -385,6 +502,7 @@ export default function VisualBuilderCanvas() {
   const stageWidth = BREAKPOINT_WIDTHS[activeBreakpoint] || BREAKPOINT_WIDTHS.desktop;
   const stageBackground = theme?.colors?.background || '#0f172a';
   const stageText = theme?.colors?.text || '#f8fafc';
+  const contentHeight = canvasContentHeight(elements);
 
   return (
     <div
@@ -412,7 +530,7 @@ export default function VisualBuilderCanvas() {
           }}
         >
           <div
-            className={`wb-canvas-stage relative min-h-[820px] shrink-0 overflow-visible border border-violet-300/15 shadow-[0_24px_90px_rgba(0,0,0,.48),0_0_0_1px_rgba(124,58,237,.07)] transition-[width,border-radius] duration-200 ${
+            className={`wb-canvas-stage relative shrink-0 overflow-visible border border-violet-300/15 shadow-[0_24px_90px_rgba(0,0,0,.48),0_0_0_1px_rgba(124,58,237,.07)] transition-[width,border-radius] duration-200 ${
               activeBreakpoint === 'mobile'
                 ? 'rounded-[28px]'
                 : activeBreakpoint === 'tablet'
@@ -421,6 +539,7 @@ export default function VisualBuilderCanvas() {
             }`}
             style={{
               width: stageWidth,
+              minHeight: `${contentHeight}px`,
               maxWidth: 'calc(100vw - 120px)',
               backgroundColor: stageBackground,
               color: stageText,
@@ -435,11 +554,11 @@ export default function VisualBuilderCanvas() {
                   <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10 text-xl">✦</div>
                   <h3 className="text-sm font-bold text-violet-100">Start building this page</h3>
                   <p className="mt-1.5 text-[10px] leading-relaxed text-white/35">Drag a block from Insert onto the page, or ask AI Assist to create one. Both use this same live page state.</p>
-                  <p className="mt-3 text-[9px] text-white/20">Ctrl/⌘ + wheel to zoom · middle mouse to pan</p>
+                  <p className="mt-3 text-[9px] text-white/20">Select an element, then use its grip to move freely · Ctrl/⌘ + wheel to zoom · middle mouse to pan</p>
                 </div>
               </div>
             ) : (
-              <div className="overflow-hidden">
+              <div className="relative overflow-visible" style={{ minHeight: `${contentHeight}px` }}>
                 <SortableContext items={elements.map((element) => element.id)} strategy={verticalListSortingStrategy}>
                   {elements.map((element) => (
                     <SortableBlock
