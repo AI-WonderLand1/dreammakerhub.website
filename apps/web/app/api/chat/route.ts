@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireUserId } from "@/lib/auth";
 import { resolveModel } from "@/lib/ai/models";
 import { logUsage } from "@/lib/usage/log";
 import { logger } from "@/lib/logger";
+import { createClient } from "@/app/utils/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -24,29 +24,30 @@ const ChatSchema = z.object({
 
 const PAID_PLANS = new Set(["pro", "team", "enterprise"]);
 
-async function getUserPlan(userId: string, token: string): Promise<string> {
+async function getUserPlan(userId: string): Promise<string> {
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !anon) return "free";
-    const supabase = createClient<any>(url, anon, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    const { data } = await supabase
-      .from("user_profiles")
-      .select("subscription_plan")
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("subscription_tier")
       .eq("id", userId)
-      .single();
-    return data?.subscription_plan || "free";
-  } catch {
+      .maybeSingle();
+
+    if (error) {
+      logger.warn("Could not read profile subscription tier", { userId, error: error.message });
+      return "free";
+    }
+
+    return data?.subscription_tier || "free";
+  } catch (error) {
+    logger.warn("Could not resolve user plan", { userId, error });
     return "free";
   }
 }
 
 export async function POST(req: NextRequest) {
-  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   const userId = await requireUserId(req);
-  if (!userId || !token) {
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
   const resolved = resolveModel(body.modelId);
 
   if (resolved.tier === "premium") {
-    const plan = await getUserPlan(userId, token);
+    const plan = await getUserPlan(userId);
     if (!PAID_PLANS.has(plan)) {
       return NextResponse.json(
         {
@@ -121,6 +122,11 @@ export async function POST(req: NextRequest) {
       data?.choices?.[0]?.message?.content ??
       data?.choices?.[0]?.text ??
       "";
+
+    if (!text.trim()) {
+      return NextResponse.json({ error: "AI returned an empty response" }, { status: 502 });
+    }
+
     const tokens =
       data?.usage?.total_tokens ??
       Math.ceil((body.message.length + text.length) / 4);
