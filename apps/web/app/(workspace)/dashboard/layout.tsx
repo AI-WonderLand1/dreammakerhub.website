@@ -190,15 +190,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Link>
 
           {!isProjectRoute && (
-            <div className="rounded-xl border border-white/10 bg-[#0b1726] p-2">
-              <p className="px-2 pb-1 text-[10px] font-semibold text-white/45">Personal</p>
-              <div className="flex items-center gap-2 rounded-lg bg-violet-500/10 px-2 py-2">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-violet-600 text-xs font-bold">{displayName.charAt(0).toUpperCase()}</span>
-                <span className="min-w-0 flex-1"><b className="block truncate text-xs">{workspaceName}</b><span className="text-[10px] text-white/40">Personal workspace</span></span>
-                <span className="text-blue-400">✓</span>
-              </div>
-              <p className="px-2 pb-1 pt-3 text-[10px] font-semibold text-white/45">Organization <span className="font-normal text-white/25">(Optional)</span></p>
-              <p className="px-2 pb-2 text-[10px] leading-4 text-white/35">No organization workspace is connected yet.</p>
+            <div className="rounded-xl border border-white/10 bg-[#0b1726] p-3">
+              <p className="text-[10px] font-semibold text-white/45">Organization <span className="font-normal text-white/25">(Optional)</span></p>
+              <p className="pb-2 pt-1 text-[10px] leading-4 text-white/35">No organization workspace is connected yet.</p>
               <Link href="/dashboard/collaboration" className="mt-1 flex items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs text-white/65 hover:bg-white/5 hover:text-white">
                 <Users size={13} /> Open team tools
               </Link>
