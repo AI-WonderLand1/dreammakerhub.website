@@ -56,7 +56,7 @@ EMAIL=aiwonderland111@gmail.com \
 See `deploy/civo/README.md` for full details.
 
 ```bash
-# Deploy all IDEs
+# Deploy all IDEs to Civo
 ./deploy/civo/deploy.sh apply
 
 # Check status
@@ -95,7 +95,14 @@ Keep only if actively used; otherwise remove to avoid confusion:
 
 ## Secrets
 
-Never commit secrets. All of the following are git-ignored:
-`.env`, `.env.*` (except `.env.example`), `apps/web/.env.production`, `*.pem`,
-`*.key`, `new-aws-key*`, `agent/data/*.db`. Provide real values via server env,
-Kubernetes secrets, or your platform's secret manager.
+Never commit secrets. `.env`, `.env.*` (except `.env.example`),
+`apps/web/.env.production`, `*.pem`, `*.key`, `new-aws-key*`, and
+`agent/data/*.db` are git-ignored.
+
+For the production DreamMakerHub web application, **GitHub Actions secrets and
+variables are the source of truth**. `.github/workflows/deploy-upcloud.yml`
+serializes the approved runtime values without printing them, copies them to the
+server over SSH, removes stale project-local Infisical configuration, replaces
+GitHub-managed application keys in the production `.env`, and recreates the web
+container. Do not hand-maintain production application secrets in Infisical or
+in the server `.env`.
