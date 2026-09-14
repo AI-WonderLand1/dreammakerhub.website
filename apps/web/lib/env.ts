@@ -1,7 +1,7 @@
 /**
  * Shared environment variables that are safe to use in both client and server contexts.
  * These are all prefixed with NEXT_PUBLIC_ or are non-sensitive configuration.
- * 
+ *
  * WARNING: Do NOT add server-side secrets here. This object may be imported by client components.
  * For server-only secrets, use serverEnv or access process.env directly in server-side code.
  */
@@ -11,7 +11,6 @@ export const env = {
   NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL || '',
   NEXT_PUBLIC_WORKSPACE_DOMAIN: process.env.NEXT_PUBLIC_WORKSPACE_DOMAIN || '',
   NODE_ENV: process.env.NODE_ENV || 'development',
-  NEXT_PUBLIC_GOOGLE_AI_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || '',
   NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
   AGENT_API_URL: process.env.AGENT_API_URL || 'http://localhost:8000',
 }
