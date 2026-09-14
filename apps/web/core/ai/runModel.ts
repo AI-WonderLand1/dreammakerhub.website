@@ -26,12 +26,15 @@ type ProviderResult = {
 };
 
 const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 const DEFAULT_CEREBRAS_MODEL = 'gpt-oss-120b';
 
 // Retry the free OpenRouter model for common provider/model failures. If
-// OpenRouter still cannot serve the request, try every configured Google AI
-// key (GEMINI_API_KEY and GOOGLE_AI_API_KEY, if distinct), then Cerebras.
+// OpenRouter still cannot serve the request, use configured platform fallbacks.
+// Groq is first because it is already provisioned for production and exposes an
+// OpenAI-compatible chat-completions API. Gemini and Cerebras remain fallback
+// paths when their credentials/account state are healthy.
 const FALLBACK_STATUSES = new Set([400, 402, 403, 404, 408, 409, 429, 500, 502, 503, 504]);
 
 function normalizeModel(model?: string): string {
@@ -93,6 +96,53 @@ async function callOpenRouter(
 
   if (!text) {
     return { ok: false, status: 502, error: 'OpenRouter returned an empty response' };
+  }
+
+  const tokens: number =
+    data?.usage?.total_tokens ??
+    Math.ceil(messages.reduce((n, m) => n + m.content.length, text.length) / 4);
+
+  return { ok: true, text, tokens };
+}
+
+async function callGroq(
+  apiKey: string,
+  messages: RunModelMessage[],
+  opts: RunModelOptions
+): Promise<ProviderResult> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: DEFAULT_GROQ_MODEL,
+      messages,
+      temperature: opts.temperature ?? 0.7,
+      ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : { max_tokens: 4096 }),
+      stream: false,
+    }),
+  });
+
+  const data = await res.json().catch(() => null) as any;
+  const providerError = providerErrorMessage(data);
+
+  if (!res.ok || providerError) {
+    const providerCode = Number(data?.error?.code);
+    return {
+      ok: false,
+      status: Number.isFinite(providerCode) && providerCode >= 400 ? providerCode : res.status,
+      error: providerError || `Groq request failed (${res.status})`,
+    };
+  }
+
+  const text = typeof data?.choices?.[0]?.message?.content === 'string'
+    ? data.choices[0].message.content.trim()
+    : '';
+
+  if (!text) {
+    return { ok: false, status: 502, error: 'Groq returned an empty response' };
   }
 
   const tokens: number =
@@ -224,7 +274,7 @@ async function callCerebras(
 
 /**
  * Real AI completion with provider-level fallback:
- * OpenRouter -> Gemini/Google AI keys -> Cerebras.
+ * OpenRouter -> Groq -> Gemini/Google AI keys -> Cerebras.
  */
 export async function runModel(
   input: string | RunModelOptions = ''
@@ -233,6 +283,7 @@ export async function runModel(
     typeof input === 'string' ? { messages: [{ role: 'user', content: input }] } : input;
 
   const openRouterKey = process.env.OPENROUTER_API_KEY || opts.userApiKey;
+  const groqKey = process.env.GROQ_API_KEY;
   const geminiKeys = Array.from(new Set(
     [process.env.GEMINI_API_KEY, process.env.GOOGLE_AI_API_KEY]
       .filter((value): value is string => Boolean(value && value.trim()))
@@ -248,6 +299,23 @@ export async function runModel(
 
   const useFallbackProviders = async (reason: string): Promise<RunModelResult> => {
     const errors: string[] = [reason];
+
+    if (groqKey) {
+      logger.warn(`runModel: ${reason}; trying Groq fallback`);
+      try {
+        const fallback = await callGroq(groqKey, messages, opts);
+        if (fallback.ok) {
+          return { text: fallback.text ?? '', tokens: fallback.tokens ?? 0 };
+        }
+        const error = fallback.error || `Groq provider error (${fallback.status ?? 'unknown'})`;
+        errors.push(`Groq: ${error}`);
+        logger.error(`runModel: Groq fallback failed: ${error}`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown Groq error';
+        errors.push(`Groq: ${message}`);
+        logger.error(`runModel: Groq fallback threw: ${message}`);
+      }
+    }
 
     for (let index = 0; index < geminiKeys.length; index += 1) {
       logger.warn(`runModel: ${reason}; trying Gemini fallback ${index + 1}/${geminiKeys.length}`);
@@ -283,20 +351,20 @@ export async function runModel(
       }
     }
 
-    if (!geminiKeys.length && !cerebrasKey) {
-      errors.push('No Gemini/Google AI or Cerebras fallback key is configured');
+    if (!groqKey && !geminiKeys.length && !cerebrasKey) {
+      errors.push('No Groq, Gemini/Google AI, or Cerebras fallback key is configured');
     }
 
     return { text: '', tokens: 0, error: `AI providers failed: ${errors.join('; ')}` };
   };
 
   if (!openRouterKey) {
-    if (!geminiKeys.length && !cerebrasKey) {
+    if (!groqKey && !geminiKeys.length && !cerebrasKey) {
       logger.error('runModel: no platform AI provider key configured');
       return {
         text: '',
         tokens: 0,
-        error: 'AI provider is not configured: OpenRouter, Gemini/Google AI, and Cerebras keys are missing',
+        error: 'AI provider is not configured: OpenRouter, Groq, Gemini/Google AI, and Cerebras keys are missing',
       };
     }
 
