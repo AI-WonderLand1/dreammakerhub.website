@@ -6,7 +6,9 @@ import { logUsage } from "@/lib/usage/log"
 export const runtime = "nodejs";
 
 function sanitizeInput(input: string): string {
-  return input.replace(/[<>]/g, '').slice(0, 10000);
+  const cleaned = input.replace(/[<>]/g, '');
+  if (cleaned.length <= 30000) return cleaned;
+  return `${cleaned.slice(0, 20000)}\n\n[builder context shortened]\n\n${cleaned.slice(-10000)}`;
 }
 
 export async function POST(req: Request) {
@@ -24,19 +26,11 @@ export async function POST(req: Request) {
   const sanitizedMessage = sanitizeInput(message);
 
   try {
-    // Use the web app's OpenRouter runtime directly. The @/core alias points at
-    // engine/core, whose legacy provider contract reports errors as booleans
-    // (for example { error: true }), which caused AI Assist to literally show
-    // "I could not apply that request. true" instead of using the resilient
-    // OpenRouter fallback path below.
-    //
-    // runModel strips the first compatibility prefix, so this resolves to the
-    // current OpenRouter Auto Router slug (openrouter/auto).
     const result = await runModel({
       model: "openrouter/openrouter/auto",
       messages: [{ role: "user", content: sanitizedMessage }],
       temperature: 0.35,
-      maxTokens: 3000,
+      maxTokens: 5000,
     })
 
     if (result.error || !result.text) {
