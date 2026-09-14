@@ -278,15 +278,6 @@ function applyQuickLocalEdit(prompt: string, selected: CanvasElement | null): bo
   return true;
 }
 
-function desiredImageCount(element: CanvasElement, requested = 1): number {
-  const props = element.props || {};
-  const bounded = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 1, 6));
-  if (Array.isArray(props.products)) return Math.min(Math.max(bounded, 1), Math.max(props.products.length, 1));
-  if (Array.isArray(props.images)) return Math.min(Math.max(bounded, 1), Math.max(props.images.length, 1));
-  if (Array.isArray(props.thumbs)) return Math.min(Math.max(bounded, 1), Math.max(props.thumbs.length, 1));
-  return 1;
-}
-
 async function generateImageAsset(prompt: string): Promise<string> {
   const response = await fetch('/api/ai/image', {
     method: 'POST',
