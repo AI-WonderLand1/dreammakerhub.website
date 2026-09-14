@@ -28,7 +28,7 @@ const FALLBACK_BLOCKS: Array<[string, string]> = [
 ];
 
 const FORBIDDEN_KEYS = new Set(['dangerouslySetInnerHTML', 'innerHTML', 'outerHTML', 'clickJs', 'customCSS', 'srcDoc', 'srcdoc', '__proto__', 'prototype', 'constructor']);
-const BLOCK_CATALOG = BLOCKS.map((block) => block.type).filter(Boolean).join(', ').slice(0, 3200);
+const BLOCK_CATALOG = BLOCKS.map((block) => block.type).filter(Boolean).join(', ').slice(0, 2200);
 
 function findElement(elements: CanvasElement[], id: string | null): CanvasElement | null {
   if (!id) return null;
@@ -44,14 +44,18 @@ function summarizeElements(elements: CanvasElement[]) {
   const summary: Array<Record<string, unknown>> = [];
   const walk = (items: CanvasElement[], depth = 0) => {
     for (const element of items) {
-      if (summary.length >= 35) return;
-      summary.push({
-        id: element.id,
-        type: element.type,
-        name: element.name,
-        depth,
-        props: element.props,
-      });
+      if (summary.length >= 24) return;
+      const compactProps = Object.fromEntries(
+        Object.entries((element.props || {}) as Record<string, unknown>)
+          .slice(0, 8)
+          .map(([key, value]) => {
+            if (typeof value === 'string') return [key, value.slice(0, 120)];
+            if (Array.isArray(value)) return [key, `[${value.length} items]`];
+            if (value && typeof value === 'object') return [key, '[object]'];
+            return [key, value];
+          }),
+      );
+      summary.push({ id: element.id, type: element.type, name: element.name, depth, props: compactProps });
       if (element.children?.length) walk(element.children, depth + 1);
     }
   };
@@ -66,7 +70,9 @@ function sanitizeUrl(value: string): string {
   try {
     const url = new URL(raw);
     return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol.toLowerCase()) ? raw : '#';
-  } catch { return '#'; }
+  } catch {
+    return '#';
+  }
 }
 
 function sanitizeObject(input: unknown): Record<string, unknown> {
@@ -74,9 +80,18 @@ function sanitizeObject(input: unknown): Record<string, unknown> {
   const output: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
     if (FORBIDDEN_KEYS.has(key) || /^on[A-Z]/.test(key) || /^on[a-z]/.test(key)) continue;
-    if (typeof value === 'string' && /(?:url|href|src|link)$/i.test(key)) { output[key] = sanitizeUrl(value); continue; }
-    if (Array.isArray(value)) { output[key] = value.map((entry) => entry && typeof entry === 'object' && !Array.isArray(entry) ? sanitizeObject(entry) : entry); continue; }
-    if (value && typeof value === 'object') { output[key] = sanitizeObject(value); continue; }
+    if (typeof value === 'string' && /(?:url|href|src|link)$/i.test(key)) {
+      output[key] = sanitizeUrl(value);
+      continue;
+    }
+    if (Array.isArray(value)) {
+      output[key] = value.map((entry) => entry && typeof entry === 'object' && !Array.isArray(entry) ? sanitizeObject(entry) : entry);
+      continue;
+    }
+    if (value && typeof value === 'object') {
+      output[key] = sanitizeObject(value);
+      continue;
+    }
     if (['string', 'number', 'boolean'].includes(typeof value) || value === null) output[key] = value;
   }
   return output;
@@ -134,7 +149,7 @@ function setNestedValue(source: Record<string, unknown>, path: string, value: un
 
 function inferImagePropPath(element: CanvasElement): string | null {
   const props = (element.props || {}) as Record<string, unknown>;
-  for (const key of ['src', 'image', 'mediaSrc', 'poster', 'avatar', 'backgroundImage', 'beforeSrc', 'afterSrc']) {
+  for (const key of ['src', 'image', 'imageUrl', 'mediaSrc', 'poster', 'avatar', 'backgroundImage', 'thumbnail', 'beforeSrc', 'afterSrc']) {
     if (key in props) return key;
   }
   if (Array.isArray(props.images)) return 'images.0';
@@ -145,8 +160,10 @@ function inferImagePropPath(element: CanvasElement): string | null {
 }
 
 function buildSystemPrompt(pageName: string, selected: CanvasElement | null, elements: CanvasElement[]) {
-  const selectedContext = selected ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2) : 'No element is selected. Selection is optional; infer the target from the request and page context.';
-  const pageContext = JSON.stringify(summarizeElements(elements), null, 2);
+  const selectedContext = selected
+    ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2).slice(0, 1400)
+    : 'No element is selected. Selection is optional; infer the target from the request and page context.';
+  const pageContext = JSON.stringify(summarizeElements(elements), null, 2).slice(0, 3000);
   return `You are WonderBuild AI Assist inside a live drag-and-drop website editor. You are an ACTION assistant, not a placeholder chat bot.
 The active page is ${JSON.stringify(pageName)}. Whatever the user asks to build, make, create, redesign, restyle, translate, or edit should be applied to the live builder state using machine actions.
 
@@ -171,7 +188,8 @@ Supported machine actions:
 3. Generate ANY requested image in ANY style/language and place it into a block property:
 {"action":"generate_image","targetRef":"products","propPath":"products.0.image","prompt":"A photorealistic ceramic latte on a walnut cafe table","style":"warm editorial food photography","size":"1024x1024","alt":"Ceramic latte"}
 If no target is supplied, generate_image creates a new Image block automatically.
-Common prop paths include src, image, mediaSrc, poster, avatar, images.0, products.0.image, products.1.image, items.0.avatar, and members.0.avatar.
+Use normal image-capable blocks for generated output. Do not target the ai-image placeholder block.
+Common prop paths include src, image, imageUrl, mediaSrc, poster, avatar, images.0, products.0.image, products.1.image, items.0.avatar, and members.0.avatar.
 
 Return one action with:
 ---BUILDER_ACTION
@@ -184,7 +202,7 @@ For a full page or multi-part request, return 2-16 actions as a JSON array:
  {"action":"add","block":{"type":"navbar","props":{},"styles":{}},"target":"root"},
  {"action":"add","block":{"type":"hero","props":{"title":"Specific title for the user's business"},"styles":{}},"target":"root"},
  {"action":"add","ref":"coffeePhoto","block":{"type":"image","props":{"alt":"Coffee shop"},"styles":{"width":"100%"}},"target":"root"},
- {"action":"generate_image","targetRef":"coffeePhoto","propPath":"src","prompt":"A welcoming specialty coffee shop interior with natural wood and morning light","style":"cinematic lifestyle photography","size":"1536x1024","alt":"Warm specialty coffee shop interior"},
+ {"action":"generate_image","targetRef":"coffeePhoto","propPath":"src","prompt":"A welcoming specialty coffee shop interior with natural wood and morning light","style":"cinematic lifestyle photography","size":"1792x1024","alt":"Warm specialty coffee shop interior"},
  {"action":"add","ref":"products","block":{"type":"product-grid-3","props":{"heading":"Featured drinks"},"styles":{}},"target":"root"},
  {"action":"generate_image","targetRef":"products","propPath":"products.0.image","prompt":"A cappuccino with detailed latte art","style":"premium cafe product photography","size":"1024x1024"},
  {"action":"add","block":{"type":"contact-form","props":{},"styles":{}},"target":"root"}
@@ -226,7 +244,10 @@ function extractActions(text: string): BuilderAction[] {
 }
 
 function stripActions(text: string) {
-  return text.replace(/---BUILDER_ACTIONS\s*[\s\S]*?\s*---END/g, '').replace(/---BUILDER_ACTION\s*[\s\S]*?\s*---END/g, '').trim();
+  return text
+    .replace(/---BUILDER_ACTIONS\s*[\s\S]*?\s*---END/g, '')
+    .replace(/---BUILDER_ACTION\s*[\s\S]*?\s*---END/g, '')
+    .trim();
 }
 
 function applyQuickLocalEdit(prompt: string, selected: CanvasElement | null): boolean {
@@ -241,8 +262,16 @@ function applyQuickLocalEdit(prompt: string, selected: CanvasElement | null): bo
   if (/\b(bigger|larger)\b/.test(lower)) styles.fontSize = '48px';
   if (/\b(smaller)\b/.test(lower)) styles.fontSize = '18px';
   const wantsBackground = lower.includes('background');
-  const colors: Array<[RegExp, string]> = [[/\bpurple\b/, '#8b5cf6'], [/\bblue\b/, '#3b82f6'], [/\bcyan\b/, '#22d3ee'], [/\bgreen\b/, '#22c55e'], [/\bwhite\b/, '#ffffff'], [/\bblack\b/, '#050816']];
-  for (const [pattern, color] of colors) if (pattern.test(lower)) { styles[wantsBackground ? 'backgroundColor' : 'color'] = color; break; }
+  const colors: Array<[RegExp, string]> = [
+    [/\bpurple\b/, '#8b5cf6'], [/\bblue\b/, '#3b82f6'], [/\bcyan\b/, '#22d3ee'],
+    [/\bgreen\b/, '#22c55e'], [/\bwhite\b/, '#ffffff'], [/\bblack\b/, '#050816'],
+  ];
+  for (const [pattern, color] of colors) {
+    if (pattern.test(lower)) {
+      styles[wantsBackground ? 'backgroundColor' : 'color'] = color;
+      break;
+    }
+  }
   const textMatch = prompt.match(/(?:change|set|make)\s+(?:the\s+)?(?:text|label|title)\s+(?:to\s+)?["“'](.+?)["”']/i);
   if (textMatch) {
     if ('content' in (selected.props || {})) props.content = textMatch[1];
@@ -270,7 +299,9 @@ export default function AIAssistantPanel() {
   const [lastApplied, setLastApplied] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight; }, [messages, loading]);
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages, loading]);
 
   const applyAction = useCallback(async (action: BuilderAction, refs: Map<string, string>): Promise<string | null> => {
     const store = useBuilderStore.getState();
@@ -280,45 +311,51 @@ export default function AIAssistantPanel() {
       const targetId = action.targetRef ? refs.get(action.targetRef) : action.targetId === 'selected' || !action.targetId ? currentSelected?.id : action.targetId;
       const target = findElement(store.elements, targetId || null);
       if (!target) return null;
-      const props = sanitizeObject(action.props); const styles = sanitizeObject(action.styles);
+      const props = sanitizeObject(action.props);
+      const styles = sanitizeObject(action.styles);
       if (Object.keys(props).length) store.updateElementProps(target.id, props);
       if (Object.keys(styles).length) store.updateElementStyles(target.id, styles);
-      store.selectElement(target.id); return `Updated ${target.name}`;
+      store.selectElement(target.id);
+      return `Updated ${target.name}`;
     }
 
     if (action.action === 'generate_image') {
       const prompt = typeof action.prompt === 'string' ? action.prompt.trim().slice(0, 4000) : '';
       if (!prompt) return null;
+      const style = typeof action.style === 'string' ? action.style.trim().slice(0, 500) : '';
+      const size = typeof action.size === 'string' ? action.size.trim().slice(0, 40) : '';
+      const imagePrompt = [prompt, style ? `Visual style: ${style}` : '', size ? `Composition/aspect target: ${size}` : ''].filter(Boolean).join('\n');
 
       const imageResponse = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt,
-          style: typeof action.style === 'string' ? action.style.slice(0, 500) : '',
-          size: typeof action.size === 'string' ? action.size : undefined,
+          prompt: imagePrompt,
+          size: size || undefined,
           type: 'wonderbuild',
           workspaceId: useBuilderStore.getState().activePageId || 'builder',
         }),
       });
       const imageData = await imageResponse.json().catch(() => ({}));
-      if (!imageResponse.ok || !imageData.imageUrl) throw new Error(imageData.error || `Image generation failed (${imageResponse.status})`);
+      if (!imageResponse.ok || typeof imageData.imageUrl !== 'string' || !imageData.imageUrl) {
+        throw new Error(imageData.error || `Image generation failed (${imageResponse.status})`);
+      }
 
       const targetId = action.targetRef ? refs.get(action.targetRef) : action.targetId === 'selected' ? currentSelected?.id : action.targetId;
       const target = findElement(useBuilderStore.getState().elements, targetId || null);
 
       if (target) {
         const propPath = action.propPath?.trim() || inferImagePropPath(target);
-        if (propPath) {
-          const nextProps = setNestedValue((target.props || {}) as Record<string, unknown>, propPath, imageData.imageUrl);
-          if (nextProps) {
-            if (action.alt && propPath === 'src') nextProps.alt = action.alt.slice(0, 300);
-            store.updateElementProps(target.id, nextProps);
-            store.selectElement(target.id);
-            return `Generated image for ${target.name}`;
-          }
-        }
+        if (!propPath) throw new Error(`${target.name} does not expose a usable image property`);
+        const nextProps = setNestedValue((target.props || {}) as Record<string, unknown>, propPath, imageData.imageUrl);
+        if (!nextProps) throw new Error(`Could not write generated image to ${target.name}`);
+        if (action.alt && ['src', 'image', 'imageUrl'].includes(propPath)) nextProps.alt = action.alt.slice(0, 300);
+        store.updateElementProps(target.id, nextProps);
+        store.selectElement(target.id);
+        return `Generated image for ${target.name}`;
       }
+
+      if (action.targetRef || action.targetId) throw new Error('The requested image target could not be found');
 
       const definition = findBlockDefinition('image');
       if (!definition) return null;
@@ -330,7 +367,8 @@ export default function AIAssistantPanel() {
         props: { ...definition.defaultProps, src: imageData.imageUrl, alt: action.alt?.slice(0, 300) || prompt.slice(0, 180) },
         styles: { ...definition.defaultStyles, width: '100%' },
       };
-      store.addElement(element); store.selectElement(element.id);
+      store.addElement(element);
+      store.selectElement(element.id);
       return 'Generated AI Image';
     }
 
@@ -345,7 +383,8 @@ export default function AIAssistantPanel() {
       styles: { ...definition.defaultStyles, ...sanitizeObject(action.block.styles) },
     };
     const parentId = action.target === 'selected' && currentSelected && acceptsChildren(currentSelected.type) ? currentSelected.id : undefined;
-    store.addElement(element, parentId); store.selectElement(element.id);
+    store.addElement(element, parentId);
+    store.selectElement(element.id);
     if (action.ref?.trim()) refs.set(action.ref.trim().slice(0, 80), element.id);
     return `Added ${element.name}`;
   }, []);
@@ -355,26 +394,48 @@ export default function AIAssistantPanel() {
     const store = useBuilderStore.getState();
     for (const [keyword, type] of FALLBACK_BLOCKS) {
       if (!lower.includes(keyword)) continue;
-      const definition = findBlockDefinition(type); if (!definition) continue;
-      const element: CanvasElement = { id: `el-${Date.now()}-fallback`, type: definition.type, name: definition.name, icon: definition.icon, props: { ...definition.defaultProps }, styles: { ...definition.defaultStyles } };
-      store.addElement(element); store.selectElement(element.id); return `Added ${definition.name}`;
+      const definition = findBlockDefinition(type);
+      if (!definition) continue;
+      const element: CanvasElement = {
+        id: `el-${Date.now()}-fallback`,
+        type: definition.type,
+        name: definition.name,
+        icon: definition.icon,
+        props: { ...definition.defaultProps },
+        styles: { ...definition.defaultStyles },
+      };
+      store.addElement(element);
+      store.selectElement(element.id);
+      return `Added ${definition.name}`;
     }
     return null;
   }, []);
 
   const handleSend = useCallback(async (override?: string) => {
-    const promptText = (override ?? input).trim(); if (!promptText || loading) return;
-    setMessages((previous) => [...previous, { role: 'user', content: promptText }]); setInput(''); setLoading(true); setLastApplied(null);
+    const promptText = (override ?? input).trim();
+    if (!promptText || loading) return;
+    setMessages((previous) => [...previous, { role: 'user', content: promptText }]);
+    setInput('');
+    setLoading(true);
+    setLastApplied(null);
+
     const liveStore = useBuilderStore.getState();
     const liveSelected = findElement(liveStore.elements, liveStore.selectedId);
     const livePage = liveStore.pages.find((page) => page.id === liveStore.activePageId);
     let remoteError = '';
+
     try {
-      const response = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `${buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements)}\n\nUser request: ${promptText}` }) });
+      const message = `User request:\n${promptText.slice(0, 3500)}\n\n${buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements)}`;
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.error) throw new Error(data.error || `AI request failed (${response.status})`);
       const reply = typeof data.text === 'string' ? data.text.trim() : '';
       if (!reply) throw new Error('AI returned an empty response');
+
       const actions = extractActions(reply);
       const refs = new Map<string, string>();
       const applied: string[] = [];
@@ -389,29 +450,40 @@ export default function AIAssistantPanel() {
         }
       }
 
-      const asksToBuild = /\b(build|make|create|generate|add|design|redesign|restyle|replace)\b/i.test(promptText);
-      if (asksToBuild && applied.length === 0) throw new Error(actionErrors[0] || 'AI replied without a valid builder action');
+      if (applied.length === 0) throw new Error(actionErrors[0] || 'AI replied without a valid builder action');
       if (applied.length) setLastApplied(`${applied.length} live change${applied.length === 1 ? '' : 's'} applied`);
       const explanation = stripActions(reply);
-      const warning = actionErrors.length ? `\n\n${actionErrors.length} action${actionErrors.length === 1 ? '' : 's'} could not be applied: ${actionErrors[0]}` : '';
-      setMessages((previous) => [...previous, { role: 'assistant', content: `${explanation || (applied.length ? `Applied ${applied.length} live change${applied.length === 1 ? '' : 's'}.` : reply)}${warning}` }]);
+      const warning = actionErrors.length
+        ? `\n\n${actionErrors.length} action${actionErrors.length === 1 ? '' : 's'} could not be applied: ${actionErrors[0]}`
+        : '';
+      setMessages((previous) => [...previous, { role: 'assistant', content: `${explanation || `Applied ${applied.length} live change${applied.length === 1 ? '' : 's'}.`}${warning}` }]);
       return;
     } catch (error) {
       remoteError = error instanceof Error ? error.message : 'AI request failed';
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
 
     if (applyQuickLocalEdit(promptText, liveSelected)) {
       setLastApplied(`Updated ${liveSelected?.name || 'selected element'}`);
-      setMessages((previous) => [...previous, { role: 'assistant', content: 'Applied that change directly to the selected element.' }]); return;
+      setMessages((previous) => [...previous, { role: 'assistant', content: 'Applied that change directly to the selected element.' }]);
+      return;
     }
+
     const added = addFallbackBlock(promptText);
     if (added) {
-      setLastApplied(added); setMessages((previous) => [...previous, { role: 'assistant', content: `${added}. The AI service could not complete the richer version, so I applied the real local block instead.` }]); return;
+      setLastApplied(added);
+      setMessages((previous) => [...previous, { role: 'assistant', content: `${added}. The AI service could not complete the richer version, so I applied the real local block instead.` }]);
+      return;
     }
+
     setMessages((previous) => [...previous, { role: 'assistant', content: `I could not apply that request. ${remoteError || 'No valid builder action was returned.'}` }]);
   }, [addFallbackBlock, applyAction, input, loading]);
 
-  const runSuggestion = (suggestion: string) => { setInput(suggestion); void handleSend(suggestion); };
+  const runSuggestion = (suggestion: string) => {
+    setInput(suggestion);
+    void handleSend(suggestion);
+  };
 
   return <div className="flex h-full w-full flex-col overflow-hidden bg-[#080d1b] text-white">
     <div className="shrink-0 border-b border-white/8 bg-gradient-to-b from-violet-500/[.07] to-transparent px-3 py-3">
