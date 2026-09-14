@@ -28,7 +28,7 @@ const FALLBACK_BLOCKS: Array<[string, string]> = [
 ];
 
 const FORBIDDEN_KEYS = new Set(['dangerouslySetInnerHTML', 'innerHTML', 'outerHTML', 'clickJs', 'customCSS', 'srcDoc', 'srcdoc', '__proto__', 'prototype', 'constructor']);
-const BLOCK_CATALOG = BLOCKS.map((block) => block.type).filter(Boolean).join(', ').slice(0, 3200);
+const BLOCK_CATALOG = BLOCKS.map((block) => block.type).filter(Boolean).join(', ').slice(0, 2200);
 
 function findElement(elements: CanvasElement[], id: string | null): CanvasElement | null {
   if (!id) return null;
@@ -44,14 +44,18 @@ function summarizeElements(elements: CanvasElement[]) {
   const summary: Array<Record<string, unknown>> = [];
   const walk = (items: CanvasElement[], depth = 0) => {
     for (const element of items) {
-      if (summary.length >= 35) return;
-      summary.push({
-        id: element.id,
-        type: element.type,
-        name: element.name,
-        depth,
-        props: element.props,
-      });
+      if (summary.length >= 24) return;
+      const compactProps = Object.fromEntries(
+        Object.entries((element.props || {}) as Record<string, unknown>)
+          .slice(0, 8)
+          .map(([key, value]) => {
+            if (typeof value === 'string') return [key, value.slice(0, 120)];
+            if (Array.isArray(value)) return [key, `[${value.length} items]`];
+            if (value && typeof value === 'object') return [key, '[object]'];
+            return [key, value];
+          }),
+      );
+      summary.push({ id: element.id, type: element.type, name: element.name, depth, props: compactProps });
       if (element.children?.length) walk(element.children, depth + 1);
     }
   };
@@ -145,7 +149,7 @@ function setNestedValue(source: Record<string, unknown>, path: string, value: un
 
 function inferImagePropPath(element: CanvasElement): string | null {
   const props = (element.props || {}) as Record<string, unknown>;
-  for (const key of ['src', 'image', 'mediaSrc', 'poster', 'avatar', 'backgroundImage', 'beforeSrc', 'afterSrc']) {
+  for (const key of ['src', 'image', 'imageUrl', 'mediaSrc', 'poster', 'avatar', 'backgroundImage', 'thumbnail', 'beforeSrc', 'afterSrc']) {
     if (key in props) return key;
   }
   if (Array.isArray(props.images)) return 'images.0';
@@ -156,8 +160,10 @@ function inferImagePropPath(element: CanvasElement): string | null {
 }
 
 function buildSystemPrompt(pageName: string, selected: CanvasElement | null, elements: CanvasElement[]) {
-  const selectedContext = selected ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2) : 'No element is selected. Selection is optional; infer the target from the request and page context.';
-  const pageContext = JSON.stringify(summarizeElements(elements), null, 2);
+  const selectedContext = selected
+    ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2).slice(0, 1400)
+    : 'No element is selected. Selection is optional; infer the target from the request and page context.';
+  const pageContext = JSON.stringify(summarizeElements(elements), null, 2).slice(0, 3000);
   return `You are WonderBuild AI Assist inside a live drag-and-drop website editor. You are an ACTION assistant, not a placeholder chat bot.
 The active page is ${JSON.stringify(pageName)}. Whatever the user asks to build, make, create, redesign, restyle, translate, or edit should be applied to the live builder state using machine actions.
 
@@ -182,7 +188,8 @@ Supported machine actions:
 3. Generate ANY requested image in ANY style/language and place it into a block property:
 {"action":"generate_image","targetRef":"products","propPath":"products.0.image","prompt":"A photorealistic ceramic latte on a walnut cafe table","style":"warm editorial food photography","size":"1024x1024","alt":"Ceramic latte"}
 If no target is supplied, generate_image creates a new Image block automatically.
-Common prop paths include src, image, mediaSrc, poster, avatar, images.0, products.0.image, products.1.image, items.0.avatar, and members.0.avatar.
+Use normal image-capable blocks for generated output. Do not target the ai-image placeholder block.
+Common prop paths include src, image, imageUrl, mediaSrc, poster, avatar, images.0, products.0.image, products.1.image, items.0.avatar, and members.0.avatar.
 
 Return one action with:
 ---BUILDER_ACTION
@@ -195,7 +202,7 @@ For a full page or multi-part request, return 2-16 actions as a JSON array:
  {"action":"add","block":{"type":"navbar","props":{},"styles":{}},"target":"root"},
  {"action":"add","block":{"type":"hero","props":{"title":"Specific title for the user's business"},"styles":{}},"target":"root"},
  {"action":"add","ref":"coffeePhoto","block":{"type":"image","props":{"alt":"Coffee shop"},"styles":{"width":"100%"}},"target":"root"},
- {"action":"generate_image","targetRef":"coffeePhoto","propPath":"src","prompt":"A welcoming specialty coffee shop interior with natural wood and morning light","style":"cinematic lifestyle photography","size":"1536x1024","alt":"Warm specialty coffee shop interior"},
+ {"action":"generate_image","targetRef":"coffeePhoto","propPath":"src","prompt":"A welcoming specialty coffee shop interior with natural wood and morning light","style":"cinematic lifestyle photography","size":"1792x1024","alt":"Warm specialty coffee shop interior"},
  {"action":"add","ref":"products","block":{"type":"product-grid-3","props":{"heading":"Featured drinks"},"styles":{}},"target":"root"},
  {"action":"generate_image","targetRef":"products","propPath":"products.0.image","prompt":"A cappuccino with detailed latte art","style":"premium cafe product photography","size":"1024x1024"},
  {"action":"add","block":{"type":"contact-form","props":{},"styles":{}},"target":"root"}
@@ -278,19 +285,6 @@ function applyQuickLocalEdit(prompt: string, selected: CanvasElement | null): bo
   return true;
 }
 
-async function generateImageAsset(prompt: string): Promise<string> {
-  const response = await fetch('/api/ai/image', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, type: 'builder' }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || typeof data.imageUrl !== 'string' || !data.imageUrl) {
-    throw new Error(data.error || `Image generation failed (${response.status})`);
-  }
-  return data.imageUrl;
-}
-
 export default function AIAssistantPanel() {
   const pages = useBuilderStore((state) => state.pages);
   const activePageId = useBuilderStore((state) => state.activePageId);
@@ -322,42 +316,46 @@ export default function AIAssistantPanel() {
       if (Object.keys(props).length) store.updateElementProps(target.id, props);
       if (Object.keys(styles).length) store.updateElementStyles(target.id, styles);
       store.selectElement(target.id);
-      return { label: `Updated ${target.name}`, elementId: target.id, imagePrompt: action.imagePrompt, imageCount: action.imageCount };
+      return `Updated ${target.name}`;
     }
 
     if (action.action === 'generate_image') {
       const prompt = typeof action.prompt === 'string' ? action.prompt.trim().slice(0, 4000) : '';
       if (!prompt) return null;
+      const style = typeof action.style === 'string' ? action.style.trim().slice(0, 500) : '';
+      const size = typeof action.size === 'string' ? action.size.trim().slice(0, 40) : '';
+      const imagePrompt = [prompt, style ? `Visual style: ${style}` : '', size ? `Composition/aspect target: ${size}` : ''].filter(Boolean).join('\n');
 
       const imageResponse = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt,
-          style: typeof action.style === 'string' ? action.style.slice(0, 500) : '',
-          size: typeof action.size === 'string' ? action.size : undefined,
+          prompt: imagePrompt,
+          size: size || undefined,
           type: 'wonderbuild',
           workspaceId: useBuilderStore.getState().activePageId || 'builder',
         }),
       });
       const imageData = await imageResponse.json().catch(() => ({}));
-      if (!imageResponse.ok || !imageData.imageUrl) throw new Error(imageData.error || `Image generation failed (${imageResponse.status})`);
+      if (!imageResponse.ok || typeof imageData.imageUrl !== 'string' || !imageData.imageUrl) {
+        throw new Error(imageData.error || `Image generation failed (${imageResponse.status})`);
+      }
 
       const targetId = action.targetRef ? refs.get(action.targetRef) : action.targetId === 'selected' ? currentSelected?.id : action.targetId;
       const target = findElement(useBuilderStore.getState().elements, targetId || null);
 
       if (target) {
         const propPath = action.propPath?.trim() || inferImagePropPath(target);
-        if (propPath) {
-          const nextProps = setNestedValue((target.props || {}) as Record<string, unknown>, propPath, imageData.imageUrl);
-          if (nextProps) {
-            if (action.alt && propPath === 'src') nextProps.alt = action.alt.slice(0, 300);
-            store.updateElementProps(target.id, nextProps);
-            store.selectElement(target.id);
-            return `Generated image for ${target.name}`;
-          }
-        }
+        if (!propPath) throw new Error(`${target.name} does not expose a usable image property`);
+        const nextProps = setNestedValue((target.props || {}) as Record<string, unknown>, propPath, imageData.imageUrl);
+        if (!nextProps) throw new Error(`Could not write generated image to ${target.name}`);
+        if (action.alt && ['src', 'image', 'imageUrl'].includes(propPath)) nextProps.alt = action.alt.slice(0, 300);
+        store.updateElementProps(target.id, nextProps);
+        store.selectElement(target.id);
+        return `Generated image for ${target.name}`;
       }
+
+      if (action.targetRef || action.targetId) throw new Error('The requested image target could not be found');
 
       const definition = findBlockDefinition('image');
       if (!definition) return null;
@@ -369,7 +367,8 @@ export default function AIAssistantPanel() {
         props: { ...definition.defaultProps, src: imageData.imageUrl, alt: action.alt?.slice(0, 300) || prompt.slice(0, 180) },
         styles: { ...definition.defaultStyles, width: '100%' },
       };
-      store.addElement(element); store.selectElement(element.id);
+      store.addElement(element);
+      store.selectElement(element.id);
       return 'Generated AI Image';
     }
 
@@ -384,7 +383,8 @@ export default function AIAssistantPanel() {
       styles: { ...definition.defaultStyles, ...sanitizeObject(action.block.styles) },
     };
     const parentId = action.target === 'selected' && currentSelected && acceptsChildren(currentSelected.type) ? currentSelected.id : undefined;
-    store.addElement(element, parentId); store.selectElement(element.id);
+    store.addElement(element, parentId);
+    store.selectElement(element.id);
     if (action.ref?.trim()) refs.set(action.ref.trim().slice(0, 80), element.id);
     return `Added ${element.name}`;
   }, []);
@@ -425,7 +425,12 @@ export default function AIAssistantPanel() {
     let remoteError = '';
 
     try {
-      const response = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `${buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements)}\n\nUser request: ${promptText}` }) });
+      const message = `User request:\n${promptText.slice(0, 3500)}\n\n${buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements)}`;
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.error) throw new Error(data.error || `AI request failed (${response.status})`);
       const reply = typeof data.text === 'string' ? data.text.trim() : '';
@@ -445,12 +450,13 @@ export default function AIAssistantPanel() {
         }
       }
 
-      const asksToBuild = /\b(build|make|create|generate|add|design|redesign|restyle|replace)\b/i.test(promptText);
-      if (asksToBuild && applied.length === 0) throw new Error(actionErrors[0] || 'AI replied without a valid builder action');
+      if (applied.length === 0) throw new Error(actionErrors[0] || 'AI replied without a valid builder action');
       if (applied.length) setLastApplied(`${applied.length} live change${applied.length === 1 ? '' : 's'} applied`);
       const explanation = stripActions(reply);
-      const warning = actionErrors.length ? `\n\n${actionErrors.length} action${actionErrors.length === 1 ? '' : 's'} could not be applied: ${actionErrors[0]}` : '';
-      setMessages((previous) => [...previous, { role: 'assistant', content: `${explanation || (applied.length ? `Applied ${applied.length} live change${applied.length === 1 ? '' : 's'}.` : reply)}${warning}` }]);
+      const warning = actionErrors.length
+        ? `\n\n${actionErrors.length} action${actionErrors.length === 1 ? '' : 's'} could not be applied: ${actionErrors[0]}`
+        : '';
+      setMessages((previous) => [...previous, { role: 'assistant', content: `${explanation || `Applied ${applied.length} live change${applied.length === 1 ? '' : 's'}.`}${warning}` }]);
       return;
     } catch (error) {
       remoteError = error instanceof Error ? error.message : 'AI request failed';
@@ -472,7 +478,7 @@ export default function AIAssistantPanel() {
     }
 
     setMessages((previous) => [...previous, { role: 'assistant', content: `I could not apply that request. ${remoteError || 'No valid builder action was returned.'}` }]);
-  }, [addFallbackBlock, applyAction, hydrateImages, input, loading]);
+  }, [addFallbackBlock, applyAction, input, loading]);
 
   const runSuggestion = (suggestion: string) => {
     setInput(suggestion);
