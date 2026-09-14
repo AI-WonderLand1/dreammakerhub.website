@@ -12,12 +12,13 @@ This repository contains:
 - WonderBuild website builder
 - cloud IDE/workspace integration
 - platform APIs and deployment integration
-- Vanguard Engine 1 / 3D tooling, with PlayCanvas/WebGL used as current renderer/runtime technology where applicable
+- 3D/world-authoring tooling powered by PlayCanvas/WebGL in the current DreamMakerHub runtime
 
 Related repositories:
 
 - `AI-PLAYGROUND` owns multi-model AI and visual workflow/orchestration tooling.
 - `NPC-AI-SIM` owns NPC cognition, personality, perception, memory, actions, voice configuration, and NPC brain/runtime contracts.
+- `vanguard-engine` is a separate engine project under development and is not the current DreamMakerHub 3D Studio runtime.
 
 These boundaries are intentional. The specialized repositories integrate with DreamMakerHub instead of duplicating the whole platform.
 
