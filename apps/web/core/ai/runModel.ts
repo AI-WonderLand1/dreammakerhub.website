@@ -27,7 +27,7 @@ type ProviderResult = {
 
 const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const DEFAULT_CEREBRAS_MODEL = 'llama-3.3-70b';
+const DEFAULT_CEREBRAS_MODEL = 'gpt-oss-120b';
 
 // Retry the free OpenRouter model for common provider/model failures. If
 // OpenRouter still cannot serve the request, try every configured Google AI
