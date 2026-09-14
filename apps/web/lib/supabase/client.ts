@@ -7,6 +7,16 @@ type SupabasePublicConfig = {
   anonKey: string
 }
 
+type BrowserSupabaseClient = ReturnType<typeof createBrowserClient>
+type GlobalSupabaseState = {
+  url: string
+  client: BrowserSupabaseClient
+}
+
+type SupabaseGlobal = typeof globalThis & {
+  __dreammakerhubSupabaseClient?: GlobalSupabaseState
+}
+
 let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
 let supabaseAnonKey = (
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -38,7 +48,7 @@ function hasUsableSupabaseConfig() {
 // handled by ensureSupabaseConfig() for deployments that inject env at start.
 export const isSupabaseConfigured = hasUsableSupabaseConfig()
 
-let cachedClient: ReturnType<typeof createBrowserClient> | null = null
+let cachedClient: BrowserSupabaseClient | null = null
 let configPromise: Promise<SupabasePublicConfig | null> | null = null
 
 async function loadRuntimeSupabaseConfig(): Promise<SupabasePublicConfig | null> {
@@ -95,9 +105,21 @@ export function getSupabaseClient() {
   if (cachedClient) return cachedClient
   if (!hasUsableSupabaseConfig()) return null
 
-  // Let @supabase/ssr manage browser cookies itself. Its cookie adapter handles
-  // the chunked/base64 auth-cookie format used by current Supabase releases.
+  const globalScope = globalThis as SupabaseGlobal
+  const existing = globalScope.__dreammakerhubSupabaseClient
+  if (existing?.client && existing.url === supabaseUrl) {
+    cachedClient = existing.client
+    return cachedClient
+  }
+
+  // Keep one browser auth client for the whole page, including chunks loaded
+  // through dynamic imports. Multiple GoTrue clients sharing the same storage
+  // key can race each other during refresh and realtime auth updates.
   cachedClient = createBrowserClient(supabaseUrl!, supabaseAnonKey!)
+  globalScope.__dreammakerhubSupabaseClient = {
+    url: supabaseUrl!,
+    client: cachedClient,
+  }
   return cachedClient
 }
 

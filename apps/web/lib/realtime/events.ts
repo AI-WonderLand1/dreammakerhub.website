@@ -45,15 +45,15 @@ export async function broadcastFileEvent(projectId: string, event: FileActivityE
   try {
     const me = await currentUserIdentity();
     const ch = await getChannel(`wonder:dash:${projectId}`);
-    await ch.send({
-      type: 'broadcast',
-      event: 'wb',
-      payload: {
+    await ch.httpSend(
+      'wb',
+      {
         type: event.type,
         message: event.message,
         from: me?.name ?? me?.id ?? 'User',
       },
-    });
+      { timeout: 5000 },
+    );
   } catch {
     // Realtime is best-effort; never break the editor if broadcast fails.
   }

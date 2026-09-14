@@ -1,9 +1,10 @@
 import type { BlockRenderer } from './types';
 import { sanitizeBuilderHtml } from '@/lib/security/sanitize-html.client';
+import { normalizeHeadingLevel } from '../heading-level';
 
 export const typographyRenderers: Record<string, BlockRenderer> = {
   'heading': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      const Tag = (el.props.level || 'h2') as any;
+      const Tag = normalizeHeadingLevel(el.props.level);
       return <Tag {...baseProps}>{el.props.content || 'Heading'}{children}</Tag>;
   },
   'paragraph': ({ el, selectedId, selectElement, baseProps, style, children }) => {

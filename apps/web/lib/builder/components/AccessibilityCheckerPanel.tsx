@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useBuilderStore } from '../store';
 import { extractHeadings, checkHeadingHierarchy, checkFormLabels, getContrastRatio, getContrastGrade } from '../a11y-utils';
+import { headingLevelNumber, isCanonicalHeadingLevel, normalizeHeadingLevel } from '../heading-level';
 
 async function generateAltText(prompt: string): Promise<string> {
   try {
@@ -57,14 +58,15 @@ export default function AccessibilityCheckerPanel() {
           }
         }
         if (el.type === 'heading') {
-          const level = parseInt(el.props?.level?.replace('h', '') || '2', 10);
-          if (level < 1 || level > 6) {
+          const rawLevel = el.props?.level;
+          if (!isCanonicalHeadingLevel(rawLevel)) {
+            const normalizedLevel = normalizeHeadingLevel(rawLevel);
             result.push({
               id: el.id, elementName: el.name, elementType: 'heading',
               category: 'heading-order', severity: 'error',
-              message: `Invalid heading level "${el.props?.level}". Use H1 through H6.`,
-              fixLabel: 'Set to H2',
-              onFix: () => updateElementProps(el.id, { level: 'h2' }),
+              message: `Invalid heading level "${String(rawLevel)}". Use H1 through H6.`,
+              fixLabel: `Set to ${normalizedLevel.toUpperCase()}`,
+              onFix: () => updateElementProps(el.id, { level: normalizedLevel }),
             });
           }
         }
@@ -114,7 +116,7 @@ export default function AccessibilityCheckerPanel() {
         fixLabel: 'Fix heading level',
         onFix: () => {
           if (element) {
-            const currentLevel = parseInt(element.props?.level?.replace('h', '') || '2', 10);
+            const currentLevel = headingLevelNumber(element.props?.level);
             const suggested = Math.max(1, currentLevel - 1);
             updateElementProps(element.id, { level: `h${suggested}` });
           }

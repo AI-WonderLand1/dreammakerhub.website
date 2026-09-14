@@ -1,5 +1,7 @@
 'use client';
 
+import { headingLevelNumber } from './heading-level';
+
 /**
  * Calculate relative luminance from a hex or RGB color string.
  */
@@ -73,7 +75,7 @@ export function extractHeadings(elements: any[]): HeadingNode[] {
   function walk(els: any[], depth: number) {
     for (const el of els) {
       if (el.type === 'heading') {
-        const level = parseInt(el.props?.level?.replace('h', '') || '2', 10);
+        const level = headingLevelNumber(el.props?.level);
         result.push({ id: el.id, level, text: el.props?.content || '', depth });
       }
       if (el.children) walk(el.children, depth + 1);

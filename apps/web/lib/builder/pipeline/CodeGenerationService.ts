@@ -1,6 +1,7 @@
 import { getEventBus } from './EventBus';
 import { EventNames } from './types';
 import { useBuilderStore } from '../store';
+import { normalizeHeadingLevel } from '../heading-level';
 import { logger } from '@/lib/logger';
 
 export class CodeGenerationService {
@@ -120,7 +121,7 @@ function renderEl(el: any, depth: number): string {
 
 function elTagGen(el: any): string {
   const map: Record<string, string> = {
-    heading: `h${el.props?.level?.replace('h', '') || '2'}`,
+    heading: normalizeHeadingLevel(el.props?.level),
     paragraph: 'p', 'rich-text': 'div', list: el.props?.listType === 'ordered' ? 'ol' : 'ul',
     quote: 'blockquote', code: 'pre', 'custom-html': 'div', image: 'img', video: 'div',
     button: 'a', divider: 'hr', spacer: 'div', input: 'input', textarea: 'textarea',
