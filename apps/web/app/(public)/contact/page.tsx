@@ -1,17 +1,16 @@
 "use client";
 
 import { Mail, MessageCircle, ShieldCheck, Sparkles, Headphones } from "lucide-react";
-import { logger } from '@/lib/logger';
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-50">
       <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">
         <header className="flex flex-col gap-3">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-400">WONDERSPACE</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">Get in touch</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-slate-400">AI WONDERLAND INNOVATION</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">Contact</h1>
           <p className="max-w-2xl text-slate-300">
-            Reach the team for support, partnerships, general questions, or security disclosures. We respond within one business day.
+            Use the address that best matches your request. DreamMakerHub is an independently developed project, so response times can vary while development is active.
           </p>
         </header>
 
@@ -31,7 +30,7 @@ export default function ContactPage() {
               <Sparkles className="h-4 w-4 text-sky-300" />
               Business & Partnerships
             </div>
-            <p className="mt-2 text-sm text-slate-300">Integrations, partnerships, enterprise pilots, or business inquiries.</p>
+            <p className="mt-2 text-sm text-slate-300">Integrations, partnerships, pilots, sponsorships, or business inquiries.</p>
             <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:contact@dreammakerhub.website">
               contact@dreammakerhub.website
             </a>
@@ -41,7 +40,7 @@ export default function ContactPage() {
               <ShieldCheck className="h-4 w-4 text-sky-300" />
               Security
             </div>
-            <p className="mt-2 text-sm text-slate-300">Report vulnerabilities or request a security review.</p>
+            <p className="mt-2 text-sm text-slate-300">Report a suspected vulnerability or security issue privately.</p>
             <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:security@dreammakerhub.website">
               security@dreammakerhub.website
             </a>
@@ -51,7 +50,7 @@ export default function ContactPage() {
               <Mail className="h-4 w-4 text-sky-300" />
               General
             </div>
-            <p className="mt-2 text-sm text-slate-300">General questions, feedback, pricing, roadmap, or speaking inquiries.</p>
+            <p className="mt-2 text-sm text-slate-300">General questions, feedback, roadmap questions, or other inquiries.</p>
             <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:hello@dreammakerhub.website">
               hello@dreammakerhub.website
             </a>
@@ -62,14 +61,14 @@ export default function ContactPage() {
           <div className="flex items-center gap-3">
             <MessageCircle className="h-5 w-5 text-sky-300" />
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Response policy</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Contact policy</p>
               <h2 className="text-xl font-semibold text-slate-50">What to expect</h2>
             </div>
           </div>
           <ul className="mt-3 space-y-2 text-sm text-slate-300">
-            <li>Support requests: acknowledgement as soon as possible, with updates within one business day.</li>
-            <li>Security reports: triage within 24 hours and coordinated disclosure where applicable.</li>
-            <li>Business and partnership inquiries: responses within two business days.</li>
+            <li>Support requests are reviewed as availability allows.</li>
+            <li>Security reports are prioritized and should include enough detail to reproduce the issue safely.</li>
+            <li>Business and partnership messages should include the organization, proposal, and preferred contact method.</li>
           </ul>
         </section>
       </div>

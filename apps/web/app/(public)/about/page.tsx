@@ -1,38 +1,42 @@
 "use client";
 
 import { Sparkles, Target, Users, Rocket, Compass, ShieldCheck, HeartHandshake } from "lucide-react";
-import { logger } from '@/lib/logger';
 
 const values = [
   {
     icon: Sparkles,
-    title: "Invent with clarity",
-    description: "We design calm, intentional tools so teams can move from prompt to product without noise.",
+    title: "Build with clarity",
+    description: "Bring AI, visual building, code, and 3D workflows into one place instead of scattering a project across disconnected tools.",
   },
   {
     icon: ShieldCheck,
-    title: "Ship responsibly",
-    description: "Guardrails, observability, and reversible changes keep experimentation safe by default.",
+    title: "Be honest about readiness",
+    description: "DreamMakerHub is under active development. We distinguish working features from experiments and planned capabilities.",
   },
   {
     icon: HeartHandshake,
-    title: "Build together",
-    description: "AI Wonderland is collaborative by design—projects, playbooks, and modules are meant to be shared.",
+    title: "Make creation accessible",
+    description: "The platform is being designed for creators who want powerful tools without needing a large engineering team.",
   },
 ];
 
-const milestones = [
-  { label: "Q1 2025", title: "Playground revamp", detail: "Progressive chat-first flows with contextual tools." },
-  { label: "Q2 2025", title: "Wonder-Build launch", detail: "Visual builder that turns prompts into components." },
-  { label: "Q3 2025", title: "Modules marketplace", detail: "Curated AI skills you can mix, match, and deploy." },
-  { label: "Q4 2025", title: "Team workspace", detail: "Shared environments with versioned outputs and review." },
-];
-
-const team = [
-  { name: "Avery Chen", role: "Founder & Product", focus: "Designing calm AI-first workflows" },
-  { name: "Jordan Patel", role: "Engineering Lead", focus: "Runtime, safety, and observability" },
-  { name: "Samira Lopez", role: "AI Systems", focus: "Model orchestration and evaluation" },
-  { name: "Mina Okafor", role: "Developer Experience", focus: "Docs, starter kits, and support" },
+const products = [
+  {
+    title: "WonderBuild",
+    detail: "AI-assisted and visual website/app building with editing and preview workflows.",
+  },
+  {
+    title: "AI Playground",
+    detail: "A workspace for exploring AI models, providers, prompts, tools, and orchestration workflows.",
+  },
+  {
+    title: "NPC-AI-SIM",
+    detail: "An experimental environment for building AI-driven characters with memory, perception, actions, and cognition controls.",
+  },
+  {
+    title: "WonderSpace",
+    detail: "Cloud development workspace work focused on browser-based coding and project environments.",
+  },
 ];
 
 export default function AboutPage() {
@@ -41,16 +45,16 @@ export default function AboutPage() {
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-10">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">AI-WONDERLAND</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">About</h1>
-            <p className="mt-3 max-w-2xl text-slate-300">
-              We’re building an intelligent, exploratory platform where teams can design, test, and ship AI-driven
-              experiences with confidence.
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">AI WONDERLAND INNOVATION</p>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">About DreamMakerHub</h1>
+            <p className="mt-3 max-w-3xl text-slate-300">
+              DreamMakerHub is an independent software project focused on bringing AI-assisted web, app, cloud development,
+              and interactive 3D creation into one platform.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100">
             <Compass className="h-4 w-4" />
-            Future-facing. Calm by design.
+            Independent and actively developed
           </div>
         </header>
 
@@ -61,24 +65,24 @@ export default function AboutPage() {
               <span>Our mission</span>
             </div>
             <p className="mt-3 text-xl font-semibold text-slate-50">
-              Help builders move from idea to deployed AI experience with the least friction—and the most safety.
+              Make advanced creation tools easier to use without hiding what the technology is actually doing.
             </p>
             <p className="mt-3 text-slate-300">
-              AI Wonderland unifies prompt experimentation, component generation, and deployment in a single flow. We keep
-              context alive, expose guardrails, and ensure you can undo every change.
+              The goal is a practical workflow where a creator can start an idea, use AI where it helps, edit the result,
+              work with real project files, and move toward publishing from the same ecosystem.
             </p>
           </div>
 
           <div className="rounded-3xl border border-white/5 bg-slate-950/60 p-6 shadow-inner shadow-sky-500/10">
             <div className="flex items-center gap-3 text-sm text-slate-300">
               <Rocket className="h-5 w-5 text-sky-300" />
-              <span>What we’re shipping</span>
+              <span>Current focus</span>
             </div>
             <ul className="mt-4 space-y-3 text-slate-200">
-              <li>Playground: chat-first exploration with contextual tools.</li>
-              <li>Wonder-Build: prompt-to-component builder with live preview.</li>
-              <li>Modules: reusable AI skills for chat, code, data, agents, and vision.</li>
-              <li>Workspaces: shared environments with snapshots, publish, and domains.</li>
+              <li>AI-assisted visual building.</li>
+              <li>Cloud development environments.</li>
+              <li>Model and provider workflows.</li>
+              <li>3D creation and AI character systems.</li>
             </ul>
           </div>
         </section>
@@ -99,18 +103,15 @@ export default function AboutPage() {
         </section>
 
         <section className="mt-12 rounded-3xl border border-white/5 bg-slate-900/70 p-6 shadow-lg shadow-slate-900/40">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Roadmap</p>
-              <h2 className="text-2xl font-semibold text-slate-50">Milestones</h2>
-            </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Products & systems</p>
+            <h2 className="text-2xl font-semibold text-slate-50">What is being built</h2>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {milestones.map((item) => (
-              <div key={item.label} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-                <p className="text-xs text-sky-300">{item.label}</p>
+            {products.map((item) => (
+              <div key={item.title} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
                 <p className="text-lg font-semibold text-slate-50">{item.title}</p>
-                <p className="text-sm text-slate-300">{item.detail}</p>
+                <p className="mt-1 text-sm text-slate-300">{item.detail}</p>
               </div>
             ))}
           </div>
@@ -120,18 +121,30 @@ export default function AboutPage() {
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-sky-300" />
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Team</p>
-              <h2 className="text-2xl font-semibold text-slate-50">People building AI Wonderland</h2>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">How we build</p>
+              <h2 className="text-2xl font-semibold text-slate-50">Founder-led, independent development</h2>
             </div>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {team.map((member) => (
-              <div key={member.name} className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-                <p className="text-sm font-semibold text-slate-50">{member.name}</p>
-                <p className="text-xs text-slate-400">{member.role}</p>
-                <p className="mt-2 text-sm text-slate-300">{member.focus}</p>
-              </div>
-            ))}
+          <p className="mt-4 max-w-3xl text-slate-300">
+            AI WONDERLAND INNOVATION is currently a founder-led independent project. DreamMakerHub and its related systems
+            are being developed iteratively, with features at different stages of testing and readiness. We do not present
+            placeholder team members or unfinished systems as established production capabilities.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3 text-sm">
+            <a className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sky-200 hover:text-sky-100" href="/docs">
+              Read the documentation
+            </a>
+            <a className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sky-200 hover:text-sky-100" href="/contact">
+              Contact AI WONDERLAND INNOVATION
+            </a>
+            <a
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sky-200 hover:text-sky-100"
+              href="https://github.com/AI-WonderLand1"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View GitHub
+            </a>
           </div>
         </section>
       </div>

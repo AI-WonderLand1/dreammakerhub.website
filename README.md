@@ -146,4 +146,6 @@ Prosperity Public License 3.0.0. See [`LICENSE`](LICENSE) for the full terms.
 
 ## Sponsorship
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y61YK1ZX)
+
 See [`SPONSORSHIP.md`](SPONSORSHIP.md) for the founding sponsorship program.
