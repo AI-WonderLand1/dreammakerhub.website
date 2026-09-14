@@ -1,4 +1,5 @@
 import type { CanvasElement, SitePage } from './types';
+import { normalizeHeadingLevel } from './heading-level';
 
 export const DEFAULT_PAGE_ID = 'home';
 export const DEFAULT_PAGE_NAME = 'Home';
@@ -29,6 +30,22 @@ function uniqueSlug(base: string, pages: SitePage[]): string {
   return `${base}-${index}`;
 }
 
+function normalizeCanvasElements(elements: CanvasElement[]): CanvasElement[] {
+  return elements.map((element) => {
+    const props = element.type === 'heading'
+      ? { ...(element.props || {}), level: normalizeHeadingLevel(element.props?.level) }
+      : element.props;
+
+    return {
+      ...element,
+      props,
+      children: element.children?.length
+        ? normalizeCanvasElements(element.children)
+        : element.children,
+    };
+  });
+}
+
 export function createSitePage(
   pages: SitePage[],
   name = 'Untitled Page',
@@ -41,7 +58,7 @@ export function createSitePage(
     id: pageId(),
     name: cleanName,
     slug,
-    elements,
+    elements: normalizeCanvasElements(elements),
   };
 }
 
@@ -50,8 +67,9 @@ export function syncActivePageElements(
   activePageId: string,
   elements: CanvasElement[],
 ): SitePage[] {
+  const normalized = normalizeCanvasElements(elements);
   return pages.map((page) =>
-    page.id === activePageId ? { ...page, elements } : page
+    page.id === activePageId ? { ...page, elements: normalized } : page
   );
 }
 
@@ -79,13 +97,17 @@ export function normalizeSitePages(
             id,
             name,
             slug,
-            elements: Array.isArray(candidate.elements) ? candidate.elements : [],
+            elements: Array.isArray(candidate.elements)
+              ? normalizeCanvasElements(candidate.elements)
+              : [],
           };
         })
     : [];
 
   if (parsedPages.length === 0) {
-    const elements = Array.isArray(legacyElements) ? legacyElements : [];
+    const elements = Array.isArray(legacyElements)
+      ? normalizeCanvasElements(legacyElements)
+      : [];
     return {
       pages: [{
         id: DEFAULT_PAGE_ID,
@@ -104,14 +126,14 @@ export function normalizeSitePages(
     : parsedPages[0].id;
 
   const pages = Array.isArray(legacyElements)
-    ? syncActivePageElements(parsedPages, activePageId, legacyElements)
+    ? syncActivePageElements(parsedPages, activePageId, normalizeCanvasElements(legacyElements))
     : parsedPages;
   const activePage = pages.find((page) => page.id === activePageId) || pages[0];
 
   return {
     pages,
     activePageId: activePage.id,
-    elements: activePage.elements,
+    elements: normalizeCanvasElements(activePage.elements),
   };
 }
 
@@ -145,7 +167,7 @@ export function switchSitePage(
   return {
     pages: syncedPages,
     activePageId: nextPage.id,
-    elements: nextPage.elements,
+    elements: normalizeCanvasElements(nextPage.elements),
   };
 }
 

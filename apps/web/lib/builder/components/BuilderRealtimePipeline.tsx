@@ -1,12 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createClient, type RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useBuilderStore } from '../store';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type ConnectionStatus = 'idle' | 'connecting' | 'live' | 'error';
 
@@ -17,7 +14,8 @@ export default function BuilderRealtimePipeline({ projectId }: { projectId?: str
   const prevCountRef = useRef(0);
 
   useEffect(() => {
-    if (!supabaseUrl || !supabaseAnonKey) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
       setStatus('error');
       return;
     }
@@ -43,10 +41,10 @@ export default function BuilderRealtimePipeline({ projectId }: { projectId?: str
       if (s === 'SUBSCRIBED') {
         setStatus('live');
         await channel.track({ userId: 'builder', name: 'Builder' });
-        await channel.send({
-          type: 'broadcast',
-          event: 'wb',
-          payload: { type: 'builder', message: 'Builder connected', from: 'builder' },
+        await channel.httpSend('wb', {
+          type: 'builder',
+          message: 'Builder connected',
+          from: 'builder',
         });
       } else if (s === 'CHANNEL_ERROR') {
         setStatus('error');
@@ -63,7 +61,6 @@ export default function BuilderRealtimePipeline({ projectId }: { projectId?: str
     };
   }, [projectId]);
 
-  // Broadcast element changes
   useEffect(() => {
     const unsub = useBuilderStore.subscribe((state, prev) => {
       const channel = channelRef.current;
@@ -83,10 +80,11 @@ export default function BuilderRealtimePipeline({ projectId }: { projectId?: str
         message = `-${prevCount - count} element${prevCount - count !== 1 ? 's' : ''} (${count} total)`;
       }
 
-      channel.send({
-        type: 'broadcast',
-        event: 'wb',
-        payload: { type, message, from: 'builder', ts: Date.now() },
+      channel.httpSend('wb', {
+        type,
+        message,
+        from: 'builder',
+        ts: Date.now(),
       }).catch(() => {});
     });
     return unsub;
