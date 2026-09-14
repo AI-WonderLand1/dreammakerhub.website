@@ -25,7 +25,7 @@ export const groqProvider: AIProvider = {
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = options.apiKey as string || process.env.GROQ_API_KEY || '';
     const {
-      model = "llama-3.1-8b-instant",
+      model = "openai/gpt-oss-120b",
       system,
       temperature = 0.7,
       maxTokens = 4096
