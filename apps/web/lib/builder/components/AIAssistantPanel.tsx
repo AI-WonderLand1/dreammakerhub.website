@@ -291,33 +291,6 @@ async function generateImageAsset(prompt: string): Promise<string> {
   return data.imageUrl;
 }
 
-function applyGeneratedImages(elementId: string, urls: string[]) {
-  if (!urls.length) return;
-  const store = useBuilderStore.getState();
-  const target = findElement(store.elements, elementId);
-  if (!target) return;
-  const currentProps = target.props || {};
-  const patch: Record<string, unknown> = {};
-
-  if (Array.isArray(currentProps.products) && currentProps.products.length) {
-    patch.products = currentProps.products.map((product, index) => {
-      if (!product || typeof product !== 'object' || Array.isArray(product)) return product;
-      return { ...(product as Record<string, unknown>), image: urls[index % urls.length] };
-    });
-  } else if (Array.isArray(currentProps.images)) {
-    patch.images = currentProps.images.map((_, index) => urls[index % urls.length]);
-  } else if (Array.isArray(currentProps.thumbs)) {
-    patch.thumbs = currentProps.thumbs.map((_, index) => urls[index % urls.length]);
-    if (Array.isArray(currentProps.fullsize)) patch.fullsize = currentProps.thumbs.map((_, index) => urls[index % urls.length]);
-  } else {
-    const directKey = DIRECT_IMAGE_KEYS.find((key) => key in currentProps)
-      || (target.type === 'image' || target.type === 'ai-image' || target.type === 'avatar' || target.type === 'image-hotspot' ? 'src' : undefined);
-    if (directKey) patch[directKey] = urls[0];
-  }
-
-  if (Object.keys(patch).length) store.updateElementProps(target.id, patch);
-}
-
 export default function AIAssistantPanel() {
   const pages = useBuilderStore((state) => state.pages);
   const activePageId = useBuilderStore((state) => state.activePageId);
