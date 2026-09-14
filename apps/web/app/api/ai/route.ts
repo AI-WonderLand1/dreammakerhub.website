@@ -6,7 +6,9 @@ import { logUsage } from "@/lib/usage/log"
 export const runtime = "nodejs";
 
 function sanitizeInput(input: string): string {
-  return input.replace(/[<>]/g, '').slice(0, 30000);
+  const cleaned = input.replace(/[<>]/g, '');
+  if (cleaned.length <= 30000) return cleaned;
+  return `${cleaned.slice(0, 20000)}\n\n[builder context shortened]\n\n${cleaned.slice(-10000)}`;
 }
 
 export async function POST(req: Request) {
