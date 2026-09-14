@@ -1,21 +1,30 @@
-export const metadata = {
-  title: "AI Wonderland - Build Anything with AI",
-  description: "Build websites, 3D games, and interactive experiences from natural language prompts. No coding required.",
+import type { Metadata } from "next";
+import Homepage from "./Homepage";
+
+export const metadata: Metadata = {
+  title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+  description:
+    "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with DreamMakerHub by AI WONDERLAND INNOVATION.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "AI Wonderland - Build Anything with AI",
-    description: "Build websites, 3D games, and interactive experiences from natural language prompts.",
+    title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+    description:
+      "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with DreamMakerHub.",
     url: "https://dreammakerhub.website",
+    siteName: "DreamMakerHub",
     type: "website",
+    images: ["/images/ai-wonderland-homepage.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Wonderland - Build Anything with AI",
-    description: "Build websites, 3D games, and interactive experiences from natural language prompts.",
+    title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+    description:
+      "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with DreamMakerHub.",
+    images: ["/images/ai-wonderland-homepage.png"],
   },
 };
-
-import Homepage from "./Homepage";
-import { logger } from '@/lib/logger';
 
 export default function HomepagePage() {
   return <Homepage />;
