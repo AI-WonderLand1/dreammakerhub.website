@@ -45,12 +45,13 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
+          SECRETS_ENCRYPTION_KEY: ${{ secrets.SECRETS_ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
           test -n "$UPCLOUD_SERVER_IP" || { echo "Missing UpCloud server IP"; exit 1; }
           test -n "$SSH_PRIVATE_KEY" || { echo "Missing UPCLOUD_SSH_KEY/UPLOAD_SSH_KEY"; exit 1; }
 
-          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL OPENROUTER_API_KEY GEMINI_API_KEY; do
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL OPENROUTER_API_KEY GEMINI_API_KEY SECRETS_ENCRYPTION_KEY; do
             test -n "${!name:-}" || { echo "Missing required GitHub Actions value: $name"; exit 1; }
           done
 
@@ -70,7 +71,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
-          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY || secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
           ALICE_API_KEY: ${{ secrets.ALICE_API_KEY }}
@@ -254,7 +255,8 @@ jobs:
 
             docker exec dreammaker-web sh -c 'test -n "$OPENROUTER_API_KEY"'
             docker exec dreammaker-web sh -c 'test -n "$GEMINI_API_KEY"'
-            echo "Required AI provider keys are present in the running web container."
+            docker exec dreammaker-web sh -c 'test -n "$SECRETS_ENCRYPTION_KEY"'
+            echo "Required runtime secrets are present in the running web container."
             docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/api/config/supabase >/dev/null'
 
             WEB_NETWORKS="$(docker inspect --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' dreammaker-web)"
