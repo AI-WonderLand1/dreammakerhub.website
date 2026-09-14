@@ -9,7 +9,7 @@ export const cerebrasProvider: AIProvider = {
   async generate(prompt: string | unknown[], options: AIProviderOptions): Promise<AIResponse> {
     const apiKey = options.apiKey as string || process.env.CEREBRAS_API_KEY || '';
     const {
-      model = "llama-3.3-70b",
+      model = "gpt-oss-120b",
       system,
       temperature = 0.7,
       maxTokens = 4096
