@@ -26,9 +26,12 @@ export async function requireUser(req: NextRequest) {
 }
 
 export function getGeminiApiKey(): string {
-  const key = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || '';
+  // Production provider secrets are server-side only. The deploy workflow
+  // maps GitHub Actions GEMINI_API_KEY (or GOOGLE_AI_API_KEY as a compatibility
+  // fallback) into the runtime container.
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
   if (!key) {
-    throw new Error('GEMINI_API_KEY is not configured in environment variables.');
+    throw new Error('GEMINI_API_KEY/GOOGLE_AI_API_KEY is not configured in the server environment.');
   }
   return key;
 }

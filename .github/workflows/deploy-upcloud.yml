@@ -44,12 +44,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
+          SECRETS_ENCRYPTION_KEY: ${{ secrets.SECRETS_ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
           test -n "$UPCLOUD_SERVER_IP" || { echo "Missing UpCloud server IP"; exit 1; }
           test -n "$SSH_PRIVATE_KEY" || { echo "Missing UPCLOUD_SSH_KEY/UPLOAD_SSH_KEY"; exit 1; }
 
-          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL OPENROUTER_API_KEY; do
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL OPENROUTER_API_KEY GEMINI_API_KEY SECRETS_ENCRYPTION_KEY; do
             test -n "${!name:-}" || { echo "Missing required GitHub Actions value: $name"; exit 1; }
           done
 
@@ -58,9 +60,9 @@ jobs:
             *) echo "NEXT_PUBLIC_SUPABASE_URL is not a valid Supabase project URL"; exit 1 ;;
           esac
 
-          echo "Required production configuration is available."
+          echo "Required production configuration is available from GitHub Actions."
 
-      - name: Build environment patch from GitHub Actions
+      - name: Build GitHub-managed runtime environment
         shell: bash
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
@@ -68,15 +70,43 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY || secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+          ALICE_API_KEY: ${{ secrets.ALICE_API_KEY }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          N8N_WEBHOOK_URL: ${{ vars.N8N_WEBHOOK_URL || secrets.N8N_WEBHOOK_URL }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           CODER_API_URL: ${{ vars.CODER_API_URL || secrets.CODER_API_URL }}
           CODER_ACCESS_URL: ${{ vars.CODER_ACCESS_URL || secrets.CODER_ACCESS_URL }}
           CODER_API_TOKEN: ${{ secrets.CODER_API_TOKEN }}
           CODER_WORKSPACE_OWNER: ${{ vars.CODER_WORKSPACE_OWNER || secrets.CODER_WORKSPACE_OWNER }}
+          NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID: ${{ vars.NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID || secrets.NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID }}
+          EXTENSION_ENCRYPTION_KEY: ${{ secrets.EXTENSION_ENCRYPTION_KEY }}
+          SECRETS_ENCRYPTION_KEY: ${{ secrets.SECRETS_ENCRYPTION_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_PRO_ID: ${{ vars.STRIPE_PRICE_PRO_ID || secrets.STRIPE_PRICE_PRO_ID }}
+          STRIPE_PRICE_PRO_YEARLY_ID: ${{ vars.STRIPE_PRICE_PRO_YEARLY_ID || secrets.STRIPE_PRICE_PRO_YEARLY_ID }}
+          STRIPE_PRICE_TEAM_ID: ${{ vars.STRIPE_PRICE_TEAM_ID || secrets.STRIPE_PRICE_TEAM_ID }}
+          STRIPE_PRICE_TEAM_YEARLY_ID: ${{ vars.STRIPE_PRICE_TEAM_YEARLY_ID || secrets.STRIPE_PRICE_TEAM_YEARLY_ID }}
+          ADMIN_USER_IDS: ${{ vars.ADMIN_USER_IDS || secrets.ADMIN_USER_IDS }}
+          SPLAT_TRAINING_WEBHOOK: ${{ vars.SPLAT_TRAINING_WEBHOOK || secrets.SPLAT_TRAINING_WEBHOOK }}
+          SPLAT_CALLBACK_SECRET: ${{ secrets.SPLAT_CALLBACK_SECRET }}
+          AGENT_API_URL: ${{ vars.AGENT_API_URL || secrets.AGENT_API_URL }}
         run: |
           set -euo pipefail
           umask 077
-          PATCH_FILE="$RUNNER_TEMP/dreammakerhub.env.patch"
-          : > "$PATCH_FILE"
+          ENV_FILE="$RUNNER_TEMP/dreammakerhub.github.env"
+          KEYS_FILE="$RUNNER_TEMP/dreammakerhub.github.keys"
+          : > "$ENV_FILE"
+          : > "$KEYS_FILE"
 
           write_env() {
             local key="$1"
@@ -85,7 +115,10 @@ jobs:
               echo "Value for $key contains a newline; refusing unsafe env serialization."
               exit 1
             fi
-            printf '%s=%s\n' "$key" "$value" >> "$PATCH_FILE"
+            printf '%s\n' "$key" >> "$KEYS_FILE"
+            if [ -n "$value" ]; then
+              printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
+            fi
           }
 
           write_env NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
@@ -93,21 +126,39 @@ jobs:
           write_env SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           write_env DATABASE_URL "$DATABASE_URL"
           write_env OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
-          if [ -n "${CODER_API_URL:-}" ]; then
-            write_env CODER_API_URL "$CODER_API_URL"
-          fi
-          if [ -n "${CODER_ACCESS_URL:-}" ]; then
-            write_env CODER_ACCESS_URL "$CODER_ACCESS_URL"
-          fi
-          if [ -n "${CODER_API_TOKEN:-}" ]; then
-            write_env CODER_API_TOKEN "$CODER_API_TOKEN"
-          fi
-          if [ -n "${CODER_WORKSPACE_OWNER:-}" ]; then
-            write_env CODER_WORKSPACE_OWNER "$CODER_WORKSPACE_OWNER"
-          fi
+          write_env GEMINI_API_KEY "$GEMINI_API_KEY"
+          write_env GOOGLE_AI_API_KEY "$GOOGLE_AI_API_KEY"
+          write_env GROQ_API_KEY "$GROQ_API_KEY"
+          write_env GITHUB_MODELS_API_KEY "$GITHUB_MODELS_API_KEY"
+          write_env ALICE_API_KEY "$ALICE_API_KEY"
+          write_env N8N_API_KEY "$N8N_API_KEY"
+          write_env N8N_WEBHOOK_URL "$N8N_WEBHOOK_URL"
+          write_env CEREBRAS_API_KEY "$CEREBRAS_API_KEY"
+          write_env OPENAI_API_KEY "$OPENAI_API_KEY"
+          write_env ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
+          write_env OPENCODE_API_KEY "$OPENCODE_API_KEY"
+          write_env NEXTAUTH_SECRET "$NEXTAUTH_SECRET"
+          write_env CODER_API_URL "$CODER_API_URL"
+          write_env CODER_ACCESS_URL "$CODER_ACCESS_URL"
+          write_env CODER_API_TOKEN "$CODER_API_TOKEN"
+          write_env CODER_WORKSPACE_OWNER "$CODER_WORKSPACE_OWNER"
+          write_env NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID "$NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID"
+          write_env EXTENSION_ENCRYPTION_KEY "$EXTENSION_ENCRYPTION_KEY"
+          write_env SECRETS_ENCRYPTION_KEY "$SECRETS_ENCRYPTION_KEY"
+          write_env STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
+          write_env NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+          write_env STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
+          write_env STRIPE_PRICE_PRO_ID "$STRIPE_PRICE_PRO_ID"
+          write_env STRIPE_PRICE_PRO_YEARLY_ID "$STRIPE_PRICE_PRO_YEARLY_ID"
+          write_env STRIPE_PRICE_TEAM_ID "$STRIPE_PRICE_TEAM_ID"
+          write_env STRIPE_PRICE_TEAM_YEARLY_ID "$STRIPE_PRICE_TEAM_YEARLY_ID"
+          write_env ADMIN_USER_IDS "$ADMIN_USER_IDS"
+          write_env SPLAT_TRAINING_WEBHOOK "$SPLAT_TRAINING_WEBHOOK"
+          write_env SPLAT_CALLBACK_SECRET "$SPLAT_CALLBACK_SECRET"
+          write_env AGENT_API_URL "$AGENT_API_URL"
 
-          chmod 600 "$PATCH_FILE"
-          echo "Environment patch prepared without printing secret values."
+          chmod 600 "$ENV_FILE" "$KEYS_FILE"
+          echo "GitHub-managed runtime environment prepared without printing secret values."
 
       - name: Set up SSH
         shell: bash
@@ -118,11 +169,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Copy environment patch to UpCloud
+      - name: Copy GitHub-managed environment to UpCloud
         shell: bash
         run: |
           set -euo pipefail
-          scp "$RUNNER_TEMP/dreammakerhub.env.patch" "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP:/tmp/dreammakerhub.env.patch"
+          scp "$RUNNER_TEMP/dreammakerhub.github.env" "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP:/tmp/dreammakerhub.github.env"
+          scp "$RUNNER_TEMP/dreammakerhub.github.keys" "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP:/tmp/dreammakerhub.github.keys"
 
       - name: Deploy latest web image
         shell: bash
@@ -144,23 +196,28 @@ jobs:
             cd "$APP_DIR"
             umask 077
 
-            if [ ! -s .env ] && docker inspect dreammaker-web >/dev/null 2>&1; then
-              docker inspect dreammaker-web \
-                --format '{{range .Config.Env}}{{println .}}{{end}}' \
-                | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' > .env
-            fi
+            # Project-local Infisical configuration is obsolete. GitHub Actions is
+            # the source of truth for DreamMakerHub application secrets.
+            rm -rf .infisical .infisical.json
+
             touch .env
             chmod 600 .env
 
-            while IFS='=' read -r key value; do
+            # Delete every GitHub-managed application key from the existing file
+            # before adding the current GitHub values. This prevents stale values
+            # from Infisical, old containers, or hand-edited server env files from
+            # silently surviving a deploy.
+            while IFS= read -r key; do
               [ -n "$key" ] || continue
               tmp="$(mktemp)"
               grep -v "^${key}=" .env > "$tmp" || true
-              printf '%s=%s\n' "$key" "$value" >> "$tmp"
               mv "$tmp" .env
               chmod 600 .env
-            done < /tmp/dreammakerhub.env.patch
-            rm -f /tmp/dreammakerhub.env.patch
+            done < /tmp/dreammakerhub.github.keys
+
+            cat /tmp/dreammakerhub.github.env >> .env
+            chmod 600 .env
+            rm -f /tmp/dreammakerhub.github.env /tmp/dreammakerhub.github.keys
 
             docker compose --env-file .env -f "$COMPOSE" pull web
 
@@ -197,7 +254,9 @@ jobs:
             fi
 
             docker exec dreammaker-web sh -c 'test -n "$OPENROUTER_API_KEY"'
-            echo "OpenRouter key is present in the running web container."
+            docker exec dreammaker-web sh -c 'test -n "$GEMINI_API_KEY"'
+            docker exec dreammaker-web sh -c 'test -n "$SECRETS_ENCRYPTION_KEY"'
+            echo "Required runtime secrets are present in the running web container."
             docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/api/config/supabase >/dev/null'
 
             WEB_NETWORKS="$(docker inspect --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' dreammaker-web)"
@@ -214,7 +273,9 @@ jobs:
           curl --fail --show-error --silent --retry 8 --retry-delay 3 --retry-all-errors https://dreammakerhub.website/api/config/supabase >/dev/null
           echo "Production homepage and Supabase configuration route are healthy."
 
-      - name: Clean runner environment patch
+      - name: Clean runner environment files
         if: always()
         shell: bash
-        run: rm -f "$RUNNER_TEMP/dreammakerhub.env.patch"
+        run: |
+          rm -f "$RUNNER_TEMP/dreammakerhub.github.env"
+          rm -f "$RUNNER_TEMP/dreammakerhub.github.keys"
