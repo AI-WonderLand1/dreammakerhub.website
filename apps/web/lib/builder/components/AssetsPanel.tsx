@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, FileImage, Loader2, Upload, Video } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import FileManagerPanel from '@/components/file-manager/FileManagerPanel';
 import { findBlockDefinition } from '../blocks/utils';
 import { blockToCanvasElement } from '../dnd-utils';
 import { useBuilderStore } from '../store';
@@ -20,7 +19,7 @@ type Stored3DAsset = {
   local_url?: string;
 };
 
-export default function AssetsPanel({ projectId }: { projectId: string }) {
+export default function AssetsPanel({ projectId: _projectId }: { projectId: string }) {
   const addElement = useBuilderStore((state) => state.addElement);
   const selectElement = useBuilderStore((state) => state.selectElement);
   const setRightPanelOpen = useBuilderStore((state) => state.setRightPanelOpen);
@@ -192,15 +191,6 @@ export default function AssetsPanel({ projectId }: { projectId: string }) {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 border-b border-white/8 px-3 py-2 text-[8px] font-black uppercase tracking-[.16em] text-white/25">
-          Project files
-        </div>
-        <div className="min-h-0 flex-1">
-          <FileManagerPanel projectId={projectId} />
         </div>
       </div>
     </section>
