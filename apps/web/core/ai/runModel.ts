@@ -17,7 +17,7 @@ export type RunModelResult = {
   error?: string;
 };
 
-type OpenRouterResult = {
+type ProviderResult = {
   ok: boolean;
   status?: number;
   text?: string;
@@ -26,10 +26,11 @@ type OpenRouterResult = {
 };
 
 const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 
-// Retry the free model for the common cases where Auto Router or a requested
-// model cannot serve the request. An invalid key (401) is intentionally not
-// retried because changing models cannot fix authentication.
+// Retry the free OpenRouter model for the common cases where Auto Router or a
+// requested model cannot serve the request. If OpenRouter still cannot serve
+// the request, the platform Gemini key is used as a provider-level fallback.
 const FALLBACK_STATUSES = new Set([400, 402, 403, 404, 408, 409, 429, 500, 502, 503, 504]);
 
 function normalizeModel(model?: string): string {
@@ -55,7 +56,7 @@ async function callOpenRouter(
   model: string,
   messages: RunModelMessage[],
   opts: RunModelOptions
-): Promise<OpenRouterResult> {
+): Promise<ProviderResult> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -100,10 +101,84 @@ async function callOpenRouter(
   return { ok: true, text, tokens };
 }
 
+async function callGemini(
+  apiKey: string,
+  messages: RunModelMessage[],
+  opts: RunModelOptions
+): Promise<ProviderResult> {
+  const systemText = messages
+    .filter((message) => message.role === 'system')
+    .map((message) => message.content)
+    .filter(Boolean)
+    .join('\n\n');
+
+  const contents = messages
+    .filter((message) => message.role !== 'system')
+    .map((message) => ({
+      role: message.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: message.content }],
+    }));
+
+  if (!contents.length) {
+    contents.push({ role: 'user', parts: [{ text: '' }] });
+  }
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_GEMINI_MODEL}:generateContent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        contents,
+        ...(systemText
+          ? { systemInstruction: { parts: [{ text: systemText }] } }
+          : {}),
+        generationConfig: {
+          temperature: opts.temperature ?? 0.7,
+          ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+        },
+      }),
+    }
+  );
+
+  const data = await res.json().catch(() => null) as any;
+  const providerError = providerErrorMessage(data);
+
+  if (!res.ok || providerError) {
+    const providerCode = Number(data?.error?.code);
+    return {
+      ok: false,
+      status: Number.isFinite(providerCode) && providerCode >= 400 ? providerCode : res.status,
+      error: providerError || `Gemini request failed (${res.status})`,
+    };
+  }
+
+  const parts = data?.candidates?.[0]?.content?.parts;
+  const text = Array.isArray(parts)
+    ? parts
+        .map((part: { text?: unknown }) => (typeof part?.text === 'string' ? part.text : ''))
+        .join('')
+        .trim()
+    : '';
+
+  if (!text) {
+    return { ok: false, status: 502, error: 'Gemini returned an empty response' };
+  }
+
+  const tokens: number =
+    data?.usageMetadata?.totalTokenCount ??
+    Math.ceil(messages.reduce((n, m) => n + m.content.length, text.length) / 4);
+
+  return { ok: true, text, tokens };
+}
+
 /**
- * Real AI completion via OpenRouter.
- * Accepts a plain prompt string or { model, messages, system, temperature, maxTokens }.
- * Model ids may be "openrouter/<vendor>/<slug>" or bare "<vendor>/<slug>".
+ * Real AI completion with OpenRouter as the primary provider and Gemini as the
+ * production fallback. Accepts a plain prompt string or
+ * { model, messages, system, temperature, maxTokens }.
  */
 export async function runModel(
   input: string | RunModelOptions = ''
@@ -111,11 +186,8 @@ export async function runModel(
   const opts: RunModelOptions =
     typeof input === 'string' ? { messages: [{ role: 'user', content: input }] } : input;
 
-  const apiKey = process.env.OPENROUTER_API_KEY || opts.userApiKey;
-  if (!apiKey) {
-    logger.error('runModel: OPENROUTER_API_KEY missing');
-    return { text: '', tokens: 0, error: 'AI provider is not configured: OPENROUTER_API_KEY is missing' };
-  }
+  const openRouterKey = process.env.OPENROUTER_API_KEY || opts.userApiKey;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
   const messages: RunModelMessage[] = [
     ...(opts.system ? [{ role: 'system', content: opts.system }] : []),
@@ -124,24 +196,64 @@ export async function runModel(
       : [{ role: 'user', content: '' }]),
   ];
 
+  const useGemini = async (reason: string): Promise<RunModelResult> => {
+    if (!geminiKey) {
+      return { text: '', tokens: 0, error: reason };
+    }
+
+    logger.warn(`runModel: ${reason}; using Gemini fallback`);
+    const fallback = await callGemini(geminiKey, messages, opts);
+    if (fallback.ok) {
+      return { text: fallback.text ?? '', tokens: fallback.tokens ?? 0 };
+    }
+
+    const error = fallback.error || `Gemini provider error (${fallback.status ?? 'unknown'})`;
+    logger.error(`runModel: Gemini fallback failed: ${error}`);
+    return { text: '', tokens: 0, error: `AI providers failed: ${reason}; Gemini: ${error}` };
+  };
+
+  if (!openRouterKey) {
+    if (!geminiKey) {
+      logger.error('runModel: no platform AI provider key configured');
+      return {
+        text: '',
+        tokens: 0,
+        error: 'AI provider is not configured: OPENROUTER_API_KEY and GEMINI_API_KEY are missing',
+      };
+    }
+
+    return useGemini('OPENROUTER_API_KEY is missing');
+  }
+
   const model = normalizeModel(opts.model);
 
   try {
-    let out = await callOpenRouter(apiKey, model, messages, opts);
+    let out = await callOpenRouter(openRouterKey, model, messages, opts);
 
     if (!out.ok && FALLBACK_STATUSES.has(out.status ?? 0) && model !== DEFAULT_MODEL) {
       logger.warn(`runModel: ${model} unavailable (${out.status}), falling back to ${DEFAULT_MODEL}`);
-      out = await callOpenRouter(apiKey, DEFAULT_MODEL, messages, opts);
+      out = await callOpenRouter(openRouterKey, DEFAULT_MODEL, messages, opts);
     }
 
     if (!out.ok) {
       const hint =
         out.status === 401
+          ? 'OpenRouter authentication failed'
+          : out.status === 402
+            ? 'OpenRouter account needs credits or model access'
+            : out.error || `OpenRouter provider error (${out.status ?? 'unknown'})`;
+
+      if (geminiKey) {
+        return useGemini(hint);
+      }
+
+      const error = `${out.error || `AI provider error (${out.status ?? 'unknown'})`}${
+        out.status === 401
           ? ' Check OPENROUTER_API_KEY.'
           : out.status === 402
             ? ' OpenRouter account needs credits or access to a free model.'
-            : '';
-      const error = `${out.error || `AI provider error (${out.status ?? 'unknown'})`}${hint}`;
+            : ''
+      }`;
       logger.error(`runModel: ${error}`);
       return { text: '', tokens: 0, error };
     }
@@ -149,6 +261,16 @@ export async function runModel(
     return { text: out.text ?? '', tokens: out.tokens ?? 0 };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown provider error';
+    if (geminiKey) {
+      try {
+        return await useGemini(`OpenRouter request failed: ${message}`);
+      } catch (fallbackErr: unknown) {
+        const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : 'Unknown Gemini error';
+        logger.error('runModel Gemini fallback failed:', fallbackMessage);
+        return { text: '', tokens: 0, error: `AI request failed: ${fallbackMessage}` };
+      }
+    }
+
     logger.error('runModel failed:', message);
     return { text: '', tokens: 0, error: `AI request failed: ${message}` };
   }
