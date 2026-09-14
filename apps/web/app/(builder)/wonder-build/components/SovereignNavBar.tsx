@@ -71,6 +71,21 @@ export function SovereignNavBar({
     };
   }, [projectId]);
 
+  // The project dashboard owns the single canonical file browser/editor.
+  // Keep old ?tab=code links working by sending them to that same project view
+  // instead of maintaining a second code/file manager inside WonderBuild.
+  useEffect(() => {
+    if (activeMode !== 'code' || typeof window === 'undefined') return;
+    const target = projectId
+      ? `/dashboard/projects/${encodeURIComponent(projectId)}#files`
+      : '/dashboard/projects';
+    window.location.replace(target);
+  }, [activeMode, projectId]);
+
+  const projectFilesHref = projectId
+    ? `/dashboard/projects/${encodeURIComponent(projectId)}#files`
+    : '/dashboard/projects';
+
   const deviceButtons = [
     { id: 'desktop' as const, label: 'Desktop', icon: Monitor },
     { id: 'tablet' as const, label: 'Tablet', icon: Tablet },
@@ -114,14 +129,13 @@ export function SovereignNavBar({
           >
             <Palette size={11} /> Design
           </button>
-          <button
-            type="button"
-            onClick={() => onModeChange('code')}
-            className={`flex h-7 items-center gap-1 rounded px-2 text-[8px] font-bold transition ${activeMode === 'code' ? 'bg-violet-500/18 text-violet-200' : 'text-white/30 hover:text-white/65'}`}
-            aria-pressed={activeMode === 'code'}
+          <Link
+            href={projectFilesHref}
+            className="flex h-7 items-center gap-1 rounded px-2 text-[8px] font-bold text-white/30 transition hover:bg-violet-500/10 hover:text-violet-200"
+            title="Open this project's files in the Dashboard"
           >
             <Code2 size={11} /> Code
-          </button>
+          </Link>
         </div>
       </div>
 
