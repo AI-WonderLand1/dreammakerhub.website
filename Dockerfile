@@ -37,6 +37,15 @@ ARG SUPABASE_SERVICE_ROLE_KEY=""
 ENV SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
 RUN npm run build
 
+# Build a runtime copy without Next.js build caches or duplicated web output.
+# The final image serves /app/.next and /app/public, so keeping those same
+# directories again under /app/apps/web only wastes hundreds of MB.
+FROM builder AS runtime-assets
+RUN rm -rf /app/apps/web/.next/cache \
+ && mkdir -p /runtime \
+ && cp -a /app/apps/web/.next /runtime/web-next \
+ && rm -rf /app/apps/web/.next /app/apps/web/public
+
 # Production-only dependency tree (no devDependencies).
 # Scripts are skipped because postinstall needs the prisma CLI (a devDependency);
 # the generated Prisma client is copied from the builder stage instead.
@@ -57,7 +66,7 @@ RUN rm -f package-lock.json \
 FROM node:22-alpine
 WORKDIR /app
 
-COPY --from=builder /app/apps/web/.next ./.next
+COPY --from=runtime-assets /runtime/web-next ./.next
 COPY --from=builder /app/apps/web/public ./public
 COPY --from=builder /app/apps/web/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/apps/web/package.json ./package.json
@@ -66,12 +75,16 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps ./apps
+COPY --from=runtime-assets /app/apps ./apps
 
 COPY --from=builder /app/engine ./engine
 COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners
 COPY --from=builder /app/types ./types
+
+# Guard against accidentally re-introducing the large duplicated Next.js output.
+RUN test ! -d ./.next/cache && test ! -d ./apps/web/.next
+
 EXPOSE 5000
 ENV PATH="/app/node_modules/.bin:$PATH"
 RUN apk add --no-cache curl openssh-client
