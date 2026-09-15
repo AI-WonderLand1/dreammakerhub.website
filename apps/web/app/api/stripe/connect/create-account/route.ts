@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac } from "node:crypto";
 import { requireUserId } from "@/lib/auth";
 import { logger } from '@/lib/logger';
 import { stripe } from "@/lib/stripe";
@@ -16,6 +17,12 @@ function clientIp(request: NextRequest): string | null {
   );
 }
 
+function accountToken(userId: string, accountId: string): string | null {
+  const secret = process.env.STRIPE_CONNECT_STATE_SECRET?.trim();
+  if (!secret) return null;
+  return createHmac("sha256", secret).update(`${userId}:${accountId}`).digest("hex");
+}
+
 export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
   if (!userId) {
@@ -26,8 +33,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (!stripe) {
-      return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
+    if (!stripe || !process.env.STRIPE_CONNECT_STATE_SECRET?.trim()) {
+      return NextResponse.json({ error: "Stripe Connect is not fully configured" }, { status: 500 });
     }
 
     const body = await request.json().catch(() => null);
@@ -67,9 +74,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const token = accountToken(userId, account.id);
+    if (!token) {
+      return NextResponse.json({ error: "Stripe Connect state signing is unavailable" }, { status: 500 });
+    }
+
     logger.info("Stripe Connect account created", { userId, accountId: account.id });
     return NextResponse.json(
-      { success: true, accountId: account.id },
+      { success: true, accountId: account.id, accountToken: token },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (err: unknown) {
