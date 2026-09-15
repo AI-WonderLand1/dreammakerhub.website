@@ -19,6 +19,7 @@ import { SovereignOSProvider, useSovereignOS } from '../context/SovereignOSConte
 import { SovereignNavBar } from '../components/SovereignNavBar';
 import type { BuilderMode } from '../components/SovereignNavBar';
 import { CloudSandboxPanel } from '../components/CloudSandboxPanel';
+import { ConfessionsDrawer } from '../components/ConfessionsDrawer';
 import { useBuilderStore } from '@/lib/builder/store';
 import type { BlockDefinition, LeftPanelTab } from '@/lib/builder/types';
 import { findBlockDefinition } from '@/lib/builder/blocks/utils';
@@ -55,7 +56,7 @@ const LEFT_TABS: Array<{ id: LeftPanelTab; label: string; short: string }> = [
 function BuilderContent() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId') || '';
-  const { setEditorCode } = useSovereignOS();
+  const { setEditorCode, confessions } = useSovereignOS();
 
   const {
     leftPanelOpen,
@@ -129,7 +130,7 @@ function BuilderContent() {
   }, [leftPanelTab, setLeftPanelTab]);
 
   useEffect(() => {
-    if (!['content', 'interactions', 'ai'].includes(rightPanelTab)) setRightPanelTab('content');
+    if (!['content', 'interactions', 'ai', 'confessions'].includes(rightPanelTab)) setRightPanelTab('content');
   }, [rightPanelTab, setRightPanelTab]);
 
   useEffect(() => {
@@ -385,7 +386,10 @@ function BuilderContent() {
     );
   }
 
-  const normalizedRightTab = rightPanelTab === 'interactions' || rightPanelTab === 'ai' ? rightPanelTab : 'content';
+  const normalizedRightTab =
+    rightPanelTab === 'interactions' || rightPanelTab === 'ai' || rightPanelTab === 'confessions'
+      ? rightPanelTab
+      : 'content';
 
   return (
     <div className="h-full overflow-hidden bg-[#050816] text-white">
@@ -456,6 +460,7 @@ function BuilderContent() {
                       ['content', 'Design'],
                       ['interactions', 'Interact'],
                       ['ai', 'AI Assist'],
+                      ['confessions', 'Confessions'],
                     ] as const).map(([tabName, label]) => (
                       <button
                         key={tabName}
@@ -476,7 +481,12 @@ function BuilderContent() {
                   <div className="min-h-0 flex-1 overflow-hidden" role="tabpanel">
                     {normalizedRightTab === 'content' && <InspectorPanel />}
                     {normalizedRightTab === 'interactions' && <InteractionPanel />}
-                    {normalizedRightTab === 'ai' && <AIAssistantPanel />}
+                    {normalizedRightTab === 'ai' && (
+                      <div className="ai-assist-clean h-full">
+                        <AIAssistantPanel />
+                      </div>
+                    )}
+                    {normalizedRightTab === 'confessions' && <ConfessionsDrawer confessions={confessions} open />}
                   </div>
                 </aside>
               )}
@@ -541,6 +551,7 @@ export default function BuilderPage() {
           .high-contrast input, .high-contrast select, .high-contrast textarea { border-color: #fff !important; background: #000 !important; color: #fff !important; }
           .theme-light { --builder-bg: #f8fafc; --builder-text: #0f172a; --builder-border: rgba(0,0,0,0.1); }
           .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+          .ai-assist-clean > div > div:first-child > div:nth-child(2) { display: none; }
         `}</style>
         <SovereignOSProvider>
           <BuilderContent />
