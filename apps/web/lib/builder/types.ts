@@ -132,4 +132,4 @@ export interface Extension {
 }
 
 export type LeftPanelTab = 'pages' | 'insert' | 'cms' | 'assets' | 'components';
-export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility' | 'ai' | 'import-export' | 'history';
+export type RightPanelTab = 'content' | 'layout' | 'style' | 'effects' | 'responsive' | 'advanced' | 'interactions' | 'data' | 'visibility' | 'accessibility' | 'ai' | 'confessions' | 'import-export' | 'history';
