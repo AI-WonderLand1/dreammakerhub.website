@@ -1,12 +1,25 @@
 import type { BlockRenderer } from './types';
 
+function navbarLogoText(value: unknown): string {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (value && typeof value === 'object') {
+    const logo = value as Record<string, unknown>;
+    for (const key of ['text', 'label', 'name']) {
+      const candidate = logo[key];
+      if (typeof candidate === 'string' || typeof candidate === 'number') return String(candidate);
+    }
+  }
+  return 'Brand';
+}
+
 export const navigationRenderers: Record<string, BlockRenderer> = {
   'navbar': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       // Imported WonderBuild templates already carry their full nav tree as
       // children. Render that tree directly so the adapter does not add a
       // second synthetic Brand/links row on top of the original navigation.
       if (children) return <div {...baseProps}>{children}</div>;
-      return <div {...baseProps}><span className="font-bold text-sm">{el.props.logo}</span><div className="flex gap-3 text-xs text-white/60">{(el.props.links as any[] || []).map((l: any, i: number) => <span key={i}>{l.label}</span>)}</div></div>;
+      const logoText = navbarLogoText(el.props.logo);
+      return <div {...baseProps}><span className="font-bold text-sm">{logoText}</span><div className="flex gap-3 text-xs text-white/60">{(el.props.links as any[] || []).map((l: any, i: number) => <span key={i}>{l.label}</span>)}</div></div>;
   },
   'sidebar-menu': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}><div className="space-y-1">{(el.props.items as any[] || []).map((item: any, i: number) => <div key={i} className="flex items-center gap-2 px-2 py-1 rounded text-xs text-white/60 hover:bg-white/5"><span>{item.icon}</span><span>{item.label}</span></div>)}</div>{children}</div>;

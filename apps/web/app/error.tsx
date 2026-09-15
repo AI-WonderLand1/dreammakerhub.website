@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { logger } from '@/lib/logger';
 
 export default function GlobalError({
@@ -34,12 +32,19 @@ export default function GlobalError({
             </p>
 
             <div className="flex gap-4 justify-center">
-              <Button onClick={reset} variant="default">
+              <button
+                type="button"
+                onClick={reset}
+                className="inline-flex h-8 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+              >
                 Try Again
-              </Button>
-              <Button asChild variant="ghost">
-                <Link href="/">Go Home</Link>
-              </Button>
+              </button>
+              <a
+                href="/"
+                className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                Go Home
+              </a>
             </div>
 
             {error.digest && (
