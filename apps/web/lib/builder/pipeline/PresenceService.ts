@@ -1,6 +1,7 @@
 import { getEventBus } from './EventBus';
 import { EventNames, type EventPayload, type PresenceUserPayload } from './types';
 import { useBuilderStore } from '../store';
+import { ensureSupabaseConfig, getSupabaseClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
 export interface PresenceConfig {
@@ -22,32 +23,48 @@ export class PresenceService {
 
   start(config: PresenceConfig): void {
     if (typeof window === 'undefined') return;
+
+    if (this.config || this.channel || this.heartbeatInterval || this.unsubs.length) {
+      this.stop();
+    }
+
     this.config = config;
     if (config.enabled === false) return;
 
-    this.connect();
+    void this.connect();
 
     this.unsubs.push(
       this.bus.on(EventNames.ELEMENT_SELECTED, (event) => {
         const { elementId } = event.payload as EventPayload<typeof EventNames.ELEMENT_SELECTED>;
-        this.updatePresence({ selectedElementId: elementId });
+        void this.updatePresence({ selectedElementId: elementId });
       })
     );
 
     this.heartbeatInterval = setInterval(() => {
-      this.updatePresence({});
+      void this.updatePresence({});
     }, 15000);
   }
 
   private async connect(): Promise<void> {
     if (!this.config) return;
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      if (!supabaseUrl || !supabaseAnonKey) return;
+      await ensureSupabaseConfig();
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
 
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user;
+      if (sessionUser && this.config.userId === 'anonymous') {
+        this.config = {
+          ...this.config,
+          userId: sessionUser.id,
+          userName:
+            sessionUser.user_metadata?.full_name ||
+            sessionUser.email?.split('@')[0] ||
+            `User ${sessionUser.id.slice(0, 4)}`,
+        };
+      }
+
       const room = `wonder:presence:${this.config.projectId}`;
       this.channel = supabase.channel(room, {
         config: { presence: { key: this.config.userId } },
@@ -58,14 +75,14 @@ export class PresenceService {
           const state = this.channel.presenceState();
           this.syncUsers(state);
         })
-        .on('presence', { event: 'join' }, ({ key, newPresences }: any) => {
+        .on('presence', { event: 'join' }, ({ newPresences }: any) => {
           for (const p of newPresences) {
             if (p.userId !== this.config?.userId) {
               this.bus.emit(EventNames.PRESENCE_JOINED, p as PresenceUserPayload);
             }
           }
         })
-        .on('presence', { event: 'leave' }, ({ key, leftPresences }: any) => {
+        .on('presence', { event: 'leave' }, ({ leftPresences }: any) => {
           for (const p of leftPresences) {
             this.users.delete(p.userId);
             this.bus.emit(EventNames.PRESENCE_LEFT, { userId: p.userId });
@@ -100,7 +117,7 @@ export class PresenceService {
 
   private syncUsers(state: any): void {
     this.users.clear();
-    for (const [key, presences] of Object.entries(state)) {
+    for (const presences of Object.values(state)) {
       const presence = (presences as any[])[0] as PresenceUserPayload;
       if (presence) {
         this.users.set(presence.userId, presence);
