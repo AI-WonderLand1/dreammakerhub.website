@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { query } from '@/lib/db';
+import { sanitizeUntrustedHtml } from '@/lib/security/sanitize-html.server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -58,6 +59,8 @@ export default async function PublicPage({ params }: { params: Promise<{ slug: s
 
   if (!page) notFound();
 
+  const safeBodyHtml = sanitizeUntrustedHtml(page.body_html || '');
+
   return (
     <article className="mx-auto max-w-4xl px-4 py-12">
       <h1 className="mb-8 text-4xl font-bold text-white">{page.title}</h1>
@@ -70,7 +73,7 @@ export default async function PublicPage({ params }: { params: Promise<{ slug: s
       )}
       <div
         className="prose prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: page.body_html }}
+        dangerouslySetInnerHTML={{ __html: safeBodyHtml }}
       />
     </article>
   );
