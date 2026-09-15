@@ -1,7 +1,7 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
 import { logger } from "@lib/logger";
-import { isInternalUrl } from "./ssrf";
+import { isInternalUrl, safeExternalFetch } from "./ssrf";
 
 export const webhookProvider: AIProvider = {
   name: "webhook",
@@ -35,7 +35,7 @@ export const webhookProvider: AIProvider = {
         confessions: {
           confidence: 0,
           reasoning: ["SSRF blocked: internal URL detected"],
-          limitations: ["Internal/private network URLs are not allowed"]
+          limitations: ["Only public HTTPS webhook URLs are allowed"]
         }
       };
     }
@@ -54,15 +54,10 @@ export const webhookProvider: AIProvider = {
         model,
       };
 
-      if (system) {
-        body.system = system;
-      }
+      if (system) body.system = system;
+      if (temperature !== undefined) body.temperature = temperature;
 
-      if (temperature !== undefined) {
-        body.temperature = temperature;
-      }
-
-      const response = await fetch(webhookUrl, {
+      const response = await safeExternalFetch(webhookUrl, {
         method: "POST",
         headers,
         body: JSON.stringify(body),
@@ -84,7 +79,9 @@ export const webhookProvider: AIProvider = {
       }
 
       const data = await response.json();
-      const outputText = typeof data === 'string' ? data : (data.text || data.output || data.response || data.message || JSON.stringify(data));
+      const outputText = typeof data === 'string'
+        ? data
+        : (data.text || data.output || data.response || data.message || JSON.stringify(data));
 
       return {
         text: outputText,
@@ -107,7 +104,7 @@ export const webhookProvider: AIProvider = {
         model,
         confessions: {
           confidence: 0,
-          reasoning: ["Network or infrastructure failure"],
+          reasoning: ["Network or security validation failure"],
           limitations: [errMsg]
         }
       };

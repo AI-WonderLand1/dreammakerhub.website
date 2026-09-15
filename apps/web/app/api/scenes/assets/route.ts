@@ -4,15 +4,30 @@ import { logger } from '@/lib/logger';
 
 const BUCKET_NAME = "3d-assets";
 
+function getPublicSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publicKey = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )?.trim();
+
+  if (!supabaseUrl || !publicKey) return null;
+  return createClient(supabaseUrl, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 export async function GET() {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json({ files: [] });
+    const supabase = getPublicSupabaseClient();
+    if (!supabase) {
+      return NextResponse.json({ files: [] }, { headers: { "Cache-Control": "no-store" } });
     }
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // This endpoint is a public scene catalog. Use only the public Supabase
+    // credential so storage policies remain the authorization boundary; never
+    // expose a service-role-backed directory listing to anonymous callers.
     const { data: files, error } = await supabase.storage
       .from(BUCKET_NAME)
       .list("", {
@@ -21,32 +36,30 @@ export async function GET() {
       });
 
     if (error) {
-      logger.error("Supabase storage error:", error);
-      return NextResponse.json({ files: [], error: error.message });
+      logger.error("Supabase storage error:", { message: error.message });
+      return NextResponse.json({ files: [] }, { headers: { "Cache-Control": "no-store" } });
     }
 
-    // Filter for JSON scene files
-    const sceneFiles = files?.filter(f => 
-      f.name.endsWith(".json") || f.name.endsWith(".scene")
+    const sceneFiles = files?.filter((file) =>
+      file.name.endsWith(".json") || file.name.endsWith(".scene")
     ) || [];
 
-    // Get public URLs for each file
     const scenes = await Promise.all(
       sceneFiles.map(async (file) => {
         const { data: { publicUrl } } = supabase.storage
           .from(BUCKET_NAME)
           .getPublicUrl(file.name);
 
-        // Try to fetch the scene data
         try {
-          const response = await fetch(publicUrl);
+          const response = await fetch(publicUrl, { cache: "no-store" });
+          if (!response.ok) throw new Error("Scene metadata unavailable");
           const sceneData = await response.json();
-          
+
           return {
             id: file.name.replace(/\.(json|scene)$/, ""),
-            name: sceneData.name || file.name,
-            description: sceneData.description || "3D Scene",
-            category: sceneData.category || "custom",
+            name: typeof sceneData?.name === "string" ? sceneData.name : file.name,
+            description: typeof sceneData?.description === "string" ? sceneData.description : "3D Scene",
+            category: typeof sceneData?.category === "string" ? sceneData.category : "custom",
             url: publicUrl
           };
         } catch {
@@ -61,10 +74,11 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ files: scenes });
-
-  } catch (error: any) {
+    return NextResponse.json({ files: scenes }, {
+      headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+    });
+  } catch (error: unknown) {
     logger.error("Failed to list 3D assets:", error);
-    return NextResponse.json({ files: [], error: error.message }, { status: 500 });
+    return NextResponse.json({ files: [] }, { status: 500 });
   }
 }

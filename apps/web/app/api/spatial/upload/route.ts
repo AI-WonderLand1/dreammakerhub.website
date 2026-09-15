@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     const smokeUserId = getSmokeUserIdFromRequest(req);
 
-    if (!user && !smakeUserId) {
+    if (!user && !smokeUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
