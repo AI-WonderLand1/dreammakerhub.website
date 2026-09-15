@@ -42,7 +42,8 @@ export default function AiModulesPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, any>>({});
 
-  // BYOK
+  // BYOK: deliberately kept only in React memory. Do not persist provider
+  // credentials to localStorage/sessionStorage where same-origin XSS can read them.
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [userApiKey, setUserApiKey] = useState("");
   const [keyActive, setKeyActive] = useState(false);
@@ -62,9 +63,6 @@ export default function AiModulesPage() {
   const [trainingLog, setTrainingLog] = useState<string[]>([]);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("WONDER_BYOK_KEY");
-    if (saved) { try { setUserApiKey(atob(saved)); setKeyActive(true); } catch {} }
-
     fetch("/api/cloud-connections")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -98,9 +96,9 @@ export default function AiModulesPage() {
   }, []);
 
   const saveKey = () => {
-    const encoded = btoa(userApiKey);
-    sessionStorage.setItem("WONDER_BYOK_KEY", encoded);
-    setKeyActive(!!userApiKey.trim());
+    const trimmedKey = userApiKey.trim();
+    setUserApiKey(trimmedKey);
+    setKeyActive(Boolean(trimmedKey));
     setShowKeyModal(false);
   };
 
@@ -183,20 +181,22 @@ export default function AiModulesPage() {
               <button onClick={() => setShowKeyModal(false)}><X className="h-5 w-5 text-slate-400" /></button>
             </div>
             <p className="text-sm text-slate-400 mb-4">
-              Your key is stored locally in your browser — never sent to our database.
+              Your key is kept only in memory for this page session. It is not written to browser storage or saved to our database here. Reloading the page clears it.
             </p>
             <input
               type="password"
               value={userApiKey}
               onChange={(e) => setUserApiKey(e.target.value)}
               placeholder="sk-or-… / sk-proj-…"
+              autoComplete="off"
+              spellCheck={false}
               className="w-full rounded-lg border border-white/10 bg-black px-4 py-2 text-sm focus:border-sky-500 outline-none"
             />
             <button
               onClick={saveKey}
               className="mt-4 w-full rounded-lg bg-sky-600 py-2 text-sm font-medium hover:bg-sky-500 transition"
             >
-              Save Key
+              Use Key This Session
             </button>
           </div>
         </div>
@@ -477,7 +477,7 @@ export default function AiModulesPage() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">BYOK Key</h3>
                 <p className="text-xs text-slate-500">
-                  Add your Google AI API key to unlock training. Stored locally only.
+                  Add your Google AI API key to unlock training. It stays in page memory only and is cleared on reload.
                 </p>
                 <button
                   onClick={() => setShowKeyModal(true)}
