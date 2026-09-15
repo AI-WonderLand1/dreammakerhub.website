@@ -14,6 +14,7 @@ import {
   Home,
   LayoutTemplate,
   Library,
+  LogOut,
   Menu,
   Pencil,
   Plus,
@@ -42,11 +43,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [librariesOpen, setLibrariesOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
 
   useEffect(() => {
@@ -116,6 +119,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const toolItems = [
     { href: withProject("/wonder-build/builder"), label: "WonderBuild", icon: Pencil },
     { href: withProject("/wonderspace"), label: "WonderSpace IDE", icon: Code2 },
+    { href: withProject("/dashboard/npc"), label: "My NPCs", icon: Bot },
+    { href: withProject("/wonder-play"), label: "NPC-AI-SIM", icon: Bot },
     { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
     { href: withProject("/dashboard/collaboration"), label: "Team", icon: Users },
     { href: withProject("/dashboard/settings"), label: "Settings", icon: Settings },
@@ -139,6 +144,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     event.preventDefault();
     const query = searchValue.trim();
     router.push(query ? `/dashboard?q=${encodeURIComponent(query)}#projects` : "/dashboard#projects");
+  };
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setAccountMenuOpen(false);
+      setSigningOut(false);
+    }
   };
 
   if (loading) {
@@ -190,11 +206,53 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Link href={activityHref} aria-label="Recent activity" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/65 hover:bg-white/5 hover:text-white">
               <Bell size={18} />
             </Link>
-            <Link href={withProject("/dashboard/settings")} className="hidden items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-white/5 sm:flex" aria-label="Account settings">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-blue-600 text-sm font-bold ring-1 ring-white/20">{displayName.charAt(0).toUpperCase()}</span>
-              <span className="max-w-32 truncate text-sm font-semibold">{displayName}</span>
-              <ChevronDown size={14} className="text-white/45" />
-            </Link>
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setAccountMenuOpen((open) => !open)}
+                className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-white/5"
+                aria-label="Open account menu"
+                aria-expanded={accountMenuOpen}
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-blue-600 text-sm font-bold ring-1 ring-white/20">{displayName.charAt(0).toUpperCase()}</span>
+                <span className="max-w-32 truncate text-sm font-semibold">{displayName}</span>
+                <ChevronDown size={14} className={`text-white/45 transition-transform ${accountMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {accountMenuOpen && (
+                <div className="absolute right-0 top-12 z-[70] w-56 overflow-hidden rounded-xl border border-white/15 bg-[#0b1626] p-2 shadow-2xl">
+                  <Link
+                    href={withProject("/dashboard/settings")}
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    <Settings size={16} /> Settings
+                  </Link>
+                  <Link
+                    href={withProject("/dashboard/npc")}
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    <Bot size={16} /> My NPCs
+                  </Link>
+                  <Link
+                    href={withProject("/wonder-play")}
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    <Bot size={16} /> NPC-AI-SIM
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    disabled={signingOut}
+                    className="mt-1 flex w-full items-center gap-2 border-t border-white/10 px-3 py-2.5 text-left text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                  >
+                    <LogOut size={16} /> {signingOut ? "Signing out..." : "Sign out"}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -295,6 +353,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <p className="text-xs font-bold">Turn your ideas into amazing things.</p>
             <p className="mt-1 text-[10px] text-white/45">Create. Build. Share. Together.</p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            disabled={signingOut}
+            className="mx-4 mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 px-3 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+          >
+            <LogOut size={16} /> {signingOut ? "Signing out..." : "Sign out"}
+          </button>
         </div>
       </aside>
 
