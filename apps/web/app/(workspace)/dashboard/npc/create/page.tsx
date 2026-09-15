@@ -4,7 +4,6 @@ import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bot, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 export default function CreateNpcPage() {
   const router = useRouter();
@@ -20,20 +19,21 @@ export default function CreateNpcPage() {
     setSaving(true);
     setError("");
     try {
-      const supabase = createClient();
-      if (!supabase) throw new Error("Supabase is not available");
+      const response = await fetch("/api/npc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: cleanName }),
+      });
+      const data = await response.json().catch(() => ({}));
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (response.status === 401 || response.status === 403) {
         router.replace("/public-pages/auth?redirectTo=%2Fdashboard%2Fnpc%2Fcreate");
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from("_npcs")
-        .insert({ name: cleanName, owner_id: user.id });
-
-      if (insertError) throw insertError;
+      if (!response.ok || data?.ok === false) {
+        throw new Error(data?.message || "Failed to create NPC");
+      }
 
       router.replace("/dashboard/npc");
       router.refresh();
