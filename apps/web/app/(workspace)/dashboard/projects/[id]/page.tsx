@@ -22,6 +22,7 @@ import {
   PlayCircle,
   Settings,
   ShieldCheck,
+  Trash2,
   Users,
 } from "lucide-react";
 import WonderRealtimeWidget from "@/app/(workspace)/dashboard/components/WonderRealtimeWidget";
@@ -107,6 +108,7 @@ export default function ProjectHubPage() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [duplicating, setDuplicating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadProjectData = useCallback(async (showLoader = false) => {
@@ -206,6 +208,29 @@ export default function ProjectHubPage() {
     }
   }
 
+  async function deleteProject() {
+    if (!project || deleting) return;
+    const confirmed = window.confirm(`Delete “${project.name}”? This permanently removes the project and its stored files.`);
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+        method: "DELETE",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.ok === false) {
+        throw new Error(data?.message || "Failed to delete project");
+      }
+      router.replace("/dashboard#projects");
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to delete project");
+      setDeleting(false);
+    }
+  }
+
   function downloadZip() {
     window.location.href = `/api/projects/${projectId}/export?format=zip`;
   }
@@ -235,7 +260,7 @@ export default function ProjectHubPage() {
   const primaryAction = isCodeProject
     ? { href: "#files", label: "Manage Files", icon: Code2 }
     : isNpcProject
-      ? { href: `/wonder-play?${projectQuery}`, label: "Open NPC Studio", icon: Bot }
+      ? { href: `/dashboard/npc?${projectQuery}`, label: "Open NPC Studio", icon: Bot }
       : isAiProject
         ? { href: `/dashboard/agents?${projectQuery}`, label: "Open AI Tools", icon: Bot }
         : is3dProject
@@ -423,6 +448,14 @@ export default function ProjectHubPage() {
               <Link href={`/dashboard/collaboration?${projectQuery}`} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
                 <Users size={15}/> Invite collaborator
               </Link>
+              <button
+                type="button"
+                onClick={() => void deleteProject()}
+                disabled={deleting}
+                className="flex w-full items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+              >
+                <Trash2 size={15}/>{deleting ? "Deleting..." : "Delete project"}
+              </button>
             </div>
           </section>
 
