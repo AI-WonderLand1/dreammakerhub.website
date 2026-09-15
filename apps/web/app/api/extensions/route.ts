@@ -1,41 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { env, requireEnv } from '@/lib/env'
-import { logger } from '@/lib/logger';
+import { requireEnv } from '@/lib/env'
+import { requireUserId } from '@/lib/auth'
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
+function bindAuthenticatedUser(body: unknown, userId: string): Record<string, unknown> | null {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null
+
+  const {
+    userId: _ignoredUserId,
+    user_id: _ignoredSnakeUserId,
+    ownerId: _ignoredOwnerId,
+    owner_id: _ignoredSnakeOwnerId,
+    ...rest
+  } = body as Record<string, unknown>
+
+  return {
+    ...rest,
+    userId,
+    user_id: userId,
+  }
+}
+
+async function proxyExtensionRequest(req: NextRequest, method: 'POST' | 'DELETE') {
+  const userId = await requireUserId(req)
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const parsedBody = await req.json().catch(() => null)
+  const body = bindAuthenticatedUser(parsedBody, userId)
+  if (!body) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
 
   const res = await fetch(
     `${requireEnv('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/extensions`,
     {
-      method: 'POST',
+      method,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${requireEnv('SUPABASE_SERVICE_ROLE_KEY')}`
+        Authorization: `Bearer ${requireEnv('SUPABASE_SERVICE_ROLE_KEY')}`,
       },
-      body: JSON.stringify(body)
-    }
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    },
   )
 
-  const data = await res.json()
-  return NextResponse.json(data)
+  const data = await res.json().catch(() => ({ error: 'Extension service returned an invalid response' }))
+  return NextResponse.json(data, {
+    status: res.status,
+    headers: { 'Cache-Control': 'no-store' },
+  })
+}
+
+export async function POST(req: NextRequest) {
+  return proxyExtensionRequest(req, 'POST')
 }
 
 export async function DELETE(req: NextRequest) {
-  const body = await req.json()
-
-  const res = await fetch(
-    `${requireEnv('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/extensions`,
-    {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${requireEnv('SUPABASE_SERVICE_ROLE_KEY')}`
-      },
-      body: JSON.stringify(body)
-    }
-  )
-
-  const data = await res.json()
-  return NextResponse.json(data)
+  return proxyExtensionRequest(req, 'DELETE')
 }
