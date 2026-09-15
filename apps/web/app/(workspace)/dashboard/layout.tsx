@@ -119,7 +119,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const toolItems = [
     { href: withProject("/wonder-build/builder"), label: "WonderBuild", icon: Pencil },
     { href: withProject("/wonderspace"), label: "WonderSpace IDE", icon: Code2 },
-    { href: withProject("/dashboard/npc"), label: "NPC Studio", icon: Bot },
+    { href: withProject("/dashboard/npc"), label: "My NPCs", icon: Bot },
+    { href: withProject("/wonder-play"), label: "NPC-AI-SIM", icon: Bot },
     { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
     { href: withProject("/dashboard/collaboration"), label: "Team", icon: Users },
     { href: withProject("/dashboard/settings"), label: "Settings", icon: Settings },
@@ -232,7 +233,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     onClick={() => setAccountMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
                   >
-                    <Bot size={16} /> NPC Studio
+                    <Bot size={16} /> My NPCs
+                  </Link>
+                  <Link
+                    href={withProject("/wonder-play")}
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    <Bot size={16} /> NPC-AI-SIM
                   </Link>
                   <button
                     type="button"
@@ -350,7 +358,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => void handleSignOut()}
             disabled={signingOut}
-            className="mx-4 mb-4 flex w-[calc(100%-2rem)] items-center gap-2 rounded-lg border border-red-500/20 px-3 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+            className="mx-4 mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 px-3 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
           >
             <LogOut size={16} /> {signingOut ? "Signing out..." : "Sign out"}
           </button>
