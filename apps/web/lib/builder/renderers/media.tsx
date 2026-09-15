@@ -1,4 +1,6 @@
 import type { BlockRenderer } from './types';
+import { BlockImage } from './BlockImage';
+import { imageFromProps } from '../image-source';
 import {
   sanitizeBuilderSvg,
   sanitizeEmbedUrl,
@@ -56,13 +58,20 @@ export const mediaRenderers: Record<string, BlockRenderer> = {
       return <div {...baseProps} style={{ position: 'relative', overflow: 'hidden' }}><div className="absolute inset-0 bg-black/40" /><div className="relative z-10 p-8 text-center text-white"><p className="text-lg font-bold">Video Background</p></div>{children}</div>;
   },
   'image-carousel': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} className="relative"><div className="aspect-video bg-white/5 rounded flex items-center justify-center"><span className="text-4xl">🖼️</span></div><div className="flex justify-center gap-1 mt-2">{((el.props.images || []) as string[]).map((_: any, i: number) => <div key={i} className="w-2 h-2 rounded-full bg-white/30" />)}</div>{children}</div>;
+      const images = Array.isArray(el.props.images) ? el.props.images : [];
+      return <div {...baseProps} style={style}><div style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: '1rem' }}>
+        {images.map((src: string, i: number) => <div key={i} style={{ flex: '0 0 100%', scrollSnapAlign: 'start' }}><BlockImage src={src} alt={`${el.props.alt || 'Gallery image'} ${i + 1}`} height={320} /></div>)}
+        {!images.length && <BlockImage src="" />}
+      </div>{children}</div>;
   },
   'image-compare': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} className="relative aspect-video bg-white/5 rounded overflow-hidden"><div className="absolute inset-0 flex"><div className="flex-1" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} /><div className="flex-1" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }} /></div><div className="absolute inset-y-0 left-1/2 w-0.5 bg-white shadow-lg" /><span className="absolute top-2 left-2 text-[9px] text-white/80 bg-black/50 px-1 rounded">Before</span><span className="absolute top-2 right-2 text-[9px] text-white/80 bg-black/50 px-1 rounded">After</span>{children}</div>;
+      return <div {...baseProps} style={style}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        <figure><BlockImage src={el.props.before || el.props.beforeSrc} alt={el.props.labelBefore || 'Before'} /><figcaption>{el.props.labelBefore || 'Before'}</figcaption></figure>
+        <figure><BlockImage src={el.props.after || el.props.afterSrc} alt={el.props.labelAfter || 'After'} /><figcaption>{el.props.labelAfter || 'After'}</figcaption></figure>
+      </div>{children}</div>;
   },
   'ai-image': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} className="rounded border border-purple-500/30 bg-purple-500/5 p-3 text-center"><span className="text-3xl">🎨</span><p className="text-xs text-purple-400 mt-1">AI: {el.props.prompt?.slice(0, 40)}</p>{children}</div>;
+      return <div {...baseProps} style={style}><BlockImage src={imageFromProps(el.props)} alt={el.props.alt || el.props.prompt || 'AI image'} height={320} />{children}</div>;
   },
   'lottie': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps} className="flex items-center justify-center"><span className="text-4xl">🎞️</span>{children}</div>;

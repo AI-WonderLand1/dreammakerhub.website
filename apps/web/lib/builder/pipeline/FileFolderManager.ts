@@ -2,6 +2,7 @@ import { getEventBus } from './EventBus';
 import { EventNames } from './types';
 import { useBuilderStore } from '../store';
 import { normalizeHeadingLevel } from '../heading-level';
+import { imageBlockHtml } from '../image-block-html';
 import { logger } from '@/lib/logger';
 
 export class FileFolderManager {
@@ -129,6 +130,8 @@ export class FileFolderManager {
     const attrs = elAttrs(el);
     const children = el.children?.map((c: any) => this.renderEl(c, depth + 1)).join('\n') || '';
     const content = el.props?.content || el.props?.label || el.props?.title || '';
+    const imageContent = imageBlockHtml(el.type, el.props || {});
+    if (imageContent !== null) return `${indent}<${tag}${attrs}>${imageContent}${children}</${tag}>`;
     if (children) return `${indent}<${tag}${attrs}>\n${children}\n${indent}</${tag}>`;
     if (content && !['img', 'input', 'hr', 'br'].includes(tag)) return `${indent}<${tag}${attrs}>${escapeHtml(content)}</${tag}>`;
     return `${indent}<${tag}${attrs} />`;

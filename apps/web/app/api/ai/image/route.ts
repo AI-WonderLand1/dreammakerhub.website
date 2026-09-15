@@ -31,6 +31,7 @@ type GeneratedImage = {
 type ImageGenerationResult = {
   image: GeneratedImage | null;
   attemptedProviders: string[];
+  failures: string[];
 };
 
 function cleanText(value: unknown, maxLength: number): string {
@@ -55,6 +56,9 @@ function extractPixazoMediaUrl(payload: any): string | null {
     payload?.imageUrl,
     payload?.image_url,
     payload?.url,
+    payload?.media_url,
+    typeof payload?.output?.media_url === "string" ? payload.output.media_url : null,
+    Array.isArray(payload?.output) ? payload.output[0]?.url || payload.output[0] : null,
     typeof payload?.output === "string" ? payload.output : null,
     payload?.output?.url,
     Array.isArray(payload?.output?.media_url) ? payload.output.media_url[0] : null,
@@ -95,7 +99,7 @@ async function downloadGeneratedImage(url: string): Promise<Buffer | null> {
   }
 }
 
-async function generateWithPixazo(prompt: string): Promise<GeneratedImage | null> {
+async function generateWithPixazo(prompt: string, failures: string[]): Promise<GeneratedImage | null> {
   if (!PIXAZO_API_KEY) return null;
 
   const headers = {
@@ -114,6 +118,7 @@ async function generateWithPixazo(prompt: string): Promise<GeneratedImage | null
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      failures.push(providerFailure("pixazo", response.status));
       logger.error("Pixazo Flux Schnell generation failed:", payload?.error?.message || payload?.error || response.statusText);
       return null;
     }
@@ -142,6 +147,7 @@ async function generateWithPixazo(prompt: string): Promise<GeneratedImage | null
             });
             const pollPayload = await poll.json().catch(() => ({}));
             if (!poll.ok) {
+              failures.push(providerFailure("pixazo", poll.status));
               logger.error("Pixazo image status check failed:", pollPayload?.error?.message || poll.statusText);
               break;
             }
@@ -160,13 +166,16 @@ async function generateWithPixazo(prompt: string): Promise<GeneratedImage | null
     }
 
     if (!mediaUrl) {
+      failures.push("pixazo: no image URL was returned before polling ended");
       logger.error("Pixazo Flux Schnell returned no usable image URL.");
       return null;
     }
 
     const bytes = await downloadGeneratedImage(mediaUrl);
+    if (!bytes) failures.push("pixazo: generated image could not be downloaded");
     return bytes ? { bytes, provider: "pixazo", model: PIXAZO_MODEL } : null;
   } catch (error) {
+    failures.push("pixazo: connection failed or request timed out");
     logger.error("Pixazo Flux Schnell generation errored:", error);
     return null;
   }
@@ -202,16 +211,22 @@ export async function POST(req: Request) {
       {
         error: noProviderConfigured
           ? "Image generation is unavailable because no image provider is configured in production. Add PIXAZO_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY/GOOGLE_AI_API_KEY."
-          : "Image generation providers are configured, but none completed the request. Check provider access/rate limits and the server logs for the exact upstream error.",
+          : `Image generation failed. ${generation.failures.join("; ") || "No provider returned an image."}`,
         imageProviders: {
           pixazo: pixazoConfigured ? "configured" : "missing",
           openai: openaiConfigured ? "configured" : "missing",
           gemini: geminiConfigured ? "configured" : "missing",
         },
         attemptedProviders: generation.attemptedProviders,
+        providerFailures: generation.failures,
       },
       { status: 502 }
     );
+  }
+
+  const format = imageFormat(generated.bytes);
+  if (!format || generated.bytes.length > MAX_IMAGE_BYTES) {
+    return NextResponse.json({ error: "The image provider returned an unsupported or oversized image." }, { status: 502 });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -219,14 +234,14 @@ export async function POST(req: Request) {
   const supabase = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
   const safeWorkspace = workspaceId.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 120) || "public";
   const safeType = type.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 60) || "generated";
-  const path = `temp/${safeWorkspace}/ai/${safeType}/${crypto.randomUUID()}.png`;
+  const path = `temp/${safeWorkspace}/ai/${safeType}/${crypto.randomUUID()}.${format.extension}`;
 
   await logUsage({ userId, action: "api.call", apiCalls: 1 });
 
   if (supabase) {
     const { error } = await supabase.storage
       .from("ai-assets")
-      .upload(path, generated.bytes, { contentType: "image/png", upsert: false });
+      .upload(path, generated.bytes, { contentType: format.mime, upsert: false });
 
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from("ai-assets").getPublicUrl(path);
@@ -243,7 +258,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
-    imageUrl: `data:image/png;base64,${generated.bytes.toString("base64")}`,
+    imageUrl: `data:${format.mime};base64,${generated.bytes.toString("base64")}`,
     tempPath: path,
     provider: generated.provider,
     model: generated.model,
@@ -253,11 +268,12 @@ export async function POST(req: Request) {
 
 async function generateImage(prompt: string, size: string): Promise<ImageGenerationResult> {
   const attemptedProviders: string[] = [];
+  const failures: string[] = [];
 
   if (PIXAZO_API_KEY) {
     attemptedProviders.push("pixazo");
-    const pixazo = await generateWithPixazo(prompt);
-    if (pixazo) return { image: pixazo, attemptedProviders };
+    const pixazo = await generateWithPixazo(prompt, failures);
+    if (pixazo) return { image: pixazo, attemptedProviders, failures };
   }
 
   if (OPENAI_API_KEY) {
@@ -276,25 +292,28 @@ async function generateImage(prompt: string, size: string): Promise<ImageGenerat
 
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
+          failures.push(providerFailure("openai", response.status));
           logger.error(`OpenAI image model ${model} failed:`, data?.error?.message || response.statusText);
           continue;
         }
 
         const b64 = data?.data?.[0]?.b64_json;
         if (typeof b64 === "string" && b64) {
-          return { image: { bytes: Buffer.from(b64, "base64"), provider: "openai", model }, attemptedProviders };
+          return { image: { bytes: Buffer.from(b64, "base64"), provider: "openai", model }, attemptedProviders, failures };
         }
 
         const url = data?.data?.[0]?.url;
         if (typeof url === "string" && url) {
           const imageResponse = await fetch(url, { signal: AbortSignal.timeout(60000) });
           if (imageResponse.ok) {
-            return { image: { bytes: Buffer.from(await imageResponse.arrayBuffer()), provider: "openai", model }, attemptedProviders };
+            return { image: { bytes: Buffer.from(await imageResponse.arrayBuffer()), provider: "openai", model }, attemptedProviders, failures };
           }
         }
 
+        failures.push("openai: no usable image was returned");
         logger.error(`OpenAI image model ${model} returned no usable image payload.`);
       } catch (error) {
+        failures.push("openai: connection failed or request timed out");
         logger.error(`OpenAI image model ${model} errored:`, error);
       }
     }
@@ -323,7 +342,7 @@ async function generateImage(prompt: string, size: string): Promise<ImageGenerat
         url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
         body: {
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"], ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}) },
         },
       },
     ];
@@ -341,6 +360,7 @@ async function generateImage(prompt: string, size: string): Promise<ImageGenerat
         });
 
         if (!response.ok) {
+          failures.push(providerFailure("gemini", response.status));
           logger.error(`Gemini image generation (${attempt.label}) failed:`, await response.text());
           continue;
         }
@@ -351,17 +371,38 @@ async function generateImage(prompt: string, size: string): Promise<ImageGenerat
           if (typeof part?.inlineData?.data === "string" && part.inlineData.data) {
             return {
               image: { bytes: Buffer.from(part.inlineData.data, "base64"), provider: "gemini", model },
-              attemptedProviders,
+              attemptedProviders, failures,
             };
           }
         }
 
+        failures.push("gemini: no usable image was returned (the response may have been filtered)");
         logger.error(`Gemini image generation (${attempt.label}) returned no usable image payload.`);
       } catch (error) {
+        failures.push("gemini: connection failed or request timed out");
         logger.error(`Gemini image generation (${attempt.label}) errored:`, error);
       }
     }
   }
 
-  return { image: null, attemptedProviders };
+  return { image: null, attemptedProviders, failures: [...new Set(failures)] };
+}
+
+// Report actionable categories without exposing provider bodies, credentials, or account details.
+function providerFailure(provider: string, status: number): string {
+  const reason = status === 401 ? "API credentials were rejected"
+    : status === 403 ? "access to the image model was denied"
+    : status === 402 ? "billing or credits are required"
+    : status === 404 ? "image model or endpoint was not found"
+    : status === 429 ? "rate limit or quota was reached"
+    : status >= 500 ? "provider is temporarily unavailable"
+    : "provider rejected the image request";
+  return `${provider}: ${reason} (HTTP ${status})`;
+}
+
+function imageFormat(bytes: Buffer): { mime: string; extension: string } | null {
+  if (bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return { mime: "image/png", extension: "png" };
+  if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return { mime: "image/jpeg", extension: "jpg" };
+  if (bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP") return { mime: "image/webp", extension: "webp" };
+  return null;
 }

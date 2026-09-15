@@ -1,11 +1,18 @@
 import type { BlockRenderer } from './types';
+import { BlockImage } from './BlockImage';
+import { imageFromProps } from '../image-source';
 
 export const commerceRenderers: Record<string, BlockRenderer> = {
   'product-card': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps}><div className="w-full h-32 bg-white/5 rounded mb-2" /><p className="text-sm font-semibold">{el.props.name}</p><p className="text-lg font-bold text-purple-400">{el.props.price}</p>{children}</div>;
+      return <div {...baseProps} style={style}><BlockImage src={imageFromProps(el.props)} alt={el.props.alt || el.props.name || ''} /><p className="text-sm font-semibold">{el.props.name}</p><p className="text-lg font-bold text-purple-400">{el.props.price}</p>{children}</div>;
   },
   'product-grid': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} style={{ display: 'grid', gridTemplateColumns: `repeat(${el.props.columns || 3}, 1fr)`, gap: '1rem' }}>{Array.from({ length: el.props.count || 6 }).map((_, i) => <div key={i} className="bg-white/5 rounded p-3"><div className="w-full h-20 bg-white/5 rounded mb-1" /><div className="h-3 w-2/3 bg-white/10 rounded mb-1" /><div className="h-3 w-1/3 bg-purple-500/30 rounded" /></div>)}{children}</div>;
+      const products = Array.isArray(el.props.products) ? el.props.products : [];
+      return <div {...baseProps} style={{ ...style, display: 'grid', gridTemplateColumns: `repeat(${el.props.columns || 3}, minmax(0, 1fr))`, gap: style.gap || '1rem' }}>
+        {products.filter((product: any) => product && typeof product === 'object').map((product: any, i: number) => <div key={i} className="bg-white/5 rounded p-3"><BlockImage src={imageFromProps(product)} alt={product.alt || product.name || ''} /><p>{product.name}</p><p>{product.price}</p></div>)}
+        {!products.length && !el.children?.length && <p>Add products to this grid.</p>}
+        {children}
+      </div>;
   },
   'add-to-cart': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <button {...baseProps} className="rounded bg-purple-600 text-white px-4 py-2 text-sm font-semibold">{el.props.label || 'Add to Cart'}{children}</button>;

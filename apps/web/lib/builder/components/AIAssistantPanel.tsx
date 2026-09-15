@@ -197,6 +197,8 @@ function setNestedValue(source: Record<string, unknown>, path: string, value: un
 
 function inferImagePropPath(element: CanvasElement): string | null {
   const props = (element.props || {}) as Record<string, unknown>;
+  if (element.type === 'ai-image') return 'src';
+  if (element.type === 'image-compare') return 'before';
   for (const key of ['src', 'image', 'imageUrl', 'mediaSrc', 'poster', 'avatar', 'backgroundImage', 'thumbnail', 'beforeSrc', 'afterSrc']) {
     if (key in props) return key;
   }
