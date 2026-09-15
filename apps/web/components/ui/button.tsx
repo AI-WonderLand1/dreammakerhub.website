@@ -15,8 +15,7 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
@@ -51,7 +50,10 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  // @radix-ui/react-slot exports Slot itself as the renderable component.
+  // Slot.Root belongs to the newer umbrella `radix-ui` namespace API and is
+  // undefined when importing { Slot } from @radix-ui/react-slot.
+  const Comp = asChild ? Slot : "button"
 
   return (
     <Comp
