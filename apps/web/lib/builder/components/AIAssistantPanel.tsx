@@ -10,8 +10,9 @@ import { findBlockDefinition } from '../blocks/utils';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type BuilderAction =
-  | { action: 'add'; ref?: string; block: { type: string; name?: string; icon?: string; props?: Record<string, unknown>; styles?: Record<string, unknown> }; target?: 'root' | 'selected' }
+  | { action: 'add'; ref?: string; allowDuplicate?: boolean; block: { type: string; name?: string; icon?: string; props?: Record<string, unknown>; styles?: Record<string, unknown> }; target?: 'root' | 'selected' }
   | { action: 'edit'; targetId?: string; targetRef?: string; props?: Record<string, unknown>; styles?: Record<string, unknown> }
+  | { action: 'remove'; targetId?: string; targetRef?: string }
   | { action: 'generate_image'; targetId?: string; targetRef?: string; propPath?: string; prompt: string; style?: string; size?: string; alt?: string; name?: string };
 
 const SUGGESTIONS = [
@@ -28,7 +29,13 @@ const FALLBACK_BLOCKS: Array<[string, string]> = [
 ];
 
 const FORBIDDEN_KEYS = new Set(['dangerouslySetInnerHTML', 'innerHTML', 'outerHTML', 'clickJs', 'customCSS', 'srcDoc', 'srcdoc', '__proto__', 'prototype', 'constructor']);
-const BLOCK_CATALOG = BLOCKS.map((block) => block.type).filter(Boolean).join(', ').slice(0, 2200);
+const BLOCK_CATALOG = BLOCKS.map((block) => block.type).filter(Boolean).join(', ').slice(0, 2600);
+
+const REUSE_ROOT_TYPES = new Set([
+  'navbar', 'hero', 'feature-grid', 'stats-section', 'pricing', 'team-grid', 'logo-cloud', 'cta',
+  'faq-accordion', 'testimonial-grid', 'carousel-testimonials', 'contact-form', 'product-grid',
+  'product-grid-3', 'gallery', 'newsletter-popup', 'footer',
+]);
 
 function findElement(elements: CanvasElement[], id: string | null): CanvasElement | null {
   if (!id) return null;
@@ -40,27 +47,68 @@ function findElement(elements: CanvasElement[], id: string | null): CanvasElemen
   return null;
 }
 
+function findReusableRoot(elements: CanvasElement[], type: string): CanvasElement | null {
+  if (!REUSE_ROOT_TYPES.has(type)) return null;
+  return elements.find((element) => element.type === type) || null;
+}
+
+function semanticRole(type: string): string {
+  if (type === 'navbar') return 'primary navigation';
+  if (type === 'hero' || type.startsWith('hero-')) return 'hero';
+  if (type === 'feature-grid' || type.startsWith('feature-')) return 'features';
+  if (type === 'pricing' || type.startsWith('pricing-')) return 'pricing';
+  if (type.includes('testimonial')) return 'testimonials';
+  if (type.includes('faq')) return 'FAQ';
+  if (type.startsWith('contact')) return 'contact';
+  if (type.startsWith('product-grid')) return 'products';
+  if (type === 'gallery' || type.endsWith('-gallery')) return 'gallery';
+  if (type === 'cta') return 'call to action';
+  if (type === 'team-grid') return 'team';
+  if (type === 'stats-section') return 'stats';
+  if (type === 'logo-cloud') return 'logo/social proof';
+  return type;
+}
+
 function summarizeElements(elements: CanvasElement[]) {
   const summary: Array<Record<string, unknown>> = [];
-  const walk = (items: CanvasElement[], depth = 0) => {
-    for (const element of items) {
-      if (summary.length >= 24) return;
+  const walk = (items: CanvasElement[], depth = 0, parentId: string | null = null) => {
+    for (let index = 0; index < items.length; index += 1) {
+      if (summary.length >= 40) return;
+      const element = items[index];
       const compactProps = Object.fromEntries(
         Object.entries((element.props || {}) as Record<string, unknown>)
-          .slice(0, 8)
+          .slice(0, 10)
           .map(([key, value]) => {
-            if (typeof value === 'string') return [key, value.slice(0, 120)];
+            if (typeof value === 'string') return [key, value.slice(0, 140)];
             if (Array.isArray(value)) return [key, `[${value.length} items]`];
             if (value && typeof value === 'object') return [key, '[object]'];
             return [key, value];
           }),
       );
-      summary.push({ id: element.id, type: element.type, name: element.name, depth, props: compactProps });
-      if (element.children?.length) walk(element.children, depth + 1);
+      summary.push({
+        id: element.id,
+        type: element.type,
+        role: semanticRole(element.type),
+        name: element.name,
+        parentId,
+        index,
+        depth,
+        props: compactProps,
+      });
+      if (element.children?.length) walk(element.children, depth + 1, element.id);
     }
   };
   walk(elements);
   return summary;
+}
+
+function summarizeRootRoles(elements: CanvasElement[]) {
+  const counts: Record<string, number> = {};
+  for (const element of elements) {
+    const role = semanticRole(element.type);
+    counts[role] = (counts[role] || 0) + 1;
+  }
+  return counts;
 }
 
 function sanitizeUrl(value: string): string {
@@ -161,34 +209,56 @@ function inferImagePropPath(element: CanvasElement): string | null {
 
 function buildSystemPrompt(pageName: string, selected: CanvasElement | null, elements: CanvasElement[]) {
   const selectedContext = selected
-    ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2).slice(0, 1400)
+    ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2).slice(0, 1600)
     : 'No element is selected. Selection is optional; infer the target from the request and page context.';
-  const pageContext = JSON.stringify(summarizeElements(elements), null, 2).slice(0, 3000);
-  return `You are WonderBuild AI Assist inside a live drag-and-drop website editor. You are an ACTION assistant, not a placeholder chat bot.
-The active page is ${JSON.stringify(pageName)}. Whatever the user asks to build, make, create, redesign, restyle, translate, or edit should be applied to the live builder state using machine actions.
+  const pageContext = JSON.stringify(summarizeElements(elements), null, 2).slice(0, 5000);
+  const roleCounts = JSON.stringify(summarizeRootRoles(elements));
+  const pageState = elements.length
+    ? 'IMPORTANT: this page already contains content. Treat it as an existing application to modify, not an empty canvas to append another site beneath.'
+    : 'This page is empty, so a broad build request may create the initial structure.';
 
-The user may prompt in ANY human language and ANY visual style. Understand the request directly. Keep page copy in the user's requested language (or the language they used when no explicit language is requested). Do not require an element selection.
+  return `You are WonderBuild AI Assist inside a production-quality live website/app builder. You are an ACTION assistant, not a placeholder chat bot.
+The active page is ${JSON.stringify(pageName)}. Apply the user's request to the live builder state using the smallest correct set of machine actions.
+
+CORE BEHAVIOR: INSPECT -> RECONCILE -> MODIFY -> VERIFY.
+${pageState}
+- Inspect the existing structure and IDs before deciding to add anything.
+- Default to EDITING or REUSING an existing block when it already serves the requested role.
+- ADD only when the requested final design genuinely needs a block/role that is missing.
+- A repeated or similar prompt should be IDEMPOTENT: running it twice should not create a second navbar, hero, feature section, product grid, pricing block, FAQ, testimonial section, contact form, gallery, CTA, or other duplicate page role.
+- For redesign/restyle requests, transform the current page in place. Do not stack a second design underneath the first one.
+- If an existing block is obsolete, conflicting, or a true duplicate, REMOVE it by exact ID. Do not remove useful content merely because adding something new is easier.
+- If the user explicitly asks for another/second/duplicate instance, an add action may set allowDuplicate:true.
+- Think about the desired FINAL page structure first, then emit only the diff needed to reach it. Do not output the plan or internal reasoning.
+
+The user may prompt in ANY human language and ANY visual style. Keep page copy in the requested language, or the user's language when none is specified. Selection is never required.
 
 Selected element, when present:
 ${selectedContext}
 
-Existing live page elements and IDs:
+Existing live page structure and exact IDs:
 ${pageContext}
+
+Current root role counts:
+${roleCounts}
 
 Available WonderBuild block types include:
 ${BLOCK_CATALOG}
 
 Supported machine actions:
-1. Add a block. You may give it a short ref so later image actions can target the newly-created block:
+1. Add a missing block:
 {"action":"add","ref":"products","block":{"type":"product-grid-3","props":{},"styles":{}},"target":"root"}
+Only set "allowDuplicate":true when the user explicitly asks for another instance.
 
-2. Edit an existing block by exact targetId, targetRef, or selected element:
-{"action":"edit","targetId":"selected","props":{"content":"New text"},"styles":{"fontSize":"48px"}}
+2. Edit/reuse an existing block by exact ID, targetRef, or selected element:
+{"action":"edit","targetId":"EXISTING_ID","props":{"heading":"Featured drinks"},"styles":{"gap":"24px"}}
 
-3. Generate ANY requested image in ANY style/language and place it into a block property:
-{"action":"generate_image","targetRef":"products","propPath":"products.0.image","prompt":"A photorealistic ceramic latte on a walnut cafe table","style":"warm editorial food photography","size":"1024x1024","alt":"Ceramic latte"}
-If no target is supplied, generate_image creates a new Image block automatically.
-Use normal image-capable blocks for generated output. Do not target the ai-image placeholder block.
+3. Remove an obsolete/conflicting/duplicate block by exact ID:
+{"action":"remove","targetId":"EXISTING_ID"}
+
+4. Generate an image and place it into an existing or newly added block:
+{"action":"generate_image","targetId":"EXISTING_ID","propPath":"products.0.image","prompt":"A photorealistic ceramic latte on a walnut cafe table","style":"warm editorial food photography","size":"1024x1024","alt":"Ceramic latte"}
+If no target is supplied, generate_image creates a new Image block. Prefer targeting an existing image-capable block when one already exists.
 Common prop paths include src, image, imageUrl, mediaSrc, poster, avatar, images.0, products.0.image, products.1.image, items.0.avatar, and members.0.avatar.
 
 Return one action with:
@@ -196,27 +266,25 @@ Return one action with:
 {...}
 ---END
 
-For a full page or multi-part request, return 2-16 actions as a JSON array:
+For a multi-part request, return 1-16 actions as a JSON array:
 ---BUILDER_ACTIONS
 [
- {"action":"add","block":{"type":"navbar","props":{},"styles":{}},"target":"root"},
- {"action":"add","block":{"type":"hero","props":{"title":"Specific title for the user's business"},"styles":{}},"target":"root"},
- {"action":"add","ref":"coffeePhoto","block":{"type":"image","props":{"alt":"Coffee shop"},"styles":{"width":"100%"}},"target":"root"},
- {"action":"generate_image","targetRef":"coffeePhoto","propPath":"src","prompt":"A welcoming specialty coffee shop interior with natural wood and morning light","style":"cinematic lifestyle photography","size":"1792x1024","alt":"Warm specialty coffee shop interior"},
- {"action":"add","ref":"products","block":{"type":"product-grid-3","props":{"heading":"Featured drinks"},"styles":{}},"target":"root"},
- {"action":"generate_image","targetRef":"products","propPath":"products.0.image","prompt":"A cappuccino with detailed latte art","style":"premium cafe product photography","size":"1024x1024"},
- {"action":"add","block":{"type":"contact-form","props":{},"styles":{}},"target":"root"}
+ {"action":"edit","targetId":"existing-navbar-id","props":{"logo":"Northstar Coffee"}},
+ {"action":"edit","targetId":"existing-hero-id","props":{"title":"Coffee worth slowing down for","subtitle":"Small-batch roasting, seasonal drinks, and a warm neighborhood room."}},
+ {"action":"generate_image","targetId":"existing-products-id","propPath":"products.0.image","prompt":"Cappuccino with precise latte art","style":"premium cafe product photography","size":"1024x1024"},
+ {"action":"add","block":{"type":"contact-form","props":{"heading":"Visit or contact us"},"styles":{}},"target":"root"}
 ]
 ---END
 
 Rules:
-- Selection is NEVER required. Use page context and exact IDs when editing an existing element without a selection.
-- If the user says something broad like “make me a coffee shop”, “build a portfolio”, or “create a SaaS site”, BUILD a useful complete page with multiple appropriate sections. Do not merely describe what you could build.
-- For visual businesses/pages such as restaurants, coffee shops, stores, hotels, portfolios, entertainment, fashion, products, travel, games, movies, or anything where imagery materially improves the page, include appropriate generate_image actions automatically. The user should not have to separately ask for pictures.
+- Existing page state is the source of truth. Use exact IDs from context for edits/removals.
+- Before EVERY add action, check whether the same type or semantic role already exists. If it does, edit it instead unless the user explicitly requested another one.
+- Broad requests like “build a coffee shop site” on a NONEMPTY page mean reconcile/upgrade the existing page into that site, not append a second complete page.
+- If changing from one block variant/type to another is necessary, remove the obsolete exact-ID block and add its replacement. Do not keep both variants accidentally.
+- For visual businesses/pages, include generate_image actions automatically, but target existing image-capable blocks before adding standalone image blocks.
 - If the user explicitly asks for an image, generate it. Do not substitute a placeholder URL.
-- Honor arbitrary visual directions such as photorealistic, watercolor, anime-inspired, cinematic, luxury editorial, brutalist, retro, futuristic, hand-drawn, clay, pixel art, or combinations described by the user.
-- Use only block types from the catalog. Prefer existing blocks and their default props over inventing unknown types.
-- Make content specific to the user's request, not “Lorem ipsum”, “Placeholder”, “Sample”, or generic fake copy.
+- Use only block types from the catalog. Prefer existing compatible blocks and their default props over inventing unknown types.
+- Make content specific to the user's request, never Lorem ipsum, Placeholder, Sample, or generic fake copy.
 - For add actions, use target selected only when the selected element accepts children; otherwise use root.
 - Keep props/styles plain JSON and CSS-in-JS camelCase.
 - Never generate scripts, JS handlers, raw custom HTML, dangerouslySetInnerHTML, srcdoc, javascript: URLs, custom CSS, or webhook code.
@@ -225,7 +293,7 @@ Rules:
 }
 
 function extractActions(text: string): BuilderAction[] {
-  const validActions = new Set(['add', 'edit', 'generate_image']);
+  const validActions = new Set(['add', 'edit', 'remove', 'generate_image']);
   const multi = text.match(/---BUILDER_ACTIONS\s*([\s\S]*?)\s*---END/);
   if (multi) {
     try {
@@ -293,7 +361,7 @@ export default function AIAssistantPanel() {
   const selectElement = useBuilderStore((state) => state.selectElement);
   const activePage = pages.find((page) => page.id === activePageId);
   const selected = useMemo(() => findElement(elements, selectedId), [elements, selectedId]);
-  const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', content: 'Prompt anything in any language or style. I can build the page, generate its images, or change the live canvas without requiring a selection.' }]);
+  const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', content: 'Tell me what to build or change. I will inspect what is already here, update it in place, and avoid duplicating sections.' }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastApplied, setLastApplied] = useState<string | null>(null);
@@ -306,6 +374,14 @@ export default function AIAssistantPanel() {
   const applyAction = useCallback(async (action: BuilderAction, refs: Map<string, string>): Promise<string | null> => {
     const store = useBuilderStore.getState();
     const currentSelected = findElement(store.elements, store.selectedId);
+
+    if (action.action === 'remove') {
+      const targetId = action.targetRef ? refs.get(action.targetRef) : action.targetId === 'selected' || !action.targetId ? currentSelected?.id : action.targetId;
+      const target = findElement(store.elements, targetId || null);
+      if (!target) return null;
+      store.removeElement(target.id);
+      return `Removed ${target.name}`;
+    }
 
     if (action.action === 'edit') {
       const targetId = action.targetRef ? refs.get(action.targetRef) : action.targetId === 'selected' || !action.targetId ? currentSelected?.id : action.targetId;
@@ -374,13 +450,28 @@ export default function AIAssistantPanel() {
 
     const definition = findBlockDefinition(action.block?.type || '');
     if (!definition) return null;
+    const props = sanitizeObject(action.block.props);
+    const styles = sanitizeObject(action.block.styles);
+    const wantsRoot = action.target !== 'selected';
+
+    if (wantsRoot && !action.allowDuplicate) {
+      const reusable = findReusableRoot(store.elements, definition.type);
+      if (reusable) {
+        if (Object.keys(props).length) store.updateElementProps(reusable.id, props);
+        if (Object.keys(styles).length) store.updateElementStyles(reusable.id, styles);
+        if (action.ref?.trim()) refs.set(action.ref.trim().slice(0, 80), reusable.id);
+        store.selectElement(reusable.id);
+        return `Updated existing ${reusable.name}`;
+      }
+    }
+
     const element: CanvasElement = {
       id: `el-${Date.now()}-ai-${Math.random().toString(36).slice(2, 7)}`,
       type: definition.type,
       name: action.block.name?.slice(0, 80) || definition.name,
       icon: action.block.icon || definition.icon,
-      props: { ...definition.defaultProps, ...sanitizeObject(action.block.props) },
-      styles: { ...definition.defaultStyles, ...sanitizeObject(action.block.styles) },
+      props: { ...definition.defaultProps, ...props },
+      styles: { ...definition.defaultStyles, ...styles },
     };
     const parentId = action.target === 'selected' && currentSelected && acceptsChildren(currentSelected.type) ? currentSelected.id : undefined;
     store.addElement(element, parentId);
@@ -396,6 +487,11 @@ export default function AIAssistantPanel() {
       if (!lower.includes(keyword)) continue;
       const definition = findBlockDefinition(type);
       if (!definition) continue;
+      const reusable = findReusableRoot(store.elements, definition.type);
+      if (reusable) {
+        store.selectElement(reusable.id);
+        return `Kept existing ${reusable.name}; no duplicate was added`;
+      }
       const element: CanvasElement = {
         id: `el-${Date.now()}-fallback`,
         type: definition.type,
@@ -451,7 +547,7 @@ export default function AIAssistantPanel() {
       }
 
       if (applied.length === 0) throw new Error(actionErrors[0] || 'AI replied without a valid builder action');
-      if (applied.length) setLastApplied(`${applied.length} live change${applied.length === 1 ? '' : 's'} applied`);
+      setLastApplied(`${applied.length} live change${applied.length === 1 ? '' : 's'} applied`);
       const explanation = stripActions(reply);
       const warning = actionErrors.length
         ? `\n\n${actionErrors.length} action${actionErrors.length === 1 ? '' : 's'} could not be applied: ${actionErrors[0]}`
@@ -473,7 +569,7 @@ export default function AIAssistantPanel() {
     const added = addFallbackBlock(promptText);
     if (added) {
       setLastApplied(added);
-      setMessages((previous) => [...previous, { role: 'assistant', content: `${added}. The AI service could not complete the richer version, so I applied the real local block instead.` }]);
+      setMessages((previous) => [...previous, { role: 'assistant', content: `${added}. The AI service could not complete the richer version, so I used the safe local fallback.` }]);
       return;
     }
 
@@ -487,14 +583,14 @@ export default function AIAssistantPanel() {
 
   return <div className="flex h-full w-full flex-col overflow-hidden bg-[#080d1b] text-white">
     <div className="shrink-0 border-b border-white/8 bg-gradient-to-b from-violet-500/[.07] to-transparent px-3 py-3">
-      <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10"><WandSparkles className="h-4 w-4 text-violet-200" /></span><div><div className="text-[13px] font-extrabold text-white">AI Assist</div><div className="text-[10px] font-bold uppercase tracking-[.12em] text-violet-200/45">Prompt-only live builder</div></div></div><span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[.07] px-2 py-1 text-[10px] font-extrabold text-emerald-200/80"><Check className="h-3 w-3" /> Any language</span></div>
+      <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10"><WandSparkles className="h-4 w-4 text-violet-200" /></span><div><div className="text-[13px] font-extrabold text-white">AI Assist</div><div className="text-[10px] font-bold uppercase tracking-[.12em] text-violet-200/45">Reconcile-first live builder</div></div></div><span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[.07] px-2 py-1 text-[10px] font-extrabold text-emerald-200/80"><Check className="h-3 w-3" /> No duplicate stacking</span></div>
       <div className="mt-3 grid grid-cols-2 gap-2"><div className="rounded-lg border border-white/8 bg-black/20 px-2.5 py-2"><div className="text-[10px] font-extrabold uppercase text-white/35">Page</div><div className="mt-0.5 truncate text-[12px] font-bold text-white/75">{activePage?.name || 'Home'}</div></div><button type="button" onClick={() => selected && selectElement(selected.id)} className="rounded-lg border border-white/8 bg-black/20 px-2.5 py-2 text-left"><div className="flex items-center gap-1 text-[10px] font-extrabold uppercase text-white/35"><MousePointer2 className="h-3 w-3" /> Optional target</div><div className={`mt-0.5 truncate text-[12px] font-bold ${selected ? 'text-violet-100/85' : 'text-white/30'}`}>{selected?.name || 'No selection needed'}</div></button></div>
     </div>
 
-    <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-3">{messages.map((message, index) => <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[90%] whitespace-pre-wrap rounded-xl border px-3 py-2.5 text-[13px] font-semibold leading-5 ${message.role === 'user' ? 'border-violet-400/20 bg-violet-500/15 text-violet-50' : 'border-white/8 bg-white/[.04] text-white/80'}`}>{message.content}</div></div>)}{loading && <div className="inline-flex items-center gap-2 rounded-xl border border-violet-300/10 bg-violet-500/[.06] px-3 py-2 text-[13px] font-bold text-violet-100/70"><Sparkles className="h-4 w-4 animate-pulse" /> Building content and images on the live canvas…</div>}</div>
+    <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-3">{messages.map((message, index) => <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[90%] whitespace-pre-wrap rounded-xl border px-3 py-2.5 text-[13px] font-semibold leading-5 ${message.role === 'user' ? 'border-violet-400/20 bg-violet-500/15 text-violet-50' : 'border-white/8 bg-white/[.04] text-white/80'}`}>{message.content}</div></div>)}{loading && <div className="inline-flex items-center gap-2 rounded-xl border border-violet-300/10 bg-violet-500/[.06] px-3 py-2 text-[13px] font-bold text-violet-100/70"><Sparkles className="h-4 w-4 animate-pulse" /> Inspecting the current page and applying the smallest correct changes…</div>}</div>
 
     {lastApplied && <div className="mx-3 mb-2 flex items-center gap-2 rounded-lg border border-emerald-300/15 bg-emerald-500/[.07] px-2.5 py-2 text-[11px] font-extrabold text-emerald-200/80"><Check className="h-3.5 w-3.5" /> {lastApplied}</div>}
 
-    <div className="shrink-0 border-t border-white/8 p-3"><div className="mb-2 flex gap-1 overflow-x-auto pb-1">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => runSuggestion(suggestion)} disabled={loading} className="shrink-0 rounded-full border border-white/8 bg-white/[.03] px-2.5 py-1.5 text-[10px] font-extrabold text-white/45 hover:border-violet-300/20 hover:bg-violet-500/10 hover:text-violet-100 disabled:opacity-30">{suggestion}</button>)}</div><div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 focus-within:border-violet-400/35"><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSend(); } }} rows={2} placeholder="Prompt anything in any language or style…" className="min-h-[48px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] font-semibold leading-5 text-white outline-none placeholder:text-white/30" /><button type="button" onClick={() => void handleSend()} disabled={loading || !input.trim()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white disabled:opacity-35" aria-label="Send AI request">{loading ? <Bot className="h-4 w-4 animate-pulse" /> : <CornerDownLeft className="h-4 w-4" />}</button></div><p className="mt-1.5 text-center text-[10px] font-semibold text-white/25">Any language + any style → real layout, copy, and image actions.</p></div>
+    <div className="shrink-0 border-t border-white/8 p-3"><div className="mb-2 flex gap-1 overflow-x-auto pb-1">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => runSuggestion(suggestion)} disabled={loading} className="shrink-0 rounded-full border border-white/8 bg-white/[.03] px-2.5 py-1.5 text-[10px] font-extrabold text-white/45 hover:border-violet-300/20 hover:bg-violet-500/10 hover:text-violet-100 disabled:opacity-30">{suggestion}</button>)}</div><div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 focus-within:border-violet-400/35"><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSend(); } }} rows={2} placeholder="Build, change, restyle, or fix anything…" className="min-h-[48px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] font-semibold leading-5 text-white outline-none placeholder:text-white/30" /><button type="button" onClick={() => void handleSend()} disabled={loading || !input.trim()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white disabled:opacity-35" aria-label="Send AI request">{loading ? <Bot className="h-4 w-4 animate-pulse" /> : <CornerDownLeft className="h-4 w-4" />}</button></div><p className="mt-1.5 text-center text-[10px] font-semibold text-white/25">Inspects first → edits/reuses existing blocks → adds only what is missing.</p></div>
   </div>;
 }
