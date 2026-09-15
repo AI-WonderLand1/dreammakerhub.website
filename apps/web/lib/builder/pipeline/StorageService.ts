@@ -29,11 +29,31 @@ export class StorageService {
   private saveCount = 0;
   private localSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private projectSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private loadedProjectId: string | null = null;
+  private loadPromise: Promise<boolean> | null = null;
+  private loadPromiseProjectId: string | null = null;
 
   setProjectId(id: string): void {
-    this.projectId = id;
-    if (id) {
-      this.loadFromProject();
+    const nextProjectId = id.trim() || null;
+
+    if (nextProjectId === this.projectId) {
+      if (
+        nextProjectId &&
+        this.loadedProjectId !== nextProjectId &&
+        this.loadPromiseProjectId !== nextProjectId
+      ) {
+        void this.loadFromProject();
+      }
+      return;
+    }
+
+    this.projectId = nextProjectId;
+    this.loadedProjectId = null;
+    this.loadPromise = null;
+    this.loadPromiseProjectId = null;
+
+    if (this.projectId) {
+      void this.loadFromProject();
     }
   }
 
@@ -182,32 +202,55 @@ export class StorageService {
   }
 
   async loadFromProject(): Promise<boolean> {
-    if (!this.projectId) return false;
-    try {
-      const res = await fetch(`/api/projects/${this.projectId}/files`, {
-        method: 'GET',
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      const raw = data.files?.[STATE_FILE];
-      if (!raw) return false;
-      const parsed = JSON.parse(raw) as Partial<VisualState> & { version?: number };
-      if (Array.isArray(parsed.pages) || Array.isArray(parsed.elements)) {
-        this.applyState(parsed);
-        const current = useBuilderStore.getState();
-        this.bus.emit(EventNames.STORAGE_LOADED, {
-          projectId: this.projectId,
-          elements: current.elements,
-          theme: current.theme,
-          activeBreakpoint: current.activeBreakpoint,
-          zoom: current.zoom,
-          pan: current.pan,
-          showGrid: current.showGrid,
-          snapToGrid: current.snapToGrid,
+    const projectId = this.projectId;
+    if (!projectId) return false;
+    if (this.loadedProjectId === projectId) return true;
+    if (this.loadPromise && this.loadPromiseProjectId === projectId) return this.loadPromise;
+
+    const loadPromise = (async (): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files`, {
+          method: 'GET',
         });
+        if (!res.ok) return false;
+
+        const data = await res.json();
+        if (this.projectId !== projectId) return false;
+
+        const raw = data.files?.[STATE_FILE];
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<VisualState> & { version?: number };
+          if (Array.isArray(parsed.pages) || Array.isArray(parsed.elements)) {
+            this.applyState(parsed);
+            const current = useBuilderStore.getState();
+            this.bus.emit(EventNames.STORAGE_LOADED, {
+              projectId,
+              elements: current.elements,
+              theme: current.theme,
+              activeBreakpoint: current.activeBreakpoint,
+              zoom: current.zoom,
+              pan: current.pan,
+              showGrid: current.showGrid,
+              snapToGrid: current.snapToGrid,
+            });
+          }
+        }
+
+        this.loadedProjectId = projectId;
+        return true;
+      } catch {
+        return false;
+      } finally {
+        if (this.loadPromise === loadPromise) {
+          this.loadPromise = null;
+          this.loadPromiseProjectId = null;
+        }
       }
-      return true;
-    } catch { return false; }
+    })();
+
+    this.loadPromise = loadPromise;
+    this.loadPromiseProjectId = projectId;
+    return loadPromise;
   }
 
   async saveRevision(label?: string): Promise<any> {

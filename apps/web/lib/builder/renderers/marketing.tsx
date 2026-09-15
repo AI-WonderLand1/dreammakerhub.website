@@ -2,7 +2,7 @@ import type { BlockRenderer } from './types';
 
 export const marketingRenderers: Record<string, BlockRenderer> = {
   'hero': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps}><h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{el.props.title}</h2><p style={{ opacity: 0.7, marginBottom: '1rem' }}>{el.props.subtitle}</p><span className="inline-block rounded bg-purple-600 text-white px-4 py-2 text-sm font-semibold">{el.props.cta || el.props.buttonText}</span>{children}</div>;
+      return <div {...baseProps}><h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{el.props.title}</h1><p style={{ opacity: 0.7, marginBottom: '1rem' }}>{el.props.subtitle}</p><span className="inline-block rounded bg-purple-600 text-white px-4 py-2 text-sm font-semibold">{el.props.cta || el.props.buttonText}</span>{children}</div>;
   },
   'cta': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}><h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{el.props.title}</h2><p style={{ opacity: 0.7, marginBottom: '1rem' }}>{el.props.subtitle}</p><span className="inline-block rounded bg-purple-600 text-white px-4 py-2 text-sm font-semibold">{el.props.cta || el.props.buttonText}</span>{children}</div>;
