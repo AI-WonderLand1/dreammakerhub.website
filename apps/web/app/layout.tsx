@@ -26,6 +26,10 @@ export const metadata: Metadata = {
     template: "%s | DreamMakerHub",
   },
   description: siteDescription,
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+  },
   authors: [{ name: "AI WONDERLAND INNOVATION", url: `${siteUrl}/about` }],
   creator: "AI WONDERLAND INNOVATION",
   publisher: "AI WONDERLAND INNOVATION",
