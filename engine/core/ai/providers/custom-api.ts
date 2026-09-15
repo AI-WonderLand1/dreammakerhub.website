@@ -1,7 +1,7 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
 import { logger } from "@lib/logger";
-import { isInternalUrl } from "./ssrf";
+import { isInternalUrl, safeExternalFetch } from "./ssrf";
 
 export const customApiProvider: AIProvider = {
   name: "custom-api",
@@ -53,7 +53,7 @@ export const customApiProvider: AIProvider = {
         confessions: {
           confidence: 0,
           reasoning: ["SSRF blocked: internal URL detected"],
-          limitations: ["Internal/private network URLs are not allowed"]
+          limitations: ["Only public HTTPS provider URLs are allowed"]
         }
       };
     }
@@ -70,7 +70,7 @@ export const customApiProvider: AIProvider = {
         content: Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt)
       });
 
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await safeExternalFetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -86,8 +86,8 @@ export const customApiProvider: AIProvider = {
 
       const data = await response.json();
 
-      if (data.error) {
-        logger.error("Custom API Error", { error: data.error });
+      if (!response.ok || data.error) {
+        logger.error("Custom API Error", { status: response.status });
         return {
           text: "Custom API returned an error.",
           error: true,
@@ -96,13 +96,13 @@ export const customApiProvider: AIProvider = {
           confessions: {
             confidence: 0,
             reasoning: ["Custom API returned an error"],
-            limitations: [data.error.message || "Unknown error"]
+            limitations: [data?.error?.message || `HTTP ${response.status}`]
           }
         };
       }
 
       if (!data.choices?.length) {
-        logger.error("Custom API returned no choices", { data });
+        logger.error("Custom API returned no choices", { status: response.status });
         return {
           text: "No response from Custom API.",
           error: true,
@@ -139,7 +139,7 @@ export const customApiProvider: AIProvider = {
         model,
         confessions: {
           confidence: 0,
-          reasoning: ["Network or infrastructure failure"],
+          reasoning: ["Network or security validation failure"],
           limitations: [errMsg]
         }
       };
