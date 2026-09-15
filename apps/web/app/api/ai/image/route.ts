@@ -24,8 +24,26 @@ type GeneratedImage = {
   model: string;
 };
 
+type ImageGenerationResult = {
+  image: GeneratedImage | null;
+  attemptedProviders: string[];
+};
+
 function cleanText(value: unknown, maxLength: number): string {
   return typeof value === "string" ? value.replace(/[<>]/g, "").trim().slice(0, maxLength) : "";
+}
+
+function geminiAspectRatio(size: string): string | undefined {
+  switch (size) {
+    case "1024x1024":
+      return "1:1";
+    case "1536x1024":
+      return "3:2";
+    case "1024x1536":
+      return "2:3";
+    default:
+      return undefined;
+  }
 }
 
 export async function POST(req: Request) {
@@ -46,10 +64,24 @@ export async function POST(req: Request) {
     ? `${prompt}\n\nVisual style requested by the user: ${style}. Follow the requested style while preserving the subject, language-specific text, cultural context, composition, and intent.`
     : prompt;
 
-  const generated = await generateImage(finalPrompt, size);
+  const generation = await generateImage(finalPrompt, size);
+  const generated = generation.image;
   if (!generated) {
+    const openaiConfigured = Boolean(OPENAI_API_KEY);
+    const geminiConfigured = Boolean(GEMINI_API_KEY);
+    const noProviderConfigured = !openaiConfigured && !geminiConfigured;
+
     return NextResponse.json(
-      { error: "Image generation failed. Configure a valid OPENAI_API_KEY or GEMINI_API_KEY/GOOGLE_AI_API_KEY with image access." },
+      {
+        error: noProviderConfigured
+          ? "Image generation is unavailable because no image provider is configured in production. Add OPENAI_API_KEY or GEMINI_API_KEY/GOOGLE_AI_API_KEY."
+          : "Image generation providers are configured, but none completed the request. Check provider billing/model access and the server logs for the exact upstream error.",
+        imageProviders: {
+          openai: openaiConfigured ? "configured" : "missing",
+          gemini: geminiConfigured ? "configured" : "missing",
+        },
+        attemptedProviders: generation.attemptedProviders,
+      },
       { status: 502 }
     );
   }
@@ -91,8 +123,11 @@ export async function POST(req: Request) {
   });
 }
 
-async function generateImage(prompt: string, size: string): Promise<GeneratedImage | null> {
+async function generateImage(prompt: string, size: string): Promise<ImageGenerationResult> {
+  const attemptedProviders: string[] = [];
+
   if (OPENAI_API_KEY) {
+    attemptedProviders.push("openai");
     for (const model of OPENAI_IMAGE_MODELS) {
       try {
         const response = await fetch("https://api.openai.com/v1/images/generations", {
@@ -113,16 +148,18 @@ async function generateImage(prompt: string, size: string): Promise<GeneratedIma
 
         const b64 = data?.data?.[0]?.b64_json;
         if (typeof b64 === "string" && b64) {
-          return { bytes: Buffer.from(b64, "base64"), provider: "openai", model };
+          return { image: { bytes: Buffer.from(b64, "base64"), provider: "openai", model }, attemptedProviders };
         }
 
         const url = data?.data?.[0]?.url;
         if (typeof url === "string" && url) {
           const imageResponse = await fetch(url, { signal: AbortSignal.timeout(60000) });
           if (imageResponse.ok) {
-            return { bytes: Buffer.from(await imageResponse.arrayBuffer()), provider: "openai", model };
+            return { image: { bytes: Buffer.from(await imageResponse.arrayBuffer()), provider: "openai", model }, attemptedProviders };
           }
         }
+
+        logger.error(`OpenAI image model ${model} returned no usable image payload.`);
       } catch (error) {
         logger.error(`OpenAI image model ${model} errored:`, error);
       }
@@ -130,36 +167,67 @@ async function generateImage(prompt: string, size: string): Promise<GeneratedIma
   }
 
   if (GEMINI_API_KEY) {
-    try {
-      const model = process.env.GEMINI_IMAGE_MODEL?.trim() || "gemini-2.5-flash-image";
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-          }),
-          signal: AbortSignal.timeout(120000),
-        }
-      );
+    attemptedProviders.push("gemini");
+    const model = process.env.GEMINI_IMAGE_MODEL?.trim() || "gemini-2.5-flash-image";
+    const aspectRatio = geminiAspectRatio(size);
 
-      if (response.ok) {
+    const attempts = [
+      {
+        label: "v1-response-format",
+        url: `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent`,
+        body: {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseFormat: {
+              image: aspectRatio ? { aspectRatio } : {},
+            },
+          },
+        },
+      },
+      {
+        label: "v1beta-response-modalities",
+        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        body: {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        },
+      },
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const response = await fetch(attempt.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": GEMINI_API_KEY,
+          },
+          body: JSON.stringify(attempt.body),
+          signal: AbortSignal.timeout(120000),
+        });
+
+        if (!response.ok) {
+          logger.error(`Gemini image generation (${attempt.label}) failed:`, await response.text());
+          continue;
+        }
+
         const data = await response.json();
         const parts = data?.candidates?.[0]?.content?.parts || [];
         for (const part of parts) {
-          if (typeof part?.inlineData?.data === "string") {
-            return { bytes: Buffer.from(part.inlineData.data, "base64"), provider: "gemini", model };
+          if (typeof part?.inlineData?.data === "string" && part.inlineData.data) {
+            return {
+              image: { bytes: Buffer.from(part.inlineData.data, "base64"), provider: "gemini", model },
+              attemptedProviders,
+            };
           }
         }
-      } else {
-        logger.error("Gemini image generation failed:", await response.text());
+
+        logger.error(`Gemini image generation (${attempt.label}) returned no usable image payload.`);
+      } catch (error) {
+        logger.error(`Gemini image generation (${attempt.label}) errored:`, error);
       }
-    } catch (error) {
-      logger.error("Gemini image generation errored:", error);
     }
   }
 
-  return null;
+  return { image: null, attemptedProviders };
 }
