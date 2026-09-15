@@ -1,27 +1,23 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth } from '@/lib/supabase/auth-context';
+
+const NPC_SIM_URL = 'https://npc-ai-sim.dreammakerhub.website';
 
 export default function WonderPlayPage() {
-  const { user, loading } = useAuth();
-
   useEffect(() => {
-    if (loading) return;
+    window.location.replace(NPC_SIM_URL);
+  }, []);
 
-    if (user) {
-      // Assuming the user object has an access_token property
-      // Adjust this according to the actual user object structure from useAuth
-      const token = user.access_token || '';
-      const url = new URL('https://npc-ai-sim.dreammakerhub.website');
-      if (token) {
-        url.searchParams.set('token', token);
-      }
-      window.location.href = url.toString();
-    } else {
-      window.location.href = 'https://npc-ai-sim.dreammakerhub.website';
-    }
-  }, [user, loading]);
-
-  return <div>Redirecting...</div>;
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#05070c] px-6 text-center text-white">
+      <div>
+        <p className="text-lg font-bold">Opening NPC-AI-SIM…</p>
+        <p className="mt-2 text-sm text-white/50">Redirecting to the NPC workspace.</p>
+        <a href={NPC_SIM_URL} className="mt-5 inline-block rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500">
+          Open NPC-AI-SIM
+        </a>
+      </div>
+    </main>
+  );
 }
