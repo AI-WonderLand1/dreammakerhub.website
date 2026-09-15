@@ -100,13 +100,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     const supabase = getSupabaseClient()
-    if (supabase) {
-      await supabase.auth.signOut()
-    }
+    const clientSignOut = supabase ? supabase.auth.signOut() : Promise.resolve()
+    const serverSignOut = typeof window !== 'undefined'
+      ? fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+      : Promise.resolve()
+
+    await Promise.allSettled([clientSignOut, serverSignOut])
+
     setUser(null)
     setSession(null)
     if (typeof window !== 'undefined') {
-      window.location.href = '/public-pages/auth'
+      window.location.replace('/public-pages/auth')
     }
   }, [])
 
