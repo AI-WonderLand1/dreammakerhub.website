@@ -2,7 +2,25 @@
 
 import { Mail, MessageCircle, ShieldCheck, Sparkles, Headphones } from "lucide-react";
 
+declare global {
+  interface Window {
+    zE?: (...args: unknown[]) => void;
+  }
+}
+
+const zendeskSupportEmail = "support@aiwonderlandinnovation.zendesk.com";
+
 export default function ContactPage() {
+  const openSupportChat = () => {
+    if (typeof window !== "undefined" && window.zE) {
+      window.zE("messenger", "show");
+      window.zE("messenger", "open");
+      return;
+    }
+
+    window.location.href = `mailto:${zendeskSupportEmail}?subject=DreamMakerHub%20Support`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-50">
       <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">
@@ -21,9 +39,23 @@ export default function ContactPage() {
               Support
             </div>
             <p className="mt-2 text-sm text-slate-300">Product help, billing questions, refunds, or account issues.</p>
-            <a className="mt-3 inline-flex text-sm text-sky-200 hover:text-sky-100" href="mailto:support@dreammakerhub.website">
-              support@dreammakerhub.website
-            </a>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={openSupportChat}
+                className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chat with support
+              </button>
+              <a
+                className="inline-flex text-sm text-sky-200 hover:text-sky-100"
+                href={`mailto:${zendeskSupportEmail}?subject=DreamMakerHub%20Support`}
+              >
+                Email support
+              </a>
+            </div>
+            <p className="mt-3 text-xs text-slate-500">Support conversations are handled through Zendesk.</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-inner shadow-sky-500/5">
             <div className="flex items-center gap-2 text-sm text-slate-200">
