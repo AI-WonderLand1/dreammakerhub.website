@@ -43,6 +43,7 @@ export const PAGES: NavPage[] = [
   { path: "/dashboard/3dhub", label: "WonderPlay", icon: "🎮", category: "tools", description: "Start and manage 3D scenes, games, worlds, and assets." },
   { path: "/wonder-play", label: "NPC-AI-SIM", icon: "🧙", category: "tools", description: "Create and test intelligent 3D characters." },
   { path: "/community", label: "Community", icon: "👥", category: "community", description: "Join builders and community discussions." },
+  { path: "/blog", label: "Blog", icon: "📝", category: "community", description: "Read DreamMakerHub product updates, founder notes, and build-in-public posts." },
   { path: "/docs", label: "Docs", icon: "📖", category: "docs", description: "Read product and API documentation." },
 ];
 
@@ -90,6 +91,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 ];
 
 export const SECONDARY_NAV: SecondaryNavItem[] = [
+  { label: "Blog", href: "/blog", icon: "📝" },
   { label: "Projects", href: "/dashboard#projects", icon: "📁" },
   { label: "Docs", href: "/docs", icon: "📖" },
   { label: "Account", href: "/settings/account", icon: "👤" },
