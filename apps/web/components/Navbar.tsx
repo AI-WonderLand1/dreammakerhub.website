@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
-  BriefcaseBusiness,
   Building2,
   ChevronDown,
   Code2,
@@ -17,7 +16,7 @@ import {
   Mail,
   Menu,
   Newspaper,
-  ShieldCheck,
+  Sparkles,
   Users,
   WandSparkles,
   X,
@@ -38,8 +37,8 @@ const ABOUT_GROUPS = [
     subtitle: 'The platform, the vision, the future',
     items: [
       { label: 'What is DreamMakerHub?', href: '/about', icon: FileText },
-      { label: 'Roadmap', href: '/roadmap', icon: BriefcaseBusiness },
       { label: 'Pricing', href: '/#pricing', icon: Building2 },
+      { label: 'Community', href: '/community', icon: Users },
     ],
   },
   {
@@ -48,7 +47,7 @@ const ABOUT_GROUPS = [
     items: [
       { label: 'About the Company', href: '/about', icon: Building2 },
       { label: 'Contact', href: '/contact', icon: Mail },
-      { label: 'Security', href: '/security', icon: ShieldCheck },
+      { label: 'Blog', href: '/blog', icon: Newspaper },
     ],
   },
   {
@@ -57,8 +56,7 @@ const ABOUT_GROUPS = [
     items: [
       { label: 'Docs & Guides', href: '/docs', icon: BookOpen },
       { label: 'Tutorials', href: '/tutorials', icon: FileText },
-      { label: 'Community', href: '/community', icon: Users },
-      { label: 'Blog', href: '/blog', icon: Newspaper },
+      { label: 'AI Playground', href: 'https://playground.dreammakerhub.website/', icon: Sparkles, external: true },
       { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: Github, external: true },
     ],
   },
@@ -103,17 +101,11 @@ export default function Navbar() {
         <div className="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex">
           {MAIN_LINKS.map(({ label, href }) => {
             const active = isActive(href);
-            return (
-              <Link key={href} href={href} onClick={() => setAboutOpen(false)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${active ? 'bg-violet-500/15 text-white ring-1 ring-violet-400/20' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>
-                {label}
-              </Link>
-            );
+            return <Link key={href} href={href} onClick={() => setAboutOpen(false)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${active ? 'bg-violet-500/15 text-white ring-1 ring-violet-400/20' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>{label}</Link>;
           })}
-          <div className="relative">
-            <button type="button" onClick={() => setAboutOpen((open) => !open)} aria-expanded={aboutOpen} aria-haspopup="true" className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${aboutOpen ? 'bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/25' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>
-              About <ChevronDown className={`h-4 w-4 transition ${aboutOpen ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
+          <button type="button" onClick={() => setAboutOpen((open) => !open)} aria-expanded={aboutOpen} aria-haspopup="true" className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${aboutOpen ? 'bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/25' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>
+            About <ChevronDown className={`h-4 w-4 transition ${aboutOpen ? 'rotate-180' : ''}`} />
+          </button>
         </div>
 
         <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
@@ -162,21 +154,17 @@ export default function Navbar() {
               const active = isActive(href);
               return <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${active ? 'bg-violet-500/15 text-white' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}><Icon size={17} className={active ? 'text-violet-300' : 'text-white/35'} />{label}</Link>;
             })}
-
-            <button type="button" onClick={() => setAboutOpen((open) => !open)} className="mt-1 flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold text-white/75 hover:bg-white/[0.055]">
-              <span>About & Resources</span><ChevronDown className={`h-4 w-4 transition ${aboutOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <button type="button" onClick={() => setAboutOpen((open) => !open)} className="mt-1 flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold text-white/75 hover:bg-white/[0.055]"><span>About & Resources</span><ChevronDown className={`h-4 w-4 transition ${aboutOpen ? 'rotate-180' : ''}`} /></button>
             {aboutOpen && (
               <div className="grid gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
                 {ABOUT_GROUPS.map((group) => (
                   <div key={group.title}>
                     <p className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-violet-300">{group.title}</p>
-                    {group.items.map(({ label, href, icon: Icon }) => <Link key={href} href={href} onClick={() => { setMobileOpen(false); setAboutOpen(false); }} className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-white/60 hover:bg-white/[0.05] hover:text-white"><Icon className="h-4 w-4" />{label}</Link>)}
+                    {group.items.map(({ label, href, icon: Icon, ...item }) => <Link key={href} href={href} target={'external' in item && item.external ? '_blank' : undefined} rel={'external' in item && item.external ? 'noreferrer' : undefined} onClick={() => { setMobileOpen(false); setAboutOpen(false); }} className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-white/60 hover:bg-white/[0.05] hover:text-white"><Icon className="h-4 w-4" />{label}</Link>)}
                   </div>
                 ))}
               </div>
             )}
-
             <div className="mt-3 border-t border-white/10 pt-3 sm:hidden">
               {!loading && user ? (
                 <div className="grid gap-2">
