@@ -5,16 +5,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   ArrowRight,
-  Bot,
   BrainCircuit,
   Check,
   Code2,
   Cuboid,
   FileCode2,
-  Globe2,
-  MessageCircle,
   Rocket,
-  ShieldCheck,
   Sparkles,
   Users,
   WandSparkles,
