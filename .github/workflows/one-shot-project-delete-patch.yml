@@ -1,0 +1,115 @@
+name: One-shot typed-name project deletion patch
+
+on:
+  push:
+    branches: [fix/typed-name-project-deletion]
+    paths: ['.github/workflows/one-shot-project-delete-patch.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/typed-name-project-deletion
+          persist-credentials: true
+      - name: Patch existing project controls without replacing pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def edit(path, transform):
+              file = Path(path)
+              original = file.read_text()
+              updated = transform(original)
+              if original == updated:
+                  raise RuntimeError(f'No changes made to {path}')
+              file.write_text(updated)
+              print(f'Updated {path}')
+
+          def once(text, before, after):
+              if text.count(before) != 1:
+                  raise RuntimeError(f'Expected one occurrence, found {text.count(before)}: {before[:100]!r}')
+              return text.replace(before, after, 1)
+
+          def edit_storage(text):
+              start = text.index('export async function deleteProject(')
+              end = text.index('\nexport async function createRevision(', start)
+              return text[:start] + '''export async function deleteProject(projectId: string, ownerId: string, confirmationName: string): Promise<void> {
+            const project = await assertOwner(projectId, ownerId);
+            if (confirmationName !== project.name) throw new Error("Project name changed during deletion.");
+            const supabase = await getClient();
+            // Match the name in the delete query as well, so a concurrent rename cannot bypass the guard.
+            const { data, error } = await supabase.from("_projects")
+              .delete()
+              .eq("id", projectId)
+              .eq("owner_id", ownerId)
+              .eq("name", confirmationName)
+              .select("id");
+            if (error) throw new Error(error.message);
+            if (!data?.length) throw new Error("Project name changed during deletion.");
+          }
+          '''.replace('          }\n          ', '          }\n') + text[end:]
+
+          def edit_project_page(text):
+              text = once(text, '  Trash2,\n', '')
+              text = once(text, 'import RepositoryFileBrowser from "./RepositoryFileBrowser";', 'import RepositoryFileBrowser from "./RepositoryFileBrowser";\nimport ProjectDeleteButton from "@/app/(workspace)/dashboard/components/ProjectDeleteButton";')
+              text = once(text, '  const [deleting, setDeleting] = useState(false);\n', '')
+              start = text.index('  async function deleteProject() {')
+              end = text.index('  function downloadZip() {', start)
+              text = text[:start] + text[end:]
+              old = '''              <button
+                type="button"
+                onClick={() => void deleteProject()}
+                disabled={deleting}
+                className="flex w-full items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+              >
+                <Trash2 size={15}/>{deleting ? "Deleting..." : "Delete project"}
+              </button>'''
+              new = '''              <ProjectDeleteButton
+                project={project}
+                onDeleted={() => { router.replace("/dashboard#projects"); router.refresh(); }}
+                className="flex w-full items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2.5 text-sm text-red-300 hover:bg-red-500/10"
+              />'''
+              return once(text, old, new)
+
+          def edit_dashboard(text):
+              text = once(text, 'import { createClient } from "@/lib/supabase/client";', 'import { createClient } from "@/lib/supabase/client";\nimport ProjectDeleteButton from "./components/ProjectDeleteButton";')
+              old = '''                          <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
+                        </div>
+                      </div>'''
+              new = '''                          <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
+                        </div>
+                        <div className="mt-2 flex justify-end">
+                          <ProjectDeleteButton
+                            project={project}
+                            onDeleted={() => setProjects((current) => current.filter((entry) => entry.id !== project.id))}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-500/25 px-2 py-1.5 text-[11px] text-red-300 hover:bg-red-500/10"
+                            label="Delete"
+                          />
+                        </div>
+                      </div>'''
+              return once(text, old, new)
+
+          def edit_dialog(text):
+              text = once(text, "import { useId, useState } from 'react';", "import { useId, useState } from 'react';\nimport { createPortal } from 'react-dom';")
+              text = once(text, '      {open && (\n', "      {open && typeof document !== 'undefined' && createPortal(\n")
+              text = once(text, '        </div>\n      )}\n', '        </div>, document.body\n      )}\n')
+              return text
+
+          edit('apps/web/lib/projects/storage.ts', edit_storage)
+          edit('apps/web/app/(workspace)/dashboard/projects/[id]/page.tsx', edit_project_page)
+          edit('apps/web/app/(workspace)/dashboard/page.tsx', edit_dashboard)
+          edit('apps/web/app/(workspace)/dashboard/components/ProjectDeleteButton.tsx', edit_dialog)
+          PY
+          git rm .github/workflows/one-shot-project-delete-patch.yml
+          git add apps/web/lib/projects/storage.ts 'apps/web/app/(workspace)/dashboard/projects/[id]/page.tsx' 'apps/web/app/(workspace)/dashboard/page.tsx' 'apps/web/app/(workspace)/dashboard/components/ProjectDeleteButton.tsx'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Wire exact-name deletion into project pages and dashboard'
+          git push origin HEAD:fix/typed-name-project-deletion
