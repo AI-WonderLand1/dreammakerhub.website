@@ -1,0 +1,50 @@
+.homepage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  color: #081c43;
+  background: #143e76;
+}
+
+.landscape {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.landscapeImage {
+  object-fit: fill;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.content h2,
+.content > section > div > p {
+  text-shadow: 0 1px 10px rgb(230 243 255 / 65%);
+}
+
+.comparison {
+  margin-top: 1.5rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 1rem;
+  color: #102747;
+  background: rgb(229 242 255 / 88%);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 767px) {
+  .landscapeImage {
+    object-fit: cover;
+    object-position: 53% top;
+  }
+
+  .content {
+    background: linear-gradient(180deg, rgb(184 216 250 / 85%), rgb(63 127 200 / 80%) 45%, rgb(210 232 250 / 85%));
+  }
+}

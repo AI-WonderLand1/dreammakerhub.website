@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/lib/supabase/auth-context';
 import HomepageNavbar from './HomepageNavbar';
 import { PLANS } from './data';
+import styles from './ScenicHomepage.module.css';
 
 const capabilities = [
   [WandSparkles, 'Build', 'Web & Apps'],
@@ -127,15 +128,14 @@ export default function MockupHomepage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#06101d] text-slate-950">
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <Image src="/images/hero-victorized-bg.webp" alt="" fill priority className="object-cover object-center" sizes="100vw" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(1,4,16,.90)_0%,rgba(5,10,34,.72)_18%,rgba(43,83,145,.30)_38%,rgba(159,203,244,.36)_56%,rgba(240,248,255,.64)_72%,rgba(255,244,205,.76)_100%)]" />
+    <main className={styles.homepage}>
+      <div className={styles.landscape} aria-hidden="true">
+        <Image src="/images/homepage-landscape.webp" alt="" fill priority unoptimized sizes="100vw" className={styles.landscapeImage} />
       </div>
 
       <HomepageNavbar scrolled={scrolled} />
 
-      <section className="relative z-10 mx-auto grid min-h-[640px] max-w-7xl items-center gap-8 px-5 pb-10 pt-24 text-white sm:px-8 lg:grid-cols-[.9fr_1.1fr] lg:px-10">
+      <section className="relative z-10 mx-auto grid min-h-[490px] max-w-7xl items-center gap-8 px-5 pb-10 pt-24 text-white sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:px-10">
         <div className="max-w-2xl">
           <p className="text-[11px] font-black uppercase tracking-[.28em] text-cyan-200/80">Turn ideas into reality</p>
           <h1 className="mt-5 text-4xl font-black leading-[.98] tracking-[-.045em] sm:text-5xl lg:text-[58px]">
@@ -149,17 +149,7 @@ export default function MockupHomepage() {
           </div>
         </div>
 
-        <div className="relative hidden min-h-[430px] lg:block">
-          <div className="absolute inset-x-6 top-9 rounded-[28px] border border-white/15 bg-[#07111f]/58 p-4 shadow-[0_24px_90px_rgba(0,0,0,.40)] backdrop-blur-xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div><p className="text-xs font-black uppercase tracking-[.18em] text-violet-300">DreamMakerHub</p><p className="mt-1 text-sm font-bold">Create · Learn · Share · Belong</p></div>
-              <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-200 ring-1 ring-emerald-300/20">LIVE</span>
-            </div>
-            <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10 bg-black/35">
-              <Image src="/images/ai-wonderland-homepage.png" alt="DreamMakerHub product preview" fill className="object-cover object-top" sizes="620px" />
-            </div>
-          </div>
-        </div>
+        <div aria-hidden="true" className="hidden lg:block" />
       </section>
 
       <section className="relative z-10 border-y border-white/10 bg-[#071323]/52 backdrop-blur-md">
@@ -173,10 +163,10 @@ export default function MockupHomepage() {
         </div>
       </section>
 
-      <div className="relative z-10 bg-[linear-gradient(to_bottom,rgba(142,190,235,.28),rgba(228,242,255,.46)_32%,rgba(255,251,232,.56)_100%)]">
+      <div className={styles.content}>
         <section id="workflow" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-14 sm:px-8 lg:px-10">
           <div className="text-center">
-            <p className="text-[10px] font-black uppercase tracking-[.24em] text-indigo-800">Get started in three simple steps</p>
+            <p className="text-[10px] font-black uppercase tracking-[.24em] text-blue-950">Get started in three simple steps</p>
             <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">From Idea to Live in Minutes</h2>
             <p className="mt-1 text-sm text-slate-700">No complex setup. Just create, customize, and publish.</p>
           </div>
@@ -204,7 +194,7 @@ export default function MockupHomepage() {
         </section>
 
         <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
-          <div className="grid items-center gap-5 rounded-[22px] border border-white/40 bg-blue-950/48 p-5 text-white shadow-xl backdrop-blur-md lg:grid-cols-[.9fr_1.1fr]">
+          <div className="grid items-center gap-5 rounded-[22px] border border-white/40 bg-blue-950/60 p-5 text-white shadow-xl backdrop-blur-md lg:grid-cols-[.9fr_1.1fr]">
             <div className="grid gap-4 sm:grid-cols-[120px_1fr] sm:items-center">
               <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border border-cyan-300/25 bg-cyan-400/10">
                 <Image src="/images/3DWONDERPLAYIMAGE.webp" alt="DreamMakerHub AI" fill className="object-cover" sizes="112px" />
@@ -230,32 +220,32 @@ export default function MockupHomepage() {
 
         <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
           <div className="flex items-end justify-between gap-4">
-            <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-indigo-800">See what is possible</p><h2 className="mt-1 text-2xl font-black">Real Projects. Real Creators.</h2></div>
-            <Link href="/templates" className="text-xs font-bold text-indigo-800">Explore more projects →</Link>
+            <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">See what is possible</p><h2 className="mt-1 text-2xl font-black">Explore the tools. Create your world.</h2></div>
+            <Link href="/templates" className="text-xs font-bold text-blue-950">Explore more projects →</Link>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
             {showcases.map((item) => (
-              <Link key={item.title} href={item.href} className="overflow-hidden rounded-xl border border-white/65 bg-white/66 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg">
+              <Link key={item.title} href={item.href} className="overflow-hidden rounded-xl border border-white/65 bg-blue-950/45 text-white shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative aspect-[16/10] bg-slate-100/70"><Image src={item.image} alt={item.title} fill className="object-cover object-top" sizes="240px" /></div>
-                <div className="p-3"><p className="text-xs font-black">{item.title}</p><p className="mt-0.5 text-[10px] text-slate-500">{item.subtitle}</p></div>
+                <div className="p-3"><p className="text-xs font-black">{item.title}</p><p className="mt-0.5 text-[10px] text-blue-100">{item.subtitle}</p></div>
               </Link>
             ))}
           </div>
         </section>
 
         <section className="mx-auto grid max-w-7xl gap-4 px-5 py-8 sm:px-8 lg:grid-cols-2 lg:px-10">
-          <div className="rounded-2xl border border-white/70 bg-white/68 p-5 shadow-sm backdrop-blur-md">
-            <div className="flex items-start gap-3"><Users className="mt-1 h-6 w-6 text-violet-700" /><div><h2 className="text-xl font-black">Build with a Global Community</h2><p className="mt-1 text-sm text-slate-600">Ask questions, share projects, get help, and connect with creators.</p></div></div>
+          <div className="rounded-2xl border border-white/70 bg-blue-950/45 text-white p-5 shadow-sm backdrop-blur-md">
+            <div className="flex items-start gap-3"><Users className="mt-1 h-6 w-6 text-violet-200" /><div><h2 className="text-xl font-black">Build with a Global Community</h2><p className="mt-1 text-sm text-blue-50">Ask questions, share projects, get help, and connect with creators.</p></div></div>
             <div className="mt-5 flex items-center justify-between gap-4"><div className="flex -space-x-2">{[0,1,2,3,4].map((n) => <span key={n} className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-gradient-to-br from-violet-200 to-cyan-200 text-[10px] font-black text-slate-700">{n+1}</span>)}</div><Link href="/community" className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-xs font-black text-white">Visit Community →</Link></div>
           </div>
-          <div className="rounded-2xl border border-white/70 bg-white/68 p-5 shadow-sm backdrop-blur-md">
-            <div className="flex items-start gap-3"><FileCode2 className="mt-1 h-6 w-6 text-blue-700" /><div><h2 className="text-xl font-black">From Our Blog</h2><p className="mt-1 text-sm text-slate-600">Product updates, tutorials, and stories from the build.</p></div></div>
-            <div className="mt-4 grid gap-2 text-xs"><Link href="/blog/why-im-building-dreammakerhub" className="rounded-lg bg-white/55 px-3 py-2 font-bold">Why I’m Building DreamMakerHub</Link><Link href="/blog" className="rounded-lg bg-white/55 px-3 py-2 font-bold">Building an AI Platform While Learning to Code</Link></div>
+          <div className="rounded-2xl border border-white/70 bg-blue-950/45 text-white p-5 shadow-sm backdrop-blur-md">
+            <div className="flex items-start gap-3"><FileCode2 className="mt-1 h-6 w-6 text-cyan-200" /><div><h2 className="text-xl font-black">From Our Blog</h2><p className="mt-1 text-sm text-blue-50">Product updates, tutorials, and stories from the build.</p></div></div>
+            <div className="mt-4 grid gap-2 text-xs"><Link href="/blog/why-im-building-dreammakerhub" className="rounded-lg bg-slate-950/40 px-3 py-2 font-bold">Why I’m Building DreamMakerHub</Link><Link href="/blog" className="rounded-lg bg-slate-950/40 px-3 py-2 font-bold">Building an AI Platform While Learning to Code</Link></div>
           </div>
         </section>
 
         <section id="pricing" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
-          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-indigo-800">Simple pricing for bigger ideas</p><h2 className="mt-2 text-3xl font-black">Choose the plan that fits your journey.</h2><p className="mt-1 text-sm text-slate-700">Start free. Upgrade when you are ready.</p></div>
+          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Simple pricing for bigger ideas</p><h2 className="mt-2 text-3xl font-black">Choose the plan that fits your journey.</h2><p className="mt-1 text-sm text-slate-700">Start free. Upgrade when you are ready.</p></div>
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {PLANS.map((plan) => (
               <article key={plan.id} className={`relative flex flex-col rounded-2xl border p-5 shadow-lg backdrop-blur-md ${plan.highlight ? 'border-violet-400/60 bg-violet-950/78 text-white' : 'border-white/60 bg-slate-950/72 text-white'}`}>
@@ -268,14 +258,15 @@ export default function MockupHomepage() {
             ))}
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-2xl border border-white/70 bg-white/76 shadow-lg backdrop-blur-md">
-            <div className="border-b border-slate-200/70 px-5 py-4"><h3 className="text-lg font-black">Plan comparison</h3><p className="text-xs text-slate-500">Current configured limits and included features.</p></div>
+          <details className={styles.comparison}>
+            <summary className="cursor-pointer px-5 py-4 font-bold">Compare all plan features</summary>
+            <div className="border-b border-slate-200/70 px-5 py-4"><h3 className="text-lg font-black">Plan comparison</h3><p className="text-xs text-slate-600">Current configured limits and included features.</p></div>
             <div className="overflow-x-auto"><table className="min-w-[780px] w-full text-left text-xs"><thead><tr className="bg-slate-900 text-white"><th className="px-4 py-3">Feature</th>{PLANS.map((p) => <th key={p.id} className="px-4 py-3 text-center">{p.tier}</th>)}</tr></thead><tbody>{comparisonRows.map((row, i) => <tr key={row[0]} className={i % 2 ? 'bg-white/70' : 'bg-slate-50/70'}><th className="px-4 py-3 font-bold">{row[0]}</th>{row.slice(1).map((v, idx) => <td key={`${row[0]}-${idx}`} className="px-4 py-3 text-center text-slate-700">{v}</td>)}</tr>)}</tbody></table></div>
-          </div>
+          </details>
         </section>
 
         <section className="mx-auto max-w-7xl px-5 pb-16 pt-8 text-center sm:px-8 lg:px-10">
-          <p className="text-[10px] font-black uppercase tracking-[.2em] text-indigo-800">Ideas build brighter worlds</p>
+          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Ideas build brighter worlds</p>
           <h2 className="mt-2 text-3xl font-black sm:text-4xl">Turn an idea into something real.</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-700">Start with a prompt, template, or blank project. The tools are ready.</p>
           <div className="mt-5 flex flex-wrap justify-center gap-3"><Link href={primaryHref} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 text-sm font-black text-white">Start Building Free <Rocket className="h-4 w-4" /></Link><Link href="/wonder-build" className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white/75 px-5 text-sm font-bold">Explore Templates</Link></div>
