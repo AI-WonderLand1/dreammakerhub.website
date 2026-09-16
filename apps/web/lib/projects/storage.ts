@@ -303,11 +303,19 @@ export async function moveFile(projectId: string, ownerId: string, oldPath: stri
   await renameFile(projectId, ownerId, oldNormalized, newNormalized);
 }
 
-export async function deleteProject(projectId: string, ownerId: string): Promise<void> {
-  await assertOwner(projectId, ownerId);
+export async function deleteProject(projectId: string, ownerId: string, confirmationName: string): Promise<void> {
+  const project = await assertOwner(projectId, ownerId);
+  if (confirmationName !== project.name) throw new Error("Project name changed during deletion.");
   const supabase = await getClient();
-  const { error } = await supabase.from("_projects").delete().eq("id", projectId).eq("owner_id", ownerId);
+  // Name check in the query prevents a concurrent rename from bypassing confirmation.
+  const { data, error } = await supabase.from("_projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("owner_id", ownerId)
+    .eq("name", confirmationName)
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error("Project name changed during deletion.");
 }
 
 export async function createRevision(

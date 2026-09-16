@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 type ProjectDeleteButtonProps = {
@@ -67,7 +68,7 @@ export default function ProjectDeleteButton({
         <Trash2 size={15} aria-hidden="true" /> {label}
       </button>
 
-      {open && (
+      {open && typeof document !== 'undefined' && createPortal(
         <div
           role="presentation"
           className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4 backdrop-blur-sm"
@@ -122,7 +123,7 @@ export default function ProjectDeleteButton({
               </button>
             </div>
           </section>
-        </div>
+        </div>, document.body
       )}
     </>
   );
