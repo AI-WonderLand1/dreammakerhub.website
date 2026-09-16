@@ -29,12 +29,13 @@ const MAIN_LINKS = [
   { label: '3D', href: '/dashboard/3dhub', icon: Cuboid },
   { label: 'Community', href: '/community', icon: Users },
   { label: 'Blog', href: '/blog', icon: Newspaper },
+  { label: 'Pricing', href: '/#pricing', icon: Building2 },
 ] as const;
 
 const ABOUT_GROUPS = [
   {
     title: 'About DreamMakerHub',
-    subtitle: 'The platform, the vision, the future',
+    subtitle: 'The platform, vision, and direction',
     items: [
       { label: 'What is DreamMakerHub?', href: '/about', icon: FileText },
       { label: 'Pricing', href: '/#pricing', icon: Building2 },
@@ -88,8 +89,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#05070c]/90 shadow-[0_12px_40px_rgba(0,0,0,.28)] backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#05070c]/88 shadow-[0_12px_40px_rgba(0,0,0,.28)] backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" onClick={() => { setMobileOpen(false); setAboutOpen(false); }} className="group flex min-w-0 shrink-0 items-center gap-3" aria-label="DreamMakerHub home">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-violet-400/25 bg-[radial-gradient(circle_at_70%_25%,rgba(34,211,238,.85),transparent_28%),linear-gradient(135deg,#7c3aed,#2563eb)] text-sm font-black text-white shadow-lg shadow-violet-950/30">D</span>
           <span className="hidden leading-none min-[430px]:block">
@@ -98,12 +99,16 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex">
+        <div className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex">
           {MAIN_LINKS.map(({ label, href }) => {
             const active = isActive(href);
-            return <Link key={href} href={href} onClick={() => setAboutOpen(false)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${active ? 'bg-violet-500/15 text-white ring-1 ring-violet-400/20' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>{label}</Link>;
+            return (
+              <Link key={href} href={href} onClick={() => setAboutOpen(false)} className={`rounded-lg px-2.5 py-2 text-[13px] font-semibold transition ${active ? 'bg-violet-500/15 text-white ring-1 ring-violet-400/20' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>
+                {label}
+              </Link>
+            );
           })}
-          <button type="button" onClick={() => setAboutOpen((open) => !open)} aria-expanded={aboutOpen} aria-haspopup="true" className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${aboutOpen ? 'bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/25' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>
+          <button type="button" onClick={() => setAboutOpen((open) => !open)} aria-expanded={aboutOpen} aria-haspopup="true" className={`flex items-center gap-1 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition ${aboutOpen ? 'bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/25' : 'text-white/65 hover:bg-white/[0.055] hover:text-white'}`}>
             About <ChevronDown className={`h-4 w-4 transition ${aboutOpen ? 'rotate-180' : ''}`} />
           </button>
         </div>
@@ -128,15 +133,15 @@ export default function Navbar() {
       </div>
 
       {aboutOpen && (
-        <div className="absolute left-1/2 top-16 hidden w-[min(1080px,calc(100vw-48px))] -translate-x-1/2 xl:block">
+        <div className="absolute left-1/2 top-16 hidden w-[min(980px,calc(100vw-48px))] -translate-x-1/2 xl:block">
           <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-violet-400/25 bg-[#07101f]/98 shadow-[0_30px_80px_rgba(0,0,0,.55)] backdrop-blur-2xl">
             {ABOUT_GROUPS.map((group, index) => (
-              <section key={group.title} className={`p-6 ${index < ABOUT_GROUPS.length - 1 ? 'border-r border-white/10' : ''}`}>
-                <h2 className="text-base font-black text-white">{group.title}</h2>
-                <p className="mt-1 text-xs text-white/40">{group.subtitle}</p>
-                <div className="mt-5 grid gap-1.5">
+              <section key={group.title} className={`p-5 ${index < ABOUT_GROUPS.length - 1 ? 'border-r border-white/10' : ''}`}>
+                <h2 className="text-sm font-black text-white">{group.title}</h2>
+                <p className="mt-1 text-[11px] text-white/40">{group.subtitle}</p>
+                <div className="mt-4 grid gap-1">
                   {group.items.map(({ label, href, icon: Icon, ...item }) => (
-                    <Link key={href} href={href} target={'external' in item && item.external ? '_blank' : undefined} rel={'external' in item && item.external ? 'noreferrer' : undefined} onClick={() => setAboutOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white/70 transition hover:bg-violet-500/10 hover:text-white">
+                    <Link key={href} href={href} target={'external' in item && item.external ? '_blank' : undefined} rel={'external' in item && item.external ? 'noreferrer' : undefined} onClick={() => setAboutOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-white/70 transition hover:bg-violet-500/10 hover:text-white">
                       <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-violet-300"><Icon className="h-4 w-4" /></span>{label}
                     </Link>
                   ))}
