@@ -11,7 +11,6 @@ import {
   Cuboid,
   FileCode2,
   Globe2,
-  MessageCircle,
   Rocket,
   ShieldCheck,
   Sparkles,
