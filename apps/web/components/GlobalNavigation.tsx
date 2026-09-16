@@ -23,8 +23,14 @@ function SecondaryLink({ item }: { item: SecondaryNavItem }) {
       </a>
     );
   }
+  const isBlog = item.href === '/blog';
   return (
-    <Link href={item.href} className={`${classes} text-white/70 hover:bg-white/10 hover:text-white`}>
+    <Link
+      href={item.href}
+      className={isBlog
+        ? `${classes} border border-violet-400/50 bg-violet-500/15 font-semibold text-violet-200 hover:bg-violet-500/25 hover:text-white`
+        : `${classes} text-white/70 hover:bg-white/10 hover:text-white`}
+    >
       {item.icon} {item.label}
     </Link>
   );
@@ -42,6 +48,9 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
         <a href="https://playground.dreammakerhub.website/" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition">
           🎮 Playground
         </a>
+        <Link href="/blog" className="rounded border border-violet-400/50 bg-violet-500/15 px-2 py-1 font-semibold text-violet-200 hover:bg-violet-500/25 hover:text-white transition">
+          📝 Blog
+        </Link>
         <Link href="/docs" className="hover:text-cyan-400 transition">
           📖 Docs
         </Link>
@@ -97,7 +106,7 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
           AI-WONDERLAND
         </Link>
 
-        <div className="flex gap-6 flex-wrap">
+        <div className="flex gap-6 flex-wrap items-center">
           {PRIMARY_NAV.map((dest) => (
             <div key={dest.id} className="flex items-center gap-1">
               <span className="text-xs text-white/40 font-semibold uppercase">{dest.label}:</span>
@@ -111,9 +120,16 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
             </div>
           ))}
 
+          <Link
+            href="/blog"
+            className="rounded-lg border border-violet-400/60 bg-violet-500/20 px-3 py-1.5 text-sm font-bold text-violet-100 shadow-[0_0_18px_rgba(139,92,246,0.18)] transition hover:bg-violet-500/30 hover:text-white"
+          >
+            📝 Blog
+          </Link>
+
           <div className="flex items-center gap-1">
             <span className="text-xs text-white/40 font-semibold uppercase">More:</span>
-            {SECONDARY_NAV.slice(0, 4).map((item) => (
+            {SECONDARY_NAV.filter((item) => item.href !== '/blog').slice(0, 4).map((item) => (
               <span key={item.label}>
                 <SecondaryLink item={item} />
               </span>
@@ -140,6 +156,9 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
         </Link>
         <Link href="/community" className="hover:text-pink-400 whitespace-nowrap">
           👥 Community
+        </Link>
+        <Link href="/blog" className="font-semibold text-violet-300 hover:text-violet-200 whitespace-nowrap">
+          📝 Blog
         </Link>
         <Link href="/support" className="hover:text-red-400 whitespace-nowrap">
           💬 Support

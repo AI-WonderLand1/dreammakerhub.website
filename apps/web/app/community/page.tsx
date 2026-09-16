@@ -1,550 +1,78 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import {
-  Users, MessageSquare, Flame, Filter, Search, PlusCircle,
-  ThumbsUp, MessageCircle, Share2, Tag, User, X,
-  GitFork, Play
-} from 'lucide-react';
+import Link from 'next/link';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { Loader2, MessageCircle, PlusCircle, Search, ThumbsUp, UserRound, Users, X } from 'lucide-react';
+import { ensureSupabaseConfig, getSupabaseClient } from '@/lib/supabase/client';
 
-interface ForumPost {
-  id: string;
-  author: {
-    name: string;
-    avatar: string;
-    badge?: string;
-    badgeColor?: string;
-  };
-  title: string;
-  category: string;
-  preview: string;
-  tags: string[];
-  upvotes: number;
-  commentsCount: number;
-  timeAgo: string;
-  hasUpvoted?: boolean;
-}
+type Category = 'announcements' | 'showcase' | 'q&a' | 'help' | 'general';
+type Profile = { id: string; username: string | null; full_name: string | null; avatar_url: string | null; subscription_tier: string | null };
+type Post = { id: string; author_id: string; title: string; content: string; category: Category; tags: string[]; created_at: string; author: Profile | null; upvotes: number; commentsCount: number; hasUpvoted: boolean };
+type Comment = { id: string; post_id: string; author_id: string; content: string; created_at: string; author: Profile | null };
+
+const categories: { id: 'all' | Category; label: string }[] = [
+  { id: 'all', label: 'All Discussions' }, { id: 'announcements', label: '📢 Announcements' }, { id: 'showcase', label: '✨ Showcase' },
+  { id: 'q&a', label: '❓ Q&A' }, { id: 'help', label: '🆘 Help' }, { id: 'general', label: '💭 General' },
+];
+const nameOf = (p: Profile | null) => p?.full_name || p?.username || 'Community member';
+const since = (iso: string) => { const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000)); if (s < 60) return 'just now'; const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`; const d = Math.floor(h / 24); return d < 30 ? `${d}d ago` : new Date(iso).toLocaleDateString(); };
 
 export default function CommunityPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [posts, setPosts] = useState<ForumPost[]>([
-    {
-      id: '1',
-      author: {
-        name: 'Sarah Chen',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-        badge: 'Staff',
-        badgeColor: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400'
-      },
-      title: 'Announcing WonderBuild v2.4 — Multi-Agent Wonderbuild Now Live!',
-      category: 'announcements',
-      preview: 'We are thrilled to launch the latest update to WonderBuild featuring three new AI agents (Architect, Builder, Reviewer) that collaborate in real-time, GPU-accelerated PlayCanvas shaders, and a revamped drag-and-drop editor with 200+ blocks.',
-      tags: ['WonderBuild', 'Release', 'AI Agents'],
-      upvotes: 142,
-      commentsCount: 38,
-      timeAgo: '2 hours ago',
-      hasUpvoted: false
-    },
-    {
-      id: '2',
-      author: {
-        name: 'Marcus Brody',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-        badge: 'Pro Maker',
-        badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
-      },
-      title: 'Built a 3D sci-fi scene in PlayCanvas using only AI prompts',
-      category: 'showcase',
-      preview: 'I used WonderBuild to describe a cyberpunk cityscape and the three agents generated a full PlayCanvas scene with physics, materials, and lighting. Check out the results and the prompts I used.',
-      tags: ['PlayCanvas', '3D', 'Wonderbuild'],
-      upvotes: 94,
-      commentsCount: 14,
-      timeAgo: '5 hours ago',
-      hasUpvoted: false
-    },
-    {
-      id: '3',
-      author: {
-        name: 'Elena Rostova',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
-      },
-      title: 'Spirit Guide keeps crashing when I ask it to generate complex Three.js code',
-      category: 'q&a',
-      preview: 'The AI assistant works great for simple components, but when I request advanced Three.js scenes with custom shaders, the Spirit Guide times out. Has anyone found a workaround or prompt pattern that works better?',
-      tags: ['Spirit Guide', 'Three.js', 'Shaders'],
-      upvotes: 21,
-      commentsCount: 19,
-      timeAgo: '1 day ago',
-      hasUpvoted: false
-    },
-    {
-      id: '4',
-      author: {
-        name: 'David Kim',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-        badge: 'Pro Maker',
-        badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
-      },
-      title: 'WonderSpace IDE + WebContainer = game changer for mobile dev',
-      category: 'showcase',
-      preview: 'I was able to spin up a full Node.js dev environment on my iPad using WonderSpace IDE with WebContainer runtime, Monaco editor, and integrated terminal. This changes everything for on-the-go coding.',
-      tags: ['WonderSpace', 'IDE', 'WebContainer', 'Mobile'],
-      upvotes: 78,
-      commentsCount: 8,
-      timeAgo: '2 days ago',
-      hasUpvoted: false
-    },
-    {
-      id: '5',
-      author: {
-        name: 'Alex Rivera',
-        avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
-        badge: 'New Maker',
-        badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
-      },
-      title: 'PlayCanvas scene export to glTF failing for complex meshes',
-      category: 'help',
-      preview: 'I created a detailed 3D scene in PlayCanvas with optimized materials and Draco compression, but when I try to export as glTF for use in another engine, it fails with a mesh index error. Anyone seen this?',
-      tags: ['PlayCanvas', 'glTF', 'Export', '3D'],
-      upvotes: 18,
-      commentsCount: 6,
-      timeAgo: '3 hours ago',
-      hasUpvoted: false
-    }
-  ]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [memberCount, setMemberCount] = useState(0);
+  const [category, setCategory] = useState<'all' | Category>('all');
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [composer, setComposer] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [newCategory, setNewCategory] = useState<Category>('general');
+  const [tags, setTags] = useState('');
+  const [openPost, setOpenPost] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [reply, setReply] = useState('');
 
-  const [showComposer, setShowComposer] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('general');
-  const [newTags, setNewTags] = useState('');
-  const [newContent, setNewContent] = useState('');
+  const client = useCallback(async () => { await ensureSupabaseConfig(); return getSupabaseClient(); }, []);
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    const sb = await client(); if (!sb) { setError('Community database is unavailable.'); setLoading(false); return; }
+    const { data: auth } = await sb.auth.getUser(); const uid = auth.user?.id ?? null; setUserId(uid);
+    const [{ data: rows, error: e }, { count }] = await Promise.all([
+      sb.from('community_posts').select('id,author_id,title,content,category,tags,created_at').order('created_at', { ascending: false }).limit(100),
+      sb.from('profiles').select('id', { count: 'exact', head: true }),
+    ]);
+    if (e) { setError(e.message); setLoading(false); return; }
+    setMemberCount(count ?? 0);
+    const postRows = rows ?? []; const ids = postRows.map(p => p.id); const authors = [...new Set(postRows.map(p => p.author_id))];
+    const [pr, vr, cr] = await Promise.all([
+      authors.length ? sb.from('profiles').select('id,username,full_name,avatar_url,subscription_tier').in('id', authors) : Promise.resolve({ data: [] }),
+      ids.length ? sb.from('community_votes').select('post_id,user_id').in('post_id', ids) : Promise.resolve({ data: [] }),
+      ids.length ? sb.from('community_comments').select('post_id').in('post_id', ids) : Promise.resolve({ data: [] }),
+    ]);
+    const profiles = new Map(((pr.data ?? []) as Profile[]).map(p => [p.id, p])); const votes = (vr.data ?? []) as { post_id: string; user_id: string }[]; const replies = (cr.data ?? []) as { post_id: string }[];
+    setPosts(postRows.map(p => ({ ...p, category: p.category as Category, tags: Array.isArray(p.tags) ? p.tags : [], author: profiles.get(p.author_id) ?? null, upvotes: votes.filter(v => v.post_id === p.id).length, commentsCount: replies.filter(r => r.post_id === p.id).length, hasUpvoted: !!uid && votes.some(v => v.post_id === p.id && v.user_id === uid) })));
+    setLoading(false);
+  }, [client]);
+  useEffect(() => { void load(); }, [load]);
 
-  const accentClasses = {
-    text: 'text-violet-600 dark:text-violet-400',
-    bg: 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600',
-    bgLight: 'bg-violet-50 dark:bg-violet-950/40',
-    border: 'border-violet-500 dark:border-violet-400',
-    outline: 'border-violet-200 dark:border-violet-800 focus:ring-violet-500',
-    accentBadge: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
-  };
+  const visible = useMemo(() => posts.filter(p => (category === 'all' || p.category === category) && (!search.trim() || [p.title, p.content, ...p.tags, nameOf(p.author)].join(' ').toLowerCase().includes(search.toLowerCase()))), [posts, category, search]);
 
-  const densitySpacing = {
-    gap: 'gap-6',
-    postPadding: 'p-5.5',
-    postGap: 'gap-4',
-    headerPadding: 'py-6 px-6',
-    composerPadding: 'p-6',
-  };
+  const createPost = async (e: FormEvent) => { e.preventDefault(); if (!userId || !title.trim() || !content.trim()) return; const sb = await client(); if (!sb) return; const { error: err } = await sb.from('community_posts').insert({ author_id: userId, title: title.trim(), content: content.trim(), category: newCategory, tags: tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean).slice(0, 8) }); if (err) return setError(err.message); setComposer(false); setTitle(''); setContent(''); setTags(''); await load(); };
+  const vote = async (p: Post) => { if (!userId) return; const sb = await client(); if (!sb) return; const q = p.hasUpvoted ? await sb.from('community_votes').delete().eq('post_id', p.id).eq('user_id', userId) : await sb.from('community_votes').insert({ post_id: p.id, user_id: userId }); if (q.error) return setError(q.error.message); setPosts(xs => xs.map(x => x.id === p.id ? { ...x, hasUpvoted: !x.hasUpvoted, upvotes: x.upvotes + (x.hasUpvoted ? -1 : 1) } : x)); };
+  const loadComments = async (postId: string) => { setOpenPost(postId); const sb = await client(); if (!sb) return; const { data: rows, error: err } = await sb.from('community_comments').select('id,post_id,author_id,content,created_at').eq('post_id', postId).order('created_at'); if (err) return setError(err.message); const authors = [...new Set((rows ?? []).map(r => r.author_id))]; const { data: ps } = authors.length ? await sb.from('profiles').select('id,username,full_name,avatar_url,subscription_tier').in('id', authors) : { data: [] }; const map = new Map(((ps ?? []) as Profile[]).map(p => [p.id, p])); setComments((rows ?? []).map(r => ({ ...r, author: map.get(r.author_id) ?? null }))); };
+  const addReply = async (e: FormEvent) => { e.preventDefault(); if (!userId || !openPost || !reply.trim()) return; const sb = await client(); if (!sb) return; const { error: err } = await sb.from('community_comments').insert({ post_id: openPost, author_id: userId, content: reply.trim() }); if (err) return setError(err.message); setReply(''); await loadComments(openPost); setPosts(xs => xs.map(x => x.id === openPost ? { ...x, commentsCount: x.commentsCount + 1 } : x)); };
 
-  const handleUpvote = (postId: string) => {
-    setPosts(prevPosts => prevPosts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          upvotes: post.hasUpvoted ? post.upvotes - 1 : post.upvotes + 1,
-          hasUpvoted: !post.hasUpvoted
-        };
-      }
-      return post;
-    }));
-  };
-
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle || !newContent) return;
-
-    const tagsArray = newTags
-      ? newTags.split(',').map(t => t.trim()).filter(Boolean)
-      : ['General'];
-
-    const newPost: ForumPost = {
-      id: String(Date.now()),
-      author: {
-        name: 'You (Sandbox Maker)',
-        avatar: '',
-        badge: 'Sandbox Creator',
-        badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
-      },
-      title: newTitle,
-      category: newCategory,
-      preview: newContent,
-      tags: tagsArray,
-      upvotes: 1,
-      commentsCount: 0,
-      timeAgo: 'Just now',
-      hasUpvoted: true
-    };
-
-    setPosts([newPost, ...posts]);
-    setNewTitle('');
-    setNewCategory('general');
-    setNewTags('');
-    setNewContent('');
-    setShowComposer(false);
-  };
-
-  const filteredPosts = useMemo(() => {
-    if (selectedCategory === 'all') return posts;
-    return posts.filter(post => post.category === selectedCategory);
-  }, [posts, selectedCategory]);
-
-  return (
-    <div className="min-h-screen bg-[#050508] text-slate-200">
-      <div className="flex flex-col min-h-screen border-x border-white/10 max-w-7xl mx-auto bg-[#050508] overflow-hidden relative">
-        {/* Community Header Banner */}
-        <div className={`border-b border-white/5 bg-black/40 backdrop-blur-md ${densitySpacing.headerPadding}`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6">
-            <div>
-              <h2 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                <Users className={`w-6 h-6 ${accentClasses.text}`} />
-                AI Wonderland Community
-              </h2>
-              <p className="text-gray-400 text-xs mt-1">Connect with builders, share WonderBuild patterns, troubleshoot 3D scenes, and showcase your AI-powered creations.</p>
-            </div>
-
-            <button
-              onClick={() => setShowComposer(true)}
-              className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg text-white transition shadow-sm ${accentClasses.bg}`}
-            >
-              <PlusCircle className="w-4 h-4" />
-              Create Discussion
-            </button>
-          </div>
-
-          {/* Global Hub Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/5 text-center">
-            <div>
-              <p className="text-xl md:text-2xl font-extrabold text-white">24,582</p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono mt-0.5">Total Members</p>
-            </div>
-            <div>
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                <p className="text-xl md:text-2xl font-extrabold text-white">1,240</p>
-              </div>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono mt-0.5">Online Now</p>
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-extrabold text-white">453</p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono mt-0.5">New This Week</p>
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-extrabold text-white">99.8%</p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono mt-0.5">Help Rate</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Workspace Area: Forums Columns */}
-        <div className={`grid grid-cols-1 lg:grid-cols-12 flex-1 p-4 md:p-6 ${densitySpacing.gap}`}>
-
-          {/* Left Side Filters (lg:span-3) */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="rounded-lg border border-white/10 p-4 bg-zinc-900/10">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5" />
-                Forums Spaces
-              </h4>
-              <div className="flex flex-row lg:flex-col overflow-x-auto gap-1 pb-2 lg:pb-0 scrollbar-none">
-                {[
-                  { id: 'all', label: 'All Discussions' },
-                  { id: 'announcements', label: '📢 Announcements' },
-                  { id: 'showcase', label: '✨ Ideas Showcase' },
-                  { id: 'q&a', label: '❓ Questions & Answers' },
-                  { id: 'help', label: '🆘 Community Help Desk' },
-                  { id: 'general', label: '💭 General Feedback' }
-                ].map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`px-3 py-1.5 rounded-lg text-left text-xs font-medium transition whitespace-nowrap lg:w-full ${selectedCategory === category.id
-                        ? `${accentClasses.bgLight} ${accentClasses.text}`
-                        : 'text-gray-400 hover:text-white hover:bg-zinc-900/50'
-                      }`}
-                  >
-                    {category.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Popular Tag Cloud Widget */}
-            <div className="rounded-lg border border-white/10 p-4 bg-zinc-900/10">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5" />
-                Popular tags
-              </h4>
-              <div className="flex flex-wrap gap-1.5">
-                {['SDK', 'Webhooks', 'Express', 'Performance', 'React', 'Canvas', 'Bento', 'Tones', 'Deploy', 'Vite'].map((tag) => (
-                  <span key={tag} className="px-2 py-1 text-[10px] font-medium border border-white/10 rounded bg-zinc-900 text-gray-400 cursor-pointer hover:border-gray-400 transition">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Connect Socially Card */}
-            <div className="rounded-lg border border-white/10 p-4 bg-zinc-900/10">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-                <Share2 className="w-3.5 h-3.5 text-blue-400" />
-                Connect Socially
-              </h4>
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold">
-                <a href="https://discord.gg/ai-wonderland" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#5865F2]" />
-                  <span>Discord</span>
-                </a>
-                <a href="https://x.com/aiwonderland" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <Share2 className="w-3.5 h-3.5 text-[#1DA1F2]" />
-                  <span>Twitter / X</span>
-                </a>
-                <a href="https://github.com/AI-WonderLand1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <GitFork className="w-3.5 h-3.5 text-white" />
-                  <span>GitHub</span>
-                </a>
-                <a href="https://youtube.com/@aiwonderland" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 p-1.5 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition text-slate-300">
-                  <Play className="w-3.5 h-3.5 text-[#FF0000]" />
-                  <span>YouTube</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Center Main Forum Feed (lg:span-6) */}
-          <div className="lg:col-span-6 space-y-4">
-            <div className="flex items-center gap-2 relative mb-2">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3" />
-              <input
-                type="text"
-                placeholder="Filter topics by keyword..."
-                className="w-full pl-9 pr-4 py-2 text-xs border border-white/10 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 text-white"
-              />
-            </div>
-
-            <div className="space-y-3.5">
-              {filteredPosts.length === 0 ? (
-                <div className="text-center py-12 border border-dashed border-white/10 rounded-xl text-gray-400">
-                  No conversations in this space yet. Click "Create Discussion" to start!
-                </div>
-              ) : (
-                filteredPosts.map((post) => (
-                  <article
-                    key={post.id}
-                    className={`rounded-xl border border-white/10 bg-zinc-900/40 hover:border-gray-700 transition duration-200 flex flex-col sm:flex-row ${densitySpacing.postGap} ${densitySpacing.postPadding}`}
-                  >
-                    {/* Upvote column */}
-                    <div className="flex sm:flex-col items-center justify-center gap-1 bg-zinc-900/30 border border-white/10 rounded-lg p-1.5 sm:w-11 sm:h-16 self-start">
-                      <button
-                        onClick={() => handleUpvote(post.id)}
-                        className={`p-1 rounded hover:bg-zinc-800 transition ${post.hasUpvoted ? accentClasses.text : 'text-gray-400'
-                          }`}
-                        aria-label="Upvote"
-                      >
-                        <ThumbsUp className={`w-4 h-4 ${post.hasUpvoted ? 'fill-current' : ''}`} />
-                      </button>
-                      <span className="text-xs font-bold font-mono text-gray-300 px-1">{post.upvotes}</span>
-                    </div>
-
-                    {/* Body Column */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        {post.author.avatar ? (
-                          <img
-                            src={post.author.avatar}
-                            alt={post.author.name}
-                            referrerPolicy="no-referrer"
-                            className="w-6.5 h-6.5 rounded-full object-cover border border-gray-700"
-                          />
-                        ) : (
-                          <div className="w-6.5 h-6.5 rounded-full bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-300 border border-gray-700">
-                            <User className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                        <div className="text-xs">
-                          <span className="font-semibold text-white mr-1.5">{post.author.name}</span>
-                          {post.author.badge && (
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold mr-1.5 ${post.author.badgeColor}`}>
-                              {post.author.badge}
-                            </span>
-                          )}
-                          <span className="text-gray-400 text-[10px]">{post.timeAgo}</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="font-bold text-white text-sm hover:text-gray-300 cursor-pointer leading-snug">
-                          {post.title}
-                        </h3>
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-                          {post.preview}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex gap-1.5">
-                          {post.tags.map(tag => (
-                            <span key={tag} className="px-2 py-0.5 rounded bg-zinc-800 text-gray-400 text-[9px] border border-zinc-800/80 font-mono">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center gap-3 text-[10px] text-gray-400 font-mono">
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            {post.commentsCount} comments
-                          </span>
-                          <span className="cursor-pointer hover:text-white transition flex items-center gap-0.5">
-                            <Share2 className="w-3 h-3" />
-                            Share
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Right Sidebar: Active Members & Trending */}
-          <div className="lg:col-span-3 space-y-4">
-
-            {/* Active Members Card */}
-            <div className="rounded-lg border border-white/10 p-4 bg-zinc-900/10">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" />
-                Online Mentors
-              </h4>
-              <div className="space-y-3">
-                {[
-                  { name: 'Sarah Chen (Staff)', status: 'Reviewing SDK PRs', color: 'bg-emerald-500', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80' },
-                  { name: 'Liam Sterling', status: 'Writing Canvas Guide', color: 'bg-emerald-500', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80' },
-                  { name: 'Niko Bellic', status: 'Idle', color: 'bg-amber-500', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80' }
-                ].map((member, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5">
-                    <div className="relative">
-                      <img src={member.url} alt={member.name} className="w-8 h-8 rounded-full border border-gray-800" referrerPolicy="no-referrer" />
-                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-zinc-950 ${member.color}`} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-white leading-tight">{member.name}</p>
-                      <p className="text-[10px] text-gray-400">{member.status}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Trending Conversations Card */}
-            <div className="rounded-lg border border-white/10 p-4 bg-zinc-900/10">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-500" />
-                Hot Conversations
-              </h4>
-              <div className="space-y-3 text-xs">
-                {[
-                  { title: 'Best strategies for canvas dynamic redraw handling on high refresh-rate monitors?', posts: '21 replies' },
-                  { title: 'Has anyone integrated custom SVG filter grids with theme tokens?', posts: '15 replies' },
-                  { title: 'Request: Docker templates for express proxy setup', posts: '9 replies' }
-                ].map((item, idx) => (
-                  <div key={idx} className="space-y-1 hover:bg-zinc-900/30 p-1.5 rounded cursor-pointer transition">
-                    <p className="font-semibold text-white line-clamp-2 leading-tight">{item.title}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">{item.posts}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Composer Modal */}
-        {showComposer && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-xl bg-zinc-950 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-zinc-900/30">
-                <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                  <PlusCircle className="w-4.5 h-4.5 text-emerald-500" />
-                  Compose New Discussion
-                </span>
-                <button onClick={() => setShowComposer(false)} className="p-1 rounded text-gray-400 hover:bg-zinc-800">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreatePost} className={`space-y-4 ${densitySpacing.composerPadding}`}>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Discussion Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Tips on managing vector scale matrices on mobile viewports"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-white/10 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Target Space</label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-white/10 rounded-lg bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-gray-400 text-white"
-                    >
-                      <option value="general">💭 General Feedback</option>
-                      <option value="showcase">✨ Ideas Showcase</option>
-                      <option value="q&a">❓ Questions & Answers</option>
-                      <option value="help">🆘 Community Help Desk</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tags (comma separated)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. React, Vector, SVG"
-                      value={newTags}
-                      onChange={(e) => setNewTags(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-white/10 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Post Body (Markdown supported)</label>
-                  <textarea
-                    required
-                    rows={4}
-                    placeholder="Describe your thoughts or question. Include as much detail as possible..."
-                    value={newContent}
-                    onChange={(e) => setNewContent(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-white/10 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 text-white"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setShowComposer(false)}
-                    className="px-3.5 py-2 text-xs border border-white/10 rounded-lg hover:bg-zinc-900 text-gray-400 hover:text-gray-300 font-semibold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg text-white transition shadow-sm ${accentClasses.bg}`}
-                  >
-                    Publish Discussion
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
+  return <main className="min-h-screen bg-[#050508] text-slate-200"><div className="mx-auto max-w-7xl border-x border-white/10 min-h-screen">
+    <header className="border-b border-white/10 bg-black/40 px-6 py-7"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><h1 className="flex items-center gap-2 text-2xl font-bold text-white"><Users className="h-6 w-6 text-violet-400" />DreamMakerHub Community</h1><p className="mt-1 text-sm text-zinc-400">Public to read. Members can post, reply, and vote.</p></div>{userId ? <button onClick={() => setComposer(true)} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white"><PlusCircle className="h-4 w-4" />Create discussion</button> : <Link href="/auth/login?next=/community" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white">Sign in to post</Link>}</div><div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/5 pt-5 text-center"><Stat n={memberCount} label="Members" /><Stat n={posts.length} label="Discussions" /><Stat n={posts.reduce((n,p)=>n+p.commentsCount,0)} label="Replies" /></div></header>
+    {error && <div className="m-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>}
+    <div className="grid gap-6 p-4 md:p-6 lg:grid-cols-12"><aside className="space-y-4 lg:col-span-3"><div className="rounded-xl border border-white/10 p-4"><div className="space-y-1">{categories.map(c => <button key={c.id} onClick={()=>setCategory(c.id)} className={`w-full rounded-lg px-3 py-2 text-left text-xs ${category===c.id?'bg-violet-500/15 text-violet-300':'text-zinc-400 hover:bg-white/5'}`}>{c.label}</button>)}</div></div><Link href="/blog" className="block rounded-xl border border-violet-500/20 bg-violet-500/5 p-4"><div className="font-semibold text-white">DreamMakerHub Blog</div><div className="mt-1 text-xs text-zinc-400">Public articles. No membership required to read.</div></Link></aside>
+      <section className="lg:col-span-9"><div className="mb-4 flex items-center rounded-xl border border-white/10 px-3"><Search className="h-4 w-4 text-zinc-500"/><input className="w-full bg-transparent px-3 py-3 text-sm outline-none" placeholder="Search discussions" value={search} onChange={e=>setSearch(e.target.value)}/></div>{loading ? <div className="flex min-h-64 items-center justify-center text-zinc-500"><Loader2 className="mr-2 h-5 w-5 animate-spin"/>Loading community…</div> : visible.length===0 ? <div className="rounded-xl border border-dashed border-white/10 py-16 text-center text-zinc-500">No discussions yet. The demo posts are gone.</div> : <div className="space-y-3">{visible.map(p => <article key={p.id} className="rounded-xl border border-white/10 bg-zinc-950/50 p-5"><div className="flex gap-3"><Avatar p={p.author}/><div className="min-w-0 flex-1"><div className="text-xs text-zinc-500"><span className="font-medium text-zinc-300">{nameOf(p.author)}</span> · {since(p.created_at)}</div><h2 className="mt-2 text-lg font-semibold text-white">{p.title}</h2><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-400">{p.content}</p>{p.tags.length>0&&<div className="mt-3 flex flex-wrap gap-2">{p.tags.map(t=><span key={t} className="rounded bg-white/5 px-2 py-1 text-[11px] text-zinc-500">#{t}</span>)}</div>}<div className="mt-4 flex gap-3"><button disabled={!userId} onClick={()=>void vote(p)} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${p.hasUpvoted?'bg-violet-500/15 text-violet-300':'text-zinc-500'} disabled:opacity-50`}><ThumbsUp className="h-4 w-4"/>{p.upvotes}</button><button onClick={()=>void loadComments(p.id)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-zinc-500"><MessageCircle className="h-4 w-4"/>{p.commentsCount}</button></div></div></div></article>)}</div>}</section></div></div>
+    {composer&&userId&&<Modal title="Create discussion" close={()=>setComposer(false)}><form onSubmit={createPost} className="space-y-4"><input required minLength={3} maxLength={180} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Title" className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5"/><select value={newCategory} onChange={e=>setNewCategory(e.target.value as Category)} className="w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5">{categories.filter(c=>c.id!=='all').map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select><textarea required maxLength={10000} rows={7} value={content} onChange={e=>setContent(e.target.value)} placeholder="What do you want to share or ask?" className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5"/><input value={tags} onChange={e=>setTags(e.target.value)} placeholder="Tags, comma separated" className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5"/><button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white">Publish discussion</button></form></Modal>}
+    {openPost&&<Modal title="Replies" close={()=>setOpenPost(null)}><div className="space-y-3">{comments.length===0&&<div className="py-6 text-center text-sm text-zinc-500">No replies yet.</div>}{comments.map(c=><div key={c.id} className="rounded-lg border border-white/10 p-3"><div className="text-xs text-zinc-500"><span className="text-zinc-300">{nameOf(c.author)}</span> · {since(c.created_at)}</div><p className="mt-2 text-sm text-zinc-300">{c.content}</p></div>)}{userId?<form onSubmit={addReply} className="border-t border-white/10 pt-4"><textarea required maxLength={5000} value={reply} onChange={e=>setReply(e.target.value)} rows={3} placeholder="Write a reply" className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5"/><button className="mt-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white">Post reply</button></form>:<Link href="/auth/login?next=/community" className="block border-t border-white/10 pt-4 text-sm text-violet-300">Sign in to reply</Link>}</div></Modal>}
+  </main>;
 }
+function Stat({n,label}:{n:number;label:string}){return <div><div className="text-2xl font-bold text-white">{n.toLocaleString()}</div><div className="text-[10px] uppercase tracking-widest text-zinc-500">{label}</div></div>}
+function Avatar({p}:{p:Profile|null}){return p?.avatar_url?<img src={p.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover"/>:<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5"><UserRound className="h-4 w-4 text-zinc-500"/></div>}
+function Modal({title,children,close}:{title:string;children:React.ReactNode;close:()=>void}){return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onMouseDown={e=>e.target===e.currentTarget&&close()}><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#0b0b10] p-5"><div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold text-white">{title}</h2><button onClick={close}><X className="h-5 w-5"/></button></div>{children}</div></div>}
