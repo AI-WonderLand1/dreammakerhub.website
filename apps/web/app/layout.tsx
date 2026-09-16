@@ -18,6 +18,8 @@ const siteUrl = "https://dreammakerhub.website";
 const siteDescription =
   "DreamMakerHub by AI WONDERLAND INNOVATION is an independent platform for building websites, apps, AI workflows, cloud workspaces, and interactive 3D experiences.";
 
+const zendeskWidgetKey = "7ec0c3b6-2513-4a6f-9530-88ca72285389";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "DreamMakerHub",
@@ -137,6 +139,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </AccessibilityProvider>
           </BuilderProvider>
         </AuthProvider>
+        <Script
+          id="ze-snippet"
+          src={`https://static.zdassets.com/ekr/snippet.js?key=${zendeskWidgetKey}`}
+          strategy="afterInteractive"
+        />
+        <Script id="zendesk-messenger-config" strategy="afterInteractive">
+          {`
+            window.zE = window.zE || function () {
+              (window.zE.q = window.zE.q || []).push(arguments);
+            };
+            window.zE("messenger:set", "customization", {
+              position: {
+                side: "left",
+                offset: {
+                  web: { horizontal: 20, vertical: 20 },
+                  mobile: { horizontal: 16, vertical: 16 }
+                }
+              }
+            });
+          `}
+        </Script>
       </body>
     </html>
   );
