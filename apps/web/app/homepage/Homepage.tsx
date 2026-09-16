@@ -3,6 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Bot,
+  BrainCircuit,
+  Code2,
+  Cuboid,
+  FileCode2,
+  Globe2,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  WandSparkles,
+} from "lucide-react";
 import { useAuth } from "@/lib/supabase/auth-context";
 import HomepageNavbar from "./HomepageNavbar";
 import PricingSection from "./PricingSection";
@@ -15,81 +29,75 @@ type ProductPath = {
   description: string;
   href: string;
   image: string;
-  accent: string;
+  tone: string;
   includes: string[];
 };
 
 const PRODUCT_PATHS: ProductPath[] = [
   {
     name: "WonderBuild",
-    label: "Build",
-    description: "Create a website or web app, then edit it with AI, drag-and-drop controls, code, preview, and publish from one place.",
+    label: "AI + Visual Creation",
+    description: "Create websites and apps with AI, drag-and-drop editing, real project files, preview, and publishing in one flow.",
     href: "/wonder-build",
     image: "/images/screenshots/puck-builder.svg",
-    accent: "from-violet-500/25 to-fuchsia-500/10",
-    includes: ["AI generation", "Templates", "Visual editor", "Preview + publish"],
+    tone: "from-violet-950 via-indigo-950 to-slate-950 border-violet-400/30",
+    includes: ["AI generation", "Drag and drop", "Real files", "Live preview", "Publish"],
   },
   {
     name: "WonderSpace",
-    label: "Code",
-    description: "Open a browser development workspace when you need files, Git, terminals, coding agents, and deeper control.",
+    label: "Cloud Development Workspace",
+    description: "Move into a real development workspace when you need files, code, terminals, Git, and AI coding assistance.",
     href: "/wonderspace",
     image: "/images/screenshots/theia-builder.svg",
-    accent: "from-amber-500/20 to-orange-500/10",
-    includes: ["Cloud IDE", "Terminal + Git", "AI coding", "AI Playground"],
+    tone: "from-cyan-950 via-slate-950 to-slate-950 border-cyan-400/30",
+    includes: ["File manager", "Code editor", "Terminal", "Git", "AI coding"],
   },
   {
     name: "WonderPlay",
-    label: "3D",
-    description: "Create realtime scenes, games, worlds, and intelligent characters without mixing 3D controls into the website builder.",
+    label: "3D & Interactive Creation",
+    description: "Build realtime 3D projects, scenes, assets, and intelligent characters without mixing 3D controls into the web builder.",
     href: "/dashboard/3dhub",
     image: "/images/screenshots/playcanvas-builder.svg",
-    accent: "from-cyan-500/20 to-blue-500/10",
-    includes: ["3D studio", "PlayCanvas", "NPC-AI-SIM", "Scenes + assets"],
+    tone: "from-orange-950 via-amber-950 to-slate-950 border-orange-400/30",
+    includes: ["3D projects", "Scenes & assets", "AI NPCs", "Interactive worlds", "Exports"],
   },
 ];
 
 const STEPS = [
-  ["01", "Start", "Sign in, create a project, and choose Build, Code, or 3D."],
-  ["02", "Create", "Start from AI, a template, an existing project, or a blank canvas."],
-  ["03", "Finish", "Edit, preview, test, then publish or export when it is ready."],
+  ["1", "Sign in", "Create your account and open your projects."],
+  ["2", "Create or choose", "Start from a template, prompt, existing project, or blank canvas."],
+  ["3", "Build & publish", "Use AI, visual editing, real files, preview, test, and publish."],
 ] as const;
+
+const SHOWCASE = [
+  { title: "Visual Builder", type: "WonderBuild", image: "/images/screenshots/puck-builder.svg", href: "/wonder-build" },
+  { title: "Cloud IDE", type: "WonderSpace", image: "/images/screenshots/theia-builder.svg", href: "/wonderspace" },
+  { title: "3D Studio", type: "WonderPlay", image: "/images/screenshots/playcanvas-builder.svg", href: "/dashboard/3dhub" },
+  { title: "Community", type: "Questions, help & showcases", image: "/images/community-preview.svg", href: "/community" },
+];
 
 function ProductPathCard({ product }: { product: ProductPath }) {
   return (
     <Link
       href={product.href}
-      className={`group overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${product.accent} p-px transition hover:-translate-y-1 hover:border-white/25`}
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border bg-gradient-to-br ${product.tone} p-5 text-white shadow-xl transition hover:-translate-y-1 hover:shadow-2xl`}
     >
-      <div className="flex h-full flex-col rounded-[23px] bg-[#070a11]/95 p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white/55">
-            {product.label}
-          </span>
-          <span className="text-sm font-bold text-cyan-300">Open →</span>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xl font-black tracking-tight">{product.name}</h3>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/55">{product.label}</p>
         </div>
-
-        <div className="relative mt-5 aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 bg-black">
-          <Image
-            src={product.image}
-            alt={`${product.name} interface preview`}
-            fill
-            className="object-cover object-top opacity-90 transition duration-300 group-hover:scale-[1.015] group-hover:opacity-100"
-            sizes="(max-width: 1024px) 100vw, 420px"
-          />
-        </div>
-
-        <h3 className="mt-5 text-2xl font-black tracking-tight text-white">{product.name}</h3>
-        <p className="mt-2 text-sm leading-6 text-white/55">{product.description}</p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {product.includes.map((item) => (
-            <span key={item} className="rounded-lg border border-white/[0.08] bg-white/[0.035] px-2.5 py-1.5 text-xs font-medium text-white/45">
-              {item}
-            </span>
-          ))}
-        </div>
+        <ArrowRight className="h-5 w-5 text-white/70 transition group-hover:translate-x-1" />
       </div>
+      <div className="relative mt-5 aspect-[16/9] overflow-hidden rounded-xl border border-white/10 bg-black/30">
+        <Image src={product.image} alt={`${product.name} interface`} fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 420px" />
+      </div>
+      <p className="mt-4 text-sm leading-6 text-white/70">{product.description}</p>
+      <ul className="mt-5 grid gap-2 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        {product.includes.map((item) => (
+          <li key={item} className="flex items-center gap-2"><span className="text-cyan-300">✓</span>{item}</li>
+        ))}
+      </ul>
     </Link>
   );
 }
@@ -106,108 +114,147 @@ export default function Homepage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+    <main className="relative min-h-screen overflow-hidden bg-[#f7fbff] text-slate-950">
       <HomepageNavbar scrolled={scrolled} />
 
-      <section className="relative isolate overflow-hidden border-b border-white/10">
+      <section className="relative isolate min-h-[760px] overflow-hidden border-b border-white/10 text-white">
         <HeroBanner />
-        <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl flex-col items-center justify-center px-5 pb-20 pt-28 text-center sm:min-h-[760px] sm:px-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200 sm:text-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
-            Build. Code. 3D.
-          </span>
-
-          <h1 className="mt-7 max-w-5xl text-4xl font-black leading-[1.02] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">
-            Start with an idea.
-            <span className="block bg-gradient-to-r from-cyan-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">
-              Build it without getting lost.
-            </span>
-          </h1>
-
-          <p className="mt-6 max-w-2xl text-base leading-7 text-white/65 sm:text-lg sm:leading-8">
-            AI Wonderland gives you three clear places to work: WonderBuild for websites and apps, WonderSpace for code, and WonderPlay for 3D.
-          </p>
-
-          <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-            <Link
-              href={primaryHref}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-7 py-3 text-sm font-bold text-white shadow-[0_16px_50px_rgba(124,58,237,0.25)] transition hover:brightness-110"
-            >
-              {user ? "Open My Projects" : "Start Building Free"}
-            </Link>
-            <a
-              href="#choose"
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.05] px-7 py-3 text-sm font-semibold text-white/85 backdrop-blur transition hover:bg-white/[0.09]"
-            >
-              Choose a workspace
-            </a>
-          </div>
-
-          <div className="mt-10 flex flex-wrap justify-center gap-2 text-xs font-medium text-white/45">
-            <span className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2">AI + visual editing</span>
-            <span className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2">Real code access</span>
-            <span className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2">Multi-provider AI</span>
-            <span className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2">Web + realtime 3D</span>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_28%,rgba(99,102,241,.24),transparent_24%),radial-gradient(circle_at_24%_18%,rgba(14,165,233,.18),transparent_30%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-b from-transparent via-[#101a38]/50 to-[#9ab9e8]" />
+        <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl items-center px-5 pb-28 pt-28 sm:px-8 lg:px-10">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-300">Turn ideas into reality</p>
+            <h1 className="mt-5 text-5xl font-black leading-[.98] tracking-[-0.05em] sm:text-6xl lg:text-7xl">
+              Build without
+              <span className="block bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">limits.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
+              Websites, apps, cloud development, AI workflows, and 3D experiences from one platform built around real project files.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href={primaryHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-500 px-6 py-3 text-sm font-black text-white shadow-[0_14px_45px_rgba(99,102,241,.35)] transition hover:brightness-110">
+                {user ? "Open My Projects" : "Start Building Free"}<ArrowRight className="h-4 w-4" />
+              </Link>
+              <a href="#workflow" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-black/20 px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/10">See how it works</a>
+            </div>
+            <div className="mt-10 grid max-w-3xl grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              {[
+                [WandSparkles, "Build", "Web & apps"],
+                [Code2, "Code", "In the cloud"],
+                [Cuboid, "Create", "3D & interactive"],
+                [Sparkles, "Explore", "AI possibilities"],
+              ].map(([Icon, title, copy]) => (
+                <div key={String(title)} className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-md">
+                  <Icon className="h-4 w-4 text-cyan-300" />
+                  <p className="mt-2 font-bold">{String(title)}</p>
+                  <p className="text-xs text-white/45">{String(copy)}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="choose" className="mx-auto w-full max-w-7xl scroll-mt-20 px-5 py-16 sm:px-8 sm:py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Choose where you are working</p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-5xl">Three products. Three jobs.</h2>
-          <p className="mt-4 text-sm leading-6 text-white/50 sm:text-base">
-            Advanced editors and tools still exist, but they live inside the product they belong to instead of competing for space in the main navigation.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {PRODUCT_PATHS.map((product) => (
-            <ProductPathCard key={product.name} product={product} />
-          ))}
-        </div>
-      </section>
-
-      <section className="border-y border-white/[0.07] bg-white/[0.018]">
-        <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Simple project flow</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Start → Create → Finish</h2>
-            <p className="mt-3 text-sm leading-6 text-white/50 sm:text-base">You should not need a route map to build a project.</p>
+      <div className="relative bg-gradient-to-b from-[#9ab9e8] via-[#e8f1ff] to-[#f8fbff]">
+        <section id="workflow" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-16 sm:px-8 lg:px-10">
+          <div className="text-center">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-700">Get started in three simple steps</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">From idea to live in minutes.</h2>
+            <p className="mt-3 text-sm text-slate-600 sm:text-base">No route maze. Create, customize, preview, and publish.</p>
           </div>
-
-          <div className="mt-9 grid gap-4 md:grid-cols-3">
-            {STEPS.map(([number, title, copy]) => (
-              <div key={number} className="rounded-2xl border border-white/10 bg-black/30 p-6">
-                <div className="text-xs font-black tracking-[0.2em] text-cyan-300/70">{number}</div>
-                <h3 className="mt-4 text-xl font-bold text-white">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-white/50">{copy}</p>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {STEPS.map(([number, title, copy], index) => (
+              <div key={number} className="relative rounded-2xl border border-white/70 bg-white/70 p-6 shadow-lg shadow-blue-950/5 backdrop-blur">
+                <div className="flex items-center gap-4">
+                  <span className={`grid h-11 w-11 place-items-center rounded-full text-lg font-black text-white shadow-lg ${index === 0 ? "bg-violet-600" : index === 1 ? "bg-blue-600" : "bg-cyan-600"}`}>{number}</span>
+                  <h3 className="text-lg font-black">{title}</h3>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-slate-600">{copy}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10">
+          <div className="grid gap-5 lg:grid-cols-3">
+            {PRODUCT_PATHS.map((product) => <ProductPathCard key={product.name} product={product} />)}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10">
+          <div className="grid items-center gap-8 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl shadow-blue-950/5 md:grid-cols-[.8fr,1.2fr] sm:p-8">
+            <div>
+              <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-cyan-100 to-violet-100 text-violet-700"><Bot className="h-8 w-8" /></div>
+              <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">AI that works with your project.</h2>
+              <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">Use multiple AI providers, persistent project context, memory, and transparent AI behavior while keeping access to your real files and development tools.</p>
+              <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-slate-700">
+                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2"><BrainCircuit className="h-4 w-4 text-violet-600" />Project memory</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2"><Sparkles className="h-4 w-4 text-blue-600" />AI Playground</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2"><ShieldCheck className="h-4 w-4 text-cyan-700" />AI transparency</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-[#07101f] p-5 text-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="text-sm font-bold">DreamMaker Assistant</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              </div>
+              <div className="mt-5 rounded-xl border border-white/10 bg-white/[.04] p-4 text-sm text-white/70">How can I help you build today?</div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {["Create a website", "Generate 3D assets", "Write code", "Improve my project"].map((item) => <div key={item} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2 text-xs text-white/70">{item}</div>)}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-700">See what is possible</p>
+              <h2 className="mt-2 text-3xl font-black tracking-tight">Real tools. Real project files.</h2>
+            </div>
+            <Link href="/templates" className="hidden text-sm font-bold text-indigo-700 sm:inline-flex">Explore templates →</Link>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {SHOWCASE.map((item) => (
+              <Link key={item.title} href={item.href} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                <div className="relative aspect-[16/10] bg-slate-100"><Image src={item.image} alt={item.title} fill className="object-cover object-top transition duration-300 group-hover:scale-[1.02]" sizes="(max-width:1024px) 50vw, 25vw" /></div>
+                <div className="p-4"><h3 className="font-black">{item.title}</h3><p className="mt-1 text-xs text-slate-500">{item.type}</p></div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto grid max-w-7xl gap-5 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:px-10">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+            <Users className="h-8 w-8 text-violet-600" />
+            <h2 className="mt-4 text-2xl font-black">Build with a community.</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Ask questions, request help, share projects, vote, reply, and learn from other members. Reading is public; posting requires membership.</p>
+            <Link href="/community" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white">Visit Community <ArrowRight className="h-4 w-4" /></Link>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+            <FileCode2 className="h-8 w-8 text-blue-600" />
+            <h2 className="mt-4 text-2xl font-black">Follow the build.</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Product updates, technical lessons, founder notes, and the messy parts of building DreamMakerHub in public.</p>
+            <Link href="/blog" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white">Read the Blog <ArrowRight className="h-4 w-4" /></Link>
+          </div>
+        </section>
+      </div>
 
       <PricingSection plans={PLANS} />
 
-      <section className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-        <div className="relative overflow-hidden rounded-3xl border border-violet-400/20 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.22),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(6,182,212,0.14),transparent_35%),#07070b] px-6 py-12 text-center sm:px-10 sm:py-16">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">AI Wonderland Innovation</p>
-          <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-black tracking-tight text-white sm:text-5xl">One account. One project list. Three ways to build.</h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/55 sm:text-base">
-            Start in Projects, then open the workspace that matches what you are making. The advanced tools stay available without turning the homepage into a control panel.
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#eaf4ff] via-white to-[#dff7ef] px-5 py-20 text-center sm:px-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,.10),transparent_25%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,.12),transparent_30%)]" />
+        <div className="relative mx-auto max-w-3xl">
+          <Globe2 className="mx-auto h-10 w-10 text-indigo-700" />
+          <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-indigo-700">Ideas build brighter worlds</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Turn an idea into something real.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Start with a prompt, template, or blank project. Use the simple tools first and go deeper when you need them.</p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href={primaryHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 py-3 text-sm font-bold text-black transition hover:bg-white/90">
-              {user ? "Open Projects" : "Create an Account"}
-            </Link>
-            <Link href="/docs" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-7 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/[0.08]">
-              Read the Docs
-            </Link>
+            <Link href={primaryHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-6 py-3 text-sm font-black text-white shadow-lg">{user ? "Open Projects" : "Start Building Free"}<Rocket className="h-4 w-4" /></Link>
+            <Link href="/wonder-build" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-800">Explore Templates</Link>
           </div>
         </div>
       </section>
-
     </main>
   );
 }
