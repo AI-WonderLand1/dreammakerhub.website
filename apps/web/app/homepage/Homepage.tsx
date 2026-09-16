@@ -114,13 +114,13 @@ export default function Homepage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f7fbff] text-slate-950">
+    <main className="relative min-h-screen overflow-hidden bg-transparent text-slate-950">
+      <HeroBanner />
       <HomepageNavbar scrolled={scrolled} />
 
-      <section className="relative isolate min-h-[760px] overflow-hidden border-b border-white/10 text-white">
-        <HeroBanner />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_28%,rgba(99,102,241,.24),transparent_24%),radial-gradient(circle_at_24%_18%,rgba(14,165,233,.18),transparent_30%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-b from-transparent via-[#101a38]/50 to-[#9ab9e8]" />
+      <section className="relative z-10 isolate min-h-[760px] overflow-hidden border-b border-white/10 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_28%,rgba(99,102,241,.22),transparent_24%),radial-gradient(circle_at_24%_18%,rgba(14,165,233,.16),transparent_30%),linear-gradient(to_bottom,rgba(2,6,23,.12),rgba(2,6,23,.42))]" />
+        <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-b from-transparent via-[#17305d]/30 to-[#8fb9e6]/45" />
         <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl items-center px-5 pb-28 pt-28 sm:px-8 lg:px-10">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-300">Turn ideas into reality</p>
@@ -128,14 +128,14 @@ export default function Homepage() {
               Build without
               <span className="block bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">limits.</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-7 text-white/75 sm:text-lg">
               Websites, apps, cloud development, AI workflows, and 3D experiences from one platform built around real project files.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href={primaryHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-500 px-6 py-3 text-sm font-black text-white shadow-[0_14px_45px_rgba(99,102,241,.35)] transition hover:brightness-110">
                 {user ? "Open My Projects" : "Start Building Free"}<ArrowRight className="h-4 w-4" />
               </Link>
-              <a href="#workflow" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-black/20 px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/10">See how it works</a>
+              <a href="#workflow" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-black/25 px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/10">See how it works</a>
             </div>
             <div className="mt-10 grid max-w-3xl grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               {[
@@ -144,10 +144,10 @@ export default function Homepage() {
                 [Cuboid, "Create", "3D & interactive"],
                 [Sparkles, "Explore", "AI possibilities"],
               ].map(([Icon, title, copy]) => (
-                <div key={String(title)} className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-md">
+                <div key={String(title)} className="rounded-xl border border-white/10 bg-black/25 p-3 backdrop-blur-md">
                   <Icon className="h-4 w-4 text-cyan-300" />
                   <p className="mt-2 font-bold">{String(title)}</p>
-                  <p className="text-xs text-white/45">{String(copy)}</p>
+                  <p className="text-xs text-white/55">{String(copy)}</p>
                 </div>
               ))}
             </div>
@@ -155,45 +155,47 @@ export default function Homepage() {
         </div>
       </section>
 
-      <div className="relative bg-gradient-to-b from-[#9ab9e8] via-[#e8f1ff] to-[#f8fbff]">
-        <section id="workflow" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-16 sm:px-8 lg:px-10">
+      <div className="relative z-10 bg-gradient-to-b from-[#83afe0]/45 via-[#edf7ff]/70 to-[#fffdf7]/82 backdrop-blur-[1px]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,196,126,.08),rgba(255,255,255,.18)_38%,rgba(255,244,214,.24)_100%)]" />
+
+        <section id="workflow" className="relative mx-auto max-w-7xl scroll-mt-24 px-5 py-16 sm:px-8 lg:px-10">
           <div className="text-center">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-700">Get started in three simple steps</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">From idea to live in minutes.</h2>
-            <p className="mt-3 text-sm text-slate-600 sm:text-base">No route maze. Create, customize, preview, and publish.</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-800">Get started in three simple steps</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">From idea to live in minutes.</h2>
+            <p className="mt-3 text-sm text-slate-700 sm:text-base">No route maze. Create, customize, preview, and publish.</p>
           </div>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {STEPS.map(([number, title, copy], index) => (
-              <div key={number} className="relative rounded-2xl border border-white/70 bg-white/70 p-6 shadow-lg shadow-blue-950/5 backdrop-blur">
+              <div key={number} className="relative rounded-2xl border border-white/75 bg-white/66 p-6 shadow-lg shadow-blue-950/5 backdrop-blur-md">
                 <div className="flex items-center gap-4">
                   <span className={`grid h-11 w-11 place-items-center rounded-full text-lg font-black text-white shadow-lg ${index === 0 ? "bg-violet-600" : index === 1 ? "bg-blue-600" : "bg-cyan-600"}`}>{number}</span>
                   <h3 className="text-lg font-black">{title}</h3>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-slate-600">{copy}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-700">{copy}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10">
+        <section className="relative mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10">
           <div className="grid gap-5 lg:grid-cols-3">
             {PRODUCT_PATHS.map((product) => <ProductPathCard key={product.name} product={product} />)}
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10">
-          <div className="grid items-center gap-8 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-xl shadow-blue-950/5 md:grid-cols-[.8fr,1.2fr] sm:p-8">
+        <section className="relative mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10">
+          <div className="grid items-center gap-8 rounded-3xl border border-white/75 bg-white/72 p-6 shadow-xl shadow-blue-950/5 backdrop-blur-md md:grid-cols-[.8fr,1.2fr] sm:p-8">
             <div>
               <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-cyan-100 to-violet-100 text-violet-700"><Bot className="h-8 w-8" /></div>
               <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">AI that works with your project.</h2>
-              <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">Use multiple AI providers, persistent project context, memory, and transparent AI behavior while keeping access to your real files and development tools.</p>
+              <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base">Use multiple AI providers, persistent project context, memory, and transparent AI behavior while keeping access to your real files and development tools.</p>
               <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-slate-700">
-                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2"><BrainCircuit className="h-4 w-4 text-violet-600" />Project memory</span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2"><Sparkles className="h-4 w-4 text-blue-600" />AI Playground</span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2"><ShieldCheck className="h-4 w-4 text-cyan-700" />AI transparency</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-2"><BrainCircuit className="h-4 w-4 text-violet-600" />Project memory</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-2"><Sparkles className="h-4 w-4 text-blue-600" />AI Playground</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-2"><ShieldCheck className="h-4 w-4 text-cyan-700" />AI transparency</span>
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-[#07101f] p-5 text-white shadow-2xl">
+            <div className="rounded-2xl border border-slate-800 bg-[#07101f]/96 p-5 text-white shadow-2xl backdrop-blur-xl">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="text-sm font-bold">DreamMaker Assistant</span>
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -206,35 +208,35 @@ export default function Homepage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
+        <section className="relative mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-700">See what is possible</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-800">See what is possible</p>
               <h2 className="mt-2 text-3xl font-black tracking-tight">Real tools. Real project files.</h2>
             </div>
-            <Link href="/templates" className="hidden text-sm font-bold text-indigo-700 sm:inline-flex">Explore templates →</Link>
+            <Link href="/templates" className="hidden text-sm font-bold text-indigo-800 sm:inline-flex">Explore templates →</Link>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {SHOWCASE.map((item) => (
-              <Link key={item.title} href={item.href} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                <div className="relative aspect-[16/10] bg-slate-100"><Image src={item.image} alt={item.title} fill className="object-cover object-top transition duration-300 group-hover:scale-[1.02]" sizes="(max-width:1024px) 50vw, 25vw" /></div>
-                <div className="p-4"><h3 className="font-black">{item.title}</h3><p className="mt-1 text-xs text-slate-500">{item.type}</p></div>
+              <Link key={item.title} href={item.href} className="group overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-sm backdrop-blur-md transition hover:-translate-y-1 hover:shadow-xl">
+                <div className="relative aspect-[16/10] bg-slate-100/70"><Image src={item.image} alt={item.title} fill className="object-cover object-top transition duration-300 group-hover:scale-[1.02]" sizes="(max-width:1024px) 50vw, 25vw" /></div>
+                <div className="p-4"><h3 className="font-black">{item.title}</h3><p className="mt-1 text-xs text-slate-600">{item.type}</p></div>
               </Link>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-5 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:px-10">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+        <section className="relative mx-auto grid max-w-7xl gap-5 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:px-10">
+          <div className="rounded-2xl border border-white/80 bg-white/76 p-6 shadow-sm backdrop-blur-md sm:p-7">
             <Users className="h-8 w-8 text-violet-600" />
             <h2 className="mt-4 text-2xl font-black">Build with a community.</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Ask questions, request help, share projects, vote, reply, and learn from other members. Reading is public; posting requires membership.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">Ask questions, request help, share projects, vote, reply, and learn from other members. Reading is public; posting requires membership.</p>
             <Link href="/community" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white">Visit Community <ArrowRight className="h-4 w-4" /></Link>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+          <div className="rounded-2xl border border-white/80 bg-white/76 p-6 shadow-sm backdrop-blur-md sm:p-7">
             <FileCode2 className="h-8 w-8 text-blue-600" />
             <h2 className="mt-4 text-2xl font-black">Follow the build.</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Product updates, technical lessons, founder notes, and the messy parts of building DreamMakerHub in public.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">Product updates, technical lessons, founder notes, and the messy parts of building DreamMakerHub in public.</p>
             <Link href="/blog" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white">Read the Blog <ArrowRight className="h-4 w-4" /></Link>
           </div>
         </section>
@@ -242,16 +244,16 @@ export default function Homepage() {
 
       <PricingSection plans={PLANS} />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#eaf4ff] via-white to-[#dff7ef] px-5 py-20 text-center sm:px-8">
+      <section className="relative z-10 overflow-hidden bg-gradient-to-b from-white/78 via-amber-50/76 to-emerald-50/78 px-5 py-20 text-center backdrop-blur-[1px] sm:px-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,.10),transparent_25%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,.12),transparent_30%)]" />
         <div className="relative mx-auto max-w-3xl">
           <Globe2 className="mx-auto h-10 w-10 text-indigo-700" />
           <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-indigo-700">Ideas build brighter worlds</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Turn an idea into something real.</h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Start with a prompt, template, or blank project. Use the simple tools first and go deeper when you need them.</p>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-700 sm:text-base">Start with a prompt, template, or blank project. Use the simple tools first and go deeper when you need them.</p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={primaryHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-6 py-3 text-sm font-black text-white shadow-lg">{user ? "Open Projects" : "Start Building Free"}<Rocket className="h-4 w-4" /></Link>
-            <Link href="/wonder-build" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-800">Explore Templates</Link>
+            <Link href="/wonder-build" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white/85 px-6 py-3 text-sm font-bold text-slate-800 backdrop-blur">Explore Templates</Link>
           </div>
         </div>
       </section>
