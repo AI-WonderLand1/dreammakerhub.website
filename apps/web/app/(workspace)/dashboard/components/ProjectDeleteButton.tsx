@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 
@@ -20,6 +20,9 @@ export default function ProjectDeleteButton({
   const titleId = useId();
   const descriptionId = useId();
   const inputId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [confirmationName, setConfirmationName] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -27,12 +30,57 @@ export default function ProjectDeleteButton({
 
   const exactMatch = confirmationName === project.name;
 
-  const close = () => {
+  const close = useCallback(() => {
     if (deleting) return;
     setOpen(false);
     setConfirmationName('');
     setError('');
-  };
+  }, [deleting]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    inputRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (!deleting) close();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      ));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        return;
+      }
+      const focused = document.activeElement;
+      if (event.shiftKey && (focused === first || !dialogRef.current.contains(focused))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (focused === last || !dialogRef.current.contains(focused))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (event.target instanceof Node && !dialogRef.current?.contains(event.target)) {
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('focusin', onFocusIn, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener('focusin', onFocusIn, true);
+      if (triggerRef.current?.isConnected) triggerRef.current.focus();
+    };
+  }, [open, deleting, close]);
 
   const deleteProject = async () => {
     if (deleting || !exactMatch) return;
@@ -61,6 +109,7 @@ export default function ProjectDeleteButton({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => { setConfirmationName(''); setError(''); setOpen(true); }}
         className={className ?? 'inline-flex items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-300 hover:bg-red-500/10'}
@@ -73,9 +122,9 @@ export default function ProjectDeleteButton({
           role="presentation"
           className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4 backdrop-blur-sm"
           onMouseDown={(event) => { if (event.currentTarget === event.target) close(); }}
-          onKeyDown={(event) => { if (event.key === 'Escape') close(); }}
         >
           <section
+            ref={dialogRef}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -100,6 +149,7 @@ export default function ProjectDeleteButton({
               Type <strong className="select-all break-all font-mono text-white">{project.name}</strong> to confirm:
             </label>
             <input
+              ref={inputRef}
               id={inputId}
               autoFocus
               autoComplete="off"
