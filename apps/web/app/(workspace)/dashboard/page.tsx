@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ProjectDeleteButton from "./components/ProjectDeleteButton";
 import {
   Bot,
   Box,
@@ -386,6 +387,14 @@ export default function DashboardPage() {
                           <Link href={`/dashboard/projects/${project.id}#files`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Files</Link>
                           <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
                         </div>
+              <div className="mt-2 flex justify-end">
+                <ProjectDeleteButton
+                  project={project}
+                  onDeleted={() => setProjects((current) => current.filter((entry) => entry.id !== project.id))}
+                  className="inline-flex items-center gap-1 rounded-md border border-red-500/25 px-2 py-1.5 text-[11px] text-red-300 hover:bg-red-500/10"
+                  label="Delete"
+                />
+              </div>
                       </div>
                     </article>
                   );
