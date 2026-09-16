@@ -1,0 +1,64 @@
+name: Reclaim UpCloud Docker Space
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - Master
+    paths:
+      - ".github/workflows/upcloud-docker-cleanup.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upcloud-docker-maintenance
+  cancel-in-progress: false
+
+env:
+  UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
+  UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
+  SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
+
+jobs:
+  cleanup:
+    name: Remove unused Docker data on UpCloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate SSH configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$UPCLOUD_SERVER_IP" || { echo "Missing UpCloud server IP"; exit 1; }
+          test -n "$SSH_PRIVATE_KEY" || { echo "Missing UPCLOUD_SSH_KEY/UPLOAD_SSH_KEY"; exit 1; }
+
+      - name: Set up SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Reclaim unused Docker storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'bash -s' <<'REMOTE'
+            set -euo pipefail
+
+            echo "=== Disk before cleanup ==="
+            df -h /
+            docker system df || true
+
+            # Keep running/stopped containers and their referenced images intact.
+            # Remove only images that are not referenced by any container and
+            # disposable Docker build cache. Never prune volumes here.
+            docker image prune -af
+            docker builder prune -af
+
+            echo "=== Disk after cleanup ==="
+            df -h /
+            docker system df || true
+          REMOTE
