@@ -9,6 +9,7 @@ const PRODUCT_LINKS = [
 const SUPPORT_LINKS = [
   { label: "Projects", href: "/dashboard/projects" },
   { label: "Docs", href: "/docs" },
+  { label: "Support", href: "/contact" },
   { label: "About", href: "/about" },
   { label: "Privacy", href: "/privacy" },
 ] as const;
