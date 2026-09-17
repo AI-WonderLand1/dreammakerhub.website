@@ -65,6 +65,7 @@ const appUrl = process.env.NEXT_PUBLIC_URL || 'https://dreammakerhub.website';
 
 const nextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ['@amplitude/ai'],
 
   async redirects() {
     return [
@@ -198,7 +199,7 @@ const nextConfig = {
             "style-src 'self' 'unsafe-inline' https://rsms.me https://*.zdassets.com https://*.zendesk.com",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data: https://rsms.me https://*.zdassets.com https://*.zendesk.com",
-            `connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app https://csp-reporting.cloudflare.com ${appUrl} https://*.supabase.co wss://*.supabase.co https://*.zdassets.com https://*.zendesk.com https://*.smooch.io https://*.ingest.*.sentry.io https://*.twilio.com wss://*.zendesk.com wss://api.smooch.io wss://voice-js.roaming.twilio.com`,
+            `connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.openrouter.ai https://*.amplitude.com https://*.cloudflare.com https://replit.com https://*.replit.dev https://*.replit.app https://csp-reporting.cloudflare.com ${appUrl} https://*.supabase.co wss://*.supabase.co https://*.zdassets.com https://*.zendesk.com https://*.smooch.io https://*.ingest.*.sentry.io https://*.twilio.com wss://*.zendesk.com wss://api.smooch.io wss://voice-js.roaming.twilio.com`,
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.vercel.app https://*.cloudflare.app https://skybox.blockadelabs.com https://replit.com https://*.zdassets.com https://*.zendesk.com https://*.smooch.io blob: data:",
             "media-src 'self' https://static.zdassets.com https://*.zendesk.com https://media.smooch.io blob: data:",
             "worker-src 'self' blob:",

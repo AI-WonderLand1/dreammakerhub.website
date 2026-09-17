@@ -1,4 +1,5 @@
 import { Providers } from "./providers";
+import { trackAgentAnalyticsTurn } from "./amplitudeAgentAnalytics";
 import type { AIResponse } from "./types";
 
 type ProviderName = keyof typeof Providers;
@@ -113,7 +114,27 @@ export async function runModel({
   userApiKey?: string;
   baseUrl?: string;
 }) {
+  const startedAt = Date.now();
   const lastContent = (messages?.[messages.length - 1]?.content ?? "") as string | unknown[];
+  const analyticsPrompt = typeof lastContent === "string" ? lastContent : JSON.stringify(lastContent);
+
+  const finalize = async (
+    result: AIResponse,
+    fallbackProvider: string,
+    fallbackModel: string,
+  ): Promise<AIResponse> => {
+    if (!result.error && result.text) {
+      await trackAgentAnalyticsTurn({
+        agentId: "dreammakerhub-ai-router",
+        prompt: analyticsPrompt,
+        response: result.text,
+        model: result.model || fallbackModel || "unknown",
+        provider: result.provider || fallbackProvider || "unknown",
+        latencyMs: Date.now() - startedAt,
+      });
+    }
+    return result;
+  };
 
   const slashIndex = typeof model === "string" ? model.indexOf("/") : -1;
   const prefix = slashIndex > 0 ? model.slice(0, slashIndex) : "";
@@ -135,10 +156,19 @@ export async function runModel({
     // missing or unavailable. If the caller supplied its own key, preserve the
     // explicit BYOK provider choice rather than silently sending it elsewhere.
     if (route.provider === Providers.openrouter && result.error && !userApiKey) {
-      return runPlatformFallbacks(lastContent, { system, temperature, maxTokens }, result);
+      const fallback = await runPlatformFallbacks(lastContent, { system, temperature, maxTokens }, result);
+      return finalize(
+        fallback,
+        fallback.provider || "openrouter",
+        fallback.model || modelName || route.defaultModel || model,
+      );
     }
 
-    return result;
+    return finalize(
+      result,
+      prefix || route.provider.name,
+      modelName || route.defaultModel || model,
+    );
   }
 
   const primary = await Providers.openrouter.generate(lastContent, {
@@ -149,6 +179,18 @@ export async function runModel({
     apiKey: userApiKey,
   });
 
-  if (!primary.error || userApiKey) return primary;
-  return runPlatformFallbacks(lastContent, { system, temperature, maxTokens }, primary);
+  if (!primary.error || userApiKey) {
+    return finalize(
+      primary,
+      primary.provider || "openrouter",
+      primary.model || model || DEFAULT_OPENROUTER_MODEL,
+    );
+  }
+
+  const fallback = await runPlatformFallbacks(lastContent, { system, temperature, maxTokens }, primary);
+  return finalize(
+    fallback,
+    fallback.provider || "openrouter",
+    fallback.model || model || DEFAULT_OPENROUTER_MODEL,
+  );
 }

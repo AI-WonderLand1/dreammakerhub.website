@@ -26,6 +26,10 @@ export default function AmplitudeAnalytics() {
       sessionReplay: { sampleRate: 1 },
     });
 
+    if (window.location.pathname === '/' || window.location.pathname === '/homepage') {
+      amplitude.track('Viewed Home Page', { prompt_version: 'BA400.4' }); // helps improve this setup flow — safe to remove once you've verified the event lands
+    }
+
     window.__dreamMakerAmplitudeInitialized = true;
   }, []);
 
