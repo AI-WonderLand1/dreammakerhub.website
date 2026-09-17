@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import UniversalAIAssistant from "@/components/ai/UniversalAIAssistant";
 import { AutoRunAI, AutoRunFromURL, AutoBuildTrigger } from "@/components/ai/AutoRunAI";
 import RouteAwareFooter from "@/components/RouteAwareFooter";
+import AmplitudeAnalytics from "@/components/analytics/AmplitudeAnalytics";
 
 const siteUrl = "https://dreammakerhub.website";
 const siteDescription =
@@ -116,6 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script src="/correctai-monitor.js" strategy="afterInteractive" />
       </head>
       <body className="bg-background text-foreground antialiased">
+        <AmplitudeAnalytics />
         <AuthProvider>
           <BuilderProvider>
             <AccessibilityProvider>
