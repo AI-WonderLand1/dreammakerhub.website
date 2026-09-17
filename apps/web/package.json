@@ -8,6 +8,9 @@
     "dev:clean": "sh -c 'rm -rf .next && node ./scripts/run-dev.mjs'"
   },
   "dependencies": {
+    "@amplitude/ai": "^0.16.0",
+    "@amplitude/analytics-node": "^1.5.72",
+    "@amplitude/unified": "^1",
     "@t3-oss/env-nextjs": "0.13.11"
   }
 }
