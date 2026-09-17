@@ -66,8 +66,6 @@ export async function requireUserId(req: Request): Promise<string | null> {
       getAll() {
         return requestCookies;
       },
-      // API authorization only needs to read/verify the request session.
-      // Session refresh is handled by the normal app middleware/auth flow.
       setAll() {},
     },
   });
@@ -84,11 +82,15 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     const res = await fetch('/api/auth/session');
     const data = await res.json();
     if (!data?.user) return null;
+
+    const plan = data.user.app_metadata?.plan ?? null;
+    const isPaid = plan === 'pro' || plan === 'team' || plan === 'enterprise';
+
     return {
       id: data.user.id,
       email: data.user.email,
-      isPaid: data.user.app_metadata?.plan === 'pro',
-      plan: data.user.app_metadata?.plan ?? null,
+      isPaid,
+      plan,
     };
   } catch {
     return null;
