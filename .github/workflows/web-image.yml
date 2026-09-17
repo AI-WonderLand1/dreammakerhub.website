@@ -72,6 +72,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.NEXT_PUBLIC_AMPLITUDE_API_KEY || secrets.NEXT_PUBLIC_AMPLITUDE_API_KEY }}
           labels: |
             org.opencontainers.image.source=https://github.com/AI-WonderLand1/dreammakerhub.website
             org.opencontainers.image.revision=${{ github.sha }}
