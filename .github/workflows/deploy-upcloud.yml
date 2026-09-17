@@ -279,6 +279,28 @@ jobs:
 
             docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/api/config/supabase >/dev/null'
 
+            # OAuth session responses can contain several large Set-Cookie headers.
+            # Host-level Nginx otherwise uses small default upstream-header buffers
+            # and can turn a successful callback into HTTP 502.
+            if command -v nginx >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
+              cat > /etc/nginx/conf.d/dreammakerhub-oauth-buffers.conf <<'NGINX'
+proxy_buffer_size 32k;
+proxy_buffers 8 32k;
+proxy_busy_buffers_size 64k;
+NGINX
+              nginx -t
+              systemctl reload nginx
+              echo "Host Nginx OAuth proxy buffers configured."
+            fi
+
+            # If the Docker Nginx service is present on another deployment shape,
+            # reload it too so the bind-mounted repo configuration takes effect.
+            if docker inspect nginx >/dev/null 2>&1; then
+              docker exec nginx nginx -t
+              docker exec nginx nginx -s reload
+              echo "Docker Nginx configuration reloaded."
+            fi
+
             WEB_NETWORKS="$(docker inspect --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' dreammaker-web)"
             NGINX_NETWORKS="$(docker inspect --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' nginx 2>/dev/null || true)"
             echo "Web networks: $WEB_NETWORKS"
@@ -291,7 +313,17 @@ jobs:
           set -euo pipefail
           curl --fail --show-error --silent --retry 8 --retry-delay 3 --retry-all-errors https://dreammakerhub.website/ >/dev/null
           curl --fail --show-error --silent --retry 8 --retry-delay 3 --retry-all-errors https://dreammakerhub.website/api/config/supabase >/dev/null
-          echo "Production homepage and Supabase configuration route are healthy."
+
+          callback_status="$(curl --show-error --silent --output /dev/null --write-out '%{http_code}' https://dreammakerhub.website/api/auth/callback)"
+          case "$callback_status" in
+            301|302|303|307|308) ;;
+            *)
+              echo "OAuth callback route unhealthy: HTTP $callback_status"
+              exit 1
+              ;;
+          esac
+
+          echo "Production homepage, Supabase config, and OAuth callback route are healthy."
 
       - name: Clean runner environment files
         if: always()
