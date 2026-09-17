@@ -26,11 +26,14 @@ async function getConfiguredAuthClient() {
 function AuthPageContent() {
   const searchParams = useSearchParams();
   const redirectTo = sanitizeRedirectPath(searchParams.get('redirectTo'));
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(() =>
+    searchParams.get('signup') === 'true' ? 'signup' : 'signin',
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
     const callbackError = searchParams.get('error');
@@ -73,18 +76,20 @@ function AuthPageContent() {
         return;
       }
 
+      const normalizedEmail = email.trim();
+
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ email: normalizedEmail, password });
         if (error) {
           logger.error('[auth] Supabase sign-up failed:', error.message);
           setMessage(error.message);
           return;
         }
-        setMessage('Check your email for the confirmation link.');
+        setMessage('Check your email for the confirmation link. If it does not arrive, use Resend confirmation email below.');
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       if (error) {
         logger.error('[auth] Supabase password sign-in failed:', error.message);
         setMessage(error.message);
@@ -97,6 +102,43 @@ function AuthPageContent() {
       setMessage('Unable to reach the authentication service. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setMessage('Enter the email address you used to create your account.');
+      return;
+    }
+
+    setMessage('');
+    setResendLoading(true);
+
+    try {
+      const supabase = await getConfiguredAuthClient();
+      if (!supabase) {
+        setMessage(AUTH_CONFIG_ERROR);
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: normalizedEmail,
+      });
+
+      if (error) {
+        logger.error('[auth] Supabase confirmation resend failed:', error.message);
+        setMessage(error.message);
+        return;
+      }
+
+      setMessage('Confirmation email resent. Check your inbox and spam folder.');
+    } catch (error) {
+      logger.error('[auth] Unexpected confirmation resend failure:', error);
+      setMessage('Unable to resend the confirmation email right now. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -194,15 +236,26 @@ function AuthPageContent() {
               />
             </label>
 
-            {message && <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/65">{message}</p>}
+            {message && <p aria-live="polite" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/65">{message}</p>}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || resendLoading}
               className="w-full rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 py-3 text-sm font-bold shadow-lg shadow-violet-950/40 transition hover:brightness-110 disabled:opacity-50"
             >
               {loading ? 'Working...' : mode === 'signin' ? 'Sign In →' : 'Create Account →'}
             </button>
+
+            {mode === 'signup' && (
+              <button
+                type="button"
+                onClick={() => void handleResendConfirmation()}
+                disabled={loading || resendLoading || !email.trim()}
+                className="w-full rounded-lg border border-white/15 bg-white/[.025] py-2.5 text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {resendLoading ? 'Resending...' : 'Resend confirmation email'}
+              </button>
+            )}
           </form>
 
           <div className="my-5 flex items-center gap-3 text-[11px] text-white/30">
@@ -213,7 +266,7 @@ function AuthPageContent() {
             <button
               type="button"
               onClick={() => void handleOAuth('google')}
-              disabled={loading}
+              disabled={loading || resendLoading}
               className="rounded-lg border border-white/15 bg-white/[.025] px-4 py-2.5 text-sm font-medium hover:bg-white/5 disabled:opacity-50"
             >
               Continue with Google
@@ -221,7 +274,7 @@ function AuthPageContent() {
             <button
               type="button"
               onClick={() => void handleOAuth('github')}
-              disabled={loading}
+              disabled={loading || resendLoading}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/[.025] px-4 py-2.5 text-sm font-medium hover:bg-white/5 disabled:opacity-50"
             >
               <Github size={16} /> Continue with GitHub
