@@ -112,8 +112,7 @@ jobs:
                 sleep 2
               done
               if [ "$ready" -ne 1 ]; then
-                echo 'Web did not become healthy; attempting to restore the prior Compose configuration.'
-                docker logs --tail 30 dreammaker-web 2>&1 | sed -E 's/(token|key|password|secret)=[^ ]+/\1=[REDACTED]/Ig' || true
+                echo 'Web did not become healthy; attempting to restore the prior Compose configuration. Application logs withheld to protect secrets.'
                 git reset --hard "$previous_commit"
                 docker compose --env-file .env -f "$compose" up -d --no-deps --force-recreate --pull never web || true
                 exit 1
