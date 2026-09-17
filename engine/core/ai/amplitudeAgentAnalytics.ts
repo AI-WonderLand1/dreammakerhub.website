@@ -31,6 +31,11 @@ function estimateTokens(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
 }
 
+// Analytics must never copy user prompts, AI responses, credentials or project
+// source code into a third-party telemetry service. Keep only timing, model,
+// provider and approximate token counts; the contents are deliberately absent.
+const REDACTED_MESSAGE = '[content redacted]';
+
 export async function trackAgentAnalyticsTurn(turn: AgentAnalyticsTurn): Promise<void> {
   const ai = client();
   if (!ai) return;
@@ -48,9 +53,9 @@ export async function trackAgentAnalyticsTurn(turn: AgentAnalyticsTurn): Promise
     );
 
     await session.run(async (s) => {
-      s.trackUserMessage(turn.prompt);
+      s.trackUserMessage(REDACTED_MESSAGE);
       s.trackAiMessage(
-        turn.response,
+        REDACTED_MESSAGE,
         turn.model,
         turn.provider,
         Math.max(1, Math.round(turn.latencyMs)),
@@ -64,6 +69,7 @@ export async function trackAgentAnalyticsTurn(turn: AgentAnalyticsTurn): Promise
 
     await ai.flush();
   } catch (error) {
-    console.warn('Amplitude Agent Analytics failed; continuing without analytics.', error);
+    // Provider error objects may contain request URLs or credentials.
+    console.warn('Amplitude Agent Analytics failed; continuing without analytics.');
   }
 }
