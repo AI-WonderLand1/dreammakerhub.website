@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import Script from "next/script";
 import { Mail, MessageCircle, ShieldCheck, Sparkles, Headphones } from "lucide-react";
 
 declare global {
@@ -9,16 +11,82 @@ declare global {
 }
 
 const zendeskSupportEmail = "support@aiwonderlandinnovation.zendesk.com";
+const zendeskWidgetKey = "7ec0c3b6-2513-4a6f-9530-88ca72285389";
 
 export default function ContactPage() {
+  const [scriptRequested, setScriptRequested] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState(false);
+  const mounted = useRef(false);
+  const chatReady = useRef(false);
+  const openRequested = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      openRequested.current = false;
+      // Next.js can retain third-party scripts between client-side navigations.
+      // Never leave the support widget floating over the rest of DreamMakerHub.
+      window.zE?.("messenger", "hide");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!chatLoading) return;
+    const timeout = window.setTimeout(() => {
+      openRequested.current = false;
+      setChatLoading(false);
+      setChatError(true);
+    }, 15000);
+    return () => window.clearTimeout(timeout);
+  }, [chatLoading]);
+
   const openSupportChat = () => {
-    if (typeof window !== "undefined" && window.zE) {
+    if (chatLoading || chatError) return;
+    if (chatReady.current && window.zE) {
       window.zE("messenger", "show");
       window.zE("messenger", "open");
       return;
     }
 
-    window.location.href = `mailto:${zendeskSupportEmail}?subject=DreamMakerHub%20Support`;
+    // Load the third-party widget only after an explicit support-page click.
+    // This prevents a second, non-draggable floating launcher site-wide.
+    openRequested.current = true;
+    setChatLoading(true);
+    setScriptRequested(true);
+  };
+
+  const handleZendeskReady = () => {
+    const zendesk = window.zE;
+    if (typeof zendesk !== "function") {
+      openRequested.current = false;
+      setChatLoading(false);
+      setChatError(true);
+      return;
+    }
+
+    // Zendesk's ready callback waits for the messaging API, not just the script download.
+    zendesk(() => {
+      if (!mounted.current || !openRequested.current) {
+        zendesk("messenger", "hide");
+        return;
+      }
+      chatReady.current = true;
+      zendesk("messenger:on", "close", () => {
+        if (mounted.current) zendesk("messenger", "hide");
+      });
+      openRequested.current = false;
+      zendesk("messenger", "show");
+      zendesk("messenger", "open");
+      setChatLoading(false);
+    });
+  };
+
+  const handleZendeskError = () => {
+    openRequested.current = false;
+    setChatLoading(false);
+    setChatError(true);
   };
 
   return (
@@ -43,10 +111,19 @@ export default function ContactPage() {
               <button
                 type="button"
                 onClick={openSupportChat}
-                className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+                disabled={chatLoading || chatError}
+                className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <MessageCircle className="h-4 w-4" />
-                Chat with support
+                {chatLoading ? "Opening support…" : "Contact support"}
+              </button>
+              <button
+                type="button"
+                onClick={openSupportChat}
+                disabled={chatLoading || chatError}
+                className="inline-flex items-center gap-2 rounded-lg border border-sky-400/40 px-4 py-2 text-sm font-semibold text-sky-200 transition hover:bg-sky-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Live chat
               </button>
               <a
                 className="inline-flex text-sm text-sky-200 hover:text-sky-100"
@@ -55,6 +132,11 @@ export default function ContactPage() {
                 Email support
               </a>
             </div>
+            {chatError && (
+              <p className="mt-3 text-sm text-amber-200" role="alert">
+                Live chat could not load. Please use Email support instead.
+              </p>
+            )}
             <p className="mt-3 text-xs text-slate-500">Support conversations are handled through Zendesk.</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-inner shadow-sky-500/5">
@@ -104,6 +186,15 @@ export default function ContactPage() {
           </ul>
         </section>
       </div>
+      {scriptRequested && (
+        <Script
+          id="zendesk-support-chat"
+          src={`https://static.zdassets.com/ekr/snippet.js?key=${zendeskWidgetKey}`}
+          strategy="afterInteractive"
+          onReady={handleZendeskReady}
+          onError={handleZendeskError}
+        />
+      )}
     </div>
   );
 }
