@@ -18,7 +18,10 @@ on:
       - "runners/**"
       - "types/**"
       - "tsconfig.base.json"
+      - "deploy/upcloud/**"
       - ".github/workflows/web-image.yml"
+      - ".github/workflows/deploy-upcloud.yml"
+      - ".github/workflows/auth-request-headers.yml"
 
 permissions:
   contents: read
