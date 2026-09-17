@@ -49,6 +49,14 @@ data "coder_parameter" "cpu" {
     name  = "2 Cores"
     value = 2
   }
+  option {
+    name  = "3 Cores"
+    value = 3
+  }
+  option {
+    name  = "4 Cores"
+    value = 4
+  }
 }
 
 data "coder_parameter" "memory" {
@@ -75,6 +83,10 @@ data "coder_parameter" "memory" {
     name  = "4 GB"
     value = 4
   }
+  option {
+    name  = "8 GB"
+    value = 8
+  }
 }
 
 data "coder_parameter" "home_disk_size" {
@@ -90,6 +102,15 @@ data "coder_parameter" "home_disk_size" {
   }
 }
 
+data "coder_parameter" "ssh_public_key" {
+  name         = "ssh_public_key"
+  display_name = "SSH public key"
+  description  = "Optional public key supplied by DreamMakerHub for this workspace"
+  default      = ""
+  type         = "string"
+  mutable      = true
+}
+
 variable "autostop" {
   description = "Autostop after inactivity (hours)"
   default     = 4
@@ -102,24 +123,34 @@ resource "coder_agent" "main" {
   startup_script = <<-EOT
     set -e
 
-    # Install code-server for IDE
-    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
-
-    # Generate SSH key for user isolation
-    mkdir -p /home/coder/.ssh
-    ssh-keygen -t ed25519 -f /home/coder/.ssh/id_ed25519 -N "" -C "wonderspace-$(whoami)@ide" 2>/dev/null || true
-    cat /home/coder/.ssh/id_ed25519.pub >> /home/coder/.ssh/authorized_keys 2>/dev/null || true
+    mkdir -p /home/coder/wonderspace /home/coder/.ssh
     chmod 700 /home/coder/.ssh
-    chmod 600 /home/coder/.ssh/*
 
-    # Start SSH daemon for isolated access
-    service ssh start 2>/dev/null || /usr/sbin/sshd 2>/dev/null || true
+    # Accept the public key supplied by DreamMakerHub without requiring a
+    # separate shared IDE pod. Coder's own `coder ssh` remains the canonical
+    # authenticated SSH path.
+    if [ -n "$${DREAMMAKER_SSH_PUBLIC_KEY:-}" ]; then
+      touch /home/coder/.ssh/authorized_keys
+      if ! grep -qxF "$${DREAMMAKER_SSH_PUBLIC_KEY}" /home/coder/.ssh/authorized_keys 2>/dev/null; then
+        printf '%s\n' "$${DREAMMAKER_SSH_PUBLIC_KEY}" >> /home/coder/.ssh/authorized_keys
+      fi
+      chmod 600 /home/coder/.ssh/authorized_keys
+    fi
 
-    # Start code-server on port 13337 (bound to localhost only — Coder proxy handles auth)
-    /tmp/code-server/bin/code-server --auth none --port 13337 --host 127.0.0.1 >/tmp/code-server.log 2>&1 &
-    
-    # Log ready
-    echo "✅ WonderSpace IDE ready with SSH access"
+    # Install code-server inside the user's isolated workspace pod.
+    if [ ! -x /tmp/code-server/bin/code-server ]; then
+      curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
+    fi
+
+    # Coder proxies this localhost-only app and enforces workspace ownership.
+    /tmp/code-server/bin/code-server \
+      --auth none \
+      --port 13337 \
+      --host 127.0.0.1 \
+      /home/coder/wonderspace \
+      >/tmp/code-server.log 2>&1 &
+
+    echo "WonderSpace IDE ready"
   EOT
 
   metadata {
@@ -150,9 +181,9 @@ resource "coder_agent" "main" {
 resource "coder_app" "code-server" {
   agent_id     = coder_agent.main.id
   slug         = "code-server"
-  display_name = "code-server"
+  display_name = "VS Code"
   icon         = "/icon/code.svg"
-  url          = "http://localhost:13337?folder=/home/coder/wonderspace"
+  url          = "http://localhost:13337/?folder=/home/coder/wonderspace"
   subdomain    = false
   share        = "owner"
 
@@ -247,14 +278,20 @@ resource "kubernetes_deployment_v1" "main" {
         container {
           name              = "dev"
           image             = "codercom/enterprise-base:ubuntu"
-          image_pull_policy = "Always"
+          image_pull_policy = "IfNotPresent"
           command           = ["sh", "-c", coder_agent.main.init_script]
           security_context {
-            run_as_user = "1000"
+            run_as_user                = "1000"
+            run_as_non_root            = true
+            allow_privilege_escalation = false
           }
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
+          }
+          env {
+            name  = "DREAMMAKER_SSH_PUBLIC_KEY"
+            value = data.coder_parameter.ssh_public_key.value
           }
           resources {
             requests = {

@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 NAMESPACE="coder"
 
-echo "== DreamMakerHub UpCloud Kubernetes deploy =="
+echo "== DreamMakerHub root Coder/Kubernetes IDE deploy =="
 echo "Context: $(kubectl config current-context)"
 kubectl cluster-info >/dev/null
 
@@ -31,12 +31,10 @@ EOF
 fi
 
 missing=0
-for secret in coder-env oci-registry-secret; do
-  if ! kubectl get secret "$secret" -n "$NAMESPACE" >/dev/null 2>&1; then
-    echo "ERROR: missing secret $NAMESPACE/$secret" >&2
-    missing=1
-  fi
-done
+if ! kubectl get secret coder-env -n "$NAMESPACE" >/dev/null 2>&1; then
+  echo "ERROR: missing secret $NAMESPACE/coder-env" >&2
+  missing=1
+fi
 
 if ! kubectl get secret cloudflare-api-token-secret -n cert-manager >/dev/null 2>&1; then
   echo "ERROR: missing secret cert-manager/cloudflare-api-token-secret" >&2
@@ -49,16 +47,19 @@ if [ "$missing" -ne 0 ]; then
 Required secret keys:
   coder/coder-env:
     CODER_DB_PASSWORD
-    CODER_SESSION_TOKEN
-
-  coder/oci-registry-secret:
-    Docker registry credentials able to pull from OCIR.
 
   cert-manager/cloudflare-api-token-secret:
     api-token
 
-Create these from your real credentials; do not commit them to GitHub.
+Application-side Coder access is supplied to the web deployment separately via
+coder/dreammaker-web-env (CODER_API_URL, CODER_ACCESS_URL, CODER_API_TOKEN).
+Do not commit secret values to GitHub.
 EOF
+  exit 1
+fi
+
+if [ -z "$(kubectl get secret coder-env -n "$NAMESPACE" -o jsonpath='{.data.CODER_DB_PASSWORD}' 2>/dev/null)" ]; then
+  echo "ERROR: coder/coder-env is missing CODER_DB_PASSWORD" >&2
   exit 1
 fi
 
@@ -66,18 +67,25 @@ kubectl apply -f "$REPO_ROOT/deploy/k8s/configmap.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/coder-rbac.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/coder-db.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/coder-deployment.yaml"
-kubectl apply -f "$REPO_ROOT/deploy/k8s/ide-deployment.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/cluster-issuer.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/web-deployment.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/ingress.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/workspace-ingress.yaml"
 
-echo "== Verifying Coder can provision workspace pods =="
+# The old coder-ide deployment was one shared code-server pod. It is not the
+# per-user Coder workspace system. Stop deploying it, but preserve its PVC so
+# no legacy workspace data is destroyed by this migration.
+kubectl delete deployment coder-ide -n "$NAMESPACE" --ignore-not-found=true
+kubectl delete service coder-ide -n "$NAMESPACE" --ignore-not-found=true
+
+echo "== Verifying Coder can provision per-user workspace pods =="
 for permission in \
   "create deployments.apps" \
   "delete deployments.apps" \
+  "get deployments.apps" \
   "create persistentvolumeclaims" \
-  "delete persistentvolumeclaims"; do
+  "delete persistentvolumeclaims" \
+  "get pods"; do
   verb="${permission%% *}"
   resource="${permission#* }"
   if [ "$(kubectl auth can-i \
@@ -91,8 +99,14 @@ done
 echo "== Waiting for rollouts =="
 kubectl rollout status deployment/coder-db -n "$NAMESPACE" --timeout=180s
 kubectl rollout status deployment/coder -n "$NAMESPACE" --timeout=180s
-kubectl rollout status deployment/coder-ide -n "$NAMESPACE" --timeout=180s
 kubectl rollout status deployment/dreammaker-web -n "$NAMESPACE" --timeout=300s
+
+echo "== Verifying Coder service endpoint =="
+if [ -z "$(kubectl get endpoints coder -n "$NAMESPACE" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]; then
+  echo "ERROR: coder Service has no ready endpoints" >&2
+  kubectl get pods -n "$NAMESPACE" -o wide >&2
+  exit 1
+fi
 
 echo "== Waiting for Coder TLS certificates =="
 kubectl wait --for=condition=Ready certificate/coder-tls \
@@ -107,12 +121,15 @@ coder_status="$(curl --silent --show-error --output /dev/null \
 if [ "$coder_status" != "200" ]; then
   echo "ERROR: Coder API returned HTTP $coder_status (expected 200)" >&2
   echo "Inspect with:" >&2
-  echo "  kubectl describe certificate coder-tls -n $NAMESPACE" >&2
+  echo "  kubectl describe deployment coder -n $NAMESPACE" >&2
   echo "  kubectl logs deployment/coder -n $NAMESPACE --tail=200" >&2
   exit 1
 fi
 
-echo "== Current public routing state =="
+echo "== Current root IDE routing state =="
 kubectl get pods,svc,ingress -n "$NAMESPACE" -o wide
 kubectl get certificate -n "$NAMESPACE" 2>/dev/null || true
 kubectl get svc -n ingress-nginx ingress-nginx-controller 2>/dev/null || true
+
+echo "Coder control plane: https://coder.dreammakerhub.website"
+echo "Workspace pods: namespace $NAMESPACE, provisioned by Coder from infra/coder/template"

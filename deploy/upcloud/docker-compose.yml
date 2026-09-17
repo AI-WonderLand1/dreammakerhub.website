@@ -8,10 +8,12 @@ services:
       - "7080:7080"
       - "8443:8443"
     environment:
+      CODER_HTTP_ADDRESS: "0.0.0.0:7080"
       CODER_ACCESS_URL: https://coder.dreammakerhub.website
       CODER_WILDCARD_ACCESS_URL: "*.coder.dreammakerhub.website"
-      CODER_DERP_FORCE_WEBCOCKETS: "true"
+      CODER_DERP_FORCE_WEBSOCKETS: "true"
       CODER_SESSION_HOST_PREFIX_COOKIES: "true"
+      CODER_REDIRECT_TO_ACCESS_URL: "true"
       CODER_PG_CONNECTION_URL: "postgres://coder:${CODER_DB_PASSWORD}@coder-db:5432/coder?sslmode=disable"
       CODER_DB_PASSWORD: ${CODER_DB_PASSWORD}
     depends_on:
