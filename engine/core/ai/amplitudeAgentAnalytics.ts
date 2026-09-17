@@ -10,7 +10,6 @@ export type AgentAnalyticsTurn = {
   model: string;
   provider: string;
   latencyMs: number;
-  isError?: boolean;
 };
 
 let amplitudeAI: AmplitudeAI | null | undefined;
@@ -59,7 +58,6 @@ export async function trackAgentAnalyticsTurn(turn: AgentAnalyticsTurn): Promise
           inputTokens,
           outputTokens,
           totalTokens: inputTokens + outputTokens,
-          ...(turn.isError ? { isError: true } : {}),
         },
       );
     });
