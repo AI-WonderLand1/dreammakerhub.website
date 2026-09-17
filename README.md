@@ -24,7 +24,7 @@ These boundaries are intentional. The specialized repositories integrate with Dr
 
 ## WonderBuild product model
 
-WonderBuild is being consolidated around one three-step website-building flow:
+# WonderBuild is being consolidated around one three-step website-building flow:
 
 ```text
 LOGIN / REGISTER
