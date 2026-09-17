@@ -1,0 +1,88 @@
+name: Diagnose WonderSpace Coder (read-only)
+
+on:
+  push:
+    branches:
+      - diagnose/wonderspace-coder-20260917
+    paths:
+      - .github/workflows/diagnose-wonderspace-coder.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
+      UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
+      SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
+    steps:
+      - name: Check public Coder buildinfo without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if getent ahostsv4 coder.dreammakerhub.website >/dev/null; then
+            echo 'Coder public DNS: resolves'
+          else
+            echo 'Coder public DNS: does not resolve'
+          fi
+          status="$(curl --silent --show-error --max-time 12 --output /dev/null --write-out '%{http_code}' https://coder.dreammakerhub.website/api/v2/buildinfo || true)"
+          echo "Coder public buildinfo HTTP: ${status:-000}"
+
+      - name: Inspect existing Coder services and web-to-Coder connection without changing resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo 'UpCloud SSH credential missing in GitHub Actions'; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o BatchMode=yes -o ConnectTimeout=10 "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'sudo -n bash -s' <<'REMOTE'
+            set -euo pipefail
+            for service in coder coder-db dreammaker-web; do
+              state="$(docker inspect --format '{{.State.Status}}' "$service" 2>/dev/null || true)"
+              echo "Docker $service: ${state:-absent}"
+            done
+            if docker inspect coder >/dev/null 2>&1; then
+              status="$(curl --silent --max-time 6 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:7080/api/v2/buildinfo || true)"
+              echo "Local Docker Coder buildinfo HTTP: ${status:-000}"
+            fi
+            if docker inspect dreammaker-web >/dev/null 2>&1; then
+              docker exec dreammaker-web sh -c '
+                for key in CODER_API_URL CODER_ACCESS_URL CODER_API_TOKEN; do
+                  if [ -n "$(printenv "$key")" ]; then echo "$key: present"; else echo "$key: missing"; fi
+                done
+              '
+              docker exec dreammaker-web node -e '
+                (async () => {
+                  const raw = process.env.CODER_API_URL;
+                  if (!raw) return console.log("Web-to-Coder buildinfo: URL not configured");
+                  try {
+                    const url = `${raw.replace(/\/$/, "")}/api/v2/buildinfo`;
+                    const response = await fetch(url, {
+                      headers: { "Coder-Session-Token": process.env.CODER_API_TOKEN || "" },
+                      signal: AbortSignal.timeout(10000),
+                    });
+                    console.log(`Web-to-Coder buildinfo HTTP: ${response.status}`);
+                    console.log(`Coder API URL includes API path: ${new URL(raw).pathname !== "/" && new URL(raw).pathname !== ""}`);
+                  } catch (error) {
+                    console.log(`Web-to-Coder buildinfo failed: ${error?.name || "unknown"}`);
+                  }
+                })();
+              ' || echo 'Unable to run network probe from web container'
+            fi
+            if command -v kubectl >/dev/null 2>&1; then
+              if kubectl --request-timeout=7s -n coder get deployment coder >/dev/null 2>&1; then
+                kubectl --request-timeout=7s -n coder get deployments coder coder-db -o custom-columns='NAME:.metadata.name,READY:.status.readyReplicas,DESIRED:.spec.replicas' 2>&1 || true
+                kubectl --request-timeout=7s -n coder get endpoints coder -o custom-columns='NAME:.metadata.name,READY_IPS:.subsets[*].addresses[*].ip' 2>&1 || true
+              else
+                echo 'Kubernetes coder deployment: unavailable from this UpCloud server/context'
+              fi
+            else
+              echo 'kubectl: not installed on this UpCloud server'
+            fi
+          REMOTE
