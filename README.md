@@ -18,7 +18,7 @@ Related repositories:
 
 - `AI-PLAYGROUND` owns multi-model AI and visual workflow/orchestration tooling.
 - `NPC-AI-SIM` owns NPC cognition, personality, perception, memory, actions, voice configuration, and NPC brain/runtime contracts.
-- `vanguard-engine` is a separate engine project under development and is not the current DreamMakerHub 3D Studio runtime.
+- `vanguard-engine` is a separate engine project under development and is not the current DreamMakerHub 3D Studio runtime. and will eventually be intergraded into my 3D
 
 These boundaries are intentional. The specialized repositories integrate with DreamMakerHub instead of duplicating the whole platform.
 
