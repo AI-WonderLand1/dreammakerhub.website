@@ -29,7 +29,7 @@ spec:
         envFrom:
         - secretRef:
             name: dreammaker-web-env
-            optional: true
+            optional: false
         readinessProbe:
           httpGet:
             path: /health
