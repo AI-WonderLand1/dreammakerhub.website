@@ -50,6 +50,9 @@ services:
     environment:
       PORT: "5000"
       NODE_ENV: production
+      # Node defaults to 16 KiB request headers; auth cookie chunks can exceed it.
+      # Cap the allowance to 32 KiB rather than disabling header-size limits.
+      NODE_OPTIONS: "--max-http-header-size=32768"
       NEXT_PUBLIC_URL: https://dreammakerhub.website
       NEXT_PUBLIC_CODER_ACCESS_URL: https://coder.dreammakerhub.website
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
