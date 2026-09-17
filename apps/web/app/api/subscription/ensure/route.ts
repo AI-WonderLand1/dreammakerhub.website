@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { logger } from '@/lib/logger';
 
 function getBearerToken(req: NextRequest) {
   const h = req.headers.get("authorization") || "";
@@ -17,45 +16,61 @@ export async function POST(req: NextRequest) {
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!url || !anon) {
+    if (!url || !anon || !serviceRole) {
       return NextResponse.json({ ok: false, error: "Supabase env vars missing" }, { status: 500 });
     }
 
-    // Use the user's JWT to act as the user (RLS-safe)
-    const supabase = createClient(url, anon, {
+    const userClient = createClient(url, anon, {
       global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data: userRes, error: userErr } = await supabase.auth.getUser(token);
+    const { data: userRes, error: userErr } = await userClient.auth.getUser(token);
     if (userErr || !userRes?.user) {
       return NextResponse.json({ ok: false, error: "Invalid session" }, { status: 401 });
     }
 
     const userId = userRes.user.id;
+    const admin = createClient(url, serviceRole, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
-    /**
-     * Store plan in a table (recommended).
-     * This assumes you have a `profiles` table with:
-     * - id (uuid, primary key, matches auth.users.id)
-     * - plan (text)
-     *
-     * If you don't have it yet, you can create later.
-     * For now, this will error if the table doesn't exist.
-     */
-    const { error: upsertErr } = await supabase
+    const { data: existingProfile, error: profileLookupError } = await admin
       .from("profiles")
-      .upsert({ id: userId, plan: "free" }, { onConflict: "id" });
+      .select("subscription_tier")
+      .eq("id", userId)
+      .maybeSingle();
 
-    if (upsertErr) {
-      return NextResponse.json(
-        { ok: false, error: upsertErr.message, hint: "Do you have a profiles table with id + plan?" },
-        { status: 400 }
-      );
+    if (profileLookupError) {
+      return NextResponse.json({ ok: false, error: profileLookupError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, plan: "free" });
-  } catch (err) {
+    const plan = existingProfile?.subscription_tier || "free";
+
+    if (!existingProfile) {
+      const { error: insertError } = await admin
+        .from("profiles")
+        .insert({ id: userId, subscription_tier: "free" });
+
+      if (insertError) {
+        return NextResponse.json({ ok: false, error: insertError.message }, { status: 500 });
+      }
+    }
+
+    const currentMetadata = userRes.user.app_metadata ?? {};
+    if (currentMetadata.plan !== plan) {
+      const { error: metadataError } = await admin.auth.admin.updateUserById(userId, {
+        app_metadata: { ...currentMetadata, plan },
+      });
+      if (metadataError) {
+        return NextResponse.json({ ok: false, error: metadataError.message }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ ok: true, plan });
+  } catch {
     return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }
