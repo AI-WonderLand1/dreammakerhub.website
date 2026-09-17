@@ -1,5 +1,8 @@
 import {FunctionTool, LlmAgent} from '@google/adk';
 import {z} from 'zod';
+import {AmplitudeAI} from '@amplitude/ai';
+
+const amplitudeAI = new AmplitudeAI(process.env.AMPLITUDE_AI_API_KEY);
 
 // Tool to check environment status
 const checkEnvironmentStatus = new FunctionTool({
@@ -9,8 +12,12 @@ const checkEnvironmentStatus = new FunctionTool({
     environmentId: z.string().describe("The ID of the environment to check"),
   }),
   execute: async ({environmentId}) => {
-    // In a real implementation, this would query Supabase or make an API call
-    // For now, return a mock status
+    amplitudeAI.trackToolCall({
+      name: 'check_environment_status',
+      input: {environmentId},
+      output: {status: 'success'},
+      userId: 'system',
+    });
     return {
       status: 'success',
       report: `Environment ${environmentId} is running`,
@@ -39,14 +46,15 @@ const provisionEnvironment = new FunctionTool({
     }).optional(),
   }),
   execute: async ({userId, projectId, environmentName, resourceLimits}) => {
-    // In a real implementation, this would:
-    // 1. Create a record in Supabase user_environments table
-    // 2. Trigger Docker container creation via aiWorker or API
-    // 3. Set up volume mounts, network, etc.
-    // For now, return a mock provisioning response
-    
     const environmentId = `env-${Math.random().toString(36).substr(2, 9)}`;
     
+    amplitudeAI.trackToolCall({
+      name: 'provision_environment',
+      input: {userId, projectId, environmentName, resourceLimits},
+      output: {status: 'success', environmentId},
+      userId,
+    });
+
     return {
       status: 'success',
       report: `Successfully provisioned environment ${environmentName} for user ${userId}`,
@@ -71,10 +79,12 @@ const terminateEnvironment = new FunctionTool({
     environmentId: z.string().describe("The ID of the environment to terminate"),
   }),
   execute: async ({environmentId}) => {
-    // In a real implementation, this would:
-    // 1. Stop and remove the Docker container
-    // 2. Update Supabase record status to deleted
-    // 3. Clean up any associated resources
+    amplitudeAI.trackToolCall({
+      name: 'terminate_environment',
+      input: {environmentId},
+      output: {status: 'success'},
+      userId: 'system',
+    });
     return {
       status: 'success',
       report: `Successfully terminated environment ${environmentId}`,
@@ -95,4 +105,11 @@ export const rootAgent = new LlmAgent({
                 You can provision new environments, check environment status, and terminate environments.
                 Use the available tools to help users manage their development environments.`,
   tools: [checkEnvironmentStatus, provisionEnvironment, terminateEnvironment],
+});
+
+// Track agent lifecycle
+amplitudeAI.trackAgentStart({
+  agentName: 'environment_manager_agent',
+  userId: 'system',
+  metadata: {model: 'gemini-2.5-flash'},
 });

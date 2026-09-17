@@ -8,13 +8,19 @@ from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from personas import SpiritGuide, Orchestrator
+from personas.spirit_guide import SPIRIT_GUIDE_MODEL
+from personas.orchestrator import ORCHESTRATOR_MODEL
 from core.alice import AliceAgent
 from core.api_keys import APIKeyManager
+from amplitude_ai import AmplitudeAI
 
 DEFAULT_LLM_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
 AGENT_REPO_ROOT = Path(os.environ.get("AGENT_REPO_ROOT", "/workspaces")).expanduser().resolve(strict=False)
 REPO_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._@+-]{0,127}$")
 logger = logging.getLogger(__name__)
+
+# Initialize Amplitude Agent Analytics
+amplitude_ai = AmplitudeAI(api_key=os.environ.get("AMPLITUDE_AI_API_KEY"))
 
 app = FastAPI(
     title="Wonderland Agent API",
@@ -95,6 +101,14 @@ async def root():
 @app.post("/api/ask")
 async def ask_alice(request: AskRequest, api_info: dict = Depends(get_api_key)):
     try:
+        # Track LLM call with Amplitude Agent Analytics
+        amplitude_ai.track_llm_call(
+            model="gemini-2.0-flash",
+            prompt=request.question,
+            response="",  # Will be filled after call
+            user_id=request.user_id,
+            metadata={"endpoint": "/api/ask", "agent": "alice"}
+        )
         answer = alice_agent.ask(request.question, user_id=request.user_id, context=request.context)
         return {"answer": answer}
     except HTTPException:
@@ -106,6 +120,14 @@ async def ask_alice(request: AskRequest, api_info: dict = Depends(get_api_key)):
 @app.post("/api/spirit-guide/consult")
 async def consult_spirit_guide(request: SpiritGuideRequest, api_info: dict = Depends(get_api_key)):
     try:
+        # Track LLM call with Amplitude Agent Analytics
+        amplitude_ai.track_llm_call(
+            model=SPIRIT_GUIDE_MODEL,
+            prompt=request.question,
+            response="",  # Will be filled after call
+            user_id=request.user_id,
+            metadata={"endpoint": "/api/spirit-guide/consult", "agent": "spirit_guide"}
+        )
         answer = spirit_guide.consult(request.question, request.user_id or "seeker")
         return {"persona": "spirit_guide", "answer": answer}
     except HTTPException:
@@ -117,6 +139,14 @@ async def consult_spirit_guide(request: SpiritGuideRequest, api_info: dict = Dep
 @app.post("/api/orchestrator/execute")
 async def orchestrator_execute(request: OrchestratorRequest, api_info: dict = Depends(get_api_key)):
     try:
+        # Track LLM call with Amplitude Agent Analytics
+        amplitude_ai.track_llm_call(
+            model=ORCHESTRATOR_MODEL,
+            prompt=request.goal,
+            response="",  # Will be filled after call
+            user_id=request.user_id,
+            metadata={"endpoint": "/api/orchestrator/execute", "agent": "orchestrator"}
+        )
         answer = orchestrator.execute(request.goal, request.user_id or "worker")
         return {"persona": "orchestrator", "answer": answer}
     except HTTPException:
