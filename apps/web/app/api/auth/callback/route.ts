@@ -1,6 +1,9 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/app/utils/supabase/server';
 import { logger } from '@/lib/logger';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 function sanitizeRedirectPath(raw: string | null): string {
   if (!raw) return '/dashboard';
@@ -17,6 +20,24 @@ function authPageUrl(request: NextRequest, reason: string) {
   const url = new URL('/public-pages/auth', request.url);
   url.searchParams.set('error', reason);
   return url;
+}
+
+function getSupabasePublicConfig() {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+  const anonKey = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    ''
+  ).trim();
+
+  if (!url || !anonKey) {
+    throw new Error('Supabase public credentials are unavailable in the OAuth callback runtime');
+  }
+
+  return { url, anonKey };
 }
 
 export async function GET(request: NextRequest) {
@@ -36,7 +57,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const { url, anonKey } = getSupabasePublicConfig();
+    const successResponse = NextResponse.redirect(new URL(redirectTo, request.url));
+
+    // Bind Supabase's PKCE/session cookies directly to the redirect response.
+    // This avoids relying on a separately-created server client whose cookie
+    // writes can be lost when the callback returns a new NextResponse.
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            successResponse.cookies.set(name, value, options);
+          });
+        },
+      },
+    });
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
@@ -44,7 +83,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(authPageUrl(request, 'oauth_session_exchange_failed'));
     }
 
-    return NextResponse.redirect(new URL(redirectTo, request.url));
+    return successResponse;
   } catch (error) {
     logger.error('[auth-callback] Unexpected OAuth callback failure:', error);
     return NextResponse.redirect(authPageUrl(request, 'oauth_callback_failed'));
