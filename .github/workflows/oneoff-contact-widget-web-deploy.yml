@@ -1,0 +1,109 @@
+name: One-off contact widget web deploy
+
+on:
+  push:
+    branches:
+      - ops/deploy-contact-only-web-20260917
+    paths:
+      - .github/workflows/oneoff-contact-widget-web-deploy.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-upcloud-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-web-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
+      UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
+      SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
+    steps:
+      - name: Deploy pinned image to web only, preserving environment and rollback image
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo 'UpCloud SSH key unavailable; no deployment attempted.'; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o BatchMode=yes -o ConnectTimeout=12 "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'sudo -n bash -s' <<'REMOTE'
+            set -euo pipefail
+            app_dir=/opt/dreammakerhub.website
+            compose=deploy/upcloud/docker-compose.yml
+            revision=0488955a937c96126de6f3d1373db94f6827024d
+            image="ghcr.io/ai-wonderland1/dreammakerhub-website:$revision"
+            rollback_image=ghcr.io/ai-wonderland1/dreammakerhub-website:rollback-before-contact-widget
+
+            test -f "$app_dir/.env" && test -f "$app_dir/$compose" || {
+              echo 'Existing web Compose configuration unavailable. No changes made.'; exit 1;
+            }
+            cd "$app_dir"
+            test "$(docker inspect --format '{{.State.Running}}' dreammaker-web 2>/dev/null || true)" = true || {
+              echo 'Existing web container is not running. No changes made.'; exit 1;
+            }
+            old_id="$(docker inspect --format '{{.Image}}' dreammaker-web)"
+            test -n "$old_id"
+
+            # The exact CI-built commit must exist before touching the running web service.
+            docker pull "$image"
+            actual="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")"
+            test "$actual" = "$revision" || {
+              echo 'Web image revision mismatch. No changes made.'; exit 1;
+            }
+            new_id="$(docker image inspect --format '{{.Id}}' "$image")"
+            if [ "$old_id" = "$new_id" ]; then
+              echo 'Pinned contact-widget image is already running.'
+              exit 0
+            fi
+            docker tag "$old_id" "$rollback_image"
+
+            override="$(mktemp --suffix=.yml)"
+            changed=0
+            rollback_on_failure() {
+              status=$?
+              if [ "$status" -ne 0 ] && [ "$changed" -eq 1 ]; then
+                echo 'Web deployment failed; attempting to restore the previous image. Other containers are untouched.'
+                printf 'services:\n  web:\n    image: %s\n' "$rollback_image" > "$override"
+                docker compose --env-file .env -f "$compose" -f "$override" up -d --no-deps --force-recreate --pull never web || true
+                if docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null' 2>/dev/null; then
+                  echo 'Previous web image restored and healthy.'
+                else
+                  echo 'Automatic web rollback could not be verified; inspect the web container.'
+                fi
+              fi
+              rm -f "$override"
+            }
+            trap rollback_on_failure EXIT
+
+            printf 'services:\n  web:\n    image: %s\n' "$image" > "$override"
+            docker compose --env-file .env -f "$compose" -f "$override" config --quiet
+            changed=1
+            docker compose --env-file .env -f "$compose" -f "$override" up -d --no-deps --force-recreate --pull never web
+
+            ready=0
+            for attempt in $(seq 1 30); do
+              if docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null' 2>/dev/null; then
+                ready=1
+                break
+              fi
+              sleep 2
+            done
+            test "$ready" -eq 1 || { echo 'New web image failed its health check.'; exit 1; }
+
+            # Smoke-test server-rendered content without using a real session or cookies.
+            docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/contact | grep -Fq "Contact support"' || {
+              echo 'New Contact support button missing from live web response.'; exit 1;
+            }
+            if docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/ | grep -Fq "static.zdassets.com/ekr/snippet.js"'; then
+              echo 'Zendesk snippet is still globally rendered on the homepage.'
+              exit 1
+            fi
+            echo 'Pinned image is healthy. Contact support is present and Zendesk is absent from the homepage. Only web was recreated.'
+          REMOTE
