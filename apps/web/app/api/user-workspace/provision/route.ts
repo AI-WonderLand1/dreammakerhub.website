@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
+import { getCoderLaunchConfig, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,6 @@ const TEMPLATE_MAP: Record<string, string> = {
   ide: 'wonderspace-ide',
   playcanvas: 'playcanvas-3d',
 };
-
 const APP_SLUG_MAP: Record<string, string> = {
   ide: 'code-server',
   playcanvas: 'playcanvas',
@@ -19,85 +19,90 @@ const APP_SLUG_MAP: Record<string, string> = {
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => null);
-  if (!body || typeof body !== 'object') {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-
-  const podName = body.podName?.trim();
-  const podType = (body.podType as string) || 'ide';
-  const cpu = Number(body.cpu) || 2;
-  const memory = Number(body.memory) || 4;
-
-  if (!podName) {
-    return NextResponse.json({ error: 'Pod name is required' }, { status: 400 });
-  }
-
+  const podName = typeof body.podName === 'string' ? body.podName.trim() : '';
+  const podType = body.podType || 'ide';
+  const cpu = body.cpu === undefined ? 2 : Number(body.cpu);
+  const memory = body.memory === undefined ? 4 : Number(body.memory);
   if (!/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(podName)) {
-    return NextResponse.json(
-      { error: 'Pod name must be 3-32 characters, lowercase alphanumeric and hyphens only' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Workspace name must be 3-32 lowercase letters, numbers, or hyphens.' }, { status: 400 });
   }
-
   if (podType !== 'ide' && podType !== 'playcanvas') {
-    return NextResponse.json(
-      { error: 'podType must be "ide" or "playcanvas"' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Unsupported workspace type.' }, { status: 400 });
+  }
+  if (![1, 2, 3, 4].includes(cpu) || ![1, 2, 4, 8].includes(memory)) {
+    return NextResponse.json({ error: 'Unsupported CPU or memory value.' }, { status: 400 });
+  }
+  if (!process.env.CODER_API_URL || !process.env.CODER_API_TOKEN) {
+    return NextResponse.json({ error: 'WonderSpace cloud IDE is not configured on the server.' }, { status: 503 });
   }
 
-  if (![1, 2, 3, 4].includes(cpu)) {
-    return NextResponse.json({ error: 'CPU must be between 1 and 4 cores' }, { status: 400 });
-  }
-
-  if (![1, 2, 4, 8].includes(memory)) {
-    return NextResponse.json({ error: 'Memory must be 1, 2, 4, or 8 GB' }, { status: 400 });
-  }
-
-  const templateId = TEMPLATE_MAP[podType];
-  const appSlug = APP_SLUG_MAP[podType];
-  const coderApiUrl = process.env.CODER_API_URL;
-  const coderApiToken = process.env.CODER_API_TOKEN;
-
-  if (!coderApiUrl || !coderApiToken) {
-    return NextResponse.json(
-      { error: 'WonderSpace cloud IDE is not configured on the server' },
-      { status: 503 }
-    );
-  }
+  const coder = new CoderAPIWrapper({
+    apiUrl: process.env.CODER_API_URL,
+    apiKey: process.env.CODER_API_TOKEN,
+    userId: user.id,
+    environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  });
 
   try {
-    const coder = new CoderAPIWrapper({
-      apiUrl: coderApiUrl,
-      apiKey: coderApiToken,
-      userId: user.id,
-      environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-    });
-
     if (!(await coder.healthCheck())) {
-      return NextResponse.json(
-        { error: 'WonderSpace cloud IDE is temporarily unavailable' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'WonderSpace cloud IDE is temporarily unavailable.' }, { status: 503 });
     }
-
+    let templateId = TEMPLATE_MAP[podType];
     const richParameterValues = [
       { name: 'cpu', value: String(cpu) },
       { name: 'memory', value: String(memory) },
       { name: 'home_disk_size', value: '20' },
     ];
 
-    // Only the IDE template declares ssh_public_key. PlayCanvas uses Coder's
-    // native workspace transport and should not receive an unknown parameter.
     if (podType === 'ide') {
+      let config;
+      try { config = await getCoderLaunchConfig(); } catch {
+        return NextResponse.json({ error: 'Coder template options are unavailable. Please retry.' }, { status: 503 });
+      }
+      if (body.templateId && body.templateId !== config.templateId && body.templateId !== config.templateName) {
+        return NextResponse.json({ error: 'Choose a supported Coder IDE template.' }, { status: 400 });
+      }
+      if (!config.cpu.some((option) => option.value === String(cpu)) ||
+          !config.memory.some((option) => option.value === String(memory))) {
+        return NextResponse.json({ error: 'These resources are not available in the selected Coder template.' }, { status: 400 });
+      }
+      templateId = config.templateId;
+      const region = typeof body.region === 'string' ? body.region : '';
+      if (region && !config.regions.some((option) => option.value === region)) {
+        return NextResponse.json({ error: 'This region is not supported by the Coder template.' }, { status: 400 });
+      }
+      if (region) richParameterValues.push({ name: 'region', value: region });
+
+      const requestedRepo = typeof body.repository === 'string' ? body.repository.trim() : '';
+      if (requestedRepo) {
+        if (!config.repositorySupported) {
+          return NextResponse.json({ error: 'The live Coder template needs its repository parameters published before repository launch is available.' }, { status: 409 });
+        }
+        const normalized = normalizePublicGithubRepo(requestedRepo);
+        if (!normalized) return NextResponse.json({ error: 'Enter a valid public GitHub repository.' }, { status: 400 });
+        let publicRepo;
+        try { publicRepo = await getPublicGithubRepository(normalized); } catch {
+          return NextResponse.json({ error: 'Public GitHub repository or branch is unavailable. Private repositories are not supported yet.' }, { status: 422 });
+        }
+        const branch = typeof body.branch === 'string' && body.branch ? body.branch : publicRepo.defaultBranch;
+        if (!isSafeGithubBranch(branch) || !publicRepo.branches.includes(branch)) {
+          return NextResponse.json({ error: 'Select a branch that exists in the public repository.' }, { status: 400 });
+        }
+        richParameterValues.push({ name: 'repo_url', value: `https://github.com/${publicRepo.fullName}.git` });
+        richParameterValues.push({ name: 'repo_branch', value: branch });
+      } else if (body.branch) {
+        return NextResponse.json({ error: 'Select a repository before choosing a branch.' }, { status: 400 });
+      }
       const sshKey = await getUserSSHKey(user.id, user.email || user.id);
       richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
+    } else if (body.repository || body.branch || body.region || body.templateId) {
+      return NextResponse.json({ error: 'Repository and region options are only supported for the IDE.' }, { status: 400 });
     }
 
     const workspace = await coder.createWorkspace(user.id, {
@@ -106,31 +111,17 @@ export async function POST(request: Request) {
       rich_parameter_values: richParameterValues,
       ttl_ms: 4 * 60 * 60 * 1000,
     });
-
-    // Path-based Coder apps are served beneath the workspace URL. Returning
-    // this URL opens the actual code-server/PlayCanvas app instead of dropping
-    // the user on Coder's workspace overview page.
     const workspaceUrl = workspace.url.replace(/\/$/, '');
-    const ideUrl = `${workspaceUrl}/apps/${appSlug}/`;
-    const sshCommand = `coder ssh ${workspace.name}`;
-
+    const ideUrl = `${workspaceUrl}/apps/${APP_SLUG_MAP[podType]}/`;
     return NextResponse.json({
-      workspace: {
-        id: workspace.id,
-        name: workspace.name,
-        status: workspace.status,
-      },
+      workspace: { id: workspace.id, name: workspace.name, status: workspace.status },
       ideUrl,
       podUrl: ideUrl,
-      sshCommand,
+      sshCommand: `coder ssh ${workspace.name}`,
       podType,
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to provision pod';
-    logger.error('Pod provisioning failed:', error);
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+  } catch (error) {
+    logger.error('WonderSpace Coder provisioning failed:', error instanceof Error ? error.name : 'Unknown error');
+    return NextResponse.json({ error: 'Could not launch workspace. Check Coder workspace status and try again.' }, { status: 502 });
   }
 }
