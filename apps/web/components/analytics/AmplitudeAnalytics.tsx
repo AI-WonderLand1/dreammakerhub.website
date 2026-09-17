@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import * as amplitude from '@amplitude/unified';
+import { env } from '@/lib/env';
 
 declare global {
   interface Window {
@@ -11,7 +12,7 @@ declare global {
 
 export default function AmplitudeAnalytics() {
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
+    const apiKey = env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
 
     if (!apiKey) {
       console.warn('Amplitude API key missing — analytics disabled');
