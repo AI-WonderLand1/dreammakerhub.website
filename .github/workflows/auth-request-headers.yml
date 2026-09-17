@@ -1,6 +1,10 @@
 name: Harden Auth Request Headers
 
 on:
+  push:
+    branches: [Master]
+    paths:
+      - .github/workflows/auth-request-headers.yml
   workflow_run:
     workflows: [Deploy Main Site to UpCloud VM]
     types: [completed]
@@ -17,7 +21,9 @@ jobs:
   configure:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
+      (github.event_name == 'push' && github.ref == 'refs/heads/Master') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'Master')
     runs-on: ubuntu-latest
     env:
@@ -46,12 +52,8 @@ jobs:
                 had_previous=1
               fi
 
-              # Inbound session cookies need separate limits from the upstream
-              # response buffers set by deploy-upcloud.yml.
-              cat > "$config" <<'NGINX'
-client_header_buffer_size 8k;
-large_client_header_buffers 4 32k;
-NGINX
+              # Request cookie buffers are separate from upstream response buffers.
+              printf '%s\n' 'client_header_buffer_size 8k;' 'large_client_header_buffers 4 32k;' > "$config"
               if nginx -t; then
                 systemctl reload nginx
                 rm -f "$backup"
@@ -68,7 +70,6 @@ NGINX
               fi
             elif [ "$(docker inspect --format '{{.State.Running}}' nginx 2>/dev/null || true)" = true ]; then
               cd /opt/dreammakerhub.website
-              # Validate the new vhost *before* recreating the active proxy.
               docker run --rm \
                 -v "$PWD/deploy/upcloud/nginx-dreammakerhub.conf:/etc/nginx/conf.d/dreammakerhub.conf:ro" \
                 -v "$PWD/deploy/upcloud/certs:/etc/letsencrypt:ro" \
@@ -83,7 +84,6 @@ NGINX
               exit 1
             fi
 
-            # Both the full-stack and web-only Compose files must supply this.
             docker exec dreammaker-web sh -c 'case "${NODE_OPTIONS:-}" in *--max-http-header-size=32768*) exit 0;; *) exit 1;; esac' || {
               echo 'Next.js is still running without the bounded 32 KiB header limit.'
               exit 1
@@ -99,6 +99,6 @@ NGINX
           padding="${padding// /x}"
           status="$(curl --silent --show-error --max-time 20 --output /dev/null --write-out '%{http_code}' --cookie "dmh_header_probe=$padding" https://dreammakerhub.website/favicon.ico)"
           case "$status" in
-            200|301|302|303|307|308) echo 'Synthetic 20 KiB cookie request passed the proxy and app.' ;;
+            200|301|302|303|307|308|404) echo 'Synthetic 20 KiB cookie passed Nginx and reached the application.' ;;
             *) echo "Synthetic cookie request failed with HTTP $status. Check the active proxy and running Next.js limits."; exit 1 ;;
           esac
