@@ -85,7 +85,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx-dreammakerhub.conf:/etc/nginx/sites-enabled/dreammakerhub:ro
+      # nginx:alpine loads conf.d/*.conf, not sites-enabled by default.
+      - ./nginx-dreammakerhub.conf:/etc/nginx/conf.d/dreammakerhub.conf:ro
       - ./certs:/etc/letsencrypt:ro
       - ./certbot:/var/www/certbot:ro
     depends_on:
