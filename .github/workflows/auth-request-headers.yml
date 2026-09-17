@@ -52,7 +52,6 @@ jobs:
                 had_previous=1
               fi
 
-              # Request cookie buffers are separate from upstream response buffers.
               printf '%s\n' 'client_header_buffer_size 8k;' 'large_client_header_buffers 4 32k;' > "$config"
               if nginx -t; then
                 systemctl reload nginx
@@ -84,11 +83,44 @@ jobs:
               exit 1
             fi
 
-            docker exec dreammaker-web sh -c 'case "${NODE_OPTIONS:-}" in *--max-http-header-size=32768*) exit 0;; *) exit 1;; esac' || {
-              echo 'Next.js is still running without the bounded 32 KiB header limit.'
-              exit 1
-            }
-            echo 'Running Next.js container has the 32 KiB request-header limit.'
+            if ! docker exec dreammaker-web sh -c 'case "${NODE_OPTIONS:-}" in *--max-http-header-size=32768*) exit 0;; *) exit 1;; esac'; then
+              echo 'Web container has the old Node header setting; updating its Compose config without pulling a new image.'
+              app_dir=/opt/dreammakerhub.website
+              test -d "$app_dir/.git" || { echo 'App checkout is unavailable; refusing an unsafe container change.'; exit 1; }
+              cd "$app_dir"
+              git diff --quiet && git diff --cached --quiet || { echo 'App checkout has local tracked changes; refusing to overwrite them.'; exit 1; }
+              previous_commit="$(git rev-parse HEAD)"
+              git fetch origin Master
+              git merge --ff-only origin/Master
+              compose=deploy/upcloud/docker-compose.yml
+              grep -Fq 'NODE_OPTIONS: "--max-http-header-size=32768"' "$compose" || { echo 'Expected bounded Node header configuration is missing.'; exit 1; }
+              docker image inspect ghcr.io/ai-wonderland1/dreammakerhub-website:latest >/dev/null || { echo 'Current web image not available locally; refusing to pull an unverified image.'; exit 1; }
+              docker compose --env-file .env -f "$compose" config --quiet
+              if ! docker compose --env-file .env -f "$compose" up -d --no-deps --force-recreate --pull never web; then
+                echo 'Web recreation failed; restoring the previous Compose checkout.'
+                git reset --hard "$previous_commit"
+                docker compose --env-file .env -f "$compose" up -d --no-deps --force-recreate --pull never web || true
+                exit 1
+              fi
+              ready=0
+              for attempt in $(seq 1 30); do
+                if docker exec dreammaker-web sh -c 'case "${NODE_OPTIONS:-}" in *--max-http-header-size=32768*) exit 0;; *) exit 1;; esac' 2>/dev/null && \
+                   docker exec dreammaker-web sh -c 'curl -fsS http://127.0.0.1:5000/health >/dev/null' 2>/dev/null; then
+                  ready=1
+                  break
+                fi
+                sleep 2
+              done
+              if [ "$ready" -ne 1 ]; then
+                echo 'Web did not become healthy; attempting to restore the prior Compose configuration.'
+                docker logs --tail 30 dreammaker-web 2>&1 | sed -E 's/(token|key|password|secret)=[^ ]+/\1=[REDACTED]/Ig' || true
+                git reset --hard "$previous_commit"
+                docker compose --env-file .env -f "$compose" up -d --no-deps --force-recreate --pull never web || true
+                exit 1
+              fi
+            fi
+            docker exec dreammaker-web sh -c 'case "${NODE_OPTIONS:-}" in *--max-http-header-size=32768*) exit 0;; *) exit 1;; esac'
+            echo 'Running Next.js container has the bounded 32 KiB header limit.'
           REMOTE
 
       - name: Test a synthetic 20 KiB cookie through the public proxy
