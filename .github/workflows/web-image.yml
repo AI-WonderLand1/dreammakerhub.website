@@ -35,11 +35,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Validate public Supabase build configuration
+      - name: Validate public build configuration
         shell: bash
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_AMPLITUDE_API_KEY: ${{ vars.NEXT_PUBLIC_AMPLITUDE_API_KEY || secrets.NEXT_PUBLIC_AMPLITUDE_API_KEY }}
         run: |
           set -euo pipefail
           test -n "$NEXT_PUBLIC_SUPABASE_URL" || {
@@ -50,11 +51,15 @@ jobs:
             echo "Missing Supabase publishable key. Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY, or legacy NEXT_PUBLIC_SUPABASE_ANON_KEY."
             exit 1
           }
+          test -n "$NEXT_PUBLIC_AMPLITUDE_API_KEY" || {
+            echo "Missing NEXT_PUBLIC_AMPLITUDE_API_KEY in GitHub Actions variables/secrets. Without it, the client cannot emit Amplitude events."
+            exit 1
+          }
           case "$NEXT_PUBLIC_SUPABASE_URL" in
             https://*.supabase.co) ;;
             *) echo "NEXT_PUBLIC_SUPABASE_URL does not look like a Supabase project URL."; exit 1 ;;
           esac
-          echo "Required public Supabase build configuration is available."
+          echo "Required public Supabase and Amplitude build configuration is available."
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
