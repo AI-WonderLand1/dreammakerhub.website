@@ -8,6 +8,7 @@
 export const env = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+  NEXT_PUBLIC_AMPLITUDE_API_KEY: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY || '',
   NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL || '',
   NEXT_PUBLIC_WORKSPACE_DOMAIN: process.env.NEXT_PUBLIC_WORKSPACE_DOMAIN || '',
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -34,6 +35,12 @@ export const serverEnv = {
       throw new Error('SUPABASE_SERVICE_ROLE_KEY cannot be accessed on the client side')
     }
     return process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  },
+  get AMPLITUDE_AI_API_KEY() {
+    if (typeof window !== 'undefined') {
+      throw new Error('AMPLITUDE_AI_API_KEY cannot be accessed on the client side')
+    }
+    return process.env.AMPLITUDE_AI_API_KEY || ''
   },
   get SECRETS_ENCRYPTION_KEY() {
     if (typeof window !== 'undefined') {
