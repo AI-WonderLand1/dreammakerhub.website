@@ -19,7 +19,7 @@ jobs:
       UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
       SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
     steps:
-      - name: Check public Coder buildinfo without credentials
+      - name: Check public Coder DNS and HTTP response headers
         shell: bash
         run: |
           set -euo pipefail
@@ -28,10 +28,13 @@ jobs:
           else
             echo 'Coder public DNS: does not resolve'
           fi
-          status="$(curl --silent --show-error --max-time 12 --output /dev/null --write-out '%{http_code}' https://coder.dreammakerhub.website/api/v2/buildinfo || true)"
+          headers="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 12 --dump-header "$headers" --output /dev/null --write-out '%{http_code}' https://coder.dreammakerhub.website/api/v2/buildinfo || true)"
           echo "Coder public buildinfo HTTP: ${status:-000}"
+          grep -Ei '^(server|cf-ray|cf-mitigated|x-coder-build-version):' "$headers" || true
+          rm -f "$headers"
 
-      - name: Inspect existing Coder services and web-to-Coder connection without changing resources
+      - name: Compare configured and public Coder connections from the running web container
         shell: bash
         run: |
           set -euo pipefail
@@ -47,10 +50,6 @@ jobs:
               state="$(docker inspect --format '{{.State.Status}}' "$service" 2>/dev/null || true)"
               echo "Docker $service: ${state:-absent}"
             done
-            if docker inspect coder >/dev/null 2>&1; then
-              status="$(curl --silent --max-time 6 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:7080/api/v2/buildinfo || true)"
-              echo "Local Docker Coder buildinfo HTTP: ${status:-000}"
-            fi
             if docker inspect dreammaker-web >/dev/null 2>&1; then
               docker exec dreammaker-web sh -c '
                 for key in CODER_API_URL CODER_ACCESS_URL CODER_API_TOKEN; do
@@ -60,17 +59,38 @@ jobs:
               docker exec dreammaker-web node -e '
                 (async () => {
                   const raw = process.env.CODER_API_URL;
-                  if (!raw) return console.log("Web-to-Coder buildinfo: URL not configured");
+                  if (!raw) return console.log("Coder API URL: missing");
+                  let configured;
                   try {
-                    const url = `${raw.replace(/\/$/, "")}/api/v2/buildinfo`;
-                    const response = await fetch(url, {
-                      headers: { "Coder-Session-Token": process.env.CODER_API_TOKEN || "" },
-                      signal: AbortSignal.timeout(10000),
-                    });
-                    console.log(`Web-to-Coder buildinfo HTTP: ${response.status}`);
-                    console.log(`Coder API URL includes API path: ${new URL(raw).pathname !== "/" && new URL(raw).pathname !== ""}`);
-                  } catch (error) {
-                    console.log(`Web-to-Coder buildinfo failed: ${error?.name || "unknown"}`);
+                    configured = new URL(raw);
+                    console.log(`Configured Coder protocol: ${configured.protocol}`);
+                    console.log(`Configured Coder hostname: ${configured.hostname}`);
+                    console.log(`Configured Coder URL has a path: ${configured.pathname !== "/" && configured.pathname !== ""}`);
+                  } catch (_) {
+                    return console.log("Coder API URL: invalid URL");
+                  }
+                  const dns = require("node:dns").promises;
+                  for (const [name, target] of [
+                    ["configured", `${raw.replace(/\/$/, "")}/api/v2/buildinfo`],
+                    ["public", "https://coder.dreammakerhub.website/api/v2/buildinfo"],
+                  ]) {
+                    const hostname = new URL(target).hostname;
+                    try {
+                      await dns.lookup(hostname);
+                      console.log(`${name} Coder DNS from web: resolves`);
+                    } catch (error) {
+                      console.log(`${name} Coder DNS from web: ${error?.code || "error"}`);
+                    }
+                    try {
+                      const response = await fetch(target, {
+                        signal: AbortSignal.timeout(7000),
+                        headers: { "Coder-Session-Token": process.env.CODER_API_TOKEN || "" },
+                      });
+                      console.log(`${name} Coder buildinfo HTTP from web: ${response.status}`);
+                      console.log(`${name} Coder response server: ${response.headers.get("server") || "not-provided"}`);
+                    } catch (error) {
+                      console.log(`${name} Coder request failed: ${error?.name || "unknown"}`);
+                    }
                   }
                 })();
               ' || echo 'Unable to run network probe from web container'
@@ -78,11 +98,10 @@ jobs:
             if command -v kubectl >/dev/null 2>&1; then
               if kubectl --request-timeout=7s -n coder get deployment coder >/dev/null 2>&1; then
                 kubectl --request-timeout=7s -n coder get deployments coder coder-db -o custom-columns='NAME:.metadata.name,READY:.status.readyReplicas,DESIRED:.spec.replicas' 2>&1 || true
-                kubectl --request-timeout=7s -n coder get endpoints coder -o custom-columns='NAME:.metadata.name,READY_IPS:.subsets[*].addresses[*].ip' 2>&1 || true
               else
-                echo 'Kubernetes coder deployment: unavailable from this UpCloud server/context'
+                echo 'Kubernetes coder deployment: unavailable from this server/context'
               fi
             else
-              echo 'kubectl: not installed on this UpCloud server'
+              echo 'kubectl: not installed on main web server'
             fi
           REMOTE
