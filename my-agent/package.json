@@ -11,6 +11,7 @@
   "description": "",
   "type": "module",
   "dependencies": {
+    "@amplitude/ai": "^0.16.0",
     "@google/adk": "^0.6.1",
     "@google/adk-devtools": "^0.6.1",
     "@tootallnate/once": ">=2.0.1"

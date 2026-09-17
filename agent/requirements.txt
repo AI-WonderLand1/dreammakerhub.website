@@ -5,3 +5,4 @@ pydantic>=2.0.0
 python-multipart>=0.0.6
 litellm
 mem0ai
+amplitude-ai
