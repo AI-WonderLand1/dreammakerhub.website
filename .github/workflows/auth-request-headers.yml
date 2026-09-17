@@ -1,0 +1,104 @@
+name: Harden Auth Request Headers
+
+on:
+  workflow_run:
+    workflows: [Deploy Main Site to UpCloud VM]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upcloud-auth-request-headers
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'Master')
+    runs-on: ubuntu-latest
+    env:
+      UPCLOUD_SERVER_IP: ${{ vars.UPCLOUD_SERVER_IP || '152.44.43.125' }}
+      UPCLOUD_SSH_USER: ${{ vars.UPCLOUD_SSH_USER || 'root' }}
+      SSH_PRIVATE_KEY: ${{ secrets.UPCLOUD_SSH_KEY || secrets.UPLOAD_SSH_KEY }}
+    steps:
+      - name: Configure active reverse proxy and verify web header limit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo 'Missing UpCloud SSH key'; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$UPCLOUD_SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o BatchMode=yes "$UPCLOUD_SSH_USER@$UPCLOUD_SERVER_IP" 'sudo -n bash -s' <<'REMOTE'
+            set -euo pipefail
+            if command -v nginx >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
+              config=/etc/nginx/conf.d/dreammakerhub-auth-request-headers.conf
+              backup="$(mktemp)"
+              had_previous=0
+              if [ -f "$config" ]; then
+                cp "$config" "$backup"
+                had_previous=1
+              fi
+
+              # Inbound session cookies need separate limits from the upstream
+              # response buffers set by deploy-upcloud.yml.
+              cat > "$config" <<'NGINX'
+client_header_buffer_size 8k;
+large_client_header_buffers 4 32k;
+NGINX
+              if nginx -t; then
+                systemctl reload nginx
+                rm -f "$backup"
+                echo 'Active host Nginx request header buffers configured.'
+              else
+                if [ "$had_previous" -eq 1 ]; then
+                  cp "$backup" "$config"
+                else
+                  rm -f "$config"
+                fi
+                rm -f "$backup"
+                nginx -t || true
+                exit 1
+              fi
+            elif [ "$(docker inspect --format '{{.State.Running}}' nginx 2>/dev/null || true)" = true ]; then
+              cd /opt/dreammakerhub.website
+              # Validate the new vhost *before* recreating the active proxy.
+              docker run --rm \
+                -v "$PWD/deploy/upcloud/nginx-dreammakerhub.conf:/etc/nginx/conf.d/dreammakerhub.conf:ro" \
+                -v "$PWD/deploy/upcloud/certs:/etc/letsencrypt:ro" \
+                nginx:alpine nginx -t
+              docker compose --env-file .env -f deploy/upcloud/docker-compose.yml up -d --no-deps --force-recreate nginx
+              docker exec nginx nginx -t
+              echo 'Docker Nginx recreated with the included vhost configuration.'
+            elif [ "$(docker inspect --format '{{.State.Running}}' dreammaker-caddy 2>/dev/null || true)" = true ]; then
+              echo 'Caddy is the active proxy; no Nginx header change is needed.'
+            else
+              echo 'No recognized active reverse proxy. Refusing to report a successful fix.'
+              exit 1
+            fi
+
+            # Both the full-stack and web-only Compose files must supply this.
+            docker exec dreammaker-web sh -c 'case "${NODE_OPTIONS:-}" in *--max-http-header-size=32768*) exit 0;; *) exit 1;; esac' || {
+              echo 'Next.js is still running without the bounded 32 KiB header limit.'
+              exit 1
+            }
+            echo 'Running Next.js container has the 32 KiB request-header limit.'
+          REMOTE
+
+      - name: Test a synthetic 20 KiB cookie through the public proxy
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf -v padding '%*s' 20000 ''
+          padding="${padding// /x}"
+          status="$(curl --silent --show-error --max-time 20 --output /dev/null --write-out '%{http_code}' --cookie "dmh_header_probe=$padding" https://dreammakerhub.website/favicon.ico)"
+          case "$status" in
+            200|301|302|303|307|308) echo 'Synthetic 20 KiB cookie request passed the proxy and app.' ;;
+            *) echo "Synthetic cookie request failed with HTTP $status. Check the active proxy and running Next.js limits."; exit 1 ;;
+          esac
