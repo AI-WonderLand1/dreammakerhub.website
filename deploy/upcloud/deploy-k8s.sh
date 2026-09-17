@@ -36,6 +36,11 @@ if ! kubectl get secret coder-env -n "$NAMESPACE" >/dev/null 2>&1; then
   missing=1
 fi
 
+if ! kubectl get secret dreammaker-web-env -n "$NAMESPACE" >/dev/null 2>&1; then
+  echo "ERROR: missing secret $NAMESPACE/dreammaker-web-env" >&2
+  missing=1
+fi
+
 if ! kubectl get secret cloudflare-api-token-secret -n cert-manager >/dev/null 2>&1; then
   echo "ERROR: missing secret cert-manager/cloudflare-api-token-secret" >&2
   missing=1
@@ -48,11 +53,14 @@ Required secret keys:
   coder/coder-env:
     CODER_DB_PASSWORD
 
+  coder/dreammaker-web-env:
+    CODER_API_URL
+    CODER_ACCESS_URL
+    CODER_API_TOKEN
+
   cert-manager/cloudflare-api-token-secret:
     api-token
 
-Application-side Coder access is supplied to the web deployment separately via
-coder/dreammaker-web-env (CODER_API_URL, CODER_ACCESS_URL, CODER_API_TOKEN).
 Do not commit secret values to GitHub.
 EOF
   exit 1
@@ -62,6 +70,13 @@ if [ -z "$(kubectl get secret coder-env -n "$NAMESPACE" -o jsonpath='{.data.CODE
   echo "ERROR: coder/coder-env is missing CODER_DB_PASSWORD" >&2
   exit 1
 fi
+
+for key in CODER_API_URL CODER_ACCESS_URL CODER_API_TOKEN; do
+  if [ -z "$(kubectl get secret dreammaker-web-env -n "$NAMESPACE" -o "jsonpath={.data.${key}}" 2>/dev/null)" ]; then
+    echo "ERROR: coder/dreammaker-web-env is missing $key" >&2
+    exit 1
+  fi
+done
 
 kubectl apply -f "$REPO_ROOT/deploy/k8s/configmap.yaml"
 kubectl apply -f "$REPO_ROOT/deploy/k8s/coder-rbac.yaml"
@@ -107,6 +122,14 @@ if [ -z "$(kubectl get endpoints coder -n "$NAMESPACE" -o jsonpath='{.subsets[*]
   kubectl get pods -n "$NAMESPACE" -o wide >&2
   exit 1
 fi
+
+echo "== Verifying DreamMakerHub web has Coder credentials =="
+for key in CODER_API_URL CODER_ACCESS_URL CODER_API_TOKEN; do
+  if ! kubectl exec deployment/dreammaker-web -n "$NAMESPACE" -- sh -c "test -n \"\${$key:-}\""; then
+    echo "ERROR: running dreammaker-web pod is missing $key" >&2
+    exit 1
+  fi
+done
 
 echo "== Waiting for Coder TLS certificates =="
 kubectl wait --for=condition=Ready certificate/coder-tls \
