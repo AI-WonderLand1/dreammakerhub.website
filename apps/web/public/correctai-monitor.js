@@ -1,361 +1,268 @@
-/**
- * CorrectAI Monitor v1.0
- * Drop this ONE script tag into your site and it runs silently in the background.
- * Open correctai-dashboard.html to see all errors live.
- *
- * Usage:
- *   <script src="correctai-monitor.js"></script>
- *
- * For React/TypeScript projects, import at the top of your index.js / main.tsx:
- *   import './correctai-monitor.js';
+/*
+ * CorrectAI diagnostics: report useful categories and HTTP statuses without
+ * collecting credentials, URL parameters, page content, request bodies, or stacks.
+ * This is a browser-only diagnostic tool, not a security/audit-log service.
  */
-
 (function () {
   'use strict';
 
-  const CHANNEL = 'correctai_events';
-  const SESSION = Date.now().toString(36);
+  if (window.__correctAIMonitorActive) return;
+  window.__correctAIMonitorActive = true;
 
-  // ── Broadcast an error event to the dashboard ─────────────────────────────
-  function emit(type, data) {
+  const CHANNEL = 'correctai_events';
+  const MIGRATION = 'correctai_events_redacted_v2';
+  const SESSION = Date.now().toString(36);
+  const SAFE_ROUTE_PREFIXES = [
+    '/api/auth', '/api/config', '/api/ai', '/_next/static',
+    '/auth', '/dashboard', '/wonder-build', '/docs', '/contact',
+  ];
+
+  // Older versions stored complete OAuth callback URLs, failed request URLs,
+  // exception messages, stacks and outerHTML. Never read or rebroadcast them.
+  // Clear that legacy store once when this version first runs on an origin.
+  try {
+    if (localStorage.getItem(MIGRATION) !== '1') {
+      localStorage.removeItem(CHANNEL);
+      localStorage.setItem(MIGRATION, '1');
+    }
+  } catch (_) { /* Browser storage may be disabled. */ }
+
+  function safeUrl(input) {
+    try {
+      const parsed = new URL(String(input), window.location.href);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '[non-http resource]';
+      // Only known, static route prefixes survive. Never retain an arbitrary
+      // path segment, query, fragment, username or password.
+      const prefix = SAFE_ROUTE_PREFIXES.find(route =>
+        parsed.pathname === route || parsed.pathname.startsWith(route + '/')
+      );
+      return parsed.origin + (prefix || '');
+    } catch (_) {
+      return '[unknown resource]';
+    }
+  }
+
+  function emit(type, data = {}) {
+    // Deliberate allowlist: callers cannot accidentally persist raw input.
     const event = {
       id: Math.random().toString(36).slice(2),
       session: SESSION,
-      type,          // js_error | unhandled_promise | network | broken_link | missing_asset | html_issue | css_issue | react_error | ts_error
-      severity: data.severity || 'error',   // error | warning | info
+      type,
+      severity: data.severity || 'warning',
       timestamp: new Date().toISOString(),
-      url: window.location.href,
-      ...data,
+      url: safeUrl(window.location.href),
+      label: data.label || 'Diagnostic',
+      message: data.message || 'Diagnostic event',
+      source: safeUrl(data.source || window.location.href),
     };
+    if (Number.isFinite(data.status)) event.status = data.status;
+    if (Number.isFinite(data.line)) event.line = data.line;
+    if (Number.isFinite(data.col)) event.col = data.col;
+    if (data.element) event.element = data.element;
 
-    // Store in localStorage so dashboard can poll it
     try {
-      const existing = JSON.parse(localStorage.getItem(CHANNEL) || '[]');
+      const current = JSON.parse(localStorage.getItem(CHANNEL) || '[]');
+      const existing = Array.isArray(current) ? current.filter(item => item && item.timestamp &&
+        Date.now() - Date.parse(item.timestamp) < 86400000 &&
+        item.url && !item.url.includes('?') && !item.url.includes('#') &&
+        !('stack' in item)) : [];
       existing.unshift(event);
-      localStorage.setItem(CHANNEL, JSON.stringify(existing.slice(0, 500)));
-    } catch (e) { /* storage full or blocked */ }
+      localStorage.setItem(CHANNEL, JSON.stringify(existing.slice(0, 100)));
+    } catch (_) { /* Storage full or unavailable. */ }
 
-    // Also broadcast via BroadcastChannel if dashboard is open in another tab
     try {
       const bc = new BroadcastChannel(CHANNEL);
       bc.postMessage(event);
       bc.close();
-    } catch (e) { /* not supported */ }
+    } catch (_) { /* BroadcastChannel unavailable. */ }
   }
 
-  // ── 1. JavaScript runtime errors ──────────────────────────────────────────
+  // Do not record arbitrary error messages or stack traces. Libraries can put
+  // bearer tokens, prompts, customer data or entire request URLs in those.
   window.addEventListener('error', function (e) {
-    if (e.message && e.message.includes('correctai')) return; // ignore our own errors
+    if (e.target && e.target !== window && e.target.tagName) return;
+    const errorName = e.error && typeof e.error.name === 'string' &&
+      /^(TypeError|ReferenceError|SyntaxError|RangeError|URIError|EvalError)$/.test(e.error.name)
+      ? e.error.name : 'JavaScript error';
     emit('js_error', {
-      severity: 'error',
-      message: e.message,
-      source: e.filename || window.location.href,
-      line: e.lineno,
-      col: e.colno,
-      stack: e.error ? e.error.stack : null,
-      label: 'JavaScript Error',
+      severity: 'error', message: errorName, label: 'JavaScript Error',
+      source: e.filename, line: e.lineno, col: e.colno,
     });
   }, true);
 
-  // ── 2. Unhandled promise rejections ───────────────────────────────────────
-  window.addEventListener('unhandledrejection', function (e) {
-    const reason = e.reason;
+  window.addEventListener('unhandledrejection', function () {
     emit('unhandled_promise', {
-      severity: 'error',
-      message: reason instanceof Error ? reason.message : String(reason),
-      stack: reason instanceof Error ? reason.stack : null,
-      label: 'Unhandled Promise Rejection',
-      source: window.location.href,
+      severity: 'error', message: 'Unhandled promise rejection', label: 'Unhandled Promise Rejection',
     });
   });
 
-  // ── 3. Network errors (fetch + XHR) ───────────────────────────────────────
-  // Intercept fetch
-  const _fetch = window.fetch;
-  window.fetch = function (...args) {
-    const url = args[0] instanceof Request ? args[0].url : String(args[0]);
-    return _fetch.apply(this, args).then(res => {
-      if (!res.ok) {
+  if (typeof window.fetch === 'function') {
+    const originalFetch = window.fetch;
+    window.fetch = function (...args) {
+      const source = typeof Request !== 'undefined' && args[0] instanceof Request
+        ? safeUrl(args[0].url) : safeUrl(args[0]);
+      return originalFetch.apply(this, args).then(response => {
+        if (!response.ok) {
+          emit('network', {
+            severity: response.status >= 500 ? 'error' : 'warning',
+            message: 'HTTP request failed', label: 'Network Request Failed',
+            source, status: response.status,
+          });
+        }
+        return response;
+      }).catch(error => {
         emit('network', {
-          severity: res.status >= 500 ? 'error' : 'warning',
-          message: `HTTP ${res.status} ${res.statusText}`,
-          source: url,
-          status: res.status,
-          label: 'Network Request Failed',
+          severity: 'error', message: 'Network request failed',
+          source, label: 'Fetch Failed',
         });
-      }
-      return res;
-    }).catch(err => {
-      emit('network', {
-        severity: 'error',
-        message: err.message,
-        source: url,
-        label: 'Fetch Failed',
+        throw error;
       });
-      throw err;
-    });
-  };
+    };
+  }
 
-  // Intercept XHR
-  const _open = XMLHttpRequest.prototype.open;
-  const _send = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function (method, url) {
-    this._correctai_url = url;
-    this._correctai_method = method;
-    return _open.apply(this, arguments);
-  };
-  XMLHttpRequest.prototype.send = function () {
-    this.addEventListener('load', function () {
-      if (this.status >= 400) {
+  if (typeof XMLHttpRequest !== 'undefined') {
+    const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      // Store the redacted form only, never the raw query-bearing URL.
+      this._correctai_safe_url = safeUrl(url);
+      return originalOpen.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.send = function () {
+      this.addEventListener('load', function () {
+        if (this.status >= 400) {
+          emit('network', {
+            severity: this.status >= 500 ? 'error' : 'warning',
+            message: 'XHR request failed', source: this._correctai_safe_url,
+            status: this.status, label: 'XHR Request Failed',
+          });
+        }
+      });
+      this.addEventListener('error', function () {
         emit('network', {
-          severity: this.status >= 500 ? 'error' : 'warning',
-          message: `XHR ${this.status} on ${this._correctai_method} ${this._correctai_url}`,
-          source: this._correctai_url,
-          status: this.status,
-          label: 'XHR Request Failed',
+          severity: 'error', message: 'XHR network error',
+          source: this._correctai_safe_url, label: 'XHR Network Error',
         });
-      }
-    });
-    this.addEventListener('error', function () {
-      emit('network', {
-        severity: 'error',
-        message: `XHR network error on ${this._correctai_url}`,
-        source: this._correctai_url,
-        label: 'XHR Network Error',
       });
-    });
-    return _send.apply(this, arguments);
-  };
+      return originalSend.apply(this, arguments);
+    };
+  }
 
-  // ── 4. Broken links & missing assets ──────────────────────────────────────
   window.addEventListener('error', function (e) {
     const el = e.target;
     if (!el || !el.tagName) return;
     const tag = el.tagName.toLowerCase();
-
-    if (['img', 'script', 'link', 'video', 'audio', 'source', 'iframe'].includes(tag)) {
-      const src = el.src || el.href || el.getAttribute('href') || '';
-      emit('missing_asset', {
-        severity: 'error',
-        message: `Failed to load <${tag}>: ${src}`,
-        source: src,
-        element: tag,
-        label: 'Missing Asset',
-      });
-    }
+    if (!['img', 'script', 'link', 'video', 'audio', 'source', 'iframe'].includes(tag)) return;
+    emit('missing_asset', {
+      severity: 'error', message: 'Resource failed to load',
+      source: safeUrl(el.src || el.href || ''), element: tag, label: 'Missing Asset',
+    });
   }, true);
 
-  // Check all <a> tags for broken hrefs (passive scan)
   function scanLinks() {
-    const links = document.querySelectorAll('a[href]');
-    links.forEach(link => {
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-      
-      // Check for dangerous protocols (case-insensitive, handle encoding)
-      const lowerHref = href.toLowerCase().trim();
-      const decodedHref = decodeURIComponent(lowerHref).toLowerCase();
-      
-      if (lowerHref.startsWith('javascript:') || decodedHref.startsWith('javascript:') ||
-          lowerHref.startsWith('data:') || decodedHref.startsWith('data:') ||
-          lowerHref.startsWith('vbscript:') || decodedHref.startsWith('vbscript:')) {
+    document.querySelectorAll('a[href]').forEach(link => {
+      const href = link.getAttribute('href') || '';
+      let decoded = href;
+      try { decoded = decodeURIComponent(href); } catch (_) { /* Invalid percent encoding. */ }
+      if (/^\s*(?:javascript|data|vbscript):/i.test(href) ||
+          /^\s*(?:javascript|data|vbscript):/i.test(decoded)) {
         emit('broken_link', {
-          severity: 'warning',
-          message: `Potentially unsafe protocol in href on <a>`,
-          source: href,
+          severity: 'warning', message: 'Potentially unsafe link protocol',
           label: 'Unsafe Link',
         });
       }
     });
   }
 
-  // ── 5. HTML issues via DOM inspection ─────────────────────────────────────
   function scanHTML() {
-    const issues = [];
-
-    // Missing alt on images
-    document.querySelectorAll('img:not([alt])').forEach(img => {
-      issues.push({ message: `<img> missing alt attribute: ${img.src || img.getAttribute('src')}`, source: img.outerHTML.slice(0, 120) });
+    document.querySelectorAll('img:not([alt])').forEach(() => {
+      emit('html_issue', { message: 'Image missing alt text', label: 'HTML Issue' });
     });
-
-    // Empty alt="" that are not decorative (has meaningful src)
-    document.querySelectorAll('img[alt=""]').forEach(img => {
-      const src = img.src || '';
-      if (src && !src.includes('spacer') && !src.includes('pixel') && !src.includes('blank')) {
-        issues.push({ message: `<img> has empty alt, may need description: ${src}`, source: img.outerHTML.slice(0, 120) });
-      }
+    const ids = new Map();
+    document.querySelectorAll('[id]').forEach(el => ids.set(el.id, (ids.get(el.id) || 0) + 1));
+    ids.forEach(count => {
+      if (count > 1) emit('html_issue', { message: 'Duplicate element IDs', label: 'HTML Issue' });
     });
-
-    // Duplicate IDs
-    const ids = {};
-    document.querySelectorAll('[id]').forEach(el => {
-      ids[el.id] = (ids[el.id] || 0) + 1;
-    });
-    Object.entries(ids).forEach(([id, count]) => {
-      if (count > 1) issues.push({ message: `Duplicate id="${id}" found ${count} times`, source: `id="${id}"` });
-    });
-
-    // Forms missing labels
     document.querySelectorAll('input:not([type="hidden"]):not([aria-label]):not([aria-labelledby])').forEach(input => {
-      const id = input.id;
-      if (!id || !document.querySelector(`label[for="${id}"]`)) {
-        issues.push({ message: `<input type="${input.type || 'text'}"> has no associated <label>`, source: input.outerHTML.slice(0, 120) });
+      if (!input.labels || input.labels.length === 0) {
+        emit('html_issue', { message: 'Input missing accessible label', label: 'HTML Issue' });
       }
     });
-
-    // Empty buttons/links
-    document.querySelectorAll('button, a').forEach(el => {
-      const text = (el.textContent || '').trim();
-      const hasIcon = el.querySelector('[aria-label], svg, img');
-      if (!text && !hasIcon && !el.getAttribute('aria-label')) {
-        issues.push({ message: `<${el.tagName.toLowerCase()}> is empty (no text or accessible label)`, source: el.outerHTML.slice(0, 120) });
-      }
-    });
-
-    // <title> missing or empty
-    if (!document.title || !document.title.trim()) {
-      issues.push({ message: 'Page is missing a <title> tag', source: '<head>' });
-    }
-
-    // Missing meta description
+    if (!document.title) emit('html_issue', { message: 'Missing page title', label: 'HTML Issue' });
     if (!document.querySelector('meta[name="description"]')) {
-      issues.push({ message: 'Missing <meta name="description"> tag', source: '<head>' });
+      emit('html_issue', { message: 'Missing meta description', label: 'HTML Issue' });
     }
-
-    issues.forEach(issue => {
-      emit('html_issue', {
-        severity: 'warning',
-        label: 'HTML Issue',
-        ...issue,
-      });
-    });
   }
 
-  // ── 6. CSS issues ─────────────────────────────────────────────────────────
   function scanCSS() {
     try {
       Array.from(document.styleSheets).forEach(sheet => {
         try {
-          const rules = Array.from(sheet.cssRules || []);
-          rules.forEach(rule => {
-            if (rule.type === CSSRule.STYLE_RULE) {
-              const style = rule.style;
-              // Detect z-index abuse
-              const z = parseInt(style.zIndex);
-              if (!isNaN(z) && Math.abs(z) > 9000) {
-                emit('css_issue', {
-                  severity: 'warning',
-                  message: `Extreme z-index value (${z}) in rule: ${rule.selectorText}`,
-                  source: rule.selectorText,
-                  label: 'CSS Issue',
-                });
-              }
-              // Detect !important overuse (flag if multiple per rule)
-              const cssText = rule.cssText;
-              const importantCount = (cssText.match(/!important/g) || []).length;
-              if (importantCount >= 3) {
-                emit('css_issue', {
-                  severity: 'warning',
-                  message: `Heavy !important usage (${importantCount}x) in: ${rule.selectorText}`,
-                  source: rule.selectorText,
-                  label: 'CSS Issue',
-                });
-              }
+          Array.from(sheet.cssRules || []).forEach(rule => {
+            if (rule.type !== CSSRule.STYLE_RULE) return;
+            if (Math.abs(parseInt(rule.style.zIndex, 10)) > 9000) {
+              emit('css_issue', { message: 'Extreme z-index', label: 'CSS Issue' });
+            }
+            if ((rule.cssText.match(/!important/g) || []).length >= 3) {
+              emit('css_issue', { message: 'Excessive !important declarations', label: 'CSS Issue' });
             }
           });
-        } catch (e) { /* cross-origin sheet, skip */ }
+        } catch (_) { /* Cross-origin style sheet. */ }
       });
-    } catch (e) { /* stylesheet read failed */ }
+    } catch (_) { /* Stylesheets unavailable. */ }
   }
 
-  // ── 7. React error boundary detection ─────────────────────────────────────
-  // Patch console.error to catch React's error messages
-  const _consoleError = console.error;
+  const originalError = console.error;
   console.error = function (...args) {
-    const msg = args.map(a => (typeof a === 'string' ? a : '')).join(' ');
-
-    if (msg.includes('React') || msg.includes('Warning:') || msg.includes('Each child')) {
-      emit('react_error', {
-        severity: msg.toLowerCase().includes('error') ? 'error' : 'warning',
-        message: msg.slice(0, 500),
-        source: window.location.href,
-        label: 'React Warning/Error',
-      });
+    if (args.some(arg => typeof arg === 'string' && /React|Warning:|Each child/.test(arg))) {
+      emit('react_error', { severity: 'warning', message: 'React warning or error', label: 'React Warning/Error' });
     }
-    _consoleError.apply(console, args);
+    return originalError.apply(this, args);
   };
 
-  // ── 8. TypeScript / build errors (caught at runtime via console) ───────────
-  const _consoleWarn = console.warn;
+  const originalWarn = console.warn;
   console.warn = function (...args) {
-    const msg = args.map(a => (typeof a === 'string' ? a : '')).join(' ');
-    if (msg.includes('TS') || msg.includes('TypeError') || msg.includes('deprecated')) {
-      emit('ts_error', {
-        severity: 'warning',
-        message: msg.slice(0, 500),
-        source: window.location.href,
-        label: 'TypeScript / Build Warning',
-      });
+    if (args.some(arg => typeof arg === 'string' && /TypeError|deprecated|\bTS\d{3,}\b/.test(arg))) {
+      emit('ts_error', { severity: 'warning', message: 'Runtime or deprecation warning', label: 'Runtime Warning' });
     }
-    _consoleWarn.apply(console, args);
+    return originalWarn.apply(this, args);
   };
 
-  // ── 9. Performance issues ─────────────────────────────────────────────────
   if (window.PerformanceObserver) {
     try {
       const po = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (entry.duration > 3000) {
             emit('network', {
-              severity: 'warning',
-              message: `Slow resource (${Math.round(entry.duration)}ms): ${entry.name}`,
-              source: entry.name,
-              label: 'Slow Asset',
+              severity: 'warning', message: 'Slow resource',
+              source: safeUrl(entry.name), label: 'Slow Asset',
             });
           }
         });
       });
       po.observe({ entryTypes: ['resource'] });
-    } catch (e) { /* not supported */ }
+    } catch (_) { /* Performance monitoring unavailable. */ }
   }
 
-  // ── 10. MutationObserver — re-scan DOM on changes ─────────────────────────
-  let scanTimer = null;
-  const observer = new MutationObserver(() => {
-    clearTimeout(scanTimer);
-    scanTimer = setTimeout(() => { scanHTML(); scanLinks(); }, 2000);
-  });
-
-  // ── Bootstrap ─────────────────────────────────────────────────────────────
   function boot() {
     scanHTML();
     scanCSS();
     scanLinks();
-
-    observer.observe(document.body || document.documentElement, {
-      childList: true,
-      subtree: true,
-      attributes: false,
-    });
-
-    // Re-scan CSS every 30s in case stylesheets load late
+    if (typeof MutationObserver !== 'undefined') {
+      let scanTimer;
+      const observer = new MutationObserver(() => {
+        clearTimeout(scanTimer);
+        scanTimer = setTimeout(() => { scanHTML(); scanLinks(); }, 2000);
+      });
+      observer.observe(document.body || document.documentElement, {
+        childList: true, subtree: true,
+      });
+    }
     setInterval(scanCSS, 30000);
-
-    emit('info', {
-      severity: 'info',
-      type: 'monitor_started',
-      label: 'Monitor Started',
-      message: `CorrectAI monitor active on ${window.location.hostname}`,
-      source: window.location.href,
-    });
-
-    console.info('%c✦ CorrectAI Monitor active — open correctai-dashboard.html to view errors', 'color:#6366f1;font-weight:bold;');
+    emit('info', { severity: 'info', message: 'Monitor active', label: 'Monitor Started' });
+    console.info('CorrectAI monitor active (sensitive diagnostic details excluded).');
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
-
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();
