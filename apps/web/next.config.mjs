@@ -15,7 +15,7 @@ const pathAliases = {
   '@styles': join(__dirname, 'styles'),
   '@/styles': join(__dirname, 'styles'),
   '@data': join(__dirname, 'data'),
-  '@data/templates': join(__dirname, 'data/templates'),
+  '@/data': join(__dirname, 'data'),
   '@utils': [join(__dirname, 'app/utils'), join(__dirname, 'utils')],
   '@/components': join(__dirname, 'components'),
   '@runners': join(__dirname, '../../runners'),
