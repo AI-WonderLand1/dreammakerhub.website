@@ -11,18 +11,11 @@ export async function GET() {
 
   try {
     const config = await getCoderLaunchConfig();
-    // The user's existing DreamMakerHub project links are suggestions only.
-    // Public GitHub access is verified separately before allowing a clone.
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('id,name,github_repo')
-      .eq('user_id', user.id)
-      .not('github_repo', 'is', null)
-      .limit(50);
-    return NextResponse.json({
-      ...config,
-      projects: (projects || []).filter((project) => project.github_repo),
-    }, { headers: { 'Cache-Control': 'private, no-store' } });
+    // No repository association exists in the production projects schema yet.
+    // The UI lets a user provide a public repo and verifies it through GitHub.
+    return NextResponse.json({ ...config, projects: [] }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch {
     return NextResponse.json({ error: 'Coder launch options are temporarily unavailable.' }, { status: 503 });
   }
