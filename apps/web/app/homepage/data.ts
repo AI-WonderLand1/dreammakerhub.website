@@ -67,7 +67,7 @@ export const PLANS: Plan[] = [
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
     bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
     cta: "Start Wandering, It's Free",
-    href: "/public-pages/auth",
+    href: "/public-pages/auth?signup=true",
     highlight: false,
     icon: "🌿",
   },
@@ -138,5 +138,5 @@ export const REGISTRY_ITEMS: RegistryItem[] = [
   { icon: "🎨", name: "Design Tokens", desc: "Sync Figma tokens to your codebase", tag: "Design" },
   { icon: "🤖", name: "AI Reviewer", desc: "Constitutional AI code review agent", tag: "AI" },
   { icon: "🚀", name: "Deploy Runner", desc: "One-click cloud deploy pipeline", tag: "DevOps" },
-  { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "AI" },
+  { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "Observability" },
 ];
