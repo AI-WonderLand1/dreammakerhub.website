@@ -20,7 +20,6 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -35,20 +34,21 @@ export async function POST(request: Request) {
   if (podType !== 'ide' && podType !== 'playcanvas') {
     return NextResponse.json({ error: 'Unsupported workspace type.' }, { status: 400 });
   }
-  if (![1, 2, 3, 4].includes(cpu) || ![1, 2, 4, 8].includes(memory)) {
-    return NextResponse.json({ error: 'Unsupported CPU or memory value.' }, { status: 400 });
+  if (!Number.isFinite(cpu) || !Number.isFinite(memory) || !Number.isInteger(cpu) || !Number.isInteger(memory)) {
+    return NextResponse.json({ error: 'CPU and memory must be whole numbers.' }, { status: 400 });
+  }
+  if (podType === 'playcanvas' && (![1, 2, 3, 4].includes(cpu) || ![1, 2, 4, 8].includes(memory))) {
+    return NextResponse.json({ error: 'Unsupported PlayCanvas CPU or memory value.' }, { status: 400 });
   }
   if (!process.env.CODER_API_URL || !process.env.CODER_API_TOKEN) {
     return NextResponse.json({ error: 'WonderSpace cloud IDE is not configured on the server.' }, { status: 503 });
   }
-
   const coder = new CoderAPIWrapper({
     apiUrl: process.env.CODER_API_URL,
     apiKey: process.env.CODER_API_TOKEN,
     userId: user.id,
     environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   });
-
   try {
     if (!(await coder.healthCheck())) {
       return NextResponse.json({ error: 'WonderSpace cloud IDE is temporarily unavailable.' }, { status: 503 });
@@ -59,7 +59,6 @@ export async function POST(request: Request) {
       { name: 'memory', value: String(memory) },
       { name: 'home_disk_size', value: '20' },
     ];
-
     if (podType === 'ide') {
       let config;
       try { config = await getCoderLaunchConfig(); } catch {
@@ -78,11 +77,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'This region is not supported by the Coder template.' }, { status: 400 });
       }
       if (region) richParameterValues.push({ name: 'region', value: region });
-
       const requestedRepo = typeof body.repository === 'string' ? body.repository.trim() : '';
       if (requestedRepo) {
         if (!config.repositorySupported) {
-          return NextResponse.json({ error: 'The live Coder template needs its repository parameters published before repository launch is available.' }, { status: 409 });
+          return NextResponse.json({ error: 'Coder must publish the repository parameters before repository launch is available.' }, { status: 409 });
         }
         const normalized = normalizePublicGithubRepo(requestedRepo);
         if (!normalized) return NextResponse.json({ error: 'Enter a valid public GitHub repository.' }, { status: 400 });
@@ -101,10 +99,12 @@ export async function POST(request: Request) {
       }
       const sshKey = await getUserSSHKey(user.id, user.email || user.id);
       richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
-    } else if (body.repository || body.branch || body.region || body.templateId) {
-      return NextResponse.json({ error: 'Repository and region options are only supported for the IDE.' }, { status: 400 });
+    } else {
+      if (body.repository || body.branch || body.region ||
+          (body.templateId && body.templateId !== TEMPLATE_MAP.playcanvas)) {
+        return NextResponse.json({ error: 'Unsupported PlayCanvas launch option.' }, { status: 400 });
+      }
     }
-
     const workspace = await coder.createWorkspace(user.id, {
       name: podName,
       template_id: templateId,
