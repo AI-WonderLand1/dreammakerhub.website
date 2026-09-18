@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const analyticsSource = readFileSync(resolve(__dirname, 'AmplitudeAnalytics.tsx'), 'utf8');
-const nextConfigSource = readFileSync(resolve(__dirname, '../../next.config.mjs'), 'utf8');
+const analyticsSource = readFileSync(new URL('./AmplitudeAnalytics.tsx', import.meta.url), 'utf8');
+const nextConfigSource = readFileSync(new URL('../../next.config.mjs', import.meta.url), 'utf8');
 
 describe('Google Analytics integration', () => {
-  it('loads the requested GA4 measurement ID exactly once', () => {
+  it('loads the requested GA4 measurement ID', () => {
     expect(analyticsSource).toContain("const GOOGLE_ANALYTICS_ID = 'G-Z704LCGF3P'");
     expect(analyticsSource).toContain('dreammakerhub-ga4-loader');
     expect(analyticsSource).toContain('dreammakerhub-ga4-init');
