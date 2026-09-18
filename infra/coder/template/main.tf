@@ -184,7 +184,9 @@ resource "coder_app" "code-server" {
   display_name = "VS Code"
   icon         = "/icon/code.svg"
   url          = "http://localhost:13337/?folder=/home/coder/wonderspace"
-  subdomain    = false
+  # Keep the editor and dev-server port previews on isolated origins rather
+  # than sharing the Coder dashboard origin. Requires wildcard DNS + valid TLS.
+  subdomain    = true
   share        = "owner"
 
   healthcheck {
