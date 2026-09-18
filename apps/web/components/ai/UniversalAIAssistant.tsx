@@ -10,6 +10,17 @@ type Message = { id: string; role: 'user' | 'assistant'; content: string };
 type Point = { x: number; y: number };
 type Drag = { target: 'button' | 'panel'; px: number; py: number; x: number; y: number } | null;
 type Failure = { code: string; message: string } | null;
+type Confession = {
+  traceId: string;
+  title: string;
+  truth: string;
+  what: string;
+  why: string;
+  how: string;
+  detail?: string;
+  createdAt: string;
+  saved?: boolean;
+};
 type UniversalAIProps = {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   theme?: 'dark' | 'light';
@@ -23,7 +34,6 @@ const MODELS = CLIENT_PERSONAS.map((p) => ({ id: p.id, name: p.name, sub: p.tagl
 const PANEL_W = 420;
 const PANEL_H = 620;
 const EDGE = 12;
-// Reset the legacy top-left saved position that covered whole-page content.
 const STORAGE = 'dreammakerhub-ai-position-v4';
 
 function clamp(n: number, min: number, max: number) {
@@ -40,6 +50,22 @@ function clampPoint(point: Point, width: number, height: number): Point {
   };
 }
 
+function asConfession(value: unknown): Confession | null {
+  if (!value || typeof value !== 'object') return null;
+  const item = value as Partial<Confession>;
+  if (typeof item.traceId !== 'string' || typeof item.truth !== 'string') return null;
+  return {
+    traceId: item.traceId,
+    title: typeof item.title === 'string' ? item.title : 'Confession',
+    truth: item.truth,
+    what: typeof item.what === 'string' ? item.what : '',
+    why: typeof item.why === 'string' ? item.why : '',
+    how: typeof item.how === 'string' ? item.how : '',
+    detail: typeof item.detail === 'string' ? item.detail : '',
+    createdAt: typeof item.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
+  };
+}
+
 export default function UniversalAIAssistant({
   position = 'bottom-right', theme = 'dark', enableAgents = true, enableRunners = true,
   defaultAgent = 'spirit-guide', dashboardUrl = '/dashboard',
@@ -49,6 +75,7 @@ export default function UniversalAIAssistant({
   const { isPaid } = useFeatureGate('agents');
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<'chat' | 'confessions'>('chat');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,6 +84,11 @@ export default function UniversalAIAssistant({
   const [agent, setAgent] = useState(defaultAgent);
   const [showModels, setShowModels] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
+  const [sessionConfessions, setSessionConfessions] = useState<Confession[]>([]);
+  const [savedConfessions, setSavedConfessions] = useState<Confession[]>([]);
+  const [confessionsLoading, setConfessionsLoading] = useState(false);
+  const [confessionsError, setConfessionsError] = useState<string | null>(null);
+  const [confessionsRefresh, setConfessionsRefresh] = useState(0);
   const [buttonPos, setButtonPos] = useState<Point>({ x: EDGE, y: EDGE });
   const [panelPos, setPanelPos] = useState<Point>({ x: EDGE, y: EDGE });
   const [drag, setDrag] = useState<Drag>(null);
@@ -72,6 +104,13 @@ export default function UniversalAIAssistant({
       { id: 'debugger', name: 'Debugger' },
     ] : []),
   ], [enableAgents, isPaid]);
+
+  const confessions = useMemo(() => {
+    const byTrace = new Map<string, Confession>();
+    sessionConfessions.forEach((item) => byTrace.set(item.traceId, item));
+    savedConfessions.forEach((item) => byTrace.set(item.traceId, { ...byTrace.get(item.traceId), ...item, saved: true }));
+    return Array.from(byTrace.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [sessionConfessions, savedConfessions]);
 
   useEffect(() => {
     const button = clampPoint({
@@ -120,8 +159,30 @@ export default function UniversalAIAssistant({
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
   }, [drag]);
 
-  useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
-  useEffect(() => { if (open) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, open]);
+  useEffect(() => { if (open && tab === 'chat') inputRef.current?.focus(); }, [open, tab]);
+  useEffect(() => { if (open && tab === 'chat') endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, open, tab]);
+
+  useEffect(() => {
+    if (!open || tab !== 'confessions') return;
+    let cancelled = false;
+    setConfessionsLoading(true);
+    setConfessionsError(null);
+    void (async () => {
+      try {
+        const response = await fetch('/api/ai/confessions?limit=50', { cache: 'no-store' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error?.message || 'Could not load saved confessions.');
+        if (!cancelled) setSavedConfessions(Array.isArray(data.confessions)
+          ? data.confessions.map(asConfession).filter((item: Confession | null): item is Confession => item !== null).map((item: Confession) => ({ ...item, saved: true }))
+          : []);
+      } catch (error) {
+        if (!cancelled) setConfessionsError(error instanceof Error ? error.message : 'Could not load saved confessions.');
+      } finally {
+        if (!cancelled) setConfessionsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, tab, confessionsRefresh]);
 
   const startDrag = (target: 'button' | 'panel', event: React.PointerEvent) => {
     if (event.button !== 0) return;
@@ -134,6 +195,7 @@ export default function UniversalAIAssistant({
     const prompt = input.trim();
     if (!prompt || loading) return;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setTab('chat');
     setFailure(null);
     setMessages((current) => [...current, { id, role: 'user', content: prompt }]);
     setInput('');
@@ -160,13 +222,38 @@ export default function UniversalAIAssistant({
       const text = normalChat ? data.text : (data.response || data.answer || data.code || data.result || data.glimpse);
       if (typeof text !== 'string' || !text.trim()) throw { code: 'EMPTY_RESPONSE', message: 'The AI returned no usable response. No action was completed.' };
       setMessages((current) => [...current, { id: `${id}-response`, role: 'assistant', content: text.trim() }]);
+      if (normalChat && Array.isArray(data.confessions)) {
+        const entries = data.confessions.map(asConfession).filter((item: Confession | null): item is Confession => item !== null);
+        setSessionConfessions((current) => [...entries.map((entry: Confession) => ({ ...entry, saved: data.confessionsStored === true })), ...current]);
+        if (data.confessionsStored) setConfessionsRefresh((value) => value + 1);
+      } else if (!normalChat) {
+        setSessionConfessions((current) => [{
+          traceId: id,
+          title: 'Agent response',
+          truth: 'The agent returned an AI-generated response. Its claims and any project changes have not been verified here.',
+          what: `Requested an answer from the ${agent} agent.`,
+          why: 'You sent a request to the agent.',
+          how: 'The request was sent to /api/unified-ai. This chat does not verify downstream file operations.',
+          createdAt: new Date().toISOString(),
+          saved: false,
+        }, ...current]);
+      }
     } catch (error) {
       const problem = error as { code?: string; message?: string };
-      // A failed request is not part of the AI conversation or usage history.
-      // Preserve the draft instead of making the user type their request twice.
       setMessages((current) => current.filter((message) => message.id !== id));
       setInput(prompt);
-      setFailure({ code: problem.code || 'NETWORK_ERROR', message: problem.message || 'Unable to reach the assistant. Your message was not processed.' });
+      const message = problem.message || 'Unable to reach the assistant. Your message was not processed.';
+      setFailure({ code: problem.code || 'NETWORK_ERROR', message });
+      setSessionConfessions((current) => [{
+        traceId: id,
+        title: 'Failed assistant request',
+        truth: message,
+        what: 'No usable reply was received.',
+        why: `The request failed (${problem.code || 'NETWORK_ERROR'}).`,
+        how: 'The assistant reported the server or network error; no successful reply was confirmed.',
+        createdAt: new Date().toISOString(),
+        saved: false,
+      }, ...current]);
     } finally {
       setLoading(false);
     }
@@ -186,19 +273,36 @@ export default function UniversalAIAssistant({
           <button type="button" onClick={() => setOpen(false)} aria-label="Close AI Assistant" className="grid h-8 w-8 place-items-center rounded-lg text-xl text-white/75 hover:bg-white/10">×</button>
         </div>
       </header>
+      <div className="flex shrink-0 gap-1 border-b border-white/10 px-3 py-2" role="tablist" aria-label="Assistant views">
+        <button type="button" role="tab" aria-selected={tab === 'chat'} onClick={() => setTab('chat')} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${tab === 'chat' ? 'bg-violet-500/25 text-white' : 'text-white/60 hover:bg-white/10'}`}>Chat</button>
+        <button type="button" role="tab" aria-selected={tab === 'confessions'} onClick={() => { setTab('confessions'); setShowModels(false); setShowAgents(false); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${tab === 'confessions' ? 'bg-violet-500/25 text-white' : 'text-white/60 hover:bg-white/10'}`}>Confessions{confessions.length ? ` (${confessions.length})` : ''}</button>
+      </div>
 
-      {showModels && <div className="max-h-44 shrink-0 overflow-y-auto border-b border-white/10 bg-[#101014] p-2">{MODELS.map((model) => { const locked = model.tier === 'premium' && !isPaid; return <button type="button" key={model.id} disabled={locked} onClick={() => { setModelId(model.id); setShowModels(false); }} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-40"><span className="block text-sm font-bold">{model.name}{locked ? ' • Pro' : ''}{model.id === modelId ? ' ✓' : ''}</span><span className="block text-xs text-white/55">{model.sub}</span></button>; })}</div>}
-      {showAgents && <div className="flex shrink-0 flex-wrap gap-2 border-b border-white/10 bg-[#101014] p-3">{agentOptions.map((item) => <button type="button" key={item.id} onClick={() => { setAgent(item.id); setShowAgents(false); }} className={`rounded-lg border px-3 py-2 text-xs font-bold ${agent === item.id ? 'border-violet-400/50 bg-violet-500/20' : 'border-white/15 text-white/75'}`}>{item.name}</button>)}{!isPaid && <Link href="/subscription" className="rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70">Builder agent plans</Link>}</div>}
+      {showModels && tab === 'chat' && <div className="max-h-44 shrink-0 overflow-y-auto border-b border-white/10 bg-[#101014] p-2">{MODELS.map((model) => { const locked = model.tier === 'premium' && !isPaid; return <button type="button" key={model.id} disabled={locked} onClick={() => { setModelId(model.id); setShowModels(false); }} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-40"><span className="block text-sm font-bold">{model.name}{locked ? ' • Pro' : ''}{model.id === modelId ? ' ✓' : ''}</span><span className="block text-xs text-white/55">{model.sub}</span></button>; })}</div>}
+      {showAgents && tab === 'chat' && <div className="flex shrink-0 flex-wrap gap-2 border-b border-white/10 bg-[#101014] p-3">{agentOptions.map((item) => <button type="button" key={item.id} onClick={() => { setAgent(item.id); setShowAgents(false); }} className={`rounded-lg border px-3 py-2 text-xs font-bold ${agent === item.id ? 'border-violet-400/50 bg-violet-500/20' : 'border-white/15 text-white/75'}`}>{item.name}</button>)}{!isPaid && <Link href="/subscription" className="rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70">Builder agent plans</Link>}</div>}
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3" aria-label="Conversation" aria-live="polite">
-        {messages.length === 0 && <div className="rounded-xl border border-white/10 bg-white/[.04] p-4"><p className="text-sm font-bold">How can I help?</p><p className="mt-1 text-sm leading-5 text-white/65">Ask about this page, your project, or an error. Project changes require an authorized agent; a chat answer does not edit files.</p></div>}
+      {tab === 'chat' ? <div role="tabpanel" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3" aria-label="Conversation" aria-live="polite">
+        {messages.length === 0 && <div className="rounded-xl border border-white/10 bg-white/[.04] p-4"><p className="text-sm font-bold">How can I help?</p><p className="mt-1 text-sm leading-5 text-white/65">Ask about this page or an error. Chat answers do not edit files.</p></div>}
         {messages.map((message) => <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[90%] break-words rounded-2xl border px-3 py-2.5 text-sm leading-6 ${message.role === 'user' ? 'border-violet-400/30 bg-violet-500/20' : 'border-white/10 bg-white/[.06]'}`}><p className="whitespace-pre-wrap">{message.content}</p></div></div>)}
         {loading && <p className="w-fit rounded-xl border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white/70" role="status">Waiting for AI response…</p>}
         <div ref={endRef} />
-      </div>
+      </div> : <div role="tabpanel" aria-label="Confessions" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3">
+        <div className="flex items-center justify-between gap-2"><p className="text-xs text-white/65">Read-only records of what the assistant actually did.</p><button type="button" onClick={() => setConfessionsRefresh((value) => value + 1)} disabled={confessionsLoading} className="rounded-lg border border-white/20 px-2 py-1 text-xs disabled:opacity-40">Refresh</button></div>
+        {confessionsLoading && <p role="status" className="text-xs text-white/60">Loading saved confessions…</p>}
+        {confessionsError && <p role="alert" className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-100">{confessionsError} Session records are still shown.</p>}
+        {!confessionsLoading && confessions.length === 0 && <p className="rounded-lg border border-white/10 p-3 text-sm text-white/65">No confessions yet. Send a message in Chat.</p>}
+        {confessions.map((entry) => <article key={entry.traceId} className="space-y-2 rounded-xl border border-white/10 bg-white/[.04] p-3 text-xs leading-5">
+          <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="text-sm font-bold">{entry.title}</h4><span className={entry.saved ? 'text-emerald-300' : 'text-amber-200'}>{entry.saved ? 'Saved' : 'Session only'}</span></div>
+          <p><strong className="text-white">Truth:</strong> <span className="text-white/75">{entry.truth}</span></p>
+          {entry.what && <p><strong>What:</strong> <span className="text-white/75">{entry.what}</span></p>}
+          {entry.why && <p><strong>Why:</strong> <span className="text-white/75">{entry.why}</span></p>}
+          {entry.how && <p><strong>How:</strong> <span className="text-white/75">{entry.how}</span></p>}
+          {entry.detail && <p className="text-white/55">{entry.detail}</p>}
+        </article>)}
+      </div>}
 
       {failure && <div role="alert" className="shrink-0 border-t border-amber-400/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"><p className="break-words">{failure.message}</p><div className="mt-1 flex flex-wrap gap-3 text-xs font-semibold underline underline-offset-2">{failure.code === 'AUTH_REQUIRED' && <Link href="/login">Sign in</Link>}{failure.code === 'UPGRADE_REQUIRED' && <Link href="/subscription">View plans</Link>}{failure.code === 'AI_NOT_CONFIGURED' && <Link href="/contact">Contact support</Link>}<button type="button" onClick={() => setFailure(null)}>Dismiss</button></div></div>}
-      <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="shrink-0 border-t border-white/10 bg-[#0c0c10] p-3"><div className="flex min-w-0 items-end gap-2 rounded-xl border border-white/15 bg-white/[.045] p-2 focus-within:border-violet-400/60"><textarea ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} rows={2} maxLength={10000} placeholder="Ask a question…" aria-label="Message the AI assistant" className="min-h-[48px] min-w-0 flex-1 resize-none bg-transparent px-1 py-1 text-sm leading-5 text-white outline-none placeholder:text-white/40" /><button type="submit" disabled={!input.trim() || loading} className="h-10 shrink-0 rounded-xl bg-violet-600 px-3 text-sm font-bold text-white disabled:opacity-40">Send</button></div><div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/65"><button type="button" onClick={() => { setInput(`Help me understand this page: ${pathname}`); inputRef.current?.focus(); }} className="rounded px-1.5 py-1 hover:bg-white/10">This page</button><button type="button" onClick={() => { setInput('Help me troubleshoot an error: '); inputRef.current?.focus(); }} className="rounded px-1.5 py-1 hover:bg-white/10">Troubleshoot</button><Link href={dashboardUrl} className="rounded px-1.5 py-1 hover:bg-white/10">Dashboard</Link></div></form>
+      {tab === 'chat' && <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="shrink-0 border-t border-white/10 bg-[#0c0c10] p-3"><div className="flex min-w-0 items-end gap-2 rounded-xl border border-white/15 bg-white/[.045] p-2 focus-within:border-violet-400/60"><textarea ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} rows={2} maxLength={10000} placeholder="Ask a question…" aria-label="Message the AI assistant" className="min-h-[48px] min-w-0 flex-1 resize-none bg-transparent px-1 py-1 text-sm leading-5 text-white outline-none placeholder:text-white/40" /><button type="submit" disabled={!input.trim() || loading} className="h-10 shrink-0 rounded-xl bg-violet-600 px-3 text-sm font-bold text-white disabled:opacity-40">Send</button></div><div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/65"><button type="button" onClick={() => { setInput(`Help me understand this page: ${pathname}`); inputRef.current?.focus(); }} className="rounded px-1.5 py-1 hover:bg-white/10">This page</button><button type="button" onClick={() => { setInput('Help me troubleshoot an error: '); inputRef.current?.focus(); }} className="rounded px-1.5 py-1 hover:bg-white/10">Troubleshoot</button><Link href={dashboardUrl} className="rounded px-1.5 py-1 hover:bg-white/10">Dashboard</Link></div></form>}
     </section>}
   </>;
 }
