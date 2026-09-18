@@ -45,6 +45,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           SECRETS_ENCRYPTION_KEY: ${{ secrets.SECRETS_ENCRYPTION_KEY }}
           AMPLITUDE_AI_API_KEY: ${{ secrets.AMPLITUDE_AI_API_KEY }}
         run: |
@@ -56,13 +58,13 @@ jobs:
             test -n "${!name:-}" || { echo "Missing required GitHub Actions value: $name"; exit 1; }
           done
 
-          if [ -z "$OPENROUTER_API_KEY" ] && [ -z "$GEMINI_API_KEY" ]; then
-            echo "Missing AI provider configuration: set OPENROUTER_API_KEY or GEMINI_API_KEY/GOOGLE_AI_API_KEY"
+          if [ -z "$OPENROUTER_API_KEY" ] && [ -z "$GEMINI_API_KEY" ] && [ -z "$GROQ_API_KEY" ] && [ -z "$CEREBRAS_API_KEY" ]; then
+            echo "Missing AI provider configuration: set OPENROUTER_API_KEY, GEMINI_API_KEY/GOOGLE_AI_API_KEY, GROQ_API_KEY, or CEREBRAS_API_KEY"
             exit 1
           fi
 
           if [ -z "$OPENROUTER_API_KEY" ]; then
-            echo "OPENROUTER_API_KEY is unavailable; Builder AI will use the Gemini fallback."
+            echo "OPENROUTER_API_KEY is unavailable; free assistant will use configured provider fallbacks. Premium OpenRouter models require a separate OpenRouter key."
           fi
 
           if [ -z "$SECRETS_ENCRYPTION_KEY" ]; then
@@ -275,7 +277,7 @@ jobs:
               exit 1
             fi
 
-            docker exec dreammaker-web sh -c 'test -n "$OPENROUTER_API_KEY" || test -n "$GEMINI_API_KEY"'
+            docker exec dreammaker-web sh -c 'test -n "$OPENROUTER_API_KEY" || test -n "$GEMINI_API_KEY" || test -n "$GOOGLE_AI_API_KEY" || test -n "$GROQ_API_KEY" || test -n "$CEREBRAS_API_KEY"'
             echo "At least one runtime AI provider is present in the running web container."
 
             if docker exec dreammaker-web sh -c 'test -n "$SECRETS_ENCRYPTION_KEY"'; then
@@ -296,11 +298,7 @@ jobs:
             # Host-level Nginx otherwise uses small default upstream-header buffers
             # and can turn a successful callback into HTTP 502.
             if command -v nginx >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
-              cat > /etc/nginx/conf.d/dreammakerhub-oauth-buffers.conf <<'NGINX'
-proxy_buffer_size 32k;
-proxy_buffers 8 32k;
-proxy_busy_buffers_size 64k;
-NGINX
+              printf '%s\n' 'proxy_buffer_size 32k;' 'proxy_buffers 8 32k;' 'proxy_busy_buffers_size 64k;' > /etc/nginx/conf.d/dreammakerhub-oauth-buffers.conf
               nginx -t
               systemctl reload nginx
               echo "Host Nginx OAuth proxy buffers configured."
