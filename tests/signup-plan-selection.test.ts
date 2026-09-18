@@ -13,14 +13,21 @@ describe('new account plan selection', () => {
   it('routes generic registration to the existing subscription chooser, preserving destination', () => {
     expect(auth).toContain('function postSignupPath(redirectTo: string)');
     expect(auth).toContain('`/subscription?redirectTo=${encodeURIComponent(redirectTo)}`');
-    expect(auth).toContain("return redirectTo;");
+    expect(auth).toContain('return redirectTo;');
   });
 
   it('sends both original and resent confirmation links through the real session callback', () => {
     expect(auth).toContain("new URL('/api/auth/callback', window.location.origin)");
-    expect(auth).toContain("options: { emailRedirectTo: confirmationCallbackUrl() }");
+    expect(auth).toContain('options: { emailRedirectTo: confirmationCallbackUrl() }');
     expect(callback).toContain('exchangeCodeForSession(code)');
     expect(callback).toContain("requestUrl.searchParams.get('next')");
+  });
+
+  it('keeps the plan destination if email confirmation is opened in another browser', () => {
+    expect(callback).toContain("url.searchParams.set('redirectTo', redirectTo)");
+    expect(callback).toContain("authPageUrl(request, 'oauth_session_exchange_failed', redirectTo)");
+    expect(callback).toContain("authPageUrl(request, 'oauth_code_missing', redirectTo)");
+    expect(auth).toContain('window.location.href = redirectTo;');
   });
 
   it('allows explicit free choice and separate paid checkout, never charging during registration', () => {
