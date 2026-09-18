@@ -84,6 +84,11 @@ COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners
 COPY --from=builder /app/types ./types
 
+# Build SHA is not a secret. Expose it only in the final image so /api/build-info
+# can prove which container was actually deployed (not merely which PR built).
+ARG BUILD_SHA=""
+ENV GITHUB_SHA=${BUILD_SHA}
+
 # Guard against accidentally re-introducing the large duplicated Next.js output.
 RUN test ! -d ./.next/cache && test ! -d ./apps/web/.next
 
