@@ -1,22 +1,27 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 import * as amplitude from '@amplitude/unified';
 import { env } from '@/lib/env';
 
 const GOOGLE_ANALYTICS_ID = 'G-Z704LCGF3P';
+const PRODUCTION_HOSTS = new Set(['dreammakerhub.website', 'www.dreammakerhub.website']);
 
 declare global {
   interface Window {
     __dreamMakerAmplitudeInitialized?: boolean;
+    __dreamMakerGAInitialized?: boolean;
+    __dreamMakerGALastPath?: string;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
 export default function AmplitudeAnalytics() {
   const pathname = usePathname();
   const wasOnHomePage = useRef(false);
+  const [gaEnabled, setGaEnabled] = useState(false);
 
   useEffect(() => {
     const apiKey = env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
@@ -49,6 +54,22 @@ export default function AmplitudeAnalytics() {
     wasOnHomePage.current = onHomePage;
   }, [pathname]);
 
+  useEffect(() => {
+    setGaEnabled(process.env.NODE_ENV === 'production' && PRODUCTION_HOSTS.has(window.location.hostname));
+  }, []);
+
+  useEffect(() => {
+    if (!gaEnabled || !window.__dreamMakerGAInitialized || window.__dreamMakerGALastPath === pathname) return;
+
+    // Never send prompts, auth codes, tokens, or other query/hash data to GA4.
+    const safeLocation = window.location.origin + pathname;
+    window.gtag?.('set', { page_location: safeLocation, page_referrer: '' });
+    window.gtag?.('event', 'page_view', { page_location: safeLocation, page_path: pathname, page_referrer: '' });
+    window.__dreamMakerGALastPath = pathname;
+  }, [gaEnabled, pathname]);
+
+  if (!gaEnabled) return null;
+
   return (
     <>
       <Script
@@ -60,7 +81,13 @@ export default function AmplitudeAnalytics() {
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', '${GOOGLE_ANALYTICS_ID}');`}
+var safePath = window.location.pathname;
+var safeLocation = window.location.origin + safePath;
+gtag('set', { page_location: safeLocation, page_referrer: '' });
+gtag('config', '${GOOGLE_ANALYTICS_ID}', { send_page_view: false, page_location: safeLocation, page_referrer: '' });
+window.__dreamMakerGAInitialized = true;
+window.__dreamMakerGALastPath = safePath;
+gtag('event', 'page_view', { page_location: safeLocation, page_path: safePath, page_referrer: '' });`}
       </Script>
     </>
   );
