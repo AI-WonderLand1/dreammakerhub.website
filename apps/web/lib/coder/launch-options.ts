@@ -7,13 +7,11 @@ export type CoderLaunchConfig = {
   memory: CoderLaunchOption[];
   regions: CoderLaunchOption[];
   repositorySupported: boolean;
+  sshSupported: boolean;
+  diskSupported: boolean;
 };
 type CoderTemplate = { id: string; name: string; active_version_id?: string };
-type CoderParameter = {
-  name: string;
-  options?: { name?: string; value: string }[];
-};
-
+type CoderParameter = { name: string; options?: { name?: string; value: string }[] };
 const REPO_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/[A-Za-z0-9._-]{1,100}$/;
 const BRANCH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,119}$/;
 
@@ -39,9 +37,7 @@ export function isSafeGithubBranch(branch: unknown): branch is string {
 }
 
 export async function getPublicGithubRepository(fullName: string): Promise<{
-  fullName: string;
-  defaultBranch: string;
-  branches: string[];
+  fullName: string; defaultBranch: string; branches: string[];
 }> {
   const repo = normalizePublicGithubRepo(fullName);
   if (!repo) throw new Error('Enter a valid public GitHub owner/repository.');
@@ -65,15 +61,13 @@ async function coderGet<T>(path: string): Promise<T> {
   const origin = configured.replace(/\/api\/v2\/?$/, '').replace(/\/$/, '');
   const response = await fetch(`${origin}${path}`, {
     headers: { 'Coder-Session-Token': token, Accept: 'application/json' },
-    cache: 'no-store',
-    signal: AbortSignal.timeout(10000),
+    cache: 'no-store', signal: AbortSignal.timeout(10000),
   });
   if (!response.ok) throw new Error('Could not read Coder template capabilities.');
   return response.json() as Promise<T>;
 }
 
 async function getPublishedCoderTemplate(names: string[]): Promise<CoderTemplate> {
-  // Coder GET /api/v2/templates returns an array, not { templates: [...] }.
   const templates = await coderGet<CoderTemplate[]>('/api/v2/templates');
   if (!Array.isArray(templates)) throw new Error('Coder returned an invalid template list.');
   const template = names.map((name) => templates.find((item) => item.name === name))
@@ -88,8 +82,6 @@ export async function getCoderTemplateId(name: string): Promise<string> {
 
 export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const configured = process.env.CODER_IDE_TEMPLATE_NAME;
-  // kubernetes-mvp is the Coder template visible in the user's working workspace.
-  // Prefer an explicitly configured template, then the original WonderSpace name.
   const names = configured ? [configured] : ['wonderspace-ide', 'kubernetes-mvp'];
   const template = await getPublishedCoderTemplate(names);
   const parameters = await coderGet<CoderParameter[]>(`/api/v2/templateversions/${encodeURIComponent(template.active_version_id!)}/rich-parameters`);
@@ -101,11 +93,10 @@ export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const memory = choices('memory');
   if (!cpu.length || !memory.length) throw new Error('The published Coder template has no selectable CPU and memory options.');
   return {
-    templateId: template.id,
-    templateName: template.name,
-    cpu,
-    memory,
+    templateId: template.id, templateName: template.name, cpu, memory,
     regions: choices('region'),
     repositorySupported: Boolean(byName('repo_url') && byName('repo_branch')),
+    sshSupported: Boolean(byName('ssh_public_key')),
+    diskSupported: Boolean(byName('home_disk_size')),
   };
 }
