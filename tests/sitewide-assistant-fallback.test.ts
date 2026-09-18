@@ -9,6 +9,7 @@ vi.mock('../apps/web/core/ai/runModel', () => ({ runModel: vi.fn() }));
 vi.mock('@/lib/usage/log', () => ({ logUsage: vi.fn() }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
 vi.mock('@/app/utils/supabase/server', () => ({ createClient: vi.fn() }));
+vi.mock('@/lib/ai/mem0Client', () => ({ storeConfessionToMem0: vi.fn() }));
 
 const providerKeys = [
   'OPENROUTER_API_KEY', 'GROQ_API_KEY', 'GEMINI_API_KEY',
@@ -24,6 +25,7 @@ async function setup(tier: 'free' | 'premium' = 'free') {
   const { runModel } = await import('../apps/web/core/ai/runModel');
   const { logUsage } = await import('@/lib/usage/log');
   const { createClient } = await import('@/app/utils/supabase/server');
+  const { storeConfessionToMem0 } = await import('@/lib/ai/mem0Client');
   vi.mocked(requireUserId).mockResolvedValue('test-user');
   vi.mocked(resolveModel).mockReturnValue({
     model: tier === 'premium' ? 'anthropic/claude-sonnet-4' : 'meta-llama/llama-3.3-70b-instruct:free',
@@ -31,13 +33,20 @@ async function setup(tier: 'free' | 'premium' = 'free') {
     name: tier === 'premium' ? 'SimpleRick' : 'Alice',
     systemPrompt: 'You are an assistant.',
   });
+  vi.mocked(storeConfessionToMem0).mockResolvedValue(false);
   vi.mocked(createClient).mockResolvedValue({
     from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({
       data: { subscription_tier: 'pro' }, error: null,
     }) }) }) }),
   } as any);
   const { POST } = await import('../apps/web/app/api/chat/route');
-  return { POST, runModel: vi.mocked(runModel), logUsage: vi.mocked(logUsage), requireUserId: vi.mocked(requireUserId) };
+  return {
+    POST,
+    runModel: vi.mocked(runModel),
+    logUsage: vi.mocked(logUsage),
+    requireUserId: vi.mocked(requireUserId),
+    storeConfessionToMem0: vi.mocked(storeConfessionToMem0),
+  };
 }
 
 function request(body: unknown = { message: 'Help me make a website' }) {
@@ -55,8 +64,8 @@ afterEach(() => {
 });
 
 describe('sitewide assistant provider configuration', () => {
-  it('uses a configured Gemini fallback when OpenRouter is missing', async () => {
-    const { POST, runModel, logUsage } = await setup();
+  it('uses a configured Gemini fallback and passes history and a concise system prompt', async () => {
+    const { POST, runModel, logUsage, storeConfessionToMem0 } = await setup();
     vi.stubEnv('GEMINI_API_KEY', 'test-gemini-secret');
     runModel.mockResolvedValue({ text: 'Here is how to start.', tokens: 42 });
 
@@ -65,26 +74,30 @@ describe('sitewide assistant provider configuration', () => {
       history: [{ role: 'user', content: 'Hello' }],
     }) as any);
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ ok: true, text: 'Here is how to start.', tier: 'free' });
+    expect(await response.json()).toMatchObject({
+      ok: true, text: 'Here is how to start.', tier: 'free', confessionsStored: false,
+      confessions: [{ title: 'Assistant response', projectId: 'sitewide' }],
+    });
     expect(runModel).toHaveBeenCalledWith(expect.objectContaining({
-      messages: [
-        { role: 'system', content: 'You are an assistant.' },
-        { role: 'user', content: 'Hello' },
-        { role: 'user', content: 'Help me make a website' },
-      ],
+      maxTokens: 450,
+      system: expect.stringContaining('Answer normal questions directly and briefly'),
+      messages: [{ role: 'user', content: expect.stringContaining('Current user message:\nHelp me make a website') }],
     }));
+    expect(runModel.mock.calls[0][0].messages[0].content).toContain('User: Hello');
     expect(logUsage).toHaveBeenCalledWith(expect.objectContaining({ userId: 'test-user', tokensUsed: 42 }));
+    expect(storeConfessionToMem0).toHaveBeenCalledOnce();
   });
 
   it('returns 503 and does not call a provider when no keys exist', async () => {
-    const { POST, runModel } = await setup();
+    const { POST, runModel, storeConfessionToMem0 } = await setup();
     const response = await POST(request() as any);
     expect(response.status).toBe(503);
     expect(runModel).not.toHaveBeenCalled();
+    expect(storeConfessionToMem0).not.toHaveBeenCalled();
   });
 
   it('never exposes upstream credentials or error details in a failed response', async () => {
-    const { POST, runModel, logUsage } = await setup();
+    const { POST, runModel, logUsage, storeConfessionToMem0 } = await setup();
     vi.stubEnv('GOOGLE_AI_API_KEY', 'test-private-secret');
     runModel.mockResolvedValue({ text: '', tokens: 0, error: 'test-private-secret upstream error' });
     const response = await POST(request() as any);
@@ -93,6 +106,7 @@ describe('sitewide assistant provider configuration', () => {
     expect(text).not.toContain('test-private-secret');
     expect(text).not.toContain('upstream error');
     expect(logUsage).not.toHaveBeenCalled();
+    expect(storeConfessionToMem0).not.toHaveBeenCalled();
   });
 
   it('does not substitute a free model for a paid model without OpenRouter', async () => {
