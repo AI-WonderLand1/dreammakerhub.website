@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUserId } from "@/lib/auth";
 import { resolveModel } from "@/lib/ai/models";
-import { runModel } from "@/core/ai/runModel";
+import { runModel } from "../../../core/ai/runModel";
 import { logUsage } from "@/lib/usage/log";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/app/utils/supabase/server";
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     let tokens = 0;
 
     if (resolved.tier === "free") {
-      // The existing model runner supports OpenRouter, Groq, Gemini/Google AI,
+      // The web model runner supports OpenRouter, Groq, Gemini/Google AI,
       // and Cerebras. Do not require OpenRouter when another provider is ready.
       if (![process.env.OPENROUTER_API_KEY, process.env.GROQ_API_KEY,
         process.env.GEMINI_API_KEY, process.env.GOOGLE_AI_API_KEY,
