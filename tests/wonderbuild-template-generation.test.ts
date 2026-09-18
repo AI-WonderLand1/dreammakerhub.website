@@ -17,6 +17,7 @@ const providerKeys = [
 
 async function setup() {
   vi.resetModules();
+  vi.clearAllMocks();
   for (const key of providerKeys) vi.stubEnv(key, '');
   const { POST } = await import('../apps/web/app/api/wonder-build/template-library/generate-batch/route');
   const { runModel } = await import('../apps/web/core/ai/runModel');
