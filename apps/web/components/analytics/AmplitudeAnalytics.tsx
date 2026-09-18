@@ -2,8 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import Script from 'next/script';
 import * as amplitude from '@amplitude/unified';
 import { env } from '@/lib/env';
+
+const GOOGLE_ANALYTICS_ID = 'G-Z704LCGF3P';
 
 declare global {
   interface Window {
@@ -46,5 +49,19 @@ export default function AmplitudeAnalytics() {
     wasOnHomePage.current = onHomePage;
   }, [pathname]);
 
-  return null;
+  return (
+    <>
+      <Script
+        id="dreammakerhub-ga4-loader"
+        src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="dreammakerhub-ga4-init" strategy="afterInteractive">
+        {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GOOGLE_ANALYTICS_ID}');`}
+      </Script>
+    </>
+  );
 }
