@@ -13,17 +13,20 @@ type LaunchOptions = {
   memory: Choice[];
   regions: Choice[];
   repositorySupported: boolean;
-  projects: { id: string; name: string; github_repo: string }[];
 };
 type PublicRepo = { fullName: string; defaultBranch: string; branches: string[] };
 type Stage = 'form' | 'provisioning' | 'ready' | 'error';
+
+function uniqueWorkspaceName(userId: string): string {
+  return `ws-${userId.slice(0, 8)}-${crypto.randomUUID().slice(0, 8)}`;
+}
 
 export default function WonderSpaceLaunch() {
   const { user, loading: authLoading } = useAuth();
   const [options, setOptions] = useState<LaunchOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
   const [mode, setMode] = useState<'blank' | 'repo'>('blank');
-  const [name, setName] = useState('my-workspace');
+  const [name, setName] = useState('');
   const [repository, setRepository] = useState('');
   const [verified, setVerified] = useState<PublicRepo | null>(null);
   const [repoLoading, setRepoLoading] = useState(false);
@@ -39,6 +42,7 @@ export default function WonderSpaceLaunch() {
 
   useEffect(() => {
     if (!user) return;
+    setName(uniqueWorkspaceName(user.id));
     const controller = new AbortController();
     fetch('/api/user-workspace/options', { signal: controller.signal })
       .then(async (response) => {
@@ -47,6 +51,7 @@ export default function WonderSpaceLaunch() {
         return data as LaunchOptions;
       })
       .then((data) => {
+        if (controller.signal.aborted) return;
         setOptions(data);
         setCpu(data.cpu.find((item) => item.value === '2')?.value || data.cpu[0].value);
         setMemory(data.memory.find((item) => item.value === '4')?.value || data.memory[0].value);
@@ -67,7 +72,7 @@ export default function WonderSpaceLaunch() {
   };
 
   const checkRepository = async () => {
-    if (!repository.trim()) { setRepoError('Choose a public GitHub repository.'); return; }
+    if (!repository.trim()) { setRepoError('Enter a public GitHub repository.'); return; }
     setRepoLoading(true);
     setRepoError('');
     setVerified(null);
@@ -89,6 +94,7 @@ export default function WonderSpaceLaunch() {
     event.preventDefault();
     if (!options || !/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(name)) {
       setError('Enter a valid 3–32 character workspace name.');
+      setStage('error');
       return;
     }
     if (mode === 'repo' && (!verified || !branch)) {
@@ -142,7 +148,6 @@ export default function WonderSpaceLaunch() {
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">WonderSpace launchpad</h1>
           <p className="mx-auto mt-3 max-w-xl text-slate-300">Choose a project, configure real Coder resources, and open your own VS Code workspace.</p>
         </div>
-
         {stage === 'ready' ? (
           <section className="mx-auto max-w-lg rounded-3xl border border-cyan-300/30 bg-[#101931]/90 p-8 text-center shadow-2xl">
             <Rocket className="mx-auto mb-4 text-cyan-300" size={42} />
@@ -150,7 +155,7 @@ export default function WonderSpaceLaunch() {
             <p className="my-4 text-slate-300">{name}</p>
             <a href={ideUrl} className="block rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold">Open real IDE →</a>
             {sshCommand && <button type="button" className="mt-4 text-sm text-slate-300 underline" onClick={() => navigator.clipboard.writeText(sshCommand)}>Copy Coder SSH command</button>}
-            <button type="button" onClick={() => setStage('form')} className="mt-5 block w-full text-sm text-slate-400 hover:text-white">Create another workspace</button>
+            <button type="button" onClick={() => { setName(uniqueWorkspaceName(user.id)); setStage('form'); }} className="mt-5 block w-full text-sm text-slate-400 hover:text-white">Create another workspace</button>
           </section>
         ) : stage === 'provisioning' ? (
           <section aria-live="polite" className="mx-auto max-w-lg rounded-3xl border border-violet-400/30 bg-[#101931]/90 p-9 text-center">
@@ -170,16 +175,14 @@ export default function WonderSpaceLaunch() {
               {mode === 'repo' && options?.repositorySupported && (
                 <div className="mt-6 space-y-3">
                   <label htmlFor="repository" className="block text-sm font-medium">Public repository</label>
-                  {options.projects.length > 0 && <select aria-label="Linked DreamMakerHub repositories" value="" onChange={(event) => changeRepo(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3 text-sm"><option value="">Choose a linked project…</option>{options.projects.map((project) => <option key={project.id} value={project.github_repo}>{project.name} · {project.github_repo}</option>)}</select>}
                   <input id="repository" value={repository} onChange={(event) => changeRepo(event.target.value)} placeholder="owner/repository" autoComplete="off" className="w-full rounded-xl border border-white/20 bg-slate-900 p-3 outline-none focus:border-cyan-400" />
                   <button type="button" disabled={repoLoading || !repository.trim()} onClick={checkRepository} className="rounded-xl border border-cyan-400/40 px-4 py-2 text-sm text-cyan-200 disabled:opacity-50">{repoLoading ? 'Checking GitHub…' : 'Load repository branches'}</button>
                   {verified && <><p className="text-sm text-emerald-300">Public repository verified: {verified.fullName}</p><label htmlFor="branch" className="flex items-center gap-2 text-sm"><GitBranch size={15} /> Branch</label><select id="branch" value={branch} onChange={(event) => setBranch(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{verified.branches.map((value) => <option key={value} value={value}>{value}</option>)}</select></>}
                   {repoError && <p role="alert" className="text-sm text-amber-200">{repoError}</p>}
-                  <p className="text-xs text-slate-400">Private repositories need a user-authorized GitHub connection; no shared server token is sent to pods.</p>
+                  <p className="text-xs text-slate-400">Private repositories require a user-authorized GitHub connection; no shared server token is sent to pods.</p>
                 </div>
               )}
             </section>
-
             <section className="rounded-3xl border border-cyan-300/20 bg-[#11182e]/90 p-6 shadow-xl backdrop-blur-xl">
               <h2 className="mb-5 text-xl font-semibold">2. Configure workspace</h2>
               {!options && !optionsError && <p className="text-slate-300">Loading actual Coder template options…</p>}
@@ -189,7 +192,7 @@ export default function WonderSpaceLaunch() {
                 <div><label htmlFor="workspace-name" className="mb-1 block text-sm font-medium">Workspace name</label><input id="workspace-name" required minLength={3} maxLength={32} pattern="[a-z0-9][a-z0-9-]{1,30}[a-z0-9]" value={name} onChange={(event) => setName(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3 outline-none focus:border-cyan-400" /><p className="mt-1 text-xs text-slate-400">3–32 characters, lowercase letters, numbers, and hyphens.</p></div>
                 <div className="grid grid-cols-2 gap-4"><div><label htmlFor="workspace-cpu" className="mb-1 block text-sm">CPU</label><select id="workspace-cpu" value={cpu} onChange={(event) => setCpu(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.cpu.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div><div><label htmlFor="workspace-memory" className="mb-1 block text-sm">Memory</label><select id="workspace-memory" value={memory} onChange={(event) => setMemory(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.memory.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div></div>
                 {options.regions.length ? <div><label htmlFor="workspace-region" className="mb-1 block text-sm">Region</label><select id="workspace-region" value={region} onChange={(event) => setRegion(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.regions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div> : <p className="text-xs text-slate-400">Location is determined by your existing Coder cluster. No additional regions are configured.</p>}
-                <button type="submit" disabled={!cpu || !memory || (mode === 'repo' && !verified)} className="w-full rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 px-6 py-3 font-semibold shadow-[0_8px_30px_rgba(79,70,229,0.3)] disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Launch real Coder workspace</button>
+                <button type="submit" disabled={!name || !cpu || !memory || (mode === 'repo' && !verified)} className="w-full rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 px-6 py-3 font-semibold shadow-[0_8px_30px_rgba(79,70,229,0.3)] disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Launch real Coder workspace</button>
               </div>}
               {stage === 'error' && <p role="alert" className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">{error}</p>}
             </section>
