@@ -2,19 +2,11 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
-import { getCoderLaunchConfig, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
+import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-
-const TEMPLATE_MAP: Record<string, string> = {
-  ide: 'wonderspace-ide',
-  playcanvas: 'playcanvas-3d',
-};
-const APP_SLUG_MAP: Record<string, string> = {
-  ide: 'code-server',
-  playcanvas: 'playcanvas',
-};
+const APP_SLUG_MAP = { ide: 'code-server', playcanvas: 'playcanvas' } as const;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -34,7 +26,7 @@ export async function POST(request: Request) {
   if (podType !== 'ide' && podType !== 'playcanvas') {
     return NextResponse.json({ error: 'Unsupported workspace type.' }, { status: 400 });
   }
-  if (!Number.isFinite(cpu) || !Number.isFinite(memory) || !Number.isInteger(cpu) || !Number.isInteger(memory)) {
+  if (!Number.isInteger(cpu) || !Number.isInteger(memory)) {
     return NextResponse.json({ error: 'CPU and memory must be whole numbers.' }, { status: 400 });
   }
   if (podType === 'playcanvas' && (![1, 2, 3, 4].includes(cpu) || ![1, 2, 4, 8].includes(memory))) {
@@ -53,12 +45,12 @@ export async function POST(request: Request) {
     if (!(await coder.healthCheck())) {
       return NextResponse.json({ error: 'WonderSpace cloud IDE is temporarily unavailable.' }, { status: 503 });
     }
-    let templateId = TEMPLATE_MAP[podType];
     const richParameterValues = [
       { name: 'cpu', value: String(cpu) },
       { name: 'memory', value: String(memory) },
       { name: 'home_disk_size', value: '20' },
     ];
+    let templateId: string;
     if (podType === 'ide') {
       let config;
       try { config = await getCoderLaunchConfig(); } catch {
@@ -101,9 +93,10 @@ export async function POST(request: Request) {
       richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
     } else {
       if (body.repository || body.branch || body.region ||
-          (body.templateId && body.templateId !== TEMPLATE_MAP.playcanvas)) {
+          (body.templateId && body.templateId !== 'playcanvas-3d')) {
         return NextResponse.json({ error: 'Unsupported PlayCanvas launch option.' }, { status: 400 });
       }
+      templateId = await getCoderTemplateId('playcanvas-3d');
     }
     const workspace = await coder.createWorkspace(user.id, {
       name: podName,
