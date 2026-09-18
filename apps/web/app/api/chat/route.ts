@@ -12,15 +12,11 @@ export const runtime = "nodejs";
 const ChatSchema = z.object({
   modelId: z.string().max(120).optional(),
   message: z.string().min(1).max(10_000),
-  history: z
-    .array(
-      z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().max(10_000),
-      })
-    )
-    .max(20)
-    .optional(),
+  history: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string().max(10_000),
+  })).max(20).optional(),
+  context: z.object({ page: z.string().max(300).optional() }).optional(),
 });
 
 const PAID_PLANS = new Set(["pro", "team", "enterprise"]);
@@ -33,12 +29,10 @@ async function getUserPlan(userId: string): Promise<string> {
       .select("subscription_tier")
       .eq("id", userId)
       .maybeSingle();
-
     if (error) {
       logger.warn("Could not read profile subscription tier", { userId, error: error.message });
       return "free";
     }
-
     return data?.subscription_tier || "free";
   } catch (error) {
     logger.warn("Could not resolve user plan", { userId, error });
@@ -49,7 +43,7 @@ async function getUserPlan(userId: string): Promise<string> {
 export async function POST(req: NextRequest) {
   const userId = await requireUserId(req);
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Sign in to use the AI assistant.", code: "AUTH_REQUIRED" }, { status: 401 });
   }
 
   let body: z.infer<typeof ChatSchema>;
@@ -61,25 +55,25 @@ export async function POST(req: NextRequest) {
   }
 
   const resolved = resolveModel(body.modelId);
-
   if (resolved.tier === "premium") {
     const plan = await getUserPlan(userId);
     if (!PAID_PLANS.has(plan)) {
       return NextResponse.json(
-        {
-          error: "This model requires a paid plan",
-          upgrade: true,
-          label: resolved.name,
-        },
+        { error: "This model requires a paid plan", code: "UPGRADE_REQUIRED", upgrade: true, label: resolved.name },
         { status: 402 }
       );
     }
   }
 
+  // Page context is untrusted user input. Supply only a pathname, never page
+  // contents, secrets, cookies, query strings, or claims of having read files.
+  const rawPage = body.context?.page;
+  const page = rawPage?.startsWith("/") && !rawPage.startsWith("//")
+    ? rawPage.split(/[?#]/, 1)[0].replace(/[\r\n]/g, " ").slice(0, 200)
+    : null;
   const messages = [
-    ...(resolved.systemPrompt
-      ? [{ role: "system", content: resolved.systemPrompt }]
-      : []),
+    ...(resolved.systemPrompt ? [{ role: "system", content: resolved.systemPrompt }] : []),
+    ...(page ? [{ role: "system", content: `The user reports that their current route is ${JSON.stringify(page)}. This is only a route hint, not proof of the page contents or project state.` }] : []),
     ...(body.history ?? []).map((h) => ({ role: h.role, content: h.content })),
     { role: "user", content: body.message },
   ];
@@ -87,34 +81,38 @@ export async function POST(req: NextRequest) {
   try {
     let text = "";
     let tokens = 0;
-
     if (resolved.tier === "free") {
-      // The web model runner supports OpenRouter, Groq, Gemini/Google AI,
-      // and Cerebras. Do not require OpenRouter when another provider is ready.
+      // The free runner supports OpenRouter, Groq, Gemini/Google AI, and Cerebras.
+      // Missing credentials cannot be repaired by a frontend fallback.
       if (![process.env.OPENROUTER_API_KEY, process.env.GROQ_API_KEY,
         process.env.GEMINI_API_KEY, process.env.GOOGLE_AI_API_KEY,
         process.env.CEREBRAS_API_KEY].some((key) => key?.trim())) {
         logger.error("No platform AI provider key configured for /api/chat");
-        return NextResponse.json({ error: "AI is not configured" }, { status: 503 });
+        return NextResponse.json(
+          { error: "The assistant is temporarily unavailable because its AI provider is not configured. No message was processed.", code: "AI_NOT_CONFIGURED" },
+          { status: 503, headers: { "Cache-Control": "no-store" } }
+        );
       }
-
       const result = await runModel({ model: resolved.model, messages, temperature: 0.7 });
       if (result.error || !result.text.trim()) {
-        // The provider may include credentials or account details in its error.
         logger.error("Sitewide assistant free-model completion failed");
-        return NextResponse.json({ error: "AI provider temporarily unavailable" }, { status: 502 });
+        return NextResponse.json(
+          { error: "The AI provider is temporarily unavailable. Your message was not completed.", code: "AI_PROVIDER_UNAVAILABLE" },
+          { status: 502 }
+        );
       }
       text = result.text;
       tokens = result.tokens;
     } else {
-      // A premium selection must use its selected premium model. Do not silently
-      // substitute a free fallback or charge for a different model.
+      // Premium models must not silently fall back to a different billed model.
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey?.trim()) {
         logger.error("OpenRouter missing for premium /api/chat model");
-        return NextResponse.json({ error: "Selected AI model is not configured" }, { status: 503 });
+        return NextResponse.json(
+          { error: "The selected AI model is not configured. No message was processed.", code: "AI_NOT_CONFIGURED" },
+          { status: 503, headers: { "Cache-Control": "no-store" } }
+        );
       }
-
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -123,23 +121,16 @@ export async function POST(req: NextRequest) {
           "X-Title": "AI Wonderland",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: resolved.model,
-          messages,
-          stream: false,
-          temperature: 0.7,
-        }),
+        body: JSON.stringify({ model: resolved.model, messages, stream: false, temperature: 0.7 }),
       });
-
       if (!res.ok) {
         logger.error(`Premium OpenRouter request failed (${res.status})`);
-        return NextResponse.json({ error: `AI provider error (${res.status})` }, { status: 502 });
+        return NextResponse.json({ error: "AI provider temporarily unavailable", code: "AI_PROVIDER_UNAVAILABLE" }, { status: 502 });
       }
-
       const data = await res.json();
       text = data?.choices?.[0]?.message?.content ?? data?.choices?.[0]?.text ?? "";
       if (typeof text !== "string" || !text.trim()) {
-        return NextResponse.json({ error: "AI returned an empty response" }, { status: 502 });
+        return NextResponse.json({ error: "AI returned an empty response", code: "AI_PROVIDER_UNAVAILABLE" }, { status: 502 });
       }
       tokens = data?.usage?.total_tokens ?? Math.ceil((body.message.length + text.length) / 4);
     }
@@ -151,15 +142,9 @@ export async function POST(req: NextRequest) {
       tokensUsed: tokens,
       computeCreditsUsed: resolved.tier === "premium" ? 50 : 5,
     });
-
-    return NextResponse.json({
-      ok: true,
-      text,
-      label: resolved.name,
-      tier: resolved.tier,
-    });
+    return NextResponse.json({ ok: true, text, label: resolved.name, tier: resolved.tier });
   } catch (err: unknown) {
     logger.error("Sitewide assistant request failed", { kind: err instanceof Error ? err.name : "unknown" });
-    return NextResponse.json({ error: "AI request failed" }, { status: 502 });
+    return NextResponse.json({ error: "AI request failed", code: "AI_PROVIDER_UNAVAILABLE" }, { status: 502 });
   }
 }
