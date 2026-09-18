@@ -43,6 +43,7 @@ jobs:
           MAIN_SITE_URL: https://dreammakerhub.website
           PLAYGROUND_URL: https://playground.dreammakerhub.website
           NPC_PUBLIC_URL: ${{ vars.NPC_PUBLIC_URL }}
+          EXPECTED_DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || '' }}
       - name: Open or update production health issue
         if: failure() && steps.smoke.outcome == 'failure'
         shell: bash
