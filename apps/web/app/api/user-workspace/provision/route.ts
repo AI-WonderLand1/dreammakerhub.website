@@ -45,10 +45,9 @@ export async function POST(request: Request) {
     if (!(await coder.healthCheck())) {
       return NextResponse.json({ error: 'WonderSpace cloud IDE is temporarily unavailable.' }, { status: 503 });
     }
-    const richParameterValues = [
+    const richParameterValues: { name: string; value: string }[] = [
       { name: 'cpu', value: String(cpu) },
       { name: 'memory', value: String(memory) },
-      { name: 'home_disk_size', value: '20' },
     ];
     let templateId: string;
     if (podType === 'ide') {
@@ -64,6 +63,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'These resources are not available in the selected Coder template.' }, { status: 400 });
       }
       templateId = config.templateId;
+      if (config.diskSupported) richParameterValues.push({ name: 'home_disk_size', value: '20' });
       const region = typeof body.region === 'string' ? body.region : '';
       if (region && !config.regions.some((option) => option.value === region)) {
         return NextResponse.json({ error: 'This region is not supported by the Coder template.' }, { status: 400 });
@@ -89,29 +89,27 @@ export async function POST(request: Request) {
       } else if (body.branch) {
         return NextResponse.json({ error: 'Select a repository before choosing a branch.' }, { status: 400 });
       }
-      const sshKey = await getUserSSHKey(user.id, user.email || user.id);
-      richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
+      if (config.sshSupported) {
+        const sshKey = await getUserSSHKey(user.id, user.email || user.id);
+        richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
+      }
     } else {
       if (body.repository || body.branch || body.region ||
           (body.templateId && body.templateId !== 'playcanvas-3d')) {
         return NextResponse.json({ error: 'Unsupported PlayCanvas launch option.' }, { status: 400 });
       }
       templateId = await getCoderTemplateId('playcanvas-3d');
+      richParameterValues.push({ name: 'home_disk_size', value: '20' });
     }
     const workspace = await coder.createWorkspace(user.id, {
-      name: podName,
-      template_id: templateId,
-      rich_parameter_values: richParameterValues,
+      name: podName, template_id: templateId, rich_parameter_values: richParameterValues,
       ttl_ms: 4 * 60 * 60 * 1000,
     });
     const workspaceUrl = workspace.url.replace(/\/$/, '');
     const ideUrl = `${workspaceUrl}/apps/${APP_SLUG_MAP[podType]}/`;
     return NextResponse.json({
       workspace: { id: workspace.id, name: workspace.name, status: workspace.status },
-      ideUrl,
-      podUrl: ideUrl,
-      sshCommand: `coder ssh ${workspace.name}`,
-      podType,
+      ideUrl, podUrl: ideUrl, sshCommand: `coder ssh ${workspace.name}`, podType,
     });
   } catch (error) {
     logger.error('WonderSpace Coder provisioning failed:', error instanceof Error ? error.name : 'Unknown error');
