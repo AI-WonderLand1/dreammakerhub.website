@@ -1,0 +1,35 @@
+name: Release and security regression gate
+
+on:
+  pull_request:
+    branches: [Master]
+  push:
+    branches: [Master]
+  schedule:
+    - cron: '15 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-regressions:
+    name: security-regressions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit CI secrets, billing, and protected routes
+        run: node .github/scripts/security-regression.mjs
+
+  public-smoke:
+    name: production-smoke
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check public site and playground without credentials
+        run: node .github/scripts/public-smoke.mjs
+        env:
+          MAIN_SITE_URL: https://dreammakerhub.website
+          PLAYGROUND_URL: https://playground.dreammakerhub.website
+          NPC_PUBLIC_URL: ${{ vars.NPC_PUBLIC_URL }}
