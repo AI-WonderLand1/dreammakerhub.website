@@ -1,3 +1,4 @@
+# Read-only Coder connectivity diagnostic rerun for WonderSpace IDE.
 name: Diagnose WonderSpace Coder (read-only)
 
 on:
