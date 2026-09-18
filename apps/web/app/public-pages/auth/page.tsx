@@ -17,6 +17,12 @@ function sanitizeRedirectPath(raw: string | null): string {
   return trimmed;
 }
 
+/** A new account chooses a plan after verification. Preserve a previously selected plan/checkout. */
+function postSignupPath(redirectTo: string): string {
+  if (/^\/(?:subscription|checkout)(?:[/?#]|$)/.test(redirectTo)) return redirectTo;
+  return `/subscription?redirectTo=${encodeURIComponent(redirectTo)}`;
+}
+
 async function getConfiguredAuthClient() {
   const config = await ensureSupabaseConfig();
   if (!config) return null;
@@ -26,6 +32,7 @@ async function getConfiguredAuthClient() {
 function AuthPageContent() {
   const searchParams = useSearchParams();
   const redirectTo = sanitizeRedirectPath(searchParams.get('redirectTo'));
+  const signupRedirectTo = postSignupPath(redirectTo);
   const [mode, setMode] = useState<'signin' | 'signup'>(() =>
     searchParams.get('signup') === 'true' ? 'signup' : 'signin',
   );
@@ -54,7 +61,9 @@ function AuthPageContent() {
       .then((supabase) => {
         if (cancelled || !supabase) return;
         return supabase.auth.getUser().then(({ data: { user: verified }, error }) => {
-          if (!cancelled && !error && verified) window.location.href = redirectTo;
+          if (!cancelled && !error && verified) {
+            window.location.href = mode === 'signup' ? signupRedirectTo : redirectTo;
+          }
         });
       })
       .catch((error) => logger.error('[auth] Authentication initialization failed:', error));
@@ -62,7 +71,13 @@ function AuthPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [redirectTo]);
+  }, [redirectTo, signupRedirectTo, mode]);
+
+  const confirmationCallbackUrl = () => {
+    const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+    callbackUrl.searchParams.set('next', signupRedirectTo);
+    return callbackUrl.toString();
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -79,13 +94,23 @@ function AuthPageContent() {
       const normalizedEmail = email.trim();
 
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email: normalizedEmail, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: { emailRedirectTo: confirmationCallbackUrl() },
+        });
         if (error) {
           logger.error('[auth] Supabase sign-up failed:', error.message);
           setMessage(error.message);
           return;
         }
-        setMessage('Check your email for the confirmation link. If it does not arrive, use Resend confirmation email below.');
+        // Confirmation can be disabled in some development environments; never
+        // strand an already authenticated new user on the email-check screen.
+        if (data.session) {
+          window.location.href = signupRedirectTo;
+          return;
+        }
+        setMessage('Check your email for the confirmation link. After confirmation, choose your subscription plan. If it does not arrive, use Resend confirmation email below.');
         return;
       }
 
@@ -125,6 +150,7 @@ function AuthPageContent() {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: normalizedEmail,
+        options: { emailRedirectTo: confirmationCallbackUrl() },
       });
 
       if (error) {
@@ -154,7 +180,7 @@ function AuthPageContent() {
       }
 
       const callbackUrl = new URL('/api/auth/callback', window.location.origin);
-      callbackUrl.searchParams.set('next', redirectTo);
+      callbackUrl.searchParams.set('next', mode === 'signup' ? signupRedirectTo : redirectTo);
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -208,7 +234,7 @@ function AuthPageContent() {
           <div className="mb-6 text-center">
             <h2 className="text-xl font-bold">{mode === 'signin' ? 'Welcome Back' : 'Create your account'}</h2>
             <p className="mt-1 text-sm text-white/45">
-              {mode === 'signin' ? 'Sign in to continue building.' : 'Create an account, then choose your first project.'}
+              {mode === 'signin' ? 'Sign in to continue building.' : 'Create an account, then choose your subscription plan.'}
             </p>
           </div>
 
