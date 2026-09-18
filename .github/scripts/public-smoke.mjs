@@ -2,6 +2,7 @@
 const main = process.env.MAIN_SITE_URL || 'https://dreammakerhub.website';
 const playground = process.env.PLAYGROUND_URL || 'https://playground.dreammakerhub.website';
 const npc = process.env.NPC_PUBLIC_URL || '';
+const expectedSha = process.env.EXPECTED_DEPLOY_SHA || '';
 const checks = [
   [main, '/', 'html'],
   [main, '/api/health', 'json'],
@@ -27,12 +28,21 @@ for (const [origin, path, kind] of checks) {
     console.error(`::error::FAIL ${origin}${path}: ${error.message}`);
   }
 }
-// /api/build-info currently may return 'unknown': that is NOT proof that the expected image is deployed.
 try {
   const response = await fetch(new URL('/api/build-info', main), { signal: AbortSignal.timeout(15000), headers: { 'Cache-Control': 'no-cache' } });
   const info = response.ok ? await response.json() : {};
-  if (/^[0-9a-f]{40}$/.test(info.buildSha || '')) console.log(`Deployed SHA reported: ${info.buildSha}`);
-  else console.warn('::warning::Deployment SHA cannot yet be verified: /api/build-info does not report a commit SHA.');
-} catch { console.warn('::warning::Deployment SHA endpoint could not be checked.'); }
+  const actualSha = typeof info.buildSha === 'string' ? info.buildSha : '';
+  if (expectedSha && actualSha !== expectedSha) {
+    failures++;
+    console.error(`::error::Live web image SHA does not match this deployment. Expected ${expectedSha}; got ${/^[0-9a-f]{40}$/.test(actualSha) ? actualSha : 'unknown'}.`);
+  } else if (/^[0-9a-f]{40}$/.test(actualSha)) {
+    console.log(`Deployed SHA verified: ${actualSha}`);
+  } else {
+    console.warn('::warning::Deployment SHA cannot be verified: /api/build-info returned unknown.');
+  }
+} catch (error) {
+  if (expectedSha) { failures++; console.error('::error::Deployment SHA endpoint could not be checked.'); }
+  else console.warn('::warning::Deployment SHA endpoint could not be checked.');
+}
 if (!npc) console.warn('::warning::NPC_PUBLIC_URL not configured; NPC public URL was not checked.');
 if (failures) process.exitCode = 1;
