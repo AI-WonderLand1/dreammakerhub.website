@@ -138,5 +138,5 @@ export const REGISTRY_ITEMS: RegistryItem[] = [
   { icon: "🎨", name: "Design Tokens", desc: "Sync Figma tokens to your codebase", tag: "Design" },
   { icon: "🤖", name: "AI Reviewer", desc: "Constitutional AI code review agent", tag: "AI" },
   { icon: "🚀", name: "Deploy Runner", desc: "One-click cloud deploy pipeline", tag: "DevOps" },
-  { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "Productivity" },
+  { icon: "🔍", name: "Semantic Search", desc: "Vector search over your codebase", tag: "AI" },
 ];
