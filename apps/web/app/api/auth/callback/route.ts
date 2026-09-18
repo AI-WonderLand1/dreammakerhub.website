@@ -16,9 +16,12 @@ function sanitizeRedirectPath(raw: string | null): string {
   return trimmed;
 }
 
-function authPageUrl(request: NextRequest, reason: string) {
+function authPageUrl(request: NextRequest, reason: string, redirectTo: string) {
   const url = new URL('/public-pages/auth', request.url);
   url.searchParams.set('error', reason);
+  // A confirmation email can be opened on a different device without its PKCE
+  // verifier. Let the user sign in normally without losing their selected plan.
+  url.searchParams.set('redirectTo', redirectTo);
   return url;
 }
 
@@ -48,12 +51,12 @@ export async function GET(request: NextRequest) {
   const providerError = requestUrl.searchParams.get('error_description') || requestUrl.searchParams.get('error');
   if (providerError) {
     logger.error('[auth-callback] OAuth provider returned an error:', providerError);
-    return NextResponse.redirect(authPageUrl(request, 'oauth_provider_error'));
+    return NextResponse.redirect(authPageUrl(request, 'oauth_provider_error', redirectTo));
   }
 
   if (!code) {
     logger.error('[auth-callback] Missing OAuth authorization code');
-    return NextResponse.redirect(authPageUrl(request, 'oauth_code_missing'));
+    return NextResponse.redirect(authPageUrl(request, 'oauth_code_missing', redirectTo));
   }
 
   try {
@@ -80,12 +83,12 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       logger.error('[auth-callback] Failed to exchange OAuth code for session:', error.message);
-      return NextResponse.redirect(authPageUrl(request, 'oauth_session_exchange_failed'));
+      return NextResponse.redirect(authPageUrl(request, 'oauth_session_exchange_failed', redirectTo));
     }
 
     return successResponse;
   } catch (error) {
     logger.error('[auth-callback] Unexpected OAuth callback failure:', error);
-    return NextResponse.redirect(authPageUrl(request, 'oauth_callback_failed'));
+    return NextResponse.redirect(authPageUrl(request, 'oauth_callback_failed', redirectTo));
   }
 }

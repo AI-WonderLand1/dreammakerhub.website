@@ -67,7 +67,7 @@ export const PLANS: Plan[] = [
     desc: "Every adventure begins somewhere. Wander in, no credit card required.",
     bullets: ["1 active project", "WonderBuild", "5 AI chats per day", "Community support", "dreammakerhub.website subdomain"],
     cta: "Start Wandering, It's Free",
-    href: "/public-pages/auth",
+    href: "/public-pages/auth?signup=true",
     highlight: false,
     icon: "🌿",
   },
