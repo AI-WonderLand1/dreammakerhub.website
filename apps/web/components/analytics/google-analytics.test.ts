@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
 const analyticsSource = readFileSync(new URL('./AmplitudeAnalytics.tsx', import.meta.url), 'utf8');
 const nextConfigSource = readFileSync(new URL('../../next.config.mjs', import.meta.url), 'utf8');
