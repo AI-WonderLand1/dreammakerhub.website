@@ -37,6 +37,8 @@ function mapType(t: WonderBuildElement['type']): string {
     case 'grid': return 'columns';
     case 'card': return 'card';
     case 'nav': return 'navbar';
+    // Preserve nesting in the existing section renderer. The semantic footer
+    // marker is rendered as <footer> by the editor and the published output.
     case 'footer': return 'section';
     default: return 'container';
   }
@@ -53,9 +55,18 @@ function gridColumnCount(el: WonderBuildElement): number {
 function toProps(el: WonderBuildElement): Record<string, any> {
   const props: Record<string, any> = {};
   switch (el.type) {
-    case 'heading':
+    case 'heading': {
       props.content = el.content ?? 'Heading';
+      // The template thumbnail selects a heading tag from font size. Use the
+      // same rule when opening that template in the real builder.
+      const size = typeof el.styles?.fontSize === 'number'
+        ? el.styles.fontSize
+        : typeof el.styles?.fontSize === 'string'
+          ? Number.parseFloat(el.styles.fontSize)
+          : 0;
+      props.level = size > 28 ? 'h1' : size > 20 ? 'h2' : 'h3';
       break;
+    }
     case 'text':
       props.content = el.content ?? '';
       break;
@@ -69,6 +80,14 @@ function toProps(el: WonderBuildElement): Record<string, any> {
       break;
     case 'grid':
       props.columns = gridColumnCount(el);
+      break;
+    case 'div':
+      // Native builder containers add max-width and auto margins. Imported
+      // template divs must retain their authored layout instead.
+      props.preserveTemplateLayout = true;
+      break;
+    case 'footer':
+      props.semanticTag = 'footer';
       break;
     case 'nav':
       // These props remain as a fallback for native navbar blocks. Imported
@@ -91,10 +110,15 @@ function visit(el: WonderBuildElement, ctx: { tplId: string; parent: string }, i
   return {
     id: `${ctx.tplId}__${ctx.parent}-${index}`,
     type,
-    name: NAMES[type] || el.type,
+    name: el.type === 'footer' ? 'Footer' : NAMES[type] || el.type,
     icon: ICONS[el.type] || '▪️',
     props: toProps(el),
-    styles: (el.styles || {}) as CanvasElement['styles'],
+    // Template preview defaults grid elements to CSS grid. Without this,
+    // imported grids silently become block layouts in the real editor.
+    styles: {
+      ...(el.type === 'grid' && !el.styles?.display ? { display: 'grid' } : {}),
+      ...(el.styles || {}),
+    } as CanvasElement['styles'],
     children,
   };
 }
