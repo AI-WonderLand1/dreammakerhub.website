@@ -26,8 +26,8 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - name: Install dependencies
-        run: npm install
+      - name: Install dependencies from committed lockfile
+        run: npm ci
       - name: Build web app without production credentials
         run: npm run build --workspace=apps/web
       - name: Run tests
