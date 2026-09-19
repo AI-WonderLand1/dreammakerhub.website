@@ -32,7 +32,8 @@
     "swarm:unreal": "node scripts/swarm/run-unreal-stack.mjs",
     "registry:sync": "node scripts/registry/sync-assets.mjs",
     "registry:sync:dry": "node scripts/registry/sync-assets.mjs --dry-run",
-    "lint": "eslint apps/ engine/ packages/ runners/ infra/ --fix",
+    "lint": "eslint apps/ engine/ packages/ runners/ infra/",
+    "lint:fix": "eslint apps/ engine/ packages/ runners/ infra/ --fix",
     "clean:ghosts": "npx ts-prune -p tsconfig.json && npm run lint",
     "postinstall": "prisma generate"
   },
