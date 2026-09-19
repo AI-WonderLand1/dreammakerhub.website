@@ -5,10 +5,16 @@ export const layoutRenderers: Record<string, BlockRenderer> = {
       return <div {...baseProps}>{children || <span className="text-white/30 text-xs">Drop blocks here</span>}</div>;
   },
   'section': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <section {...baseProps}>{children || <span className="text-white/30 text-xs">Section — drop blocks here</span>}</section>;
+      // Imported template footers retain the section type so existing saved
+      // projects and drag/drop nesting continue to work, but render as <footer>.
+      const Tag = el.props.semanticTag === 'footer' ? 'footer' : 'section';
+      return <Tag {...baseProps}>{children || <span className="text-white/30 text-xs">Section — drop blocks here</span>}</Tag>;
   },
   'container': ({ el, selectedId, selectElement, baseProps, style, children }) => {
-      return <div {...baseProps} style={{ ...style, maxWidth: el.props.maxWidth || '1200px', margin: '0 auto' }}>{children || <span className="text-white/30 text-xs">Container</span>}</div>;
+      // Do not overwrite geometry supplied by an imported template div.
+      const content = children || <span className="text-white/30 text-xs">Container</span>;
+      if (el.props.preserveTemplateLayout === true) return <div {...baseProps}>{content}</div>;
+      return <div {...baseProps} style={{ ...style, maxWidth: el.props.maxWidth || '1200px', margin: '0 auto' }}>{content}</div>;
   },
   'wrapper': ({ el, selectedId, selectElement, baseProps, style, children }) => {
       return <div {...baseProps}>{children || <span className="text-white/30 text-xs">{el.name}</span>}</div>;
