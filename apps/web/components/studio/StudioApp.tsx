@@ -2,7 +2,22 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Box, Eye, Gamepad2, Film, type LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Box,
+  ChevronDown,
+  Code2,
+  Eye,
+  Film,
+  FolderOpen,
+  Gamepad2,
+  Home,
+  Menu,
+  Pencil,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Studio3DFactory from "@/components/studio/Studio3DFactory";
 import Studio360View from "@/components/studio/Studio360View";
 import StudioGameBuilder from "@/components/studio/StudioGameBuilder";
@@ -10,6 +25,7 @@ import StudioMovieMaker from "@/components/studio/StudioMovieMaker";
 import StudioContentBrowser from "@/components/studio/StudioContentBrowser";
 import "./StudioEditor.css";
 import "./StudioEditorMobile.css";
+import "./StudioNavigation.css";
 
 type StudioMode = "factory" | "panorama" | "game" | "movie";
 
@@ -20,15 +36,32 @@ const MODES: { id: StudioMode; label: string; icon: LucideIcon }[] = [
   { id: "movie", label: "Movie Maker", icon: Film },
 ];
 
-/** A single editor route. Modes switch the central tool without leaving the workspace. */
+const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
+  { href: "/wonder-build/builder", label: "WonderBuild", icon: Pencil },
+  { href: "/wonderspace", label: "WonderSpace IDE", icon: Code2 },
+  { href: "/dashboard/npc", label: "My NPCs", icon: Users },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+];
+
+/** One editor route: site navigation is tucked into the top bar, not a permanent sidebar. */
 export default function StudioApp() {
   const [mode, setMode] = useState<StudioMode>("factory");
 
   return (
     <div className="wonderplay-app">
       <div className="wonderplay-menu">
-        <strong>WonderPlay</strong>
-        <span>3D Studio</span>
+        <Link className="wonderplay-brand" href="/dashboard" aria-label="DreamMakerHub home">DreamMakerHub</Link>
+        <span className="wonderplay-product-name">WonderPlay</span>
+        <details className="wonderplay-site-menu">
+          <summary><Menu size={14} aria-hidden="true" /> Navigate <ChevronDown size={12} aria-hidden="true" /></summary>
+          <nav aria-label="DreamMakerHub navigation" className="wonderplay-site-links">
+            {SITE_LINKS.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href}><Icon size={15} aria-hidden="true" /> {label}</Link>
+            ))}
+          </nav>
+        </details>
         <span className="wonderplay-project">Viewport · Outliner · Details · Content Browser</span>
       </div>
       <div className="wonderplay-toolbar">
