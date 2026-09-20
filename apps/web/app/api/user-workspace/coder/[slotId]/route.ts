@@ -20,6 +20,13 @@ export async function DELETE(_request: Request, { params }: Context) {
       // administrator must reconcile it by name before safely releasing it.
       return NextResponse.json({ error: 'This workspace may still be provisioning. Contact support to reconcile its Coder ID; no allocation was freed.' }, { status: 409 });
     }
+    // A 404 from an unrelated reverse proxy or misrouted host is NOT proof
+    // that Coder deleted a workspace. Verify Coder's own build-info endpoint.
+    const buildInfoResponse = await coderApiRequest('/api/v2/buildinfo', 'GET');
+    const buildInfo = buildInfoResponse.ok ? await buildInfoResponse.json().catch(() => null) : null;
+    if (typeof buildInfo?.version !== 'string' || !buildInfo.version.trim()) {
+      throw new CostGateError('Coder server identity could not be verified. Slot remains allocated.');
+    }
     const path = `/api/v2/workspaces/${encodeURIComponent(slot.workspace_id)}`;
     const current = await coderApiRequest(path, 'GET');
     if (current.status === 404) {
