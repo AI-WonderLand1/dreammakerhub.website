@@ -9,6 +9,7 @@ import StudioGameBuilder from "@/components/studio/StudioGameBuilder";
 import StudioMovieMaker from "@/components/studio/StudioMovieMaker";
 import StudioContentBrowser from "@/components/studio/StudioContentBrowser";
 import "./StudioEditor.css";
+import "./StudioEditorMobile.css";
 
 type StudioMode = "factory" | "panorama" | "game" | "movie";
 
