@@ -1,0 +1,84 @@
+/* The dashboard shell is still the auth boundary. Its navigation is not part of the studio UI. */
+body:has(.wonderplay-app) header.fixed,
+body:has(.wonderplay-app) aside.fixed {
+  display: none;
+}
+
+.wonderplay-menu {
+  position: relative;
+  z-index: 5;
+  gap: 12px;
+  min-height: 38px;
+}
+
+.wonderplay-brand {
+  color: #f4f7ff;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.wonderplay-brand:hover { color: #93c5fd; }
+.wonderplay-product-name {
+  border-left: 1px solid #525861;
+  padding-left: 12px;
+  color: #b8c2d0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wonderplay-site-menu { position: relative; flex-shrink: 0; }
+.wonderplay-site-menu summary {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  border: 1px solid #495260;
+  border-radius: 4px;
+  padding: 0 9px;
+  color: #e5eaf2;
+  font-size: 11px;
+  list-style: none;
+  user-select: none;
+}
+.wonderplay-site-menu summary::-webkit-details-marker { display: none; }
+.wonderplay-site-menu summary:hover,
+.wonderplay-site-menu[open] summary { border-color: #738198; background: #343b45; }
+.wonderplay-site-links {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  width: 225px;
+  max-height: min(70dvh, 420px);
+  overflow-y: auto;
+  border: 1px solid #58616f;
+  border-radius: 6px;
+  background: #22272f;
+  padding: 5px;
+  box-shadow: 0 14px 35px #000a;
+}
+.wonderplay-site-links a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  border-radius: 4px;
+  padding: 7px 9px;
+  color: #e3e8ef;
+  font-size: 12px;
+  text-decoration: none;
+}
+.wonderplay-site-links a:hover,
+.wonderplay-site-links a:focus-visible { background: #3d4858; color: #fff; }
+.wonderplay-brand:focus-visible,
+.wonderplay-site-menu summary:focus-visible,
+.wonderplay-back:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+
+@media (max-width: 650px) {
+  .wonderplay-menu { gap: 8px; padding-inline: 8px; }
+  .wonderplay-brand { font-size: 11px; }
+  .wonderplay-product-name { display: none; }
+  .wonderplay-site-menu summary { min-height: 27px; padding: 0 7px; }
+}
