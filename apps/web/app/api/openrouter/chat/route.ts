@@ -1,102 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUserId } from "@/lib/auth";
-import { logger } from '@/lib/logger';
+import { requireUserId } from '@/lib/auth';
+import { CostGateError, costGateResponse, reserveAiRequest } from '@/lib/billing/cost-guard.server';
 
-interface OpenRouterRequest {
-  model: string;
-  messages: Array<{ role: string; content: string }>;
-  temperature?: number;
-  top_p?: number;
-  top_k?: number;
-  stream?: boolean;
-}
+const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const MAX_INPUT_CHARACTERS = 12000;
+const MAX_OUTPUT_TOKENS = 1024;
 
-/**
- * Server-side proxy for OpenRouter API calls.
- * This keeps the API key secure on the server instead of exposing it to the client.
- */
+/** Authenticated proxy: never accept an arbitrary user-selected billable model. */
 export async function POST(req: NextRequest) {
   const userId = await requireUserId(req);
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const apiKey = process.env.OPENROUTER_API_KEY;
-  
-  if (!apiKey) {
-    logger.error('OPENROUTER_API_KEY is not configured');
-    return NextResponse.json(
-      { error: 'OpenRouter API key is not configured' },
-      { status: 500 }
-    );
-  }
+  if (!apiKey) return NextResponse.json({ error: 'AI provider is not configured' }, { status: 503 });
 
-  let body: OpenRouterRequest;
+  const body = await req.json().catch(() => null);
+  const model = body?.model;
+  const allowedModels = (process.env.OPENROUTER_ALLOWED_MODELS || DEFAULT_MODEL)
+    .split(',').map((value) => value.trim()).filter(Boolean);
+  if (typeof model !== 'string' || !allowedModels.includes(model)) {
+    return NextResponse.json({ error: 'This model is not enabled for your plan.' }, { status: 403 });
+  }
+  if (!Array.isArray(body?.messages) || body.messages.length < 1 || body.messages.length > 20 ||
+      body.messages.some((message: unknown) => !message || typeof message !== 'object' ||
+        !['user', 'assistant', 'system'].includes((message as { role?: string }).role || '') ||
+        typeof (message as { content?: unknown }).content !== 'string')) {
+    return NextResponse.json({ error: 'Invalid messages' }, { status: 400 });
+  }
+  const inputCharacters = body.messages.reduce((total: number, message: { content: string }) => total + message.content.length, 0);
+  if (inputCharacters < 1 || inputCharacters > MAX_INPUT_CHARACTERS) {
+    return NextResponse.json({ error: 'Input exceeds the per-request budget' }, { status: 413 });
+  }
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON in request body' },
-      { status: 400 }
-    );
-  }
-
-  // Validate required fields
-  if (!body.model || !body.messages || !Array.isArray(body.messages)) {
-    return NextResponse.json(
-      { error: 'Missing required fields: model and messages' },
-      { status: 400 }
-    );
-  }
-
-  try {
+    await reserveAiRequest(userId, inputCharacters, MAX_OUTPUT_TOKENS);
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
-        'X-Title': 'Wonder.Lab Sovereign_OS',
+        Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.NEXT_PUBLIC_URL || 'https://dreammakerhub.website',
+        'X-Title': 'DreamMakerHub',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: body.model,
+        model,
         messages: body.messages,
-        temperature: body.temperature ?? 0.7,
-        top_p: body.top_p ?? 1,
-        top_k: body.top_k ?? 40,
-        stream: body.stream ?? true,
+        temperature: 0.7,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        stream: body.stream === true,
       }),
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error('OpenRouter API error:', response.status, errorText);
-      return NextResponse.json(
-        { error: 'OpenRouter API error', details: errorText },
-        { status: response.status }
-      );
-    }
-
-    // For streaming responses, forward the stream
-    if (body.stream && response.body) {
+    if (!response.ok) return NextResponse.json({ error: 'AI provider request failed' }, { status: 502 });
+    if (body.stream === true && response.body) {
       return new NextResponse(response.body, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' },
       });
     }
-
-    // For non-streaming, forward the JSON response
-    const data = await response.json();
-    return NextResponse.json(data);
-    
-  } catch (error) {
-    logger.error('Error calling OpenRouter:', error);
-    return NextResponse.json(
-      { error: 'Failed to call OpenRouter API' },
-      { status: 500 }
-    );
+    return NextResponse.json(await response.json());
+  } catch (error: unknown) {
+    if (error instanceof CostGateError) return costGateResponse(error);
+    return NextResponse.json({ error: 'AI provider unavailable' }, { status: 502 });
   }
 }
