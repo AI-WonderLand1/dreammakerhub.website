@@ -38,6 +38,73 @@
   backdrop-filter: blur(12px);
 }
 
+/* The product section follows #workflow in MockupHomepage. Keep these overrides
+   scoped to those three cards instead of changing every article on the page. */
+.content > section:nth-of-type(2) > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.content > section:nth-of-type(2) > div > article {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem;
+}
+
+/* Never put the editor preview beside a cramped five-item feature list. */
+.content > section:nth-of-type(2) > div > article > div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.content > section:nth-of-type(2) > div > article > div:nth-child(2) > div:first-child {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-width: 0;
+}
+
+.content > section:nth-of-type(2) > div > article > div:nth-child(2) > ul {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.625rem;
+  min-width: 0;
+  padding-top: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.content > section:nth-of-type(2) > div > article > div:nth-child(2) > ul > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The actions stay level even when the cards' feature labels wrap differently. */
+.content > section:nth-of-type(2) > div > article > div:last-child {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.content > section:nth-of-type(2) > div > article > div:last-child > a {
+  min-width: 0;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .content > section:nth-of-type(2) > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .content > section:nth-of-type(2) > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 767px) {
   .landscapeImage {
     object-fit: cover;
