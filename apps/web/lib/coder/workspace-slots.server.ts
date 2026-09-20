@@ -2,6 +2,7 @@ import 'server-only';
 import { getClient } from '@/lib/supabase-service';
 import { PLAN_LIMITS } from '@/lib/billing/limits';
 import { CostGateError, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
+import { secureCoderApiOrigin } from '@/lib/coder/secure-origin';
 
 export const MAX_CODER_CPU = 2;
 export const MAX_CODER_MEMORY_GIB = 4;
@@ -35,14 +36,8 @@ export function coderApiConfig(): { url: string; token: string } {
   const url = process.env.CODER_API_URL;
   const token = process.env.CODER_API_TOKEN;
   if (!url || !token) throw new CostGateError('Coder connection is not configured.');
-  let parsed: URL;
-  try { parsed = new URL(url); } catch { throw new CostGateError('Coder API URL is invalid.'); }
-  // An HTTP URL is acceptable only for an operator-managed internal host, never a browser URL.
-  if (!['https:', 'http:'].includes(parsed.protocol) || parsed.username || parsed.password ||
-      parsed.search || parsed.hash || parsed.pathname.replace(/\/$/, '') !== '') {
-    throw new CostGateError('Coder API URL must be a server origin without credentials or a path.');
-  }
-  return { url: parsed.origin, token };
+  try { return { url: secureCoderApiOrigin(url), token }; }
+  catch { throw new CostGateError('Coder API requires HTTPS or an internal private endpoint.'); }
 }
 
 export async function reserveCoderSlot(userId: string, workspaceName: string): Promise<string> {
@@ -123,6 +118,7 @@ export async function coderApiRequest(path: string, method: 'GET' | 'POST', body
       headers: { 'Coder-Session-Token': token, ...(body ? { 'Content-Type': 'application/json' } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
       signal: AbortSignal.timeout(15000),
+      redirect: 'error',
       cache: 'no-store',
     });
   } catch {
