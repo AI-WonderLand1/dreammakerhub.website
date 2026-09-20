@@ -29,8 +29,8 @@ describe('WonderBuild generated site HTML', () => {
       id: 'text-1', type: 'paragraph', props: { content: attack }, styles: {},
     }]);
     expect(html).not.toContain(attack);
-    expect((html.match(/<script>/g) || []).length).toBe(1);
-    expect((html.match(/<\/script>/g) || []).length).toBe(1);
+    expect((html.match(/<script>/gi) || []).length).toBe(1);
+    expect((html.match(/<\/script>/gi) || []).length).toBe(1);
     const serialized = html.match(/window\.__BUILDER_STATE__ = ([\s\S]*?);<\/script>/)?.[1];
     expect(serialized).toBeDefined();
     expect(serialized).toContain('\\u003c/script>');
