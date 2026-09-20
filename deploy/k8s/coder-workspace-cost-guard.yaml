@@ -1,0 +1,75 @@
+# Review against the ACTIVE cluster before applying. The Coder server stays in
+# namespace coder; ONLY customer workspace deployments/PVCs use this namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coder-workspaces
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dreammakerhub-workspace-budget
+  namespace: coder-workspaces
+spec:
+  hard:
+    pods: "5"
+    count/deployments.apps: "5"
+    persistentvolumeclaims: "5"
+    requests.storage: 50Gi
+    requests.cpu: "2500m"
+    requests.memory: 5Gi
+    limits.cpu: "10"
+    limits.memory: 20Gi
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dreammakerhub-workspace-limits
+  namespace: coder-workspaces
+spec:
+  limits:
+    - type: Container
+      max:
+        cpu: "2"
+        memory: 4Gi
+        ephemeral-storage: 2Gi
+      default:
+        ephemeral-storage: 2Gi
+      defaultRequest:
+        ephemeral-storage: 256Mi
+    - type: PersistentVolumeClaim
+      min:
+        storage: 1Gi
+      max:
+        storage: 10Gi
+---
+# Grant the EXISTING Coder service account permission in this namespace only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-workspace-provisioner
+  namespace: coder-workspaces
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims", "pods", "pods/log"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-workspace-provisioner
+  namespace: coder-workspaces
+subjects:
+  - kind: ServiceAccount
+    name: coder-workspace-provisioner
+    namespace: coder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-workspace-provisioner

@@ -1,4 +1,6 @@
 // Coder launch capability discovery. Never return credentials to the browser.
+import { secureCoderApiOrigin } from './secure-origin';
+
 export type CoderLaunchOption = { label: string; value: string };
 export type CoderLaunchConfig = {
   templateId: string;
@@ -58,10 +60,10 @@ async function coderGet<T>(path: string): Promise<T> {
   const configured = process.env.CODER_API_URL;
   const token = process.env.CODER_API_TOKEN;
   if (!configured || !token) throw new Error('Coder is not configured.');
-  const origin = configured.replace(/\/api\/v2\/?$/, '').replace(/\/$/, '');
+  const origin = secureCoderApiOrigin(configured);
   const response = await fetch(`${origin}${path}`, {
     headers: { 'Coder-Session-Token': token, Accept: 'application/json' },
-    cache: 'no-store', signal: AbortSignal.timeout(10000),
+    cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
   });
   if (!response.ok) throw new Error('Could not read Coder template capabilities.');
   return response.json() as Promise<T>;

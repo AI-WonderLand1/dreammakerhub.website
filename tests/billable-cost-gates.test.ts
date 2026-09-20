@@ -22,12 +22,13 @@ describe('platform-funded cost guards', () => {
     const agent = read('apps/web/app/api/agent/route.ts');
     const proxy = read('apps/web/app/api/openrouter/chat/route.ts');
     const coder = read('apps/web/app/api/user-workspace/provision/route.ts');
+    const slots = read('apps/web/lib/coder/workspace-slots.server.ts');
     expect(ai.indexOf('await reserveAiRequest(')).toBeLessThan(ai.indexOf('await runModel('));
     expect(agent.indexOf('await reserveAgentRequest(')).toBeLessThan(agent.indexOf('await runModel('));
     expect(proxy.indexOf('await reserveAiRequest(')).toBeLessThan(proxy.indexOf("fetch('https://openrouter.ai"));
     expect(proxy).toContain('allowedModels.includes(model)');
-    expect(coder.indexOf('await reserveWorkspaceLaunch(')).toBeLessThan(coder.indexOf('await coder.createWorkspace('));
-    expect(read('apps/web/lib/billing/cost-guard.server.ts')).toContain("process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true'");
+    expect(coder.indexOf('await reserveCoderSlot(')).toBeLessThan(coder.indexOf('await coder.createWorkspace('));
+    expect(slots).toContain("process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true'");
   });
 
   it('blocks the known alternate unmetered AI routes and limits builder project inserts', () => {
