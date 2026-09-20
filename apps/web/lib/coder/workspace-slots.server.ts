@@ -8,13 +8,14 @@ export const MAX_CODER_MEMORY_GIB = 4;
 export const CODER_DISK_GIB = 10;
 export const CODER_TTL_MS = 60 * 60 * 1000;
 
-export type CoderSlot = {
+type CoderSlotPublic = {
   id: string;
   workspace_id: string | null;
   workspace_name: string;
   state: 'reserved' | 'provisioned' | 'deleting' | 'released';
   created_at: string;
 };
+export type CoderSlot = CoderSlotPublic & { coder_api_origin: string };
 
 export function coderServiceClient() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -28,6 +29,20 @@ export function assertCoderResourceBudget(cpu: number, memory: number): void {
       !Number.isInteger(memory) || memory < 1 || memory > MAX_CODER_MEMORY_GIB) {
     throw new CostGateError('Workspace size exceeds the 2 CPU / 4 GiB safety ceiling.', 429);
   }
+}
+
+export function coderApiConfig(): { url: string; token: string } {
+  const url = process.env.CODER_API_URL;
+  const token = process.env.CODER_API_TOKEN;
+  if (!url || !token) throw new CostGateError('Coder connection is not configured.');
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { throw new CostGateError('Coder API URL is invalid.'); }
+  // An HTTP URL is acceptable only for an operator-managed internal host, never a browser URL.
+  if (!['https:', 'http:'].includes(parsed.protocol) || parsed.username || parsed.password ||
+      parsed.search || parsed.hash || parsed.pathname.replace(/\/$/, '') !== '') {
+    throw new CostGateError('Coder API URL must be a server origin without credentials or a path.');
+  }
+  return { url: parsed.origin, token };
 }
 
 export async function reserveCoderSlot(userId: string, workspaceName: string): Promise<string> {
@@ -45,6 +60,7 @@ export async function reserveCoderSlot(userId: string, workspaceName: string): P
   const { data, error } = await coderServiceClient().rpc('reserve_coder_workspace_slot', {
     p_user_id: userId,
     p_workspace_name: workspaceName,
+    p_origin: coderApiConfig().url,
     p_limit: limit,
   });
   if (error) throw new CostGateError('Workspace accounting is unavailable. No pod was requested.');
@@ -67,17 +83,17 @@ export async function attachCoderWorkspace(userId: string, slotId: string, works
   }
 }
 
-export async function listCoderSlots(userId: string): Promise<CoderSlot[]> {
+export async function listCoderSlots(userId: string): Promise<CoderSlotPublic[]> {
   const { data, error } = await coderServiceClient().from('coder_workspace_slots')
     .select('id,workspace_id,workspace_name,state,created_at')
     .eq('user_id', userId).is('released_at', null).order('created_at', { ascending: true });
   if (error || !Array.isArray(data)) throw new CostGateError('Workspace allocation records are unavailable.');
-  return data as CoderSlot[];
+  return data as CoderSlotPublic[];
 }
 
 export async function getCoderSlot(userId: string, slotId: string): Promise<CoderSlot | null> {
   const { data, error } = await coderServiceClient().from('coder_workspace_slots')
-    .select('id,workspace_id,workspace_name,state,created_at')
+    .select('id,workspace_id,workspace_name,coder_api_origin,state,created_at')
     .eq('user_id', userId).eq('id', slotId).is('released_at', null).maybeSingle();
   if (error) throw new CostGateError('Workspace allocation lookup failed.');
   return (data as CoderSlot | null) ?? null;
@@ -97,20 +113,6 @@ export async function releaseDeletedCoderSlot(userId: string, slotId: string, wo
     .eq('user_id', userId).eq('id', slotId).eq('workspace_id', workspaceId).eq('state', 'deleting')
     .select('id').maybeSingle();
   if (error || !data) throw new CostGateError('Coder deleted the workspace, but the allocation is still held. Contact support.');
-}
-
-export function coderApiConfig(): { url: string; token: string } {
-  const url = process.env.CODER_API_URL;
-  const token = process.env.CODER_API_TOKEN;
-  if (!url || !token) throw new CostGateError('Coder connection is not configured.');
-  let parsed: URL;
-  try { parsed = new URL(url); } catch { throw new CostGateError('Coder API URL is invalid.'); }
-  // An HTTP URL is acceptable only for an operator-managed internal host, never a browser URL.
-  if (!['https:', 'http:'].includes(parsed.protocol) || parsed.username || parsed.password ||
-      parsed.search || parsed.hash || parsed.pathname.replace(/\/$/, '') !== '') {
-    throw new CostGateError('Coder API URL must be a server origin without credentials or a path.');
-  }
-  return { url: parsed.origin, token };
 }
 
 export async function coderApiRequest(path: string, method: 'GET' | 'POST', body?: unknown): Promise<Response> {
