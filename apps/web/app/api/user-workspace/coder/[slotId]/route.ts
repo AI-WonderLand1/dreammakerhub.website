@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
-import { coderApiRequest, getCoderSlot, markCoderSlotDeleting, releaseDeletedCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { coderApiConfig, coderApiRequest, getCoderSlot, markCoderSlotDeleting, releaseDeletedCoderSlot } from '@/lib/coder/workspace-slots.server';
 
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ slotId: string }> };
@@ -16,12 +16,12 @@ export async function DELETE(_request: Request, { params }: Context) {
     const slot = await getCoderSlot(user.id, slotId);
     if (!slot) return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
     if (!slot.workspace_id || slot.state === 'reserved') {
-      // A timed-out provisioning request may already have a running pod. An
-      // administrator must reconcile it by name before safely releasing it.
       return NextResponse.json({ error: 'This workspace may still be provisioning. Contact support to reconcile its Coder ID; no allocation was freed.' }, { status: 409 });
     }
-    // A 404 from an unrelated reverse proxy or misrouted host is NOT proof
-    // that Coder deleted a workspace. Verify Coder's own build-info endpoint.
+    // A different Coder deployment may return 404 for a still-running old pod.
+    if (slot.coder_api_origin !== coderApiConfig().url) {
+      throw new CostGateError('Coder server has changed. Slot remains allocated until the original server is reconciled.');
+    }
     const buildInfoResponse = await coderApiRequest('/api/v2/buildinfo', 'GET');
     const buildInfo = buildInfoResponse.ok ? await buildInfoResponse.json().catch(() => null) : null;
     if (typeof buildInfo?.version !== 'string' || !buildInfo.version.trim()) {
@@ -43,8 +43,8 @@ export async function DELETE(_request: Request, { params }: Context) {
       throw new CostGateError('Coder deletion failed. Slot remains allocated pending administrator cleanup.');
     }
     if (slot.state !== 'deleting' && workspace?.latest_build?.transition !== 'delete') {
-      // Coder deletes workspaces through a transition build, not through DELETE
-      // /workspaces/{id}. A successful POST only queues deletion, not cleanup.
+      // Coder deletes workspaces through a transition build. An accepted POST
+      // only queues deletion; it does not prove the workspace is gone.
       const deletion = await coderApiRequest(`${path}/builds`, 'POST', { transition: 'delete' });
       if (!deletion.ok) throw new CostGateError('Coder did not accept workspace deletion. Slot remains allocated.');
     }
