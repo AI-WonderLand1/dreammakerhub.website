@@ -21,6 +21,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v7
+      - name: Validate AWS fallback deployment shell syntax
+        run: bash -n deploy/aws-fallback/deploy-web.sh
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:

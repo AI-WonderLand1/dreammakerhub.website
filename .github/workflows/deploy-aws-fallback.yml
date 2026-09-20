@@ -1,0 +1,205 @@
+name: Deploy AWS fallback web (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: '40-character Master commit SHA with a completed Build & Push Web Image run'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-aws-fallback-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Never deploy an unreviewed PR ref or run this on a push or schedule.
+    if: github.ref == 'refs/heads/Master'
+    runs-on: ubuntu-latest
+    env:
+      AWS_FALLBACK_HOST: ${{ vars.AWS_FALLBACK_HOST }}
+      AWS_FALLBACK_USER: ${{ vars.AWS_FALLBACK_USER || 'ubuntu' }}
+      IMAGE_SHA: ${{ inputs.image_sha }}
+
+    steps:
+      - name: Check out production source
+        uses: actions/checkout@v4
+        with:
+          ref: Master
+          persist-credentials: false
+
+      - name: Validate deployment target and image identity
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.AWS_FALLBACK_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.AWS_FALLBACK_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'image_sha must be 40 lowercase hex characters.'; exit 1; }
+          [[ "$AWS_FALLBACK_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || { echo 'Set AWS_FALLBACK_HOST to the AWS VM hostname or IPv4 address.'; exit 1; }
+          [[ "$AWS_FALLBACK_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] || { echo 'Set a valid AWS_FALLBACK_USER.'; exit 1; }
+          test -n "$SSH_KEY" || { echo 'Missing AWS_FALLBACK_SSH_KEY.'; exit 1; }
+          test -n "$SSH_KNOWN_HOSTS" || { echo 'Missing AWS_FALLBACK_KNOWN_HOSTS (pin the verified VM SSH host key).'; exit 1; }
+
+      - name: Prepare runtime environment from existing GitHub secrets
+        shell: bash
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY || secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          PIXAZO_API_KEY: ${{ secrets.PIXAZO_API_KEY }}
+          GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+          ALICE_API_KEY: ${{ secrets.ALICE_API_KEY }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          N8N_WEBHOOK_URL: ${{ vars.N8N_WEBHOOK_URL || secrets.N8N_WEBHOOK_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          AMPLITUDE_AI_API_KEY: ${{ secrets.AMPLITUDE_AI_API_KEY }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          CODER_API_URL: ${{ vars.CODER_API_URL || secrets.CODER_API_URL }}
+          CODER_ACCESS_URL: ${{ vars.CODER_ACCESS_URL || secrets.CODER_ACCESS_URL }}
+          CODER_API_TOKEN: ${{ secrets.CODER_API_TOKEN }}
+          CODER_WORKSPACE_OWNER: ${{ vars.CODER_WORKSPACE_OWNER || secrets.CODER_WORKSPACE_OWNER }}
+          NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID: ${{ vars.NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID || secrets.NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID }}
+          EXTENSION_ENCRYPTION_KEY: ${{ secrets.EXTENSION_ENCRYPTION_KEY }}
+          SECRETS_ENCRYPTION_KEY: ${{ secrets.SECRETS_ENCRYPTION_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_PRO_ID: ${{ vars.STRIPE_PRICE_PRO_ID || secrets.STRIPE_PRICE_PRO_ID }}
+          STRIPE_PRICE_PRO_YEARLY_ID: ${{ vars.STRIPE_PRICE_PRO_YEARLY_ID || secrets.STRIPE_PRICE_PRO_YEARLY_ID }}
+          STRIPE_PRICE_TEAM_ID: ${{ vars.STRIPE_PRICE_TEAM_ID || secrets.STRIPE_PRICE_TEAM_ID }}
+          STRIPE_PRICE_TEAM_YEARLY_ID: ${{ vars.STRIPE_PRICE_TEAM_YEARLY_ID || secrets.STRIPE_PRICE_TEAM_YEARLY_ID }}
+          ADMIN_USER_IDS: ${{ vars.ADMIN_USER_IDS || secrets.ADMIN_USER_IDS }}
+          SPLAT_TRAINING_WEBHOOK: ${{ vars.SPLAT_TRAINING_WEBHOOK || secrets.SPLAT_TRAINING_WEBHOOK }}
+          SPLAT_CALLBACK_SECRET: ${{ secrets.SPLAT_CALLBACK_SECRET }}
+          AGENT_API_URL: ${{ vars.AGENT_API_URL || secrets.AGENT_API_URL }}
+          FALLBACK_PUBLIC_URL: ${{ vars.AWS_FALLBACK_PUBLIC_URL || 'https://dreammakerhub.website' }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL; do
+            test -n "${!key:-}" || { echo "Missing required GitHub Actions value: $key"; exit 1; }
+          done
+          if [[ -z "$OPENROUTER_API_KEY" && -z "$GEMINI_API_KEY" && -z "$GROQ_API_KEY" && -z "$CEREBRAS_API_KEY" ]]; then
+            echo 'Configure at least one AI provider secret.'
+            exit 1
+          fi
+          case "$NEXT_PUBLIC_SUPABASE_URL" in
+            https://*.supabase.co) ;;
+            *) echo 'Invalid Supabase project URL.'; exit 1 ;;
+          esac
+          case "$FALLBACK_PUBLIC_URL" in
+            https://*) ;;
+            *) echo 'AWS_FALLBACK_PUBLIC_URL must start with https://'; exit 1 ;;
+          esac
+          export_file="$RUNNER_TEMP/dreammakerhub.aws-fallback.env"
+          : > "$export_file"
+          write_env() {
+            local key="$1" value="$2"
+            [[ "$value" != *$'\n'* && "$value" != *$'\r'* ]] || { echo "Refusing newline in $key"; exit 1; }
+            if [[ -n "$value" ]]; then printf '%s=%s\n' "$key" "$value" >> "$export_file"; fi
+          }
+          write_env NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
+          write_env NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          write_env SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
+          write_env DATABASE_URL "$DATABASE_URL"
+          write_env OPENROUTER_API_KEY "$OPENROUTER_API_KEY"
+          write_env GEMINI_API_KEY "$GEMINI_API_KEY"
+          write_env GOOGLE_AI_API_KEY "$GOOGLE_AI_API_KEY"
+          write_env GROQ_API_KEY "$GROQ_API_KEY"
+          write_env CEREBRAS_API_KEY "$CEREBRAS_API_KEY"
+          write_env PIXAZO_API_KEY "$PIXAZO_API_KEY"
+          write_env GITHUB_MODELS_API_KEY "$GITHUB_MODELS_API_KEY"
+          write_env ALICE_API_KEY "$ALICE_API_KEY"
+          write_env N8N_API_KEY "$N8N_API_KEY"
+          write_env N8N_WEBHOOK_URL "$N8N_WEBHOOK_URL"
+          write_env OPENAI_API_KEY "$OPENAI_API_KEY"
+          write_env ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
+          write_env OPENCODE_API_KEY "$OPCODE_API_KEY"
+          write_env AMPLITUDE_AI_API_KEY "$AMPLITUDE_AI_API_KEY"
+          write_env NEXTAUTH_SECRET "$NEXTAUTH_SECRET"
+          write_env CODER_API_URL "$CODER_API_URL"
+          write_env CODER_ACCESS_URL "$CODER_ACCESS_URL"
+          write_env CODER_API_TOKEN "$CODER_API_TOKEN"
+          write_env CODER_WORKSPACE_OWNER "$CODER_WORKSPACE_OWNER"
+          write_env NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID "$NEXT_PUBLIC_WEBCONTAINER_CLIENT_ID"
+          write_env EXTENSION_ENCRYPTION_KEY "$EXTENSION_ENCRYPTION_KEY"
+          write_env SECRETS_ENCRYPTION_KEY "$SECRETS_ENCRYPTION_KEY"
+          write_env STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
+          write_env NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+          write_env STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
+          write_env STRIPE_PRICE_PRO_ID "$STRIPE_PRICE_PRO_ID"
+          write_env STRIPE_PRICE_PRO_YEARLY_ID "$STRIPE_PRICE_PRO_YEARLY_ID"
+          write_env STRIPE_PRICE_TEAM_ID "$STRIPE_PRICE_TEAM_ID"
+          write_env STRIPE_PRICE_TEAM_YEARLY_ID "$STRIPE_PRICE_TEAM_YEARLY_ID"
+          write_env ADMIN_USER_IDS "$ADMIN_USER_IDS"
+          write_env SPLAT_TRAINING_WEBHOOK "$SPLAT_TRAINING_WEBHOOK"
+          write_env SPLAT_CALLBACK_SECRET "$SPLAT_CALLBACK_SECRET"
+          write_env AGENT_API_URL "$AGENT_API_URL"
+          write_env NEXTAUTH_URL "$FALLBACK_PUBLIC_URL"
+          write_env NEXT_PUBLIC_URL "$FALLBACK_PUBLIC_URL"
+          chmod 600 "$export_file"
+          echo 'Prepared the runtime environment without printing values.'
+
+      - name: Configure verified SSH host identity
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.AWS_FALLBACK_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.AWS_FALLBACK_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/aws-fallback-key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/aws-fallback-key ~/.ssh/known_hosts
+          ssh-keygen -F "$AWS_FALLBACK_HOST" -f ~/.ssh/known_hosts >/dev/null || {
+            echo 'Known hosts entry must match AWS_FALLBACK_HOST exactly.'; exit 1;
+          }
+          ssh -i ~/.ssh/aws-fallback-key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST" 'command -v docker >/dev/null && docker info >/dev/null && command -v curl >/dev/null'
+
+      - name: Copy fallback deploy files to AWS over SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh_args=(-i "$HOME/.ssh/aws-fallback-key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
+          ssh "${ssh_args[@]}" "$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST" \
+            'umask 077; mkdir -p "$HOME/dreammakerhub-fallback"; chmod 700 "$HOME/dreammakerhub-fallback"'
+          scp "${ssh_args[@]}" "$RUNNER_TEMP/dreammakerhub.aws-fallback.env" \
+            "$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST:~/dreammakerhub-fallback/runtime.env"
+          scp "${ssh_args[@]}" deploy/aws-fallback/deploy-web.sh \
+            "$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST:~/dreammakerhub-fallback/deploy-web.sh"
+          ssh "${ssh_args[@]}" "$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST" \
+            'chmod 600 "$HOME/dreammakerhub-fallback/runtime.env"; chmod 700 "$HOME/dreammakerhub-fallback/deploy-web.sh"'
+
+      - name: Deploy pinned image and verify local health
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GHCR_TOKEN" | ssh \
+            -i "$HOME/.ssh/aws-fallback-key" \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST" \
+            "bash \"\$HOME/dreammakerhub-fallback/deploy-web.sh\" '$IMAGE_SHA' '${{ github.actor }}'"
+
+      - name: Remove temporary secret files
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/dreammakerhub.aws-fallback.env" "$HOME/.ssh/aws-fallback-key"
