@@ -3,6 +3,7 @@ import { z } from "zod";
 import { runModel } from "../../../../../engine/core/ai/runModel";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/app/utils/supabase/server";
+import { CostGateError, costGateResponse, reserveAgentRequest } from "@/lib/billing/cost-guard.server";
 import { logger } from "@/lib/logger";
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,6 @@ function inferCategory(agent: string, command: string) {
 }
 
 export async function POST(req: Request) {
-  // This route is directly callable, so the UI's subscription gate is not sufficient.
   const userId = await requireUserId(req);
   if (!userId) {
     return NextResponse.json({ status: 'error', error: 'Sign in to use agents.' }, { status: 401 });
@@ -66,8 +66,9 @@ export async function POST(req: Request) {
     if (!result.success) {
       return NextResponse.json({ status: 'error', error: 'Invalid request', details: result.error.issues }, { status: 400 });
     }
-
     const { agent, command } = result.data;
+    // Existing profile display alone is not a paid entitlement. Reserve BEFORE the model call.
+    await reserveAgentRequest(userId, command.length);
     const category = inferCategory(agent, command);
     const systemPrompt = `You are the Wonderland ${agent === 'designer' ? 'Designer' : agent === 'debugger' ? 'Debugger' : 'Builder'}.
 Respond to the user's natural-language request directly. Do not pretend to have edited project files.
@@ -80,6 +81,7 @@ Return JSON only: {"code":"complete result or component code when appropriate","
       messages: [{ role: 'user', content: command }],
       system: systemPrompt,
       temperature: 0.7,
+      maxTokens: 4096,
     });
     if (aiResponse.error || !aiResponse.text?.trim()) {
       return NextResponse.json({ status: 'error', error: 'AI agent could not produce a response.' }, { status: 502 });
@@ -100,13 +102,12 @@ Return JSON only: {"code":"complete result or component code when appropriate","
     }
     const answer = manifest.code || manifest.glimpse || aiResponse.text;
     if (!answer?.trim()) return NextResponse.json({ status: 'error', error: 'AI returned no usable result' }, { status: 502 });
-    // An authenticated user is not automatically authorized to write shared server files.
-    // Return proposed code only; the project editor must use its ownership-checked save API.
     return NextResponse.json({ status: 'success', success: true, answer,
       response: manifest.glimpse || answer, code: manifest.code, glimpse: manifest.glimpse,
       confession: [manifest.confession, 'No project files were saved by this agent endpoint.'].filter(Boolean).join(' '),
       commandCategory: category });
   } catch (err: unknown) {
+    if (err instanceof CostGateError) return costGateResponse(err);
     logger.error('Agent request failed', { error: err instanceof Error ? err.message : 'Unknown error' });
     return NextResponse.json({ status: 'error', error: 'AI agent request failed' }, { status: 500 });
   }
