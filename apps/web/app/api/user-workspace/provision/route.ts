@@ -4,7 +4,7 @@ import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
-import { assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -29,14 +29,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unsupported workspace type.' }, { status: 400 });
   }
   try {
-    // Validate BEFORE contacting Coder or acquiring a slot; never trust the UI options.
+    // Validate size and URL BEFORE any Coder token is sent or a slot is acquired.
     assertCoderResourceBudget(cpu, memory);
-    if (!process.env.CODER_API_URL || !process.env.CODER_API_TOKEN) {
-      return NextResponse.json({ error: 'WonderSpace cloud IDE is not configured on the server.' }, { status: 503 });
-    }
+    const connection = coderApiConfig();
     const coder = new CoderAPIWrapper({
-      apiUrl: process.env.CODER_API_URL,
-      apiKey: process.env.CODER_API_TOKEN,
+      apiUrl: connection.url,
+      apiKey: connection.token,
       userId: user.id,
       environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     });
