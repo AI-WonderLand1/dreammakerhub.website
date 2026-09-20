@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
+import CoderAvailabilityIndicator from './CoderAvailabilityIndicator';
 import { Cloud, Code2, GitBranch, Github, Rocket, Sparkles } from 'lucide-react';
 
 type Choice = { label: string; value: string };
@@ -192,7 +193,9 @@ export default function WonderSpaceLaunch() {
                 <div><label htmlFor="workspace-name" className="mb-1 block text-sm font-medium">Workspace name</label><input id="workspace-name" required minLength={3} maxLength={32} pattern="[a-z0-9][a-z0-9-]{1,30}[a-z0-9]" value={name} onChange={(event) => setName(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3 outline-none focus:border-cyan-400" /><p className="mt-1 text-xs text-slate-400">3–32 characters, lowercase letters, numbers, and hyphens.</p></div>
                 <div className="grid grid-cols-2 gap-4"><div><label htmlFor="workspace-cpu" className="mb-1 block text-sm">CPU</label><select id="workspace-cpu" value={cpu} onChange={(event) => setCpu(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.cpu.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div><div><label htmlFor="workspace-memory" className="mb-1 block text-sm">Memory</label><select id="workspace-memory" value={memory} onChange={(event) => setMemory(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.memory.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div></div>
                 {options.regions.length ? <div><label htmlFor="workspace-region" className="mb-1 block text-sm">Region</label><select id="workspace-region" value={region} onChange={(event) => setRegion(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.regions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div> : <p className="text-xs text-slate-400">Location is determined by your existing Coder cluster. No additional regions are configured.</p>}
-                <button type="submit" disabled={!name || !cpu || !memory || (mode === 'repo' && !verified)} className="w-full rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 px-6 py-3 font-semibold shadow-[0_8px_30px_rgba(79,70,229,0.3)] disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Launch real Coder workspace</button>
+                <CoderAvailabilityIndicator>
+                  <button type="submit" disabled={!name || !cpu || !memory || (mode === 'repo' && !verified)} className="w-full rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 px-6 py-3 font-semibold shadow-[0_8px_30px_rgba(79,70,229,0.3)] disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Launch real Coder workspace</button>
+                </CoderAvailabilityIndicator>
               </div>}
               {stage === 'error' && <p role="alert" className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">{error}</p>}
             </section>
