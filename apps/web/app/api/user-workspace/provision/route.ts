@@ -3,6 +3,7 @@ import { createClient } from '@/app/utils/supabase/server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
+import { CostGateError, costGateResponse, reserveWorkspaceLaunch } from '@/lib/billing/cost-guard.server';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -101,6 +102,9 @@ export async function POST(request: Request) {
       templateId = await getCoderTemplateId('playcanvas-3d');
       richParameterValues.push({ name: 'home_disk_size', value: '20' });
     }
+    // Do not create billable Kubernetes resources until a paid Stripe entitlement,
+    // atomic monthly launch reservation, and operator-enabled cloud guard all pass.
+    await reserveWorkspaceLaunch(user.id);
     const workspace = await coder.createWorkspace(user.id, {
       name: podName, template_id: templateId, rich_parameter_values: richParameterValues,
       ttl_ms: 4 * 60 * 60 * 1000,
@@ -112,6 +116,7 @@ export async function POST(request: Request) {
       ideUrl, podUrl: ideUrl, sshCommand: `coder ssh ${workspace.name}`, podType,
     });
   } catch (error) {
+    if (error instanceof CostGateError) return costGateResponse(error);
     logger.error('WonderSpace Coder provisioning failed:', error instanceof Error ? error.name : 'Unknown error');
     return NextResponse.json({ error: 'Could not launch workspace. Check Coder workspace status and try again.' }, { status: 502 });
   }
