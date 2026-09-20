@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { listProjects, createProject } from '@/lib/projects/storage';
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 import { logger } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
@@ -26,6 +27,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, message: 'name is required' }, { status: 400 });
     }
     const project = await createProject(userId, name.trim(), type || tool || 'wonderbuild');
+    // Count only persisted projects, never attempted clicks or failed requests.
+    await trackFunnelEvent('Project Created', userId, project.id);
     return NextResponse.json({ ok: true, project }, { status: 201 });
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('PROJECT_LIMIT_REACHED')) {

@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -84,6 +85,20 @@ export async function GET(request: NextRequest) {
     if (error) {
       logger.error('[auth-callback] Failed to exchange OAuth code for session:', error.message);
       return NextResponse.redirect(authPageUrl(request, 'oauth_session_exchange_failed', redirectTo));
+    }
+
+    // Count only a recently confirmed new account. Existing-user OAuth sign-ins
+    // and failed/pending email confirmations are not completed signups.
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (!userError && user?.email_confirmed_at) {
+      const createdAt = Date.parse(user.created_at);
+      const confirmedAt = Date.parse(user.email_confirmed_at);
+      const now = Date.now();
+      if (Number.isFinite(createdAt) && Number.isFinite(confirmedAt) &&
+          createdAt <= confirmedAt && confirmedAt <= now &&
+          now - confirmedAt <= 2 * 60 * 1000) {
+        await trackFunnelEvent('Signup Completed', user.id, user.id);
+      }
     }
 
     return successResponse;
