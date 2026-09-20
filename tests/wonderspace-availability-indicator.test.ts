@@ -13,7 +13,7 @@ describe('WonderSpace availability hint', () => {
     expect(indicator).toContain('onMouseEnter=');
     expect(indicator).toContain('onFocusCapture=');
     expect(indicator).toContain('aria-live="polite"');
-    expect(indicator).toContain('Workspace launch, owner login');
+    expect(indicator).toContain('An actual workspace, editor login');
     expect(options).toContain('supabase.auth.getUser()');
     expect(options).toContain('getCoderLaunchConfig()');
     expect(indicator).not.toContain('CODER_API_TOKEN');
