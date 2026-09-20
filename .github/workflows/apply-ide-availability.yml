@@ -1,0 +1,32 @@
+name: Apply IDE availability UI (one time)
+
+on:
+  push:
+    branches:
+      - fix/ide-availability-hover-20260920
+    paths:
+      - .github/workflows/apply-ide-availability.yml
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.repository == 'AI-WonderLand1/dreammakerhub.website'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate indicator in existing pages
+        run: node scripts/apply-ide-availability-once.mjs
+      - name: Verify and push focused changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 'apps/web/app/(workspace)/dashboard/page.tsx' apps/web/components/engines/WonderSpaceLaunch.tsx
+          git diff --cached --exit-code >/dev/null && { echo 'No integration changes'; exit 1; } || true
+          git commit -m 'Show real Coder availability when choosing or launching an IDE'
+          git push origin HEAD:refs/heads/fix/ide-availability-hover-20260920
