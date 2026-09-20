@@ -1,0 +1,36 @@
+name: Consolidate TODO documents (one time)
+
+on:
+  push:
+    branches:
+      - fix/consolidate-todo-20260920
+    paths:
+      - .github/workflows/consolidate-todo.yml
+      - scripts/consolidate-todos.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    if: github.repository == 'AI-WonderLand1/dreammakerhub.website'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Merge all six original TODOs without dropping any tasks
+        run: node scripts/consolidate-todos.mjs
+      - name: Commit the actual consolidated file, remove duplicate TODOs, and fix links
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          if git diff --cached --quiet; then
+            echo 'No TODO changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Consolidate six TODO documents into root TODO.md'
+          git push origin HEAD:refs/heads/fix/consolidate-todo-20260920
