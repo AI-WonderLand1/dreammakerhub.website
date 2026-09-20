@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { logger } from '@/lib/logger';
 import { stripe } from "@/lib/stripe";
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -103,6 +104,11 @@ export async function POST(request: NextRequest) {
         if (subscriptionError) throw subscriptionError;
 
         await syncAuthPlan(supabase, userId, plan);
+        // Stripe's signature and the successful entitlement writes are required.
+        // A submitted checkout or an unpaid asynchronous checkout is not a sale.
+        if (session.payment_status === 'paid') {
+          await trackFunnelEvent('Subscription Started', userId, subscriptionId);
+        }
         break;
       }
 
