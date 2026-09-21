@@ -5,6 +5,7 @@ import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { provisionManagedIde } from '@/lib/managed-ide/server';
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 import { logger } from '@/lib/logger';
 
@@ -29,6 +30,25 @@ export async function POST(request: Request) {
   if (podType !== 'ide' && podType !== 'playcanvas') {
     return NextResponse.json({ error: 'Unsupported workspace type.' }, { status: 400 });
   }
+
+  // Operator-run image agent. The browser can select only published image keys,
+  // never arbitrary container registries, URLs, Kubernetes specs, or owners.
+  if (process.env.MANAGED_IDE_ENABLED === 'true' && podType === 'ide') {
+    if (cpu !== 2 || memory !== 4 || (body.templateId && body.templateId !== 'managed-linux') ||
+        body.repository || body.branch || body.region || (body.ideImage && body.ideImage !== 'linux')) {
+      return NextResponse.json({ error: 'Choose an available managed IDE configuration.' }, { status: 400 });
+    }
+    try {
+      return NextResponse.json(await provisionManagedIde(user.id, podName, 'linux'), {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    } catch (error) {
+      if (error instanceof CostGateError) return costGateResponse(error);
+      logger.error('Managed IDE provisioning failed:', error instanceof Error ? error.name : 'Unknown error');
+      return NextResponse.json({ error: 'Managed IDE could not be started. Retry this workspace name to safely resume.' }, { status: 503 });
+    }
+  }
+
   try {
     // Validate size and URL BEFORE any Coder token is sent or a slot is acquired.
     assertCoderResourceBudget(cpu, memory);
