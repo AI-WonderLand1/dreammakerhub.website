@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
     const successUrl = new URL("/checkout/success", baseUrl);
     successUrl.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
     successUrl.searchParams.set("redirectTo", redirectTo);
+    // Stripe replaces the literal token, not its URLSearchParams-encoded braces.
+    const stripeSuccessUrl = successUrl.toString().replace("%7BCHECKOUT_SESSION_ID%7D", "{CHECKOUT_SESSION_ID}");
     const cancelUrl = new URL("/subscription", baseUrl);
     cancelUrl.searchParams.set("canceled", "true");
     cancelUrl.searchParams.set("redirectTo", redirectTo);
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
       client_reference_id: user.id,
       metadata: { userId: user.id, plan: planConfig.id, interval: isYearly ? "year" : "month" },
       subscription_data: { metadata: { userId: user.id, plan: planConfig.id } },
-      success_url: successUrl.toString(),
+      success_url: stripeSuccessUrl,
       cancel_url: cancelUrl.toString(),
     });
     if (!session.url || !session.url.startsWith("https://")) {
