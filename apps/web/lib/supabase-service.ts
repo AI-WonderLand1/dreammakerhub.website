@@ -50,17 +50,13 @@ export async function loginUser(email: string, password: string) {
   }
 }
 
-export async function subscribeToPlan(userId: string, plan: string) {
-  try {
-    const client = getClient();
-    const { data, error } = await client
-      .from('subscriptions')
-      .upsert({ user_id: userId, plan, status: 'active', updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
-      .select()
-      .single();
-    if (error) throw error;
-    return { success: true, data };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Subscription failed' };
-  }
+/** @deprecated Client-side subscription writes must never grant paid access.
+ * Use /subscription and the signed, server-verified Stripe checkout flow instead.
+ * Kept as a fail-closed compatibility export for legacy callers.
+ */
+export async function subscribeToPlan(_userId: string, _plan: string) {
+  return {
+    success: false,
+    error: 'Select a plan at /subscription. Paid access requires Stripe checkout confirmation.',
+  };
 }
