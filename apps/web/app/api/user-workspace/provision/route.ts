@@ -5,6 +5,7 @@ import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -108,6 +109,14 @@ export async function POST(request: Request) {
       ttl_ms: CODER_TTL_MS,
     });
     await attachCoderWorkspace(user.id, slotId, workspace.id);
+    // A workspace launch is a confirmed running IDE, not a click, failed build,
+    // or PlayCanvas workspace. Stable IDs let Amplitude deduplicate retries.
+    if (podType === 'ide' && workspace.status === 'running') {
+      await trackFunnelEvent('Workspace Launched', user.id, workspace.id, {
+        workspace_type: 'ide',
+        template_id: templateId,
+      });
+    }
     const workspaceUrl = workspace.url.replace(/\/$/, '');
     const ideUrl = `${workspaceUrl}/apps/${APP_SLUG_MAP[podType]}/`;
     return NextResponse.json({
