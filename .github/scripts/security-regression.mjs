@@ -15,7 +15,12 @@ check(/requireUserId\(req\)/.test(agent) && agent.indexOf('requireUserId(req)') 
 check(/status:\s*401/.test(agent), 'Agent route must reject unauthenticated users');
 check(/status:\s*410/.test(entitlement), 'Manual entitlement endpoint must stay disabled');
 check(/stripe\.webhooks\.constructEvent\(/.test(stripe), 'Stripe events must be signature-verified');
-check(/STRIPE_WEBHOOK_SECRET\s*&&\s*signature/.test(stripe), 'Missing Stripe webhook secret or signature must fail closed');
+// Accept either a positive signature check with an error branch or an explicit
+// negative guard that returns 400 before constructing the event. This remains a
+// targeted static assertion, not a substitute for signed webhook integration tests.
+const positiveSignatureGuard = /STRIPE_WEBHOOK_SECRET\s*&&\s*signature/.test(stripe);
+const negativeSignatureGuard = /if\s*\(\s*!STRIPE_WEBHOOK_SECRET\s*\|\|\s*!signature\s*\)\s*\{[\s\S]*?return\s+NextResponse\.json\([^;]*status:\s*400/.test(stripe);
+check(positiveSignatureGuard || negativeSignatureGuard, 'Missing Stripe webhook secret or signature must fail closed');
 
 if (failures.length) {
   failures.forEach((failure) => console.error(`::error::${failure}`));
