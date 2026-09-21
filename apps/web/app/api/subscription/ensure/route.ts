@@ -1,76 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 function getBearerToken(req: NextRequest) {
-  const h = req.headers.get("authorization") || "";
-  const m = h.match(/^Bearer\s+(.+)$/i);
-  return m?.[1] || null;
+  return (req.headers.get("authorization") || "").match(/^Bearer\s+(.+)$/i)?.[1] || null;
 }
 
 export async function POST(req: NextRequest) {
+  const token = getBearerToken(req);
+  if (!token) return NextResponse.json({ ok: false, error: "Sign in to select a plan" }, { status: 401 });
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const serviceRole = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !publicKey || !serviceRole) {
+    return NextResponse.json({ ok: false, error: "Subscription service is temporarily unavailable" }, { status: 503 });
+  }
+
   try {
-    const token = getBearerToken(req);
-    if (!token) {
-      return NextResponse.json({ ok: false, error: "Missing Authorization token" }, { status: 401 });
-    }
-
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !anon || !serviceRole) {
-      return NextResponse.json({ ok: false, error: "Supabase env vars missing" }, { status: 500 });
-    }
-
-    const userClient = createClient(url, anon, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
+    const userClient = createClient(url, publicKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-
-    const { data: userRes, error: userErr } = await userClient.auth.getUser(token);
-    if (userErr || !userRes?.user) {
-      return NextResponse.json({ ok: false, error: "Invalid session" }, { status: 401 });
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
+    if (userError || !user?.id) {
+      return NextResponse.json({ ok: false, error: "Session expired. Sign in again." }, { status: 401 });
     }
 
-    const userId = userRes.user.id;
     const admin = createClient(url, serviceRole, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-
-    const { data: existingProfile, error: profileLookupError } = await admin
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("subscription_tier")
-      .eq("id", userId)
+      .eq("id", user.id)
       .maybeSingle();
+    if (profileError) throw profileError;
 
-    if (profileLookupError) {
-      return NextResponse.json({ ok: false, error: profileLookupError.message }, { status: 500 });
-    }
-
-    const plan = existingProfile?.subscription_tier || "free";
-
-    if (!existingProfile) {
+    // Never downgrade an existing paid account by selecting the free-plan button.
+    const plan = profile?.subscription_tier || "free";
+    if (!profile) {
       const { error: insertError } = await admin
         .from("profiles")
-        .insert({ id: userId, subscription_tier: "free" });
-
-      if (insertError) {
-        return NextResponse.json({ ok: false, error: insertError.message }, { status: 500 });
-      }
+        .insert({ id: user.id, subscription_tier: "free" });
+      if (insertError) throw insertError;
     }
-
-    const currentMetadata = userRes.user.app_metadata ?? {};
+    const currentMetadata = user.app_metadata ?? {};
     if (currentMetadata.plan !== plan) {
-      const { error: metadataError } = await admin.auth.admin.updateUserById(userId, {
+      const { error: metadataError } = await admin.auth.admin.updateUserById(user.id, {
         app_metadata: { ...currentMetadata, plan },
       });
-      if (metadataError) {
-        return NextResponse.json({ ok: false, error: metadataError.message }, { status: 500 });
-      }
+      if (metadataError) throw metadataError;
     }
-
-    return NextResponse.json({ ok: true, plan });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
+    return NextResponse.json({ ok: true, plan }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    logger.error("Free plan setup failed", error);
+    return NextResponse.json({ ok: false, error: "Could not load your plan. Please try again." }, { status: 502 });
   }
 }
