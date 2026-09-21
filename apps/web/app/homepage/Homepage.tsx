@@ -36,8 +36,8 @@ export default function Homepage() {
 
   useEffect(() => {
     // The scenic homepage already has an unused second hero grid column.
-    // Mount the promotion there without replacing the landscape or rebuilding
-    // the rest of the homepage; reveal the same column on smaller screens.
+    // Keep the promotional image visible before hydration via the CSS below,
+    // then replace it with an accessible button in that same reserved space.
     const slot = document.querySelector<HTMLElement>(
       'main > section:first-of-type > div[aria-hidden="true"]',
     );
@@ -49,6 +49,28 @@ export default function Homepage() {
 
   return (
     <div className="relative">
+      <style>{`
+        main > section:first-of-type > div:last-child {
+          display: block !important;
+          min-height: 432px;
+        }
+        main > section:first-of-type > div[aria-hidden="true"]::before {
+          content: '';
+          display: block;
+          aspect-ratio: 502 / 675;
+          width: min(320px, 100%);
+          margin-inline: auto;
+          background: url('/images/ai-confessions-homepage.svg') center / contain no-repeat;
+        }
+        @media (min-width: 1024px) {
+          main > section:first-of-type > div:last-child { min-height: 492px; }
+          main > section:first-of-type > div[aria-hidden="true"]::before {
+            width: min(365px, 100%);
+            margin-left: auto;
+            margin-right: 0;
+          }
+        }
+      `}</style>
       <MockupHomepage />
       {heroSlot && createPortal(
         <button
@@ -62,7 +84,6 @@ export default function Homepage() {
             alt="AI Confessions: The Transparent AI Architect. Discover the truth, why, and how behind AI-generated worlds. Explore AI Confessions."
             width={502}
             height={675}
-            priority
             unoptimized
             sizes="(min-width: 1024px) 365px, 320px"
             className="h-auto w-full rounded-[24px]"
