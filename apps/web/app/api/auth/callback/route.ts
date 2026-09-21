@@ -36,6 +36,9 @@ function sanitizeRedirectPath(raw: string | null): string {
 }
 
 function authPageUrl(request: NextRequest, reason: string, redirectTo: string) {
+  if (request.nextUrl.hostname === '0.0.0.0') {
+    logger.warn('[auth-callback] Internal request host detected; using public redirect origin');
+  }
   const url = new URL('/public-pages/auth', publicAuthOrigin());
   url.searchParams.set('error', reason);
   // A confirmation email can be opened on a different device without its PKCE
