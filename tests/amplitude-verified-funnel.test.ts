@@ -36,7 +36,9 @@ describe('Verified DreamMakerHub conversion events', () => {
     const webhook = read('apps/web/app/api/webhooks/stripe/route.ts');
     expect(webhook).toContain('stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)');
     expect(webhook).toMatch(/session\.payment_status === ['"]paid['"]/);
+    expect(webhook).toMatch(/session\.status !== ['"]complete['"]/);
     expect(webhook).toContain('checkout.session.async_payment_succeeded');
+    expect(webhook).toContain('stripe.subscriptions.retrieve(subscriptionId)');
     expect(webhook).toContain('await syncAuthPlan(supabase, userId, plan)');
     expect(webhook).toMatch(/trackFunnelEvent\(['"]Subscription Started['"], userId, subscriptionId\)/);
     const analyticsPosition = webhook.search(/trackFunnelEvent\(['"]Subscription Started['"]/);
