@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import MockupHomepage from './MockupHomepage';
+import HomepageServiceStatus from './HomepageServiceStatus';
 
 function openConfessionsTab() {
   const selectTab = () => {
@@ -50,7 +51,7 @@ export default function Homepage() {
   return (
     <div className="relative">
       <style>{`
-        main > section:first-of-type > div:last-child {
+        main > section:first-of-type > div:nth-of-type(2) {
           display: block !important;
           min-height: 432px;
         }
@@ -63,7 +64,7 @@ export default function Homepage() {
           background: url('/images/ai-confessions-homepage.svg') center / contain no-repeat;
         }
         @media (min-width: 1024px) {
-          main > section:first-of-type > div:last-child { min-height: 492px; }
+          main > section:first-of-type > div:nth-of-type(2) { min-height: 492px; }
           main > section:first-of-type > div[aria-hidden="true"]::before {
             width: min(365px, 100%);
             margin-left: auto;
@@ -90,6 +91,12 @@ export default function Homepage() {
           />
         </button>,
         heroSlot,
+      )}
+      {heroSlot?.parentElement && createPortal(
+        <div className="w-full lg:col-span-2">
+          <HomepageServiceStatus />
+        </div>,
+        heroSlot.parentElement,
       )}
       <a
         href="https://playground.dreammakerhub.website/"
