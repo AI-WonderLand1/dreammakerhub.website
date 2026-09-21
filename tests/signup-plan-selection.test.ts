@@ -8,6 +8,7 @@ const auth = read('apps/web/app/public-pages/auth/page.tsx');
 const callback = read('apps/web/app/api/auth/callback/route.ts');
 const subscription = read('apps/web/app/subscription/page.tsx');
 const pricing = read('apps/web/app/homepage/data.ts');
+const checkoutStatus = read('apps/web/app/api/subscription/checkout-status/route.ts');
 
 describe('new account plan selection', () => {
   it('routes generic registration to the existing subscription chooser, preserving destination', () => {
@@ -31,9 +32,18 @@ describe('new account plan selection', () => {
   });
 
   it('allows explicit free choice and separate paid checkout, never charging during registration', () => {
-    expect(subscription).toContain('return ensureFree()');
+    // Calling ensureFree and immediately returning is equivalent to returning its promise.
+    expect(subscription).toMatch(/(?:return\s+ensureFree\(\)|void\s+ensureFree\(\);\s*return;)/);
     expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(plan.id)}');
     expect(auth).not.toContain('/api/subscription/subscribe');
-    expect(pricing).toContain('href: "/public-pages/auth?signup=true"');
+    expect(pricing).toContain('href: "/public-pages/auth?signup=true&redirectTo=%2Fsubscription"');
+    expect(pricing).toContain('href: "/checkout?plan=pro&interval=month"');
+    expect(pricing).toContain('href: "/checkout?plan=team&interval=month"');
+  });
+
+  it('does not trust a success URL as proof of payment', () => {
+    expect(subscription).toContain('Checkout status not verified');
+    expect(checkoutStatus).toContain('stripe.checkout.sessions.retrieve(sessionId)');
+    expect(checkoutStatus).toContain('checkout.metadata.userId !== user.id');
   });
 });
