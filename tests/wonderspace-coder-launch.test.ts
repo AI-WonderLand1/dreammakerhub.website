@@ -38,13 +38,25 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(read('apps/web/app/wonderspace/page.tsx')).toContain('WonderSpaceLaunch');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
-  it('never enables repository or region controls unsupported by Coder', () => {
+  it('keeps repository selection visible but prevents launch when the template does not support it', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     const route = read('apps/web/app/api/user-workspace/provision/route.ts');
-    expect(launch).toContain('disabled={!options?.repositorySupported}');
+    expect(launch).toContain("aria-pressed={mode === 'repo'}");
+    expect(launch).toContain('mode === \'repo\' && !options.repositorySupported');
     expect(launch).toContain('options.regions.length ?');
     expect(route).toContain('if (!config.repositorySupported)');
     expect(route).toContain('getPublicGithubRepository(normalized)');
+  });
+  it('keeps the form visible during an outage, allows retry without resetting input, and gates provisioning', () => {
+    const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
+    expect(launch).toContain('Waiting for Coder connection');
+    expect(launch).toContain('Retry Coder connection');
+    expect(launch).toContain('setRetryCount((count) => count + 1)');
+    expect(launch).toContain('aria-pressed={mode === \'blank\'}');
+    expect(launch).toContain('disabled={!launchReady}');
+    expect(launch).toContain('if (!options || optionsLoading || optionsError || !cpu || !memory)');
+    expect(launch).toContain('disabled={!options}');
+    expect(launch).not.toContain('window.location.reload()');
   });
   it('parses actual Coder template arrays and filters options to published capabilities', async () => {
     vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
