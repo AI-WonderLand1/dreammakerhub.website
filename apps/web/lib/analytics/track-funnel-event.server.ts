@@ -3,10 +3,10 @@ import 'server-only';
 /**
  * Send a conversion only after its authoritative server-side operation succeeds.
  * A missing analytics key or an Amplitude outage must never undo a signup,
- * project creation, or Stripe webhook. Event identifiers deduplicate retries.
+ * project creation, workspace launch, or Stripe webhook. Event identifiers deduplicate retries.
  */
 export async function trackFunnelEvent(
-  eventType: 'Signup Completed' | 'Project Created' | 'Subscription Started',
+  eventType: 'Signup Completed' | 'Project Created' | 'Workspace Launched' | 'Subscription Started',
   userId: string,
   eventId: string,
   eventProperties?: Record<string, string>,
