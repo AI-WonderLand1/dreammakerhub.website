@@ -75,6 +75,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Your session expired. Please sign in again." }, { status: 401 });
     }
 
+    // Do not charge the customer a different amount, currency, or billing cycle
+    // if a deployment points at an outdated or incorrectly configured Stripe Price.
+    const stripePrice = await stripe.prices.retrieve(priceId);
+    const expectedAmount = isYearly ? planConfig.yearlyPrice : planConfig.price;
+    if (expectedAmount === undefined || !stripePrice.active || stripePrice.type !== "recurring" ||
+        stripePrice.currency !== "usd" || stripePrice.unit_amount !== expectedAmount ||
+        stripePrice.recurring?.interval !== (isYearly ? "year" : "month") ||
+        stripePrice.recurring?.usage_type !== "licensed") {
+      logger.error("Stripe subscription price does not match the advertised plan", {
+        plan: planConfig.id, interval: isYearly ? "year" : "month", priceId,
+      });
+      return NextResponse.json({ error: "The selected plan's payment configuration does not match its displayed price. Please contact support." }, { status: 503 });
+    }
+
     const baseUrl = publicSiteUrl();
     const successUrl = new URL("/checkout/success", baseUrl);
     successUrl.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
