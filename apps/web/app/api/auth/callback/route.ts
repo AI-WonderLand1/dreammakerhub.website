@@ -6,6 +6,24 @@ import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const FALLBACK_PUBLIC_ORIGIN = 'https://dreammakerhub.website';
+
+/** Never construct browser redirects from an internal proxy address such as 0.0.0.0:5000. */
+function publicAuthOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_URL;
+  if (configured) {
+    try {
+      const url = new URL(configured);
+      if (url.protocol === 'https:' && url.hostname !== '0.0.0.0' && url.hostname !== 'localhost') {
+        return url.origin;
+      }
+    } catch {
+      logger.warn('[auth-callback] Invalid public site URL; using production origin');
+    }
+  }
+  return FALLBACK_PUBLIC_ORIGIN;
+}
+
 function sanitizeRedirectPath(raw: string | null): string {
   if (!raw) return '/dashboard';
 
@@ -18,7 +36,7 @@ function sanitizeRedirectPath(raw: string | null): string {
 }
 
 function authPageUrl(request: NextRequest, reason: string, redirectTo: string) {
-  const url = new URL('/public-pages/auth', request.url);
+  const url = new URL('/public-pages/auth', publicAuthOrigin());
   url.searchParams.set('error', reason);
   // A confirmation email can be opened on a different device without its PKCE
   // verifier. Let the user sign in normally without losing their selected plan.
@@ -62,7 +80,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { url, anonKey } = getSupabasePublicConfig();
-    const successResponse = NextResponse.redirect(new URL(redirectTo, request.url));
+    const successResponse = NextResponse.redirect(new URL(redirectTo, publicAuthOrigin()));
 
     // Bind Supabase's PKCE/session cookies directly to the redirect response.
     // This avoids relying on a separately-created server client whose cookie
