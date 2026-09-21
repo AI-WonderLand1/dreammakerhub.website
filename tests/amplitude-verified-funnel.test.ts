@@ -32,12 +32,17 @@ describe('Verified DreamMakerHub conversion events', () => {
     expect(read('apps/web/components/engines/WonderSpaceLaunch.tsx')).not.toContain("amplitude.track('Workspace Launched'");
   });
 
-  it('tracks paid subscriptions only after signature verification and successful entitlement writes', () => {
+  it('tracks paid subscriptions only after signed payment confirmation and successful entitlement writes', () => {
     const webhook = read('apps/web/app/api/webhooks/stripe/route.ts');
     expect(webhook).toContain('stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)');
-    expect(webhook).toContain("session.payment_status === 'paid'");
-    expect(webhook).toContain("trackFunnelEvent('Subscription Started', userId, subscriptionId)");
-    expect(webhook.indexOf("trackFunnelEvent('Subscription Started'")).toBeGreaterThan(webhook.indexOf('await syncAuthPlan(supabase, userId, plan)'));
+    expect(webhook).toMatch(/session\.payment_status === ['"]paid['"]/);
+    expect(webhook).toMatch(/session\.status !== ['"]complete['"]/);
+    expect(webhook).toContain('checkout.session.async_payment_succeeded');
+    expect(webhook).toContain('stripe.subscriptions.retrieve(subscriptionId)');
+    expect(webhook).toContain('await syncAuthPlan(supabase, userId, plan)');
+    expect(webhook).toMatch(/trackFunnelEvent\(['"]Subscription Started['"], userId, subscriptionId\)/);
+    const analyticsPosition = webhook.search(/trackFunnelEvent\(['"]Subscription Started['"]/);
+    expect(analyticsPosition).toBeGreaterThan(webhook.indexOf('await syncAuthPlan(supabase, userId, plan)'));
   });
 
   it('does not expose the analytics key to the client or fail user operations on ingestion outages', () => {
