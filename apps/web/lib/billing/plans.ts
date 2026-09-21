@@ -6,6 +6,7 @@ export type PlanDefinition = {
   name: string;
   displayName: string;
   price: number;
+  yearlyPrice?: number;
   priceDisplay: string;
   yearlyPriceDisplay: string;
   interval: "month" | "year";
@@ -43,6 +44,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     name: "architect",
     displayName: "The Architect",
     price: 3900,
+    yearlyPrice: 39000,
     priceDisplay: "$39/mo",
     yearlyPriceDisplay: "$390/yr ($32.50/mo)",
     interval: "month",
@@ -67,6 +69,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     name: "guild",
     displayName: "The Guild",
     price: 12900,
+    yearlyPrice: 129000,
     priceDisplay: "$129/mo",
     yearlyPriceDisplay: "$1,290/yr ($107.50/mo)",
     interval: "month",
