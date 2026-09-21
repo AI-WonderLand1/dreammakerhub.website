@@ -22,6 +22,16 @@ describe('Verified DreamMakerHub conversion events', () => {
     expect(read('apps/web/app/(workspace)/dashboard/page.tsx')).not.toContain("amplitude.track('Project Created'");
   });
 
+  it('records workspace launch only after Coder reports a running IDE and the slot is attached', () => {
+    const route = read('apps/web/app/api/user-workspace/provision/route.ts');
+    const transport = read('apps/web/lib/analytics/track-funnel-event.server.ts');
+    expect(route).toContain("if (podType === 'ide' && workspace.status === 'running')");
+    expect(route).toContain("await trackFunnelEvent('Workspace Launched', user.id, workspace.id");
+    expect(route.indexOf("trackFunnelEvent('Workspace Launched'")).toBeGreaterThan(route.indexOf('await attachCoderWorkspace('));
+    expect(transport).toContain("'Workspace Launched'");
+    expect(read('apps/web/components/engines/WonderSpaceLaunch.tsx')).not.toContain("amplitude.track('Workspace Launched'");
+  });
+
   it('tracks paid subscriptions only after signature verification and successful entitlement writes', () => {
     const webhook = read('apps/web/app/api/webhooks/stripe/route.ts');
     expect(webhook).toContain('stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)');
