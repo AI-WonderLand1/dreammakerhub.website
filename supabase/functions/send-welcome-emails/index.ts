@@ -11,8 +11,8 @@ Deno.serve(async (request: Request) => {
     return new Response('Unauthorized', { status: 401 });
   }
   const apiKey = Deno.env.get('RESEND_API_KEY');
-  const sender = Deno.env.get('WELCOME_FROM_EMAIL');
-  if (Deno.env.get('WELCOME_EMAIL_ENABLED') !== 'true' || !apiKey || !sender) {
+  const sender = 'DreamMakerHub <hello@dreammakerhub.website>';
+  if (Deno.env.get('WELCOME_EMAIL_ENABLED') !== 'true' || !apiKey) {
     return Response.json({ enabled: false, processed: 0 });
   }
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
