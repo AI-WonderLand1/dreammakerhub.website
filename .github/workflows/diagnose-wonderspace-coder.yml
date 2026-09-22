@@ -142,6 +142,31 @@ jobs:
                 })();
               ' || echo 'Unable to run authenticated Coder checks from web container'
             fi
+                        if docker inspect dreammaker-web >/dev/null 2>&1; then
+              docker exec dreammaker-web node -e '
+                (async () => {
+                  try {
+                    const response = await fetch("http://127.0.0.1:5000/api/public/service-status", {
+                      signal: AbortSignal.timeout(7000),
+                    });
+                    const body = await response.json().catch(() => null);
+                    const ide = body?.services?.find?.((service) => service?.id === "ide");
+                    console.log(`Local website Coder status HTTP: ${response.status}`);
+                    console.log(`Local website Coder status: ${ide?.status || "invalid"}`);
+                  } catch (error) {
+                    console.log(`Local website Coder status failed: ${error?.name || "unknown"}`);
+                  }
+                })();
+              ' || echo 'Unable to read local website Coder status'
+              docker exec dreammaker-web sh -c '
+                if [ -n "$GITHUB_SHA" ]; then echo "Web image build SHA: present"; else echo "Web image build SHA: missing"; fi
+                if grep -R -F -q "kubernetes-mvp" /app/.next/server 2>/dev/null; then
+                  echo "Web bundle recognizes Kubernetes template fallback: yes"
+                else
+                  echo "Web bundle recognizes Kubernetes template fallback: no"
+                fi
+              '
+            fi
                         if command -v kubectl >/dev/null 2>&1; then
               if kubectl --request-timeout=7s -n coder get deployment coder >/dev/null 2>&1; then
                 kubectl --request-timeout=7s -n coder get deployments coder coder-db -o custom-columns='NAME:.metadata.name,READY:.status.readyReplicas,DESIRED:.spec.replicas' 2>&1 || true
