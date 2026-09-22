@@ -14,14 +14,26 @@ describe('Existing operator IDE link', () => {
     expect(page).toContain('href="/wonderspace/my-ide"');
   });
 
-  it('authorizes again on the server before redirecting to the existing Coder app', () => {
+  it('authorizes again, verifies the operator workspace, and restarts the same IDE when stopped', () => {
     const route = read('apps/web/app/wonderspace/my-ide/route.ts');
     expect(route).toContain('supabase.auth.getUser()');
     expect(route).toContain('adminIds.includes(user.id)');
     expect(route).toContain("status: 404");
+    expect(route).toContain("coderApiRequest('/api/v2/users/me', 'GET')");
+    expect(route).toContain('/api/v2/users/me/workspace/');
+    expect(route).toContain("/builds");
+    expect(route).toContain("{ transition: 'start' }");
+    expect(route).toContain("workspace.owner_id !== identity.id");
     expect(route).toContain('https://coder.dreammakerhub.website/@wonderingtribe/production.main/apps/code-server/');
     expect(route).toContain("'Cache-Control': 'private, no-store'");
     expect(route).not.toContain('CODER_API_TOKEN');
     expect(route).not.toContain('request.nextUrl.searchParams');
+    expect(route).not.toContain("POST /workspaces");
+  });
+
+  it('recognizes Coder succeeded start/stop builds as running/stopped states', () => {
+    const route = read('apps/web/app/wonderspace/my-ide/route.ts');
+    expect(route).toContain("buildStatus === 'succeeded' && transition === 'start'");
+    expect(route).toContain("buildStatus === 'succeeded' && transition === 'stop'");
   });
 });
