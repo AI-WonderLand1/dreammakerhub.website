@@ -24,7 +24,7 @@ function uniqueWorkspaceName(userId: string): string {
 }
 
 export default function WonderSpaceLaunch() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [options, setOptions] = useState<LaunchOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
   const [optionsLoading, setOptionsLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function WonderSpaceLaunch() {
     setOptions(null);
     setOptionsError('');
     setOptionsLoading(true);
-    fetch('/api/user-workspace/options', { signal: controller.signal, cache: 'no-store' })
+    fetch('/api/user-workspace/options', { signal: controller.signal, cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Coder options unavailable.');
@@ -82,7 +82,7 @@ export default function WonderSpaceLaunch() {
         if (!controller.signal.aborted) setOptionsLoading(false);
       });
     return () => controller.abort();
-  }, [user?.id, retryCount]);
+  }, [user?.id, session?.access_token, retryCount]);
 
   const changeRepo = (value: string) => {
     setRepository(value);
@@ -97,7 +97,7 @@ export default function WonderSpaceLaunch() {
     setRepoError('');
     setVerified(null);
     try {
-      const response = await fetch(`/api/user-workspace/repository?repo=${encodeURIComponent(repository.trim())}`);
+      const response = await fetch(`/api/user-workspace/repository?repo=${encodeURIComponent(repository.trim())}`, { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Repository unavailable.');
       const repo = data as PublicRepo;
@@ -140,7 +140,7 @@ export default function WonderSpaceLaunch() {
     try {
       const response = await fetch('/api/user-workspace/provision', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
         body: JSON.stringify({
           podName: name,
           podType: 'ide',
