@@ -1,6 +1,6 @@
-# REVIEW before applying. Verify provisioner RBAC, CNI NetworkPolicy enforcement,
-# cluster DNS labels and the Coder agent's outbound route. Applying this blindly
-# can break customer pods; do not apply it to the existing coder namespace.
+# REVIEW before applying. Verify provisioner RBAC, NetworkPolicy enforcement,
+# CoreDNS labels, and that the Coder agent reaches its server via PUBLIC HTTPS.
+# Never apply this to the operator's existing coder namespace.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -26,26 +26,21 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: customer-workspace-default-deny
+  name: customer-default-deny
   namespace: coder-customers
 spec:
-  podSelector:
-    matchLabels:
-      com.coder.resource: "true"
+  podSelector: {}
   policyTypes: [Ingress, Egress]
   ingress: []
   egress: []
 ---
-# Permit cluster DNS only. Confirm your CoreDNS pod labels before applying.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: customer-workspace-dns
+  name: customer-dns
   namespace: coder-customers
 spec:
-  podSelector:
-    matchLabels:
-      com.coder.workspace.id: "" # Replace with an actual selector or remove this policy and use a reviewed per-pod policy.
+  podSelector: {}
   policyTypes: [Egress]
   egress:
     - to:
@@ -58,3 +53,28 @@ spec:
       ports:
         - { protocol: UDP, port: 53 }
         - { protocol: TCP, port: 53 }
+---
+# Allow outbound HTTPS to public addresses for Coder agent + approved package
+# registries. Internal Kubernetes and RFC1918 services are NOT accessible.
+# Verify DNS resolution, Cloudflare/Coder URLs and your CNI's ipBlock handling.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: customer-public-https
+  namespace: coder-customers
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - { protocol: TCP, port: 443 }
