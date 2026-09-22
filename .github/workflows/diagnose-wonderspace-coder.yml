@@ -106,6 +106,7 @@ jobs:
                   const origin = raw.replace(/\/$/, "");
                   const get = (path) => fetch(`${origin}${path}`, {
                     headers: { "Coder-Session-Token": token, Accept: "application/json" },
+                    redirect: "error",
                     signal: AbortSignal.timeout(7000),
                   });
                   try {
