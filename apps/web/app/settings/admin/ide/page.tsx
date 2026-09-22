@@ -10,7 +10,7 @@ export default async function AdminIDEOperationsPage() {
   // getUser verifies the session with Supabase Auth; a username, user-supplied
   // UUID, or unverified getSession result must never grant admin access.
   const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) redirect('/auth');
+  if (error || !user) redirect('/auth/login');
   const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
   if (!adminIds.includes(user.id)) notFound();
 
