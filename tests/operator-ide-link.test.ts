@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('Existing operator IDE link', () => {
-  it('only displays the existing IDE link for a verified Supabase administrator', () => {
+  it('checks the current user before showing the existing operator IDE', () => {
     const page = read('apps/web/app/wonderspace/page.tsx');
     const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
     const role = read('apps/web/app/api/wonderspace/operator/route.ts');
@@ -19,7 +19,9 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
-    expect(role).toContain('authenticatedSupabaseUser(request)');
+    expect(role).toContain("request.headers.get('authorization')");
+    expect(role).toContain('supabase.auth.getUser(bearer)');
+    expect(role).toContain('supabase.auth.getUser()');
     expect(role).toContain('adminIds.includes(user.id)');
     expect(role).toContain("'Cache-Control': 'private, no-store'");
     expect(role).not.toContain('CODER_API_TOKEN');
