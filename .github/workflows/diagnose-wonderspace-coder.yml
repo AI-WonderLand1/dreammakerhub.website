@@ -186,6 +186,31 @@ jobs:
               docker exec dreammaker-web sh -c 'ps -eo pid=,ppid=,comm=,args= | grep -E "[n]ode|[n]ext" || true'
               docker exec dreammaker-web node -e '
                 const fs = require("node:fs");
+                const paths = ["/app/.env", "/app/.env.production", "/app/apps/web/.env", "/app/apps/web/.env.production"];
+                for (const path of paths) {
+                  if (!fs.existsSync(path)) continue;
+                  console.log(`Runtime env file found: ${path}`);
+                  const values = Object.fromEntries(fs.readFileSync(path, "utf8").split(/\\r?\\n/).flatMap((line) => {
+                    const match = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(line);
+                    return match ? [[match[1], match[2]]] : [];
+                  }));
+                  for (const key of ["CODER_API_URL", "CODER_ACCESS_URL", "CODER_API_TOKEN"]) {
+                    console.log(`Runtime env file ${key}: ${values[key] ? "present" : "missing"}`);
+                  }
+                  if (values.CODER_API_URL) {
+                    try {
+                      const parsed = new URL(values.CODER_API_URL);
+                      console.log(`Runtime env file Coder protocol: ${parsed.protocol}`);
+                      console.log(`Runtime env file Coder hostname: ${parsed.hostname}`);
+                      console.log(`Runtime env file Coder URL has a path: ${parsed.pathname !== "/" && parsed.pathname !== ""}`);
+                    } catch {
+                      console.log("Runtime env file Coder URL: invalid");
+                    }
+                  }
+                }
+              '
+                            docker exec dreammaker-web node -e '
+                const fs = require("node:fs");
                 const pid = fs.readdirSync("/proc").find((entry) => {
                   if (!/^\\d+$/.test(entry)) return false;
                   try {
