@@ -217,7 +217,28 @@ jobs:
                   }
                 }
               '
-              docker exec dreammaker-web sh -c '
+              docker exec dreammaker-web node -e '
+                const fs = require("node:fs");
+                const entries = fs.readFileSync("/proc/1/environ", "utf8").split("\\0");
+                const values = Object.fromEntries(entries.filter(Boolean).map((entry) => {
+                  const index = entry.indexOf("=");
+                  return [entry.slice(0, index), entry.slice(index + 1)];
+                }));
+                const raw = values.CODER_API_URL;
+                console.log("PID 1 CODER_API_URL: " + (raw ? "present" : "missing"));
+                console.log("PID 1 CODER_API_TOKEN: " + (values.CODER_API_TOKEN ? "present" : "missing"));
+                if (raw) {
+                  try {
+                    const parsed = new URL(raw);
+                    console.log("PID 1 Coder protocol: " + parsed.protocol);
+                    console.log("PID 1 Coder hostname: " + parsed.hostname);
+                    console.log("PID 1 Coder URL has a path: " + (parsed.pathname !== "/" && parsed.pathname !== ""));
+                  } catch {
+                    console.log("PID 1 Coder URL: invalid");
+                  }
+                }
+              '
+                            docker exec dreammaker-web sh -c '
                 if [ -n "$GITHUB_SHA" ]; then echo "Web image build SHA: present"; else echo "Web image build SHA: missing"; fi
                 if grep -R -F -q "kubernetes-mvp" /app/.next/server 2>/dev/null; then
                   echo "Web bundle recognizes Kubernetes template fallback: yes"
