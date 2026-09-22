@@ -9,7 +9,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export function customerProvisioningGate(): void {
-  // None of these are toggled by a client request, subscription or profile.
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
       process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED !== 'true' ||
@@ -22,15 +21,17 @@ export function customerProvisioningGate(): void {
   }
 }
 
-/** Validate the actual published customer template, never fall back to a personal template. */
+/** Validate the actual published customer template; never fall back to an operator template. */
 export async function verifiedCustomerTemplateId(): Promise<string> {
   const templateId = process.env.CODER_CUSTOMER_TEMPLATE_ID;
   const versionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
   const templateName = process.env.CODER_CUSTOMER_TEMPLATE_NAME;
-  if (!templateId || !versionId || !templateName || !UUID.test(templateId) || !UUID.test(versionId)) {
-    throw new CostGateError('A verified, pinned customer-only template is not configured.');
+  const operatorTemplateId = process.env.CODER_OPERATOR_TEMPLATE_ID;
+  if (!templateId || !versionId || !templateName || !operatorTemplateId ||
+      !UUID.test(templateId) || !UUID.test(versionId) || !UUID.test(operatorTemplateId)) {
+    throw new CostGateError('Both the operator template and a verified, pinned customer-only template must be configured.');
   }
-  if (templateId === process.env.CODER_OPERATOR_TEMPLATE_ID) {
+  if (templateId === operatorTemplateId) {
     throw new CostGateError('The operator template cannot be used for customer provisioning.');
   }
   const response = await coderApiRequest(`/api/v2/templates/${encodeURIComponent(templateId)}`, 'GET');
@@ -42,7 +43,7 @@ export async function verifiedCustomerTemplateId(): Promise<string> {
   return templateId;
 }
 
-async function assertFreshUsageController(): Promise<void> {
+export async function assertFreshUsageController(): Promise<void> {
   const { data, error } = await coderServiceClient().from('coder_customer_controller')
     .select('last_heartbeat_at').eq('id', true).maybeSingle();
   const lastSeen = data?.last_heartbeat_at ? Date.parse(data.last_heartbeat_at) : NaN;
@@ -64,6 +65,9 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     throw new CostGateError('Choose a valid workspace name, CPU and memory.', 429);
   }
   assertCoderResourceBudget(cpu, memory);
+  if (![1, 2].includes(cpu) || ![2, 4].includes(memory)) {
+    throw new CostGateError('Choose an approved customer CPU and memory profile.', 429);
+  }
   if (body.repository || body.ideImage || body.sshPublicKey || body.diskGiB !== undefined) {
     throw new CostGateError('Only an approved blank IDE and fixed 10 GiB disk are available in this pilot.', 429);
   }
@@ -74,7 +78,6 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
   if (!configuredMinutes || !Number.isSafeInteger(minutes) || minutes < 1 || minutes > 1440) {
     throw new CostGateError('Your plan’s compute allowance is not configured.');
   }
-  // Resolve exact OIDC Coder identity before reserving any disk or contacting Coder create.
   const coderUserId = await verifiedCustomerCoderOwner(user);
   const templateId = await verifiedCustomerTemplateId();
   await assertFreshUsageController();
@@ -96,7 +99,6 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     max_compute_ms: minutes * 60_000,
   });
   if (jobError) {
-    // Do not automatically release: another worker may have received the job.
     throw new CostGateError('Workspace reserved but the setup queue failed. Contact support; do not retry with another name.');
   }
   return slotId;
