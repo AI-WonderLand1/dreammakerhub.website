@@ -14,7 +14,7 @@ This repository contains:
 - platform APIs and deployment integration
 - 3D/world-authoring tooling powered by PlayCanvas/WebGL in the current DreamMakerHub runtime
 
-Related repositories:
+# Related repositories:
 
 - `AI-PLAYGROUND` owns multi-model AI and visual workflow/orchestration tooling.
 - `NPC-AI-SIM` owns NPC cognition, personality, perception, memory, actions, voice configuration, and NPC brain/runtime contracts.
