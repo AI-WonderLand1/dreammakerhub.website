@@ -84,7 +84,9 @@ export async function getCoderTemplateId(name: string): Promise<string> {
 
 export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const configured = process.env.CODER_IDE_TEMPLATE_NAME;
-  const names = configured ? [configured] : ['wonderspace-ide', 'kubernetes-mvp'];
+  // Prefer an explicitly configured template. The existing live Coder deployment
+  // publishes its IDE as "kubernetes"; do not require operators to rename it.
+  const names = configured ? [configured] : ['wonderspace-ide', 'kubernetes-mvp', 'kubernetes'];
   const template = await getPublishedCoderTemplate(names);
   const parameters = await coderGet<CoderParameter[]>(`/api/v2/templateversions/${encodeURIComponent(template.active_version_id!)}/rich-parameters`);
   if (!Array.isArray(parameters)) throw new Error('Coder returned an invalid parameter list.');
