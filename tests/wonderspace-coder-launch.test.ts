@@ -82,6 +82,25 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(await getCoderTemplateId('playcanvas-3d')).toBe('playcanvas-template-id');
     expect(fetchMock).toHaveBeenCalled();
   });
+  it('recognizes an existing published kubernetes template when no override is set', async () => {
+    vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
+    vi.stubEnv('CODER_API_TOKEN', 'test-token');
+    vi.stubEnv('CODER_IDE_TEMPLATE_NAME', '');
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.endsWith('/api/v2/templates')
+        ? [{ id: 'live-template-id', name: 'kubernetes', active_version_id: 'live-version' }]
+        : [
+          { name: 'cpu', options: [{ name: '1 CPU', value: '1' }] },
+          { name: 'memory', options: [{ name: '2 GiB', value: '2' }] },
+        ],
+    } as Response)));
+    const config = await getCoderLaunchConfig();
+    expect(config.templateId).toBe('live-template-id');
+    expect(config.templateName).toBe('kubernetes');
+    expect(config.cpu).toEqual([{ label: '1 CPU', value: '1' }]);
+    expect(config.memory).toEqual([{ label: '2 GiB', value: '2' }]);
+  });
   it('does not read nonexistent linked repository columns from production projects', () => {
     expect(read('apps/web/app/api/user-workspace/options/route.ts')).not.toContain(".select('id,name,github_repo')");
   });
