@@ -4,15 +4,14 @@ The production Supabase project has the `onboarding_email_outbox` migration and 
 
 ## 1. Verify a delivery provider
 
-The worker currently implements the Resend Emails API. Verify `dreammakerhub.website` with Resend, adding the DNS records it provides in Cloudflare. Existing Zoho Mail can remain your business mailbox; check the new DNS records do not replace or conflict with existing MX/SPF/DKIM configuration. A verified sender can be `DreamMakerHub <hello@dreammakerhub.website>` if approved in the email provider. Do not commit API credentials.
+The worker currently uses the Resend Emails API and its From address is fixed in the code to `DreamMakerHub <hello@dreammakerhub.website>`. Verify `dreammakerhub.website` with Resend, adding the DNS records it provides in Cloudflare. Existing Zoho Mail can remain your business mailbox; check the new DNS records do not replace or conflict with existing MX/SPF/DKIM configuration. Successful Supabase Auth confirmation email delivery does not establish Resend domain verification or API credentials. Do not commit API credentials.
 
 In the **Supabase project > Edge Functions > Secrets** configure:
 
 - `RESEND_API_KEY` = the private API key for the verified domain.
-- `WELCOME_FROM_EMAIL` = the approved sender address, e.g. `DreamMakerHub <hello@dreammakerhub.website>`.
 - `WELCOME_EMAIL_ENABLED` = `true` only after a controlled end-to-end test.
 
-The built-in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are read by the function. Never expose them to client-side code. The worker requires a service-role JWT in its `Authorization` header and is deployed with JWT verification enabled. It does not accept arbitrary recipients from requests.
+`WELCOME_FROM_EMAIL` is no longer used: the sender is fixed in the function source. The built-in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are read by the function. Never expose them to client-side code. The worker requires a service-role JWT in its `Authorization` header and is deployed with JWT verification enabled. It does not accept arbitrary recipients from requests.
 
 ## 2. Schedule the worker securely
 
