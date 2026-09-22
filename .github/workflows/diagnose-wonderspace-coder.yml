@@ -137,6 +137,30 @@ jobs:
                       option && (option.value === "linux" || option.value === "node"));
                     console.log(`Expected template image selector present: ${Boolean(imageParameter)}`);
                     console.log(`Expected template approved image profile available: ${approvedProfile}`);
+                    try {
+                      const byName = (name) => parameters.find((parameter) => parameter.name === name);
+                      const choices = (name) => (byName(name)?.options || [])
+                        .map((option) => ({ label: option.name || option.value, value: option.value }));
+                      const cpu = choices("cpu");
+                      const memory = choices("memory");
+                      if (!cpu.length || !memory.length) throw new Error("missing_required_choices");
+                      const images = choices("ide_image").filter((choice) => choice.value === "linux" || choice.value === "node");
+                      if (byName("ide_image") && !images.length) throw new Error("unapproved_ide_image");
+                      const reconstructed = {
+                        templateId: template.id,
+                        templateName: template.name,
+                        cpu,
+                        memory,
+                        images,
+                        regions: choices("region"),
+                        repositorySupported: Boolean(byName("repo_url") && byName("repo_branch")),
+                        sshSupported: Boolean(byName("ssh_public_key")),
+                        diskSupported: Boolean(byName("home_disk_size")),
+                      };
+                      console.log(`Website launch-config reconstruction: ${reconstructed.templateId && reconstructed.templateName ? "succeeded" : "invalid"}`);
+                    } catch (error) {
+                      console.log(`Website launch-config reconstruction: failed:${error?.message || error?.name || "unknown"}`);
+                    }
                   } catch (error) {
                     console.log(`Coder authenticated checks failed: ${error?.name || "unknown"}`);
                   }
