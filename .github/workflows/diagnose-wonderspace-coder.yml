@@ -225,8 +225,19 @@ jobs:
                   return [entry.slice(0, index), entry.slice(index + 1)];
                 }));
                 const raw = values.CODER_API_URL;
-                console.log("PID 1 CODER_API_URL: " + (raw ? "present" : "missing"));
-                console.log("PID 1 CODER_API_TOKEN: " + (values.CODER_API_TOKEN ? "present" : "missing"));
+                for (const key of [
+                  "CODER_API_URL",
+                  "CODER_ACCESS_URL",
+                  "CODER_API_TOKEN",
+                  "CODER_WORKSPACE_CREATION_ENABLED",
+                  "NEXT_PUBLIC_SUPABASE_URL",
+                  "SUPABASE_SERVICE_ROLE_KEY",
+                  "NODE_ENV",
+                  "PORT",
+                  "GITHUB_SHA",
+                ]) {
+                  console.log(`PID 1 ${key}: ${values[key] ? "present" : "missing"}`);
+                }
                 if (raw) {
                   try {
                     const parsed = new URL(raw);
