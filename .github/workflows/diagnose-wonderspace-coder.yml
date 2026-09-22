@@ -263,6 +263,11 @@ jobs:
                   const code = fs.readFileSync(file, "utf8");
                   const index = code.indexOf("kubernetes-mvp");
                   console.log("Compiled Coder configuration excerpt: " + code.slice(Math.max(0, index - 900), index + 1300).replace(/\\s+/g, " "));
+                  const statusMarker = "Cloud IDE availability could not be verified.";
+                  const statusIndex = code.indexOf(statusMarker);
+                  console.log("Compiled Coder status excerpt: " + (statusIndex >= 0
+                    ? code.slice(Math.max(0, statusIndex - 900), statusIndex + 350).replace(/\\s+/g, " ")
+                    : "not found"));
                 }
               '
                             docker exec dreammaker-web sh -c '
