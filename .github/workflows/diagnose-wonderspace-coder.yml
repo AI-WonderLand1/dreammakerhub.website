@@ -183,6 +183,7 @@ jobs:
                   }
                 })();
               ' || echo 'Unable to read local website Coder status'
+              docker exec dreammaker-web sh -c 'ps -eo pid=,ppid=,comm=,args= | grep -E "[n]ode|[n]ext" || true'
               docker exec dreammaker-web node -e '
                 const fs = require("node:fs");
                 const pid = fs.readdirSync("/proc").find((entry) => {
