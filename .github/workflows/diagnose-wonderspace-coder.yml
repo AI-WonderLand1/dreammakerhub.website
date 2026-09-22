@@ -249,6 +249,22 @@ jobs:
                   }
                 }
               '
+                            docker exec dreammaker-web node -e '
+                const fs = require("node:fs");
+                const root = "/app/.next/server";
+                const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+                  const path = dir + "/" + entry.name;
+                  return entry.isDirectory() ? walk(path) : [path];
+                });
+                const file = walk(root).find((path) => path.endsWith(".js") && fs.readFileSync(path, "utf8").includes("kubernetes-mvp"));
+                if (!file) {
+                  console.log("Compiled Coder configuration excerpt: not found");
+                } else {
+                  const code = fs.readFileSync(file, "utf8");
+                  const index = code.indexOf("kubernetes-mvp");
+                  console.log("Compiled Coder configuration excerpt: " + code.slice(Math.max(0, index - 900), index + 1300).replace(/\\s+/g, " "));
+                }
+              '
                             docker exec dreammaker-web sh -c '
                 if [ -n "$GITHUB_SHA" ]; then echo "Web image build SHA: present"; else echo "Web image build SHA: missing"; fi
                 if grep -R -F -q "kubernetes-mvp" /app/.next/server 2>/dev/null; then
