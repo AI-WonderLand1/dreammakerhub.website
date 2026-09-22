@@ -179,7 +179,7 @@ export default function MockupHomepage() {
               ['3', 'Build & Publish', 'Use AI, drag and drop, code, preview, and share.'],
             ].map(([n, title, copy], i) => (
               <div key={n} className="relative text-center">
-                <span className={`relative z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-4 border-white text-lg font-black text-white ${i === 0 ? 'bg-violet-600' : i === 1 ? 'bg-blue-600' : 'bg-cyan-600'}`}>{n}</span>
+                <span className={`relative z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-4 border-white text-lg font-black text-white shadow-xl ${i === 0 ? 'bg-violet-600' : i === 1 ? 'bg-blue-600' : 'bg-cyan-600'}`}>{n}</span>
                 <h3 className="mt-3 text-base font-black">{title}</h3>
                 <p className="mx-auto mt-1 max-w-[240px] text-xs leading-5 text-slate-700">{copy}</p>
               </div>
