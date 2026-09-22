@@ -1,12 +1,12 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { attachCoderWorkspace, coderApiRequest, coderServiceClient, getCoderSlot } from '@/lib/coder/workspace-slots.server';
-import { customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
+import { assertFreshUsageController, customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type Job = {
   slot_id: string; user_id: string; coder_user_id: string; template_id: string;
   cpu: number; memory_gib: number; disk_gib: number; max_compute_ms: number;
@@ -35,6 +35,12 @@ export async function POST(request: Request) {
   try {
     customerProvisioningGate();
     const templateId = await verifiedCustomerTemplateId();
+    await assertFreshUsageController();
+    const versionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
+    const operatorId = process.env.CODER_OPERATOR_USER_ID;
+    if (!versionId || !UUID.test(versionId) || !operatorId || !UUID.test(operatorId)) {
+      throw new Error('Pinned customer template and operator identity are required');
+    }
     const db = coderServiceClient();
     const { data, error } = await db.rpc('claim_coder_customer_job');
     if (error || !Array.isArray(data)) return NextResponse.json({ error: 'Job queue unavailable' }, { status: 503 });
@@ -57,18 +63,17 @@ export async function POST(request: Request) {
       if (!owner || owner.id !== job.coder_user_id || owner.status !== 'active' ||
           owner.login_type !== 'oidc' || owner.is_service_account === true ||
           owner.email?.trim().toLowerCase() !== identity.data.verified_email ||
-          owner.id === process.env.CODER_OPERATOR_USER_ID) throw new Error('Coder owner could not be reverified');
+          owner.id === operatorId) throw new Error('Coder owner could not be reverified');
       const path = `/api/v2/users/${encodeURIComponent(job.coder_user_id)}/workspace/${encodeURIComponent(slot.workspace_name)}`;
       const existing = await coderApiRequest(path, 'GET');
       let workspace: RemoteWorkspace;
       if (existing.ok) {
         workspace = await existing.json() as RemoteWorkspace;
       } else if (existing.status === 404) {
-        // Never use /users/me or the operator account. The owner ID comes
-        // only from a unique, verified server-side OIDC identity binding.
         const created = await coderApiRequest(`/api/v2/users/${encodeURIComponent(job.coder_user_id)}/workspaces`, 'POST', {
-          name: slot.workspace_name, template_id: templateId,
+          name: slot.workspace_name, template_version_id: versionId,
           rich_parameter_values: [
+            { name: 'ide_image', value: 'linux' },
             { name: 'cpu', value: String(job.cpu) },
             { name: 'memory', value: String(job.memory_gib) },
             { name: 'home_disk_size', value: String(job.disk_gib) },
@@ -95,7 +100,6 @@ export async function POST(request: Request) {
       await db.from('coder_customer_jobs').update({
         status: 'needs_reconciliation', updated_at: new Date().toISOString(),
       }).eq('slot_id', job.slot_id).eq('status', 'claimed');
-      // Do not release the slot or create a replacement when Coder's outcome is uncertain.
       return NextResponse.json({ status: 'needs_reconciliation' }, { status: 503 });
     }
   } catch {
