@@ -96,7 +96,48 @@ jobs:
                 })();
               ' || echo 'Unable to run network probe from web container'
             fi
-            if command -v kubectl >/dev/null 2>&1; then
+            # Authenticated metadata only: never prints the token, IDs, or template names.
+            if docker inspect dreammaker-web >/dev/null 2>&1; then
+              docker exec dreammaker-web node -e '
+                (async () => {
+                  const raw = process.env.CODER_API_URL;
+                  const token = process.env.CODER_API_TOKEN;
+                  if (!raw || !token) return console.log("Coder authenticated checks: configuration missing");
+                  const origin = raw.replace(/\/$/, "");
+                  const get = (path) => fetch(`${origin}${path}`, {
+                    headers: { "Coder-Session-Token": token, Accept: "application/json" },
+                    signal: AbortSignal.timeout(7000),
+                  });
+                  try {
+                    const identity = await get("/api/v2/users/me");
+                    console.log(`Coder token identity HTTP from web: ${identity.status}`);
+                    const templatesResponse = await get("/api/v2/templates");
+                    console.log(`Coder template list HTTP from web: ${templatesResponse.status}`);
+                    if (!templatesResponse.ok) return;
+                    const templates = await templatesResponse.json();
+                    if (!Array.isArray(templates)) return console.log("Coder template list shape: invalid");
+                    const override = process.env.CODER_IDE_TEMPLATE_NAME;
+                    const expectedNames = override ? [override] : ["wonderspace-ide", "kubernetes-mvp", "kubernetes"];
+                    const template = expectedNames
+                      .map((name) => templates.find((item) => item && item.name === name))
+                      .find((item) => item && item.id && item.active_version_id);
+                    console.log(`Expected Coder template present: ${Boolean(template)}`);
+                    if (!template) return;
+                    const parametersResponse = await get(`/api/v2/templateversions/${encodeURIComponent(template.active_version_id)}/rich-parameters`);
+                    console.log(`Expected template parameters HTTP from web: ${parametersResponse.status}`);
+                    if (!parametersResponse.ok) return;
+                    const parameters = await parametersResponse.json();
+                    if (!Array.isArray(parameters)) return console.log("Expected template parameter shape: invalid");
+                    const hasChoices = (name) => Boolean(parameters.find((item) => item && item.name === name && Array.isArray(item.options) && item.options.length));
+                    console.log(`Expected template CPU choices available: ${hasChoices("cpu")}`);
+                    console.log(`Expected template memory choices available: ${hasChoices("memory")}`);
+                  } catch (error) {
+                    console.log(`Coder authenticated checks failed: ${error?.name || "unknown"}`);
+                  }
+                })();
+              ' || echo 'Unable to run authenticated Coder checks from web container'
+            fi
+                        if command -v kubectl >/dev/null 2>&1; then
               if kubectl --request-timeout=7s -n coder get deployment coder >/dev/null 2>&1; then
                 kubectl --request-timeout=7s -n coder get deployments coder coder-db -o custom-columns='NAME:.metadata.name,READY:.status.readyReplicas,DESIRED:.spec.replicas' 2>&1 || true
               else
