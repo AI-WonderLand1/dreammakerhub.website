@@ -1,0 +1,80 @@
+# REVIEW before applying. Verify provisioner RBAC, NetworkPolicy enforcement,
+# CoreDNS labels, and that the Coder agent reaches its server via PUBLIC HTTPS.
+# Never apply this to the operator's existing coder namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coder-customers
+  labels:
+    app.kubernetes.io/part-of: dreammakerhub-customers
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: customer-pilot-cap
+  namespace: coder-customers
+spec:
+  hard:
+    pods: "2"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    requests.storage: 20Gi
+    persistentvolumeclaims: "2"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: customer-default-deny
+  namespace: coder-customers
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: customer-dns
+  namespace: coder-customers
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# Allow outbound HTTPS to public addresses for Coder agent + approved package
+# registries. Internal Kubernetes and RFC1918 services are NOT accessible.
+# Verify DNS resolution, Cloudflare/Coder URLs and your CNI's ipBlock handling.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: customer-public-https
+  namespace: coder-customers
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - { protocol: TCP, port: 443 }

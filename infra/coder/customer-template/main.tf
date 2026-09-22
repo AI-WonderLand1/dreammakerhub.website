@@ -1,4 +1,5 @@
-# Candidate template ONLY. Import separately; never overwrite the operator IDE.
+# CUSTOMER-ONLY candidate. Publish as a NEW template, never replace the
+# operator's existing wonderspace-ide or WonderSpace-ide-template in place.
 terraform {
   required_providers {
     coder = {
@@ -17,26 +18,46 @@ provider "kubernetes" {}
 
 variable "namespace" {
   type        = string
-  description = "Customer-only namespace with quotas and NetworkPolicies"
+  description = "Dedicated namespace with network policies, quota, and Coder provisioner RBAC"
   default     = "coder-customers"
+  validation {
+    condition     = var.namespace == "coder-customers"
+    error_message = "Customer workspaces must use the separate coder-customers namespace."
+  }
+}
+
+# Build and test these images yourself, with code-server already installed.
+# Only admins configure the digests: users select a profile name, never an image.
+variable "linux_image" {
+  type        = string
+  description = "Admin-approved Linux IDE image pinned to immutable sha256 digest"
+  validation {
+    condition     = can(regex("@sha256:[a-f0-9]{64}$", var.linux_image))
+    error_message = "Use a verified image reference pinned to an immutable sha256 digest."
+  }
+}
+variable "node_image" {
+  type        = string
+  description = "Admin-approved Node.js IDE image pinned to immutable sha256 digest"
+  validation {
+    condition     = can(regex("@sha256:[a-f0-9]{64}$", var.node_image))
+    error_message = "Use a verified image reference pinned to an immutable sha256 digest."
+  }
 }
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
-# Only admin-approved profiles can select registry images. Pin verified digests
-# and pre-bake code-server before allowing customer deployments.
 locals {
   images = {
-    linux = "codercom/enterprise-base:ubuntu"
-    node  = "codercom/example-node:ubuntu"
+    linux = var.linux_image
+    node  = var.node_image
   }
 }
 
 data "coder_parameter" "ide_image" {
   name         = "ide_image"
   display_name = "IDE environment"
-  description  = "Choose an administrator-approved Linux environment"
   type         = "string"
   default      = "linux"
   mutable      = false
@@ -61,11 +82,11 @@ data "coder_parameter" "cpu" {
     max = 2
   }
   option {
-    name  = "1 core"
+    name  = "1 Core"
     value = "1"
   }
   option {
-    name  = "2 cores"
+    name  = "2 Cores"
     value = "2"
   }
 }
@@ -77,7 +98,7 @@ data "coder_parameter" "memory" {
   default      = "2"
   mutable      = false
   validation {
-    min = 2
+    min = 1
     max = 4
   }
   option {
@@ -92,7 +113,7 @@ data "coder_parameter" "memory" {
 
 data "coder_parameter" "home_disk_size" {
   name         = "home_disk_size"
-  display_name = "Persistent home disk (GiB)"
+  display_name = "Home disk (GiB)"
   type         = "number"
   default      = "10"
   mutable      = false
@@ -108,10 +129,9 @@ resource "coder_agent" "main" {
   startup_script = <<-EOT
     set -eu
     mkdir -p /home/coder/wonderspace
-    if [ ! -x /home/coder/.local/code-server/bin/code-server ]; then
-      curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/home/coder/.local/code-server
-    fi
-    /home/coder/.local/code-server/bin/code-server --auth none --host 127.0.0.1 --port 13337 /home/coder/wonderspace > /tmp/code-server.log 2>&1 &
+    # Never fetch and execute an installer during customer pod startup.
+    command -v code-server >/dev/null || { echo 'Approved IDE image lacks code-server'; exit 1; }
+    code-server --auth none --host 127.0.0.1 --port 13337 /home/coder/wonderspace >/tmp/code-server.log 2>&1 &
   EOT
 }
 
@@ -120,6 +140,7 @@ resource "coder_app" "code-server" {
   slug         = "code-server"
   display_name = "VS Code"
   url          = "http://localhost:13337/?folder=/home/coder/wonderspace"
+  # Requires correctly configured wildcard DNS/TLS; use isolated origin.
   subdomain    = true
   share        = "owner"
   healthcheck {
@@ -143,9 +164,7 @@ resource "kubernetes_persistent_volume_claim_v1" "home" {
   spec {
     access_modes = ["ReadWriteOnce"]
     resources {
-      requests = {
-        storage = "${data.coder_parameter.home_disk_size.value}Gi"
-      }
+      requests = { storage = "${data.coder_parameter.home_disk_size.value}Gi" }
     }
   }
 }
@@ -165,13 +184,9 @@ resource "kubernetes_deployment_v1" "main" {
   spec {
     replicas = 1
     selector {
-      match_labels = {
-        "com.coder.workspace.id" = data.coder_workspace.me.id
-      }
+      match_labels = { "com.coder.workspace.id" = data.coder_workspace.me.id }
     }
-    strategy {
-      type = "Recreate"
-    }
+    strategy { type = "Recreate" }
     template {
       metadata {
         labels = {
@@ -185,6 +200,7 @@ resource "kubernetes_deployment_v1" "main" {
           run_as_user     = 1000
           fs_group        = 1000
           run_as_non_root = true
+          seccomp_profile { type = "RuntimeDefault" }
         }
         container {
           name              = "ide"
@@ -195,19 +211,15 @@ resource "kubernetes_deployment_v1" "main" {
             run_as_user                = 1000
             run_as_non_root            = true
             allow_privilege_escalation = false
-            capabilities {
-              drop = ["ALL"]
-            }
+            read_only_root_filesystem  = true
+            capabilities { drop = ["ALL"] }
           }
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
           }
           resources {
-            requests = {
-              cpu    = "250m"
-              memory = "512Mi"
-            }
+            requests = { cpu = "250m", memory = "512Mi" }
             limits = {
               cpu    = data.coder_parameter.cpu.value
               memory = "${data.coder_parameter.memory.value}Gi"
@@ -218,6 +230,11 @@ resource "kubernetes_deployment_v1" "main" {
             mount_path = "/home/coder"
             read_only  = false
           }
+          volume_mount {
+            name       = "tmp"
+            mount_path = "/tmp"
+            read_only  = false
+          }
         }
         volume {
           name = "home"
@@ -225,6 +242,10 @@ resource "kubernetes_deployment_v1" "main" {
             claim_name = kubernetes_persistent_volume_claim_v1.home.metadata[0].name
             read_only  = false
           }
+        }
+        volume {
+          name = "tmp"
+          empty_dir {}
         }
       }
     }

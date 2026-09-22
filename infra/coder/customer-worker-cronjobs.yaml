@@ -1,0 +1,84 @@
+# NOT INSTALLED. Apply only after verifying HTTPS connectivity, a suitable
+# pinned curl image, 1-minute scheduling, and the private runner secret.
+# Create secret coder-customer-runner in namespace coder with key token.
+# Failure of this controller is NOT an independent hard-stop failsafe.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-customer-usage
+  namespace: coder
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 45
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: request
+              # Pin a reviewed digest before deployment.
+              image: curlimages/curl:8.16.0
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              env:
+                - name: RUNNER_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: coder-customer-runner
+                      key: token
+              command: ["sh", "-ec"]
+              args:
+                - 'curl --fail --silent --show-error --max-time 35 --request POST --header "Authorization: Bearer ${RUNNER_TOKEN}" https://dreammakerhub.website/api/internal/coder/customer-usage'
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-customer-runner
+  namespace: coder
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 45
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: request
+              image: curlimages/curl:8.16.0
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              env:
+                - name: RUNNER_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: coder-customer-runner
+                      key: token
+              command: ["sh", "-ec"]
+              args:
+                - 'curl --fail --silent --show-error --max-time 35 --request POST --header "Authorization: Bearer ${RUNNER_TOKEN}" https://dreammakerhub.website/api/internal/coder/customer-runner'
