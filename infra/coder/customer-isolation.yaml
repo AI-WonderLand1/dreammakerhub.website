@@ -1,0 +1,60 @@
+# REVIEW before applying. Verify provisioner RBAC, CNI NetworkPolicy enforcement,
+# cluster DNS labels and the Coder agent's outbound route. Applying this blindly
+# can break customer pods; do not apply it to the existing coder namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coder-customers
+  labels:
+    app.kubernetes.io/part-of: dreammakerhub-customers
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: customer-pilot-cap
+  namespace: coder-customers
+spec:
+  hard:
+    pods: "2"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    requests.storage: 20Gi
+    persistentvolumeclaims: "2"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: customer-workspace-default-deny
+  namespace: coder-customers
+spec:
+  podSelector:
+    matchLabels:
+      com.coder.resource: "true"
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress: []
+---
+# Permit cluster DNS only. Confirm your CoreDNS pod labels before applying.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: customer-workspace-dns
+  namespace: coder-customers
+spec:
+  podSelector:
+    matchLabels:
+      com.coder.workspace.id: "" # Replace with an actual selector or remove this policy and use a reviewed per-pod policy.
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
