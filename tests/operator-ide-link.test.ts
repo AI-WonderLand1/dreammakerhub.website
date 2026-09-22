@@ -10,8 +10,10 @@ describe('Existing operator IDE link', () => {
     expect(page).toContain('supabase.auth.getUser()');
     expect(page).toContain("process.env.ADMIN_USER_IDS");
     expect(page).toContain('adminIds.includes(user.id)');
-    expect(page).toContain('{isOperator ? (');
+    expect(page).toContain('if (isOperator)');
     expect(page).toContain('href="/wonderspace/my-ide"');
+    expect(page).toContain('Open / start production IDE');
+    expect(page).toContain('does not create another workspace');
   });
 
   it('authorizes again, verifies the operator workspace, and restarts the same IDE when stopped', () => {
@@ -35,5 +37,20 @@ describe('Existing operator IDE link', () => {
     const route = read('apps/web/app/wonderspace/my-ide/route.ts');
     expect(route).toContain("buildStatus === 'succeeded' && transition === 'start'");
     expect(route).toContain("buildStatus === 'succeeded' && transition === 'stop'");
+  });
+});
+
+
+describe('Coder runtime cost-control deployment', () => {
+  it('copies the Coder enablement switches into the production runtime environment', () => {
+    const workflow = read('.github/workflows/deploy-upcloud.yml');
+    expect(workflow).toContain('BILLABLE_OPERATIONS_ENABLED:');
+    expect(workflow).toContain('CODER_WORKSPACE_CREATION_ENABLED:');
+    expect(workflow).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED:');
+    expect(workflow).toContain('CODER_OPERATOR_SUPABASE_ID:');
+    expect(workflow).toContain('write_env BILLABLE_OPERATIONS_ENABLED');
+    expect(workflow).toContain('write_env CODER_WORKSPACE_CREATION_ENABLED');
+    expect(workflow).toContain('write_env CODER_CUSTOMER_PROVISIONING_ENABLED');
+    expect(workflow).toContain('write_env CODER_OPERATOR_SUPABASE_ID');
   });
 });
