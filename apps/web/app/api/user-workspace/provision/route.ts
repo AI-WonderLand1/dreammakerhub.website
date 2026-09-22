@@ -4,7 +4,7 @@ import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
-import { assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { assertCoderOwnerIsolation, assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 import { logger } from '@/lib/logger';
 
@@ -15,6 +15,16 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // The configured server token currently acts as ONE Coder owner. Reject other
+  // site users before parsing options or contacting that shared Coder account.
+  // Keep the independent check in reserveCoderSlot as defense in depth.
+  try {
+    assertCoderOwnerIsolation(user.id);
+  } catch (error) {
+    return costGateResponse(error instanceof CostGateError ? error : undefined);
+  }
+
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
