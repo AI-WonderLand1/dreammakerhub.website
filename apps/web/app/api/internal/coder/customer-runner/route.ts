@@ -6,7 +6,7 @@ import { assertFreshUsageController, customerProvisioningGate, verifiedCustomerT
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 type Job = {
   slot_id: string; user_id: string; coder_user_id: string; template_id: string;
   cpu: number; memory_gib: number; disk_gib: number; max_compute_ms: number;
