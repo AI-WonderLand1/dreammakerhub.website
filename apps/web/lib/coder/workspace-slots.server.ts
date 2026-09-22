@@ -98,7 +98,11 @@ export async function listCoderSlots(userId: string): Promise<CoderSlotPublic[]>
   const { data, error } = await coderServiceClient().from('coder_workspace_slots')
     .select('id,workspace_id,workspace_name,state,created_at')
     .eq('user_id', userId).is('released_at', null).order('created_at', { ascending: true });
-  if (error || !Array.isArray(data)) throw new CostGateError('Workspace allocation records are unavailable.');
+  if (error || !Array.isArray(data)) {
+    // Only log the database error code. Do not log IDs, tokens, or row contents.
+    console.error('[coder-workspaces] allocation read failed', { code: error?.code || 'invalid_response' });
+    throw new CostGateError('Workspace allocation lookup failed. No workspaces were changed.');
+  }
   return data as CoderSlotPublic[];
 }
 

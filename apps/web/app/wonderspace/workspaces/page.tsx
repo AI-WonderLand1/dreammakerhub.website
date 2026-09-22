@@ -15,6 +15,7 @@ export default function CoderWorkspaceManager() {
   const [notice, setNotice] = useState('');
 
   const refresh = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/user-workspace/coder', { cache: 'no-store' });
       const result = await response.json();
@@ -24,6 +25,9 @@ export default function CoderWorkspaceManager() {
       setCanOpen(result.canOpen === true);
       setError('');
     } catch (cause) {
+      // A failed read is not evidence that the user has no workspaces.
+      // Never leave stale workspace action buttons enabled after a read fails.
+      setSlots([]);
       setError(cause instanceof Error ? cause.message : 'Unable to load workspaces.');
       setCanOpen(false);
     } finally {
@@ -93,7 +97,8 @@ export default function CoderWorkspaceManager() {
         {notice && <p role="status" className="mt-5 rounded-lg border border-cyan-400/40 p-4 text-cyan-200">{notice}</p>}
         {loading ? <p className="mt-8 text-slate-300">Checking workspace allocations…</p> : (
           <div className="mt-8 space-y-4">
-            {slots.length === 0 && <p className="text-slate-300">No workspaces have been allocated through this launchpad yet. Your existing personal Coder workspace may not be listed here.</p>}
+            {error && <p className="text-slate-300">Workspace availability could not be verified. This does not mean your files or workspaces have been deleted. Your existing personal Coder IDE is managed separately.</p>}
+            {!error && slots.length === 0 && <p className="text-slate-300">No workspaces have been allocated through this launchpad yet. Your existing personal Coder workspace may not be listed here.</p>}
             {slots.map((slot) => (
               <section key={slot.id} className="rounded-xl border border-white/15 bg-white/5 p-5">
                 <h2 className="text-lg font-semibold">{slot.workspace_name}</h2>
@@ -104,7 +109,7 @@ export default function CoderWorkspaceManager() {
                 </div>
               </section>
             ))}
-            <button type="button" onClick={() => void refresh()} className="rounded-lg border border-white/20 px-4 py-2 text-sm">Refresh allocations</button>
+            <button type="button" disabled={loading} onClick={() => void refresh()} className="rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opacity-50">Refresh allocations</button>
           </div>
         )}
       </div>
