@@ -1,9 +1,14 @@
-# Separate candidate customer template. Import as a NEW Coder template; do not
-# overwrite the operator's existing wonderspace-ide / production workspace.
+# Candidate template ONLY. Import separately; never overwrite the operator IDE.
 terraform {
   required_providers {
-    coder = { source = "coder/coder", version = "~> 2.15.0" }
-    kubernetes = { source = "hashicorp/kubernetes", version = "~> 3.0" }
+    coder = {
+      source  = "coder/coder"
+      version = "~> 2.15.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -12,15 +17,15 @@ provider "kubernetes" {}
 
 variable "namespace" {
   type        = string
-  description = "Namespace with a quota, a restricted Coder provisioner and customer NetworkPolicies"
+  description = "Customer-only namespace with quotas and NetworkPolicies"
   default     = "coder-customers"
 }
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
-# The browser/API selects a PROFILE, never an arbitrary registry URL. An admin
-# reviews and updates these images; pin each to a verified digest before release.
+# Only admin-approved profiles can select registry images. Pin verified digests
+# and pre-bake code-server before allowing customer deployments.
 locals {
   images = {
     linux = "codercom/enterprise-base:ubuntu"
@@ -51,9 +56,18 @@ data "coder_parameter" "cpu" {
   type         = "number"
   default      = "1"
   mutable      = false
-  validation { min = 1, max = 2 }
-  option { name = "1 core", value = "1" }
-  option { name = "2 cores", value = "2" }
+  validation {
+    min = 1
+    max = 2
+  }
+  option {
+    name  = "1 core"
+    value = "1"
+  }
+  option {
+    name  = "2 cores"
+    value = "2"
+  }
 }
 
 data "coder_parameter" "memory" {
@@ -62,9 +76,18 @@ data "coder_parameter" "memory" {
   type         = "number"
   default      = "2"
   mutable      = false
-  validation { min = 2, max = 4 }
-  option { name = "2 GiB", value = "2" }
-  option { name = "4 GiB", value = "4" }
+  validation {
+    min = 2
+    max = 4
+  }
+  option {
+    name  = "2 GiB"
+    value = "2"
+  }
+  option {
+    name  = "4 GiB"
+    value = "4"
+  }
 }
 
 data "coder_parameter" "home_disk_size" {
@@ -73,7 +96,10 @@ data "coder_parameter" "home_disk_size" {
   type         = "number"
   default      = "10"
   mutable      = false
-  validation { min = 10, max = 10 }
+  validation {
+    min = 10
+    max = 10
+  }
 }
 
 resource "coder_agent" "main" {
@@ -117,7 +143,9 @@ resource "kubernetes_persistent_volume_claim_v1" "home" {
   spec {
     access_modes = ["ReadWriteOnce"]
     resources {
-      requests = { storage = "${data.coder_parameter.home_disk_size.value}Gi" }
+      requests = {
+        storage = "${data.coder_parameter.home_disk_size.value}Gi"
+      }
     }
   }
 }
@@ -137,9 +165,13 @@ resource "kubernetes_deployment_v1" "main" {
   spec {
     replicas = 1
     selector {
-      match_labels = { "com.coder.workspace.id" = data.coder_workspace.me.id }
+      match_labels = {
+        "com.coder.workspace.id" = data.coder_workspace.me.id
+      }
     }
-    strategy { type = "Recreate" }
+    strategy {
+      type = "Recreate"
+    }
     template {
       metadata {
         labels = {
@@ -163,14 +195,19 @@ resource "kubernetes_deployment_v1" "main" {
             run_as_user                = 1000
             run_as_non_root            = true
             allow_privilege_escalation = false
-            capabilities { drop = ["ALL"] }
+            capabilities {
+              drop = ["ALL"]
+            }
           }
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
           }
           resources {
-            requests = { cpu = "250m", memory = "512Mi" }
+            requests = {
+              cpu    = "250m"
+              memory = "512Mi"
+            }
             limits = {
               cpu    = data.coder_parameter.cpu.value
               memory = "${data.coder_parameter.memory.value}Gi"
