@@ -70,6 +70,18 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'These resources are not available in the selected Coder template.' }, { status: 400 });
       }
       templateId = config.templateId;
+      // Accept only a profile published on the template AND in our server-side
+      // allowlist. The browser cannot request an arbitrary Docker image/URL.
+      if (config.images.length) {
+        const imageProfile = body.ideImage === undefined ? config.images[0].value : body.ideImage;
+        if (typeof imageProfile !== 'string' ||
+            !config.images.some((option) => option.value === imageProfile)) {
+          return NextResponse.json({ error: 'Choose an approved IDE environment.' }, { status: 400 });
+        }
+        richParameterValues.push({ name: 'ide_image', value: imageProfile });
+      } else if (body.ideImage !== undefined) {
+        return NextResponse.json({ error: 'This Coder template does not support IDE environment selection.' }, { status: 400 });
+      }
       if (config.diskSupported) richParameterValues.push({ name: 'home_disk_size', value: String(CODER_DISK_GIB) });
       const region = typeof body.region === 'string' ? body.region : '';
       if (region && !config.regions.some((option) => option.value === region)) {
@@ -101,7 +113,7 @@ export async function POST(request: Request) {
         richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
       }
     } else {
-      if (body.repository || body.branch || body.region ||
+      if (body.repository || body.branch || body.region || body.ideImage !== undefined ||
           (body.templateId && body.templateId !== 'playcanvas-3d')) {
         return NextResponse.json({ error: 'Unsupported PlayCanvas launch option.' }, { status: 400 });
       }
@@ -119,12 +131,9 @@ export async function POST(request: Request) {
       ttl_ms: CODER_TTL_MS,
     });
     await attachCoderWorkspace(user.id, slotId, workspace.id);
-    // A workspace launch is a confirmed running IDE, not a click, failed build,
-    // or PlayCanvas workspace. Stable IDs let Amplitude deduplicate retries.
     if (podType === 'ide' && workspace.status === 'running') {
       await trackFunnelEvent('Workspace Launched', user.id, workspace.id, {
-        workspace_type: 'ide',
-        template_id: templateId,
+        workspace_type: 'ide', template_id: templateId,
       });
     }
     const workspaceUrl = workspace.url.replace(/\/$/, '');
