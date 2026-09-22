@@ -14,6 +14,24 @@ describe('Coder customer isolation and operator settings', () => {
     expect(route).not.toContain('reserveCoderSlot(body.user_id');
   });
 
+  it('rejects non-operator requests before parsing launch options or contacting a shared Coder owner', () => {
+    const route = read('apps/web/app/api/user-workspace/provision/route.ts');
+    const auth = route.indexOf('supabase.auth.getUser()');
+    const earlyGate = route.indexOf('assertCoderOwnerIsolation(user.id);');
+    const parseBody = route.indexOf('await request.json()');
+    const apiConfig = route.indexOf('coderApiConfig()');
+    const healthCheck = route.indexOf('coder.healthCheck()');
+    const templateLookup = route.indexOf('getCoderLaunchConfig()', auth);
+    const reservation = route.indexOf('await reserveCoderSlot(');
+    expect(earlyGate).toBeGreaterThan(auth);
+    expect(earlyGate).toBeLessThan(parseBody);
+    expect(earlyGate).toBeLessThan(apiConfig);
+    expect(earlyGate).toBeLessThan(healthCheck);
+    expect(earlyGate).toBeLessThan(templateLookup);
+    expect(earlyGate).toBeLessThan(reservation);
+    expect(route).toContain('return costGateResponse(error instanceof CostGateError ? error : undefined);');
+  });
+
   it('blocks customer provisioning independently of operator cost switches', () => {
     const guard = read('apps/web/lib/coder/workspace-slots.server.ts');
     const methodStart = guard.indexOf('export async function reserveCoderSlot(');
