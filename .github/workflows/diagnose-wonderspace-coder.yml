@@ -183,6 +183,39 @@ jobs:
                   }
                 })();
               ' || echo 'Unable to read local website Coder status'
+              docker exec dreammaker-web node -e '
+                const fs = require("node:fs");
+                const pid = fs.readdirSync("/proc").find((entry) => {
+                  if (!/^\\d+$/.test(entry)) return false;
+                  try {
+                    const command = fs.readFileSync(`/proc/${entry}/cmdline`, "utf8");
+                    return command.includes("next-server");
+                  } catch { return false; }
+                });
+                if (!pid) {
+                  console.log("Next server process environment: not found");
+                  process.exit(0);
+                }
+                const entries = fs.readFileSync(`/proc/${pid}/environ`, "utf8").split("\\0");
+                const values = Object.fromEntries(entries.filter(Boolean).map((entry) => {
+                  const index = entry.indexOf("=");
+                  return [entry.slice(0, index), entry.slice(index + 1)];
+                }));
+                console.log("Next server process environment: found");
+                const raw = values.CODER_API_URL;
+                console.log("Next server CODER_API_URL: " + (raw ? "present" : "missing"));
+                console.log("Next server CODER_API_TOKEN: " + (values.CODER_API_TOKEN ? "present" : "missing"));
+                if (raw) {
+                  try {
+                    const parsed = new URL(raw);
+                    console.log("Next server Coder protocol: " + parsed.protocol);
+                    console.log("Next server Coder hostname: " + parsed.hostname);
+                    console.log("Next server Coder URL has a path: " + (parsed.pathname !== "/" && parsed.pathname !== ""));
+                  } catch {
+                    console.log("Next server Coder URL: invalid");
+                  }
+                }
+              '
               docker exec dreammaker-web sh -c '
                 if [ -n "$GITHUB_SHA" ]; then echo "Web image build SHA: present"; else echo "Web image build SHA: missing"; fi
                 if grep -R -F -q "kubernetes-mvp" /app/.next/server 2>/dev/null; then
