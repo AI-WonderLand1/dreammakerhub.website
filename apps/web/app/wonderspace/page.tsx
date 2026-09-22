@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/app/utils/supabase/server';
 import WonderSpaceLaunch from '@/components/engines/WonderSpaceLaunch';
+import CustomerWorkspaceLaunch from '@/components/engines/CustomerWorkspaceLaunch';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -9,12 +10,13 @@ export const metadata = {
 };
 
 export default async function WonderSpacePage() {
-  // This link is exclusively for the existing operator workspace. Customers
-  // must never be directed to the shared Coder owner or its private IDE.
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
   const isOperator = !error && Boolean(user && adminIds.includes(user.id));
+  // Customers get their own form ONLY after the operator opts in. The existing
+  // personal workspace and its Coder template never become customer defaults.
+  const customerPilot = !isOperator && process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true';
 
   return (
     <>
@@ -33,7 +35,7 @@ export default async function WonderSpacePage() {
           Manage cloud workspaces
         </Link>
       </div>
-      <WonderSpaceLaunch />
+      {customerPilot ? <CustomerWorkspaceLaunch /> : <WonderSpaceLaunch />}
     </>
   );
 }
