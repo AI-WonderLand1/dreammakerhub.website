@@ -131,6 +131,11 @@ jobs:
                     const hasChoices = (name) => Boolean(parameters.find((item) => item && item.name === name && Array.isArray(item.options) && item.options.length));
                     console.log(`Expected template CPU choices available: ${hasChoices("cpu")}`);
                     console.log(`Expected template memory choices available: ${hasChoices("memory")}`);
+                    const imageParameter = parameters.find((item) => item && item.name === "ide_image");
+                    const approvedProfile = Array.isArray(imageParameter?.options) && imageParameter.options.some((option) =>
+                      option && (option.value === "linux" || option.value === "node"));
+                    console.log(`Expected template image selector present: ${Boolean(imageParameter)}`);
+                    console.log(`Expected template approved image profile available: ${approvedProfile}`);
                   } catch (error) {
                     console.log(`Coder authenticated checks failed: ${error?.name || "unknown"}`);
                   }
