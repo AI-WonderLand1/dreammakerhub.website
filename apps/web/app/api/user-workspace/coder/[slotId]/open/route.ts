@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import {
   assertCoderOwnerIsolation,
@@ -98,9 +98,8 @@ async function openExistingWorkspace(userId: string, slotId: string, start: bool
 }
 
 async function handle(request: Request, { params }: Context, start: boolean) {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: noStore });
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: noStore });
   const { slotId } = await params;
   if (!slotIdPattern.test(slotId)) return NextResponse.json({ error: 'Invalid workspace allocation.' }, { status: 400, headers: noStore });
   try { return await openExistingWorkspace(user.id, slotId, start); }

@@ -11,7 +11,7 @@ describe('Existing Coder workspace resume', () => {
   const page = read('apps/web/app/wonderspace/workspaces/page.tsx');
 
   it('uses the verified Supabase session and scopes the slot to that user', () => {
-    expect(route).toContain('supabase.auth.getUser()');
+    expect(route).toContain('authenticatedSupabaseUser(request)');
     expect(route).toContain('assertSoleOperator(userId)');
     expect(route).toContain('getCoderSlot(userId, slotId)');
     expect(route).toContain("slot.state !== 'provisioned'");
@@ -42,6 +42,7 @@ describe('Existing Coder workspace resume', () => {
     expect(page).toContain('canOpen && slot.workspace_id');
     expect(page).toContain('Open existing IDE');
     expect(page).toContain("fetch(endpoint, { method: 'POST'");
+    expect(page).toContain('Authorization: `Bearer ${session.access_token}`');
     expect(page).toContain('window.location.assign(result.url)');
     expect(page).not.toContain("fetch('/api/user-workspace/provision'");
   });

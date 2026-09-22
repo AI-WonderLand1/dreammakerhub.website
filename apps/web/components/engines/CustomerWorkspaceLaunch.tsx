@@ -8,7 +8,7 @@ type Setup = { slotId: string; status: string; allocated?: boolean; error?: stri
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export default function CustomerWorkspaceLaunch() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [workspaceName, setWorkspaceName] = useState('');
   const [cpu, setCpu] = useState(1);
   const [memory, setMemory] = useState(2);
@@ -26,7 +26,7 @@ export default function CustomerWorkspaceLaunch() {
     const poll = async () => {
       try {
         const response = await fetch(`/api/user-workspace/customer/status/${encodeURIComponent(setup.slotId)}`, {
-          cache: 'no-store', signal: controller.signal,
+          cache: 'no-store', signal: controller.signal, headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
         });
         const result = await response.json() as Setup;
         if (!response.ok) throw new Error(result.error || 'Unable to check setup.');
@@ -37,7 +37,7 @@ export default function CustomerWorkspaceLaunch() {
     };
     const timer = window.setInterval(() => { void poll(); }, 3000);
     return () => { controller.abort(); window.clearInterval(timer); };
-  }, [setup?.slotId, setup?.status]);
+  }, [setup?.slotId, setup?.status, session?.access_token]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,7 +47,7 @@ export default function CustomerWorkspaceLaunch() {
     setError('');
     try {
       const response = await fetch('/api/user-workspace/customer/provision', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
         body: JSON.stringify({ workspaceName, cpu, memory }),
       });
       const result = await response.json() as Setup;

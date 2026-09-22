@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
@@ -12,9 +12,8 @@ export const dynamic = 'force-dynamic';
 const APP_SLUG_MAP = { ide: 'code-server', playcanvas: 'playcanvas' } as const;
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // The configured server token currently acts as ONE Coder owner. Reject other
   // site users before parsing options or contacting that shared Coder account.

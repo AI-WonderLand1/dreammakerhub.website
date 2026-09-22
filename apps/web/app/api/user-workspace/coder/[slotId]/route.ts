@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { coderApiConfig, coderApiRequest, getCoderSlot, markCoderSlotDeleting, releaseDeletedCoderSlot } from '@/lib/coder/workspace-slots.server';
 
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ slotId: string }> };
 
-export async function DELETE(_request: Request, { params }: Context) {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function DELETE(request: Request, { params }: Context) {
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { slotId } = await params;
   if (!/^[a-f0-9-]{36}$/i.test(slotId)) return NextResponse.json({ error: 'Invalid slot ID' }, { status: 400 });
   try {
