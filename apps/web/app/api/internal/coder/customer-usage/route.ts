@@ -31,18 +31,18 @@ export async function POST(request: Request) {
   const db = coderServiceClient();
   try {
     const pending = await db.from('coder_customer_jobs')
-      .select('status,updated_at').in('status', ['claimed', 'needs_reconciliation']).limit(1);
-    if (pending.error || pending.data?.some((item) =>
-      item.status === 'needs_reconciliation' || Date.now() - Date.parse(item.updated_at) > 120_000)) {
+      .select('status,updated_at').in('status', ['claimed', 'needs_reconciliation']).limit(21);
+    if (pending.error || !Array.isArray(pending.data) || pending.data.length > 20 ||
+        pending.data.some((item) => item.status === 'needs_reconciliation' ||
+          Date.now() - Date.parse(item.updated_at) > 120_000)) {
       throw new Error('Unreconciled customer allocation: no controller heartbeat');
     }
     const { data, error } = await db.from('coder_customer_compute_usage')
       .select('slot_id,workspace_id,user_id,used_ms,max_ms,stop_requested_at').limit(21);
     if (error || !Array.isArray(data) || data.length > 20) throw new Error('Usage ledger unavailable or exceeds controller capacity');
     let stopped = 0;
-    // Sequential sampling intentionally makes the accounting and stop decision
-    // for each workspace finish before the next. Increase controller capacity
-    // and verify scheduler overlap behaviour before serving >20 workspaces.
+    // The pilot quota allows at most two running customer pods. Increase
+    // capacity only after confirming controller completion every minute.
     for (const usage of data as Usage[]) {
       const identity = await db.from('coder_customer_identities')
         .select('coder_user_id').eq('user_id', usage.user_id).maybeSingle();
@@ -57,9 +57,8 @@ export async function POST(request: Request) {
       const build = remote.latest_build;
       if (!build || !['start', 'stop'].includes(build.transition || '')) throw new Error('Unknown Coder workspace lifecycle');
       const stoppedState = build.transition === 'stop' && ['succeeded', 'stopped'].includes(build.status || '');
-      const running = !stoppedState;
       const sample = await db.rpc('meter_coder_customer_compute', {
-        p_slot_id: usage.slot_id, p_running: running,
+        p_slot_id: usage.slot_id, p_running: !stoppedState,
       });
       const meter = sample.data?.[0];
       if (sample.error || !meter || typeof meter.should_stop !== 'boolean') {
@@ -75,8 +74,8 @@ export async function POST(request: Request) {
         stopped++;
       }
     }
-    // This is only a liveness signal for refusing NEW pods, not proof of a
-    // fail-safe hard cap if the entire controller or server is offline.
+    // Heartbeat is a creation gate, NOT a fail-safe hard-stop if the entire
+    // controller, scheduler, website, or Coder API is unavailable.
     const beat = await db.from('coder_customer_controller').upsert({
       id: true, last_heartbeat_at: new Date().toISOString(),
     }, { onConflict: 'id' });
@@ -85,7 +84,6 @@ export async function POST(request: Request) {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch {
-    // Fail closed: stale heartbeat prevents further customer pod creation.
     return NextResponse.json({ error: 'Usage reconciliation failed; customer creation will pause' }, { status: 503 });
   }
 }
