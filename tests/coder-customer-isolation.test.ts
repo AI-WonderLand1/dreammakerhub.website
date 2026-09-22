@@ -7,7 +7,7 @@ const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8');
 describe('Coder customer isolation and operator settings', () => {
   it('gets identity from Supabase Auth and never accepts an ID from the request body', () => {
     const route = read('apps/web/app/api/user-workspace/provision/route.ts');
-    expect(route).toContain('supabase.auth.getUser()');
+    expect(route).toContain('authenticatedSupabaseUser(request)');
     expect(route).toContain('reserveCoderSlot(user.id, podName)');
     expect(route).toContain('coder.createWorkspace(user.id,');
     expect(route).not.toContain('reserveCoderSlot(body.userId');
@@ -16,7 +16,7 @@ describe('Coder customer isolation and operator settings', () => {
 
   it('rejects non-operator requests before parsing launch options or contacting a shared Coder owner', () => {
     const route = read('apps/web/app/api/user-workspace/provision/route.ts');
-    const auth = route.indexOf('supabase.auth.getUser()');
+    const auth = route.indexOf('authenticatedSupabaseUser(request)');
     const earlyGate = route.indexOf('assertCoderOwnerIsolation(user.id);');
     const parseBody = route.indexOf('await request.json()');
     const apiConfig = route.indexOf('coderApiConfig()');
