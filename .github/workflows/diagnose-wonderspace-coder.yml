@@ -106,3 +106,5 @@ jobs:
               echo 'kubectl: not installed on main web server'
             fi
           REMOTE
+
+# Re-run requested 2026-09-22; this workflow only reports sanitized connection status.
