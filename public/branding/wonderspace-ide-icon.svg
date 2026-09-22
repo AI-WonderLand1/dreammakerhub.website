@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="WonderSpace IDE icon">
+  <defs>
+    <linearGradient id="orbit" x1="0" y1="1" x2="1" y2="0">
+      <stop stop-color="#25d3ff"/><stop offset="0.5" stop-color="#3578ff"/><stop offset="1" stop-color="#b849f9"/>
+    </linearGradient>
+    <linearGradient id="code" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#69d5ff"/><stop offset="0.55" stop-color="#3478f6"/><stop offset="1" stop-color="#a94af4"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="#0d1220"/>
+  <ellipse cx="128" cy="128" rx="106" ry="66" transform="rotate(-28 128 128)" fill="none" stroke="url(#orbit)" stroke-width="8"/>
+  <path d="m108 91-37 37 37 37m40-74 37 37-37 37" fill="none" stroke="url(#code)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m194 38 7 19 19 7-19 7-7 19-7-19-19-7 19-7z" fill="#e3ddff"/>
+  <circle cx="43" cy="73" r="5" fill="#9ec8ff"/>
+  <circle cx="209" cy="190" r="4" fill="#a791fa"/>
+</svg>
