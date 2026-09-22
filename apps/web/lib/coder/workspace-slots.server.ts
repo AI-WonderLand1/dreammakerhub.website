@@ -7,6 +7,7 @@ import { secureCoderApiOrigin } from '@/lib/coder/secure-origin';
 export const MAX_CODER_CPU = 2;
 export const MAX_CODER_MEMORY_GIB = 4;
 export const CODER_DISK_GIB = 10;
+// Coder TTL is an inactivity-based autostop request, NOT cumulative IDE time.
 export const CODER_TTL_MS = 60 * 60 * 1000;
 
 type CoderSlotPublic = {
@@ -40,7 +41,22 @@ export function coderApiConfig(): { url: string; token: string } {
   catch { throw new CostGateError('Coder API requires HTTPS or an internal private endpoint.'); }
 }
 
+/**
+ * Supabase auth.users.id identifies a customer but does not authenticate them
+ * to Coder. The current backend token creates workspaces under ONE Coder owner.
+ * Until a verified per-customer Coder identity and a hard usage limit exist,
+ * only the explicitly allowlisted site operator may use this creation path.
+ * This independent gate prevents a billing flag from exposing the operator IDE.
+ */
+export function assertCoderOwnerIsolation(userId: string): void {
+  const operatorIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
+  if (!operatorIds.includes(userId)) {
+    throw new CostGateError('Customer IDE creation is paused until individual Coder access and time limits are verified.');
+  }
+}
+
 export async function reserveCoderSlot(userId: string, workspaceName: string): Promise<string> {
+  assertCoderOwnerIsolation(userId);
   // Do not call Coder at all if either operator switch is off.
   if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
