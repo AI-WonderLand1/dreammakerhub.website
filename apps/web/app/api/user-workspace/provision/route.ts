@@ -1,17 +1,29 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
 import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
 import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
+import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
+import { assertCoderOwnerIsolation, assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 const APP_SLUG_MAP = { ide: 'code-server', playcanvas: 'playcanvas' } as const;
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // The configured server token currently acts as ONE Coder owner. Reject other
+  // site users before parsing options or contacting that shared Coder account.
+  // Keep the independent check in reserveCoderSlot as defense in depth.
+  try {
+    assertCoderOwnerIsolation(user.id);
+  } catch (error) {
+    return costGateResponse(error instanceof CostGateError ? error : undefined);
+  }
+
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -26,22 +38,16 @@ export async function POST(request: Request) {
   if (podType !== 'ide' && podType !== 'playcanvas') {
     return NextResponse.json({ error: 'Unsupported workspace type.' }, { status: 400 });
   }
-  if (!Number.isInteger(cpu) || !Number.isInteger(memory)) {
-    return NextResponse.json({ error: 'CPU and memory must be whole numbers.' }, { status: 400 });
-  }
-  if (podType === 'playcanvas' && (![1, 2, 3, 4].includes(cpu) || ![1, 2, 4, 8].includes(memory))) {
-    return NextResponse.json({ error: 'Unsupported PlayCanvas CPU or memory value.' }, { status: 400 });
-  }
-  if (!process.env.CODER_API_URL || !process.env.CODER_API_TOKEN) {
-    return NextResponse.json({ error: 'WonderSpace cloud IDE is not configured on the server.' }, { status: 503 });
-  }
-  const coder = new CoderAPIWrapper({
-    apiUrl: process.env.CODER_API_URL,
-    apiKey: process.env.CODER_API_TOKEN,
-    userId: user.id,
-    environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-  });
   try {
+    // Validate size and URL BEFORE any Coder token is sent or a slot is acquired.
+    assertCoderResourceBudget(cpu, memory);
+    const connection = coderApiConfig();
+    const coder = new CoderAPIWrapper({
+      apiUrl: connection.url,
+      apiKey: connection.token,
+      userId: user.id,
+      environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    });
     if (!(await coder.healthCheck())) {
       return NextResponse.json({ error: 'WonderSpace cloud IDE is temporarily unavailable.' }, { status: 503 });
     }
@@ -63,7 +69,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'These resources are not available in the selected Coder template.' }, { status: 400 });
       }
       templateId = config.templateId;
-      if (config.diskSupported) richParameterValues.push({ name: 'home_disk_size', value: '20' });
+      // Accept only a profile published on the template AND in our server-side
+      // allowlist. The browser cannot request an arbitrary Docker image/URL.
+      if (config.images.length) {
+        const imageProfile = body.ideImage === undefined ? config.images[0].value : body.ideImage;
+        if (typeof imageProfile !== 'string' ||
+            !config.images.some((option) => option.value === imageProfile)) {
+          return NextResponse.json({ error: 'Choose an approved IDE environment.' }, { status: 400 });
+        }
+        richParameterValues.push({ name: 'ide_image', value: imageProfile });
+      } else if (body.ideImage !== undefined) {
+        return NextResponse.json({ error: 'This Coder template does not support IDE environment selection.' }, { status: 400 });
+      }
+      if (config.diskSupported) richParameterValues.push({ name: 'home_disk_size', value: String(CODER_DISK_GIB) });
       const region = typeof body.region === 'string' ? body.region : '';
       if (region && !config.regions.some((option) => option.value === region)) {
         return NextResponse.json({ error: 'This region is not supported by the Coder template.' }, { status: 400 });
@@ -94,17 +112,29 @@ export async function POST(request: Request) {
         richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
       }
     } else {
-      if (body.repository || body.branch || body.region ||
+      if (body.repository || body.branch || body.region || body.ideImage !== undefined ||
           (body.templateId && body.templateId !== 'playcanvas-3d')) {
         return NextResponse.json({ error: 'Unsupported PlayCanvas launch option.' }, { status: 400 });
       }
       templateId = await getCoderTemplateId('playcanvas-3d');
-      richParameterValues.push({ name: 'home_disk_size', value: '20' });
+      richParameterValues.push({ name: 'home_disk_size', value: String(CODER_DISK_GIB) });
     }
+
+    // Counts ALLOCATED workspaces, not monthly starts. A stopped pod still has a
+    // paid persistent disk. Concurrent requests acquire at most the plan's slots.
+    const slotId = await reserveCoderSlot(user.id, podName);
+    // If Coder times out AFTER creating a pod, keep the slot reserved. Never
+    // automatically release it without verifying the remote workspace is gone.
     const workspace = await coder.createWorkspace(user.id, {
       name: podName, template_id: templateId, rich_parameter_values: richParameterValues,
-      ttl_ms: 4 * 60 * 60 * 1000,
+      ttl_ms: CODER_TTL_MS,
     });
+    await attachCoderWorkspace(user.id, slotId, workspace.id);
+    if (podType === 'ide' && workspace.status === 'running') {
+      await trackFunnelEvent('Workspace Launched', user.id, workspace.id, {
+        workspace_type: 'ide', template_id: templateId,
+      });
+    }
     const workspaceUrl = workspace.url.replace(/\/$/, '');
     const ideUrl = `${workspaceUrl}/apps/${APP_SLUG_MAP[podType]}/`;
     return NextResponse.json({
@@ -112,7 +142,8 @@ export async function POST(request: Request) {
       ideUrl, podUrl: ideUrl, sshCommand: `coder ssh ${workspace.name}`, podType,
     });
   } catch (error) {
+    if (error instanceof CostGateError) return costGateResponse(error);
     logger.error('WonderSpace Coder provisioning failed:', error instanceof Error ? error.name : 'Unknown error');
-    return NextResponse.json({ error: 'Could not launch workspace. Check Coder workspace status and try again.' }, { status: 502 });
+    return NextResponse.json({ error: 'Could not launch workspace. If creation timed out, its slot stays reserved until Coder confirms cleanup. Check workspace status before retrying.' }, { status: 502 });
   }
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ProjectDeleteButton from "./components/ProjectDeleteButton";
+import CoderAvailabilityIndicator from "@/components/engines/CoderAvailabilityIndicator";
 import {
   Bot,
   Box,
@@ -385,7 +386,13 @@ export default function DashboardPage() {
                         <div className="mt-4 grid grid-cols-3 gap-2">
                           <Link href={`/dashboard/projects/${project.id}`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">Open</Link>
                           <Link href={`/dashboard/projects/${project.id}#files`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Files</Link>
-                          <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
+                          {["workspace", "code"].includes(normalizedType(type)) ? (
+                            <CoderAvailabilityIndicator>
+                              <Link href={toolAction.href} className="block truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
+                            </CoderAvailabilityIndicator>
+                          ) : (
+                            <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
+                          )}
                         </div>
               <div className="mt-2 flex justify-end">
                 <ProjectDeleteButton
@@ -467,7 +474,8 @@ export default function DashboardPage() {
                 ["game", "3D / Game", Gamepad2],
                 ["npc", "NPC AI", Bot],
                 ["ai", "AI App", Sparkles],
-              ] as const).map(([value, label, Icon]) => (
+              ] as const).map(([value, label, Icon]) => {
+                const option = (
                 <button
                   key={value}
                   type="button"
@@ -476,7 +484,9 @@ export default function DashboardPage() {
                 >
                   <Icon size={17} /> {label}
                 </button>
-              ))}
+                );
+                return value === "workspace" ? <CoderAvailabilityIndicator key={value}>{option}</CoderAvailabilityIndicator> : option;
+              })}
             </div>
 
             {createError && <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{createError}</p>}

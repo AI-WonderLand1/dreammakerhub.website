@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { logger } from '@/lib/logger';
 import { stripe } from "@/lib/stripe";
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -34,26 +35,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.text();
     const signature = request.headers.get("stripe-signature");
-
-    let event: Stripe.Event;
-
-    if (STRIPE_WEBHOOK_SECRET && signature) {
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
-      } catch (err: any) {
-        logger.error("Webhook signature verification failed:", err.message);
-        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-      }
-    } else {
-      logger.error("Stripe webhook received but STRIPE_WEBHOOK_SECRET is not configured or signature missing");
-      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+    if (!STRIPE_WEBHOOK_SECRET || !signature) {
+      logger.error("Stripe webhook received without configured signing secret or signature");
+      return NextResponse.json({ error: "Webhook signature unavailable" }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+    } catch (error) {
+      logger.error("Stripe webhook signature verification failed", error);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
+      return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -61,7 +59,8 @@ export async function POST(request: NextRequest) {
     });
 
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan;
@@ -69,8 +68,23 @@ export async function POST(request: NextRequest) {
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
 
-        if (!userId || !plan || !subscriptionId) {
-          throw new Error("Stripe checkout completed without required user, plan, or subscription metadata");
+        if (!userId || !plan || !subscriptionId || !["pro", "team"].includes(plan)) {
+          throw new Error("Stripe checkout missing a valid user, paid plan, or subscription");
+        }
+        // Checkout may complete before delayed bank payments settle. No paid
+        // entitlement is created until Stripe confirms paid/no-payment-required.
+        if (session.status !== "complete" || !["paid", "no_payment_required"].includes(session.payment_status)) {
+          logger.info("Stripe checkout still awaiting payment", { sessionId: session.id, paymentStatus: session.payment_status });
+          break;
+        }
+
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+        if (stripeSubscription.status !== "active" && stripeSubscription.status !== "trialing") {
+          logger.info("Stripe subscription is not active or trialing; entitlement withheld", {
+            subscriptionId,
+            status: stripeSubscription.status,
+          });
+          break;
         }
 
         const { error: profileError } = await supabase
@@ -95,7 +109,7 @@ export async function POST(request: NextRequest) {
               stripe_customer_id: customerId,
               plan,
               interval,
-              status: "active",
+              status: stripeSubscription.status,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "stripe_subscription_id" },
@@ -103,24 +117,35 @@ export async function POST(request: NextRequest) {
         if (subscriptionError) throw subscriptionError;
 
         await syncAuthPlan(supabase, userId, plan);
+        if (session.payment_status === "paid") {
+          await trackFunnelEvent("Subscription Started", userId, subscriptionId);
+        }
+        break;
+      }
+
+      case "checkout.session.async_payment_failed": {
+        const failedSession = event.data.object as Stripe.Checkout.Session;
+        logger.warn("Stripe asynchronous payment failed; no entitlement granted by this event", {
+          sessionId: failedSession.id,
+        });
         break;
       }
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-
         const { error } = await supabase
           .from("subscriptions")
           .update({ status: subscription.status, updated_at: new Date().toISOString() })
           .eq("stripe_subscription_id", subscription.id);
         if (error) throw error;
+        // Profile/Auth tier reconciliation for status changes follows the
+        // approved grace-period policy tracked in #496.
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = stripeId(subscription.customer);
-
         const { data: subscriptionRow, error: lookupError } = await supabase
           .from("subscriptions")
           .select("user_id")
@@ -141,7 +166,6 @@ export async function POST(request: NextRequest) {
             .update({ subscription_tier: "free", updated_at: new Date().toISOString() })
             .eq("id", userId);
           if (profileError) throw profileError;
-
           await syncAuthPlan(supabase, userId, "free");
         } else if (customerId) {
           logger.warn("Canceled Stripe subscription had no matching DreamMakerHub user", {
@@ -155,7 +179,6 @@ export async function POST(request: NextRequest) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = stripeId(invoice.customer);
-
         if (customerId) {
           const { error } = await supabase
             .from("subscriptions")
@@ -168,8 +191,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
-    logger.error("Webhook error:", err);
-    return NextResponse.json({ error: err?.message || "Webhook processing failed" }, { status: 500 });
+  } catch (error) {
+    logger.error("Webhook processing failed", error);
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

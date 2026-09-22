@@ -1,5 +1,5 @@
 // infra/services/marketplace/MarketplaceAgent.ts
-import { logger } from "@lib/logger";
+import { logger } from "../../../apps/web/lib/logger";
 import JSZip from "jszip";
 import { Octokit } from "@octokit/rest";
 
@@ -37,8 +37,8 @@ function parseGitHubPackageId(packageId: string): GitHubRepoInfo | null {
 
 export const MarketplaceAgent = {
   async install(req: MarketplaceInstallRequest): Promise<MarketplaceInstallResult> {
-    if (!req?.packageId) {
-      return { ok: false, error: "Missing packageId" };
+    if (!req?.packageId?.trim()) {
+      return { ok: false, installed: false, error: "Missing packageId" };
     }
 
     logger.info("Marketplace install requested", {
@@ -48,15 +48,16 @@ export const MarketplaceAgent = {
       source: req.source,
     });
 
-    if (req.source === "github" || packageId.startsWith("github:")) {
+    if (req.source === "github" || req.packageId.startsWith("github:")) {
       return this.installFromGitHub(req);
     }
 
+    // Do not claim a successful install when no local installer exists.
     return {
-      ok: true,
-      installed: true,
+      ok: false,
+      installed: false,
       packageId: req.packageId,
-      message: "Local/unknown source - install stubbed.",
+      error: "Local and unknown marketplace sources are not supported yet.",
     };
   },
 
@@ -67,6 +68,8 @@ export const MarketplaceAgent = {
     if (!repoInfo) {
       return {
         ok: false,
+        installed: false,
+        packageId: req.packageId,
         error: "Invalid GitHub package ID format. Expected: github:owner/repo or github:owner/repo#tag",
       };
     }
@@ -111,60 +114,60 @@ export const MarketplaceAgent = {
         recursive: "true",
       });
 
-      const jszip = new JSZip();
       const maxFiles = 100;
-      let fileCount = 0;
+      const blobs = treeData.tree.filter((item) => item.type === "blob");
+      if (treeData.truncated || blobs.length > maxFiles) {
+        return {
+          ok: false,
+          installed: false,
+          packageId: req.packageId,
+          error: `GitHub package exceeds the supported ${maxFiles}-file limit or its tree is incomplete. Nothing was installed.`,
+        };
+      }
+      if (!blobs.length || blobs.some((item) => !item.path || !item.sha)) {
+        return {
+          ok: false,
+          installed: false,
+          packageId: req.packageId,
+          error: "GitHub package has no usable files or contains incomplete file metadata.",
+        };
+      }
 
-      for (const item of treeData.tree) {
-        if (item.type === "blob" && item.path && item.sha) {
-          if (fileCount >= maxFiles) {
-            logger.warn(`Skipping files beyond limit (${maxFiles})`);
-            break;
-          }
-
-          try {
-            const { data: blobData } = await octokit.git.getBlob({
-              owner: repoInfo.owner,
-              repo: repoInfo.repo,
-              file_sha: item.sha,
-            });
-
-            let content: string;
-            if (typeof blobData.content === "string") {
-              content = Buffer.from(blobData.content, "base64").toString("utf-8");
-            } else {
-              content = blobData.content as unknown as string;
-            }
-
-            jszip.file(item.path, content);
-            fileCount++;
-          } catch (err) {
-            logger.warn(`Failed to fetch file ${item.path}`, err);
-          }
+      const jszip = new JSZip();
+      for (const item of blobs) {
+        // A failed fetch must not silently produce an incomplete archive.
+        const { data: blobData } = await octokit.git.getBlob({
+          owner: repoInfo.owner,
+          repo: repoInfo.repo,
+          file_sha: item.sha!,
+        });
+        if (typeof blobData.content !== "string" || blobData.encoding !== "base64") {
+          throw new Error(`Unsupported blob encoding for ${item.path}`);
         }
+        jszip.file(item.path!, Buffer.from(blobData.content, "base64"));
       }
 
       const zipBuffer = await jszip.generateAsync({ type: "nodebuffer" });
-
-      logger.info(`Package ${req.packageId} installed successfully`, {
-        fileCount,
+      logger.info(`Prepared GitHub package archive ${req.packageId}`, {
+        fileCount: blobs.length,
         zipSize: zipBuffer.length,
       });
 
+      // Returning an archive is not the same as installing it into a project.
       return {
         ok: true,
-        installed: true,
+        installed: false,
         packageId: req.packageId,
-        message: `Installed ${fileCount} files from ${repoInfo.owner}/${repoInfo.repo}`,
+        message: `Prepared ${blobs.length} files from ${repoInfo.owner}/${repoInfo.repo}; installation into a project is not implemented.`,
         files: [{ path: "package.zip", content: zipBuffer.toString("base64") }],
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      logger.error("GitHub install failed", error);
-
+      logger.error("GitHub package preparation failed", error);
       return {
         ok: false,
-        error: `Failed to install from GitHub: ${errorMessage}`,
+        installed: false,
+        error: `Failed to prepare GitHub package: ${errorMessage}`,
         packageId: req.packageId,
       };
     }

@@ -1,9 +1,28 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const FALLBACK_PUBLIC_ORIGIN = 'https://dreammakerhub.website';
+
+/** Never construct browser redirects from an internal proxy address such as 0.0.0.0:5000. */
+function publicAuthOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_URL;
+  if (configured) {
+    try {
+      const url = new URL(configured);
+      if (url.protocol === 'https:' && url.hostname !== '0.0.0.0' && url.hostname !== 'localhost') {
+        return url.origin;
+      }
+    } catch {
+      logger.warn('[auth-callback] Invalid public site URL; using production origin');
+    }
+  }
+  return FALLBACK_PUBLIC_ORIGIN;
+}
 
 function sanitizeRedirectPath(raw: string | null): string {
   if (!raw) return '/dashboard';
@@ -17,7 +36,10 @@ function sanitizeRedirectPath(raw: string | null): string {
 }
 
 function authPageUrl(request: NextRequest, reason: string, redirectTo: string) {
-  const url = new URL('/public-pages/auth', request.url);
+  if (request.nextUrl.hostname === '0.0.0.0') {
+    logger.warn('[auth-callback] Internal request host detected; using public redirect origin');
+  }
+  const url = new URL('/public-pages/auth', publicAuthOrigin());
   url.searchParams.set('error', reason);
   // A confirmation email can be opened on a different device without its PKCE
   // verifier. Let the user sign in normally without losing their selected plan.
@@ -61,7 +83,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { url, anonKey } = getSupabasePublicConfig();
-    const successResponse = NextResponse.redirect(new URL(redirectTo, request.url));
+    const successResponse = NextResponse.redirect(new URL(redirectTo, publicAuthOrigin()));
 
     // Bind Supabase's PKCE/session cookies directly to the redirect response.
     // This avoids relying on a separately-created server client whose cookie
@@ -84,6 +106,20 @@ export async function GET(request: NextRequest) {
     if (error) {
       logger.error('[auth-callback] Failed to exchange OAuth code for session:', error.message);
       return NextResponse.redirect(authPageUrl(request, 'oauth_session_exchange_failed', redirectTo));
+    }
+
+    // Count only a recently confirmed new account. Existing-user OAuth sign-ins
+    // and failed/pending email confirmations are not completed signups.
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (!userError && user?.email_confirmed_at) {
+      const createdAt = Date.parse(user.created_at);
+      const confirmedAt = Date.parse(user.email_confirmed_at);
+      const now = Date.now();
+      if (Number.isFinite(createdAt) && Number.isFinite(confirmedAt) &&
+          createdAt <= confirmedAt && confirmedAt <= now &&
+          now - confirmedAt <= 2 * 60 * 1000) {
+        await trackFunnelEvent('Signup Completed', user.id, user.id);
+      }
     }
 
     return successResponse;

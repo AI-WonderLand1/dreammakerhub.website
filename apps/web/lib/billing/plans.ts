@@ -6,6 +6,7 @@ export type PlanDefinition = {
   name: string;
   displayName: string;
   price: number;
+  yearlyPrice?: number;
   priceDisplay: string;
   yearlyPriceDisplay: string;
   interval: "month" | "year";
@@ -30,9 +31,8 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     features: [
       "1 active project",
       "Wonderbuild UI editor",
-      "1 IDE seat",
-      "10 runtime hours/month",
-      "5K AI tokens/month",
+      "No cloud IDE included",
+      "5K AI tokens/month (subject to availability)",
       "100 API calls/month",
       "100 MB storage",
       "Community support",
@@ -44,6 +44,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     name: "architect",
     displayName: "The Architect",
     price: 3900,
+    yearlyPrice: 39000,
     priceDisplay: "$39/mo",
     yearlyPriceDisplay: "$390/yr ($32.50/mo)",
     interval: "month",
@@ -68,6 +69,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     name: "guild",
     displayName: "The Guild",
     price: 12900,
+    yearlyPrice: 129000,
     priceDisplay: "$129/mo",
     yearlyPriceDisplay: "$1,290/yr ($107.50/mo)",
     interval: "month",
@@ -91,13 +93,13 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: "enterprise",
     name: "architect_worlds",
     displayName: "The Architect of Worlds",
-    price: 0, // Custom pricing
+    price: 0,
     priceDisplay: "Custom",
     yearlyPriceDisplay: "Custom",
     interval: "month",
     description: "You're not building a site. You're building infrastructure. We'll build it with you.",
     features: [
-      "Unlimited everything",
+      "Custom limits and pricing (contract required)",
       "SSO + SCIM directory sync",
       "On-premise or private cloud deployment",
       "Custom AI agent training (your brand voice, your rules)",
@@ -111,13 +113,4 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
 };
 
-// For use in checkout/payment flows
 export const PAID_PLANS = Object.values(PLANS).filter((p) => p.price > 0 && p.id !== "enterprise");
-
-// Stripe Price IDs - set these after creating products in Stripe Dashboard
-// Instructions: 
-// 1. Go to https://dashboard.stripe.com/products
-// 2. Create products for each plan with recurring prices
-// 3. Copy the Price ID (starts with price_) and add to your .env:
-//    STRIPE_PRICE_PRO_ID=price_xxxxx
-//    STRIPE_PRICE_TEAM_ID=price_xxxxx

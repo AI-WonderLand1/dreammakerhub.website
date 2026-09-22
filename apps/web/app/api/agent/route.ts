@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { runModel } from "../../../../../engine/core/ai/runModel";
-import { manifestVisualBlock } from "../../../../../engine/core/ai/bridge";
+import { requireUserId } from "@/lib/auth";
+import { createClient } from "@/app/utils/supabase/server";
+import { CostGateError, costGateResponse, reserveAgentRequest } from "@/lib/billing/cost-guard.server";
 import { logger } from "@/lib/logger";
 
 export const dynamic = 'force-dynamic';
@@ -14,12 +16,8 @@ const AgentRequestSchema = z.object({
 });
 
 const dangerousGeneratedPatterns = [
-  /eval\s*\(/gi,
-  /Function\s*\(/gi,
-  /require\s*\(/gi,
-  /child_process/gi,
-  /\bexec\s*\(/gi,
-  /\bspawn\s*\(/gi,
+  /eval\s*\(/gi, /Function\s*\(/gi, /require\s*\(/gi,
+  /child_process/gi, /\bexec\s*\(/gi, /\bspawn\s*\(/gi,
 ];
 
 function stripJsonFence(text: string) {
@@ -48,95 +46,69 @@ function inferCategory(agent: string, command: string) {
 }
 
 export async function POST(req: Request) {
+  const userId = await requireUserId(req);
+  if (!userId) {
+    return NextResponse.json({ status: 'error', error: 'Sign in to use agents.' }, { status: 401 });
+  }
   try {
+    const supabase = await createClient();
+    const { data: profile, error: planError } = await supabase
+      .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle();
+    if (planError) {
+      logger.error('Agent plan lookup failed', { error: planError.message });
+      return NextResponse.json({ status: 'error', error: 'Unable to verify subscription.' }, { status: 503 });
+    }
+    if (!['pro', 'team', 'enterprise'].includes(profile?.subscription_tier || 'free')) {
+      return NextResponse.json({ status: 'error', error: 'Agents require a paid plan.', upgrade: true }, { status: 402 });
+    }
+
     const result = AgentRequestSchema.safeParse(await req.json());
     if (!result.success) {
-      return NextResponse.json({ status: "error", error: "Invalid request", details: result.error.issues }, { status: 400 });
+      return NextResponse.json({ status: 'error', error: 'Invalid request', details: result.error.issues }, { status: 400 });
     }
-
     const { agent, command } = result.data;
+    // Existing profile display alone is not a paid entitlement. Reserve BEFORE the model call.
+    await reserveAgentRequest(userId, command.length);
     const category = inferCategory(agent, command);
-    const systemPrompt = `You are the Wonderland ${agent === "designer" ? "Designer" : agent === "debugger" ? "Debugger" : "Builder"}.
-Respond to the user's natural-language request directly. The user does not need to use special command words.
-
+    const systemPrompt = `You are the Wonderland ${agent === 'designer' ? 'Designer' : agent === 'debugger' ? 'Debugger' : 'Builder'}.
+Respond to the user's natural-language request directly. Do not pretend to have edited project files.
 USER REQUEST: ${JSON.stringify(command)}
 TASK CATEGORY: ${category}
-
-Rules:
-1. Build, design, explain, or debug exactly what the user asked for.
-2. When code is requested, return a complete safe React component rather than placeholder snippets.
-3. Never claim work is finished if you did not produce the requested result.
-4. Never use eval, Function, require, child_process, process execution, filesystem access, or dynamic code execution.
-5. Do not invent fake runtime results.
-
-Return JSON only:
-{
-  "code": "full result or component code when code is appropriate",
-  "glimpse": "clear useful explanation of what you produced",
-  "confession": "real limitations or compromises, if any"
-}`;
-
+Rules: Give a safe, useful response. Never use eval, Function, require, child_process, process execution or filesystem access. Never invent runtime results.
+Return JSON only: {"code":"complete result or component code when appropriate","glimpse":"brief explanation","confession":"real limitations or compromises, if any"}`;
     const aiResponse = await runModel({
-      model: "openrouter/meta-llama/llama-3.3-70b-instruct",
-      messages: [{ role: "user", content: command }],
+      model: 'openrouter/meta-llama/llama-3.3-70b-instruct',
+      messages: [{ role: 'user', content: command }],
       system: systemPrompt,
       temperature: 0.7,
+      maxTokens: 4096,
     });
-
-    if (aiResponse.error || !aiResponse.text.trim()) {
-      return NextResponse.json({ status: "error", error: aiResponse.error || "AI returned an empty response" }, { status: 502 });
+    if (aiResponse.error || !aiResponse.text?.trim()) {
+      return NextResponse.json({ status: 'error', error: 'AI agent could not produce a response.' }, { status: 502 });
     }
-
     const manifest = parseManifest(aiResponse.text);
     if (!manifest) {
-      return NextResponse.json({
-        status: "success",
-        answer: aiResponse.text,
-        response: aiResponse.text,
-        glimpse: "AI returned a direct response.",
-        confession: "The response was not structured as agent JSON, so no visual block was manifested.",
-        commandCategory: category,
-      });
+      return NextResponse.json({ status: 'success', answer: aiResponse.text, response: aiResponse.text,
+        glimpse: 'AI returned a direct response.', confession: 'No project files were saved.', commandCategory: category });
     }
-
     if (manifest.code) {
       for (const pattern of dangerousGeneratedPatterns) {
         pattern.lastIndex = 0;
         if (pattern.test(manifest.code)) {
-          logger.error("AI generated blocked code pattern", { pattern: pattern.toString() });
-          return NextResponse.json({ status: "error", error: "Generated code contains an unsafe execution pattern" }, { status: 500 });
+          logger.error('AI generated blocked code pattern', { pattern: pattern.toString() });
+          return NextResponse.json({ status: 'error', error: 'Generated code contains an unsafe execution pattern' }, { status: 500 });
         }
       }
     }
-
-    let manifestationResult: { path?: string } | null = null;
-    if (manifest.code) {
-      manifestationResult = manifestVisualBlock(
-        `${agent}-${Date.now()}.tsx`,
-        manifest.code,
-        manifest.confession || "",
-      );
-    }
-
     const answer = manifest.code || manifest.glimpse || aiResponse.text;
-    if (!answer?.trim()) {
-      return NextResponse.json({ status: "error", error: "AI returned no usable result" }, { status: 502 });
-    }
-
-    return NextResponse.json({
-      status: "success",
-      success: true,
-      answer,
-      response: manifest.glimpse || answer,
-      code: manifest.code,
-      glimpse: manifest.glimpse,
-      confession: manifest.confession,
-      path: manifestationResult?.path,
-      commandCategory: category,
-    });
+    if (!answer?.trim()) return NextResponse.json({ status: 'error', error: 'AI returned no usable result' }, { status: 502 });
+    return NextResponse.json({ status: 'success', success: true, answer,
+      response: manifest.glimpse || answer, code: manifest.code, glimpse: manifest.glimpse,
+      confession: [manifest.confession, 'No project files were saved by this agent endpoint.'].filter(Boolean).join(' '),
+      commandCategory: category });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    logger.error("Agent request failed", { error: message });
-    return NextResponse.json({ status: "error", error: "AI agent request failed" }, { status: 500 });
+    if (err instanceof CostGateError) return costGateResponse(err);
+    logger.error('Agent request failed', { error: err instanceof Error ? err.message : 'Unknown error' });
+    return NextResponse.json({ status: 'error', error: 'AI agent request failed' }, { status: 500 });
   }
 }

@@ -1,10 +1,16 @@
 // Coder launch capability discovery. Never return credentials to the browser.
+import { secureCoderApiOrigin } from './secure-origin';
+
 export type CoderLaunchOption = { label: string; value: string };
+// The customer's choice is a PROFILE ID, never a container image URL.
+export const APPROVED_IDE_PROFILE_IDS = ['linux', 'node'] as const;
+export type ApprovedIdeProfile = (typeof APPROVED_IDE_PROFILE_IDS)[number];
 export type CoderLaunchConfig = {
   templateId: string;
   templateName: string;
   cpu: CoderLaunchOption[];
   memory: CoderLaunchOption[];
+  images: CoderLaunchOption[];
   regions: CoderLaunchOption[];
   repositorySupported: boolean;
   sshSupported: boolean;
@@ -58,10 +64,10 @@ async function coderGet<T>(path: string): Promise<T> {
   const configured = process.env.CODER_API_URL;
   const token = process.env.CODER_API_TOKEN;
   if (!configured || !token) throw new Error('Coder is not configured.');
-  const origin = configured.replace(/\/api\/v2\/?$/, '').replace(/\/$/, '');
+  const origin = secureCoderApiOrigin(configured);
   const response = await fetch(`${origin}${path}`, {
     headers: { 'Coder-Session-Token': token, Accept: 'application/json' },
-    cache: 'no-store', signal: AbortSignal.timeout(10000),
+    cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
   });
   if (!response.ok) throw new Error('Could not read Coder template capabilities.');
   return response.json() as Promise<T>;
@@ -82,7 +88,9 @@ export async function getCoderTemplateId(name: string): Promise<string> {
 
 export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const configured = process.env.CODER_IDE_TEMPLATE_NAME;
-  const names = configured ? [configured] : ['wonderspace-ide', 'kubernetes-mvp'];
+  // Existing operator templates stay unchanged until the separate customer
+  // template is deliberately published and selected by the operator.
+  const names = configured ? [configured] : ['wonderspace-ide', 'kubernetes-mvp', 'kubernetes'];
   const template = await getPublishedCoderTemplate(names);
   const parameters = await coderGet<CoderParameter[]>(`/api/v2/templateversions/${encodeURIComponent(template.active_version_id!)}/rich-parameters`);
   if (!Array.isArray(parameters)) throw new Error('Coder returned an invalid parameter list.');
@@ -92,8 +100,13 @@ export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const cpu = choices('cpu');
   const memory = choices('memory');
   if (!cpu.length || !memory.length) throw new Error('The published Coder template has no selectable CPU and memory options.');
+  const images = choices('ide_image').filter((choice) =>
+    (APPROVED_IDE_PROFILE_IDS as readonly string[]).includes(choice.value));
+  // An image parameter without approved choices must not silently select an
+  // unknown image or fall back to a user-provided registry URL.
+  if (byName('ide_image') && !images.length) throw new Error('Coder has no approved IDE image profiles.');
   return {
-    templateId: template.id, templateName: template.name, cpu, memory,
+    templateId: template.id, templateName: template.name, cpu, memory, images,
     regions: choices('region'),
     repositorySupported: Boolean(byName('repo_url') && byName('repo_branch')),
     sshSupported: Boolean(byName('ssh_public_key')),

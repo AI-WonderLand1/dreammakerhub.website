@@ -119,7 +119,7 @@ export class FileFolderManager {
   <div id="app">
     ${elements.map((el) => this.renderEl(el, 2)).join('\n    ')}
   </div>
-  <script>window.__BUILDER_STATE__ = ${JSON.stringify({ elements, version: 1 }, null, 2)};</script>
+  <script>window.__BUILDER_STATE__ = ${JSON.stringify({ elements, version: 1 }, null, 2).replace(/</g, '\\u003c')};</script>
 </body>
 </html>`;
   }
@@ -183,6 +183,7 @@ export class FileFolderManager {
 }
 
 function elTag(el: any): string {
+  if (el.type === 'section' && el.props?.semanticTag === 'footer') return 'footer';
   const m: Record<string, string> = {
     heading: normalizeHeadingLevel(el.props?.level),
     paragraph: 'p', 'rich-text': 'div', list: el.props?.listType === 'ordered' ? 'ol' : 'ul',

@@ -12,31 +12,25 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    # No GitHub production secrets, even for same-repo pull requests.
+    env:
+      ALICE_API_KEY: ci-build-placeholder
+      SIMPLE_RICK_API_KEY: ci-build-placeholder
+      SPIRIT_GUIDE_API_KEY: ci-build-placeholder
+      MONGODB_URI: mongodb://127.0.0.1:27017/ci-build
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v7
-      
+      - name: Validate AWS fallback deployment shell syntax
+        run: bash -n deploy/aws-fallback/deploy-web.sh
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
-          
       - name: Install dependencies
         run: npm install
-        
-      - name: Build web app
+      - name: Build web app without production credentials
         run: npm run build --workspace=apps/web
-        env:
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-          Wonder_Build_2026: ${{ secrets.Wonder_Build_2026 }}
-          # Build-time placeholders only. These modules require values at import time;
-          # production receives the real secrets from the deployment environment.
-          ALICE_API_KEY: ci-build-placeholder
-          SIMPLE_RICK_API_KEY: ci-build-placeholder
-          SPIRIT_GUIDE_API_KEY: ci-build-placeholder
-          MONGODB_URI: mongodb://127.0.0.1:27017/ci-build
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
-          
       - name: Run tests
         run: npm test

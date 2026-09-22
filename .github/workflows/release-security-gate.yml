@@ -1,0 +1,61 @@
+name: Release and security regression gate
+
+on:
+  pull_request:
+    branches: [Master]
+  push:
+    branches: [Master]
+  workflow_run:
+    workflows: ['Deploy Main Site to UpCloud VM']
+    types: [completed]
+  schedule:
+    - cron: '15 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-regressions:
+    name: security-regressions
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit CI secrets, billing, and protected routes
+        run: node .github/scripts/security-regression.mjs
+
+  public-smoke:
+    name: production-smoke
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'Master')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: Master
+      - name: Check public site and playground without credentials
+        id: smoke
+        run: node .github/scripts/public-smoke.mjs
+        env:
+          MAIN_SITE_URL: https://dreammakerhub.website
+          PLAYGROUND_URL: https://playground.dreammakerhub.website
+          NPC_PUBLIC_URL: ${{ vars.NPC_PUBLIC_URL }}
+          EXPECTED_DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || '' }}
+      - name: Open or update production health issue
+        if: failure() && steps.smoke.outcome == 'failure'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title='Production smoke checks failing'
+          existing="$(gh issue list --state open --json number,title --jq '.[] | select(.title == "Production smoke checks failing") | .number' | head -n 1)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Production smoke checks failed again: $RUN_URL"
+          else
+            gh issue create --title "$title" --body "Public release-health checks failed. Review the failed checks in $RUN_URL. No credentials were used; a passing build is not proof of a working deployment."
+          fi
