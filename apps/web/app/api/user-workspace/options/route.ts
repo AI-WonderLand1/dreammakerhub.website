@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
 import { MAX_CODER_CPU, MAX_CODER_MEMORY_GIB, CODER_DISK_GIB } from '@/lib/coder/workspace-slots.server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(request: Request) {
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const config = await getCoderLaunchConfig();
