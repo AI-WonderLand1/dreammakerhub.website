@@ -63,7 +63,7 @@ const showcases = [
   { title: 'Visual Builder', subtitle: 'WonderBuild', image: '/images/screenshots/puck-builder.svg', href: '/wonder-build' },
   { title: '3D Studio', subtitle: 'WonderPlay', image: '/images/3DWONDERPLAYIMAGE.webp', href: '/dashboard/3dhub' },
   { title: 'Project Dashboard', subtitle: 'Projects', image: '/images/dashboard-preview.svg', href: '/dashboard/projects' },
-  { title: 'Interactive World', subtitle: '3D Experience', image: '/images/wonderland-theme.webp', href: '/dashboard/3dhub' },
+  { title: 'Interactive World', subtitle: '3D Experience', image: '/images/wonderland-theme.webp', href: '/wonder-play' },
   { title: 'Cloud IDE', subtitle: 'WonderSpace', image: '/images/screenshots/theia-builder.svg', href: '/wonderspace' },
   { title: 'Community', subtitle: 'Questions & Showcases', image: '/images/community-preview.svg', href: '/community' },
 ] as const;
@@ -179,7 +179,7 @@ export default function MockupHomepage() {
               ['3', 'Build & Publish', 'Use AI, drag and drop, code, preview, and share.'],
             ].map(([n, title, copy], i) => (
               <div key={n} className="relative text-center">
-                <span className={`relative z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-4 border-white text-lg font-black text-white shadow-xl ${i === 0 ? 'bg-violet-600' : i === 1 ? 'bg-blue-600' : 'bg-cyan-600'}`}>{n}</span>
+                <span className={`relative z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-4 border-white text-lg font-black text-white ${i === 0 ? 'bg-violet-600' : i === 1 ? 'bg-blue-600' : 'bg-cyan-600'}`}>{n}</span>
                 <h3 className="mt-3 text-base font-black">{title}</h3>
                 <p className="mx-auto mt-1 max-w-[240px] text-xs leading-5 text-slate-700">{copy}</p>
               </div>
