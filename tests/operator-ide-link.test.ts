@@ -42,15 +42,17 @@ describe('Existing operator IDE link', () => {
 
 
 describe('Coder runtime cost-control deployment', () => {
-  it('copies the Coder enablement switches into the production runtime environment', () => {
-    const workflow = read('.github/workflows/deploy-upcloud.yml');
-    expect(workflow).toContain('BILLABLE_OPERATIONS_ENABLED:');
-    expect(workflow).toContain('CODER_WORKSPACE_CREATION_ENABLED:');
-    expect(workflow).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED:');
-    expect(workflow).toContain('CODER_OPERATOR_SUPABASE_ID:');
-    expect(workflow).toContain('write_env BILLABLE_OPERATIONS_ENABLED');
-    expect(workflow).toContain('write_env CODER_WORKSPACE_CREATION_ENABLED');
-    expect(workflow).toContain('write_env CODER_CUSTOMER_PROVISIONING_ENABLED');
-    expect(workflow).toContain('write_env CODER_OPERATOR_SUPABASE_ID');
+  it('copies the Coder enablement switches into the production runtime environments', () => {
+    for (const path of ['.github/workflows/deploy-upcloud.yml', '.github/workflows/deploy-aws-fallback.yml']) {
+      const workflow = read(path);
+      expect(workflow).toContain('BILLABLE_OPERATIONS_ENABLED:');
+      expect(workflow).toContain('CODER_WORKSPACE_CREATION_ENABLED:');
+      expect(workflow).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED:');
+      expect(workflow).toContain('CODER_OPERATOR_SUPABASE_ID:');
+      expect(workflow).toContain('write_env BILLABLE_OPERATIONS_ENABLED');
+      expect(workflow).toContain('write_env CODER_WORKSPACE_CREATION_ENABLED');
+      expect(workflow).toContain('write_env CODER_CUSTOMER_PROVISIONING_ENABLED');
+      expect(workflow).toContain('write_env CODER_OPERATOR_SUPABASE_ID');
+    }
   });
 });
