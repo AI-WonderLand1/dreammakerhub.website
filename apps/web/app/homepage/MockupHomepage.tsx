@@ -63,7 +63,7 @@ const showcases = [
   { title: 'Visual Builder', subtitle: 'WonderBuild', image: '/images/screenshots/puck-builder.svg', href: '/wonder-build' },
   { title: '3D Studio', subtitle: 'WonderPlay', image: '/images/3DWONDERPLAYIMAGE.webp', href: '/dashboard/3dhub' },
   { title: 'Project Dashboard', subtitle: 'Projects', image: '/images/dashboard-preview.svg', href: '/dashboard/projects' },
-  { title: 'Interactive World', subtitle: '3D Experience', image: '/images/wonderland-theme.webp', href: '/dashboard/3dhub' },
+  { title: 'Interactive World', subtitle: '3D Experience', image: '/images/wonderland-theme.webp', href: '/wonder-play' },
   { title: 'Cloud IDE', subtitle: 'WonderSpace', image: '/images/screenshots/theia-builder.svg', href: '/wonderspace' },
   { title: 'Community', subtitle: 'Questions & Showcases', image: '/images/community-preview.svg', href: '/community' },
 ] as const;
