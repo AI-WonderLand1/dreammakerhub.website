@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 type Availability = 'unchecked' | 'checking' | 'reachable' | 'unavailable';
 
@@ -26,6 +27,7 @@ export default function CoderAvailabilityIndicator({
   children: ReactNode;
   className?: string;
 }) {
+  const { session } = useAuth();
   const [availability, setAvailability] = useState<Availability>('unchecked');
   const lastChecked = useRef(0);
   const inFlight = useRef(false);
@@ -37,7 +39,7 @@ export default function CoderAvailabilityIndicator({
     try {
       // Existing authenticated endpoint only succeeds when Coder's published
       // template can be read. It never returns the server's Coder API token.
-      const response = await fetch('/api/user-workspace/options', { cache: 'no-store' });
+      const response = await fetch('/api/user-workspace/options', { cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
       setAvailability(response.ok ? 'reachable' : 'unavailable');
     } catch {
       setAvailability('unavailable');
@@ -45,7 +47,7 @@ export default function CoderAvailabilityIndicator({
       lastChecked.current = Date.now();
       inFlight.current = false;
     }
-  }, []);
+  }, [session?.access_token]);
 
   return (
     <div
