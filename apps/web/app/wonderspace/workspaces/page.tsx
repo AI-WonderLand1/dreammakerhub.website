@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 type Slot = { id: string; workspace_id: string | null; workspace_name: string; state: string; created_at: string };
 type OpenResult = { status?: string; url?: string; error?: string; message?: string };
 
 export default function CoderWorkspaceManager() {
+  const { session } = useAuth();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [canOpen, setCanOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ export default function CoderWorkspaceManager() {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/user-workspace/coder', { cache: 'no-store' });
+      const response = await fetch('/api/user-workspace/coder', { cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Unable to load workspaces.');
       if (!Array.isArray(result.slots)) throw new Error('Workspace list was invalid.');
@@ -33,7 +35,7 @@ export default function CoderWorkspaceManager() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session?.access_token]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -45,13 +47,13 @@ export default function CoderWorkspaceManager() {
     const endpoint = `/api/user-workspace/coder/${encodeURIComponent(slot.id)}/open`;
     try {
       // POST is a start/reopen action for this ID, never a create request.
-      let response = await fetch(endpoint, { method: 'POST', cache: 'no-store' });
+      let response = await fetch(endpoint, { method: 'POST', cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
       let result = await response.json() as OpenResult;
       if (!response.ok && response.status !== 202) throw new Error(result.error || 'Could not open the existing workspace.');
       for (let attempt = 0; attempt < 24 && response.status === 202; attempt++) {
         setNotice(result.message || 'Waiting for your existing workspace to start…');
         await new Promise<void>((resolve) => window.setTimeout(resolve, 2500));
-        response = await fetch(endpoint, { cache: 'no-store' });
+        response = await fetch(endpoint, { cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
         result = await response.json() as OpenResult;
         if (!response.ok && response.status !== 202) throw new Error(result.error || 'Could not verify the workspace.');
       }
@@ -74,7 +76,7 @@ export default function CoderWorkspaceManager() {
     setNotice('');
     setError('');
     try {
-      const response = await fetch(`/api/user-workspace/coder/${encodeURIComponent(slot.id)}`, { method: 'DELETE' });
+      const response = await fetch(`/api/user-workspace/coder/${encodeURIComponent(slot.id)}`, { method: 'DELETE', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Coder deletion failed.');
       setNotice(result.message || 'Workspace deletion requested.');
