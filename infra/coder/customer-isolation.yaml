@@ -7,6 +7,10 @@ metadata:
   name: coder-customers
   labels:
     app.kubernetes.io/part-of: dreammakerhub-customers
+    # Restrict only customer pods. This does not alter the operator namespace.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 ---
 apiVersion: v1
 kind: ResourceQuota
@@ -22,6 +26,28 @@ spec:
     limits.memory: 8Gi
     requests.storage: 20Gi
     persistentvolumeclaims: "2"
+---
+# Defense in depth: reject oversized containers/PVCs even when a pod is
+# created outside the approved Coder template. ResourceQuota caps totals.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: customer-pilot-limits
+  namespace: coder-customers
+spec:
+  limits:
+    - type: Container
+      min:
+        cpu: 100m
+        memory: 256Mi
+      max:
+        cpu: "2"
+        memory: 4Gi
+    - type: PersistentVolumeClaim
+      min:
+        storage: 10Gi
+      max:
+        storage: 10Gi
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
