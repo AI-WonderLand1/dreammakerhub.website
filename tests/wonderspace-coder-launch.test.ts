@@ -40,11 +40,12 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain("fetch('/api/user-workspace/provision'");
     const page = read('apps/web/app/wonderspace/page.tsx');
     const operatorGate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
-    // The page now separates the existing operator IDE from the customer
-    // launcher; the gate must still retain the original Coder launcher.
+    // The page separates the existing operator IDE from the customer launcher.
+    // Customer provisioning is deliberately unavailable until the pilot is enabled.
     expect(page).toContain('WonderSpaceOperatorGate');
-    expect(operatorGate).toContain('<WonderSpaceLaunch />');
     expect(operatorGate).toContain('<OperatorIdePanel />');
+    expect(operatorGate).toContain('<CustomerWorkspaceLaunch />');
+    expect(operatorGate).toContain('Cloud IDE access is private');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
   it('keeps repository selection visible but prevents launch when the template does not support it', () => {
