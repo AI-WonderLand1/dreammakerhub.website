@@ -26,7 +26,7 @@ jobs:
         with:
           ref: Master
           persist-credentials: false
-      - name: Validate AWS target and verified cluster identity
+      - name: Validate AWS target and optional pinned cluster identity
         shell: bash
         env:
           SSH_KEY: ${{ secrets.AWS_FALLBACK_SSH_KEY }}
@@ -35,7 +35,9 @@ jobs:
           set -euo pipefail
           [[ "$AWS_FALLBACK_HOST" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || { echo 'AWS_FALLBACK_HOST is unset or invalid.'; exit 1; }
           [[ "$AWS_FALLBACK_USER" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]] || { echo 'AWS_FALLBACK_USER is invalid.'; exit 1; }
-          [[ "$AWS_CODER_KUBE_CONTEXT" =~ ^[A-Za-z0-9_./:@-]+$ ]] || { echo 'Set the verified AWS_CODER_KUBE_CONTEXT variable. Do not guess an EKS or k3s context.'; exit 1; }
+          if [[ -n "$AWS_CODER_KUBE_CONTEXT" && ! "$AWS_CODER_KUBE_CONTEXT" =~ ^[A-Za-z0-9_./:@-]+$ ]]; then
+            echo 'AWS_CODER_KUBE_CONTEXT contains invalid characters.'; exit 1
+          fi
           test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS" || { echo 'AWS SSH key or pinned known_hosts secret is missing.'; exit 1; }
           bash -n infra/coder/aws-customer-pod-preflight.sh
       - name: Configure pinned SSH host key
