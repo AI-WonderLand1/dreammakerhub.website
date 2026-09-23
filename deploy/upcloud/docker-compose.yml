@@ -14,6 +14,11 @@ services:
       CODER_DERP_FORCE_WEBSOCKETS: "true"
       CODER_SESSION_HOST_PREFIX_COOKIES: "true"
       CODER_REDIRECT_TO_ACCESS_URL: "true"
+      # Customer direct-Coder access is paused. Fail closed on sharing and new OIDC signups.
+      CODER_DISABLE_WORKSPACE_SHARING: "true"
+      CODER_DISABLE_OWNER_WORKSPACE_ACCESS: "true"
+      CODER_DISABLE_PATH_APPS: "true"
+      CODER_OIDC_ALLOW_SIGNUPS: "false"
       CODER_PG_CONNECTION_URL: "postgres://coder:${CODER_DB_PASSWORD}@coder-db:5432/coder?sslmode=disable"
       CODER_DB_PASSWORD: ${CODER_DB_PASSWORD}
     depends_on:
