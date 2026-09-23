@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
-import WonderSpaceLaunch from './WonderSpaceLaunch';
 import CustomerWorkspaceLaunch from './CustomerWorkspaceLaunch';
 
 type Role = 'checking' | 'operator' | 'customer' | 'unauthorized' | 'error';
@@ -112,7 +111,17 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
     return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">Checking your DreamMakerHub session…</main>;
   }
   if (role === 'operator') return <OperatorIdePanel />;
-  if (role === 'customer') return customerPilot ? <CustomerWorkspaceLaunch /> : <WonderSpaceLaunch />;
+  if (role === 'customer' && customerPilot) return <CustomerWorkspaceLaunch />;
+
+  if (role === 'customer') {
+    return (
+      <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
+        <h1 className="text-2xl font-semibold">Cloud IDE access is private</h1>
+        <p className="mx-auto mt-3 max-w-lg text-slate-300">Sign in with the approved operator account to open the existing IDE. This page does not create a customer workspace.</p>
+        <Link href="/public-pages/auth" className="mt-6 inline-block rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in</Link>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
