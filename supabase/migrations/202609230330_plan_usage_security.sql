@@ -6,7 +6,7 @@ ALTER TABLE public.user_profiles
   ALTER COLUMN projects_limit SET DEFAULT 5,
   ALTER COLUMN workspaces_limit SET DEFAULT 5,
   ALTER COLUMN ide_sessions_limit SET DEFAULT 2,
-  ALTER COLUMN compute_credits_monthly SET DEFAULT 900000,
+  ALTER COLUMN compute_credits_monthly SET DEFAULT 9000,
   ALTER COLUMN ai_tokens_monthly SET DEFAULT 500000,
   ALTER COLUMN runtime_hours_monthly SET DEFAULT 150,
   ALTER COLUMN api_calls_monthly SET DEFAULT 10000;
@@ -36,9 +36,9 @@ SET
     ELSE 999999
   END,
   compute_credits_monthly = CASE subscription_plan
-    WHEN 'free' THEN 900000
-    WHEN 'pro' THEN 1800000
-    WHEN 'team' THEN 6000000
+    WHEN 'free' THEN 9000
+    WHEN 'pro' THEN 18000
+    WHEN 'team' THEN 60000
     ELSE 999999999
   END,
   ai_tokens_monthly = CASE subscription_plan
