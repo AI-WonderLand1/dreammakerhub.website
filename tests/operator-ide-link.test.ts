@@ -66,8 +66,11 @@ describe('Existing operator IDE link', () => {
     expect(access).toContain('return adminIds.length === 1 ? adminIds[0] : null;');
     expect(slots).toContain('isConfiguredCoderOperator(userId)');
     expect(customerIdentity).toContain('isConfiguredCoderOperator(user.id)');
+    expect(slotOpen).toContain('assertSoleOperator(userId)');
     expect(slotOpen).not.toContain('adminIds.includes');
-    expect(status).toContain('const canOpen = isConfiguredCoderOperator(user.id);');
+    expect(status).toContain('const operator = isConfiguredCoderOperator(user.id)');
+    expect(status).toContain('let canOpen = operator');
+    expect(status).toContain("openMode: canOpen ? (operator ? 'operator' : 'customer') : 'disabled'");
   });
 
   it('keeps the customer launcher closed while the customer pilot is off', () => {
