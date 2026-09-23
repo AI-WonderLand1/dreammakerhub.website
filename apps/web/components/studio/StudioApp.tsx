@@ -27,13 +27,23 @@ import "./StudioEditor.css";
 import "./StudioEditorMobile.css";
 import "./StudioNavigation.css";
 
-type StudioMode = "factory" | "panorama" | "game" | "movie";
+type Workspace = "create" | "capture";
+type CreateTool = "game" | "factory";
+type CaptureTool = "movie" | "panorama";
 
-const MODES: { id: StudioMode; label: string; icon: LucideIcon }[] = [
-  { id: "factory", label: "3D Editor", icon: Box },
+const WORKSPACES: { id: Workspace; label: string; icon: LucideIcon }[] = [
+  { id: "create", label: "Create", icon: Gamepad2 },
+  { id: "capture", label: "Capture", icon: Film },
+];
+
+const CREATE_TOOLS: { id: CreateTool; label: string; icon: LucideIcon }[] = [
+  { id: "game", label: "Game World", icon: Gamepad2 },
+  { id: "factory", label: "3D Scene", icon: Box },
+];
+
+const CAPTURE_TOOLS: { id: CaptureTool; label: string; icon: LucideIcon }[] = [
+  { id: "movie", label: "Movie", icon: Film },
   { id: "panorama", label: "360 View", icon: Eye },
-  { id: "game", label: "Game Builder", icon: Gamepad2 },
-  { id: "movie", label: "Movie Maker", icon: Film },
 ];
 
 const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
@@ -47,7 +57,10 @@ const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 
 /** One editor route: site navigation is tucked into the top bar, not a permanent sidebar. */
 export default function StudioApp() {
-  const [mode, setMode] = useState<StudioMode>("factory");
+  const [workspace, setWorkspace] = useState<Workspace>("create");
+  const [createTool, setCreateTool] = useState<CreateTool>("game");
+  const [captureTool, setCaptureTool] = useState<CaptureTool>("movie");
+  const activeTool = workspace === "create" ? createTool : captureTool;
 
   return (
     <div className="wonderplay-app">
@@ -65,23 +78,32 @@ export default function StudioApp() {
         <span className="wonderplay-project">Viewport · Outliner · Details · Content Browser</span>
       </div>
       <div className="wonderplay-toolbar">
-        <nav className="wonderplay-tabs" aria-label="3D tools">
-          {MODES.map(({ id, label, icon: Icon }) => (
-            <button key={id} type="button" aria-pressed={mode === id} onClick={() => setMode(id)}>
-              <Icon size={14} aria-hidden="true" /> {label}
-            </button>
-          ))}
-        </nav>
+        <div className="flex min-w-0 items-center gap-3">
+          <nav className="wonderplay-tabs" aria-label="WonderPlay workspaces">
+            {WORKSPACES.map(({ id, label, icon: Icon }) => (
+              <button key={id} type="button" aria-pressed={workspace === id} onClick={() => setWorkspace(id)}>
+                <Icon size={14} aria-hidden="true" /> {label}
+              </button>
+            ))}
+          </nav>
+          <nav className="wonderplay-context-tools" aria-label={workspace === "create" ? "Create tools" : "Capture tools"}>
+            {(workspace === "create" ? CREATE_TOOLS : CAPTURE_TOOLS).map(({ id, label, icon: Icon }) => (
+              <button key={id} type="button" aria-pressed={activeTool === id} onClick={() => workspace === "create" ? setCreateTool(id as CreateTool) : setCaptureTool(id as CaptureTool)}>
+                <Icon size={13} aria-hidden="true" /> {label}
+              </button>
+            ))}
+          </nav>
+        </div>
         <Link className="wonderplay-back" href="/dashboard/projects"><ArrowLeft size={14} aria-hidden="true" /><span>Projects</span></Link>
       </div>
       <main className="wonderplay-main">
         <Suspense fallback={<p className="m-auto text-sm text-slate-400">Loading 3D Studio…</p>}>
           <div className="wonderplay-stack">
-            <section className={mode === "factory" ? "wonderplay-factory" : "flex min-h-0 min-w-0 overflow-hidden"} aria-label={`${MODES.find((item) => item.id === mode)?.label} workspace`}>
-              {mode === "factory" && <Studio3DFactory />}
-              {mode === "panorama" && <Studio360View />}
-              {mode === "game" && <StudioGameFoundation />}
-              {mode === "movie" && <StudioMovieMaker />}
+            <section className={activeTool === "factory" ? "wonderplay-factory" : "flex min-h-0 min-w-0 overflow-hidden"} aria-label={`${workspace === "create" ? "Create" : "Capture"} workspace`}>
+              {activeTool === "factory" && <Studio3DFactory />}
+              {activeTool === "panorama" && <Studio360View />}
+              {activeTool === "game" && <StudioGameFoundation />}
+              {activeTool === "movie" && <StudioMovieMaker />}
             </section>
             <StudioContentBrowser />
           </div>
