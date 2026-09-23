@@ -66,6 +66,7 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[]): GeneratedScene {
     lights: [
       { id: "sun", type: "directional", color: [1, 0.96, 0.84], intensity: 1.35, direction: [-0.6, -1, -0.3] },
       { id: "world-accent", type: "point", color: style.accent, intensity: 2.4, position: [0, 5, -3] },
+      ...actors.filter((actor) => actor.kind === "light").map((actor) => ({ id: "light-" + actor.id, type: "point" as const, color: ACTOR_META.light.color, intensity: 2.6, position: actor.position })),
     ],
     camera: { position: [0, 4.4, 12], target: [0, 1, 0], fov: 60 },
     sky: { type: "color", color: style.sky },
@@ -82,20 +83,28 @@ export default function StudioGameFoundation() {
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedPath, setSavedPath] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const scene = useMemo(() => buildWorld(preset, actors), [actors, preset]);
 
   useEffect(() => {
-    viewportRef.current?.renderScene(scene);
-    viewportRef.current?.setShowGrid(true);
+    const render = () => {
+      viewportRef.current?.renderScene(scene);
+      viewportRef.current?.setShowGrid(true);
+    };
+    render();
+    const retries = [250, 900].map((delay) => window.setTimeout(render, delay));
+    return () => retries.forEach(window.clearTimeout);
   }, [scene]);
 
   const selectPreset = useCallback((next: WorldPreset) => {
     setPreset(next);
     setActors(initialActors(next));
     setSelectedId("player-start");
+    viewportRef.current?.animateCameraPath({ enabled: false });
     setRunning(false);
     setSavedPath(null);
+    setSaveError(null);
   }, []);
 
   const addActor = useCallback((kind: ActorKind) => {
@@ -128,6 +137,7 @@ export default function StudioGameFoundation() {
   const saveLevel = useCallback(async () => {
     setSaving(true);
     setSavedPath(null);
+    setSaveError(null);
     try {
       const slug = preset + "_game_level";
       const path = "levels/" + slug + "_" + Date.now().toString(36) + ".json";
@@ -140,6 +150,7 @@ export default function StudioGameFoundation() {
       setSavedPath(path);
     } catch (error) {
       logger.error("Save WonderPlay level error:", error);
+      setSaveError("Level could not be saved. Check the selected project and try again.");
     } finally {
       setSaving(false);
     }
@@ -202,6 +213,7 @@ export default function StudioGameFoundation() {
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level
         </button>
         {savedPath && <p className="mt-2 break-all text-[10px] font-mono text-emerald-400">Saved {savedPath}</p>}
+        {saveError && <p role="alert" className="mt-2 text-[11px] leading-4 text-red-300">{saveError}</p>}
       </aside>
     </div>
   );
