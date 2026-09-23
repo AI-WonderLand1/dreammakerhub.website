@@ -95,7 +95,8 @@ export async function getUserLimits(userId: string): Promise<UserLimits | null> 
 
   if (error || !data) return null;
 
-  const plan = (data.subscription_plan in PLAN_LIMITS ? data.subscription_plan : "free") as SubscriptionPlan;
+  const storedPlan = typeof data.subscription_plan === "string" ? data.subscription_plan : "free";
+  const plan = (Object.prototype.hasOwnProperty.call(PLAN_LIMITS, storedPlan) ? storedPlan : "free") as SubscriptionPlan;
   const canonical = PLAN_LIMITS[plan];
 
   return {
