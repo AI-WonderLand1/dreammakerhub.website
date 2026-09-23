@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,5 @@ export async function GET(request: Request) {
     });
   }
 
-  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  return NextResponse.json({ isOperator: adminIds.includes(user.id) }, { headers: NO_STORE });
+  return NextResponse.json({ isOperator: isConfiguredCoderOperator(user.id) }, { headers: NO_STORE });
 }

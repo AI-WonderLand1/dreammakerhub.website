@@ -10,8 +10,7 @@ describe('Existing operator IDE link', () => {
     const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
     const role = read('apps/web/app/api/wonderspace/operator/route.ts');
     expect(page).toContain('supabase.auth.getUser()');
-    expect(page).toContain("process.env.ADMIN_USER_IDS");
-    expect(page).toContain('adminIds.includes(user.id)');
+    expect(page).toContain('isConfiguredCoderOperator(user?.id)');
     expect(page).toContain('if (isOperator)');
     expect(page).toContain('WonderSpaceOperatorGate');
     expect(gate).toContain("fetch('/api/wonderspace/operator'");
@@ -22,7 +21,7 @@ describe('Existing operator IDE link', () => {
     expect(role).toContain("request.headers.get('authorization')");
     expect(role).toContain('supabase.auth.getUser(bearer)');
     expect(role).toContain('supabase.auth.getUser()');
-    expect(role).toContain('adminIds.includes(user.id)');
+    expect(role).toContain('isConfiguredCoderOperator(user.id)');
     expect(role).toContain("'Cache-Control': 'private, no-store'");
     expect(role).not.toContain('CODER_API_TOKEN');
   });
@@ -33,7 +32,7 @@ describe('Existing operator IDE link', () => {
     expect(route).toContain('supabase.auth.getUser()');
     expect(route).toContain('supabase.auth.getUser(bearer)');
     expect(route).toContain('if (bearerOnly && !bearer)');
-    expect(route).toContain('adminIds.includes(user.id)');
+    expect(route).toContain('isConfiguredCoderOperator(user.id)');
     expect(route).toContain('status: 404');
     expect(route).toContain("coderApiRequest('/api/v2/users/me', 'GET')");
     expect(route).toContain('/api/v2/users/me/workspace/');
@@ -55,6 +54,27 @@ describe('Existing operator IDE link', () => {
     const route = read('apps/web/app/wonderspace/my-ide/route.ts');
     expect(route).toContain("buildStatus === 'succeeded' && transition === 'start'");
     expect(route).toContain("buildStatus === 'succeeded' && transition === 'stop'");
+  });
+
+  it('uses one dedicated operator check for every shared-Coder entry point', () => {
+    const access = read('apps/web/lib/coder/operator-access.server.ts');
+    const slots = read('apps/web/lib/coder/workspace-slots.server.ts');
+    const customerIdentity = read('apps/web/lib/coder/customer-identity.server.ts');
+    const slotOpen = read('apps/web/app/api/user-workspace/coder/[slotId]/open/route.ts');
+    const status = read('apps/web/app/api/user-workspace/coder/route.ts');
+    expect(access).toContain('process.env.CODER_OPERATOR_SUPABASE_ID?.trim()');
+    expect(access).toContain('return adminIds.length === 1 ? adminIds[0] : null;');
+    expect(slots).toContain('isConfiguredCoderOperator(userId)');
+    expect(customerIdentity).toContain('isConfiguredCoderOperator(user.id)');
+    expect(slotOpen).not.toContain('adminIds.includes');
+    expect(status).toContain('const canOpen = isConfiguredCoderOperator(user.id);');
+  });
+
+  it('keeps the customer launcher closed while the customer pilot is off', () => {
+    const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
+    expect(gate).toContain("role === 'customer' && customerPilot");
+    expect(gate).toContain('Cloud IDE access is private');
+    expect(gate).not.toContain("import WonderSpaceLaunch from './WonderSpaceLaunch'");
   });
 });
 

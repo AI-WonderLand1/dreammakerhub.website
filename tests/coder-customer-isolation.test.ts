@@ -41,8 +41,7 @@ describe('Coder customer isolation and operator settings', () => {
     expect(isolation).toBeGreaterThan(methodStart);
     expect(isolation).toBeLessThan(switches);
     expect(switches).toBeLessThan(reserve);
-    expect(guard).toContain("(process.env.ADMIN_USER_IDS || '').split(',')");
-    expect(guard).toContain('if (!operatorIds.includes(userId))');
+    expect(guard).toContain('isConfiguredCoderOperator(userId)');
     expect(guard).not.toContain('process.env.CODER_ALLOW_ALL_USERS');
   });
 

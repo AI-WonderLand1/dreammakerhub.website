@@ -37,13 +37,9 @@ function publicCoderOrigin(): string {
 
 /** This shared-token path is ONLY for the single site operator, not customers. */
 function assertSoleOperator(userId: string) {
+  // assertCoderOwnerIsolation uses the same one-account Coder operator rule
+  // as the private WonderSpace entry point.
   assertCoderOwnerIsolation(userId);
-  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  const operatorId = process.env.CODER_OPERATOR_SUPABASE_ID?.trim();
-  if (operatorId ? (operatorId !== userId || !adminIds.includes(operatorId)) :
-    (adminIds.length !== 1 || adminIds[0] !== userId)) {
-    throw new CostGateError('The private IDE owner is not uniquely configured.');
-  }
 }
 
 async function openExistingWorkspace(userId: string, slotId: string, start: boolean) {

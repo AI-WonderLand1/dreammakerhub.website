@@ -1,6 +1,7 @@
 import 'server-only';
 import type { User } from '@supabase/supabase-js';
 import { CostGateError } from '@/lib/billing/cost-guard.server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import { coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -27,8 +28,7 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
   if (!user.email || !user.email_confirmed_at || !UUID.test(user.id)) {
     throw new CostGateError('A confirmed DreamMakerHub account is required.', 402);
   }
-  const operators = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim());
-  if (operators.includes(user.id)) {
+  if (isConfiguredCoderOperator(user.id)) {
     throw new CostGateError('The operator account cannot be enrolled as a customer.');
   }
   const expectedEmail = user.email.trim().toLowerCase();

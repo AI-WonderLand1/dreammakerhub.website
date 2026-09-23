@@ -1,5 +1,6 @@
 import { createClient } from '@/app/utils/supabase/server';
 import WonderSpaceOperatorGate, { OperatorIdePanel } from '@/components/engines/WonderSpaceOperatorGate';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -10,8 +11,7 @@ export const metadata = {
 export default async function WonderSpacePage() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
-  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  const isOperator = !error && Boolean(user && adminIds.includes(user.id));
+  const isOperator = !error && isConfiguredCoderOperator(user?.id);
 
   // If the SSR cookie is missing, do not guess that the visitor is a customer.
   // The browser can have a verified Supabase session even when the proxy drops

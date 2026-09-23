@@ -36,7 +36,7 @@ describe('Existing Coder workspace resume', () => {
   });
 
   it('does not render the resume action for customers using the shared Coder owner', () => {
-    expect(list).toContain('adminIds.includes(user.id)');
+    expect(list).toContain('isConfiguredCoderOperator(user.id)');
     expect(list).toContain('const canOpen');
     expect(page).toContain('result.canOpen === true');
     expect(page).toContain('canOpen && slot.workspace_id');
