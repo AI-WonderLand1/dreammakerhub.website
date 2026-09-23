@@ -53,6 +53,12 @@ locals {
     linux = var.linux_image
     node  = var.node_image
   }
+  machine_profiles = {
+    micro    = { cpu = "1", memory = "2Gi" }
+    standard = { cpu = "2", memory = "4Gi" }
+    power    = { cpu = "4", memory = "8Gi" }
+    max      = { cpu = "8", memory = "16Gi" }
+  }
 }
 
 data "coder_parameter" "ide_image" {
@@ -71,43 +77,28 @@ data "coder_parameter" "ide_image" {
   }
 }
 
-data "coder_parameter" "cpu" {
-  name         = "cpu"
-  display_name = "CPU"
-  type         = "number"
-  default      = "1"
+data "coder_parameter" "machine_profile" {
+  name         = "machine_profile"
+  display_name = "Machine"
+  description  = "Larger machines consume the monthly compute pool faster."
+  type         = "string"
+  default      = "micro"
   mutable      = false
-  validation {
-    min = 1
-    max = 2
+  option {
+    name  = "Micro · 1 CPU / 2 GB · 1x compute"
+    value = "micro"
   }
   option {
-    name  = "1 Core"
-    value = "1"
+    name  = "Standard · 2 CPU / 4 GB · 2x compute"
+    value = "standard"
   }
   option {
-    name  = "2 Cores"
-    value = "2"
-  }
-}
-
-data "coder_parameter" "memory" {
-  name         = "memory"
-  display_name = "Memory (GiB)"
-  type         = "number"
-  default      = "2"
-  mutable      = false
-  validation {
-    min = 1
-    max = 4
+    name  = "Power · 4 CPU / 8 GB · 4x compute"
+    value = "power"
   }
   option {
-    name  = "2 GiB"
-    value = "2"
-  }
-  option {
-    name  = "4 GiB"
-    value = "4"
+    name  = "Max · 8 CPU / 16 GB · 8x compute"
+    value = "max"
   }
 }
 
@@ -221,8 +212,8 @@ resource "kubernetes_deployment_v1" "main" {
           resources {
             requests = { cpu = "250m", memory = "512Mi" }
             limits = {
-              cpu    = data.coder_parameter.cpu.value
-              memory = "${data.coder_parameter.memory.value}Gi"
+              cpu    = local.machine_profiles[data.coder_parameter.machine_profile.value].cpu
+              memory = local.machine_profiles[data.coder_parameter.machine_profile.value].memory
             }
           }
           volume_mount {
