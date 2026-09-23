@@ -9,6 +9,27 @@ ALTER TABLE public.coder_customer_jobs
   ADD COLUMN IF NOT EXISTS machine_profile text NOT NULL DEFAULT 'micro',
   ADD COLUMN IF NOT EXISTS compute_multiplier integer NOT NULL DEFAULT 1;
 
+ALTER TABLE public.coder_customer_compute_usage
+  ADD COLUMN IF NOT EXISTS compute_multiplier integer NOT NULL DEFAULT 1
+    CHECK (compute_multiplier IN (1,2,4,8));
+
+-- Backfill any already-queued pilot rows before enforcing the profile shape.
+UPDATE public.coder_customer_jobs
+SET
+  machine_profile = CASE
+    WHEN cpu = 2 AND memory_gib = 4 THEN 'standard'
+    ELSE 'micro'
+  END,
+  compute_multiplier = CASE
+    WHEN cpu = 2 AND memory_gib = 4 THEN 2
+    ELSE 1
+  END;
+
+UPDATE public.coder_customer_compute_usage u
+SET compute_multiplier = j.compute_multiplier
+FROM public.coder_customer_jobs j
+WHERE j.slot_id = u.slot_id;
+
 ALTER TABLE public.coder_customer_jobs
   ADD CONSTRAINT coder_customer_jobs_machine_profile_check
     CHECK (machine_profile IN ('micro','standard','power','max')),
@@ -25,30 +46,6 @@ ALTER TABLE public.coder_customer_jobs
       (machine_profile = 'power'    AND cpu = 4 AND memory_gib = 8  AND compute_multiplier = 4) OR
       (machine_profile = 'max'      AND cpu = 8 AND memory_gib = 16 AND compute_multiplier = 8)
     );
-
-ALTER TABLE public.coder_customer_compute_usage
-  ADD COLUMN IF NOT EXISTS compute_multiplier integer NOT NULL DEFAULT 1
-    CHECK (compute_multiplier IN (1,2,4,8));
-
--- Backfill any already-queued pilot rows to a profile that matches their old
--- 1/2 CPU and 2/4 GiB shape before enforcing the weighted meter.
-UPDATE public.coder_customer_jobs
-SET
-  machine_profile = CASE
-    WHEN cpu = 2 AND memory_gib = 4 THEN 'standard'
-    ELSE 'micro'
-  END,
-  compute_multiplier = CASE
-    WHEN cpu = 2 AND memory_gib = 4 THEN 2
-    ELSE 1
-  END
-WHERE machine_profile = 'micro' AND compute_multiplier = 1;
-
-UPDATE public.coder_customer_compute_usage u
-SET compute_multiplier = j.compute_multiplier
-FROM public.coder_customer_jobs j
-WHERE j.slot_id = u.slot_id
-  AND u.compute_multiplier = 1;
 
 CREATE OR REPLACE FUNCTION public.meter_coder_customer_compute(
   p_slot_id uuid, p_running boolean
