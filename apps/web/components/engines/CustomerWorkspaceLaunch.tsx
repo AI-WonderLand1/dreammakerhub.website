@@ -15,7 +15,6 @@ export default function CustomerWorkspaceLaunch() {
   const [memory, setMemory] = useState(2);
   const [setup, setSetup] = useState<Setup | null>(null);
   const [loading, setLoading] = useState(false);
-  const [opening, setOpening] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -64,35 +63,6 @@ export default function CustomerWorkspaceLaunch() {
     }
   };
 
-  const openPrivateIde = async () => {
-    if (!setup?.slotId || setup.status !== 'ready' || opening) return;
-    setOpening(true);
-    setError('');
-    try {
-      // Read-only: never create or restart a workspace from the browser.
-      const endpoint = `/api/user-workspace/customer/open/${encodeURIComponent(setup.slotId)}`;
-      for (let attempt = 0; attempt < 24; attempt++) {
-        const response = await fetch(endpoint, { cache: 'no-store',
-          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
-        const result = await response.json() as OpenResult;
-        if (response.status === 202) {
-          await new Promise<void>((resolve) => window.setTimeout(resolve, 2500));
-          continue;
-        }
-        if (!response.ok) throw new Error(result.error || 'Your private IDE cannot be opened yet.');
-        if (result.status !== 'running' || !result.url) throw new Error('Coder did not confirm your private IDE is running.');
-        // Coder performs its own OIDC sign-in; no admin credentials enter the browser.
-        window.location.assign(result.url);
-        return;
-      }
-      throw new Error('The IDE is still starting. Use Open my private IDE again; do not create another workspace.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to open your private IDE.');
-    } finally {
-      setOpening(false);
-    }
-  };
-
   if (authLoading) return <main className="min-h-screen bg-[#080d22] p-12 text-white">Checking your session…</main>;
   if (!user) return <main className="min-h-screen bg-[#080d22] p-12 text-white"><Link href="/public-pages/auth" className="text-cyan-200 underline">Sign in to WonderSpace</Link></main>;
 
@@ -107,12 +77,8 @@ export default function CustomerWorkspaceLaunch() {
         <p className="mt-3 text-slate-300">{setup.status === 'needs_reconciliation'
           ? 'Coder may have created your workspace, but confirmation was interrupted. Contact support. Do not request a replacement.'
           : setup.status === 'ready'
-            ? 'Your private workspace is allocated. Open it with your own Coder account; Coder may ask you to sign in through DreamMakerHub single sign-on.'
+            ? 'Your private workspace is allocated and preserved. Opening is temporarily paused while the DreamMakerHub-only IDE gateway is secured; you will not be sent to the Coder dashboard.'
             : 'The runner is preparing your workspace. Do not submit a duplicate request.'}</p>
-        {setup.status === 'ready' && <button type="button" onClick={() => void openPrivateIde()} disabled={opening}
-          className="mt-5 rounded-lg bg-cyan-600 px-5 py-3 font-semibold disabled:opacity-50">
-          {opening ? 'Checking your private IDE…' : 'Open my private IDE'}
-        </button>}
         {error && <p role="alert" className="mt-3 text-amber-200">{error}</p>}
       </section> : <form onSubmit={submit} className="mt-9 grid gap-6 md:grid-cols-2">
         <section className="rounded-2xl border border-white/20 bg-slate-900 p-6">
