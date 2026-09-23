@@ -14,6 +14,10 @@ describe('Existing operator IDE link', () => {
     expect(page).toContain('if (isOperator)');
     expect(page).toContain('WonderSpaceOperatorGate');
     expect(gate).toContain("fetch('/api/wonderspace/operator'");
+    expect(gate).toContain('const checkOperator = async () =>');
+    expect(gate).toContain("const requestCheck = (token?: string) => fetch('/api/wonderspace/operator'");
+    expect(gate).toContain('let response = await requestCheck(accessToken)');
+    expect(gate).toContain('response = await requestCheck(data.session.access_token)');
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
