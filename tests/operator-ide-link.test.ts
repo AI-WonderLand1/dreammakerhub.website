@@ -58,7 +58,8 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain('client.auth.refreshSession()');
     expect(gate).toContain('response = await requestOpen(data.session.access_token)');
     expect(gate).toContain("method: 'POST'");
-    expect(gate).toContain('Open existing IDE in Coder');
+    expect(gate).not.toContain('Open existing IDE in Coder');
+    expect(gate).toContain('Manage production in Coder');
     expect(gate).toContain('Sign in to DreamMakerHub');
     expect(route).toContain('if (bearerOnly && !bearer)');
     expect(route).toContain('supabase.auth.getUser(bearer)');
