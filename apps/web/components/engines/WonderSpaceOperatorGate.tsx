@@ -165,11 +165,10 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
   return (
     <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
       <h1 className="text-2xl font-semibold">{role === 'unauthorized' ? 'Sign in to DreamMakerHub' : 'Your session could not be verified'}</h1>
-      <p className="mx-auto mt-3 max-w-lg text-slate-300">Your existing Coder workspace has not been changed. This page will not open the customer creation form until your account is verified.</p>
+      <p className="mx-auto mt-3 max-w-lg text-slate-300">Your DreamMakerHub session must be verified before WonderSpace access can continue. Customer accounts are never given the operator Coder workspace link.</p>
       <div className="mt-6 flex flex-wrap justify-center gap-4">
         <button type="button" onClick={() => void retrySessionCheck()} className="rounded-lg border border-cyan-300/40 px-5 py-3 text-cyan-200">Retry session check</button>
         <Link href={DREAMMAKERHUB_SIGN_IN} className="rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in to DreamMakerHub</Link>
-        <a href={OPERATOR_WORKSPACE_URL} className="rounded-lg border border-cyan-300/40 px-5 py-3 font-semibold text-cyan-200">Open existing IDE in Coder</a>
       </div>
     </main>
   );
