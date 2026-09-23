@@ -43,11 +43,27 @@ describe('Existing operator IDE link', () => {
     expect(route).toContain("'Cache-Control': 'private, no-store'");
     expect(route).toContain('export async function POST(request: Request)');
     expect(gate).toContain("fetch('/wonderspace/my-ide'");
-    expect(gate).toContain('Authorization: `Bearer ${session.access_token}`');
+    expect(gate).toContain('Authorization: `Bearer ${token}`');
     expect(gate).not.toContain('CODER_API_TOKEN');
     expect(route).not.toContain('CODER_API_TOKEN');
     expect(route).not.toContain('request.nextUrl.searchParams');
     expect(route).not.toContain('POST /workspaces');
+  });
+
+  it('uses the latest browser session and makes at most one refresh attempt on a rejected operator token', () => {
+    const route = read('apps/web/app/wonderspace/my-ide/route.ts');
+    const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
+    expect(gate).toContain('client.auth.getSession()');
+    expect(gate).toContain('if (response.status === 401 && client)');
+    expect(gate).toContain('client.auth.refreshSession()');
+    expect(gate).toContain('response = await requestOpen(data.session.access_token)');
+    expect(gate).toContain("method: 'POST'");
+    expect(gate).toContain('Open existing IDE in Coder');
+    expect(gate).toContain('Sign in to DreamMakerHub');
+    expect(route).toContain('if (bearerOnly && !bearer)');
+    expect(route).toContain('supabase.auth.getUser(bearer)');
+    expect(route).toContain("'/public-pages/auth?redirectTo=%2Fwonderspace'");
+    expect(route).not.toContain("new URL('/auth/login', request.url)");
   });
 
   it('recognizes Coder succeeded start/stop builds as running/stopped states', () => {
