@@ -52,6 +52,19 @@ export async function GET(request: Request, { params }: Context) {
   const { slotId } = await params;
   if (!UUID.test(slotId)) return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: noStore });
 
+  // Customer browsers must not be handed the Coder dashboard origin. The
+  // current Coder OIDC session exposes Coder's own dashboard after sign-in.
+  // Keep customer IDE opening paused until the DreamMakerHub workspace-only
+  // gateway is deployed and independently verified.
+  return NextResponse.json({
+    error: 'Customer IDE opening is temporarily paused while the private DreamMakerHub IDE gateway is being secured.',
+    code: 'CUSTOMER_IDE_GATEWAY_REQUIRED',
+  }, { status: 503, headers: noStore });
+
+  /* SECURITY HOLD: do not remove this fail-closed return until the gateway
+     binds the DreamMakerHub user to the exact workspace/app and never exposes
+     coder.dreammakerhub.website to the browser.
+
   try {
     customerProvisioningGate();
     if (await verifiedCostPlan(user.id) === 'free') {
@@ -123,4 +136,5 @@ export async function GET(request: Request, { params }: Context) {
   } catch (cause) {
     return costGateResponse(cause instanceof CostGateError ? cause : undefined);
   }
+  */
 }
