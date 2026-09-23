@@ -1,4 +1,5 @@
 import 'server-only';
+import { fetch as undiciFetch } from 'undici';
 import { getClient } from '@/lib/supabase-service';
 import { PLAN_LIMITS } from '@/lib/billing/limits';
 import { CostGateError, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
@@ -133,7 +134,7 @@ export async function releaseDeletedCoderSlot(userId: string, slotId: string, wo
 export async function coderApiRequest(path: string, method: 'GET' | 'POST', body?: unknown): Promise<Response> {
   const { url, token } = coderApiConfig();
   try {
-    return await fetch(`${url}${path}`, {
+    return await undiciFetch(`${url}${path}`, {
       method,
       headers: { 'Coder-Session-Token': token, ...(body ? { 'Content-Type': 'application/json' } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
