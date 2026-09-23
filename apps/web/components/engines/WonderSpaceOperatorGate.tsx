@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -108,12 +108,19 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
   const { user, session, loading: authLoading } = useAuth();
   const [role, setRole] = useState<Role>('checking');
   const [retry, setRetry] = useState(0);
+  const operatorRefreshAttempted = useRef(false);
+  const refreshUserId = useRef<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       setRole('unauthorized');
       return;
+    }
+
+    if (refreshUserId.current !== user.id) {
+      refreshUserId.current = user.id;
+      operatorRefreshAttempted.current = false;
     }
 
     const controller = new AbortController();
@@ -138,9 +145,11 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
       });
 
       let response = await requestCheck(accessToken);
-      if (response.status === 401 && client) {
-        // Retry once with a refreshed Supabase session before treating the
-        // browser as signed out. Never infer operator rights from client data.
+      if (response.status === 401 && client && !operatorRefreshAttempted.current) {
+        // Keep the retry budget across auth-context token updates. Supabase can
+        // publish a refreshed token while this effect is still running, which
+        // restarts the effect; the ref prevents an unbounded refresh loop.
+        operatorRefreshAttempted.current = true;
         const { data, error } = await client.auth.refreshSession();
         if (!error && data.session?.access_token) {
           response = await requestCheck(data.session.access_token);
@@ -149,6 +158,7 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
 
       if (response.status === 401) return 'unauthorized' as Role;
       if (!response.ok) throw new Error('Operator access could not be checked.');
+      operatorRefreshAttempted.current = false;
       const result = await response.json() as { isOperator?: unknown };
       if (typeof result.isOperator !== 'boolean') throw new Error('Invalid operator access response.');
       return result.isOperator ? 'operator' as Role : 'customer' as Role;
@@ -161,6 +171,7 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
   }, [authLoading, user?.id, session?.access_token, retry]);
 
   async function retrySessionCheck() {
+    operatorRefreshAttempted.current = false;
     const client = getSupabaseClient();
     if (client) {
       // Supabase updates the shared auth context on a successful refresh.
