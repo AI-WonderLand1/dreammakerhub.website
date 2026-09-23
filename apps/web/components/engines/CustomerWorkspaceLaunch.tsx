@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
 
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
@@ -10,8 +11,7 @@ const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 export default function CustomerWorkspaceLaunch() {
   const { user, session, loading: authLoading } = useAuth();
   const [workspaceName, setWorkspaceName] = useState('');
-  const [cpu, setCpu] = useState(1);
-  const [memory, setMemory] = useState(2);
+  const [machineProfile, setMachineProfile] = useState<WorkspaceProfileId>('micro');
   const [setup, setSetup] = useState<Setup | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +49,7 @@ export default function CustomerWorkspaceLaunch() {
     try {
       const response = await fetch('/api/user-workspace/customer/provision', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ workspaceName, cpu, memory }),
+        body: JSON.stringify({ workspaceName, machineProfile }),
       });
       const result = await response.json() as Setup;
       if (!response.ok) throw new Error(result.error || 'Workspace creation is paused.');
@@ -89,18 +89,29 @@ export default function CustomerWorkspaceLaunch() {
             className="mt-2 w-full rounded-lg border border-white/20 bg-slate-950 p-3" />
         </section>
         <section className="rounded-2xl border border-white/20 bg-slate-900 p-6">
-          <h2 className="text-xl font-semibold">2. Choose your resources</h2>
-          <label htmlFor="customer-cpu" className="mt-5 block text-sm">CPU</label>
-          <select id="customer-cpu" value={cpu} onChange={(e) => setCpu(Number(e.target.value))}
-            className="mt-2 w-full rounded-lg border border-white/20 bg-slate-950 p-3">
-            <option value={1}>1 Core</option><option value={2}>2 Cores</option>
-          </select>
-          <label htmlFor="customer-memory" className="mt-5 block text-sm">Memory</label>
-          <select id="customer-memory" value={memory} onChange={(e) => setMemory(Number(e.target.value))}
-            className="mt-2 w-full rounded-lg border border-white/20 bg-slate-950 p-3">
-            <option value={2}>2 GiB</option><option value={4}>4 GiB</option>
-          </select>
-          <p className="mt-4 text-sm text-slate-300">Your persistent home disk: 10 GiB.</p>
+          <h2 className="text-xl font-semibold">2. Choose your machine</h2>
+          <p className="mt-3 text-sm text-slate-300">Larger machines use your monthly compute pool faster, just like more expensive AI models use more tokens.</p>
+          <div className="mt-5 grid gap-3">
+            {WORKSPACE_PROFILES.map((profile) => (
+              <label key={profile.id} className={`cursor-pointer rounded-xl border p-4 transition ${machineProfile === profile.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/60 hover:border-white/30'}`}>
+                <span className="flex items-start gap-3">
+                  <input type="radio" name="machine-profile" value={profile.id}
+                    checked={machineProfile === profile.id}
+                    onChange={() => setMachineProfile(profile.id)}
+                    className="mt-1" />
+                  <span className="flex-1">
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                      <strong>{profile.name}</strong>
+                      <span className="text-sm font-semibold text-cyan-200">{profile.computeMultiplier}× compute</span>
+                    </span>
+                    <span className="mt-1 block text-sm text-slate-200">{profile.cpu} CPU · {profile.memoryGiB} GB RAM</span>
+                    <span className="mt-1 block text-xs text-slate-400">{profile.description}</span>
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <p className="mt-4 text-sm text-slate-300">1 compute credit = 1 CPU-minute. Persistent home disk: 10 GiB.</p>
           <button type="submit" disabled={loading} className="mt-5 w-full rounded-lg bg-cyan-600 px-5 py-3 font-semibold disabled:opacity-50">
             {loading ? 'Reserving your workspace…' : 'Create my private IDE'}
           </button>
