@@ -3,6 +3,7 @@ import { fetch as undiciFetch } from 'undici';
 import { getClient } from '@/lib/supabase-service';
 import { PLAN_LIMITS } from '@/lib/billing/limits';
 import { CostGateError, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import { secureCoderApiOrigin } from '@/lib/coder/secure-origin';
 
 export const MAX_CODER_CPU = 2;
@@ -50,8 +51,7 @@ export function coderApiConfig(): { url: string; token: string } {
  * This independent gate prevents a billing flag from exposing the operator IDE.
  */
 export function assertCoderOwnerIsolation(userId: string): void {
-  const operatorIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  if (!operatorIds.includes(userId)) {
+  if (!isConfiguredCoderOperator(userId)) {
     throw new CostGateError('Customer IDE creation is paused until individual Coder access and time limits are verified.');
   }
 }
