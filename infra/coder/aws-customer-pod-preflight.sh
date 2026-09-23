@@ -7,9 +7,13 @@ fail() { printf 'BLOCKED: %s\n' "$*" >&2; exit 1; }
 info() { printf 'CHECK: %s\n' "$*"; }
 
 command -v kubectl >/dev/null 2>&1 || fail 'kubectl is not installed on this AWS host; a Docker web VM is not an established Kubernetes cluster.'
-[[ -n "${EXPECTED_KUBE_CONTEXT:-}" ]] || fail 'Set the verified AWS_CODER_KUBE_CONTEXT GitHub variable first. Refusing an unknown cluster.'
-
 actual_context="$(kubectl config current-context 2>/dev/null)" || fail 'No usable kubeconfig/current context on this AWS host.'
+# The first run can discover the configured context without reading resources
+# from a potentially unrelated cluster. Pin it before a second, deeper scan.
+if [[ -z "${EXPECTED_KUBE_CONTEXT:-}" ]]; then
+  info "Discovered Kubernetes context on this AWS host: $actual_context"
+  fail 'Verify that this is the intended AWS customer cluster, set AWS_CODER_KUBE_CONTEXT to that exact value in GitHub, then rerun the read-only preflight.'
+fi
 [[ "$actual_context" == "$EXPECTED_KUBE_CONTEXT" ]] || fail "Kubernetes context does not match verified AWS_CODER_KUBE_CONTEXT (actual: $actual_context)."
 info "Verified expected Kubernetes context: $actual_context"
 
