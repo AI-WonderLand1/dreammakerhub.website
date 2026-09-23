@@ -12,8 +12,9 @@ export function customerProvisioningGate(): void {
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
       process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED !== 'true' ||
-      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true') {
-    throw new CostGateError('Private customer IDEs are pending identity, pod isolation and compute-limit verification.');
+      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true' ||
+      process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED !== 'true') {
+    throw new CostGateError('Private customer IDEs are paused until identity, pod isolation, compute limits, and the DreamMakerHub-only IDE gateway are verified.');
   }
   if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
