@@ -195,7 +195,7 @@ const nextConfig = {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://replit.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.zdassets.com https://*.zendesk.com https://*.smooch.io https://*.ingest.*.sentry.io https://*.twilio.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://replit.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://cdn.amplitude.com https://*.zdassets.com https://*.zendesk.com https://*.smooch.io https://*.ingest.*.sentry.io https://*.twilio.com",
             "style-src 'self' 'unsafe-inline' https://rsms.me https://*.zdassets.com https://*.zendesk.com",
             "img-src 'self' blob: data: https:",
             "font-src 'self' data: https://rsms.me https://*.zdassets.com https://*.zendesk.com",
