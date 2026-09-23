@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
-type OpenResult = { status?: string; url?: string; message?: string; error?: string };
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export default function CustomerWorkspaceLaunch() {
