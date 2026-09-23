@@ -122,7 +122,14 @@ export async function GET(request: Request) {
   if ('url' in target) {
     return NextResponse.redirect(target.url, { status: 303, headers: NO_STORE });
   }
-  if (target.login) return NextResponse.redirect(new URL('/auth/login', request.url));
+  if (target.login) {
+    // Keep the user on the real website login and return to WonderSpace after
+    // sign-in. A Coder login is a separate session on a different origin.
+    return NextResponse.redirect(new URL('/public-pages/auth?redirectTo=%2Fwonderspace', request.url), {
+      status: 303,
+      headers: NO_STORE,
+    });
+  }
   return NextResponse.json({ error: target.error }, { status: target.status, headers: NO_STORE });
 }
 

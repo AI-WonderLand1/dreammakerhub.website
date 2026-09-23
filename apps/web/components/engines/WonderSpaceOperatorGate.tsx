@@ -3,40 +3,68 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import CustomerWorkspaceLaunch from './CustomerWorkspaceLaunch';
 
 type Role = 'checking' | 'operator' | 'customer' | 'unauthorized' | 'error';
 
 const CODER_ORIGIN = 'https://coder.dreammakerhub.website';
+const OPERATOR_WORKSPACE_URL = `${CODER_ORIGIN}/@wonderingtribe/production`;
+const DREAMMAKERHUB_SIGN_IN = '/public-pages/auth?redirectTo=%2Fwonderspace';
 
 /** The personal operator workspace is never created through the customer form. */
 export function OperatorIdePanel() {
   const { session } = useAuth();
   const [opening, setOpening] = useState(false);
   const [openError, setOpenError] = useState('');
+  const [needsSignIn, setNeedsSignIn] = useState(false);
 
   async function openProduction() {
     if (opening) return;
     setOpenError('');
-    // If SSR already recognized the operator but the browser session is still
-    // loading, the existing cookie-authenticated GET handler remains usable.
-    if (!session?.access_token) {
-      window.location.assign('/wonderspace/my-ide');
-      return;
-    }
-
+    setNeedsSignIn(false);
     setOpening(true);
+
     try {
-      // A verified Supabase Bearer token fixes lost SSR cookies without ever
-      // handing the Coder API token or a customer creation capability to JS.
-      const response = await fetch('/wonderspace/my-ide', {
+      const client = getSupabaseClient();
+      // Prefer the latest browser session. The auth context can still contain
+      // an older access token after Supabase refreshes it in another tab.
+      let accessToken: string | undefined = session?.access_token;
+      if (client) {
+        const { data } = await client.auth.getSession();
+        accessToken = data.session?.access_token || accessToken;
+      }
+      if (!accessToken) {
+        // The cookie-authenticated GET is read-only until it has independently
+        // verified the operator; POST must always carry a verified Bearer token.
+        window.location.assign('/wonderspace/my-ide');
+        return;
+      }
+
+      const requestOpen = (token: string) => fetch('/wonderspace/my-ide', {
         method: 'POST',
         cache: 'no-store',
         credentials: 'same-origin',
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
+      let response = await requestOpen(accessToken);
+
+      if (response.status === 401 && client) {
+        // Retry exactly once with a newly issued Supabase session. Never retry
+        // with cookies or expose the privileged Coder token to the browser.
+        const { data, error } = await client.auth.refreshSession();
+        if (!error && data.session?.access_token) {
+          response = await requestOpen(data.session.access_token);
+        }
+      }
+
       const result = await response.json().catch(() => null) as { url?: unknown; error?: string } | null;
-      if (!response.ok) throw new Error(result?.error || 'The existing IDE could not be opened.');
+      if (!response.ok) {
+        if (response.status === 401) setNeedsSignIn(true);
+        throw new Error(response.status === 401
+          ? 'Your DreamMakerHub session expired. Sign in again to use this button, or open your IDE directly in Coder.'
+          : result?.error || 'The existing IDE could not be opened.');
+      }
       if (typeof result?.url !== 'string' || new URL(result.url).origin !== CODER_ORIGIN) {
         throw new Error('Coder returned an unexpected editor address.');
       }
@@ -62,11 +90,12 @@ export function OperatorIdePanel() {
             <button type="button" onClick={() => void openProduction()} disabled={opening} className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-center font-semibold text-slate-950 disabled:opacity-60">
               {opening ? 'Opening existing IDE…' : 'Open / start production IDE'}
             </button>
-            <a href={`${CODER_ORIGIN}/@wonderingtribe/production`} className="rounded-xl border border-cyan-300/40 bg-slate-950 px-6 py-3 text-center font-semibold text-cyan-100 hover:bg-slate-800">
+            <a href={OPERATOR_WORKSPACE_URL} className="rounded-xl border border-cyan-300/40 bg-slate-950 px-6 py-3 text-center font-semibold text-cyan-100 hover:bg-slate-800">
               Manage production in Coder
             </a>
           </div>
           {openError && <p role="alert" className="mt-4 text-sm text-amber-200">{openError}</p>}
+          {needsSignIn && <Link href={DREAMMAKERHUB_SIGN_IN} className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">Sign in to DreamMakerHub</Link>}
           <p className="mt-5 text-sm text-slate-400">This button does not create another workspace or change its persistent disk.</p>
         </section>
       </div>
@@ -107,6 +136,16 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
     return () => controller.abort();
   }, [authLoading, user?.id, session?.access_token, retry]);
 
+  async function retrySessionCheck() {
+    const client = getSupabaseClient();
+    if (client) {
+      // Supabase updates the shared auth context on a successful refresh.
+      // A revoked token remains unauthenticated; never infer operator rights.
+      try { await client.auth.refreshSession(); } catch { /* Sign-in remains available. */ }
+    }
+    setRetry((value) => value + 1);
+  }
+
   if (authLoading || role === 'checking') {
     return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">Checking your DreamMakerHub session…</main>;
   }
@@ -118,7 +157,7 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
       <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
         <h1 className="text-2xl font-semibold">Cloud IDE access is private</h1>
         <p className="mx-auto mt-3 max-w-lg text-slate-300">Sign in with the approved operator account to open the existing IDE. This page does not create a customer workspace.</p>
-        <Link href="/public-pages/auth" className="mt-6 inline-block rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in</Link>
+        <Link href={DREAMMAKERHUB_SIGN_IN} className="mt-6 inline-block rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in</Link>
       </main>
     );
   }
@@ -127,9 +166,10 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
     <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
       <h1 className="text-2xl font-semibold">{role === 'unauthorized' ? 'Sign in to DreamMakerHub' : 'Your session could not be verified'}</h1>
       <p className="mx-auto mt-3 max-w-lg text-slate-300">Your existing Coder workspace has not been changed. This page will not open the customer creation form until your account is verified.</p>
-      <div className="mt-6 flex justify-center gap-4">
-        <button type="button" onClick={() => setRetry((value) => value + 1)} className="rounded-lg border border-cyan-300/40 px-5 py-3 text-cyan-200">Retry session check</button>
-        <Link href="/public-pages/auth" className="rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in</Link>
+      <div className="mt-6 flex flex-wrap justify-center gap-4">
+        <button type="button" onClick={() => void retrySessionCheck()} className="rounded-lg border border-cyan-300/40 px-5 py-3 text-cyan-200">Retry session check</button>
+        <Link href={DREAMMAKERHUB_SIGN_IN} className="rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in to DreamMakerHub</Link>
+        <a href={OPERATOR_WORKSPACE_URL} className="rounded-lg border border-cyan-300/40 px-5 py-3 font-semibold text-cyan-200">Open existing IDE in Coder</a>
       </div>
     </main>
   );
