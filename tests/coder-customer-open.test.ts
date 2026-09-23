@@ -5,11 +5,11 @@ import { join } from 'node:path';
 const file = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('customer IDE opening', () => {
-  it('requires Supabase authentication, verified customer mapping, paid access and a fresh controller', () => {
+  it('requires Supabase authentication, verified customer mapping and a fresh controller', () => {
     const route = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
     expect(route).toContain('authenticatedSupabaseUser(request)');
     expect(route).toContain('customerProvisioningGate()');
-    expect(route).toContain('verifiedCostPlan(user.id)');
+    expect(route).not.toContain("verifiedCostPlan(user.id) === 'free'");
     expect(route).toContain('verifiedCustomerTemplateId()');
     expect(route).toContain('assertFreshUsageController()');
     expect(route).toContain('getCoderSlot(user.id, slotId)');
