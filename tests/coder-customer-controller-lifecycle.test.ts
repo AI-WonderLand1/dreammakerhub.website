@@ -7,15 +7,18 @@ const controller = read('apps/web/app/api/internal/coder/customer-usage/route.ts
 const schema = read('supabase/migrations/202609220945_coder_customer_jobs.sql');
 
 describe('customer compute controller and deleted workspace accounting', () => {
-  it('meters only unreleased slots rather than the unbounded historical usage ledger', () => {
+  it('joins customer jobs before selecting unreleased slots, excluding operator allocations', () => {
     const active = controller.indexOf(".from('coder_workspace_slots')");
-    const unreleased = controller.indexOf(".is('released_at', null)", active);
+    const customerOnly = controller.indexOf('coder_customer_jobs!inner(slot_id)', active);
+    const unreleased = controller.indexOf(".is('released_at', null)", customerOnly);
     const states = controller.indexOf(".in('state', ['provisioned', 'deleting'])", unreleased);
     const metered = controller.indexOf(".from('coder_customer_compute_usage')", states);
     expect(active).toBeGreaterThan(0);
-    expect(unreleased).toBeGreaterThan(active);
+    expect(customerOnly).toBeGreaterThan(active);
+    expect(unreleased).toBeGreaterThan(customerOnly);
     expect(states).toBeGreaterThan(unreleased);
     expect(metered).toBeGreaterThan(states);
+    expect(controller).toContain('identity.data.coder_user_id === operatorId');
     expect(controller).toContain(".in('slot_id', allocations.map((slot) => slot.id))");
     expect(controller).toContain('usage.data.length !== allocations.length');
     expect(controller).not.toContain(".select('slot_id,workspace_id,user_id,used_ms,max_ms,stop_requested_at').limit(21)");
