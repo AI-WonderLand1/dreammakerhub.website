@@ -45,6 +45,16 @@ spec:
               key: CODER_SESSION_HOST_PREFIX_COOKIES
         - name: CODER_REDIRECT_TO_ACCESS_URL
           value: "true"
+        # Customer direct-Coder access is paused. These reduce cross-workspace
+        # exposure while the DreamMakerHub-only gateway is built.
+        - name: CODER_DISABLE_WORKSPACE_SHARING
+          value: "true"
+        - name: CODER_DISABLE_OWNER_WORKSPACE_ACCESS
+          value: "true"
+        - name: CODER_DISABLE_PATH_APPS
+          value: "true"
+        - name: CODER_OIDC_ALLOW_SIGNUPS
+          value: "false"
         - name: CODER_DB_PASSWORD
           valueFrom:
             secretKeyRef:
