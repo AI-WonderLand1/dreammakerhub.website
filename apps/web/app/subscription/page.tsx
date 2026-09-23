@@ -36,8 +36,8 @@ function sanitizeRedirectPath(raw: string | null): string {
 
 const faqs = [
   {
-    q: 'How does your billing measurement work? What is an "engine call"?',
-    a: 'An engine call represents a single webhook callback, canvas-state compile, or visual layout generation API request processed on our rendering clusters. Front-end resizing operations do NOT count toward engine calls.'
+    q: 'How does WonderSpace usage billing work?',
+    a: 'Saved workspaces primarily use storage. Running IDEs consume compute from your monthly core-hour pool, and AI usage is metered separately. Hibernated IDEs do not keep consuming CPU or RAM.'
   },
   {
     q: 'Can I change plans or cancel my subscription at any time?',
@@ -340,90 +340,28 @@ function SubscriptionContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Active Projects</td>
-                  <td className="py-3 px-4 text-center text-slate-400">1</td>
-                  <td className="py-3 px-4 text-center text-white">5</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">AI Chats</td>
-                  <td className="py-3 px-4 text-center text-slate-400">5/day</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Wonderbuild UI Editor</td>
-                  <td className="py-3 px-4 text-center text-slate-400">Basic</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Wonderplay 3D Engine</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">WonderSpace IDE</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Custom Domain</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-white">1</td>
-                  <td className="py-3 px-4 text-center text-white">Multiple</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Team Seats</td>
-                  <td className="py-3 px-4 text-center text-slate-400">1</td>
-                  <td className="py-3 px-4 text-center text-slate-400">1</td>
-                  <td className="py-3 px-4 text-center text-white">5</td>
-                  <td className="py-3 px-4 text-center text-white">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Priority GPU</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">White-Labeling</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">SSO / SCIM</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-green-400">✓</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-slate-300">Compute Credits</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-slate-500">—</td>
-                  <td className="py-3 px-4 text-center text-white">300K/mo</td>
-                  <td className="py-3 px-4 text-center text-white">Custom</td>
-                </tr>
-                <tr className="border-t border-white/10">
-                  <td className="py-3 px-4 text-slate-300">Support</td>
-                  <td className="py-3 px-4 text-center text-slate-400">Community</td>
-                  <td className="py-3 px-4 text-center text-white">Priority</td>
-                  <td className="py-3 px-4 text-center text-white">Dedicated</td>
-                  <td className="py-3 px-4 text-center text-white">SLA + Manager</td>
-                </tr>
+                {[
+                  ["Saved WonderSpace IDEs", "5", "100", "Unlimited", "Unlimited"],
+                  ["Running IDEs at once", "2", "4", "8", "Custom"],
+                  ["Monthly compute pool", "150 core-hours", "300 core-hours", "1,000 pooled", "Custom"],
+                  ["AI tokens / month", "500K", "5M", "25M pooled", "Custom"],
+                  ["Included storage", "5 GB", "100 GB", "500 GB pooled", "Custom"],
+                  ["Idle hibernation", "1 hour", "1 hour", "1 hour", "Custom"],
+                  ["Wonderbuild UI Editor", "Basic", "✓", "✓", "✓"],
+                  ["Wonderplay 3D Engine", "—", "✓", "✓", "✓"],
+                  ["Custom Domain", "Subdomain", "1", "Multiple", "Unlimited"],
+                  ["Shared Assets", "—", "—", "✓", "✓"],
+                  ["SSO / SCIM", "—", "—", "—", "✓"],
+                  ["Support", "Community", "Priority", "Dedicated", "SLA + Manager"],
+                ].map(([feature, free, pro, team, enterprise]) => (
+                  <tr key={feature}>
+                    <td className="py-3 px-4 text-slate-300">{feature}</td>
+                    <td className="py-3 px-4 text-center text-slate-400">{free}</td>
+                    <td className="py-3 px-4 text-center text-white">{pro}</td>
+                    <td className="py-3 px-4 text-center text-white">{team}</td>
+                    <td className="py-3 px-4 text-center text-white">{enterprise}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
