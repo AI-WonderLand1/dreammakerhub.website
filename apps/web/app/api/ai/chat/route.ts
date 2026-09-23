@@ -10,6 +10,7 @@ import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { storeConfessionToMem0 } from '@/lib/ai/mem0Client';
 import { getConfessionConfig } from '@/lib/ai/confessionConfig';
 import { isMem0ServiceEnabled, searchMemories, storeMemory } from '@/lib/ai/mem0Service';
+import { archiveAiConversation } from '@/lib/ai/mongoMemory.server';
 import { CostGateError, costGateResponse, reserveAiRequest } from '@/lib/billing/cost-guard.server';
 import { logUsage } from '@/lib/usage/log';
 import { decryptSecret } from '@/lib/crypto/secrets';
@@ -233,6 +234,18 @@ export async function POST(req: NextRequest) {
       memoryStore = { ok: false, error: memoryError?.message || 'Failed to write memory' };
     }
 
+    const mongoStore = {
+      ok: await archiveAiConversation({
+        userId: paidUser.userId,
+        projectId: project.id,
+        traceId,
+        prompt,
+        response: pipelineResult.finalText,
+        model: modelId,
+        persona: persona.id,
+      }),
+    };
+
     let mem0Store: { ok: boolean; stored?: number; error?: string } = { ok: false };
     if (config.enableMem0) {
       try {
@@ -286,6 +299,7 @@ export async function POST(req: NextRequest) {
         aiLaws: AI_LAWS,
         memoryStore,
         mem0Store,
+        mongoStore,
         confessionMode: config.mode,
         outputFormat,
       }
