@@ -35,7 +35,13 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(route).toContain('coder.createWorkspace(');
     expect(route).toContain("getCoderTemplateId('playcanvas-3d')");
     expect(launch).toContain("fetch('/api/user-workspace/provision'");
-    expect(read('apps/web/app/wonderspace/page.tsx')).toContain('WonderSpaceLaunch');
+    const page = read('apps/web/app/wonderspace/page.tsx');
+    const operatorGate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
+    // The page now separates the existing operator IDE from the customer
+    // launcher; the gate must still retain the original Coder launcher.
+    expect(page).toContain('WonderSpaceOperatorGate');
+    expect(operatorGate).toContain('<WonderSpaceLaunch />');
+    expect(operatorGate).toContain('<OperatorIdePanel />');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
   it('keeps repository selection visible but prevents launch when the template does not support it', () => {
