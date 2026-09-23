@@ -9,6 +9,8 @@ export const maxDuration = 60;
 const UUID = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 type Job = {
   slot_id: string; user_id: string; coder_user_id: string; template_id: string;
+  machine_profile: 'micro' | 'standard' | 'power' | 'max';
+  compute_multiplier: 1 | 2 | 4 | 8;
   cpu: number; memory_gib: number; disk_gib: number; max_compute_ms: number;
 };
 type RemoteWorkspace = { id?: string; owner_id?: string; template_id?: string; name?: string };
@@ -74,8 +76,7 @@ export async function POST(request: Request) {
           name: slot.workspace_name, template_version_id: versionId,
           rich_parameter_values: [
             { name: 'ide_image', value: 'linux' },
-            { name: 'cpu', value: String(job.cpu) },
-            { name: 'memory', value: String(job.memory_gib) },
+            { name: 'machine_profile', value: job.machine_profile },
             { name: 'home_disk_size', value: String(job.disk_gib) },
           ],
           ttl_ms: 60 * 60 * 1000,
@@ -89,6 +90,7 @@ export async function POST(request: Request) {
       await attachCoderWorkspace(job.user_id, job.slot_id, workspaceId);
       const usage = await db.from('coder_customer_compute_usage').insert({
         slot_id: job.slot_id, user_id: job.user_id, workspace_id: workspaceId,
+        compute_multiplier: job.compute_multiplier,
         max_ms: job.max_compute_ms, last_checked_at: new Date().toISOString(),
       });
       if (usage.error) throw new Error('Compute ledger could not be initialized');
