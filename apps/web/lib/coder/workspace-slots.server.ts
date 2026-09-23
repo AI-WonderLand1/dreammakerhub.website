@@ -64,10 +64,9 @@ export async function reserveCoderSlot(userId: string, workspaceName: string): P
     throw new CostGateError('New cloud workspaces are paused pending cost-control verification.');
   }
   const plan = await verifiedCostPlan(userId);
-  if (plan === 'free') throw new CostGateError('Cloud IDE requires an active paid subscription.', 402);
   const limit = PLAN_LIMITS[plan].workspacesLimit;
-  if (!Number.isInteger(limit) || limit < 1 || limit > 5) {
-    throw new CostGateError('Workspace allowance is not configured. New pods are paused.');
+  if (!Number.isInteger(limit) || limit < 1 || limit > 999999) {
+    throw new CostGateError('Saved-workspace allowance is not configured. New pods are paused.');
   }
   const { data, error } = await coderServiceClient().rpc('reserve_coder_workspace_slot', {
     p_user_id: userId,

@@ -15,6 +15,7 @@ type UsageSummary = {
   api_calls_used: number;
   tokens_used: number;
   compute_credits_used: number;
+  ide_compute_credits_used: number;
   runtime_minutes: number;
   projects_count: number;
   storage_used: number;
@@ -41,30 +42,30 @@ type UsageLimits = {
 
 const USAGE_LIMITS: Record<PlanId, UsageLimits> = {
   free: {
-    projects: 1,
-    aiTokens: 5_000,
-    apiCalls: 100,
-    storageBytes: 100 * 1024 * 1024,
-    runtimeHours: 10,
-    computeCredits: 10_000,
+    projects: 5,
+    aiTokens: 500_000,
+    apiCalls: 10_000,
+    storageBytes: 5 * 1024 * 1024 * 1024,
+    runtimeHours: 150,
+    computeCredits: 9_000,
     teamSeats: 1,
   },
   pro: {
-    projects: 5,
-    aiTokens: 100_000,
-    apiCalls: 10_000,
-    storageBytes: 5 * 1024 * 1024 * 1024,
-    runtimeHours: 10,
-    computeCredits: 100_000,
+    projects: 100,
+    aiTokens: 5_000_000,
+    apiCalls: 100_000,
+    storageBytes: 100 * 1024 * 1024 * 1024,
+    runtimeHours: 300,
+    computeCredits: 18_000,
     teamSeats: 1,
   },
   team: {
-    projects: 10,
-    aiTokens: 500_000,
-    apiCalls: 100_000,
-    storageBytes: 50 * 1024 * 1024 * 1024,
-    runtimeHours: 50,
-    computeCredits: 300_000,
+    projects: null,
+    aiTokens: 25_000_000,
+    apiCalls: 1_000_000,
+    storageBytes: 500 * 1024 * 1024 * 1024,
+    runtimeHours: 1000,
+    computeCredits: 60_000,
     teamSeats: 5,
   },
   enterprise: {
@@ -220,8 +221,8 @@ export default function SubscriptionPage() {
       display: (n: number) => compact(n),
     },
     {
-      label: "Compute Credits",
-      used: usage?.compute_credits_used ?? 0,
+      label: "IDE Compute Credits",
+      used: usage?.ide_compute_credits_used ?? 0,
       limit: limits.computeCredits,
       display: (n: number) => compact(n),
     },
@@ -331,7 +332,10 @@ export default function SubscriptionPage() {
         {/* Usage This Cycle */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-lg font-bold text-white/90">Usage this cycle</div>
+            <div>
+              <div className="text-lg font-bold text-white/90">Usage this cycle</div>
+              <div className="mt-1 text-xs text-white/45">1 IDE compute credit = 1 CPU-minute. Larger WonderSpace machines burn credits faster.</div>
+            </div>
             {usage?.period_reset && (
               <div className="text-xs text-white/45">
                 Resets {new Date(usage.period_reset).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}

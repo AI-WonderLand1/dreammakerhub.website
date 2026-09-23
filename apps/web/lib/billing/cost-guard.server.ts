@@ -81,25 +81,28 @@ export async function reserveAiRequest(userId: string, inputCharacters: number, 
 
 export async function reserveAgentRequest(userId: string, inputCharacters: number) {
   const plan = await verifiedCostPlan(userId);
-  if (plan === 'free') throw new CostGateError('Agents require an active paid subscription.', 402);
   if (!Number.isSafeInteger(inputCharacters) || inputCharacters < 1 || inputCharacters > 5000) {
     throw new CostGateError('Agent input exceeds the per-request budget.', 429);
   }
   const limits = PLAN_LIMITS[plan];
+  // Keep AI available on Free, but give paid tiers substantially larger agent pools.
+  const requestLimit = plan === 'free' ? 100 : plan === 'pro' ? 2000 : plan === 'team' ? 10000 : 100000;
   // An agent request may make more than one model call: debit a fixed, conservative allowance.
   await reserveBillableUnits(userId, 'ai_tokens', Math.ceil(inputCharacters / 2) + 4096, limits.aiTokensMonthly);
-  await reserveBillableUnits(userId, 'agent_requests', 1, plan === 'team' ? 500 : 100);
+  await reserveBillableUnits(userId, 'agent_requests', 1, requestLimit);
   return plan;
 }
 
 export async function reserveWorkspaceLaunch(userId: string) {
   const plan = await verifiedCostPlan(userId);
-  if (plan === 'free') throw new CostGateError('Cloud IDE requires an active paid subscription.', 402);
   if (process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
     throw new CostGateError('New cloud workspaces are paused until the pod cost controls are verified.');
   }
-  // These are conservative MONTHLY START limits, not a substitute for Coder/Kubernetes concurrency and TTL caps.
-  await reserveBillableUnits(userId, 'workspace_launches', 1, PLAN_LIMITS[plan].workspacesLimit);
+  if (PLAN_LIMITS[plan].workspacesLimit < 1) {
+    throw new CostGateError('Your plan does not include a cloud workspace.', 402);
+  }
+  // Workspace creation itself is not the primary billable unit. Saved-workspace,
+  // concurrent-run, compute, storage and AI limits are enforced separately.
   return plan;
 }
 

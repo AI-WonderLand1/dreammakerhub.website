@@ -1,13 +1,20 @@
 import { logger } from '@/lib/logger';
-const MEM0_API_KEY = process.env.MEM0AI_API_KEY || "";
+function mem0ApiKey(): string {
+  return (process.env.MEM0AI_API_KEY || process.env.MEM0_API_KEY || "").trim();
+}
+
+export function isMem0ServiceEnabled(): boolean {
+  return Boolean(mem0ApiKey());
+}
 
 let mem0Client: any = null;
 
 async function getClient() {
   if (!mem0Client) {
-    if (!MEM0_API_KEY) throw new Error("MEM0AI_API_KEY not set");
+    const apiKey = mem0ApiKey();
+    if (!apiKey) throw new Error("MEM0AI_API_KEY or MEM0_API_KEY not set");
     const { MemoryClient } = await import("mem0ai");
-    mem0Client = new MemoryClient({ apiKey: MEM0_API_KEY });
+    mem0Client = new MemoryClient({ apiKey });
   }
   return mem0Client;
 }

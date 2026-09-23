@@ -47,8 +47,13 @@ declare namespace NodeJS {
     BYOC_CREDENTIALS_ENCRYPTION_KEY?: string;
     TOKEN_HASH_SECRET?: string;
     
-    // Database
+    // Database / AI memory
     MEM0_POSTGRES_URL?: string;
+    MEM0AI_API_KEY?: string;
+    MEM0_API_KEY?: string;
+    MONGODB_URI?: string;
+    MONGODB_DB?: string;
+    MONGODB_AI_MEMORY_ENABLED?: string;
     
     // Workspace provisioning
     WORKSPACE_DOMAIN?: string;
@@ -70,5 +75,9 @@ declare namespace NodeJS {
     // Stripe
     STRIPE_SECRET_KEY?: string;
     STRIPE_WEBHOOK_SECRET?: string;
+    STRIPE_PRICE_PRO_ID?: string;
+    STRIPE_PRICE_PRO_YEARLY_ID?: string;
+    STRIPE_PRICE_TEAM_ID?: string;
+    STRIPE_PRICE_TEAM_YEARLY_ID?: string;
   }
 }

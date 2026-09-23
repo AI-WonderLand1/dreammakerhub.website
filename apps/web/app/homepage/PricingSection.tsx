@@ -8,22 +8,18 @@ type CompareRow = {
 
 const COMPARISON_ROWS: CompareRow[] = [
   { label: "Price", values: { free: "$0 forever", pro: "$39/mo", team: "$129/mo", enterprise: "Custom" } },
-  { label: "Active projects", values: { free: "1", pro: "—", team: "—", enterprise: "Unlimited" } },
-  { label: "AI chats", values: { free: "5/day", pro: "Unlimited", team: "Unlimited", enterprise: "Unlimited" } },
+  { label: "Saved WonderSpace IDEs", values: { free: "5", pro: "100", team: "Unlimited", enterprise: "Unlimited" } },
+  { label: "Running IDEs at once", values: { free: "2", pro: "4", team: "8", enterprise: "Custom" } },
+  { label: "Monthly compute pool", values: { free: "150 core-hours", pro: "300 core-hours", team: "1,000 pooled", enterprise: "Custom" } },
+  { label: "AI tokens / month", values: { free: "500K", pro: "5M", team: "25M pooled", enterprise: "Custom" } },
+  { label: "Included storage", values: { free: "5 GB", pro: "100 GB", team: "500 GB pooled", enterprise: "Custom" } },
+  { label: "Idle hibernation", values: { free: "1 hour", pro: "1 hour", team: "1 hour", enterprise: "Custom" } },
   { label: "WonderBuild", values: { free: "Included", pro: "Included", team: "Included", enterprise: "Included" } },
-  { label: "1-click deployment", values: { free: "—", pro: "Included", team: "Included", enterprise: "Included" } },
   { label: "Custom domain", values: { free: "Subdomain", pro: "Included", team: "Included", enterprise: "Included" } },
-  { label: "Team seats", values: { free: "—", pro: "—", team: "Up to 5", enterprise: "Custom" } },
   { label: "Shared asset library", values: { free: "—", pro: "—", team: "Included", enterprise: "Included" } },
-  { label: "AI agent seats", values: { free: "—", pro: "—", team: "3", enterprise: "Custom" } },
-  { label: "Collaborative IDE", values: { free: "—", pro: "—", team: "Included", enterprise: "Included" } },
-  { label: "Always-on runners", values: { free: "—", pro: "—", team: "Included", enterprise: "Included" } },
-  { label: "White-label", values: { free: "—", pro: "—", team: "Ready", enterprise: "Included" } },
-  { label: "Compute credits", values: { free: "—", pro: "—", team: "300K/mo", enterprise: "Custom package" } },
   { label: "SSO + SCIM", values: { free: "—", pro: "—", team: "—", enterprise: "Included" } },
   { label: "Private cloud / on-prem", values: { free: "—", pro: "—", team: "—", enterprise: "Available" } },
   { label: "Dedicated account manager", values: { free: "—", pro: "—", team: "—", enterprise: "Included" } },
-  { label: "SLA-backed uptime", values: { free: "—", pro: "—", team: "—", enterprise: "Included" } },
 ];
 
 function planTone(plan: Plan) {

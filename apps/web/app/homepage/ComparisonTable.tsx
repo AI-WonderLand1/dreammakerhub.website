@@ -1,15 +1,15 @@
 const rows = [
-  { feature: "Active Projects", free: "1", pro: "5", team: "Unlimited", enterprise: "Unlimited" },
-  { feature: "AI Chats", free: "5/day", pro: "Unlimited", team: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Saved WonderSpace IDEs", free: "5", pro: "100", team: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Running IDEs at once", free: "2", pro: "4", team: "8", enterprise: "Custom" },
+  { feature: "Monthly compute pool", free: "150 core-hours", pro: "300 core-hours", team: "1,000 pooled", enterprise: "Custom" },
+  { feature: "AI tokens / month", free: "500K", pro: "5M", team: "25M pooled", enterprise: "Custom" },
+  { feature: "Included storage", free: "5 GB", pro: "100 GB", team: "500 GB pooled", enterprise: "Custom" },
+  { feature: "Idle hibernation", free: "1 hour", pro: "1 hour", team: "1 hour", enterprise: "Custom" },
   { feature: "WonderBuild", free: "Basic", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
   { feature: "NPC AI SIM Engine", free: "—", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
-  { feature: "WonderSpace IDE", free: "—", pro: "✓", team: "✓", enterprise: "✓", proHighlight: true },
-  { feature: "Custom Domain", free: "—", pro: "1", team: "Multiple", enterprise: "Unlimited" },
-  { feature: "Team Seats", free: "1", pro: "1", team: "5", enterprise: "Unlimited" },
-  { feature: "Priority GPU", free: "—", pro: "—", team: "✓", enterprise: "✓", teamHighlight: true },
-  { feature: "White-Labeling", free: "—", pro: "—", team: "✓", enterprise: "✓", teamHighlight: true },
-  { feature: "SSO / SCIM", free: "—", pro: "—", team: "—", enterprise: "✓", enterpriseHighlight: true },
-  { feature: "Compute Credits", free: "—", pro: "—", team: "300K/mo", enterprise: "Custom" },
+  { feature: "Custom Domain", free: "Subdomain", pro: "1", team: "Multiple", enterprise: "Unlimited" },
+  { feature: "Team collaboration", free: "—", pro: "—", team: "✓", enterprise: "✓" },
+  { feature: "SSO / SCIM", free: "—", pro: "—", team: "—", enterprise: "✓" },
 ];
 
 export default function ComparisonTable() {

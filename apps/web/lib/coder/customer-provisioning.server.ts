@@ -2,8 +2,9 @@ import 'server-only';
 import type { User } from '@supabase/supabase-js';
 import { CostGateError, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
 import { PLAN_LIMITS } from '@/lib/billing/limits';
-import { coderApiConfig, coderApiRequest, coderServiceClient, assertCoderResourceBudget } from '@/lib/coder/workspace-slots.server';
+import { coderApiConfig, coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
 import { verifiedCustomerCoderOwner } from '@/lib/coder/customer-identity.server';
+import { workspaceProfile } from '@/lib/coder/workspace-profiles';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
@@ -60,31 +61,30 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
   }
   const body = input as Record<string, unknown>;
   const name = typeof body.workspaceName === 'string' ? body.workspaceName.trim() : '';
-  const cpu = body.cpu;
-  const memory = body.memory;
-  if (!WORKSPACE_NAME.test(name) || typeof cpu !== 'number' || typeof memory !== 'number') {
-    throw new CostGateError('Choose a valid workspace name, CPU and memory.', 429);
-  }
-  assertCoderResourceBudget(cpu, memory);
-  if (![1, 2].includes(cpu) || ![2, 4].includes(memory)) {
-    throw new CostGateError('Choose an approved customer CPU and memory profile.', 429);
+  const profile = workspaceProfile(body.machineProfile);
+  if (!WORKSPACE_NAME.test(name) || !profile) {
+    throw new CostGateError('Choose a valid workspace name and machine profile.', 429);
   }
   if (body.repository || body.ideImage || body.sshPublicKey || body.diskGiB !== undefined) {
     throw new CostGateError('Only an approved blank IDE and fixed 10 GiB disk are available in this pilot.', 429);
   }
   const plan = await verifiedCostPlan(user.id);
-  if (plan === 'free') throw new CostGateError('Cloud IDE requires a verified paid plan.', 402);
-  const configuredMinutes = process.env[plan === 'team' ? 'CODER_TEAM_COMPUTE_MINUTES' : 'CODER_PRO_COMPUTE_MINUTES'];
+  const computeEnv = plan === 'free'
+    ? 'CODER_FREE_COMPUTE_MINUTES'
+    : plan === 'team'
+      ? 'CODER_TEAM_COMPUTE_MINUTES'
+      : 'CODER_PRO_COMPUTE_MINUTES';
+  const configuredMinutes = process.env[computeEnv];
   const minutes = Number(configuredMinutes);
   if (!configuredMinutes || !Number.isSafeInteger(minutes) || minutes < 1 || minutes > 1440) {
-    throw new CostGateError('Your plan’s compute allowance is not configured.');
+    throw new CostGateError('Your plan’s per-workspace safety allowance is not configured.');
   }
   const coderUserId = await verifiedCustomerCoderOwner(user);
   const templateId = await verifiedCustomerTemplateId();
   await assertFreshUsageController();
   const limit = PLAN_LIMITS[plan].workspacesLimit;
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5) {
-    throw new CostGateError('Customer workspace allowance is not configured.');
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 999999) {
+    throw new CostGateError('Customer saved-workspace allowance is not configured.');
   }
   const db = coderServiceClient();
   const { data: slotId, error: reservationError } = await db.rpc('reserve_coder_workspace_slot', {
@@ -96,7 +96,14 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
   }
   const { error: jobError } = await db.from('coder_customer_jobs').insert({
     slot_id: slotId, user_id: user.id, coder_user_id: coderUserId,
-    template_id: templateId, cpu, memory_gib: memory, disk_gib: 10,
+    template_id: templateId,
+    machine_profile: profile.id,
+    compute_multiplier: profile.computeMultiplier,
+    cpu: profile.cpu,
+    memory_gib: profile.memoryGiB,
+    disk_gib: 10,
+    // max_compute_ms is a weighted compute allowance. The controller charges
+    // elapsed wall time × compute_multiplier.
     max_compute_ms: minutes * 60_000,
   });
   if (jobError) {

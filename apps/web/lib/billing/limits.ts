@@ -29,36 +29,36 @@ export type ProjectLimits = {
 export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed" | "computeUsed" | "aiTokensUsed" | "runtimeHoursUsed" | "apiCallsUsed">> = {
   free: {
     plan: "free",
-    storageLimit: 100 * 1024 * 1024, // 100 MB
-    projectsLimit: 1,
-    workspacesLimit: 0,
-    ideSessionsLimit: 0,
-    computeCreditsMonthly: 10000,
-    aiTokensMonthly: 5000,
-    runtimeHoursMonthly: 0,
-    apiCallsMonthly: 100,
+    storageLimit: 5 * 1024 * 1024 * 1024, // 5 GB included
+    projectsLimit: 5,
+    workspacesLimit: 5,
+    ideSessionsLimit: 2,
+    computeCreditsMonthly: 9000,
+    aiTokensMonthly: 500000,
+    runtimeHoursMonthly: 150,
+    apiCallsMonthly: 10000,
   },
   pro: {
     plan: "pro",
-    storageLimit: 5 * 1024 * 1024 * 1024, // 5 GB
-    projectsLimit: 5,
-    workspacesLimit: 1,
-    ideSessionsLimit: 1,
-    computeCreditsMonthly: 100000,
-    aiTokensMonthly: 100000,
-    runtimeHoursMonthly: 10,
-    apiCallsMonthly: 10000,
+    storageLimit: 100 * 1024 * 1024 * 1024, // 100 GB included
+    projectsLimit: 100,
+    workspacesLimit: 100,
+    ideSessionsLimit: 4,
+    computeCreditsMonthly: 18000,
+    aiTokensMonthly: 5000000,
+    runtimeHoursMonthly: 300,
+    apiCallsMonthly: 100000,
   },
   team: {
     plan: "team",
-    storageLimit: 50 * 1024 * 1024 * 1024, // 50 GB
-    projectsLimit: 10,
-    workspacesLimit: 5,
-    ideSessionsLimit: 5,
-    computeCreditsMonthly: 500000,
-    aiTokensMonthly: 500000,
-    runtimeHoursMonthly: 50,
-    apiCallsMonthly: 100000,
+    storageLimit: 500 * 1024 * 1024 * 1024, // 500 GB pooled
+    projectsLimit: 999999,
+    workspacesLimit: 999999,
+    ideSessionsLimit: 8,
+    computeCreditsMonthly: 60000,
+    aiTokensMonthly: 25000000,
+    runtimeHoursMonthly: 1000,
+    apiCallsMonthly: 1000000,
   },
   enterprise: {
     plan: "enterprise",
@@ -95,16 +95,12 @@ export async function getUserLimits(userId: string): Promise<UserLimits | null> 
 
   if (error || !data) return null;
 
+  const storedPlan = typeof data.subscription_plan === "string" ? data.subscription_plan : "free";
+  const plan = (Object.prototype.hasOwnProperty.call(PLAN_LIMITS, storedPlan) ? storedPlan : "free") as SubscriptionPlan;
+  const canonical = PLAN_LIMITS[plan];
+
   return {
-    plan: data.subscription_plan,
-    storageLimit: data.storage_limit,
-    projectsLimit: data.projects_limit,
-    workspacesLimit: data.workspaces_limit,
-    ideSessionsLimit: data.ide_sessions_limit,
-    computeCreditsMonthly: data.compute_credits_monthly,
-    aiTokensMonthly: data.ai_tokens_monthly,
-    runtimeHoursMonthly: data.runtime_hours_monthly,
-    apiCallsMonthly: data.api_calls_monthly,
+    ...canonical,
     storageUsed: data.storage_used || 0,
     computeUsed: data.compute_used || 0,
     aiTokensUsed: data.ai_tokens_used || 0,
@@ -241,6 +237,8 @@ export const PLAN_PERMISSIONS: Record<PlanTier, string[]> = {
     "view_projects",
     "basic_build",
     "wonderbuild_ui",
+    "ai_builder",
+    "cloud_ide",
   ],
   pro: [
     "view_projects",

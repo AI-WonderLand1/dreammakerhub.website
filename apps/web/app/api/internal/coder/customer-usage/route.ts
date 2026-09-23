@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
+import { PLAN_LIMITS, type SubscriptionPlan } from '@/lib/billing/limits';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -98,8 +99,24 @@ export async function POST(request: Request) {
         throw new Error('Unknown or unreconciled Coder workspace lifecycle');
       }
       const stoppedState = build.transition === 'stop' && ['succeeded', 'stopped'].includes(build.status || '');
-      const sample = await db.rpc('meter_coder_customer_compute', {
-        p_slot_id: usage.slot_id, p_running: !stoppedState,
+
+      const planResult = await db.from('user_profiles')
+        .select('subscription_plan').eq('id', usage.user_id).maybeSingle();
+      const storedPlan = planResult.data?.subscription_plan;
+      if (planResult.error || typeof storedPlan !== 'string' ||
+          !Object.prototype.hasOwnProperty.call(PLAN_LIMITS, storedPlan)) {
+        throw new Error('Customer compute plan could not be verified');
+      }
+      const plan = storedPlan as SubscriptionPlan;
+      const monthlyLimit = PLAN_LIMITS[plan].computeCreditsMonthly;
+      if (!Number.isSafeInteger(monthlyLimit) || monthlyLimit < 1) {
+        throw new Error('Customer compute-credit limit is invalid');
+      }
+
+      const sample = await db.rpc('meter_coder_customer_compute_v2', {
+        p_slot_id: usage.slot_id,
+        p_running: !stoppedState,
+        p_monthly_limit_credits: monthlyLimit,
       });
       const meter = sample.data?.[0];
       if (sample.error || !meter || typeof meter.should_stop !== 'boolean') {
