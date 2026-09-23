@@ -69,12 +69,11 @@ const showcases = [
 ] as const;
 
 const comparisonRows = [
-  ['Active projects', '1', '—', '—', 'Unlimited'],
-  ['AI chats', '5/day', 'Unlimited', 'Unlimited', 'Unlimited'],
-  ['WonderBuild', 'Included', 'Included', 'Included', 'Included'],
-  ['Custom domain', 'Subdomain', 'Included', 'Included', 'Included'],
-  ['Team seats', '—', '—', 'Up to 5', 'Custom'],
-  ['Collaborative IDE', '—', '—', 'Included', 'Included'],
+  ['Saved WonderSpace IDEs', '5', '100', 'Unlimited', 'Unlimited'],
+  ['Running IDEs at once', '2', '4', '8', 'Custom'],
+  ['Monthly compute pool', '150 core-hours', '300 core-hours', '1,000 pooled', 'Custom'],
+  ['AI tokens / month', '500K', '5M', '25M pooled', 'Custom'],
+  ['Included storage', '5 GB', '100 GB', '500 GB pooled', 'Custom'],
   ['SSO + SCIM', '—', '—', '—', 'Included'],
 ] as const;
 
