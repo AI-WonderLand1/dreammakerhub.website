@@ -16,6 +16,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  MessageSquareText,
   Newspaper,
   Search,
   ShieldCheck,
@@ -135,6 +136,12 @@ const PRODUCT_MENUS = [
 
 const DIRECT_LINKS = [
   { label: 'Community', href: '/community', icon: Users },
+  {
+    label: 'Give Feedback',
+    href: 'https://feedback.link/aiwonderlandinnovati',
+    icon: MessageSquareText,
+    external: true,
+  },
   { label: 'Blog', href: '/blog', icon: Newspaper },
 ] as const;
 
@@ -164,6 +171,12 @@ const ABOUT_COLUMNS = [
       { label: 'Docs & Guides', href: '/docs', icon: BookOpen },
       { label: 'Tutorials', href: '/tutorials', icon: FileText },
       { label: 'Community', href: '/community', icon: Users },
+      {
+        label: 'Give Feedback',
+        href: 'https://feedback.link/aiwonderlandinnovati',
+        icon: MessageSquareText,
+        external: true,
+      },
       { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: Github, external: true },
     ],
   },
@@ -336,10 +349,12 @@ export default function Navbar() {
             );
           })}
 
-          {DIRECT_LINKS.map(({ label, href }) => (
+          {DIRECT_LINKS.map(({ label, href, ...rest }) => (
             <Link
               key={href}
               href={href}
+              target={'external' in rest && rest.external ? '_blank' : undefined}
+              rel={'external' in rest && rest.external ? 'noopener noreferrer' : undefined}
               onClick={closeMenus}
               className={`rounded-lg px-3 py-2 text-[13px] font-bold transition ${isActive(href) ? 'bg-white/10 text-white' : 'text-white/72 hover:bg-white/[.06] hover:text-white'}`}
             >
@@ -524,8 +539,15 @@ export default function Navbar() {
               );
             })}
 
-            {DIRECT_LINKS.map(({ label, href, icon: Icon }) => (
-              <Link key={href} href={href} onClick={closeMenus} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-white/70 hover:bg-white/[.05] hover:text-white">
+            {DIRECT_LINKS.map(({ label, href, icon: Icon, ...rest }) => (
+              <Link
+                key={href}
+                href={href}
+                target={'external' in rest && rest.external ? '_blank' : undefined}
+                rel={'external' in rest && rest.external ? 'noopener noreferrer' : undefined}
+                onClick={closeMenus}
+                className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-white/70 hover:bg-white/[.05] hover:text-white"
+              >
                 <Icon className="h-4 w-4 text-cyan-300" />{label}
               </Link>
             ))}
