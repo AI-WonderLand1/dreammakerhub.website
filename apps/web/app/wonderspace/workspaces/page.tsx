@@ -6,11 +6,13 @@ import { useAuth } from '@/lib/supabase/auth-context';
 
 type Slot = { id: string; workspace_id: string | null; workspace_name: string; state: string; created_at: string };
 type OpenResult = { status?: string; url?: string; error?: string; message?: string };
+type OpenMode = 'operator' | 'customer' | 'disabled';
 
 export default function CoderWorkspaceManager() {
   const { session } = useAuth();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [canOpen, setCanOpen] = useState(false);
+  const [openMode, setOpenMode] = useState<OpenMode>('disabled');
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -24,7 +26,8 @@ export default function CoderWorkspaceManager() {
       if (!response.ok) throw new Error(result.error || 'Unable to load workspaces.');
       if (!Array.isArray(result.slots)) throw new Error('Workspace list was invalid.');
       setSlots(result.slots);
-      setCanOpen(result.canOpen === true);
+      setCanOpen(result.canOpen === true && ['operator', 'customer'].includes(result.openMode));
+      setOpenMode(result.openMode === 'operator' || result.openMode === 'customer' ? result.openMode : 'disabled');
       setError('');
     } catch (cause) {
       // A failed read is not evidence that the user has no workspaces.
@@ -32,6 +35,7 @@ export default function CoderWorkspaceManager() {
       setSlots([]);
       setError(cause instanceof Error ? cause.message : 'Unable to load workspaces.');
       setCanOpen(false);
+      setOpenMode('disabled');
     } finally {
       setLoading(false);
     }
@@ -44,10 +48,14 @@ export default function CoderWorkspaceManager() {
     setWorking(slot.id);
     setError('');
     setNotice('Checking your existing Coder workspace…');
-    const endpoint = `/api/user-workspace/coder/${encodeURIComponent(slot.id)}/open`;
+    const customer = openMode === 'customer';
+    const endpoint = customer
+      ? `/api/user-workspace/customer/open/${encodeURIComponent(slot.id)}`
+      : `/api/user-workspace/coder/${encodeURIComponent(slot.id)}/open`;
     try {
-      // POST is a start/reopen action for this ID, never a create request.
-      let response = await fetch(endpoint, { method: 'POST', cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
+      // Customers only check their own running IDE. Only the operator can
+      // use the original POST endpoint to start an existing workspace.
+      let response = await fetch(endpoint, { method: customer ? 'GET' : 'POST', cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
       let result = await response.json() as OpenResult;
       if (!response.ok && response.status !== 202) throw new Error(result.error || 'Could not open the existing workspace.');
       for (let attempt = 0; attempt < 24 && response.status === 202; attempt++) {
@@ -106,7 +114,7 @@ export default function CoderWorkspaceManager() {
                 <h2 className="text-lg font-semibold">{slot.workspace_name}</h2>
                 <p className="mt-1 text-sm text-slate-300">{slot.state === 'reserved' ? 'Provisioning status uncertain. Contact support before retrying.' : slot.state === 'deleting' ? 'Coder deletion pending.' : 'Allocated workspace and persistent storage.'}</p>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  {canOpen && slot.workspace_id && slot.state === 'provisioned' && <button type="button" disabled={working !== null} onClick={() => void openExisting(slot)} className="rounded-lg border border-cyan-400/50 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/10 disabled:opacity-40">{working === slot.id ? 'Opening existing IDE…' : 'Open existing IDE'}</button>}
+                  {canOpen && slot.workspace_id && slot.state === 'provisioned' && <button type="button" disabled={working !== null} onClick={() => void openExisting(slot)} className="rounded-lg border border-cyan-400/50 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/10 disabled:opacity-40">{working === slot.id ? 'Opening existing IDE…' : openMode === 'customer' ? 'Open my private IDE' : 'Open existing IDE'}</button>}
                   {slot.workspace_id && <button type="button" disabled={working !== null} onClick={() => void remove(slot)} className="rounded-lg border border-red-400/50 px-4 py-2 text-sm text-red-200 hover:bg-red-400/10 disabled:opacity-40">{working === slot.id ? 'Checking Coder…' : slot.state === 'deleting' ? 'Check deletion and release slot' : 'Permanently delete workspace'}</button>}
                 </div>
               </section>
