@@ -11,11 +11,14 @@ describe('AWS customer pod preflight', () => {
   const rbac = file('infra/coder/customer-provisioner-rbac.yaml');
   const isolation = file('infra/coder/customer-isolation.yaml');
 
-  it('inspects a pinned AWS cluster without installing or deleting resources', () => {
+  it('discovers context read-only then fails closed on unknown or forbidden operator namespace', () => {
     expect(script).toContain('EXPECTED_KUBE_CONTEXT');
     expect(script).toContain('kubectl config current-context');
     expect(script).toContain('get namespace coder-customers');
     expect(script).toContain('operator_namespace_present=false');
+    expect(script).toContain('operator_lookup');
+    expect(script).toContain('*NotFound*');
+    expect(script).toContain('Cannot verify whether an operator Coder namespace exists');
     expect(script).toContain('auth can-i');
     expect(script).toContain('get secrets coder-customers');
     for (const write of ['kubectl apply', 'kubectl create', 'kubectl delete', 'kubectl patch', 'kubectl replace']) {
@@ -23,13 +26,15 @@ describe('AWS customer pod preflight', () => {
     }
   });
 
-  it('uses a manual, Master-only action with verified SSH host identity', () => {
+  it('uses a manual, Master-only action with verified SSH host identity and no remote file writes', () => {
     expect(workflow).toContain('workflow_dispatch:');
     expect(workflow).toContain("if: github.ref == 'refs/heads/Master'");
     expect(workflow).toContain('AWS_CODER_KUBE_CONTEXT');
     expect(workflow).toContain('AWS_FALLBACK_KNOWN_HOSTS');
     expect(workflow).toContain('StrictHostKeyChecking=yes');
-    expect(workflow).toContain('aws-customer-pod-preflight.sh');
+    expect(workflow).toContain('bash -s');
+    expect(workflow).toContain('< infra/coder/aws-customer-pod-preflight.sh');
+    expect(workflow).not.toContain('scp ');
     expect(workflow).not.toContain('kubectl apply');
   });
 
