@@ -7,7 +7,7 @@ import { coderApiConfig, coderApiRequest, coderServiceClient, getCoderSlot } fro
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ slotId: string }> };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const noStore = { 'Cache-Control': 'private, no-store' };
+const noStore = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' };
 
 type CustomerIdentity = {
   id?: string; username?: string; email?: string; login_type?: string;
@@ -15,7 +15,8 @@ type CustomerIdentity = {
 };
 type CustomerWorkspace = {
   id?: string; owner_id?: string; name?: string; template_id?: string;
-  latest_build?: { status?: string; template_version_id?: string };
+  status?: string;
+  latest_build?: { status?: string; transition?: string; template_version_id?: string };
 };
 
 function publicCoderOrigin(): string {
@@ -28,6 +29,17 @@ function publicCoderOrigin(): string {
     throw new CostGateError('The customer Coder address must be a clean HTTPS origin.');
   }
   return url.origin;
+}
+
+function customerWorkspaceState(workspace: CustomerWorkspace): 'running' | 'stopped' | 'transitioning' | 'unknown' {
+  if (workspace.status === 'running' || workspace.status === 'stopped') return workspace.status;
+  if (['starting', 'pending', 'stopping', 'canceling'].includes(workspace.status || '')) return 'transitioning';
+  const build = workspace.latest_build;
+  if (build?.status === 'succeeded' && build.transition === 'start') return 'running';
+  if (build?.status === 'succeeded' && build.transition === 'stop') return 'stopped';
+  if (['pending', 'running', 'starting', 'stopping', 'canceling'].includes(build?.status || '') &&
+      ['start', 'stop'].includes(build?.transition || '')) return 'transitioning';
+  return 'unknown';
 }
 
 /** Read-only handoff to Coder's own OIDC-authenticated workspace page.
@@ -95,15 +107,15 @@ export async function GET(request: Request, { params }: Context) {
     if (workspace.latest_build?.template_version_id !== pinnedVersionId) {
       throw new CostGateError('Your IDE uses an unverified template version. Contact support.');
     }
-    const status = workspace.latest_build?.status || 'unknown';
+    const status = customerWorkspaceState(workspace);
     if (status === 'running') {
       // This is the Coder workspace landing page, not an unprotected app proxy.
       // Coder requires the customer's separate authenticated browser session.
       const url = `${publicCoderOrigin()}/@${encodeURIComponent(owner.username)}/${encodeURIComponent(workspace.name)}`;
       return NextResponse.json({ status: 'running', url }, { headers: noStore });
     }
-    if (['pending', 'starting', 'stopping', 'canceling'].includes(status)) {
-      return NextResponse.json({ status, message: 'Your private IDE is still starting or changing state.' }, { status: 202, headers: noStore });
+    if (status === 'transitioning') {
+      return NextResponse.json({ status: 'starting', message: 'Your private IDE is still starting or changing state.' }, { status: 202, headers: noStore });
     }
     return NextResponse.json({ error: status === 'stopped'
       ? 'Your IDE is stopped. It cannot restart until its compute allowance is verified.'
