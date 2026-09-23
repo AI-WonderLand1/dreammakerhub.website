@@ -61,9 +61,9 @@ jobs:
           set -euo pipefail
           ssh_args=(-i "$HOME/.ssh/customer-pod-preflight-key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10)
           destination="$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST"
-          ssh "${ssh_args[@]}" "$destination" 'umask 077; mkdir -p "$HOME/dreammakerhub-customer-preflight"; chmod 700 "$HOME/dreammakerhub-customer-preflight"'
-          scp "${ssh_args[@]}" infra/coder/aws-customer-pod-preflight.sh "$destination:~/dreammakerhub-customer-preflight/preflight.sh"
-          ssh "${ssh_args[@]}" "$destination" "EXPECTED_KUBE_CONTEXT='$AWS_CODER_KUBE_CONTEXT' bash \"\$HOME/dreammakerhub-customer-preflight/preflight.sh\""
+          # Stream the reviewed script via SSH stdin: no script or directory is
+          # written to the AWS host and no Kubernetes object is modified.
+          ssh "${ssh_args[@]}" "$destination" "EXPECTED_KUBE_CONTEXT='$AWS_CODER_KUBE_CONTEXT' bash -s" < infra/coder/aws-customer-pod-preflight.sh
       - name: Remove temporary SSH key
         if: always()
         shell: bash
