@@ -154,12 +154,12 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const metadataUserId = session.metadata?.userId;
+        const userId = session.metadata?.userId;
         const metadataPlan = session.metadata?.plan;
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
 
-        if (!metadataUserId || !subscriptionId || !["pro", "team"].includes(metadataPlan || "")) {
+        if (!userId || !subscriptionId || !["pro", "team"].includes(metadataPlan || "")) {
           throw new Error("Stripe checkout missing a valid user, paid plan, or subscription");
         }
         if (session.status !== "complete" || !["paid", "no_payment_required"].includes(session.payment_status)) {
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         const resolved = resolvedPaidPlan(subscription);
         const subscriptionUserId = subscription.metadata?.userId;
         if (!resolved || resolved.plan !== metadataPlan ||
-            (subscriptionUserId && subscriptionUserId !== metadataUserId)) {
+            (subscriptionUserId && subscriptionUserId !== userId)) {
           throw new Error("Stripe subscription price or owner does not match checkout metadata");
         }
         if (subscription.status !== "active" && subscription.status !== "trialing") {
@@ -186,16 +186,16 @@ export async function POST(request: NextRequest) {
         }
 
         await persistSubscription(supabase, {
-          userId: metadataUserId,
+          userId,
           subscription,
           customerId,
           plan: resolved.plan,
           interval: resolved.interval,
         });
-        await syncUserTier(supabase, metadataUserId, resolved.plan, customerId);
+        await syncUserTier(supabase, userId, resolved.plan, customerId);
 
         if (session.payment_status === "paid") {
-          await trackFunnelEvent("Subscription Started", metadataUserId, subscriptionId);
+          await trackFunnelEvent("Subscription Started", userId, subscriptionId);
         }
         break;
       }
