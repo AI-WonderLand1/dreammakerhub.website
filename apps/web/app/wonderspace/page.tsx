@@ -18,6 +18,8 @@ export default async function WonderSpacePage() {
   // SSR cookies. The client gate rechecks the role using a verified Bearer token.
   if (isOperator) return <OperatorIdePanel />;
 
-  const customerPilot = process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true';
+  const customerPilot =
+    process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true' &&
+    process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED === 'true';
   return <WonderSpaceOperatorGate customerPilot={customerPilot} />;
 }
