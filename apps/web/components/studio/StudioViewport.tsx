@@ -1022,11 +1022,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       const app = appRef.current;
       const pc = pcRef.current;
       if (!app || !pc) return;
-      const amb = baseLightsRef.current.find((l) => l.name === "AmbLight");
-      if (amb?.light) {
-        amb.light.color = new pc.Color(color[0], color[1], color[2]);
-        if (intensity !== undefined) amb.light.intensity = intensity;
-      }
+      const level = intensity ?? 1;
+      app.scene.ambientLight = new pc.Color(color[0] * level, color[1] * level, color[2] * level);
     }, []);
 
     const focusOn = useCallback((id: string | null) => {
