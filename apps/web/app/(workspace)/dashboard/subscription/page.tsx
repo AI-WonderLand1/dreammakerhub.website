@@ -15,6 +15,7 @@ type UsageSummary = {
   api_calls_used: number;
   tokens_used: number;
   compute_credits_used: number;
+  ide_compute_credits_used: number;
   runtime_minutes: number;
   projects_count: number;
   storage_used: number;
@@ -221,7 +222,7 @@ export default function SubscriptionPage() {
     },
     {
       label: "IDE Compute Credits",
-      used: usage?.compute_credits_used ?? 0,
+      used: usage?.ide_compute_credits_used ?? 0,
       limit: limits.computeCredits,
       display: (n: number) => compact(n),
     },
