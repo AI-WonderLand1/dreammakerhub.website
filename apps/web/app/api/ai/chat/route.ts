@@ -7,9 +7,11 @@ import { runAIPipeline } from '@/core/ai/pipeline-v1/runtime/pipeline';
 import { AI_LAWS, buildLawPrompt, getPersonaPrompt } from '@/core/ai/personas';
 import { writeAiMemoryEntry } from '@/lib/ai/memoryStore';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { storeConfessionToMem0, isMem0Enabled } from '@/lib/ai/mem0Client';
+import { storeConfessionToMem0 } from '@/lib/ai/mem0Client';
 import { getConfessionConfig } from '@/lib/ai/confessionConfig';
-import { searchMemories, storeMemory } from '@/lib/ai/mem0Service';
+import { isMem0ServiceEnabled, searchMemories, storeMemory } from '@/lib/ai/mem0Service';
+import { CostGateError, costGateResponse, reserveAiRequest } from '@/lib/billing/cost-guard.server';
+import { logUsage } from '@/lib/usage/log';
 import { decryptSecret } from '@/lib/crypto/secrets';
 import { logger } from '@/lib/logger';
 
@@ -23,7 +25,7 @@ const requestSchema = z.object({
   targetLanguage: z.string().optional(),
   personaId: z.string().optional(),
   temperature: z.number().min(0).max(1).optional(),
-  maxTokens: z.number().int().positive().optional(),
+  maxTokens: z.number().int().positive().max(4096).optional(),
   outputFormat: z.enum(["text"]).optional().default("text"),
   existingComponents: z.array(z.object({
     type: z.string(),
@@ -100,7 +102,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prompt, agentId, provider: reqProvider, model: reqModel, targetLanguage, personaId, outputFormat } = body.data;
+    const {
+      prompt, agentId, provider: reqProvider, model: reqModel, targetLanguage,
+      personaId, outputFormat, maxTokens,
+    } = body.data;
+
+    let billing: Awaited<ReturnType<typeof reserveAiRequest>>;
+    try {
+      billing = await reserveAiRequest(paidUser.userId, prompt.length, maxTokens ?? 2048);
+    } catch (error) {
+      if (error instanceof CostGateError) return costGateResponse(error);
+      throw error;
+    }
 
     // Resolve model: either explicit provider/model pair, or from the agent map
     let modelId: string;
@@ -177,8 +190,9 @@ export async function POST(req: NextRequest) {
       enhancedPrompt += `\n\nProvide clean, documented ${detectedProgLang} code.`;
     }
 
-    const plan = req.headers.get("x-plan") || "free";
-    const config = getConfessionConfig(plan, isMem0Enabled());
+    // Never trust a browser-provided plan header for paid AI or memory.
+    const plan = billing.plan;
+    const config = getConfessionConfig(plan, isMem0ServiceEnabled());
     const useLLMExtraction = config.mode === "paid" && config.enableMem0;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
@@ -192,6 +206,13 @@ export async function POST(req: NextRequest) {
       useLLMExtraction,
       userApiKey,
       baseUrl,
+    });
+
+    await logUsage({
+      userId: paidUser.userId,
+      action: "ai.token",
+      tokensUsed: billing.estimatedTokens,
+      apiCalls: 1,
     });
 
     let memoryStore: { ok: boolean; bucket?: string; path?: string; error?: string } = { ok: true };
