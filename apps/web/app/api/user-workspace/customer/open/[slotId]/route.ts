@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
-import { CostGateError, costGateResponse, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
+import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { assertFreshUsageController, customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
 import { coderApiConfig, coderApiRequest, coderServiceClient, getCoderSlot } from '@/lib/coder/workspace-slots.server';
 
@@ -54,9 +54,6 @@ export async function GET(request: Request, { params }: Context) {
 
   try {
     customerProvisioningGate();
-    if (await verifiedCostPlan(user.id) === 'free') {
-      throw new CostGateError('Cloud IDE requires a verified paid plan.', 402);
-    }
     const templateId = await verifiedCustomerTemplateId();
     const pinnedVersionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
     if (!pinnedVersionId || !UUID.test(pinnedVersionId)) {
