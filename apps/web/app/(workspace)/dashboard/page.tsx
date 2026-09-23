@@ -385,7 +385,7 @@ export default function DashboardPage() {
                         <p className="mt-3 text-xs text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
                           <Link href={`/dashboard/projects/${project.id}`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">Open</Link>
-                          <Link href={`/dashboard/projects/${project.id}#files`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Files</Link>
+                          <Link href={`/dashboard/projects/${project.id}/files`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Files</Link>
                           {["workspace", "code"].includes(normalizedType(type)) ? (
                             <CoderAvailabilityIndicator>
                               <Link href={toolAction.href} className="block truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
