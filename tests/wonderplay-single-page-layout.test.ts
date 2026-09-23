@@ -8,7 +8,7 @@ const browser = readFileSync(new URL('../apps/web/components/studio/StudioConten
 
 describe('WonderPlay unified editor layout', () => {
   it('keeps every 3D tool on the existing studio route rather than linking to extra setup pages', () => {
-    for (const component of ['Studio3DFactory', 'Studio360View', 'StudioGameBuilder', 'StudioMovieMaker']) {
+    for (const component of ['Studio3DFactory', 'Studio360View', 'StudioGameFoundation', 'StudioMovieMaker']) {
       expect(studio).toContain(`<${component} />`);
     }
     expect(studio).toContain('onClick={() => setMode(id)}');
