@@ -36,20 +36,16 @@ describe('Existing Coder workspace resume', () => {
     expect(route).toContain("process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
   });
 
-  it('keeps operator restart separate from customer read-only handoff', () => {
+  it('keeps operator restart available but customer direct-Coder handoff disabled', () => {
     expect(list).toContain('const operator = isConfiguredCoderOperator(user.id)');
-    expect(list).toContain('let canOpen = operator');
-    expect(list).toContain("openMode: canOpen ? (operator ? 'operator' : 'customer') : 'disabled'");
-    expect(page).toContain("const customer = openMode === 'customer'");
-    expect(page).toContain('/api/user-workspace/customer/open/');
-    expect(page).toContain("method: customer ? 'GET' : 'POST'");
-    expect(page).toContain('canOpen && slot.workspace_id');
-    expect(page).toContain('Open existing IDE');
-    expect(page).toContain('Authorization: `Bearer ${session.access_token}`');
+    expect(page).toContain("openMode !== 'operator'");
+    expect(page).not.toContain('/api/user-workspace/customer/open/');
+    expect(page).toContain('/api/user-workspace/coder/');
     expect(page).toContain('window.location.assign(result.url)');
     expect(page).not.toContain("fetch('/api/user-workspace/provision'");
-    expect(customerRoute).toContain('authenticatedSupabaseUser(request)');
-    expect(customerRoute).not.toContain('export async function POST');
+    expect(customerRoute).toContain('CUSTOMER_IDE_GATEWAY_REQUIRED');
+    expect(customerRoute).toContain('status: 503');
+    expect(customerRoute).not.toContain('coderApiRequest(');
     expect(customerRoute).not.toContain("transition: 'start'");
-  });
+  });;
 });
