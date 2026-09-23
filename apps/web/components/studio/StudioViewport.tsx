@@ -494,16 +494,16 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       dir.setEulerAngles(45, 30, 0);
       app.root.addChild(dir);
 
-      const amb = new pc.Entity("AmbLight");
-      amb.addComponent("light", { type: "ambient", color: new pc.Color(0.35, 0.38, 0.5), intensity: 0.7 });
-      app.root.addChild(amb);
+      // Ambient illumination belongs to the scene, not an entity light component.
+      // PlayCanvas entity lights only support directional, omni, and spot types.
+      app.scene.ambientLight = new pc.Color(0.35, 0.38, 0.5);
 
       const rim = new pc.Entity("RimLight");
       rim.addComponent("light", { type: "directional", color: new pc.Color(0.2, 0.4, 0.7), intensity: 0.4 });
       rim.setEulerAngles(-30, -120, 0);
       app.root.addChild(rim);
 
-      baseLightsRef.current = [dir, amb, rim];
+      baseLightsRef.current = [dir, rim];
     }, []);
 
     // Apply scene-authored lights under the scene root; disable base lights when present
