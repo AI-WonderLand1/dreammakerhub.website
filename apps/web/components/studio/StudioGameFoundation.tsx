@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Cuboid, Gamepad2, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, Trees, UserRound } from "lucide-react";
+import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound } from "lucide-react";
 import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
