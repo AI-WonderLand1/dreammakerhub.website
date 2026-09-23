@@ -109,6 +109,9 @@ async function persistSubscription(
         plan: args.plan,
         interval: args.interval,
         status: args.subscription.status,
+        price_id: args.subscription.items.data[0]?.price.id || null,
+        quantity: args.subscription.items.data[0]?.quantity || 1,
+        cancel_at_period_end: args.subscription.cancel_at_period_end,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "stripe_subscription_id" },
@@ -225,7 +228,11 @@ export async function POST(request: NextRequest) {
 
         const { error: statusError } = await supabase
           .from("subscriptions")
-          .update({ status: subscription.status, updated_at: new Date().toISOString() })
+          .update({
+            status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            updated_at: new Date().toISOString(),
+          })
           .eq("stripe_subscription_id", subscription.id);
         if (statusError) throw statusError;
 
