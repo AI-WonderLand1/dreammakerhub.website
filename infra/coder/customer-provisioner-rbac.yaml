@@ -1,0 +1,49 @@
+# Candidate for a SEPARATE, trusted Coder provisioner running as this service
+# account. Do NOT bind the operator's existing Coder service account here or
+# switch the existing control plane to these credentials. This manifest alone
+# does not deploy a provisioner or establish cross-namespace isolation.
+# Verify the real AWS cluster, then review before applying.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder-customer-provisioner
+  namespace: coder-customers
+  labels:
+    app.kubernetes.io/part-of: dreammakerhub-customers
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-customer-provisioner
+  namespace: coder-customers
+rules:
+  # Terraform creates one Deployment and one PVC per Coder workspace.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-customer-provisioner
+  namespace: coder-customers
+subjects:
+  - kind: ServiceAccount
+    name: coder-customer-provisioner
+    namespace: coder-customers
+roleRef:
+  kind: Role
+  name: coder-customer-provisioner
+  apiGroup: rbac.authorization.k8s.io
