@@ -11,7 +11,10 @@ describe('WonderPlay unified editor layout', () => {
     for (const component of ['Studio3DFactory', 'Studio360View', 'StudioGameFoundation', 'StudioMovieMaker']) {
       expect(studio).toContain(`<${component} />`);
     }
-    expect(studio).toContain('onClick={() => setMode(id)}');
+    expect(studio).toContain('aria-label="WonderPlay workspaces"');
+    expect(studio).toContain('label: "Create"');
+    expect(studio).toContain('label: "Capture"');
+    expect(studio).toContain('aria-label={workspace === "create" ? "Create tools" : "Capture tools"}');
     expect(studio).toContain('<StudioContentBrowser />');
     expect(studio).not.toContain('GPU ENGINE READY');
   });
