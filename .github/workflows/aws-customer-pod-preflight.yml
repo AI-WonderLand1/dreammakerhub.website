@@ -1,0 +1,70 @@
+name: AWS customer pod preflight (read only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-customer-pod-preflight
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    # Do not allow PRs or arbitrary refs to execute scripts with AWS SSH secrets.
+    if: github.ref == 'refs/heads/Master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      AWS_FALLBACK_HOST: ${{ vars.AWS_FALLBACK_HOST }}
+      AWS_FALLBACK_USER: ${{ vars.AWS_FALLBACK_USER || 'ubuntu' }}
+      AWS_CODER_KUBE_CONTEXT: ${{ vars.AWS_CODER_KUBE_CONTEXT }}
+    steps:
+      - name: Check out reviewed source only
+        uses: actions/checkout@v4
+        with:
+          ref: Master
+          persist-credentials: false
+      - name: Validate AWS target and optional pinned cluster identity
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.AWS_FALLBACK_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.AWS_FALLBACK_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$AWS_FALLBACK_HOST" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || { echo 'AWS_FALLBACK_HOST is unset or invalid.'; exit 1; }
+          [[ "$AWS_FALLBACK_USER" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]] || { echo 'AWS_FALLBACK_USER is invalid.'; exit 1; }
+          if [[ -n "$AWS_CODER_KUBE_CONTEXT" && ! "$AWS_CODER_KUBE_CONTEXT" =~ ^[A-Za-z0-9_./:@-]+$ ]]; then
+            echo 'AWS_CODER_KUBE_CONTEXT contains invalid characters.'; exit 1
+          fi
+          test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS" || { echo 'AWS SSH key or pinned known_hosts secret is missing.'; exit 1; }
+          bash -n infra/coder/aws-customer-pod-preflight.sh
+      - name: Configure pinned SSH host key
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.AWS_FALLBACK_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.AWS_FALLBACK_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/customer-pod-preflight-key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/customer-pod-preflight-key" "$HOME/.ssh/known_hosts"
+          ssh-keygen -F "$AWS_FALLBACK_HOST" -f "$HOME/.ssh/known_hosts" >/dev/null || {
+            echo 'Pinned SSH host identity does not match AWS_FALLBACK_HOST.'; exit 1;
+          }
+      - name: Inspect existing AWS Kubernetes cluster without creating pods
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh_args=(-i "$HOME/.ssh/customer-pod-preflight-key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10)
+          destination="$AWS_FALLBACK_USER@$AWS_FALLBACK_HOST"
+          # Stream the reviewed script via SSH stdin: no script or directory is
+          # written to the AWS host and no Kubernetes object is modified.
+          ssh "${ssh_args[@]}" "$destination" "EXPECTED_KUBE_CONTEXT='$AWS_CODER_KUBE_CONTEXT' bash -s" < infra/coder/aws-customer-pod-preflight.sh
+      - name: Remove temporary SSH key
+        if: always()
+        shell: bash
+        run: rm -f "$HOME/.ssh/customer-pod-preflight-key"
