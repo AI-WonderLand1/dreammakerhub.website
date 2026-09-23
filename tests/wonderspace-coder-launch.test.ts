@@ -3,8 +3,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getCoderLaunchConfig, getCoderTemplateId, isSafeGithubBranch, normalizePublicGithubRepo } from '../apps/web/lib/coder/launch-options';
 
+const { coderFetchMock } = vi.hoisted(() => ({ coderFetchMock: vi.fn() }));
+vi.mock('undici', () => ({ fetch: coderFetchMock }));
+
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
-afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); coderFetchMock.mockReset(); });
 
 describe('WonderSpace public GitHub input safety', () => {
   it('accepts only public GitHub owner/repository URL shapes', () => {
@@ -79,20 +82,20 @@ describe('Coder API remains the WonderSpace engine', () => {
       ];
       return { ok: true, json: async () => body } as Response;
     });
-    vi.stubGlobal('fetch', fetchMock);
+    coderFetchMock.mockImplementation(fetchMock);
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('coder-template-id');
     expect(config.cpu).toEqual([{ label: '2 CPUs', value: '2' }]);
     expect(config.regions).toEqual([]);
     expect(config.repositorySupported).toBe(false);
     expect(await getCoderTemplateId('playcanvas-3d')).toBe('playcanvas-template-id');
-    expect(fetchMock).toHaveBeenCalled();
+    expect(coderFetchMock).toHaveBeenCalled();
   });
   it('recognizes an existing published kubernetes template when no override is set', async () => {
     vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
     vi.stubEnv('CODER_API_TOKEN', 'test-token');
     vi.stubEnv('CODER_IDE_TEMPLATE_NAME', '');
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+    coderFetchMock.mockImplementation(async (url: string) => ({
       ok: true,
       json: async () => url.endsWith('/api/v2/templates')
         ? [{ id: 'live-template-id', name: 'kubernetes', active_version_id: 'live-version' }]
@@ -100,7 +103,7 @@ describe('Coder API remains the WonderSpace engine', () => {
           { name: 'cpu', options: [{ name: '1 CPU', value: '1' }] },
           { name: 'memory', options: [{ name: '2 GiB', value: '2' }] },
         ],
-    } as Response)));
+    } as Response));
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('live-template-id');
     expect(config.templateName).toBe('kubernetes');

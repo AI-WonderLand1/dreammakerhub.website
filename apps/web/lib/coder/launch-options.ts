@@ -1,4 +1,5 @@
 // Coder launch capability discovery. Never return credentials to the browser.
+import { fetch as undiciFetch } from 'undici';
 import { secureCoderApiOrigin } from './secure-origin';
 
 export type CoderLaunchOption = { label: string; value: string };
@@ -65,7 +66,9 @@ async function coderGet<T>(path: string): Promise<T> {
   const token = process.env.CODER_API_TOKEN;
   if (!configured || !token) throw new Error('Coder is not configured.');
   const origin = secureCoderApiOrigin(configured);
-  const response = await fetch(`${origin}${path}`, {
+  // Next.js wraps global fetch inside a request context. Use the server HTTP
+  // client for Coder so this capability check is independent of that wrapper.
+  const response = await undiciFetch(`${origin}${path}`, {
     headers: { 'Coder-Session-Token': token, Accept: 'application/json' },
     cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
   });
