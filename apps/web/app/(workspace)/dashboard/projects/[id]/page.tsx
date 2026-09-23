@@ -234,7 +234,7 @@ export default function ProjectHubPage() {
   const collaboratorCount = onlineCount;
 
   const primaryAction = isCodeProject
-    ? { href: "#files", label: "Manage Files", icon: Code2 }
+    ? { href: `/dashboard/projects/${project.id}/files`, label: "Manage Files", icon: Code2 }
     : isNpcProject
       ? { href: `/dashboard/npc?${projectQuery}`, label: "Open NPC Studio", icon: Bot }
       : isAiProject
@@ -244,7 +244,7 @@ export default function ProjectHubPage() {
           : { href: `/wonder-build/builder?${projectQuery}`, label: "Open WonderBuild", icon: Pencil };
 
   const repoTabs = [
-    { label: "Code", href: `/dashboard/projects/${project.id}#files`, icon: Code2, active: true },
+    { label: "Code", href: `/dashboard/projects/${project.id}/files`, icon: Code2, active: false },
     { label: "Issues", href: `/dashboard/support?${projectQuery}`, icon: CircleDot },
     { label: "Pull requests", href: `/dashboard/collaboration?${projectQuery}&view=reviews`, icon: GitPullRequest },
     { label: "Agents", href: `/dashboard/agents?${projectQuery}`, icon: Bot },
@@ -403,9 +403,9 @@ export default function ProjectHubPage() {
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <h2 className="mb-3 font-bold">Quick Actions</h2>
             <div className="space-y-2">
-              <a href="#files" className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
+              <Link href={`/dashboard/projects/${project.id}/files`} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
                 <Code2 size={15}/> Manage project files
-              </a>
+              </Link>
               <button
                 type="button"
                 onClick={() => void duplicateProject()}

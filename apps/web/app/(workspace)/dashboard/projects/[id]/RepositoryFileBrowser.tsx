@@ -506,15 +506,27 @@ export default function RepositoryFileBrowser({
   };
 
   return (
-    <section id="files" className="overflow-hidden rounded-xl border border-white/10 bg-[#0d1625]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+    <section id="files" className="overflow-hidden rounded-2xl border border-violet-400/15 bg-[#09111f] shadow-[0_22px_80px_rgba(2,6,23,.28)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[linear-gradient(90deg,rgba(124,58,237,.12),rgba(14,165,233,.06),transparent)] px-4 py-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1 text-sm">
-            <button type="button" onClick={() => { setCurrentPath(""); setSelectedPath(null); }} className="font-semibold text-white hover:text-blue-300">Files</button>
+            <button
+              type="button"
+              onClick={() => { setCurrentPath(""); setSelectedPath(null); }}
+              className="font-semibold text-white hover:text-cyan-300"
+            >
+              Files
+            </button>
             {breadcrumbs.map((part, index) => (
               <Fragment key={`${part}-${index}`}>
                 <ChevronRight size={14} className="shrink-0 text-white/25" />
-                <button type="button" onClick={() => openBreadcrumb(index)} className="max-w-40 truncate text-white/65 hover:text-white">{part}</button>
+                <button
+                  type="button"
+                  onClick={() => openBreadcrumb(index)}
+                  className="max-w-40 truncate text-white/65 hover:text-white"
+                >
+                  {part}
+                </button>
               </Fragment>
             ))}
           </div>
@@ -522,91 +534,141 @@ export default function RepositoryFileBrowser({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <button type="button" onClick={() => void createFile()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-white/70 hover:bg-white/5"><FilePlus2 size={14}/> New file</button>
-          <button type="button" onClick={() => void createFolder()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-white/70 hover:bg-white/5"><FolderPlus size={14}/> New folder</button>
-          <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-white/70 hover:bg-white/5"><Upload size={14}/> Import</button>
-          <button type="button" onClick={() => { window.location.href = `/api/projects/${projectId}/export?format=zip`; }} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-white/70 hover:bg-white/5"><Download size={14}/> ZIP</button>
+          <button type="button" onClick={() => void createFile()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-cyan-400/30 hover:bg-cyan-400/5 hover:text-white"><FilePlus2 size={14}/> New file</button>
+          <button type="button" onClick={() => void createFolder()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-cyan-400/30 hover:bg-cyan-400/5 hover:text-white"><FolderPlus size={14}/> New folder</button>
+          <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-violet-400/30 hover:bg-violet-400/5 hover:text-white"><Upload size={14}/> Import</button>
+          <button type="button" onClick={() => { window.location.href = `/api/projects/${projectId}/export?format=zip`; }} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-violet-400/30 hover:bg-violet-400/5 hover:text-white"><Download size={14}/> ZIP</button>
           {selectedPath && (
-            <button type="button" disabled={saving} onClick={() => void saveSelectedFile()} className="inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-violet-500 disabled:opacity-50"><Save size={14}/>{saving ? "Saving..." : "Save"}</button>
+            <button type="button" disabled={saving} onClick={() => void saveSelectedFile()} className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-violet-600 to-cyan-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 disabled:opacity-50"><Save size={14}/>{saving ? "Saving..." : "Save"}</button>
           )}
         </div>
       </div>
 
-      <div className="border-b border-white/10 bg-white/[.02] px-4 py-2.5 text-xs text-white/40">
+      <div className="border-b border-white/10 bg-white/[.018] px-4 py-2.5 text-xs text-white/40">
         <span>{totalFiles} stored file{totalFiles === 1 ? "" : "s"}</span>
         {updatedLabel && <span className="ml-3">Last saved {updatedLabel}</span>}
-        <span className="ml-3 text-white/25">Create, rename, delete, import, and edit here.</span>
+        <span className="ml-3 text-white/25">Explorer on the left. Code manager on the right.</span>
       </div>
 
       {actionError && (
         <div className="border-b border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs text-red-300">{actionError}</div>
       )}
 
-      <div className="divide-y divide-white/[.07]">
-        {currentPath && (
-          <button
-            type="button"
-            onClick={() => { setSelectedPath(null); setCurrentPath(currentPath.split("/").slice(0, -1).join("/")); }}
-            className="grid w-full grid-cols-[minmax(0,1fr)_110px] items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-white/[.035]"
-          >
-            <span className="flex min-w-0 items-center gap-2 text-white/65"><FolderOpen size={16} className="text-blue-400" />..</span>
-            <span className="text-right text-xs text-white/30">Parent folder</span>
-          </button>
-        )}
-
-        {entries.length === 0 ? (
-          <div className="px-4 py-10 text-center text-sm text-white/35">
-            <p>No files in this folder.</p>
-            <div className="mt-3 flex justify-center gap-2">
-              <button type="button" onClick={() => void createFile()} className="rounded-md border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5">Create file</button>
-              <button type="button" onClick={() => void createFolder()} className="rounded-md border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5">Create folder</button>
-            </div>
+      <div className="grid min-h-[590px] lg:grid-cols-[330px_minmax(0,1fr)]">
+        <aside className="min-w-0 border-b border-white/10 bg-[#07101b] lg:border-b-0 lg:border-r">
+          <div className="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
+            <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-white/55">
+              <FolderOpen size={15} className="text-cyan-400" /> Project Explorer
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[.025] px-2 py-0.5 text-[10px] text-white/35">
+              {entries.length}
+            </span>
           </div>
-        ) : entries.map((entry) => {
-          const isReadme = entry.kind === "file" && /^readme\.(md|mdx)$/i.test(entry.name);
-          return (
-            <div key={`${entry.kind}-${entry.path}`} className="grid grid-cols-[minmax(0,1fr)_100px_auto] items-center gap-2 px-3 py-1.5 text-sm hover:bg-white/[.035]">
-              {entry.kind === "folder" ? (
-                <button type="button" onClick={() => { setSelectedPath(null); setCurrentPath(entry.path); }} className="flex min-w-0 items-center gap-2 px-1 py-1 text-left font-medium text-white/80">
-                  <Folder size={16} className="shrink-0 fill-blue-500/20 text-blue-400" />
-                  <span className="truncate">{entry.name}</span>
-                </button>
-              ) : (
-                <button type="button" onClick={() => selectFile(entry.path)} className={`flex min-w-0 items-center gap-2 rounded px-1 py-1 text-left ${selectedPath === entry.path ? "text-violet-300" : "text-white/70"}`}>
-                  {isReadme ? <FileText size={16} className="shrink-0 text-white/45" /> : <FileCode2 size={16} className="shrink-0 text-white/45" />}
-                  <span className="truncate">{entry.name}</span>
-                </button>
-              )}
-              <span className="text-right text-xs text-white/35">{entry.kind === "folder" ? `${entry.count} file${entry.count === 1 ? "" : "s"}` : formatBytes(entry.size || 0)}</span>
-              <div className="flex justify-end gap-1">
-                <button type="button" onClick={() => void renameEntry(entry)} className="rounded p-1.5 text-white/35 hover:bg-white/10 hover:text-white" aria-label={`Rename ${entry.name}`} title="Rename"><Pencil size={13}/></button>
-                <button type="button" onClick={() => void deleteEntry(entry)} className="rounded p-1.5 text-white/35 hover:bg-red-500/10 hover:text-red-300" aria-label={`Delete ${entry.name}`} title="Delete"><Trash2 size={13}/></button>
+
+          <div className="max-h-[650px] overflow-auto">
+            {currentPath && (
+              <button
+                type="button"
+                onClick={() => { setSelectedPath(null); setCurrentPath(currentPath.split("/").slice(0, -1).join("/")); }}
+                className="grid w-full grid-cols-[minmax(0,1fr)_68px] items-center gap-2 border-b border-white/[.05] px-3 py-2.5 text-left text-sm hover:bg-white/[.035]"
+              >
+                <span className="flex min-w-0 items-center gap-2 text-white/65"><FolderOpen size={16} className="text-cyan-400" />..</span>
+                <span className="text-right text-[10px] text-white/25">Parent</span>
+              </button>
+            )}
+
+            {entries.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-white/35">
+                <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-violet-300">
+                  <FolderPlus size={18}/>
+                </div>
+                <p>No files in this folder.</p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <button type="button" onClick={() => void createFile()} className="rounded-md border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5">Create file</button>
+                  <button type="button" onClick={() => void createFolder()} className="rounded-md border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5">Create folder</button>
+                </div>
+              </div>
+            ) : entries.map((entry) => {
+              const isReadme = entry.kind === "file" && /^readme\.(md|mdx)$/i.test(entry.name);
+              const selected = selectedPath === entry.path;
+              return (
+                <div
+                  key={`${entry.kind}-${entry.path}`}
+                  className={`group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-b border-white/[.045] px-2 py-1.5 text-sm transition ${selected ? "bg-gradient-to-r from-violet-500/14 to-cyan-500/5" : "hover:bg-white/[.03]"}`}
+                >
+                  {entry.kind === "folder" ? (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedPath(null); setCurrentPath(entry.path); }}
+                      className="flex min-w-0 items-center gap-2 rounded px-1.5 py-1.5 text-left font-medium text-white/80"
+                    >
+                      <Folder size={16} className="shrink-0 fill-cyan-500/10 text-cyan-400" />
+                      <span className="truncate">{entry.name}</span>
+                      <span className="ml-auto text-[10px] text-white/25">{entry.count}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => selectFile(entry.path)}
+                      className={`flex min-w-0 items-center gap-2 rounded px-1.5 py-1.5 text-left ${selected ? "text-violet-200" : "text-white/70"}`}
+                    >
+                      {isReadme ? <FileText size={16} className="shrink-0 text-violet-300/75" /> : <FileCode2 size={16} className="shrink-0 text-white/45" />}
+                      <span className="truncate">{entry.name}</span>
+                      <span className="ml-auto text-[10px] text-white/25">{formatBytes(entry.size || 0)}</span>
+                    </button>
+                  )}
+                  <div className="flex justify-end gap-0.5 opacity-55 transition group-hover:opacity-100">
+                    <button type="button" onClick={() => void renameEntry(entry)} className="rounded p-1.5 text-white/35 hover:bg-white/10 hover:text-white" aria-label={`Rename ${entry.name}`} title="Rename"><Pencil size={13}/></button>
+                    <button type="button" onClick={() => void deleteEntry(entry)} className="rounded p-1.5 text-white/35 hover:bg-red-500/10 hover:text-red-300" aria-label={`Delete ${entry.name}`} title="Delete"><Trash2 size={13}/></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+
+        <div className="min-w-0 bg-[#0b1220]">
+          <div className="flex items-center justify-between border-b border-white/10 bg-[linear-gradient(90deg,rgba(91,33,182,.12),rgba(8,145,178,.08))] px-4 py-2.5">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-300/80">AI Wonderland Code Manager</p>
+              <p className="mt-0.5 truncate text-xs text-white/40">{selectedPath || "Select a project file to edit"}</p>
+            </div>
+            <span className="rounded-full border border-cyan-400/20 bg-cyan-400/5 px-2.5 py-1 text-[10px] font-semibold text-cyan-200">LIVE PROJECT FILES</span>
+          </div>
+
+          {selectedPath ? (
+            <div className="h-[590px] bg-[#1e1e1e]">
+              <CodeEditor
+                filePath={selectedPath}
+                content={fileContent}
+                onChange={setFileContent}
+                onSave={() => void saveSelectedFile()}
+              />
+            </div>
+          ) : readme ? (
+            <div className="min-h-[590px]">
+              <div className="flex items-center justify-between border-b border-white/10 bg-white/[.02] px-4 py-3 text-sm font-semibold">
+                <span className="flex items-center gap-2"><FileText size={16} className="text-violet-300" />{readme.name}</span>
+                <button type="button" onClick={() => selectFile(readme.path)} className="rounded-md border border-violet-400/20 bg-violet-500/10 px-2.5 py-1.5 text-xs font-normal text-violet-200 hover:bg-violet-500/15">Open in code manager</button>
+              </div>
+              <article className="px-5 py-5 sm:px-7 sm:py-6">
+                {readme.content.trim() ? renderMarkdown(readme.content) : <p className="text-sm text-white/35">This README is empty.</p>}
+              </article>
+            </div>
+          ) : (
+            <div className="relative grid min-h-[590px] place-items-center overflow-hidden p-8 text-center">
+              <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(124,58,237,.18),transparent_34%),radial-gradient(circle_at_80%_70%,rgba(6,182,212,.12),transparent_35%)]" />
+              <div className="relative max-w-md">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/20 to-cyan-500/10 text-violet-200 shadow-xl shadow-violet-950/20">
+                  <FileCode2 size={24}/>
+                </div>
+                <h3 className="mt-5 text-xl font-black tracking-tight text-white">AI Wonderland Code Manager</h3>
+                <p className="mt-2 text-sm leading-6 text-white/45">Choose a file from the explorer. The editor opens here, while project navigation stays visible instead of throwing you into another disconnected screen.</p>
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
-
-      {selectedPath ? (
-        <div className="h-[430px] border-t border-white/10 bg-[#1e1e1e]">
-          <CodeEditor
-            filePath={selectedPath}
-            content={fileContent}
-            onChange={setFileContent}
-            onSave={() => void saveSelectedFile()}
-          />
-        </div>
-      ) : readme ? (
-        <div className="border-t border-white/10">
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/[.02] px-4 py-3 text-sm font-semibold">
-            <span className="flex items-center gap-2"><FileText size={16} className="text-white/50" />{readme.name}</span>
-            <button type="button" onClick={() => selectFile(readme.path)} className="text-xs font-normal text-blue-400 hover:underline">Edit README</button>
-          </div>
-          <article className="px-5 py-5 sm:px-7 sm:py-6">
-            {readme.content.trim() ? renderMarkdown(readme.content) : <p className="text-sm text-white/35">This README is empty.</p>}
-          </article>
-        </div>
-      ) : null}
 
       <ImportModal
         isOpen={importOpen}
