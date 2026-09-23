@@ -287,7 +287,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
     const setupRaycastSelection = useCallback((app: any, cameraEntity: any) => {
       if (!app.mouse) return;
-      const pc = app.constructor;
+      const pc = pcRef.current;
+      if (!pc) return;
 
       app.mouse.on(pc.EVENT_MOUSEDOWN, (event: any) => {
         if (event.button !== 0) return;
@@ -350,7 +351,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     }, []);
 
     const setupOrbitControls = useCallback((app: any, camera: any) => {
-      const pc = app.constructor;
+      const pc = pcRef.current;
+      if (!pc) return;
       let isDragging = false;
       let panning = false;
       let lastX = 0;
@@ -424,7 +426,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     }, []);
 
     const setupGround = useCallback((app: any) => {
-      const pc = app.constructor;
+      const pc = pcRef.current;
+      if (!pc) return;
       const ground = new pc.Entity("Ground");
       ground.addComponent("render", { type: "plane" });
       ground.setLocalScale(20, 20, 1);
@@ -443,7 +446,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     }, []);
 
     const setupGrid = useCallback((app: any, enabled: boolean) => {
-      const pc = app.constructor;
+      const pc = pcRef.current;
+      if (!pc) return;
       if (gridRef.current) {
         gridRef.current.enabled = enabled;
         return gridRef.current;
@@ -483,7 +487,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     }, []);
 
     const setupLights = useCallback((app: any) => {
-      const pc = app.constructor;
+      const pc = pcRef.current;
+      if (!pc) return;
       const dir = new pc.Entity("DirLight");
       dir.addComponent("light", { type: "directional", color: new pc.Color(1, 1, 1), intensity: 1.1, castShadows: true });
       dir.setEulerAngles(45, 30, 0);
@@ -573,7 +578,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           logger.error("PlayCanvas GLTF Loading Error:", err);
           return;
         }
-        const pc = app.constructor;
+        const pc = pcRef.current;
+      if (!pc) return;
         const targetEntity = new pc.Entity(`AI_Asset_${assetId ?? Date.now()}`);
         targetEntity.addComponent("model", { type: "asset", asset: asset.resource.model });
         targetEntity.addComponent("rigidbody", { type: "static" });

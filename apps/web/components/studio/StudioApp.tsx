@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import Studio3DFactory from "@/components/studio/Studio3DFactory";
 import Studio360View from "@/components/studio/Studio360View";
-import StudioGameBuilder from "@/components/studio/StudioGameBuilder";
+import StudioGameFoundation from "@/components/studio/StudioGameFoundation";
 import StudioMovieMaker from "@/components/studio/StudioMovieMaker";
 import StudioContentBrowser from "@/components/studio/StudioContentBrowser";
 import "./StudioEditor.css";
@@ -80,7 +80,7 @@ export default function StudioApp() {
             <section className={mode === "factory" ? "wonderplay-factory" : "flex min-h-0 min-w-0 overflow-hidden"} aria-label={`${MODES.find((item) => item.id === mode)?.label} workspace`}>
               {mode === "factory" && <Studio3DFactory />}
               {mode === "panorama" && <Studio360View />}
-              {mode === "game" && <StudioGameBuilder />}
+              {mode === "game" && <StudioGameFoundation />}
               {mode === "movie" && <StudioMovieMaker />}
             </section>
             <StudioContentBrowser />
