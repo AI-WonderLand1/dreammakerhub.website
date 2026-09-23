@@ -24,4 +24,9 @@ describe('Google Analytics integration', () => {
     expect(nextConfigSource).toContain('https://www.googletagmanager.com');
     expect(nextConfigSource).toContain('https://*.google-analytics.com');
   });
+
+  it('allows the Amplitude engagement SDK script in CSP', () => {
+    expect(nextConfigSource).toContain('https://cdn.amplitude.com');
+    expect(nextConfigSource).toContain('https://*.amplitude.com');
+  });
 });
