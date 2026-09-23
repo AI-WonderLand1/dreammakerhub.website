@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import { coderApiRequest } from '@/lib/coder/workspace-slots.server';
 
 export const dynamic = 'force-dynamic';
@@ -64,8 +65,7 @@ async function existingOperatorTarget(request: Request, bearerOnly: boolean): Pr
     return { error: 'Your DreamMakerHub session must be refreshed.', status: 401, login: true };
   }
 
-  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  if (!adminIds.includes(user.id)) {
+  if (!isConfiguredCoderOperator(user.id)) {
     return { error: 'Not found', status: 404 };
   }
 
