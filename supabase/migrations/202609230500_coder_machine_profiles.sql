@@ -183,3 +183,77 @@ REVOKE ALL ON FUNCTION public.meter_coder_customer_compute_v2(uuid, boolean, int
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.meter_coder_customer_compute_v2(uuid, boolean, integer)
   TO service_role;
+
+
+-- Add weighted WonderSpace compute to the authenticated usage dashboard while
+-- preserving existing generic compute_credits_used from usage_logs.
+CREATE OR REPLACE FUNCTION public.get_usage_summary()
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+  uid UUID := auth.uid();
+  p RECORD;
+  period_start TIMESTAMPTZ;
+  month_start DATE := date_trunc('month', now() AT TIME ZONE 'UTC')::date;
+  result JSON;
+BEGIN
+  IF uid IS NULL THEN RETURN NULL; END IF;
+
+  SELECT * INTO p FROM public.user_profiles WHERE id = uid;
+  period_start := CASE
+    WHEN FOUND THEN COALESCE(p.usage_period_start, date_trunc('month', now()))
+    ELSE date_trunc('month', now())
+  END;
+
+  SELECT json_build_object(
+    'plan', COALESCE(p.subscription_plan, 'free'),
+    'period_start', period_start,
+    'period_reset', COALESCE(p.usage_period_start, date_trunc('month', now())) + interval '1 month',
+    'api_calls_used', COALESCE((
+      SELECT SUM(api_calls) FROM public.usage_logs
+      WHERE user_id = uid AND created_at >= period_start
+    ), 0),
+    'tokens_used', COALESCE((
+      SELECT SUM(tokens_used) FROM public.usage_logs
+      WHERE user_id = uid AND created_at >= period_start
+    ), 0),
+    'compute_credits_used', COALESCE((
+      SELECT SUM(compute_credits_used) FROM public.usage_logs
+      WHERE user_id = uid AND created_at >= period_start
+    ), 0),
+    'ide_compute_credits_used', COALESCE((
+      SELECT ceil(used_weighted_ms / 60000.0)::bigint
+      FROM public.coder_customer_compute_monthly
+      WHERE user_id = uid AND period_start = month_start
+    ), 0),
+    'runtime_minutes', COALESCE((
+      SELECT SUM(runtime_minutes) FROM public.usage_logs
+      WHERE user_id = uid AND created_at >= period_start
+    ), 0),
+    'projects_count', (
+      SELECT COUNT(*) FROM public.projects
+      WHERE owner_id = uid AND status <> 'deleted'
+    ),
+    'storage_used', COALESCE((
+      SELECT SUM(storage_used) FROM public.projects
+      WHERE owner_id = uid AND status <> 'deleted'
+    ), 0),
+    'recent_activity', COALESCE((
+      SELECT json_agg(row_to_json(t)) FROM (
+        SELECT action, tokens_used, compute_credits_used, api_calls, runtime_minutes, project_id, created_at
+        FROM public.usage_logs
+        WHERE user_id = uid
+        ORDER BY created_at DESC
+        LIMIT 12
+      ) t
+    ), '[]'::json)
+  ) INTO result;
+
+  RETURN result;
+END $$;
+
+GRANT EXECUTE ON FUNCTION public.get_usage_summary() TO authenticated;
