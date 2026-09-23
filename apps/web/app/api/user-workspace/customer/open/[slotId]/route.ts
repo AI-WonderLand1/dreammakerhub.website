@@ -15,7 +15,7 @@ type CustomerIdentity = {
 };
 type CustomerWorkspace = {
   id?: string; owner_id?: string; name?: string; template_id?: string;
-  latest_build?: { status?: string };
+  latest_build?: { status?: string; template_version_id?: string };
 };
 
 function publicCoderOrigin(): string {
@@ -46,6 +46,10 @@ export async function GET(request: Request, { params }: Context) {
       throw new CostGateError('Cloud IDE requires a verified paid plan.', 402);
     }
     const templateId = await verifiedCustomerTemplateId();
+    const pinnedVersionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
+    if (!pinnedVersionId || !UUID.test(pinnedVersionId)) {
+      throw new CostGateError('Approved customer template version is not configured.');
+    }
     await assertFreshUsageController();
     const slot = await getCoderSlot(user.id, slotId);
     if (!slot) return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: noStore });
@@ -85,6 +89,11 @@ export async function GET(request: Request, { params }: Context) {
     if (!workspace || workspace.id !== slot.workspace_id || workspace.owner_id !== owner.id ||
         workspace.name !== slot.workspace_name || workspace.template_id !== templateId) {
       throw new CostGateError('Coder workspace ownership or template does not match your account.');
+    }
+    // The template ID alone is insufficient: a user may update a workspace to
+    // another version of that template through Coder without using this app.
+    if (workspace.latest_build?.template_version_id !== pinnedVersionId) {
+      throw new CostGateError('Your IDE uses an unverified template version. Contact support.');
     }
     const status = workspace.latest_build?.status || 'unknown';
     if (status === 'running') {
