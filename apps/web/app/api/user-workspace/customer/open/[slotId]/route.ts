@@ -15,7 +15,7 @@ const noStore = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-r
  * has a workspace-only gateway that:
  *   - verifies the DreamMakerHub user and exact workspace ownership,
  *   - proxies the workspace app and WebSockets without an operator token,
- *   - exposes no coder.dreammakerhub.website URL to the browser,
+ *   - exposes no direct Coder dashboard URL to the browser,
  *   - passes two-user cross-workspace negative tests.
  */
 export async function GET(request: Request, { params }: Context) {
