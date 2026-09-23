@@ -52,12 +52,11 @@ describe('customer workspace deletion authorization', () => {
 });
 
 describe('customer IDE lifecycle handoff', () => {
-  it('recognizes a succeeded start as running and a succeeded stop as stopped', () => {
-    expect(handoff).toContain("build?.status === 'succeeded' && build.transition === 'start'");
-    expect(handoff).toContain("build?.status === 'succeeded' && build.transition === 'stop'");
-    expect(handoff).toContain('customerWorkspaceState(workspace)');
-    expect(handoff).toContain("workspace.latest_build?.template_version_id !== pinnedVersionId");
-    expect(handoff).not.toContain('export async function POST');
+  it('fails closed until a DreamMakerHub-only gateway exists', () => {
+    expect(handoff).toContain('CUSTOMER_IDE_GATEWAY_REQUIRED');
+    expect(handoff).toContain('status: 503');
+    expect(handoff).not.toContain('coderApiRequest(');
+    expect(handoff).not.toContain('CODER_ACCESS_URL');
     expect(handoff).not.toContain("{ transition: 'start' }");
   });
 });
