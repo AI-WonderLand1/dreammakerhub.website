@@ -19,13 +19,15 @@ info "Verified expected Kubernetes context: $actual_context"
 
 kubectl --request-timeout=15s get nodes -o name >/dev/null || fail 'Cannot read AWS Kubernetes nodes with the current credentials.'
 kubectl --request-timeout=15s get namespace coder-customers -o name >/dev/null || fail 'Separate coder-customers namespace has not been installed.'
-# The Coder control plane may live on UpCloud or elsewhere. Do not require an
-# operator "coder" namespace on the AWS workspace cluster.
+# The Coder control plane may live on UpCloud or elsewhere. Distinguish a
+# genuinely absent operator namespace from forbidden/unavailable API access.
 operator_namespace_present=false
-if kubectl --request-timeout=15s get namespace coder -o name >/dev/null 2>&1; then
+if operator_lookup="$(kubectl --request-timeout=15s get namespace coder -o name 2>&1)"; then
   operator_namespace_present=true
-else
+elif [[ "$operator_lookup" == *NotFound* ]]; then
   info 'No operator Coder namespace found here; a separate AWS-connected Coder provisioner will be required.'
+else
+  fail 'Cannot verify whether an operator Coder namespace exists; refusing to skip cross-namespace RBAC checks.'
 fi
 info 'The separate customer namespace exists; no namespace was created.'
 
