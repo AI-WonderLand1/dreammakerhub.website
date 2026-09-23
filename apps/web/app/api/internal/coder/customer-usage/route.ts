@@ -34,6 +34,8 @@ export async function POST(request: Request) {
   }
   const db = coderServiceClient();
   try {
+    const operatorId = process.env.CODER_OPERATOR_USER_ID;
+    if (!operatorId) throw new Error('Coder operator identity not configured');
     const pending = await db.from('coder_customer_jobs')
       .select('status,updated_at').in('status', ['claimed', 'needs_reconciliation']).limit(21);
     if (pending.error || !Array.isArray(pending.data) || pending.data.length > 20 ||
@@ -42,14 +44,14 @@ export async function POST(request: Request) {
       throw new Error('Unreconciled customer allocation: no controller heartbeat');
     }
 
-    // Usage history is retained after deletion. Meter only unreleased slots:
-    // reading every historical row eventually hits the pilot limit and a
-    // deleted Coder ID would otherwise prevent all future heartbeats.
+    // Usage history is retained after deletion. The inner join ensures ONLY
+    // customer-job slots are metered: operator slots share this slots table.
+    // Excluding released rows avoids historical volume/404s blocking heartbeat.
     const active = await db.from('coder_workspace_slots')
-      .select('id,workspace_id,workspace_name,user_id,state')
+      .select('id,workspace_id,workspace_name,user_id,state,coder_customer_jobs!inner(slot_id)')
       .is('released_at', null).in('state', ['provisioned', 'deleting']).limit(21);
     if (active.error || !Array.isArray(active.data) || active.data.length > 20) {
-      throw new Error('Live workspace allocations unavailable or exceed controller capacity');
+      throw new Error('Live customer allocations unavailable or exceed controller capacity');
     }
     const allocations = active.data as Allocation[];
     let usageRows: Usage[] = [];
@@ -72,7 +74,9 @@ export async function POST(request: Request) {
           usage.user_id !== slot.user_id) throw new Error('Compute ledger owner mismatch');
       const identity = await db.from('coder_customer_identities')
         .select('coder_user_id').eq('user_id', usage.user_id).maybeSingle();
-      if (identity.error || !identity.data) throw new Error('Customer identity mapping missing');
+      if (identity.error || !identity.data || identity.data.coder_user_id === operatorId) {
+        throw new Error('Customer identity mapping missing or refers to operator');
+      }
       const job = await db.from('coder_customer_jobs')
         .select('template_id,status').eq('slot_id', usage.slot_id).eq('user_id', usage.user_id).maybeSingle();
       if (job.error || job.data?.status !== 'ready') throw new Error('Unreconciled workspace state');
