@@ -18,8 +18,9 @@ export default async function WonderSpacePage() {
   // SSR cookies. The client gate rechecks the role using a verified Bearer token.
   if (isOperator) return <OperatorIdePanel />;
 
-  const customerPilot =
-    process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true' &&
-    process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED === 'true';
+  // Customer pod provisioning and browser IDE opening are deliberately
+  // independent. A private pod/PVC may be prepared while the direct-open route
+  // remains fail-closed until the DreamMakerHub-only gateway is verified.
+  const customerPilot = process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true';
   return <WonderSpaceOperatorGate customerPilot={customerPilot} />;
 }

@@ -10,12 +10,16 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export function customerProvisioningGate(): void {
+  // Provisioning a private pod/PVC and exposing that IDE to a browser are
+  // separate security boundaries. Keep workspace creation gated on identity,
+  // template isolation and the independent hard-stop controls, while the
+  // customer open route remains fail-closed until the DreamMakerHub-only
+  // browser gateway is independently verified.
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
       process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED !== 'true' ||
-      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true' ||
-      process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED !== 'true') {
-    throw new CostGateError('Private customer IDEs are paused until identity, pod isolation, compute limits, and the DreamMakerHub-only IDE gateway are verified.');
+      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true') {
+    throw new CostGateError('Private customer IDE pods are paused until identity, pod isolation, compute limits, and hard-stop controls are verified.');
   }
   if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {

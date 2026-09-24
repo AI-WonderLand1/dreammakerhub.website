@@ -25,6 +25,7 @@ describe('customer-only Coder provisioning', () => {
     expect(reserve).toBeGreaterThan(controller);
     expect(source).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
     expect(source).toContain('CODER_CUSTOMER_HARD_STOP_VERIFIED');
+    expect(source).not.toContain('CODER_CUSTOMER_IDE_GATEWAY_VERIFIED');
   });
 
   it('creates under the verified customer UUID and keeps uncertain slots allocated', () => {
