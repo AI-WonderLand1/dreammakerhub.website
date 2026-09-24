@@ -16,6 +16,12 @@ describe('customer IDE opening security hold', () => {
     expect(route).not.toContain('export async function POST');
   });
 
+  it('allows the customer pod pilot to render without pretending the browser gateway exists', () => {
+    const page = file('apps/web/app/wonderspace/page.tsx');
+    expect(page).toContain("process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true'");
+    expect(page).not.toContain("process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED === 'true'");
+  });
+
   it('removes direct customer-to-Coder navigation from both customer views', () => {
     const launch = file('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     const manager = file('apps/web/app/wonderspace/workspaces/page.tsx');
