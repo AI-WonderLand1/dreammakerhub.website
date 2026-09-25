@@ -125,6 +125,8 @@ export async function createProject(ownerId: string, name: string, tool?: string
 }
 
 export async function ensureDefaultProject(ownerId: string, name = "Wonder Build Default") {
+  // Do not report an invented project when the real database is unavailable.
+  // Callers must handle the storage failure before generating project-linked AI data.
   const existing = await listProjects(ownerId);
   if (existing.length > 0) return existing[0];
   return createProject(ownerId, name);
