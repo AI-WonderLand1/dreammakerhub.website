@@ -25,6 +25,8 @@ import type { BlockDefinition, LeftPanelTab } from '@/lib/builder/types';
 import { findBlockDefinition } from '@/lib/builder/blocks/utils';
 import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
 import { storageService } from '@/lib/builder/pipeline/StorageService';
+import { checkBuilderProjectAccess } from '@/lib/builder/project-access';
+import type { BuilderProjectStatus } from '@/lib/builder/project-access';
 import { livePreviewService } from '@/lib/builder/pipeline/LivePreviewService';
 import {
   CANVAS_ROOT_ID,
@@ -85,7 +87,7 @@ function BuilderContent() {
     return requested === 'code' || requested === 'preview' ? requested : 'design';
   });
   const [toast, setToast] = useState<string | null>(null);
-  const [projectStatus, setProjectStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
+  const [projectStatus, setProjectStatus] = useState<BuilderProjectStatus>('loading');
   const [dragOverlay, setDragOverlay] = useState<BlockDefinition | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
 
@@ -109,13 +111,14 @@ function BuilderContent() {
   }, []);
 
   useEffect(() => {
+    if (projectStatus !== 'ready') return;
     const pendingCode = sessionStorage.getItem('pendingBuilderCode');
     if (!pendingCode) return;
     setEditorCode(pendingCode);
     sessionStorage.removeItem('pendingBuilderCode');
     switchTab('code');
     showToast('AI-generated code loaded');
-  }, [setEditorCode, showToast, switchTab]);
+  }, [projectStatus, setEditorCode, showToast, switchTab]);
 
   useEffect(() => {
     const rawTab = leftPanelTab as string;
@@ -134,42 +137,83 @@ function BuilderContent() {
   }, [rightPanelTab, setRightPanelTab]);
 
   useEffect(() => {
-    const pipeline = getPipeline({ projectId: projectId || undefined });
-    if (!pipeline.isRunning()) pipeline.start();
+    setProjectStatus('loading');
+    const pipeline = getPipeline({ projectId: projectId || undefined, autoStart: false });
+    if (projectId && pipeline.isRunning()) pipeline.stop();
 
     if (!projectId) {
+      storageService.setProjectId('');
       setProjectId('');
+      if (!pipeline.isRunning()) pipeline.start();
       setProjectStatus('ready');
       return;
     }
 
-    setProjectId(projectId);
-    storageService.setProjectId(projectId);
-
     let cancelled = false;
-    fetch(`/api/projects/${projectId}`)
-      .then((response) => {
-        if (cancelled) return;
-        setProjectStatus(response.status === 404 ? 'notfound' : 'ready');
-      })
-      .catch(() => {
-        if (!cancelled) setProjectStatus('ready');
-      });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
 
-    import('@/lib/supabase/client')
-      .then(async ({ createClient, ensureSupabaseConfig }) => {
-        const config = await ensureSupabaseConfig();
-        if (!config) return;
+    void (async () => {
+      const access = await checkBuilderProjectAccess(projectId, () =>
+        fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+          signal: controller.signal,
+        }),
+      );
+      window.clearTimeout(timeout);
+      if (cancelled) return;
+      if (access.status !== 'ready') {
+        setProjectStatus(access.status);
+        return;
+      }
+
+      try {
+        // The API has verified ownership, but the browser must also use the
+        // same account before the project storage service may read or write.
+        const { createClient, ensureSupabaseConfig } = await import('@/lib/supabase/client');
+        if (!(await ensureSupabaseConfig())) {
+          setProjectStatus('unavailable');
+          return;
+        }
         const client = createClient();
-        if (!client) return;
-        const { data } = await client.auth.getSession();
-        const ownerId = data.session?.user?.id;
-        if (ownerId) storageService.setOwnerId(ownerId);
-      })
-      .catch(() => {});
+        if (!client) {
+          setProjectStatus('unavailable');
+          return;
+        }
+        const { data, error } = await client.auth.getUser();
+        if (cancelled) return;
+        if (error || !data.user?.id) {
+          setProjectStatus('signin');
+          return;
+        }
+        if (data.user.id !== access.ownerId) {
+          setProjectStatus('forbidden');
+          return;
+        }
+
+        storageService.setOwnerId(data.user.id);
+        storageService.setProjectId(projectId);
+        const loaded = await storageService.loadFromProject();
+        if (cancelled) return;
+        if (!loaded) {
+          setProjectStatus('unavailable');
+          return;
+        }
+
+        setProjectId(projectId);
+        const readyPipeline = getPipeline({ projectId, ownerId: data.user.id, autoStart: false });
+        if (!readyPipeline.isRunning()) readyPipeline.start();
+        setProjectStatus('ready');
+      } catch {
+        if (!cancelled) setProjectStatus('unavailable');
+      }
+    })();
 
     return () => {
       cancelled = true;
+      controller.abort();
+      window.clearTimeout(timeout);
     };
   }, [projectId, setProjectId]);
 
@@ -181,6 +225,7 @@ function BuilderContent() {
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
+      if (projectStatus !== 'ready') return;
       const target = event.target as HTMLElement;
       const isInput =
         target.tagName === 'INPUT' ||
@@ -257,6 +302,7 @@ function BuilderContent() {
   }, [
     duplicateElement,
     projectId,
+    projectStatus,
     redo,
     removeElement,
     selectElement,
@@ -382,6 +428,43 @@ function BuilderContent() {
         <a href="/dashboard/projects" className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-500">
           Back to Projects
         </a>
+      </div>
+    );
+  }
+
+  if (projectStatus !== 'ready') {
+    const blocked = {
+      signin: {
+        title: 'Sign in to open this project',
+        message: 'Your session needs to be verified before WonderBuild can edit or save this project.',
+      },
+      forbidden: {
+        title: 'Project access denied',
+        message: 'Your current account does not own this project. Switch to the correct account.',
+      },
+      unavailable: {
+        title: 'Could not safely load this project',
+        message: 'The project or its saved contents could not be verified. Editing is paused to protect existing work.',
+      },
+    }[projectStatus];
+
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#050816] p-8 text-center text-white">
+        <h1 className="text-xl font-bold">{blocked.title}</h1>
+        <p role="alert" className="max-w-md text-sm text-white/60">{blocked.message}</p>
+        <div className="flex gap-3">
+          {projectStatus === 'signin' && (
+            <a href="/public-pages/auth" className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold hover:bg-violet-500">
+              Sign in
+            </a>
+          )}
+          <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:bg-white/10">
+            Retry
+          </button>
+          <a href="/dashboard/projects" className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:bg-white/10">
+            Back to Projects
+          </a>
+        </div>
       </div>
     );
   }
