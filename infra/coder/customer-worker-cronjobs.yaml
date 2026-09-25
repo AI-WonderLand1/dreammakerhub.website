@@ -9,6 +9,8 @@ metadata:
   namespace: coder
 spec:
   schedule: "* * * * *"
+  # Installed disabled. Never automatically activate customer billing/compute.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 30
   successfulJobsHistoryLimit: 1
@@ -50,6 +52,8 @@ metadata:
   namespace: coder
 spec:
   schedule: "* * * * *"
+  # Installed disabled. Never automatically activate customer billing/compute.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 30
   successfulJobsHistoryLimit: 1
