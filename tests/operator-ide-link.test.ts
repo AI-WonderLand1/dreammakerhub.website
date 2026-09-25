@@ -22,7 +22,7 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain('!operatorRefreshAttempted.current');
     expect(gate).toContain('operatorRefreshAttempted.current = true');
     expect(gate).toContain('refreshUserId.current !== user.id');
-    expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
+    expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel customerPilot={customerPilot} />");
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
