@@ -17,6 +17,15 @@ describe('AWS WonderSpace customer pod smoke template', () => {
     expect(source).not.toContain('privileged = true');
   });
 
+  it('uses a valid provider block and does not point agents at denied internal HTTP egress', () => {
+    const source = read('infra/coder/customer-smoke-template/main.tf');
+    const instructions = read('infra/coder/customer-smoke-template/README.md');
+    expect(source).toContain('provider "coder" {}');
+    expect(source).not.toContain(String.raw`\n`);
+    expect(source).not.toContain('coder.coder.svc.cluster.local');
+    expect(instructions).toContain('public HTTPS');
+  });
+
   it('is clearly separated from the production customer template', () => {
     const smoke = read('infra/coder/customer-smoke-template/README.md');
     expect(smoke).toContain('not production-ready');
