@@ -125,19 +125,9 @@ export async function createProject(ownerId: string, name: string, tool?: string
 }
 
 export async function ensureDefaultProject(ownerId: string, name = "Wonder Build Default") {
-  try {
-    const existing = await listProjects(ownerId);
-    if (existing.length > 0) return existing[0];
-    return createProject(ownerId, name);
-  } catch {
-    return {
-      id: `project-${ownerId}`,
-      ownerId,
-      name,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  }
+  const existing = await listProjects(ownerId);
+  if (existing.length > 0) return existing[0];
+  return createProject(ownerId, name);
 }
 
 async function assertOwner(projectId: string, ownerId: string) {
