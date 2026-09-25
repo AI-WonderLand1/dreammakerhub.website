@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # Import Unsloth before TRL/Transformers in CUDA training processes.
     from unsloth import FastLanguageModel, is_bfloat16_supported
-    from unsloth.chat_templates import get_chat_template, train_on_responses_only
+    from unsloth.chat_templates import train_on_responses_only
     from datasets import load_dataset
     from trl import SFTTrainer, SFTConfig
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         dtype=None,
         load_in_4bit=True,
     )
-    tokenizer = get_chat_template(tokenizer, chat_template="qwen-2.5")
+    # Keep the model tokenizer's own Qwen chat template.
     model = FastLanguageModel.get_peft_model(
         model,
         r=16,
@@ -107,8 +107,8 @@ if __name__ == "__main__":
     )
     trainer = train_on_responses_only(
         trainer,
-        instruction_part="<|im_start|>user\\n",
-        response_part="<|im_start|>assistant\\n",
+        instruction_part="<|im_start|>user\n",
+        response_part="<|im_start|>assistant\n",
     )
     # Prevent silent training on a fully masked dataset.
     sample = trainer.train_dataset[0]
