@@ -21,8 +21,17 @@ let pending: Promise<PublicStatus> | null = null;
 
 async function checkAI(): Promise<Service> {
   const base = { id: 'ai' as const, name: 'AI assistant' };
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) return { ...base, status: 'unavailable', message: 'Chat provider is not configured.' };
+  const key = process.env.OPENROUTER_API_KEY?.trim();
+  if (!key) {
+    // Match the free chat endpoint's supported providers. Configuration alone
+    // does not establish provider reachability or a successful completion.
+    const hasFallback = [process.env.GROQ_API_KEY, process.env.GEMINI_API_KEY,
+      process.env.GOOGLE_AI_API_KEY, process.env.CEREBRAS_API_KEY]
+      .some((value) => value?.trim());
+    return hasFallback
+      ? { ...base, status: 'limited', message: 'AI provider configured; chat replies not yet verified.' }
+      : { ...base, status: 'unavailable', message: 'Chat provider is not configured.' };
+  }
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
