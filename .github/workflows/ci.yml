@@ -25,6 +25,8 @@ jobs:
         run: bash -n deploy/aws-fallback/deploy-web.sh
       - name: Validate AWS customer pod preflight shell syntax
         run: bash -n infra/coder/aws-customer-pod-preflight.sh
+      - name: Validate suspended customer runner installer shell syntax
+        run: bash -n infra/coder/install-paused-customer-workers.sh
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
