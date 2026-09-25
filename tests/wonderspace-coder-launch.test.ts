@@ -43,7 +43,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     // The page separates the existing operator IDE from the customer launcher.
     // Customer provisioning is deliberately unavailable until the pilot is enabled.
     expect(page).toContain('WonderSpaceOperatorGate');
-    expect(operatorGate).toContain('<OperatorIdePanel />');
+    expect(operatorGate).toContain('<OperatorIdePanel customerPilot={customerPilot} />');
     expect(operatorGate).toContain('<CustomerWorkspaceLaunch />');
     expect(operatorGate).toContain('Cloud IDE access is private');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
