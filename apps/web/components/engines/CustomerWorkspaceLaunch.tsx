@@ -8,7 +8,7 @@ import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspa
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
-export default function CustomerWorkspaceLaunch() {
+export default function CustomerWorkspaceLaunch({ operatorPreview = false, embedded = false }: { operatorPreview?: boolean; embedded?: boolean }) {
   const { user, session, loading: authLoading } = useAuth();
   const [workspaceName, setWorkspaceName] = useState('');
   const [machineProfile, setMachineProfile] = useState<WorkspaceProfileId>('micro');
@@ -43,6 +43,7 @@ export default function CustomerWorkspaceLaunch() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!names.test(workspaceName)) { setError('Use a 3–32 character lowercase workspace name.'); return; }
+    if (operatorPreview) { setError('This is the customer IDE form. Sign in with a non-operator customer account to provision a private customer workspace.'); return; }
     if (loading || setup) return;
     setLoading(true);
     setError('');
@@ -65,12 +66,11 @@ export default function CustomerWorkspaceLaunch() {
   if (authLoading) return <main className="min-h-screen bg-[#080d22] p-12 text-white">Checking your session…</main>;
   if (!user) return <main className="min-h-screen bg-[#080d22] p-12 text-white"><Link href="/public-pages/auth" className="text-cyan-200 underline">Sign in to WonderSpace</Link></main>;
 
-  return <main className="relative min-h-screen bg-[#080d22] px-5 py-12 text-white">
-    <div className="mx-auto max-w-4xl">
-      <Link href="/dashboard" className="text-cyan-200">← Back to Dashboard</Link>
-      <h1 className="mt-9 text-4xl font-bold">WonderSpace cloud IDE</h1>
+  const content = <div className={embedded ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl"}>
+      <h1 className={embedded ? "text-3xl font-bold" : "text-4xl font-bold"}>WonderSpace cloud IDE</h1>
       <p className="mt-3 text-slate-300">Choose your workspace on this page. DreamMakerHub prepares a private pod and persistent disk for your account.</p>
       <Link href="/wonderspace/workspaces" className="mt-3 inline-block text-sm text-cyan-200 underline">Manage existing workspaces</Link>
+      {operatorPreview && <p className="mt-4 rounded-xl border border-amber-300/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">Operator preview: this is the same customer form regular signed-in users see. Customer pods must remain owned by separate customer Coder identities, not the production operator account.</p>}
       {setup ? <section aria-live="polite" className="mt-9 rounded-2xl border border-cyan-400/30 bg-slate-900 p-7">
         <h2 className="text-xl font-semibold">Your workspace setup: {setup.status.replaceAll('_', ' ')}</h2>
         <p className="mt-3 text-slate-300">{setup.status === 'needs_reconciliation'
@@ -113,11 +113,13 @@ export default function CustomerWorkspaceLaunch() {
           </div>
           <p className="mt-4 text-sm text-slate-300">1 compute credit = 1 CPU-minute. Persistent home disk: 10 GiB.</p>
           <button type="submit" disabled={loading} className="mt-5 w-full rounded-lg bg-cyan-600 px-5 py-3 font-semibold disabled:opacity-50">
-            {loading ? 'Reserving your workspace…' : 'Create my private IDE'}
+            {loading ? 'Reserving your workspace…' : operatorPreview ? 'Preview customer IDE form' : 'Create my private IDE'}
           </button>
           {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error}</p>}
         </section>
       </form>}
-    </div>
-  </main>;
+    </div>;
+
+  if (embedded) return <section className="mt-8 border-t border-white/10 pt-8">{content}</section>;
+  return <main className="relative min-h-screen bg-[#080d22] px-5 py-12 text-white">{content}</main>;
 }
