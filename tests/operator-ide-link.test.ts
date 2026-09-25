@@ -26,6 +26,8 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
+    expect(gate).toContain('<CustomerWorkspaceLaunch operatorPreview embedded />');
+    expect(gate).not.toContain('href="/dashboard"');
     expect(role).toContain("authenticatedSupabaseUser(request)");
     expect(role).toContain("from '@/lib/supabase/authenticated-user.server'");
     expect(role).toContain('isConfiguredCoderOperator(user.id)');
@@ -45,6 +47,7 @@ describe('Existing operator IDE link', () => {
     expect(route).toContain('/api/v2/users/me/workspace/');
     expect(route).toContain('/builds');
     expect(route).toContain("{ transition: 'start' }");
+    expect(route).toContain("if (state === 'starting') return { url: OPERATOR_IDE_URL }");
     expect(route).toContain('workspace.owner_id !== identity.id');
     expect(route).toContain('https://coder.dreammakerhub.website/@wonderingtribe/production.main/apps/code-server/');
     expect(route).toContain("'Cache-Control': 'private, no-store'");
@@ -97,10 +100,14 @@ describe('Existing operator IDE link', () => {
     expect(status).toContain("openMode: canOpen ? (operator ? 'operator' : 'customer') : 'disabled'");
   });
 
-  it('keeps the customer launcher closed while the customer pilot is off', () => {
+  it('keeps the customer launcher gated for customers while still showing the operator preview form', () => {
     const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
+    const customer = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     expect(gate).toContain("role === 'customer' && customerPilot");
     expect(gate).toContain('Cloud IDE access is private');
+    expect(gate).toContain('<CustomerWorkspaceLaunch operatorPreview embedded />');
+    expect(customer).toContain('operatorPreview');
+    expect(customer).not.toContain('href="/dashboard"');
     expect(gate).not.toContain("import WonderSpaceLaunch from './WonderSpaceLaunch'");
   });
 });
