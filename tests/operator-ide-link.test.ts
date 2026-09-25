@@ -26,9 +26,8 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
-    expect(role).toContain("request.headers.get('authorization')");
-    expect(role).toContain('supabase.auth.getUser(bearer)');
-    expect(role).toContain('supabase.auth.getUser()');
+    expect(role).toContain("authenticatedSupabaseUser(request)");
+    expect(role).toContain("from '@/lib/supabase/authenticated-user.server'");
     expect(role).toContain('isConfiguredCoderOperator(user.id)');
     expect(role).toContain("'Cache-Control': 'private, no-store'");
     expect(role).not.toContain('CODER_API_TOKEN');
@@ -37,9 +36,9 @@ describe('Existing operator IDE link', () => {
   it('authorizes again, verifies the operator workspace, and restarts the same IDE when stopped', () => {
     const route = read('apps/web/app/wonderspace/my-ide/route.ts');
     const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
-    expect(route).toContain('supabase.auth.getUser()');
-    expect(route).toContain('supabase.auth.getUser(bearer)');
-    expect(route).toContain('if (bearerOnly && !bearer)');
+    expect(route).toContain("authenticatedSupabaseUser(request)");
+    expect(route).toContain("from '@/lib/supabase/authenticated-user.server'");
+    expect(route).toContain('if (mutation && !isSameOriginRequest(request))');
     expect(route).toContain('isConfiguredCoderOperator(user.id)');
     expect(route).toContain('status: 404');
     expect(route).toContain("coderApiRequest('/api/v2/users/me', 'GET')");
@@ -69,8 +68,8 @@ describe('Existing operator IDE link', () => {
     expect(gate).not.toContain('Open existing IDE in Coder');
     expect(gate).toContain('Manage production in Coder');
     expect(gate).toContain('Sign in to DreamMakerHub');
-    expect(route).toContain('if (bearerOnly && !bearer)');
-    expect(route).toContain('supabase.auth.getUser(bearer)');
+    expect(route).toContain("authenticatedSupabaseUser(request)");
+    expect(route).toContain('if (mutation && !isSameOriginRequest(request))');
     expect(route).toContain("'/public-pages/auth?redirectTo=%2Fwonderspace'");
     expect(route).not.toContain("new URL('/auth/login', request.url)");
   });
