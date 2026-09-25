@@ -16,7 +16,10 @@ export default async function WonderSpacePage() {
   // If the SSR cookie is missing, do not guess that the visitor is a customer.
   // The browser can have a verified Supabase session even when the proxy drops
   // SSR cookies. The client gate rechecks the role using a verified Bearer token.
-  if (isOperator) return <OperatorIdePanel />;
+  if (isOperator) {
+    const customerPilot = process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true';
+    return <OperatorIdePanel customerPilot={customerPilot} />;
+  }
 
   // Customer pod provisioning and browser IDE opening are deliberately
   // independent. A private pod/PVC may be prepared while the direct-open route
