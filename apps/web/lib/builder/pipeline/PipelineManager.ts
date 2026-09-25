@@ -142,7 +142,7 @@ let globalPipeline: PipelineManager | null = null;
 export function getPipeline(config?: PipelineConfig): PipelineManager {
   if (!globalPipeline) {
     globalPipeline = new PipelineManager(config);
-  } else if (config?.projectId && globalPipeline.getProjectId() !== config.projectId) {
+  } else if (config?.projectId !== undefined && globalPipeline.getProjectId() !== config.projectId) {
     globalPipeline.stop();
     globalPipeline = new PipelineManager(config);
     if (config.autoStart !== false) globalPipeline.start();
