@@ -15,7 +15,9 @@ terraform {
   }
 }
 
-provider "coder" {\n  # Smoke-test override: workspace agents must talk to the NEW AWS Coder,\n  # not the old public coder.dreammakerhub.website deployment.\n  url = "http://coder.coder.svc.cluster.local"\n}
+# Use the authenticated Coder provisioner configuration; do not override its URL
+# with an internal HTTP service unreachable under customer egress restrictions.
+provider "coder" {}
 provider "kubernetes" {}
 
 data "coder_workspace" "me" {}

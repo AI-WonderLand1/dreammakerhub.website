@@ -9,7 +9,7 @@ It is limited to one Micro-sized IDE container (1 CPU / 2 GiB limit, 10 GiB PVC)
 1. Confirm the new AWS Coder pod and database are running in namespace `coder`.
 2. Confirm `coder-customers` exists.
 3. Confirm `system:serviceaccount:coder:coder-workspace-provisioner` can create PVCs and Deployments in `coder-customers`.
-4. Confirm the new AWS Coder server is reachable by the workspace agent. During a private smoke test, the temporary Coder access URL may be the in-cluster service URL. Do not change public DNS just to run this test.
+4. Confirm the workspace agent can reach the **new AWS Coder deployment's actual configured access URL**. The proposed customer NetworkPolicy permits public HTTPS (TCP 443), not `http://coder.coder.svc.cluster.local` on port 80. Verify actual DNS/TLS and network egress before testing, or review and explicitly permit a narrowly scoped alternative. Do not point agents at the old public Coder installation or change production DNS to force a smoke test.
 
 ## Publish from a shell authenticated to the NEW AWS Coder
 
