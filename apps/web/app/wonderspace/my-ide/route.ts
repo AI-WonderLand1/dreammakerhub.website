@@ -114,9 +114,10 @@ async function existingOperatorTarget(request: Request, mutation: boolean): Prom
       if (!startResponse.ok) {
         return { error: 'Coder did not accept the production workspace restart.', status: 502 };
       }
-      return { url: OPERATOR_WORKSPACE_URL };
+      return { url: OPERATOR_IDE_URL };
     }
-    if (state === 'starting' || state === 'stopping') return { url: OPERATOR_WORKSPACE_URL };
+    if (state === 'starting') return { url: OPERATOR_IDE_URL };
+    if (state === 'stopping') return { url: OPERATOR_WORKSPACE_URL };
     return { error: 'Coder production workspace needs attention before it can be opened.', status: 409 };
   } catch {
     return { error: 'Coder is unreachable or the server-side Coder connection is not configured.', status: 503 };
