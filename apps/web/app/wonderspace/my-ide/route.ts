@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import { coderApiRequest } from '@/lib/coder/workspace-slots.server';
 
@@ -47,21 +47,27 @@ function workspaceState(workspace: CoderWorkspace): 'running' | 'stopped' | 'sta
   return 'unknown';
 }
 
+function isSameOriginRequest(request: Request) {
+  const origin = request.headers.get('origin');
+  if (!origin) return false;
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
 /** Returns ONLY the existing, verified operator workspace or editor URL. */
-async function existingOperatorTarget(request: Request, bearerOnly: boolean): Promise<Target> {
-  const supabase = await createClient();
-  // POST requires the browser's own Supabase token. Never allow cookie-only
-  // cross-site POSTs to start an operator workspace. No Coder token is exposed.
-  const authorization = request.headers.get('authorization')?.trim() || '';
-  const bearer = /^Bearer\s+(.+)$/i.exec(authorization)?.[1]?.trim();
-  if (bearerOnly && !bearer) {
-    return { error: 'Your DreamMakerHub session must be refreshed.', status: 401, login: true };
+async function existingOperatorTarget(request: Request, mutation: boolean): Promise<Target> {
+  // Starting a workspace is a privileged mutation. Require a browser same-origin
+  // POST so cookie fallback cannot be abused as a cross-site start request.
+  if (mutation && !isSameOriginRequest(request)) {
+    return { error: 'Invalid request origin.', status: 403 };
   }
 
-  const { data: { user }, error } = bearerOnly
-    ? await supabase.auth.getUser(bearer)
-    : await supabase.auth.getUser();
-  if (error || !user) {
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) {
     return { error: 'Your DreamMakerHub session must be refreshed.', status: 401, login: true };
   }
 
