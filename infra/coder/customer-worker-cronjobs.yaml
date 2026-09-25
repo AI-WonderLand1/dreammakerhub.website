@@ -1,5 +1,6 @@
 # NOT INSTALLED. Apply only after verifying HTTPS connectivity, a suitable
 # pinned curl image, 1-minute scheduling, and the private runner secret.
+# This placeholder MUST be replaced by the reviewed paused installer.
 # Create secret coder-customer-runner in namespace coder with key token.
 # Failure of this controller is NOT an independent hard-stop failsafe.
 apiVersion: batch/v1
@@ -9,6 +10,8 @@ metadata:
   namespace: coder
 spec:
   schedule: "* * * * *"
+  # Installed disabled. Never automatically activate customer billing/compute.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 30
   successfulJobsHistoryLimit: 1
@@ -28,11 +31,14 @@ spec:
           containers:
             - name: request
               # Pin a reviewed digest before deployment.
-              image: curlimages/curl:8.16.0
+              image: REPLACE_WITH_REVIEWED_CURL_IMAGE_DIGEST
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits: { cpu: 100m, memory: 128Mi }
               env:
                 - name: RUNNER_TOKEN
                   valueFrom:
@@ -50,6 +56,8 @@ metadata:
   namespace: coder
 spec:
   schedule: "* * * * *"
+  # Installed disabled. Never automatically activate customer billing/compute.
+  suspend: true
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 30
   successfulJobsHistoryLimit: 1
@@ -68,11 +76,14 @@ spec:
             seccompProfile: { type: RuntimeDefault }
           containers:
             - name: request
-              image: curlimages/curl:8.16.0
+              image: REPLACE_WITH_REVIEWED_CURL_IMAGE_DIGEST
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits: { cpu: 100m, memory: 128Mi }
               env:
                 - name: RUNNER_TOKEN
                   valueFrom:
