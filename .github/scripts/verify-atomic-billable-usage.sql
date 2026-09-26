@@ -7,7 +7,8 @@ CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
 INSERT INTO auth.users (id) VALUES
   ('00000000-0000-4000-8000-000000000001'),
-  ('00000000-0000-4000-8000-000000000002');
+  ('00000000-0000-4000-8000-000000000002'),
+  ('00000000-0000-4000-8000-000000000003');
 \ir ../../supabase/migrations/202609201800_atomic_billable_usage.sql
 
 DO $test$
@@ -58,6 +59,11 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Ledger RLS must be enabled';
   END IF;
-  RAISE NOTICE 'PASS: atomic reservations, separate user/feature budgets, browser access denied, RLS enabled';
+  -- The separate shell-level test will use two PostgreSQL connections and
+  -- the third user to attempt concurrent reservations against the same row.
+  INSERT INTO public.billable_usage_counters (user_id, period_start, feature, units)
+    VALUES ('00000000-0000-4000-8000-000000000003',
+      date_trunc('month', now() AT TIME ZONE 'UTC')::date, 'workspace_launches', 0);
+  RAISE NOTICE 'PASS: serial reservations, separate user/feature budgets, browser access denied, RLS enabled';
 END
 $test$;
