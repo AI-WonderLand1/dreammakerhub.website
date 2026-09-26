@@ -31,13 +31,17 @@ describe('platform-funded cost guards', () => {
     expect(slots).toContain("process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true'");
   });
 
-  it('blocks the known alternate unmetered AI routes and limits builder project inserts', () => {
+  it('keeps unmetered AI routes paused but allows the metered AI chat route', () => {
     const middleware = read('apps/web/middleware.ts');
+    const chat = read('apps/web/app/api/ai/chat/route.ts');
     const migration = read('supabase/migrations/202609201810_builder_project_quota.sql');
-    expect(middleware).toContain('isUnmeteredBillablePath(pathname)');
-    expect(middleware).toContain('pathname.startsWith(\'/api/ai/\')');
+    expect(middleware).toContain("if (pathname === '/api/ai/chat') return false");
+    expect(middleware).toContain("pathname.startsWith('/api/ai/')");
     expect(middleware).toContain('"/api/build/stream"');
     expect(middleware).toContain('"/api/chat"');
+    expect(chat).toContain('await reserveAiRequest(');
+    expect(chat).toContain('await runAIPipeline(');
+    expect(chat.indexOf('await reserveAiRequest(')).toBeLessThan(chat.indexOf('await runAIPipeline('));
     expect(migration).toContain('pg_advisory_xact_lock');
     expect(migration).toContain('BEFORE INSERT ON public._projects');
     expect(migration).toContain('PROJECT_LIMIT_REACHED');
