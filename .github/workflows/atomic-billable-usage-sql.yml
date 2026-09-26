@@ -5,6 +5,7 @@ on:
     paths:
       - 'supabase/migrations/202609201800_atomic_billable_usage.sql'
       - '.github/scripts/verify-atomic-billable-usage.sql'
+      - '.github/scripts/verify-atomic-billable-concurrency.sh'
       - '.github/workflows/atomic-billable-usage-sql.yml'
   workflow_dispatch:
 permissions:
@@ -39,3 +40,11 @@ jobs:
           psql --version
           psql -h 127.0.0.1 -U postgres -d launch_test \
             -v ON_ERROR_STOP=1 -f .github/scripts/verify-atomic-billable-usage.sql
+      - name: Verify simultaneous PostgreSQL reservations never exceed the limit
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: launch_test
+        run: bash .github/scripts/verify-atomic-billable-concurrency.sh
