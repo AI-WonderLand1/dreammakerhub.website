@@ -8,7 +8,20 @@ vi.mock('@/lib/ai/models', () => ({ resolveModel: vi.fn() }));
 vi.mock('../apps/web/core/ai/runModel', () => ({ runModel: vi.fn() }));
 vi.mock('@/lib/usage/log', () => ({ logUsage: vi.fn() }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
-vi.mock('@/app/utils/supabase/server', () => ({ createClient: vi.fn() }));
+vi.mock('@/lib/billing/cost-guard.server', () => {
+  class CostGateError extends Error {
+    constructor(message: string, readonly status = 503) {
+      super(message);
+    }
+  }
+  return {
+    CostGateError,
+    costGateResponse: (error: unknown) =>
+      Response.json({ error: error instanceof Error ? error.message : 'Usage unavailable' }, { status: 503 }),
+    verifiedCostPlan: vi.fn(),
+    reserveAiRequest: vi.fn(),
+  };
+});
 vi.mock('@/lib/ai/mem0Client', () => ({ storeConfessionToMem0: vi.fn() }));
 
 const providerKeys = [
@@ -24,7 +37,7 @@ async function setup(tier: 'free' | 'premium' = 'free') {
   const { resolveModel } = await import('@/lib/ai/models');
   const { runModel } = await import('../apps/web/core/ai/runModel');
   const { logUsage } = await import('@/lib/usage/log');
-  const { createClient } = await import('@/app/utils/supabase/server');
+  const { verifiedCostPlan, reserveAiRequest } = await import('@/lib/billing/cost-guard.server');
   const { storeConfessionToMem0 } = await import('@/lib/ai/mem0Client');
   vi.mocked(requireUserId).mockResolvedValue('test-user');
   vi.mocked(resolveModel).mockReturnValue({
@@ -34,11 +47,10 @@ async function setup(tier: 'free' | 'premium' = 'free') {
     systemPrompt: 'You are an assistant.',
   });
   vi.mocked(storeConfessionToMem0).mockResolvedValue(false);
-  vi.mocked(createClient).mockResolvedValue({
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({
-      data: { subscription_tier: 'pro' }, error: null,
-    }) }) }) }),
-  } as any);
+  vi.mocked(verifiedCostPlan).mockResolvedValue(tier === 'premium' ? 'pro' : 'free');
+  vi.mocked(reserveAiRequest).mockResolvedValue({
+    plan: tier === 'premium' ? 'pro' : 'free', estimatedTokens: 1474,
+  });
   const { POST } = await import('../apps/web/app/api/chat/route');
   return {
     POST,
@@ -46,6 +58,8 @@ async function setup(tier: 'free' | 'premium' = 'free') {
     logUsage: vi.mocked(logUsage),
     requireUserId: vi.mocked(requireUserId),
     storeConfessionToMem0: vi.mocked(storeConfessionToMem0),
+    verifiedCostPlan: vi.mocked(verifiedCostPlan),
+    reserveAiRequest: vi.mocked(reserveAiRequest),
   };
 }
 
@@ -65,7 +79,7 @@ afterEach(() => {
 
 describe('sitewide assistant provider configuration', () => {
   it('uses a configured Gemini fallback and passes history and a concise system prompt', async () => {
-    const { POST, runModel, logUsage, storeConfessionToMem0 } = await setup();
+    const { POST, runModel, logUsage, storeConfessionToMem0, reserveAiRequest } = await setup();
     vi.stubEnv('GEMINI_API_KEY', 'test-gemini-secret');
     runModel.mockResolvedValue({ text: 'Here is how to start.', tokens: 42 });
 
@@ -78,6 +92,8 @@ describe('sitewide assistant provider configuration', () => {
       ok: true, text: 'Here is how to start.', tier: 'free', confessionsStored: false,
       confessions: [{ title: 'Assistant response', projectId: 'sitewide' }],
     });
+    expect(reserveAiRequest).toHaveBeenCalledWith('test-user', expect.any(Number), 450);
+    expect(reserveAiRequest.mock.invocationCallOrder[0]).toBeLessThan(runModel.mock.invocationCallOrder[0]);
     expect(runModel).toHaveBeenCalledWith(expect.objectContaining({
       maxTokens: 450,
       system: expect.stringContaining('Answer normal questions directly and briefly'),
@@ -86,6 +102,28 @@ describe('sitewide assistant provider configuration', () => {
     expect(runModel.mock.calls[0][0].messages[0].content).toContain('User: Hello');
     expect(logUsage).toHaveBeenCalledWith(expect.objectContaining({ userId: 'test-user', tokensUsed: 42 }));
     expect(storeConfessionToMem0).toHaveBeenCalledOnce();
+  });
+
+  it('rejects requests without available server-side usage accounting before contacting AI', async () => {
+    const { POST, runModel, reserveAiRequest } = await setup();
+    const { CostGateError } = await import('@/lib/billing/cost-guard.server');
+    vi.stubEnv('GEMINI_API_KEY', 'test-gemini-secret');
+    reserveAiRequest.mockRejectedValue(new CostGateError('Usage accounting unavailable'));
+    const response = await POST(request() as any);
+    expect(response.status).toBe(503);
+    expect(runModel).not.toHaveBeenCalled();
+  });
+
+  it('includes history in the per-request input budget', async () => {
+    const { POST, runModel, reserveAiRequest } = await setup();
+    vi.stubEnv('GEMINI_API_KEY', 'test-gemini-secret');
+    const response = await POST(request({
+      message: 'short',
+      history: [{ role: 'user', content: 'x'.repeat(12000) }],
+    }) as any);
+    expect(response.status).toBe(413);
+    expect(runModel).not.toHaveBeenCalled();
+    expect(reserveAiRequest).not.toHaveBeenCalled();
   });
 
   it('returns 503 and does not call a provider when no keys exist', async () => {
