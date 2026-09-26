@@ -96,6 +96,7 @@ describe('sitewide assistant provider configuration', () => {
     expect(reserveAiRequest.mock.invocationCallOrder[0]).toBeLessThan(runModel.mock.invocationCallOrder[0]);
     expect(runModel).toHaveBeenCalledWith(expect.objectContaining({
       maxTokens: 450,
+      singleProviderAttempt: true,
       system: expect.stringContaining('Answer normal questions directly and briefly'),
       messages: [{ role: 'user', content: expect.stringContaining('Current user message:\nHelp me make a website') }],
     }));
