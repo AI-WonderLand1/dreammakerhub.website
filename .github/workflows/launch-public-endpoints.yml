@@ -4,7 +4,7 @@ on:
     branches: [Master]
     paths:
       - '.github/scripts/public-endpoint-check.mjs'
-      - '.github/scripts/public-endpoint-check.test.mjs'
+      - '.github/scripts/public-endpoint-check.check.mjs'
       - '.github/workflows/launch-public-endpoints.yml'
   workflow_dispatch:
   schedule:
@@ -23,6 +23,6 @@ jobs:
         with:
           node-version: '22'
       - name: Unit test diagnostic (no network)
-        run: node --test .github/scripts/public-endpoint-check.test.mjs
+        run: node --test .github/scripts/public-endpoint-check.check.mjs
       - name: Check public endpoints from GitHub hosted VM
         run: node .github/scripts/public-endpoint-check.mjs
