@@ -6,7 +6,7 @@ import { resolveModel } from "@/lib/ai/models";
 import { runModel } from "../../../core/ai/runModel";
 import { logUsage } from "@/lib/usage/log";
 import { logger } from "@/lib/logger";
-import { createClient } from "@/app/utils/supabase/server";
+import { CostGateError, costGateResponse, reserveAiRequest, verifiedCostPlan } from "@/lib/billing/cost-guard.server";
 import { storeConfessionToMem0, type StoredConfession } from "@/lib/ai/mem0Client";
 
 export const runtime = "nodejs";
@@ -24,25 +24,6 @@ const ChatSchema = z.object({
 const PAID_PLANS = new Set(["pro", "team", "enterprise"]);
 const SHORT_ANSWER_RULE = "Answer normal questions directly and briefly, usually in 1-3 sentences. Expand only when the user requests steps, code, or depth. Do not claim to have inspected a page, changed files, or verified facts unless you actually did so. Clearly state material uncertainties.";
 
-async function getUserPlan(userId: string): Promise<string> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("subscription_tier")
-      .eq("id", userId)
-      .maybeSingle();
-    if (error) {
-      logger.warn("Could not read profile subscription tier", { userId, error: error.message });
-      return "free";
-    }
-    return data?.subscription_tier || "free";
-  } catch (error) {
-    logger.warn("Could not resolve user plan", { userId, error });
-    return "free";
-  }
-}
-
 export async function POST(req: NextRequest) {
   const userId = await requireUserId(req);
   if (!userId) {
@@ -59,7 +40,12 @@ export async function POST(req: NextRequest) {
 
   const resolved = resolveModel(body.modelId);
   if (resolved.tier === "premium") {
-    const plan = await getUserPlan(userId);
+    let plan: string;
+    try {
+      plan = await verifiedCostPlan(userId);
+    } catch (error) {
+      return costGateResponse(error);
+    }
     if (!PAID_PLANS.has(plan)) {
       return NextResponse.json(
         { error: "This model requires a paid plan", code: "UPGRADE_REQUIRED", upgrade: true, label: resolved.name },
@@ -82,7 +68,36 @@ export async function POST(req: NextRequest) {
     { role: "user", content: body.message },
   ];
 
+  // Include supplied conversation history in the input reservation. Without
+  // this cap a client can send many large history entries while paying for
+  // only the current message.
+  const inputCharacters = body.message.length +
+    (body.history ?? []).reduce((total, item) => total + item.content.length, 0);
+  if (inputCharacters > 12_000) {
+    return NextResponse.json({ error: "Conversation exceeds the per-request budget", code: "COST_GUARD" }, { status: 413 });
+  }
+
+  // Avoid reserving allowance for a provider that cannot run at all.
+  if (resolved.tier === "free" &&
+      ![process.env.OPENROUTER_API_KEY, process.env.GROQ_API_KEY,
+        process.env.GEMINI_API_KEY, process.env.GOOGLE_AI_API_KEY,
+        process.env.CEREBRAS_API_KEY].some((key) => key?.trim())) {
+    return NextResponse.json(
+      { error: "The assistant is temporarily unavailable because its AI provider is not configured. No message was processed.", code: "AI_NOT_CONFIGURED" },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  if (resolved.tier === "premium" && !process.env.OPENROUTER_API_KEY?.trim()) {
+    return NextResponse.json(
+      { error: "The selected AI model is not configured. No message was processed.", code: "AI_NOT_CONFIGURED" },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   try {
+    // Atomic database reservation MUST succeed before contacting any model.
+    // If configuration, metering or entitlement checks fail, remain paused.
+    await reserveAiRequest(userId, inputCharacters, 450);
     let text = "";
     let tokens = 0;
     let provider = "openrouter";
@@ -189,6 +204,7 @@ export async function POST(req: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err: unknown) {
+    if (err instanceof CostGateError) return costGateResponse(err);
     logger.error("Sitewide assistant request failed", { kind: err instanceof Error ? err.name : "unknown" });
     return NextResponse.json({ error: "AI request failed", code: "AI_PROVIDER_UNAVAILABLE" }, { status: 502 });
   }
