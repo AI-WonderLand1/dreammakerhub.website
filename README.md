@@ -57,7 +57,7 @@ WonderBuild is a website builder, not a game/world editor.
 
 It can use images, video, generated graphics, GLB/GLTF models, product viewers, and simple interactive 3D web components as normal website content. Game-level editing, gameplay systems, physics authoring, and NPC simulation belong outside WonderBuild.
 
-See [`TODO.md`](TODO.md) for the current WonderBuild implementation checklist and UX source of truth.
+See [`todo.md`](todo.md) for prioritized launch blockers and release acceptance criteria. The former detailed TODO remains available in Git history.
 
 ## Tech stack
 
