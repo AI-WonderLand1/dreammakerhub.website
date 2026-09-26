@@ -1,12 +1,9 @@
 name: Deploy Main Site to UpCloud VM
 
+# Recovery-only workflow. Railway is primary production; AWS EKS hosts Coder IDE pods.
+# Never auto-deploy an older UpCloud image after a GitHub image build.
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Build & Push Web Image
-    types:
-      - completed
 
 permissions:
   contents: read
@@ -23,10 +20,7 @@ env:
 
 jobs:
   deploy:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'Master')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/Master'
     runs-on: ubuntu-latest
     name: Deploy DreamMakerHub web to UpCloud VM
 
