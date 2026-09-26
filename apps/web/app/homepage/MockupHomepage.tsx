@@ -146,6 +146,22 @@ export default function MockupHomepage() {
             <Link href={primaryHref} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 text-sm font-black text-white shadow-[0_12px_32px_rgba(79,70,229,.35)]">Start Building Free <ArrowRight className="h-4 w-4" /></Link>
             <a href="#workflow" className="inline-flex min-h-11 items-center rounded-xl border border-white/25 bg-black/25 px-5 text-sm font-bold text-white backdrop-blur-md">Watch / Explore</a>
           </div>
+          <a
+            href="https://startupbase.io/products/ai-wonderland-innovation?utm_source=startupbase&utm_medium=badge&utm_campaign=launch-badge-dark"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="AI Wonderland Innovation on StartupBase (opens in a new tab)"
+            className="mt-6 inline-flex items-center rounded-lg transition hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300"
+          >
+            <img
+              src="https://statics.startupbase.io/site/badges/launched-on-sb-dark.svg"
+              alt="Launched on StartupBase"
+              height={55}
+              width={190}
+              style={{ height: 55, width: 'auto' }}
+              loading="lazy"
+            />
+          </a>
         </div>
 
         <div aria-hidden="true" className="hidden lg:block" />
