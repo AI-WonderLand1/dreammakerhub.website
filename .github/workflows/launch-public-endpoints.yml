@@ -1,0 +1,22 @@
+name: Launch public endpoint diagnostics
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '47 13 * * *'
+permissions:
+  contents: read
+jobs:
+  public-endpoints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit test diagnostic (no network)
+        run: node --test .github/scripts/public-endpoint-check.test.mjs
+      - name: Check public endpoints from GitHub hosted VM
+        run: node .github/scripts/public-endpoint-check.mjs
