@@ -30,12 +30,11 @@ function isPathProtected(pathname: string): boolean {
 }
 
 function isUnmeteredBillablePath(pathname: string): boolean {
-  // Only the reviewed, reserve-before-provider sitewide route may run. Keep the global
-  // pause if billing is disabled: a migration alone must not start spending.
-  if (pathname === '/api/chat') {
+  // Only exact reviewed routes that reserve server-side usage may run.
+  // Keep them paused while billing is disabled; all other unmetered routes stay closed.
+  if (pathname === '/api/chat' || pathname === '/api/ai/chat') {
     return process.env.BILLABLE_OPERATIONS_ENABLED !== 'true';
   }
-  // The main /api/ai route has an atomic guard. Other /api/ai/* POST handlers do not yet.
   return UNMETERED_AI_PATHS.has(pathname) || pathname.startsWith('/api/ai/');
 }
 
