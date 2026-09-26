@@ -31,6 +31,17 @@ describe('platform-funded cost guards', () => {
     expect(slots).toContain("process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true'");
   });
 
+  it('only unpauses guarded assistant routes with metering enabled', () => {
+    const middleware = read('apps/web/middleware.ts');
+    const assistant = read('apps/web/app/api/chat/route.ts');
+    const richChat = read('apps/web/app/api/ai/chat/route.ts');
+    expect(middleware).toContain("pathname === '/api/chat' || pathname === '/api/ai/chat'");
+    expect(middleware).toContain("process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
+    expect(assistant.indexOf('await reserveAiRequest(')).toBeLessThan(assistant.indexOf('await runModel('));
+    expect(assistant.indexOf('await reserveAiRequest(')).toBeLessThan(assistant.indexOf('fetch("https://openrouter.ai'));
+    expect(richChat.indexOf('await reserveAiRequest(')).toBeLessThan(richChat.indexOf('await runAIPipeline('));
+  });
+
   it('blocks the known alternate unmetered AI routes and limits builder project inserts', () => {
     const middleware = read('apps/web/middleware.ts');
     const migration = read('supabase/migrations/202609201810_builder_project_quota.sql');
