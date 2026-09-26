@@ -266,7 +266,7 @@ export async function renamePath(projectId: string, ownerId: string, oldPath: st
 
 function validRenameInput(value: string): boolean {
   return value.length >= 1 && value.length <= 512 && !value.startsWith("/") &&
-    !/[\\\\\x00-\x1f\x7f]/.test(value) &&
+    !/[\\\x00-\x1f\x7f]/.test(value) &&
     value.split("/").every((part) => part !== "" && part !== "." && part !== "..");
 }
 
