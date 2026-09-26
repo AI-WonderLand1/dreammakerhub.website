@@ -271,8 +271,13 @@ function validRenameInput(value: string): boolean {
 }
 
 export async function renameFile(projectId: string, ownerId: string, oldPath: string, newPath: string): Promise<void> {
+  // A folder must never move and THEN throw from this single-file API.
+  if (typeof oldPath !== "string" || !validRenameInput(oldPath) ||
+      (await readFile(projectId, ownerId, oldPath)) === null) {
+    throw new Error("Project rename source missing or is a folder");
+  }
   const moved = await renamePath(projectId, ownerId, oldPath, newPath);
-  if (moved !== 1) throw new Error("Expected exactly one file; use renamePath for folders");
+  if (moved !== 1) throw new Error("Project file changed during rename");
 }
 
 export async function moveFile(projectId: string, ownerId: string, oldPath: string, newDir: string): Promise<void> {
