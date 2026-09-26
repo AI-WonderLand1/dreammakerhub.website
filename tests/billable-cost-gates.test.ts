@@ -35,9 +35,12 @@ describe('platform-funded cost guards', () => {
     const middleware = read('apps/web/middleware.ts');
     const assistant = read('apps/web/app/api/chat/route.ts');
     const richChat = read('apps/web/app/api/ai/chat/route.ts');
-    expect(middleware).toContain("pathname === '/api/chat' || pathname === '/api/ai/chat'");
+    expect(middleware).toContain("pathname === '/api/chat'");
+    expect(middleware).not.toContain("pathname === '/api/chat' || pathname === '/api/ai/chat'");
+    expect(middleware).toContain("pathname.startsWith('/api/ai/')");
     expect(middleware).toContain("process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
     expect(assistant.indexOf('await reserveAiRequest(')).toBeLessThan(assistant.indexOf('await runModel('));
+    expect(assistant).toContain('singleProviderAttempt: true');
     expect(assistant.indexOf('await reserveAiRequest(')).toBeLessThan(assistant.indexOf('fetch("https://openrouter.ai'));
     expect(richChat.indexOf('await reserveAiRequest(')).toBeLessThan(richChat.indexOf('await runAIPipeline('));
   });
