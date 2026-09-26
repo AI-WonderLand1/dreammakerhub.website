@@ -1,0 +1,45 @@
+name: Atomic project rename DB regression
+on:
+  pull_request:
+    branches: [Master]
+    paths:
+      - 'supabase/migrations/202609261400_atomic_builder_file_rename.sql'
+      - '.github/sql/atomic-builder-file-rename-test.sql'
+      - '.github/workflows/atomic-builder-file-rename.yml'
+      - 'apps/web/lib/projects/storage.ts'
+      - 'apps/web/app/api/projects/**'
+      - 'tests/atomic-project-rename-contract.test.ts'
+permissions:
+  contents: read
+jobs:
+  isolated-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ephemeral-test-only
+          POSTGRES_DB: test_project_rename
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_project_rename"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ephemeral-test-only
+      PGDATABASE: test_project_rename
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Run atomic rename against isolated temporary database
+        run: psql -X -v ON_ERROR_STOP=1 -f .github/sql/atomic-builder-file-rename-test.sql
