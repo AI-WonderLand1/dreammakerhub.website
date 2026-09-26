@@ -31,33 +31,22 @@ describe('platform-funded cost guards', () => {
     expect(slots).toContain("process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true'");
   });
 
-  it('only unpauses guarded assistant routes with metering enabled', () => {
+  it('unpauses only reviewed, metered chat handlers when billing is enabled', () => {
     const middleware = read('apps/web/middleware.ts');
     const assistant = read('apps/web/app/api/chat/route.ts');
     const richChat = read('apps/web/app/api/ai/chat/route.ts');
-    expect(middleware).toContain("pathname === '/api/chat'");
-    expect(middleware).not.toContain("pathname === '/api/chat' || pathname === '/api/ai/chat'");
+    const migration = read('supabase/migrations/202609201810_builder_project_quota.sql');
+    expect(middleware).toContain("pathname === '/api/chat' || pathname === '/api/ai/chat'");
+    expect(middleware).toContain("return process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
     expect(middleware).toContain("pathname.startsWith('/api/ai/')");
-    expect(middleware).toContain("process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
+    expect(middleware).toContain('"/api/build/stream"');
     expect(assistant.indexOf('await reserveAiRequest(')).toBeLessThan(assistant.indexOf('await runModel('));
     expect(assistant).toContain('singleProviderAttempt: true');
     expect(assistant.indexOf('await reserveAiRequest(')).toBeLessThan(assistant.indexOf('fetch("https://openrouter.ai'));
     expect(richChat.indexOf('await reserveAiRequest(')).toBeLessThan(richChat.indexOf('await runAIPipeline('));
-  });
-
-  it('blocks the known alternate unmetered AI routes and limits builder project inserts', () => {
-    const middleware = read('apps/web/middleware.ts');
-    const chat = read('apps/web/app/api/ai/chat/route.ts');
-    const migration = read('supabase/migrations/202609201810_builder_project_quota.sql');
-    expect(middleware).toContain("if (pathname === '/api/ai/chat') return false");
-    expect(middleware).toContain("pathname.startsWith('/api/ai/')");
-    expect(middleware).toContain('"/api/build/stream"');
-    expect(middleware).toContain('"/api/chat"');
-    expect(chat).toContain('await reserveAiRequest(');
-    expect(chat).toContain('await runAIPipeline(');
-    expect(chat.indexOf('await reserveAiRequest(')).toBeLessThan(chat.indexOf('await runAIPipeline('));
     expect(migration).toContain('pg_advisory_xact_lock');
     expect(migration).toContain('BEFORE INSERT ON public._projects');
     expect(migration).toContain('PROJECT_LIMIT_REACHED');
   });
+
 });
