@@ -9,6 +9,8 @@ export const targets = Object.freeze([
   { name: 'Playground health', url: 'https://playground.dreammakerhub.website/api/health', type: 'json' },
   { name: 'WonderPlay homepage', url: 'https://wonderplay-3d.dreammakerhub.website/', type: 'html' },
   { name: 'Coder public build information', url: 'https://coder.dreammakerhub.website/api/v2/buildinfo', type: 'json' },
+  { name: 'Unauthenticated project API denied', url: 'https://dreammakerhub.website/api/projects', type: 'json', expectedStatus: 401 },
+  { name: 'Unauthenticated operator API denied', url: 'https://dreammakerhub.website/api/wonderspace/operator', type: 'json', expectedStatus: 401 },
 ]);
 
 export async function inspectEndpoints({ list = targets, request = fetch, resolve = lookup } = {}) {
@@ -32,7 +34,7 @@ export async function inspectEndpoints({ list = targets, request = fetch, resolv
       });
       http = String(response.status);
       const mime = (response.headers.get('content-type') || '').toLowerCase();
-      if (response.status === 200 && mime.includes(target.type === 'json' ? 'json' : 'html')) {
+      if (response.status === (target.expectedStatus || 200) && mime.includes(target.type === 'json' ? 'json' : 'html')) {
         if (target.type === 'json') await response.json();
         result = 'PASS';
       }
@@ -48,7 +50,7 @@ export function renderSummary(results) {
   const lines = [
     '## Read-only public launch endpoints',
     '',
-    'Checks only DNS resolution, HTTP 200 and response type. They do not prove login, billing, AI, publishing, pod isolation, or TLS coverage for wildcard Coder apps.',
+    'Checks DNS, expected HTTP status and response type; anonymous auth-guard checks accept only HTTP 401, never a login redirect/HTML. These checks do not prove login, billing, AI, publishing, pod isolation, or TLS coverage for wildcard Coder apps.',
     '',
     '| Endpoint | DNS | HTTP | Result |',
     '|---|---|---|---|',
