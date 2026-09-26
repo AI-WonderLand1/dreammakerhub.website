@@ -21,6 +21,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v7
+      - name: Enforce Railway-primary and AWS-EKS-IDE deployment policy
+        run: node .github/scripts/check-primary-deployment-policy.mjs
       - name: Validate AWS fallback deployment shell syntax
         run: bash -n deploy/aws-fallback/deploy-web.sh
       - name: Validate AWS customer pod preflight shell syntax

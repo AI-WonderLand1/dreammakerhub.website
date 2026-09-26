@@ -1,12 +1,8 @@
 name: Reclaim UpCloud Docker Space
 
+# Manual only: preserve old UpCloud images while Railway/AWS migration is verified.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - Master
-    paths:
-      - ".github/workflows/upcloud-docker-cleanup.yml"
 
 permissions:
   contents: read
