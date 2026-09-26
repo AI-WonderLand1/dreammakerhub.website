@@ -9,6 +9,9 @@ export type RunModelOptions = {
   temperature?: number;
   maxTokens?: number;
   userApiKey?: string;
+  // Cost-controlled endpoints must not trigger secondary provider requests
+  // under a single usage reservation.
+  singleProviderAttempt?: boolean;
 };
 
 export type RunModelResult = {
@@ -296,6 +299,31 @@ export async function runModel(
       ? opts.messages
       : [{ role: 'user', content: '' }]),
   ];
+
+  if (opts.singleProviderAttempt) {
+    // Exactly one provider call. Use the first configured provider in the
+    // existing priority order, but never retry a second model or API key.
+    // The caller must atomically reserve usage before invoking runModel.
+    try {
+      const result = openRouterKey
+        ? await callOpenRouter(openRouterKey, normalizeModel(opts.model), messages, opts)
+        : groqKey
+          ? await callGroq(groqKey, messages, opts)
+          : geminiKeys.length
+            ? await callGemini(geminiKeys[0], messages, opts)
+            : cerebrasKey
+              ? await callCerebras(cerebrasKey, messages, opts)
+              : null;
+      if (!result) {
+        return { text: '', tokens: 0, error: 'No AI provider configured' };
+      }
+      return result.ok
+        ? { text: result.text ?? '', tokens: result.tokens ?? 0 }
+        : { text: '', tokens: 0, error: 'Selected AI provider unavailable' };
+    } catch {
+      return { text: '', tokens: 0, error: 'Selected AI provider request failed' };
+    }
+  }
 
   const useFallbackProviders = async (reason: string): Promise<RunModelResult> => {
     const errors: string[] = [reason];
