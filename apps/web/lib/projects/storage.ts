@@ -241,51 +241,38 @@ export async function deletePath(projectId: string, ownerId: string, targetPath:
   return matches.length;
 }
 
+// The database RPC performs ownership checks, collision detection and the
+// move in one transaction. Never reintroduce copy-then-delete for renames.
 export async function renamePath(projectId: string, ownerId: string, oldPath: string, newPath: string): Promise<number> {
   await assertOwner(projectId, ownerId);
+  if (typeof oldPath !== "string" || typeof newPath !== "string" ||
+      !validRenameInput(oldPath) || !validRenameInput(newPath)) {
+    throw new Error("Invalid project file path");
+  }
   const oldNormalized = normalizeFilePath(oldPath);
   const newNormalized = normalizeFilePath(newPath);
   const supabase = await getClient();
-  const { data, error } = await supabase
-    .from("_project_files")
-    .select("file_path,content")
-    .eq("project_id", projectId);
+  const { data, error } = await supabase.rpc("rename_builder_project_path", {
+    p_project_id: projectId,
+    p_old_path: oldNormalized,
+    p_new_path: newNormalized,
+  });
   if (error) throw new Error(error.message);
+  if (typeof data !== "number" || !Number.isSafeInteger(data) || data < 1) {
+    throw new Error("Project rename did not complete");
+  }
+  return data;
+}
 
-  const matches = (data ?? []).filter((row) => {
-    const filePath = row.file_path as string;
-    return filePath === oldNormalized || filePath.startsWith(`${oldNormalized}/`);
-  });
-  if (!matches.length) return 0;
-
-  const now = new Date().toISOString();
-  const replacements = matches.map((row) => {
-    const filePath = row.file_path as string;
-    return {
-      project_id: projectId,
-      file_path: `${newNormalized}${filePath.slice(oldNormalized.length)}`,
-      content: (row.content as string | null) ?? "",
-      updated_at: now,
-    };
-  });
-
-  const { error: upsertError } = await supabase.from("_project_files").upsert(replacements, { onConflict: "project_id,file_path" });
-  if (upsertError) throw new Error(upsertError.message);
-
-  const oldFiles = matches.map((row) => row.file_path as string);
-  const { error: deleteError } = await supabase.from("_project_files").delete().eq("project_id", projectId).in("file_path", oldFiles);
-  if (deleteError) throw new Error(deleteError.message);
-  await updateProjectMetadata(projectId, ownerId, { updatedAt: now });
-  return matches.length;
+function validRenameInput(value: string): boolean {
+  return value.length >= 1 && value.length <= 512 && !value.startsWith("/") &&
+    !/[\\\\\x00-\x1f\x7f]/.test(value) &&
+    value.split("/").every((part) => part !== "" && part !== "." && part !== "..");
 }
 
 export async function renameFile(projectId: string, ownerId: string, oldPath: string, newPath: string): Promise<void> {
-  await assertOwner(projectId, ownerId);
-  const oldNormalized = normalizeFilePath(oldPath);
-  const newNormalized = normalizeFilePath(newPath);
-  const content = (await readFile(projectId, ownerId, oldNormalized)) ?? "";
-  await writeFile(projectId, ownerId, newNormalized, content);
-  await deleteFile(projectId, ownerId, oldNormalized);
+  const moved = await renamePath(projectId, ownerId, oldPath, newPath);
+  if (moved !== 1) throw new Error("Expected exactly one file; use renamePath for folders");
 }
 
 export async function moveFile(projectId: string, ownerId: string, oldPath: string, newDir: string): Promise<void> {
