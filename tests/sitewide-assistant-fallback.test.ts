@@ -119,7 +119,7 @@ describe('sitewide assistant provider configuration', () => {
     vi.stubEnv('GEMINI_API_KEY', 'test-gemini-secret');
     const response = await POST(request({
       message: 'short',
-      history: [{ role: 'user', content: 'x'.repeat(12000) }],
+      history: [{ role: 'user', content: 'x'.repeat(7000) }, { role: 'assistant', content: 'y'.repeat(6000) }],
     }) as any);
     expect(response.status).toBe(413);
     expect(runModel).not.toHaveBeenCalled();
