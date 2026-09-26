@@ -21,6 +21,16 @@ describe('usage-first pricing contract', () => {
     expect(reserveBlock).toContain('PLAN_LIMITS[plan].workspacesLimit');
   });
 
+  it('uses the Stripe-verified subscription plan for customer IDE compute metering', () => {
+    const usage = read('apps/web/app/api/internal/coder/customer-usage/route.ts');
+    const source = read('apps/web/lib/billing/cost-guard.server.ts');
+    expect(usage).toContain('await verifiedCostPlan(usage.user_id)');
+    expect(usage).not.toContain(".from('user_profiles')");
+    expect(usage).toContain('meter_coder_customer_compute_v2');
+    expect(source).toContain(".from('subscriptions')");
+    expect(source).toContain("stripe_subscription_id.startsWith('sub_')");
+  });
+
   it('locks profile entitlement fields away from browser updates', () => {
     const migration = read('supabase/migrations/202609230330_plan_usage_security.sql');
     expect(migration).toContain('REVOKE UPDATE ON TABLE public.user_profiles FROM authenticated');
