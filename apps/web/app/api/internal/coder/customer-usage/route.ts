@@ -1,7 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
-import { PLAN_LIMITS, type SubscriptionPlan } from '@/lib/billing/limits';
+import { PLAN_LIMITS } from '@/lib/billing/limits';
+import { verifiedCostPlan } from '@/lib/billing/cost-guard.server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -100,14 +101,10 @@ export async function POST(request: Request) {
       }
       const stoppedState = build.transition === 'stop' && ['succeeded', 'stopped'].includes(build.status || '');
 
-      const planResult = await db.from('user_profiles')
-        .select('subscription_plan').eq('id', usage.user_id).maybeSingle();
-      const storedPlan = planResult.data?.subscription_plan;
-      if (planResult.error || typeof storedPlan !== 'string' ||
-          !Object.prototype.hasOwnProperty.call(PLAN_LIMITS, storedPlan)) {
-        throw new Error('Customer compute plan could not be verified');
-      }
-      const plan = storedPlan as SubscriptionPlan;
+      // Use the same Stripe-verified plan gate as customer workspace creation.
+      // Production Supabase does not expose a user_profiles plan table; never
+      // derive funded compute allowances from an unverified client profile.
+      const plan = await verifiedCostPlan(usage.user_id);
       const monthlyLimit = PLAN_LIMITS[plan].computeCreditsMonthly;
       if (!Number.isSafeInteger(monthlyLimit) || monthlyLimit < 1) {
         throw new Error('Customer compute-credit limit is invalid');
