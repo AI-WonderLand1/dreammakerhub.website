@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS public.billable_usage_counters (
 
 ALTER TABLE public.billable_usage_counters ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.billable_usage_counters FROM PUBLIC, anon, authenticated;
+-- Internal only. Do not expose counters through a browser role.
+GRANT SELECT, INSERT, UPDATE ON TABLE public.billable_usage_counters TO service_role;
 
 CREATE OR REPLACE FUNCTION public.reserve_billable_units(
   p_user_id uuid,
