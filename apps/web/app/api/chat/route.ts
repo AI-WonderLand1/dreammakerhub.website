@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
         messages: [{ role: "user", content: prompt }],
         temperature: 0.5,
         maxTokens: 450,
+        singleProviderAttempt: true,
       });
       if (result.error || !result.text.trim()) {
         logger.error("Sitewide assistant free-model completion failed");
