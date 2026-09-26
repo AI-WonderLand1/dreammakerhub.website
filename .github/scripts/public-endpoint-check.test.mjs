@@ -20,3 +20,12 @@ test('requires valid JSON for JSON endpoint', async () => {
   const r=await inspectEndpoints({list:[{...one[0],type:'json'}],resolve:async()=>{},request:async()=>({status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>{throw Error('bad json');}})});
   assert.equal(r[0].result,'FAIL');
 });
+
+test('checks both positive and negative authorization expectations', async () => {
+  const protectedEndpoint = [{ name: 'Protected', url: 'https://example.test/api/projects', type: 'json', expectedStatus: 401 }];
+  const resolve = async()=>{};
+  const deny = await inspectEndpoints({list:protectedEndpoint,resolve,request:async()=>({status:401,headers:new Headers({'content-type':'application/json'}),json:async()=>({error:'Unauthorized'})})});
+  assert.equal(deny[0].result,'PASS');
+  const leak = await inspectEndpoints({list:protectedEndpoint,resolve,request:async()=>({status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>({projects:[]})})});
+  assert.equal(leak[0].result,'FAIL');
+});
