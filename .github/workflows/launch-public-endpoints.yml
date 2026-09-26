@@ -1,5 +1,11 @@
 name: Launch public endpoint diagnostics
 on:
+  pull_request:
+    branches: [Master]
+    paths:
+      - '.github/scripts/public-endpoint-check.mjs'
+      - '.github/scripts/public-endpoint-check.test.mjs'
+      - '.github/workflows/launch-public-endpoints.yml'
   workflow_dispatch:
   schedule:
     - cron: '47 13 * * *'
