@@ -30,7 +30,9 @@ function isPathProtected(pathname: string): boolean {
 }
 
 function isUnmeteredBillablePath(pathname: string): boolean {
-  // The main /api/ai route has an atomic guard. Other /api/ai/* POST handlers do not yet.
+  // The main /api/ai route and /api/ai/chat both reserve usage atomically.
+  // Keep the rest of /api/ai/* paused until each child route gets an equivalent guard.
+  if (pathname === '/api/ai/chat') return false;
   return UNMETERED_AI_PATHS.has(pathname) || pathname.startsWith('/api/ai/');
 }
 
