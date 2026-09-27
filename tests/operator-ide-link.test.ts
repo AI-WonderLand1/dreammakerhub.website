@@ -110,7 +110,7 @@ describe('Existing operator IDE link', () => {
     // The dashboard link is intentionally available for browsing the caller's own
     // site projects; it cannot open or provision the operator's Coder workspace.
     expect(customer).toContain("source === 'site'");
-    expect(customer).toContain('href="/dashboard"');
+    expect(customer).toContain('siteProjectHref(selectedSiteProject)');
     expect(customer).not.toContain('coder.dreammakerhub.website');
     expect(gate).not.toContain("import WonderSpaceLaunch from './WonderSpaceLaunch'");
   });
