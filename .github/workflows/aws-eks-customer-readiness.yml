@@ -72,6 +72,7 @@ jobs:
           set -euo pipefail
           account="$(aws sts get-caller-identity --query Account --output text)"
           export EXPECTED_KUBE_CONTEXT="arn:aws:eks:$AWS_REGION:$account:cluster/$EKS_CLUSTER"
+          export RUN_PRIVILEGED_RBAC_CHECKS=false
           bash infra/coder/aws-customer-pod-preflight.sh
       - name: Clarify the boundary
         if: always()
