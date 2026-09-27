@@ -14,9 +14,12 @@ Restrict AWS IAM to at most `eks:DescribeCluster` on the pinned
 `coder-cluster` ARN. AWS STS `GetCallerIdentity` needs no extra identity policy
 grant. Separately grant this IAM role **read-only** Kubernetes RBAC for the
 existing cluster's nodes, namespaces, policy resources, service accounts,
-deployments, pods and storage classes, along with narrowly permitted
-`kubectl auth can-i --as` checks. Do not grant writes, secrets read or broad
-admin just to get a green diagnostic. IAM and Kubernetes access are separate.
+deployments, pods and storage classes, **without** Kubernetes impersonation. Use the reviewed
+`infra/coder/github-readiness-inventory-rbac.yaml` manifest for a dedicated EKS
+access-entry group named `wonderspace-readiness`, then apply it from a trusted
+cluster-admin environment (NOT from GitHub Actions). The GitHub run performs
+only unprivileged inventory checks. Never grant this group writes, secrets
+read, impersonation or broad cluster administration. IAM and Kubernetes access are separate.
 
 Set GitHub **repository variable** `AWS_EKS_READ_ONLY_ROLE_ARN` to the full ARN.
 Set `AWS_EKS_ACCOUNT_ID` to the intended 12-digit account ID to pin account
@@ -27,7 +30,13 @@ Run workflow** on `Master` after review/merge. GitHub's disposable Ubuntu VM
 then verifies AWS identity, obtains the pinned EKS kubeconfig and checks the
 current customer namespace isolation manifests in
 `infra/coder/aws-customer-pod-preflight.sh`. Missing or differently named
-objects will be reported as failures. Compare the result with the actual
+objects will be reported as failures. A pass only means inventory objects can
+be read, NOT that the provisioner's RBAC or security isolation is proven.
+
+Independently run privileged `kubectl auth can-i --as` provisioner isolation
+checks from a trusted administrator context, after reviewing the target
+service account's rights. Never run those impersonation checks with the
+GitHub role or grant GitHub the impersonation verb. Compare the result with the actual
 cluster: do not rename, delete or apply Kubernetes resources automatically.
 
 ## A passing preflight is not permission to unpause
