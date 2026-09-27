@@ -14,7 +14,7 @@ describe('WonderSpace customer creation layout', () => {
   it('keeps a single-page quick-start and Codespaces-style setup layout without GitHub branding', () => {
     expect(form).toContain('Quick start templates');
     expect(form).toContain('Create a new workspace');
-    for (const row of ['Workspace name', 'Repository', 'Branch', 'Region', 'Machine type']) {
+    for (const row of ['Workspace name', 'Source: where will your code come from?', 'Branch (read-only preview)', 'Region', 'Machine type']) {
       expect(form).toContain(row);
     }
     expect(form).toContain('Blank Linux');
@@ -50,7 +50,7 @@ describe('WonderSpace customer creation layout', () => {
 
   it('renders an inert operator preview and an honest paused customer screen', () => {
     expect(form).toContain('const provisioningPaused = operatorPreview || !provisioningEnabled');
-    expect(form).toContain('disabled={loading || provisioningPaused}');
+    expect(form).toContain("disabled={loading || provisioningPaused || source !== 'blank'}");
     expect(form).toContain('if (operatorPreview || !provisioningEnabled)');
     expect(gate).toContain('<CustomerWorkspaceLaunch operatorPreview embedded />');
     expect(gate).toContain('<CustomerWorkspaceLaunch provisioningEnabled={false} />');
