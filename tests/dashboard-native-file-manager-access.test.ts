@@ -9,7 +9,7 @@ const browser = read('apps/web/app/(workspace)/dashboard/projects/[id]/Repositor
 const filesApi = read('apps/web/app/api/projects/[projectId]/files/route.ts');
 
 describe('VM-independent dashboard file manager access', () => {
-  it('has a visible direct file manager entry and supports a new user's project creation', () => {
+  it("has a visible direct file manager entry and supports a new user\'s project creation", () => {
     expect(dashboard).toContain('File Manager');
     expect(dashboard).toContain('(no VM)');
     expect(dashboard).toContain('/dashboard/projects/${mostRecentProject.id}/files');
