@@ -8,6 +8,8 @@ describe('WonderSpace customer creation layout', () => {
   const form = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
   const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
   const provision = read('apps/web/app/api/user-workspace/customer/provision/route.ts');
+  const repoPreview = read('apps/web/app/api/user-workspace/customer/repository/route.ts');
+  const customerQueue = read('apps/web/lib/coder/customer-provisioning.server.ts');
 
   it('keeps a single-page quick-start and Codespaces-style setup layout without GitHub branding', () => {
     expect(form).toContain('Quick start templates');
@@ -19,18 +21,29 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).not.toContain('GitHub Codespaces');
   });
 
-  it('does not pretend repository, branch, region or future starter templates are live', () => {
-    expect(form).toContain('Repository import needs an approved customer template first');
-    expect(form).toContain('Not applicable to blank workspace');
+  it('distinguishes real site projects, public GitHub inspection and unconnected local upload', () => {
+    expect(form).toContain('My DreamMakerHub projects');
+    expect(form).toContain('Public GitHub repository');
+    expect(form).toContain('Files on my computer');
+    expect(form).toContain('Inspect repository');
+    expect(form).toContain('View this repository’s CI');
+    expect(form).toContain("href=\"/dashboard\"");
     expect(form).toContain('Automatic');
     expect(form).toContain('aria-disabled="true"');
-    expect(form).toContain('Import planned');
+    expect(form).toContain('Inspecting is not importing.');
+    expect(form).toContain("source !== 'blank'");
   });
 
   it('only submits the approved server-side customer form fields', () => {
     expect(form).toContain("fetch('/api/user-workspace/customer/provision'");
     expect(form).toContain('JSON.stringify({ workspaceName, machineProfile })');
     expect(provision).toContain('queueCustomerWorkspace(user, input)');
+    expect(customerQueue).toContain('Only an approved blank IDE');
+    expect(repoPreview).toContain('authenticatedSupabaseUser(request)');
+    expect(repoPreview).toContain('normalizePublicGithubRepo(raw)');
+    expect(repoPreview).toContain('importAvailable: false');
+    expect(repoPreview).not.toContain('queueCustomerWorkspace(');
+    expect(repoPreview).not.toContain('createWorkspace(');
     expect(form).not.toContain('/api/user-workspace/customer/open/');
     expect(form).not.toContain('coder.dreammakerhub.website');
   });
