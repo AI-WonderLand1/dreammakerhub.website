@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/supabase/auth-context';
 import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
 
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
-type Source = 'blank' | 'site' | 'local';
+type Source = 'blank' | 'site' | 'github' | 'local';
 type ExistingProject = { id: string; name: string; tool?: string | null; type?: string | null };
 // Use the same persisted project routes as Dashboard. The legacy /projects/[id]
 // page reads a different Prisma collection and must not receive _projects IDs.
@@ -123,7 +123,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">AI Wonderland / WonderSpace</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl">Your cloud development environment</h1>
-        <p className="mt-2 text-slate-300">Use a blank workspace or access projects belonging to your signed-in DreamMakerHub account. Private IDE creation opens after the safety checks pass.</p>
+        <p className="mt-2 text-slate-300">Choose a blank workspace, one of your DreamMakerHub projects, your own connected GitHub account, or files from your computer. Private IDE creation opens after security checks pass.</p>
       </div>
       <div className="flex flex-wrap gap-3">
         <Link href="/wonderspace/workspaces" className="rounded-xl border border-white/20 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-cyan-400">
@@ -196,11 +196,12 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
           </div>
           <fieldset id="workspace-source" className="scroll-mt-8 px-5 py-6 md:px-7">
             <legend className="text-base font-semibold text-white">Source: where will your code come from?</legend>
-            <p className="mt-1 text-sm text-slate-400">Only your signed-in DreamMakerHub projects are listed here. Files on your own computer are not uploaded or shared.</p>
+            <p className="mt-1 text-sm text-slate-400">Choose where your own project lives. DreamMakerHub projects are account-scoped; GitHub and local files require a separate authorized import before they can enter an isolated IDE.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {([
                 { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
                 { id: 'site', label: 'My DreamMakerHub projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
+                { id: 'github', label: 'My GitHub repositories', description: 'Only repositories authorized by your own connected GitHub account, not public repository search.', status: 'Secure connection pending' },
                 { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside an AWS pod.', status: 'Upload not available' },
               ] as const).map((option) => (
                 <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
@@ -226,6 +227,9 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               {selectedSiteProject && <Link href={siteProjectHref(selectedSiteProject)}
                 className="inline-block text-sm font-semibold text-cyan-200 underline">Open selected project in its editor</Link>}
               <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder pods. Browsing them does not allocate a workspace.</p>
+            </div>}
+            {source === 'github' && <div role="status" className="mt-4 rounded-xl border border-amber-300/20 bg-slate-950 p-4 text-sm text-slate-300">
+              GitHub repository import requires a separate, account-authorized GitHub connection with access limited to repositories you select. Signing in with GitHub alone does not confirm repository access. Public repository search and anonymous URL imports are disabled. No repository names, contents or tokens are displayed or transferred here.
             </div>}
             {source === 'local' && <div className="mt-4 rounded-xl border border-white/15 bg-slate-950 p-4 text-sm text-slate-300">
               Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated AWS customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
