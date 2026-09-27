@@ -6,7 +6,7 @@ This prepares the **existing** DreamMakerHub customer runner and usage controlle
 
 - API routes already exist at /api/internal/coder/customer-runner and /api/internal/coder/customer-usage, both requiring the same private bearer secret.
 - Production Supabase project named dreammakerhub.website has the customer jobs, identities, usage and controller tables, but inspection found zero registered customer Coder identities, zero customer jobs and no fresh controller heartbeat.
-- Production Supabase currently exposes meter_coder_customer_compute, **not** the meter_coder_customer_compute_v2 RPC currently called by the usage controller. The newer source migration `supabase/migrations/202609230500_coder_machine_profiles.sql` is not in production migration history. Review, test and separately apply it after checking schema dependencies, RLS, and potential duplicate constraints. DO NOT activate workers before that.
+- Production Supabase now includes the audited weighted metering RPC and monthly ledger (migration version `20260927120517`, applied September 27, 2026). The prior pending draft `202609230500_coder_machine_profiles.sql` is a documented no-op. Controller heartbeat is still absent. Do NOT activate workers until identity isolation, the private customer template, and independent compute hard-stop are verified.
 - An independent enforceable compute hard-stop and verified two-customer identity/isolation testing remain prerequisites for public creation. Do not set CODER_CUSTOMER_HARD_STOP_VERIFIED or CODER_CUSTOMER_PROVISIONING_ENABLED to true until independently verified.
 
 ## One-time preflight from AWS CloudShell or your trusted EKS admin shell
