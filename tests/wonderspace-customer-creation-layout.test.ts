@@ -11,10 +11,12 @@ describe('WonderSpace customer creation layout', () => {
   const provision = read('apps/web/app/api/user-workspace/customer/provision/route.ts');
   const customerQueue = read('apps/web/lib/coder/customer-provisioning.server.ts');
 
-  it('keeps a single-page quick-start and Codespaces-style setup layout without GitHub branding', () => {
-    expect(form).toContain('Quick start templates');
+  it('keeps one simple creation screen with safe defaults and advanced naming', () => {
     expect(form).toContain('Create a new workspace');
-    for (const row of ['Workspace name', 'Source: where will your code come from?', 'Machine type']) {
+    expect(form).toContain('Start from');
+    expect(form).toContain('Advanced options · Change workspace name');
+    expect(form).toContain("useState<WorkspaceProfileId>('micro')");
+    for (const row of ['Workspace name', 'Choose a source', 'Machine type']) {
       expect(form).toContain(row);
     }
     expect(form).toContain('Blank Linux');
