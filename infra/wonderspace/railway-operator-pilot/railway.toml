@@ -1,0 +1,8 @@
+# Separate Railway service ONLY; do not apply to dreammakerhub.website.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/healthz"
+healthcheckTimeout = 120
