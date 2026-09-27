@@ -27,7 +27,9 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain('Files on my computer');
     expect(form).toContain('Inspect repository');
     expect(form).toContain('View this repository’s CI');
-    expect(form).toContain("href=\"/dashboard\"");
+    expect(form).toContain('siteProjectHref(selectedSiteProject)');
+    expect(form).toContain('if (requestId !== repoRequestId.current) return;');
+    expect(form).toContain('repoRequestId.current += 1');
     expect(form).toContain('Automatic');
     expect(form).toContain('aria-disabled="true"');
     expect(form).toContain('Inspecting is not importing.');
@@ -61,6 +63,8 @@ describe('WonderSpace customer creation layout', () => {
   it('preserves the operator IDE path without letting customers inherit it', () => {
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('isOperator'); // Operator identity is determined by the separate server check.
-    expect(form).toContain('you will not be sent to the Coder dashboard');
+    expect(form).toContain('siteProjectHref(selectedSiteProject)');
+    expect(form).toContain('if (requestId !== repoRequestId.current) return;');
+    expect(form).toContain('repoRequestId.current += 1');
   });
 });
