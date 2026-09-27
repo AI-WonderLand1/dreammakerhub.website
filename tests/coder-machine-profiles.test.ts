@@ -36,7 +36,7 @@ describe('WonderSpace weighted machine profiles', () => {
   });
 
   it('charges elapsed compute by multiplier and against one monthly user pool', () => {
-    const migration = read('supabase/migrations/202609230500_coder_machine_profiles.sql');
+    const migration = read('supabase/migrations/20260927120517_coder_customer_metering_core_20260927.sql');
     const controller = read('apps/web/app/api/internal/coder/customer-usage/route.ts');
     expect(migration).toContain('v_elapsed * v_row.compute_multiplier');
     expect(migration).toContain('coder_customer_compute_monthly');
