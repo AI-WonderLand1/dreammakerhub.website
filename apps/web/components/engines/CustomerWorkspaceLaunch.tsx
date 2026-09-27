@@ -156,14 +156,14 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">AI Wonderland / WonderSpace</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl">Your cloud development environment</h1>
-        <p className="mt-2 text-slate-300">Choose a starter and machine on one page. Your private workspace stays under your account.</p>
+        <p className="mt-2 text-slate-300">Choose where your code comes from, inspect a repository, and manage your existing workspaces. Private IDE creation opens after the safety checks pass.</p>
       </div>
       <div className="flex flex-wrap gap-3">
         <Link href="/wonderspace/workspaces" className="rounded-xl border border-white/20 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-cyan-400">
           Manage workspaces
         </Link>
-        <a href="#create-workspace" className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-400">
-          Create workspace
+        <a href="#workspace-source" className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-400">
+          {provisioningPaused ? 'Choose a source' : 'Create workspace'}
         </a>
       </div>
     </header>
@@ -172,7 +172,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       <p role="status" className="mb-6 rounded-xl border border-amber-300/30 bg-amber-400/10 px-5 py-3 text-sm text-amber-100">
         {operatorPreview
           ? 'Operator preview only. This form cannot create a customer workspace from your production account.'
-          : 'Customer workspace creation is temporarily paused while private identity, pod isolation, and compute controls are verified.'}
+          : 'New private IDEs are paused until AWS identity, pod isolation and compute controls are verified. You can still inspect GitHub repositories, find your site projects and manage existing workspaces.'}
       </p>
     )}
 
@@ -213,8 +213,8 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
     ) : (
       <form id="create-workspace" onSubmit={submit} className="mt-6 overflow-hidden rounded-2xl border border-white/15 bg-[#121a2d]/95 shadow-xl">
         <div className="border-b border-white/10 px-5 py-5 md:px-7">
-          <h2 className="text-xl font-semibold text-white">Create a new workspace</h2>
-          <p className="mt-1 text-sm text-slate-300">One form. The agent handles private workspace setup after the request is approved.</p>
+          <h2 className="text-xl font-semibold text-white">{provisioningPaused ? 'Choose your code source' : 'Create a new workspace'}</h2>
+          <p className="mt-1 text-sm text-slate-300">{provisioningPaused ? 'Explore your sources now. Creating new private IDEs is temporarily unavailable; existing workspaces are managed separately.' : 'One form. The agent handles private workspace setup after the request is approved.'}</p>
         </div>
         <div className="divide-y divide-white/10">
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
@@ -227,7 +227,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               onChange={(event) => setWorkspaceName(event.target.value)}
               className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400" />
           </div>
-          <fieldset className="px-5 py-6 md:px-7">
+          <fieldset id="workspace-source" className="scroll-mt-8 px-5 py-6 md:px-7">
             <legend className="text-base font-semibold text-white">Source: where will your code come from?</legend>
             <p className="mt-1 text-sm text-slate-400">Your DreamMakerHub projects, public GitHub repositories and files on your computer are different sources. Nothing is copied until a supported import is explicitly confirmed.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -307,13 +307,6 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
           </div>
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
             <div>
-              <span className="font-semibold text-white">Region</span>
-              <p className="mt-1 text-sm text-slate-400">Assigned by your approved WonderSpace infrastructure.</p>
-            </div>
-            <div className="w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-slate-300" aria-label="Automatic region assignment">Automatic</div>
-          </div>
-          <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
-            <div>
               <label htmlFor="customer-machine-profile" className="font-semibold text-white">Machine type</label>
               <p className="mt-1 text-sm text-slate-400">Select your compute profile. Larger machines consume credits faster.</p>
             </div>
@@ -327,12 +320,13 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                   </option>
                 ))}
               </select>
-              <p className="mt-2 text-xs text-slate-400">Compute: 1 credit per CPU-minute. Persistent home disk: 10 GiB.</p>
+              <p className="mt-2 text-xs text-slate-400">Compute: 1 credit per CPU-minute. Persistent home disk: 10 GiB. Infrastructure assigns the AWS region; customers do not need to choose it.</p>
             </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 bg-slate-950/50 px-5 py-5 md:px-7">
-          <p className="max-w-lg text-sm text-slate-400">Only your verified account can request and manage your private workspace.</p>
+          <p className="max-w-lg text-sm text-slate-400">{provisioningPaused ? 'Existing private workspaces can be managed without creating another one.' : 'Only your verified account can request and manage your private workspace.'}</p>
+          {provisioningPaused && <Link href="/wonderspace/workspaces" className="rounded-xl border border-cyan-400/50 px-5 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/10">Manage existing workspaces</Link>}
           <button type="submit" disabled={loading || provisioningPaused || source !== 'blank'}
             className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-bold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
             {loading ? 'Reserving your workspace…' : provisioningPaused ? 'Creation paused' : source !== 'blank' ? 'Import not available yet' : 'Create workspace'}
