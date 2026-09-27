@@ -96,6 +96,8 @@ export default function DashboardPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [projectLoadError, setProjectLoadError] = useState("");
+  const [projectReloadKey, setProjectReloadKey] = useState(0);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] = useState<ProjectType>("wonderbuild");
   const [displayName, setDisplayName] = useState("Your");
@@ -108,11 +110,13 @@ export default function DashboardPage() {
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) {
+      setProjectLoadError("Project storage is not configured. Files are unavailable; no project data has been changed.");
       setLoading(false);
       return;
     }
 
     async function load() {
+      setProjectLoadError("");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.replace("/public-pages/auth?redirectTo=%2Fdashboard");
@@ -133,10 +137,15 @@ export default function DashboardPage() {
           fetch("/api/assets/user"),
         ]);
 
-        if (projectsResponse.ok) {
-          const data = await projectsResponse.json().catch(() => ({}));
-          setProjects(Array.isArray(data.projects) ? data.projects : []);
+        if (!projectsResponse.ok) {
+          const failure = await projectsResponse.json().catch(() => ({}));
+          throw new Error(failure?.message || failure?.error || "Could not load your projects. Retry; your existing files have not been changed.");
         }
+        const data = await projectsResponse.json().catch(() => ({}));
+        if (!Array.isArray(data.projects)) {
+          throw new Error("The project service returned an invalid response. Retry rather than creating duplicate projects.");
+        }
+        setProjects(data.projects);
 
         if (assetsResponse.ok) {
           const assetData = await assetsResponse.json().catch(() => ({}));
@@ -147,8 +156,11 @@ export default function DashboardPage() {
       }
     }
 
-    load().catch(() => setLoading(false));
-  }, [router]);
+    load().catch((cause) => {
+      setProjectLoadError(cause instanceof Error ? cause.message : "Unable to load your projects. Retry.");
+      setLoading(false);
+    });
+  }, [router, projectReloadKey]);
 
   const sortedProjects = useMemo(
     () => [...projects].sort((a, b) => projectTimestamp(b) - projectTimestamp(a)),
@@ -297,19 +309,38 @@ export default function DashboardPage() {
                 </div>
                 <p className="max-w-xl text-sm text-white/55">Build, create, and bring your ideas to life.</p>
               </div>
-              <button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-5 py-3 text-sm font-bold shadow-lg shadow-violet-950/40">
-                <Plus size={17} /> New Project
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {mostRecentProject && (
+                  <Link href={`/dashboard/projects/${mostRecentProject.id}/files`} className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/40 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/20">
+                    <Folder size={17} /> File Manager <span className="text-xs font-normal text-cyan-200/65">(no VM)</span>
+                  </Link>
+                )}
+                <button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-5 py-3 text-sm font-bold shadow-lg shadow-violet-950/40">
+                  <Plus size={17} /> New Project
+                </button>
+              </div>
             </div>
           </section>
 
           <nav className="mb-5 flex gap-7 overflow-x-auto border-b border-white/10 px-1 pt-3 text-sm text-white/55">
             <a href="#overview" className="border-b-2 border-violet-500 px-1 py-3 font-semibold text-violet-300">Overview</a>
             <a href="#projects" className="px-1 py-3 hover:text-white">Projects</a>
+            {mostRecentProject ? (
+              <Link href={`/dashboard/projects/${mostRecentProject.id}/files`} className="px-1 py-3 hover:text-cyan-200">File Manager</Link>
+            ) : (
+              <button type="button" onClick={openCreate} className="px-1 py-3 hover:text-cyan-200">File Manager</button>
+            )}
             <Link href="/dashboard/collaboration" className="px-1 py-3 hover:text-white">Members</Link>
             <a href="#workspace-activity" className="px-1 py-3 hover:text-white">Activity</a>
             <Link href="/dashboard/settings" className="px-1 py-3 hover:text-white">Settings</Link>
           </nav>
+
+          {projectLoadError && (
+            <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <span>{projectLoadError}</span>
+              <button type="button" onClick={() => { setLoading(true); setProjectReloadKey((key) => key + 1); }} className="rounded-md border border-amber-300/40 px-3 py-1.5 font-semibold hover:bg-amber-400/10">Retry loading projects</button>
+            </div>
+          )}
 
           <div id="overview" className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {statCards.map(({ icon: Icon, value, label, className }) => (
