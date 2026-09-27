@@ -21,14 +21,17 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).not.toContain('GitHub Codespaces');
   });
 
-  it('only exposes signed-in site projects and does not offer public GitHub repository inspection', () => {
+  it('restricts GitHub to a future user-authorized connection without public repository inspection', () => {
     expect(form).toContain('My DreamMakerHub projects');
+    expect(form).toContain('My GitHub repositories');
+    expect(form).toContain('separate, account-authorized GitHub connection');
     expect(form).toContain('Files on my computer');
     expect(form).toContain('siteProjectHref(selectedSiteProject)');
     expect(form).toContain('id="workspace-source"');
     expect(form).toContain('Manage existing workspaces');
     expect(form).toContain("source !== 'blank'");
     expect(form).not.toContain('Public GitHub repository');
+    expect(form).not.toContain('https://github.com/');
     expect(form).not.toContain('public-github-repo');
     expect(form).not.toContain('inspectPublicRepo');
     expect(form).not.toContain('github.com');
