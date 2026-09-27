@@ -1,13 +1,24 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
 
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
 type Source = 'blank' | 'site' | 'github' | 'local';
-type ExistingProject = { id: string; name: string };
+type ExistingProject = { id: string; name: string; tool?: string | null; type?: string | null };
+// Use the same persisted project routes as Dashboard. The legacy /projects/[id]
+// page reads a different Prisma collection and must not receive _projects IDs.
+function siteProjectHref(project: ExistingProject): string {
+  const kind = (project.type || project.tool || '').toLowerCase();
+  const query = `projectId=${encodeURIComponent(project.id)}`;
+  if (['workspace', 'code'].includes(kind)) return `/wonderspace?${query}`;
+  if (['game', '3d', '3d_scene', 'playcanvas'].includes(kind)) return `/dashboard/3dhub?${query}`;
+  if (kind === 'npc') return `/wonder-play?${query}`;
+  if (['ai', 'ai_app', 'ai-playground', 'ai_playground'].includes(kind)) return `/dashboard/agents?${query}`;
+  return `/wonder-build/builder?${query}`;
+}
 type PublicRepoPreview = { repository: string; defaultBranch: string; branches: string[]; importAvailable: false };
 
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
@@ -28,6 +39,8 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
   const [repoBranch, setRepoBranch] = useState('');
   const [repoError, setRepoError] = useState('');
   const [checkingRepo, setCheckingRepo] = useState(false);
+  const repoRequestId = useRef(0);
+  const selectedSiteProject = siteProjects.find((project) => project.id === siteProjectId);
 
 
   useEffect(() => {
@@ -78,23 +91,27 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
 
   const inspectPublicRepo = async () => {
     if (checkingRepo) return;
+    const requestId = ++repoRequestId.current;
+    const requestedRepo = publicRepo.trim();
     setCheckingRepo(true);
     setRepoError('');
     setRepoPreview(null);
     try {
-      const response = await fetch(`/api/user-workspace/customer/repository?repository=${encodeURIComponent(publicRepo.trim())}`, {
+      const response = await fetch(`/api/user-workspace/customer/repository?repository=${encodeURIComponent(requestedRepo)}`, {
         cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
       });
       const result = await response.json() as PublicRepoPreview & { error?: string };
+      if (requestId !== repoRequestId.current) return;
       if (!response.ok || !result.repository || !Array.isArray(result.branches)) {
         throw new Error(result.error || 'Unable to verify the repository.');
       }
       setRepoPreview(result);
       setRepoBranch(result.defaultBranch);
     } catch (cause) {
-      setRepoError(cause instanceof Error ? cause.message : 'Could not verify the repository.');
+      if (requestId === repoRequestId.current)
+        setRepoError(cause instanceof Error ? cause.message : 'Could not verify the repository.');
     } finally {
-      setCheckingRepo(false);
+      if (requestId === repoRequestId.current) setCheckingRepo(false);
     }
   };
 
@@ -222,7 +239,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               ] as const).map((option) => (
                 <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
                   <input type="radio" name="workspaceSource" checked={source === option.id}
-                    onChange={() => { setSource(option.id); setError(''); }}
+                    onChange={() => { repoRequestId.current += 1; setCheckingRepo(false); setRepoPreview(null); setSource(option.id); setError(''); }}
                     className="mt-1 accent-cyan-400" />
                   <span>
                     <span className="block font-semibold text-white">{option.label}</span>
@@ -240,8 +257,8 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                 {siteProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
               {siteError && <p role="alert" className="text-sm text-amber-200">{siteError}</p>}
-              {siteProjectId && <Link href={`/dashboard?projectId=${encodeURIComponent(siteProjectId)}`}
-                className="inline-block text-sm font-semibold text-cyan-200 underline">View selected project in dashboard</Link>}
+              {selectedSiteProject && <Link href={siteProjectHref(selectedSiteProject)}
+                className="inline-block text-sm font-semibold text-cyan-200 underline">Open selected project in its editor</Link>}
               <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder pods. Browsing them does not allocate a workspace.</p>
             </div>}
             {source === 'github' && <div className="mt-4 space-y-3 rounded-xl border border-white/15 bg-slate-950 p-4">
@@ -249,7 +266,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               <div className="flex flex-wrap gap-2">
                 <input id="public-github-repo" type="text" autoComplete="off"
                   placeholder="https://github.com/owner/repository" value={publicRepo}
-                  onChange={(event) => { setPublicRepo(event.target.value); setRepoPreview(null); setRepoError(''); }}
+                  onChange={(event) => { repoRequestId.current += 1; setCheckingRepo(false); setPublicRepo(event.target.value); setRepoPreview(null); setRepoError(''); }}
                   className="min-w-0 flex-1 rounded-lg border border-white/20 bg-slate-900 px-3 py-2 text-white" />
                 <button type="button" onClick={() => void inspectPublicRepo()} disabled={!publicRepo.trim() || checkingRepo}
                   className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50">
