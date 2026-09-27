@@ -20,6 +20,10 @@ describe('WonderSpace customer creation layout', () => {
       expect(form).toContain(row);
     }
     expect(form).toContain('Blank Linux');
+    expect(form).not.toContain('Quick start templates');
+    expect(form.indexOf('id="workspace-source"')).toBeLessThan(form.indexOf('htmlFor="customer-machine-profile"'));
+    expect(form.indexOf('htmlFor="customer-machine-profile"')).toBeLessThan(form.indexOf('Advanced options · Change workspace name'));
+    expect(form).toContain('name="workspaceName" minLength={3}');
     expect(form).not.toContain('GitHub Codespaces');
   });
 
@@ -30,7 +34,7 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain('Files on my computer');
     expect(form).toContain('siteProjectHref(selectedSiteProject)');
     expect(form).toContain('id="workspace-source"');
-    expect(form).toContain('Manage existing workspaces');
+    expect(form).toContain('Manage workspaces');
     expect(form).toContain("source !== 'blank'");
     expect(form).not.toContain('Public GitHub repository');
     expect(form).not.toContain('https://github.com/');
