@@ -14,7 +14,7 @@ describe('WonderSpace customer creation layout', () => {
   it('keeps a single-page quick-start and Codespaces-style setup layout without GitHub branding', () => {
     expect(form).toContain('Quick start templates');
     expect(form).toContain('Create a new workspace');
-    for (const row of ['Workspace name', 'Source: where will your code come from?', 'Branch (read-only preview)', 'Region', 'Machine type']) {
+    for (const row of ['Workspace name', 'Source: where will your code come from?', 'Branch (read-only preview)', 'Machine type']) {
       expect(form).toContain(row);
     }
     expect(form).toContain('Blank Linux');
@@ -30,9 +30,13 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain('siteProjectHref(selectedSiteProject)');
     expect(form).toContain('if (requestId !== repoRequestId.current) return;');
     expect(form).toContain('repoRequestId.current += 1');
-    expect(form).toContain('Automatic');
+    expect(form).not.toContain('Automatic region assignment');
+    expect(form).not.toContain('>Region</span>');
+    expect(form).toContain('id="workspace-source"');
     expect(form).toContain('aria-disabled="true"');
     expect(form).toContain('Inspecting is not importing.');
+    expect(form).toContain("provisioningPaused ? 'Choose a source' : 'Create workspace'");
+    expect(form).toContain('Manage existing workspaces');
     expect(form).toContain("source !== 'blank'");
   });
 
