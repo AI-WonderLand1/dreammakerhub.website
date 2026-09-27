@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
@@ -19,7 +19,6 @@ function siteProjectHref(project: ExistingProject): string {
   if (['ai', 'ai_app', 'ai-playground', 'ai_playground'].includes(kind)) return `/dashboard/agents?${query}`;
   return `/wonder-build/builder?${query}`;
 }
-type PublicRepoPreview = { repository: string; defaultBranch: string; branches: string[]; importAvailable: false };
 
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
@@ -34,12 +33,6 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
   const [siteProjects, setSiteProjects] = useState<ExistingProject[]>([]);
   const [siteProjectId, setSiteProjectId] = useState('');
   const [siteError, setSiteError] = useState('');
-  const [publicRepo, setPublicRepo] = useState('');
-  const [repoPreview, setRepoPreview] = useState<PublicRepoPreview | null>(null);
-  const [repoBranch, setRepoBranch] = useState('');
-  const [repoError, setRepoError] = useState('');
-  const [checkingRepo, setCheckingRepo] = useState(false);
-  const repoRequestId = useRef(0);
   const selectedSiteProject = siteProjects.find((project) => project.id === siteProjectId);
 
 
@@ -89,32 +82,6 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
     return () => controller.abort();
   }, [source, session?.access_token]);
 
-  const inspectPublicRepo = async () => {
-    if (checkingRepo) return;
-    const requestId = ++repoRequestId.current;
-    const requestedRepo = publicRepo.trim();
-    setCheckingRepo(true);
-    setRepoError('');
-    setRepoPreview(null);
-    try {
-      const response = await fetch(`/api/user-workspace/customer/repository?repository=${encodeURIComponent(requestedRepo)}`, {
-        cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
-      });
-      const result = await response.json() as PublicRepoPreview & { error?: string };
-      if (requestId !== repoRequestId.current) return;
-      if (!response.ok || !result.repository || !Array.isArray(result.branches)) {
-        throw new Error(result.error || 'Unable to verify the repository.');
-      }
-      setRepoPreview(result);
-      setRepoBranch(result.defaultBranch);
-    } catch (cause) {
-      if (requestId === repoRequestId.current)
-        setRepoError(cause instanceof Error ? cause.message : 'Could not verify the repository.');
-    } finally {
-      if (requestId === repoRequestId.current) setCheckingRepo(false);
-    }
-  };
-
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!names.test(workspaceName)) { setError('Use a 3–32 character lowercase workspace name.'); return; }
@@ -156,7 +123,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">AI Wonderland / WonderSpace</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl">Your cloud development environment</h1>
-        <p className="mt-2 text-slate-300">Choose where your code comes from, inspect a repository, and manage your existing workspaces. Private IDE creation opens after the safety checks pass.</p>
+        <p className="mt-2 text-slate-300">Choose a blank workspace, one of your DreamMakerHub projects, your own connected GitHub account, or files from your computer. Private IDE creation opens after security checks pass.</p>
       </div>
       <div className="flex flex-wrap gap-3">
         <Link href="/wonderspace/workspaces" className="rounded-xl border border-white/20 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-cyan-400">
@@ -172,7 +139,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       <p role="status" className="mb-6 rounded-xl border border-amber-300/30 bg-amber-400/10 px-5 py-3 text-sm text-amber-100">
         {operatorPreview
           ? 'Operator preview only. This form cannot create a customer workspace from your production account.'
-          : 'New private IDEs are paused until AWS identity, pod isolation and compute controls are verified. You can still inspect GitHub repositories, find your site projects and manage existing workspaces.'}
+          : 'New private IDEs are paused until AWS identity, pod isolation and compute controls are verified. You can still access your site projects and manage existing workspaces.'}
       </p>
     )}
 
@@ -229,17 +196,17 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
           </div>
           <fieldset id="workspace-source" className="scroll-mt-8 px-5 py-6 md:px-7">
             <legend className="text-base font-semibold text-white">Source: where will your code come from?</legend>
-            <p className="mt-1 text-sm text-slate-400">Your DreamMakerHub projects, public GitHub repositories and files on your computer are different sources. Nothing is copied until a supported import is explicitly confirmed.</p>
+            <p className="mt-1 text-sm text-slate-400">Choose where your own project lives. DreamMakerHub projects are account-scoped; GitHub and local files require a separate authorized import before they can enter an isolated IDE.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {([
                 { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
                 { id: 'site', label: 'My DreamMakerHub projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
-                { id: 'github', label: 'Public GitHub repository', description: 'Paste a GitHub URL and inspect its available branches.', status: 'Preview only' },
+                { id: 'github', label: 'My GitHub repositories', description: 'Only repositories authorized by your own connected GitHub account, not public repository search.', status: 'Secure connection pending' },
                 { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside an AWS pod.', status: 'Upload not available' },
               ] as const).map((option) => (
                 <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
                   <input type="radio" name="workspaceSource" checked={source === option.id}
-                    onChange={() => { repoRequestId.current += 1; setCheckingRepo(false); setRepoPreview(null); setSource(option.id); setError(''); }}
+                    onChange={() => { setSource(option.id); setError(''); }}
                     className="mt-1 accent-cyan-400" />
                   <span>
                     <span className="block font-semibold text-white">{option.label}</span>
@@ -261,33 +228,8 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                 className="inline-block text-sm font-semibold text-cyan-200 underline">Open selected project in its editor</Link>}
               <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder pods. Browsing them does not allocate a workspace.</p>
             </div>}
-            {source === 'github' && <div className="mt-4 space-y-3 rounded-xl border border-white/15 bg-slate-950 p-4">
-              <label htmlFor="public-github-repo" className="block text-sm font-semibold text-white">Public GitHub repository URL</label>
-              <div className="flex flex-wrap gap-2">
-                <input id="public-github-repo" type="text" autoComplete="off"
-                  placeholder="https://github.com/owner/repository" value={publicRepo}
-                  onChange={(event) => { repoRequestId.current += 1; setCheckingRepo(false); setPublicRepo(event.target.value); setRepoPreview(null); setRepoError(''); }}
-                  className="min-w-0 flex-1 rounded-lg border border-white/20 bg-slate-900 px-3 py-2 text-white" />
-                <button type="button" onClick={() => void inspectPublicRepo()} disabled={!publicRepo.trim() || checkingRepo}
-                  className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50">
-                  {checkingRepo ? 'Checking…' : 'Inspect repository'}
-                </button>
-              </div>
-              {repoError && <p role="alert" className="text-sm text-amber-200">{repoError}</p>}
-              {repoPreview && <>
-                <label htmlFor="public-repo-branch" className="block text-sm font-semibold text-white">Branch (read-only preview)</label>
-                <select id="public-repo-branch" value={repoBranch} onChange={(event) => setRepoBranch(event.target.value)}
-                  className="w-full rounded-lg border border-white/20 bg-slate-900 px-3 py-2 text-white">
-                  {repoPreview.branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
-                </select>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <a href={`https://github.com/${repoPreview.repository}/tree/${encodeURIComponent(repoBranch)}`}
-                    target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">View source on GitHub</a>
-                  <a href={`https://github.com/${repoPreview.repository}/actions`}
-                    target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">View this repository’s CI</a>
-                </div>
-              </>}
-              <p className="text-sm text-amber-200">Inspecting is not importing. Private repositories need account-authorized GitHub access. GitHub cloning will become available only after the customer-only Coder template and runner are verified.</p>
+            {source === 'github' && <div role="status" className="mt-4 rounded-xl border border-amber-300/20 bg-slate-950 p-4 text-sm text-slate-300">
+              GitHub repository import requires a separate, account-authorized GitHub connection with access limited to repositories you select. Signing in with GitHub alone does not confirm repository access. Public repository search and anonymous URL imports are disabled. No repository names, contents or tokens are displayed or transferred here.
             </div>}
             {source === 'local' && <div className="mt-4 rounded-xl border border-white/15 bg-slate-950 p-4 text-sm text-slate-300">
               Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated AWS customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
@@ -296,14 +238,10 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
           </fieldset>
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
             <div>
-              <span className="font-semibold text-white">Source and CI</span>
-              <p className="mt-1 text-sm text-slate-400">Source lives in your selected project or repository. CI runs where that repository is hosted, not on the Coder workspace creation form.</p>
+              <span className="font-semibold text-white">Your site projects</span>
+              <p className="mt-1 text-sm text-slate-400">View projects under your verified DreamMakerHub account. This page does not browse or expose GitHub repositories.</p>
             </div>
-            <div className="flex flex-wrap gap-3 text-sm">
-              <Link href="/dashboard" className="text-cyan-200 underline">My site projects</Link>
-              <a href="https://github.com/settings/repositories" target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">My GitHub repositories</a>
-              <a href="https://docs.github.com/en/actions" target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">About GitHub CI</a>
-            </div>
+            <Link href="/dashboard" className="text-sm font-semibold text-cyan-200 underline">Open my projects</Link>
           </div>
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
             <div>
