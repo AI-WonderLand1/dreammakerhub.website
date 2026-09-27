@@ -1,0 +1,84 @@
+# This checks AWS EKS directly. It does NOT SSH to the fallback web VM.
+# AWS_EKS_READ_ONLY_ROLE_ARN must be a tightly scoped GitHub OIDC role with
+# eks:DescribeCluster plus Kubernetes read/impersonation-check permissions.
+name: AWS EKS WonderSpace customer readiness (read only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: aws-eks-customer-readiness
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    # Reviewed Master only. Never execute arbitrary PRs with cloud trust.
+    if: github.ref == 'refs/heads/Master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: production
+    env:
+      AWS_REGION: us-east-1
+      EKS_CLUSTER: coder-cluster
+      READ_ONLY_ROLE: ${{ vars.AWS_EKS_READ_ONLY_ROLE_ARN }}
+      EXPECTED_ACCOUNT: ${{ vars.AWS_EKS_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: Master
+          persist-credentials: false
+      - name: Refuse missing or malformed AWS read-only access configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$READ_ONLY_ROLE" =~ ^arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$ ]] ||
+            { echo 'Configure a dedicated AWS_EKS_READ_ONLY_ROLE_ARN repository variable before running.'; exit 1; }
+          if [[ -n "$EXPECTED_ACCOUNT" ]]; then
+            [[ "$EXPECTED_ACCOUNT" =~ ^[0-9]{12}$ ]] ||
+              { echo 'AWS_EKS_ACCOUNT_ID must be a 12-digit AWS account ID.'; exit 1; }
+            [[ "$READ_ONLY_ROLE" == arn:aws:iam::"$EXPECTED_ACCOUNT":role/* ]] ||
+              { echo 'Configured role ARN does not match the pinned AWS account.'; exit 1; }
+          fi
+          bash -n infra/coder/aws-customer-pod-preflight.sh
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_EKS_READ_ONLY_ROLE_ARN }}
+          role-session-name: wonderspace-readonly-preflight
+          aws-region: us-east-1
+          output-credentials: true
+      - name: Verify AWS account and fetch ONLY the pinned EKS cluster
+        shell: bash
+        run: |
+          set -euo pipefail
+          account="$(aws sts get-caller-identity --query Account --output text)"
+          if [[ -n "$EXPECTED_ACCOUNT" && "$account" != "$EXPECTED_ACCOUNT" ]]; then
+            echo 'AWS account does not match pinned account.' >&2; exit 1
+          fi
+          arn="$(aws eks describe-cluster --name "$EKS_CLUSTER" --region "$AWS_REGION" --query cluster.arn --output text)"
+          [[ "$arn" == "arn:aws:eks:$AWS_REGION:$account:cluster/$EKS_CLUSTER" ]] ||
+            { echo 'Unexpected EKS cluster identity.' >&2; exit 1; }
+          # kubeconfig is written ONLY to the disposable GitHub runner.
+          aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER" --alias "$arn" >/dev/null
+          [[ "$(kubectl config current-context)" == "$arn" ]] ||
+            { echo 'Kubernetes context mismatch.' >&2; exit 1; }
+          printf '%s\n' "Verified AWS EKS cluster identity: $EKS_CLUSTER / $AWS_REGION"
+      - name: Read-only customer isolation, namespace, quotas and RBAC checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          account="$(aws sts get-caller-identity --query Account --output text)"
+          export EXPECTED_KUBE_CONTEXT="arn:aws:eks:$AWS_REGION:$account:cluster/$EKS_CLUSTER"
+          bash infra/coder/aws-customer-pod-preflight.sh
+      - name: Clarify the boundary
+        if: always()
+        run: |
+          {
+            echo '## AWS EKS WonderSpace read-only preflight'
+            echo
+            echo 'This does not deploy a workspace, change resource policies, test Coder OIDC, prove network-policy enforcement, or demonstrate an independent compute hard stop.'
+            echo 'Keep CODER_CUSTOMER_PROVISIONING_ENABLED disabled until two-account isolation and enforced metering have been verified in a controlled pilot.'
+          } >> "$GITHUB_STEP_SUMMARY"
