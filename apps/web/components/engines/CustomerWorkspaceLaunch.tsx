@@ -6,6 +6,10 @@ import { useAuth } from '@/lib/supabase/auth-context';
 import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
 
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
+type Source = 'blank' | 'site' | 'github' | 'local';
+type ExistingProject = { id: string; name: string };
+type PublicRepoPreview = { repository: string; defaultBranch: string; branches: string[]; importAvailable: false };
+
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export default function CustomerWorkspaceLaunch({ operatorPreview = false, embedded = false, provisioningEnabled = true }: { operatorPreview?: boolean; embedded?: boolean; provisioningEnabled?: boolean }) {
@@ -15,6 +19,16 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
   const [setup, setSetup] = useState<Setup | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [source, setSource] = useState<Source>('blank');
+  const [siteProjects, setSiteProjects] = useState<ExistingProject[]>([]);
+  const [siteProjectId, setSiteProjectId] = useState('');
+  const [siteError, setSiteError] = useState('');
+  const [publicRepo, setPublicRepo] = useState('');
+  const [repoPreview, setRepoPreview] = useState<PublicRepoPreview | null>(null);
+  const [repoBranch, setRepoBranch] = useState('');
+  const [repoError, setRepoError] = useState('');
+  const [checkingRepo, setCheckingRepo] = useState(false);
+
 
   useEffect(() => {
     if (user && !workspaceName) setWorkspaceName(`ws-${user.id.slice(0, 8)}-${crypto.randomUUID().slice(0, 8)}`);
@@ -40,9 +54,54 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
     return () => { controller.abort(); window.clearInterval(timer); };
   }, [setup?.slotId, setup?.status, session?.access_token]);
 
+  // Read existing site projects with this customer's own session. Viewing a
+  // project is not permission to copy it into an unverified customer pod.
+  useEffect(() => {
+    if (source !== 'site' || !session?.access_token) return;
+    const controller = new AbortController();
+    void (async () => {
+      setSiteError('');
+      try {
+        const response = await fetch('/api/projects', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store', signal: controller.signal,
+        });
+        const result = await response.json() as { projects?: ExistingProject[]; message?: string };
+        if (!response.ok || !Array.isArray(result.projects)) throw new Error(result.message || 'Could not load site projects.');
+        if (!controller.signal.aborted) setSiteProjects(result.projects);
+      } catch {
+        if (!controller.signal.aborted) setSiteError('Could not load your site projects. Check your session.');
+      }
+    })();
+    return () => controller.abort();
+  }, [source, session?.access_token]);
+
+  const inspectPublicRepo = async () => {
+    if (checkingRepo) return;
+    setCheckingRepo(true);
+    setRepoError('');
+    setRepoPreview(null);
+    try {
+      const response = await fetch(`/api/user-workspace/customer/repository?repository=${encodeURIComponent(publicRepo.trim())}`, {
+        cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+      });
+      const result = await response.json() as PublicRepoPreview & { error?: string };
+      if (!response.ok || !result.repository || !Array.isArray(result.branches)) {
+        throw new Error(result.error || 'Unable to verify the repository.');
+      }
+      setRepoPreview(result);
+      setRepoBranch(result.defaultBranch);
+    } catch (cause) {
+      setRepoError(cause instanceof Error ? cause.message : 'Could not verify the repository.');
+    } finally {
+      setCheckingRepo(false);
+    }
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!names.test(workspaceName)) { setError('Use a 3–32 character lowercase workspace name.'); return; }
+    if (source !== 'blank') { setError('Import is not active for private customer pods. Select Blank Linux or wait for an approved import template.'); return; }
     if (operatorPreview || !provisioningEnabled) { setError('Customer workspace creation is paused.'); return; }
     if (loading || setup) return;
     setLoading(true);
@@ -151,21 +210,83 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               onChange={(event) => setWorkspaceName(event.target.value)}
               className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400" />
           </div>
+          <fieldset className="px-5 py-6 md:px-7">
+            <legend className="text-base font-semibold text-white">Source: where will your code come from?</legend>
+            <p className="mt-1 text-sm text-slate-400">Your DreamMakerHub projects, public GitHub repositories and files on your computer are different sources. Nothing is copied until a supported import is explicitly confirmed.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {([
+                { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
+                { id: 'site', label: 'My DreamMakerHub projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
+                { id: 'github', label: 'Public GitHub repository', description: 'Paste a GitHub URL and inspect its available branches.', status: 'Preview only' },
+                { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside an AWS pod.', status: 'Upload not available' },
+              ] as const).map((option) => (
+                <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
+                  <input type="radio" name="workspaceSource" checked={source === option.id}
+                    onChange={() => { setSource(option.id); setError(''); }}
+                    className="mt-1 accent-cyan-400" />
+                  <span>
+                    <span className="block font-semibold text-white">{option.label}</span>
+                    <span className="mt-1 block text-sm text-slate-400">{option.description}</span>
+                    <span className="mt-2 inline-block text-xs font-medium text-cyan-200">{option.status}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {source === 'site' && <div className="mt-4 space-y-3 rounded-xl border border-white/15 bg-slate-950 p-4">
+              <label htmlFor="existing-site-project" className="block text-sm font-semibold text-white">Existing site project</label>
+              <select id="existing-site-project" value={siteProjectId} onChange={(event) => setSiteProjectId(event.target.value)}
+                className="w-full rounded-lg border border-white/20 bg-slate-900 px-3 py-2 text-white">
+                <option value="">Choose a project to inspect</option>
+                {siteProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+              </select>
+              {siteError && <p role="alert" className="text-sm text-amber-200">{siteError}</p>}
+              {siteProjectId && <Link href={`/dashboard?projectId=${encodeURIComponent(siteProjectId)}`}
+                className="inline-block text-sm font-semibold text-cyan-200 underline">View selected project in dashboard</Link>}
+              <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder pods. Browsing them does not allocate a workspace.</p>
+            </div>}
+            {source === 'github' && <div className="mt-4 space-y-3 rounded-xl border border-white/15 bg-slate-950 p-4">
+              <label htmlFor="public-github-repo" className="block text-sm font-semibold text-white">Public GitHub repository URL</label>
+              <div className="flex flex-wrap gap-2">
+                <input id="public-github-repo" type="text" autoComplete="off"
+                  placeholder="https://github.com/owner/repository" value={publicRepo}
+                  onChange={(event) => { setPublicRepo(event.target.value); setRepoPreview(null); setRepoError(''); }}
+                  className="min-w-0 flex-1 rounded-lg border border-white/20 bg-slate-900 px-3 py-2 text-white" />
+                <button type="button" onClick={() => void inspectPublicRepo()} disabled={!publicRepo.trim() || checkingRepo}
+                  className="rounded-lg bg-cyan-500 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50">
+                  {checkingRepo ? 'Checking…' : 'Inspect repository'}
+                </button>
+              </div>
+              {repoError && <p role="alert" className="text-sm text-amber-200">{repoError}</p>}
+              {repoPreview && <>
+                <label htmlFor="public-repo-branch" className="block text-sm font-semibold text-white">Branch (read-only preview)</label>
+                <select id="public-repo-branch" value={repoBranch} onChange={(event) => setRepoBranch(event.target.value)}
+                  className="w-full rounded-lg border border-white/20 bg-slate-900 px-3 py-2 text-white">
+                  {repoPreview.branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+                </select>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <a href={`https://github.com/${repoPreview.repository}/tree/${encodeURIComponent(repoBranch)}`}
+                    target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">View source on GitHub</a>
+                  <a href={`https://github.com/${repoPreview.repository}/actions`}
+                    target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">View this repository’s CI</a>
+                </div>
+              </>}
+              <p className="text-sm text-amber-200">Inspecting is not importing. Private repositories need account-authorized GitHub access. GitHub cloning will become available only after the customer-only Coder template and runner are verified.</p>
+            </div>}
+            {source === 'local' && <div className="mt-4 rounded-xl border border-white/15 bg-slate-950 p-4 text-sm text-slate-300">
+              Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated AWS customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
+            </div>}
+            {source !== 'blank' && <p role="status" className="mt-4 text-sm text-amber-200">This source can be inspected, but is not yet eligible for customer workspace creation. Nothing will be imported or charged.</p>}
+          </fieldset>
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
             <div>
-              <span className="font-semibold text-white">Repository</span>
-              <p className="mt-1 text-sm text-slate-400">Start blank today. Repository import needs an approved customer template first.</p>
+              <span className="font-semibold text-white">Source and CI</span>
+              <p className="mt-1 text-sm text-slate-400">Source lives in your selected project or repository. CI runs where that repository is hosted, not on the Coder workspace creation form.</p>
             </div>
-            <div className="w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-slate-300" aria-label="Blank workspace; repository import unavailable">
-              Blank workspace <span className="float-right text-xs text-amber-200">Import planned</span>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <Link href="/dashboard" className="text-cyan-200 underline">My site projects</Link>
+              <a href="https://github.com/settings/repositories" target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">My GitHub repositories</a>
+              <a href="https://docs.github.com/en/actions" target="_blank" rel="noopener noreferrer" className="text-cyan-200 underline">About GitHub CI</a>
             </div>
-          </div>
-          <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
-            <div>
-              <span className="font-semibold text-white">Branch</span>
-              <p className="mt-1 text-sm text-slate-400">Available when repository import is supported.</p>
-            </div>
-            <div className="w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-slate-500" aria-label="Branch unavailable for blank workspace">Not applicable to blank workspace</div>
           </div>
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
             <div>
@@ -195,9 +316,9 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 bg-slate-950/50 px-5 py-5 md:px-7">
           <p className="max-w-lg text-sm text-slate-400">Only your verified account can request and manage your private workspace.</p>
-          <button type="submit" disabled={loading || provisioningPaused}
+          <button type="submit" disabled={loading || provisioningPaused || source !== 'blank'}
             className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-bold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
-            {loading ? 'Reserving your workspace…' : provisioningPaused ? 'Creation paused' : 'Create workspace'}
+            {loading ? 'Reserving your workspace…' : provisioningPaused ? 'Creation paused' : source !== 'blank' ? 'Import not available yet' : 'Create workspace'}
           </button>
         </div>
         {error && <p role="alert" className="px-7 pb-5 text-sm text-amber-200">{error}</p>}
