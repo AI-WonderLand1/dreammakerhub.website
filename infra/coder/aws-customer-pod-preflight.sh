@@ -47,6 +47,11 @@ kubectl --request-timeout=15s get namespace coder-customers -o json |
   fail 'Customer namespace must enforce the restricted Pod Security Standard.'
 info 'Customer quota, size limits, pod restrictions, network policies and dedicated provisioner RBAC objects exist.'
 
+# Impersonation authorizes the caller to exercise the provisioner's own
+# permissions. NEVER grant that power to the public-repo GitHub OIDC role.
+# An independently trusted cluster administrator can opt in when reviewing
+# isolation, but only after inspecting the target subject's permissions.
+if [[ "${RUN_PRIVILEGED_RBAC_CHECKS:-false}" == true ]]; then
 subject='system:serviceaccount:coder-customers:coder-customer-provisioner'
 authorize() {
   # A missing impersonation privilege is inconclusive and must not be treated
@@ -64,7 +69,15 @@ if [[ "$operator_namespace_present" == true ]]; then
 fi
 info 'Dedicated provisioner can create customer deployments/PVCs without secret or operator namespace read access.'
 
+else
+  info 'Privileged provisioner impersonation NOT tested by this read-only run; separate trusted administrator verification required.'
+fi
+
 kubectl --request-timeout=15s -n coder-customers get pods -o name || fail 'Cannot inspect customer pods.'
 storage_classes="$(kubectl --request-timeout=15s get storageclasses -o name)" || fail 'Cannot inspect Kubernetes storage classes.'
 [[ -n "$storage_classes" ]] || fail 'No Kubernetes StorageClass exists for the customer PVC.'
-info 'READ-ONLY PREFLIGHT PASSED. Still requires manual AWS node/volume capacity, default StorageClass, CNI enforcement, external provisioner credentials, image digest, OIDC and independent compute hard-stop verification.'
+if [[ "${RUN_PRIVILEGED_RBAC_CHECKS:-false}" == true ]]; then
+  info 'CLUSTER INVENTORY AND PRIVILEGED RBAC CHECKS PASSED; additional manual security and capacity checks still required.'
+else
+  info 'READ-ONLY CLUSTER INVENTORY PASSED; privileged provisioner RBAC and all additional security/capacity checks remain UNVERIFIED.'
+fi

@@ -1,0 +1,68 @@
+# Minimal read-only inventory permissions for the GitHub readiness role.
+# Group comes from the EKS IAM access entry for the dedicated GitHub OIDC role.
+# Do not grant this group secrets access, impersonation or write permissions.
+# Review on the intended EKS cluster before applying.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: wonderspace-readiness-inventory
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: ["coder-customers", "coder"]
+    verbs: ["get"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: wonderspace-readiness-inventory
+subjects:
+  - kind: Group
+    name: wonderspace-readiness
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: wonderspace-readiness-inventory
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: wonderspace-readiness-inventory
+  namespace: coder-customers
+rules:
+  - apiGroups: [""]
+    resources: ["resourcequotas", "limitranges", "serviceaccounts"]
+    resourceNames: ["customer-pilot-cap", "customer-pilot-limits", "coder-customer-provisioner"]
+    verbs: ["get"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    resourceNames: ["customer-default-deny", "customer-dns", "customer-public-https"]
+    verbs: ["get"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    resourceNames: ["coder-customer-provisioner"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: wonderspace-readiness-inventory
+  namespace: coder-customers
+subjects:
+  - kind: Group
+    name: wonderspace-readiness
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: wonderspace-readiness-inventory
+  apiGroup: rbac.authorization.k8s.io
