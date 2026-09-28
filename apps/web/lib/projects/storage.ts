@@ -1,5 +1,7 @@
 import "server-only";
 import path from "path";
+import { headers } from "next/headers";
+import { createClient as createBearerClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 
@@ -60,6 +62,31 @@ function mapProjectRow(row: ProjectRow): ProjectMetadata {
 }
 
 async function getClient() {
+  // The browser editor sends its verified Supabase session as a Bearer token.
+  // When a reverse proxy omits SSR cookies, keep project queries bound to that
+  // SAME user's JWT so Supabase RLS (auth.uid()) still applies.
+  let authorization: string | null = null;
+  try {
+    authorization = (await headers()).get("authorization");
+  } catch {
+    // Scripts and jobs without an HTTP request still use the existing SSR client.
+  }
+  const token = authorization && /^Bearer\s+(\S+)$/i.exec(authorization.trim())?.[1];
+  if (token) {
+    const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "").trim();
+    const publicKey = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY || "").trim();
+    if (!url || !publicKey) throw new Error("Project authentication is not configured");
+    // A per-request public-key client: never put a customer's JWT on the
+    // process-wide service-role client, and never bypass project RLS.
+    return createBearerClient(url, publicKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    });
+  }
   return createSupabaseServerClient();
 }
 
