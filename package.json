@@ -73,7 +73,7 @@
     "@gltf-transform/functions": "^4.5.0",
     "@google/generative-ai": "^0.24.1",
     "@heyputer/puter.js": "^2.5.3",
-    "@kubernetes/client-node": "^1.4.0",
+    "@kubernetes/client-node": "^2.0.0",
     "@mdx-js/react": "^3.1.1",
     "@mkkellogg/gaussian-splats-3d": "^0.4.7",
     "@monaco-editor/react": "^4.7.0",
