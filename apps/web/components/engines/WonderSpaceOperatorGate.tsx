@@ -12,6 +12,26 @@ const CODER_ORIGIN = 'https://coder.dreammakerhub.website';
 const OPERATOR_WORKSPACE_URL = `${CODER_ORIGIN}/@wonderingtribe/production`;
 const DREAMMAKERHUB_SIGN_IN = '/public-pages/auth?redirectTo=%2Fwonderspace';
 
+/** Uses existing authenticated project storage; never shares the operator terminal. */
+function BrowserIdeEntry() {
+  return (
+    <section className="mx-auto max-w-4xl rounded-2xl border border-cyan-300/30 bg-cyan-400/[.06] p-6 text-white">
+      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200">Available without a cloud VM</p>
+      <h2 className="mt-2 text-xl font-semibold">WonderSpace browser code editor</h2>
+      <p className="mt-2 text-sm text-slate-300">
+        Open your own projects, create files and folders, edit code, and save directly to DreamMakerHub.
+        The Linux terminal and isolated Coder workspaces are a separate pilot.
+      </p>
+      <Link
+        href="/wonderspace/browser"
+        className="mt-4 inline-flex rounded-lg bg-cyan-400 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-300"
+      >
+        Open browser editor
+      </Link>
+    </section>
+  );
+}
+
 /** The personal operator workspace is never created through the customer form. */
 export function OperatorIdePanel({ customerPilot = false }: { customerPilot?: boolean }) {
   const { session } = useAuth();
@@ -78,7 +98,8 @@ export function OperatorIdePanel({ customerPilot = false }: { customerPilot?: bo
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,rgba(96,76,218,0.4),transparent_42%),radial-gradient(ellipse_at_85%_75%,rgba(18,148,206,0.28),transparent_45%),radial-gradient(ellipse_at_60%_0%,rgba(224,83,197,0.17),transparent_35%)]" />
-      <div className="relative mx-auto max-w-4xl">
+      <div className="relative mx-auto max-w-4xl space-y-6">
+        <BrowserIdeEntry />
         <section className="rounded-3xl border border-emerald-300/25 bg-[#101931]/90 p-8 shadow-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-200">Operator IDE</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight">Your existing production workspace</h1>
@@ -186,12 +207,18 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
     return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">Checking your DreamMakerHub session…</main>;
   }
   if (role === 'operator') return <OperatorIdePanel customerPilot={customerPilot} />;
-  if (role === 'customer' && customerPilot) return <CustomerWorkspaceLaunch />;
+  if (role === 'customer' && customerPilot) return (
+    <>
+      <div className="bg-[#080d22] px-5 pt-8"><BrowserIdeEntry /></div>
+      <CustomerWorkspaceLaunch />
+    </>
+  );
 
   if (role === 'customer') {
     return (
       <div className="bg-[#080d22] text-white">
         <h1 className="sr-only">Cloud IDE access is private</h1>
+        <div className="px-5 pt-8"><BrowserIdeEntry /></div>
         <CustomerWorkspaceLaunch provisioningEnabled={false} />
       </div>
     );
