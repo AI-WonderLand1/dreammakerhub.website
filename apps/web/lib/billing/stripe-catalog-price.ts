@@ -25,6 +25,9 @@ export function stripePriceMatchesPlan(
     price.type === "recurring" &&
     price.unit_amount === expectedAmount &&
     price.recurring?.interval === interval &&
+    // Stripe uses the same interval for e.g. monthly and every 3 months.
+    // Never grant a monthly/yearly plan for a multi-interval recurring Price.
+    price.recurring?.interval_count === 1 &&
     price.recurring?.usage_type === "licensed";
 }
 
