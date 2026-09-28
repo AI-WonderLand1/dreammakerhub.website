@@ -22,7 +22,7 @@ if (!checkpoints.some((item) => item.key === CHECKPOINT)) {
 const id = randomUUID();
 const expected = "independent-project-" + id + "\n";
 const projectFile = "/home/coder/project/snapshot-smoke.txt";
-const archivePath = "/tmp/wonderspace-smoke.tar.gz";
+const archivePath = "/tmp/wonderspace-save.tar.gz";
 let first;
 let archive;
 try {
@@ -32,7 +32,7 @@ try {
   });
   await first.files.write(projectFile, expected);
   const pack = await first.exec(
-    "tar -czf /tmp/wonderspace-smoke.tar.gz -C /home/coder project",
+    "runuser -u coder -- python3 /opt/wonderspace/export.py",
     { timeoutSec: 30 },
   );
   assert.equal(pack.exitCode, 0, pack.stderr);
@@ -55,10 +55,9 @@ try {
     idleTimeoutMinutes: 5,
     networkIsolation: "ISOLATED",
   });
-  await resumed.files.write(archivePath, archive);
+  await resumed.files.write("/tmp/wonderspace-restore.tar.gz", archive);
   const inspect = await resumed.exec(
-    "tar -tzf /tmp/wonderspace-smoke.tar.gz && " +
-    "tar -xzf /tmp/wonderspace-smoke.tar.gz -C /home/coder",
+    "runuser -u coder -- python3 /opt/wonderspace/restore.py",
     { timeoutSec: 30 },
   );
   assert.equal(inspect.exitCode, 0, inspect.stderr);
