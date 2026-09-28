@@ -8,9 +8,11 @@
   "scripts": {
     "prepare:checkpoint": "node scripts/prepare-checkpoint.mjs",
     "test:roundtrip": "node scripts/checkpoint-gzip-roundtrip.mjs",
-    "check": "node --check scripts/prepare-checkpoint.mjs && node --check scripts/checkpoint-gzip-roundtrip.mjs"
+    "check": "node --check gateway.mjs && node --check scripts/prepare-checkpoint.mjs && node --check scripts/checkpoint-gzip-roundtrip.mjs && python3 -m py_compile export.py restore.py && node --test tests/gateway.test.mjs",
+    "test:gateway": "node --test tests/gateway.test.mjs"
   },
   "dependencies": {
-    "railway": "3.11.0"
+    "railway": "3.11.0",
+    "http-proxy": "1.18.1"
   }
 }
