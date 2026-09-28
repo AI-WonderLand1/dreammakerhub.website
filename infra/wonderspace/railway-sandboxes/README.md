@@ -98,7 +98,7 @@ Neither script creates a public domain or accesses customer/owner files.
 
 Prerequisites: Node 22+, `npm install` in **this directory**, approved
 Railway usage, a privately configured `RAILWAY_TOKEN` (environment-scoped project
-token from the dedicated customer-sandboxes project's Settings → Tokens; do not
+token from an explicitly approved environment in the existing Railway project's Settings → Tokens; do not
 use an account or workspace token under this variable name) and `RAILWAY_ENVIRONMENT_ID` pointing to
 the intended isolated **test** environment. Do not put tokens in GitHub.
 The scripts refuse to run unless `CONFIRM_BILLABLE_SANDBOX_TEST=YES` is
