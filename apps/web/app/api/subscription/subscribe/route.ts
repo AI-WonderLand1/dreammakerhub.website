@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { logger } from "@/lib/logger";
 import { stripe } from "@/lib/stripe";
+import { selectCatalogCheckoutPriceId, stripePriceMatchesPlan } from "@/lib/billing/stripe-catalog-price";
 
 function getBearerToken(req: NextRequest) {
   const match = (req.headers.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
@@ -49,10 +50,6 @@ export async function POST(request: NextRequest) {
     if (planConfig.price === 0 || planConfig.id === "enterprise") {
       return NextResponse.json({ error: "This plan does not use paid self-service checkout" }, { status: 400 });
     }
-    const priceId = isYearly ? planConfig.stripePriceYearlyId : planConfig.stripePriceId;
-    if (!priceId) {
-      return NextResponse.json({ error: "The selected plan is not configured for checkout. Contact support." }, { status: 503 });
-    }
     if (!stripe) {
       return NextResponse.json({ error: "Payment processing is temporarily unavailable" }, { status: 503 });
     }
@@ -75,14 +72,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Your session expired. Please sign in again." }, { status: 401 });
     }
 
-    // Do not charge the customer a different amount, currency, or billing cycle
-    // if a deployment points at an outdated or incorrectly configured Stripe Price.
+    // Prefer an explicitly configured price when present; otherwise discover
+    // one for the verified product, advertised amount and billing interval.
+    // Product IDs do NOT authorize charging a mismatched Price.
+    const billingInterval = isYearly ? "year" : "month";
+    let priceId = isYearly ? planConfig.stripePriceYearlyId : planConfig.stripePriceId;
+    if (!priceId && planConfig.stripeProductId) {
+      const prices = await stripe.prices.list({
+        product: planConfig.stripeProductId,
+        active: true,
+        type: "recurring",
+        limit: 100,
+      });
+      // Never assume page-one ordering identifies a safe Price.
+      if (prices.has_more) {
+        return NextResponse.json({ error: "Plan price requires configuration review." }, { status: 503 });
+      }
+      priceId = selectCatalogCheckoutPriceId(prices.data, planConfig, billingInterval) || undefined;
+      if (!priceId) {
+        // Guild has two monthly Prices of the same amount. Stripe's own
+        // Default marker resolves ambiguity; never select a random duplicate.
+        const product = await stripe.products.retrieve(planConfig.stripeProductId);
+        const defaultPriceId = typeof product.default_price === "string"
+          ? product.default_price : product.default_price?.id || null;
+        priceId = selectCatalogCheckoutPriceId(
+          prices.data, planConfig, billingInterval, defaultPriceId,
+        ) || undefined;
+      }
+    }
+    if (!priceId) {
+      logger.error("Stripe catalogue price could not be uniquely verified", {
+        plan: planConfig.id, interval: billingInterval,
+      });
+      return NextResponse.json({ error: "The selected plan is not configured for checkout. Contact support." }, { status: 503 });
+    }
+
+    // Do not charge the customer a different amount, currency, billing cycle,
+    // or product even when a stale explicit Price ID is configured.
     const stripePrice = await stripe.prices.retrieve(priceId);
     const expectedAmount = isYearly ? planConfig.yearlyPrice : planConfig.price;
     if (expectedAmount === undefined || !stripePrice.active || stripePrice.type !== "recurring" ||
         stripePrice.currency !== "usd" || stripePrice.unit_amount !== expectedAmount ||
         stripePrice.recurring?.interval !== (isYearly ? "year" : "month") ||
-        stripePrice.recurring?.usage_type !== "licensed") {
+        stripePrice.recurring?.usage_type !== "licensed" ||
+        !stripePriceMatchesPlan(stripePrice, planConfig, billingInterval)) {
       logger.error("Stripe subscription price does not match the advertised plan", {
         plan: planConfig.id, interval: isYearly ? "year" : "month", priceId,
       });
