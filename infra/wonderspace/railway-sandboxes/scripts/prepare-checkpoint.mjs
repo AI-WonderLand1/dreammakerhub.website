@@ -20,7 +20,7 @@ if (existing.some((item) => item.key === CHECKPOINT)) {
 // Reproduce only IDE software, never the operator's current files, secrets or settings.
 // A prepared sandbox checkpoint can seed independent customer VMs on demand.
 const template = Sandbox.template()
-  .withPackages("git", "gzip", "tar", "curl", "ca-certificates")
+  .withPackages("git", "gzip", "tar", "curl", "ca-certificates", "python3")
   .run("npm install --global code-server@4.130.0")
   .run("install -d /opt/wonderspace && npm install --prefix /opt/wonderspace --no-audit --no-fund http-proxy@1.18.1");
 
