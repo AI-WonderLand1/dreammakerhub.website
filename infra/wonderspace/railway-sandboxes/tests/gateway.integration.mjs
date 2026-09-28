@@ -27,7 +27,10 @@ async function request(path, extras = {}) {
       response.on("data", chunk => chunks.push(chunk));
       response.on("end", () => resolve({
         status: response.statusCode,
-        headers: { get: key => response.headers[key.toLowerCase()] || null },
+        headers: { get: key => {
+          const value = response.headers[key.toLowerCase()];
+          return Array.isArray(value) ? value.join(",") : value || null;
+        } },
         text: async () => Buffer.concat(chunks).toString("utf8"),
       }));
     });
