@@ -217,8 +217,8 @@ async function startWorkspace(user, id) {
     // A private full-disk checkpoint already contains the customer home;
     // otherwise restore the newest checksum-verified portable gzip archive.
     if (!privateName) await restoreArchive(sandbox, created.data);
-    await background(sandbox, "runuser -u coder -- code-server --bind-addr 127.0.0.1:8081 --auth none --disable-telemetry --disable-update-check /home/coder/project");
-    await background(sandbox, "node /opt/wonderspace/gateway.mjs");
+    await background(sandbox, "env -u WONDERSPACE_GATEWAY_SECRET -u WONDERSPACE_SESSION_DEADLINE_MS runuser -u coder -- code-server --bind-addr 127.0.0.1:8081 --auth none --disable-telemetry --disable-update-check /home/coder/project");
+    await background(sandbox, "runuser -u wonderspace-proxy -- node /opt/wonderspace/gateway.mjs");
     await checked("curl -fsS -H 'Host: probe.up.railway.app' --retry 5 --retry-delay 1 http://127.0.0.1:8080/healthz", sandbox, 25);
     const domain = domainName(sandbox);
     const running = await db.from("wonderspace_sandbox_workspaces")
