@@ -293,9 +293,7 @@ async function saveAndStop(row, reason = "user") {
         updated_at: new Date().toISOString(),
       }).eq("id", row.id).eq("state", "saving").eq("sandbox_id", current.sandbox_id);
       if (finish.error) throw finish.error;
-      // Keep only the current full-disk checkpoint for this workspace.
-      // Cleanup never deletes the clean golden image or other users\u0027 snapshots.
-      const prefix = "ws-v1-" + current.id.replaceAll("-", "") + "-";
+      // Keep only this workspace\u0027s newest full-disk checkpoint; never prune another owner.
       try {
         const all = await Sandbox.checkpoints();
         for (const cp of all) {
