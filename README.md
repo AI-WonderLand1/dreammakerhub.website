@@ -80,7 +80,7 @@ The repository is an npm-workspace monorepo built primarily with:
 
 ### Requirements
 
-- Node.js 20.19.0 (see [`.nvmrc`](.nvmrc))
+- Node.js 22.12.0 or newer supported LTS (see [`.nvmrc`](.nvmrc); required by Vitest 5)
 - npm
 
 ### Install
