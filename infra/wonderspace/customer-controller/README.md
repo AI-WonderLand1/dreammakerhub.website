@@ -50,13 +50,20 @@ Supabase JWT independently and only allows approved tester IDs; no raw
 customer GitHub tokens or third-party repository URLs are accepted.
 The private gzip bucket has no client RLS policies. Every save is a new
 immutable private archive and its SHA-256 hash is committed before the VM
-is destroyed. The controller retries failed saves, and blocks starting an
+is destroyed. The service retains two committed gzip generations to bound
+storage. An intentional stop also attempts a **private per-workspace whole-disk
+Railway checkpoint**, preserving installed tools and IDE extensions; a later
+start restores that checkpoint when available, otherwise falls back to the
+latest integrity-checked portable gzip and clean golden IDE. The controller retries failed saves, and blocks starting an
 unknown or failed VM until reconciled.
 
-**Important limitation:** autosaving does not preserve unsaved editor tabs,
-background programs or operating-system packages installed outside the
-customer project. Customer-specific whole-disk checkpoints are a separate
-feature requiring storage/privacy review before they can be enabled.
+**Important limitation:** autosaving does not preserve unsaved editor tabs or
+background programs. Portable gzip contains project files only. A successful
+whole-disk Railway checkpoint may retain user-installed tools and extensions,
+but it is best-effort and limited by the plan's checkpoint quota. Restoration
+from portable gzip after checkpoint unavailability starts from the clean IDE
+without user-installed operating-system packages. These limitations must be
+shown to customers before general release.
 If the controller is down long enough for Railway itself to delete a VM,
 edits since the last completed gzip autosave can be lost.
 
