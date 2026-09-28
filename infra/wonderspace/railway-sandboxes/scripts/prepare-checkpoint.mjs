@@ -32,12 +32,16 @@ try {
     networkIsolation: "ISOLATED",
   });
 
-  await base.files.write("/opt/wonderspace/gateway.mjs", await readFile(new URL("../gateway.mjs", import.meta.url), "utf8"), { mode: 0o644 });
+  for (const file of ["gateway.mjs", "export.py", "restore.py"]) {
+    await base.files.write("/opt/wonderspace/" + file,
+      await readFile(new URL("../" + file, import.meta.url), "utf8"), { mode: 0o644 });
+  }
 
   const setup = await base.exec(
     "set -eu; (id coder >/dev/null 2>&1 || useradd -m -s /bin/bash coder); " +
     "install -d -m 0750 -o coder -g coder /home/coder/project; " +
     "code-server --version; node --check /opt/wonderspace/gateway.mjs; " +
+    "python3 -m py_compile /opt/wonderspace/export.py /opt/wonderspace/restore.py; " +
     "test -d /home/coder/project; " +
     "test ! -e /home/coder/.ssh; " +
     "test ! -e /home/coder/.config/code-server/config.yaml; " +
