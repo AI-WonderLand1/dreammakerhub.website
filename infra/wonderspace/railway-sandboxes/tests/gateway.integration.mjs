@@ -38,7 +38,7 @@ async function request(path, extras = {}) {
     request.end(extras.body);
   });
 }
-function websocketAttempt(cookie) {
+function websocketAttempt(cookie, origin) {
   return new Promise((resolve, reject) => {
     const socket = net.createConnection(8080, "127.0.0.1");
     socket.setTimeout(2000);
@@ -47,7 +47,7 @@ function websocketAttempt(cookie) {
     socket.once("connect", () => socket.write([
       "GET / HTTP/1.1", "Host: " + HOST, "Connection: Upgrade",
       "Upgrade: websocket", "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==",
-      "Sec-WebSocket-Version: 13", "Origin: https://attacker.example",
+      "Sec-WebSocket-Version: 13", "Origin: " + origin,
       "Cookie: " + cookie, "", "",
     ].join("\r\n")));
     socket.once("data", chunk => { socket.end(); resolve(chunk.toString("utf8")); });
@@ -55,6 +55,9 @@ function websocketAttempt(cookie) {
 }
 test("gateway rejects anonymous users, replayed tickets and cross-origin websocket access", async () => {
   const backend = http.createServer((_req, res) => res.end("isolated code-server mock"));
+  backend.on("upgrade", (_req, socket) => {
+    socket.write("HTTP/1.1 101 Switching Protocols\\r\\nConnection: Upgrade\\r\\nUpgrade: websocket\\r\\n\\r\\n");
+  });
   await new Promise(resolve => backend.listen(8081, "127.0.0.1", resolve));
   const child = spawn(process.execPath, ["gateway.mjs"], {
     cwd: new URL("..", import.meta.url).pathname,
@@ -95,8 +98,10 @@ test("gateway rejects anonymous users, replayed tickets and cross-origin websock
     assert.equal((await request("/", { method: "POST", headers: {
       Cookie: cookie, Origin: "https://attacker.example",
     } })).status, 403);
-    const denied = await websocketAttempt(cookie);
+    const denied = await websocketAttempt(cookie, "https://attacker.example");
     assert.match(denied, /403 Forbidden/);
+    const accepted = await websocketAttempt(cookie, "https://" + HOST);
+    assert.match(accepted, /101 Switching Protocols/);
   } finally {
     child.kill("SIGTERM");
     backend.close();
