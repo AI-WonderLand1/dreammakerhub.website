@@ -20,6 +20,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 import RepositoryFileBrowser from "../RepositoryFileBrowser";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 
 type Project = {
   id: string;
@@ -67,10 +68,13 @@ export default function ProjectCodeManagerPage() {
       setError("");
       try {
         const [projectResponse, filesResponse] = await Promise.all([
-          fetch(`/api/projects/${encodeURIComponent(projectId)}`, { cache: "no-store" }),
-          fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, { cache: "no-store" }),
+          fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}`),
+          fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}/files`),
         ]);
 
+        if (projectResponse.status === 401 || filesResponse.status === 401) {
+          throw new Error("Your session expired. Sign in again to open your project files.");
+        }
         const projectData = await projectResponse.json().catch(() => ({}));
         if (!projectResponse.ok || !projectData?.project) {
           throw new Error(projectData?.message || "Project not found");
@@ -123,6 +127,9 @@ export default function ProjectCodeManagerPage() {
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
         <p className="font-semibold text-red-200">Code manager could not open.</p>
         <p className="mt-2 text-sm text-red-200/70">{error || "Project not found"}</p>
+        {error.includes("Sign in") && (
+          <Link href={`/public-pages/auth?redirectTo=${encodeURIComponent(`/dashboard/projects/${projectId}/files`)}`} className="mt-3 block text-sm font-semibold text-cyan-300 hover:underline">Sign in again</Link>
+        )}
         <Link href="/dashboard" className="mt-4 inline-block text-sm text-cyan-300 hover:underline">← Back to workspace</Link>
       </div>
     );

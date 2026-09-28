@@ -18,6 +18,7 @@ import {
 import { CodeEditor } from "@/components/file-manager/CodeEditor";
 import { ImportModal } from "@/components/file-manager/ImportModal";
 import { broadcastFileEvent } from "@/lib/realtime/events";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 
 type RepoEntry = {
   name: string;
@@ -293,6 +294,7 @@ export default function RepositoryFileBrowser({
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -355,7 +357,7 @@ export default function RepositoryFileBrowser({
 
     try {
       setActionError(null);
-      const response = await fetch(`/api/projects/${projectId}/files`, {
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/files`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: { [path]: "" } }),
@@ -384,7 +386,7 @@ export default function RepositoryFileBrowser({
 
     try {
       setActionError(null);
-      const response = await fetch(`/api/projects/${projectId}/files`, {
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/files`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: { [placeholder]: "" } }),
@@ -410,7 +412,7 @@ export default function RepositoryFileBrowser({
 
     try {
       setActionError(null);
-      const response = await fetch(`/api/projects/${projectId}/files/rename`, {
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/files/rename`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ oldPath: entry.path, newPath }),
@@ -440,7 +442,7 @@ export default function RepositoryFileBrowser({
 
     try {
       setActionError(null);
-      const response = await fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(entry.path)}`, {
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/files?path=${encodeURIComponent(entry.path)}`, {
         method: "DELETE",
       });
       await checkResponse(response, "Failed to delete");
@@ -471,7 +473,7 @@ export default function RepositoryFileBrowser({
     setSaving(true);
     try {
       setActionError(null);
-      const response = await fetch(`/api/projects/${projectId}/files`, {
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/files`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: { [selectedPath]: fileContent } }),
@@ -489,7 +491,7 @@ export default function RepositoryFileBrowser({
   const importFiles = async (imported: Record<string, string>) => {
     try {
       setActionError(null);
-      const response = await fetch(`/api/projects/${projectId}/import`, {
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: imported }),
@@ -502,6 +504,32 @@ export default function RepositoryFileBrowser({
       });
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Import failed");
+    }
+  };
+
+  // Fetch the ZIP with a verified Bearer token when SSR cookies are missing.
+  const exportZip = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      setActionError(null);
+      const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/export?format=zip`);
+      await checkResponse(response, "Failed to export project");
+      const downloadUrl = URL.createObjectURL(await response.blob());
+      try {
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `project-${projectId}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } finally {
+        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 60_000);
+      }
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Failed to export project");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -537,7 +565,7 @@ export default function RepositoryFileBrowser({
           <button type="button" onClick={() => void createFile()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-cyan-400/30 hover:bg-cyan-400/5 hover:text-white"><FilePlus2 size={14}/> New file</button>
           <button type="button" onClick={() => void createFolder()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-cyan-400/30 hover:bg-cyan-400/5 hover:text-white"><FolderPlus size={14}/> New folder</button>
           <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-violet-400/30 hover:bg-violet-400/5 hover:text-white"><Upload size={14}/> Import</button>
-          <button type="button" onClick={() => { window.location.href = `/api/projects/${projectId}/export?format=zip`; }} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-violet-400/30 hover:bg-violet-400/5 hover:text-white"><Download size={14}/> ZIP</button>
+          <button type="button" disabled={exporting} onClick={() => void exportZip()} className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-xs text-white/70 hover:border-violet-400/30 hover:bg-violet-400/5 hover:text-white"><Download size={14}/>{exporting ? "Exporting..." : "ZIP"}</button>
           {selectedPath && (
             <button type="button" disabled={saving} onClick={() => void saveSelectedFile()} className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-violet-600 to-cyan-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 disabled:opacity-50"><Save size={14}/>{saving ? "Saving..." : "Save"}</button>
           )}
