@@ -15,7 +15,7 @@ request and enforce compute budgets before creating a billable sandbox.
 
 Plan the system in two complementary snapshot layers:
 
-1. **One clean golden checkpoint** `wonderspace-clean-v1`. Created once from
+1. **One clean golden checkpoint** `wonderspace-clean-v2`. Created once from
    an isolated Railway sandbox that installs the same pinned code-server version
    as our operator IDE. No operator files, tokens, SSH keys or other credentials.
    Destroy the golden VM when its checkpoint is ready.
@@ -89,7 +89,7 @@ Do not enable public customer access until:
 ## Private smoke test already scaffolded here
 
 `scripts/prepare-checkpoint.mjs` prepares a **new, clean sandbox**, installs
-code-server, captures `wonderspace-clean-v1`, then destroys the source VM.
+code-server, captures `wonderspace-clean-v2`, then destroys the source VM.
 `scripts/checkpoint-gzip-roundtrip.mjs` creates two **sequential** private
 VMs from that checkpoint. It writes a harmless test project in the first,
 compresses the project to `.tar.gz`, destroys the first VM, restores the

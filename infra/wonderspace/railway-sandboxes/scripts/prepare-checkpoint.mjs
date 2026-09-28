@@ -1,4 +1,5 @@
 import { Sandbox } from "railway";
+import { readFile } from "node:fs/promises";
 
 // Run only with the owner's explicit approval. This creates billable VM compute.
 // Never checkpoint a live operator home directory: it may contain credentials.
@@ -9,7 +10,7 @@ if (!process.env.RAILWAY_API_TOKEN || !process.env.RAILWAY_ENVIRONMENT_ID) {
   throw new Error("Set Railway credentials privately in the execution environment.");
 }
 
-const CHECKPOINT = "wonderspace-clean-v1";
+const CHECKPOINT = "wonderspace-clean-v2";
 const existing = await Sandbox.checkpoints();
 if (existing.some((item) => item.key === CHECKPOINT)) {
   console.log("Clean WonderSpace checkpoint already exists; leaving it unchanged.");
@@ -19,8 +20,9 @@ if (existing.some((item) => item.key === CHECKPOINT)) {
 // Reproduce only IDE software, never the operator's current files, secrets or settings.
 // A prepared sandbox checkpoint can seed independent customer VMs on demand.
 const template = Sandbox.template()
-  .withPackages("git", "gzip", "tar", "curl", "ca-certificates")
-  .run("npm install --global code-server@4.130.0");
+  .withPackages("git", "gzip", "tar", "curl", "ca-certificates", "python3")
+  .run("npm install --global code-server@4.130.0")
+  .run("install -d /opt/wonderspace && npm install --prefix /opt/wonderspace --no-audit --no-fund http-proxy@1.18.1");
 
 let base;
 try {
@@ -30,13 +32,22 @@ try {
     networkIsolation: "ISOLATED",
   });
 
+  for (const file of ["gateway.mjs", "export.py", "restore.py"]) {
+    await base.files.write("/opt/wonderspace/" + file,
+      await readFile(new URL("../" + file, import.meta.url), "utf8"), { mode: 0o644 });
+  }
+
   const setup = await base.exec(
     "set -eu; (id coder >/dev/null 2>&1 || useradd -m -s /bin/bash coder); " +
+    "(id wonderspace-proxy >/dev/null 2>&1 || useradd --system --no-create-home -s /usr/sbin/nologin wonderspace-proxy); " +
+    "chmod 0700 /home/coder; " +
     "install -d -m 0750 -o coder -g coder /home/coder/project; " +
-    "code-server --version; " +
+    "code-server --version; node --check /opt/wonderspace/gateway.mjs; " +
+    "python3 -m py_compile /opt/wonderspace/export.py /opt/wonderspace/restore.py; " +
     "test -d /home/coder/project; " +
     "test ! -e /home/coder/.ssh; " +
-    "test ! -e /home/coder/.config/code-server/config.yaml",
+    "test ! -e /home/coder/.config/code-server/config.yaml; " +
+    "test ! -e /home/coder/project/.env",
     { timeoutSec: 60 },
   );
   if (setup.exitCode !== 0) {
