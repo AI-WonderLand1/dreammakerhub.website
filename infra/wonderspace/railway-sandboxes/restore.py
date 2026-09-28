@@ -2,7 +2,6 @@
 """Restore only ordinary project files from a private, integrity-checked gzip archive."""
 import os
 import shutil
-import stat
 import sys
 import tarfile
 from pathlib import Path, PurePosixPath
