@@ -80,7 +80,11 @@ export function middleware(request: NextRequest) {
       );
     }
 
-    if (isPathProtected(pathname)) {
+    // Stripe authenticates webhook delivery with stripe-signature in its own
+    // route handler. Requiring our internal N8N_API_KEY here blocks real
+    // Stripe events before the verified-signature handler ever runs.
+    // Exact-path exception only; all other webhooks stay x-api-key protected.
+    if (pathname !== "/api/webhooks/stripe" && isPathProtected(pathname)) {
       const apiKey = request.headers.get("x-api-key");
       const expectedKey = process.env.N8N_API_KEY;
       if (expectedKey !== undefined && expectedKey !== null) {

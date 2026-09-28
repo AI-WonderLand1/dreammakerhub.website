@@ -73,15 +73,10 @@ async function syncUserTier(
     );
   if (profileError) throw profileError;
 
-  const { error: usageProfileError } = await supabase
-    .from("user_profiles")
-    .update({
-      subscription_plan: plan,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", userId);
-  if (usageProfileError) throw usageProfileError;
-
+  // The live DreamMakerHub database currently has profiles + subscriptions,
+  // but no user_profiles table. Paid access reads the Stripe-verified
+  // subscriptions table; an optional legacy profile mirror must not cause a
+  // successfully paid subscription to fail webhook processing.
   await syncAuthPlan(supabase, userId, plan);
 }
 
