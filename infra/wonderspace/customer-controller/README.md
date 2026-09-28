@@ -4,7 +4,12 @@
 two-customer isolation checks, measured Railway usage, and safe restore tests
 have completed. This service does not connect to the operator's IDE.
 
-Railway project: `wonderspace-customer-sandboxes` (dedicated private project).
+Proposed location: the **existing** Railway project `lucid-integrity`.
+This is a deployment plan only: do not create any service, environment, or
+project without separate operator approval. If approved, the controller must
+be its own service, not the existing personal `WonderSpace-IDE` or its disk.
+Production project tokens can reach other services in their environment;
+review token scope and environment isolation before turning on customer VMs.
 Connect the confirmed `AI-WonderLand1/dreammakerhub.website` GitHub repository
 on `Master`, root `/infra/wonderspace/customer-controller`, with
 `infra/wonderspace/customer-controller/railway.toml`. Use one replica.
@@ -15,10 +20,10 @@ operator's `ide.dreammakerhub.website` hostname.
 - `SUPABASE_URL` — existing DreamMakerHub Supabase project URL.
 - `SUPABASE_PUBLISHABLE_KEY` — project public publishable key.
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only secret with access to project
-  storage/ledger. Only on this dedicated controller. Never in a sandbox.
-- `RAILWAY_TOKEN` — environment-scoped **project token**, generated in the dedicated Railway customer-sandboxes project Settings → Tokens for production. Railway's Sandbox SDK automatically detects this name and applies the correct project-token authentication. Do not use a broad account token. Never put it into the sandbox VM.
+  storage/ledger. Only on the approved controller service. Never in a sandbox.
+- `RAILWAY_TOKEN` — environment-scoped **project token**, generated in the explicitly approved environment of the existing Railway project Settings → Tokens. Railway's Sandbox SDK automatically detects this name and applies the correct project-token authentication. Do not use a broad account token. Never put it into the sandbox VM.
 - `RAILWAY_ENVIRONMENT_ID` — Railway automatically injects it into the
-  deployed controller. For a local smoke test, supply the dedicated project's
+  deployed controller. For a local smoke test, supply the approved environment's
   test environment ID privately.
 - `WONDERSPACE_GATEWAY_MASTER_SECRET` — random `openssl rand -hex 32`,
   generated privately and NEVER inherited by customer VMs. Each VM gets a
@@ -37,11 +42,18 @@ The existing website service additionally needs:
 - `NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED` — `true` *last*, once
   two-user auth/terminal isolation and actual spend have been validated.
 
-**Bootstrapping** (after explicit spend approval): in the dedicated Railway
+**Bootstrapping** (after explicit spend and deployment approval): in the approved Railway
 project/environment, prepare the clean checkpoint and run the existing
 `../railway-sandboxes/scripts/checkpoint-gzip-roundtrip.mjs` test.
 The checkpoint scripts require `CONFIRM_BILLABLE_SANDBOX_TEST=YES` and a
-privately configured account/workspace token; tokens may not appear in CI logs.
+privately configured environment-scoped project token; tokens may not appear in CI logs.
+
+**Data boundary:** the no-VM browser editor already saves owner-verified
+editable files in the existing Supabase `_projects` and `_project_files` tables.
+The controller separately saves per-sandbox gzip archives in private Supabase
+Storage. Those files are **not currently synchronized**. Do not promise shared
+editing between the browser editor and customer Linux VMs until the bridge is
+implemented and ownership, conflicts and restore are tested.
 
 The controller uses an atomic service-role RPC to reserve 15 minutes for a
 10-minute VM session, with a single global concurrent VM. It verifies each
