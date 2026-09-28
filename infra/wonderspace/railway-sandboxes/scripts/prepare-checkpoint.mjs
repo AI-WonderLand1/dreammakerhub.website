@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 if (process.env.CONFIRM_BILLABLE_SANDBOX_TEST !== "YES") {
   throw new Error("Set CONFIRM_BILLABLE_SANDBOX_TEST=YES after approving Railway sandbox charges.");
 }
-if (!process.env.RAILWAY_API_TOKEN || !process.env.RAILWAY_ENVIRONMENT_ID) {
+if (!(process.env.RAILWAY_TOKEN || process.env.RAILWAY_API_TOKEN) || !process.env.RAILWAY_ENVIRONMENT_ID) {
   throw new Error("Set Railway credentials privately in the execution environment.");
 }
 
