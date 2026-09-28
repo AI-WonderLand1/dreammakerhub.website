@@ -291,8 +291,9 @@ async function saveAndStop(row, reason = "user") {
         state: "stopped", sandbox_id: null, gateway_domain: null,
         session_nonce: null, expires_at: null, last_error_code: null,
         updated_at: new Date().toISOString(),
-      }).eq("id", row.id).eq("state", "saving").eq("sandbox_id", current.sandbox_id);
-      if (finish.error) throw finish.error;
+      }).eq("id", row.id).eq("state", "saving").eq("sandbox_id", current.sandbox_id)
+        .select("id").maybeSingle();
+      if (finish.error || !finish.data) throw new HttpError(503, "Could not verify stopped state");
       // Keep only this workspace\u0027s newest full-disk checkpoint; never prune another owner.
       try {
         const all = await Sandbox.checkpoints();
