@@ -54,6 +54,9 @@ with tarfile.open(ARCHIVE, mode="r:gz") as archive:
         try:
             with os.fdopen(fd, "wb") as output:
                 shutil.copyfileobj(source, output, length=64 * 1024)
+                # Preserve safe owner read/write/execute bits; never restore setuid,
+                # setgid, sticky or world-access permissions from an untrusted tar.
+                os.fchmod(output.fileno(), (member.mode & 0o700) | 0o600)
         finally:
             source.close()
 print("Private workspace gzip restored")
