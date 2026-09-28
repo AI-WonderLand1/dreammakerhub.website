@@ -16,8 +16,7 @@ operator's `ide.dreammakerhub.website` hostname.
 - `SUPABASE_PUBLISHABLE_KEY` — project public publishable key.
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only secret with access to project
   storage/ledger. Only on this dedicated controller. Never in a sandbox.
-- `RAILWAY_API_TOKEN` — an appropriate token with access to this *isolated
-  sandbox project*. Use the narrowest available scope; keep private.
+- `RAILWAY_TOKEN` — environment-scoped **project token**, generated in the dedicated Railway customer-sandboxes project Settings → Tokens for production. Railway's Sandbox SDK automatically detects this name and applies the correct project-token authentication. Do not use a broad account token. Never put it into the sandbox VM.
 - `RAILWAY_ENVIRONMENT_ID` — Railway automatically injects it into the
   deployed controller. For a local smoke test, supply the dedicated project's
   test environment ID privately.
