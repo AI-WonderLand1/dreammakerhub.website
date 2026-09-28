@@ -97,7 +97,7 @@ archive into the second, verifies its contents and destroys the second.
 Neither script creates a public domain or accesses customer/owner files.
 
 Prerequisites: Node 22+, `npm install` in **this directory**, approved
-Railway usage, a privately configured `RAILWAY_API_TOKEN` (workspace/account
+Railway usage, a privately configured `RAILWAY_TOKEN` (workspace/account
 token with access to this project) and `RAILWAY_ENVIRONMENT_ID` pointing to
 the intended isolated **test** environment. Do not put tokens in GitHub.
 The scripts refuse to run unless `CONFIRM_BILLABLE_SANDBOX_TEST=YES` is
