@@ -39,6 +39,8 @@ try {
 
   const setup = await base.exec(
     "set -eu; (id coder >/dev/null 2>&1 || useradd -m -s /bin/bash coder); " +
+    "(id wonderspace-proxy >/dev/null 2>&1 || useradd --system --no-create-home -s /usr/sbin/nologin wonderspace-proxy); " +
+    "chmod 0700 /home/coder; " +
     "install -d -m 0750 -o coder -g coder /home/coder/project; " +
     "code-server --version; node --check /opt/wonderspace/gateway.mjs; " +
     "python3 -m py_compile /opt/wonderspace/export.py /opt/wonderspace/restore.py; " +
