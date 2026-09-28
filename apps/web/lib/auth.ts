@@ -46,8 +46,12 @@ export async function requireUserId(req: Request): Promise<string | null> {
   if (!supabaseUrl || !supabaseAnonKey) return null;
 
   const authHeader = req.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7).trim();
+  if (authHeader !== null) {
+    // Match the project storage and route helpers: scheme is case-insensitive
+    // and any standard whitespace separator is permitted. An invalid explicit
+    // Authorization header must never fall back to a different cookie identity.
+    const match = /^Bearer\s+(\S+)$/i.exec(authHeader.trim());
+    const token = match?.[1];
     if (!token) return null;
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
