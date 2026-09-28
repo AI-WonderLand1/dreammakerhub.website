@@ -59,7 +59,7 @@ const projectLabel = (type?: string | null) => {
 const projectToolAction = (type: string | null | undefined, projectId: string) => {
   const value = normalizedType(type);
   const projectQuery = `projectId=${encodeURIComponent(projectId)}`;
-  if (["workspace", "code"].includes(value)) return { label: "IDE", href: `/wonderspace?${projectQuery}` };
+  if (["workspace", "code"].includes(value)) return { label: "Browser IDE", href: `/dashboard/projects/${encodeURIComponent(projectId)}/files` };
   if (["game", "3d", "3d_scene", "playcanvas"].includes(value)) return { label: "3D Studio", href: `/dashboard/3dhub?${projectQuery}` };
   if (value === "npc") return { label: "NPC Studio", href: `/wonder-play?${projectQuery}` };
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(value)) return { label: "AI Tools", href: `/dashboard/agents?${projectQuery}` };
