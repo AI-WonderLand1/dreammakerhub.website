@@ -13,7 +13,7 @@ if (!process.env.RAILWAY_API_TOKEN || !process.env.RAILWAY_ENVIRONMENT_ID) {
   throw new Error("Railway credentials must be set privately in the execution environment.");
 }
 
-const CHECKPOINT = "wonderspace-clean-v1";
+const CHECKPOINT = "wonderspace-clean-v2";
 const checkpoints = await Sandbox.checkpoints();
 if (!checkpoints.some((item) => item.key === CHECKPOINT)) {
   throw new Error("Prepare the clean checkpoint first with npm run prepare:checkpoint.");
