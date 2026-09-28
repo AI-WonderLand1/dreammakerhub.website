@@ -44,9 +44,13 @@ describe('Stripe entitlement contract', () => {
   it('derives paid access from the actual Stripe subscription price', () => {
     const webhook = read('apps/web/app/api/webhooks/stripe/route.ts');
     expect(webhook).toContain('function resolvedPaidPlan(subscription: Stripe.Subscription)');
-    expect(webhook).toContain('price.id === plan.stripePriceId');
-    expect(webhook).toContain('price.unit_amount === plan.price');
-    expect(webhook).toContain('price.recurring.interval === "month"');
+    expect(webhook).toContain('stripePriceMatchesPlan(price, plan, "month")');
+    expect(webhook).toContain('stripePriceMatchesPlan(price, plan, "year")');
+    const selector = read('apps/web/lib/billing/stripe-catalog-price.ts');
+    expect(selector).toContain('price.id === expectedPriceId');
+    expect(selector).toContain('actualProductId === plan.stripeProductId');
+    expect(selector).toContain('price.unit_amount === expectedAmount');
+    expect(selector).toContain('price.recurring?.interval === interval');
     expect(webhook).toContain('resolved.plan !== metadataPlan');
     expect(webhook).toContain('syncUserTier');
   });
