@@ -40,5 +40,9 @@ describe("Stripe webhook middleware authentication", () => {
     expect(handler).toContain('request.headers.get("stripe-signature")');
     expect(handler).toContain("stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)");
     expect(handler).toContain("if (!STRIPE_WEBHOOK_SECRET || !signature)");
+    expect(handler).toContain('await syncAuthPlan(supabase, userId, plan)');
+    expect(handler).toContain('.from("subscriptions")');
+    expect(handler).toContain('.from("profiles")');
+    expect(handler).not.toContain('.from("user_profiles")');
   });
 });
