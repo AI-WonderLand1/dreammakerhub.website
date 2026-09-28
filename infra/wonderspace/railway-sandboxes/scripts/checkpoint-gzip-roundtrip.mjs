@@ -9,7 +9,7 @@ import { Sandbox } from "railway";
 if (process.env.CONFIRM_BILLABLE_SANDBOX_TEST !== "YES") {
   throw new Error("Set CONFIRM_BILLABLE_SANDBOX_TEST=YES only after approving Railway usage.");
 }
-if (!process.env.RAILWAY_API_TOKEN || !process.env.RAILWAY_ENVIRONMENT_ID) {
+if (!(process.env.RAILWAY_TOKEN || process.env.RAILWAY_API_TOKEN) || !process.env.RAILWAY_ENVIRONMENT_ID) {
   throw new Error("Railway credentials must be set privately in the execution environment.");
 }
 
