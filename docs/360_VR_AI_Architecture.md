@@ -1,3 +1,4 @@
+{% raw %}
 # 360° Photorealistic VR AI NPC Architecture Blueprint
 
 This document outlines the software engineering structure, data pipeline, and engine wiring required to integrate autonomous AI characters into 360° photorealistic virtual environments (similar to the 360city.com framework).
@@ -257,3 +258,4 @@ app.post('/voice', async (c) => {
   // Update NPC state based on LLM response
 });
 ```
+{% endraw %}
