@@ -4,7 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import { Sandbox } from "railway";
 
 const required = ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY",
-  "RAILWAY_API_TOKEN", "RAILWAY_ENVIRONMENT_ID", "WONDERSPACE_GATEWAY_MASTER_SECRET"];
+  "RAILWAY_ENVIRONMENT_ID", "WONDERSPACE_GATEWAY_MASTER_SECRET"];
+// Railway SDK prefers RAILWAY_TOKEN (environment-scoped project token), with
+// RAILWAY_API_TOKEN (broader bearer account/workspace token) only as a fallback.
+if (!process.env.RAILWAY_TOKEN && !process.env.RAILWAY_API_TOKEN) {
+  throw new Error("Set a Railway project token as RAILWAY_TOKEN for this isolated environment.");
+}
 for (const name of required) {
   if (!process.env[name]) throw new Error("Missing required private controller variable: " + name);
 }
