@@ -1,0 +1,35 @@
+name: WonderSpace native Sandbox security checks
+on:
+  pull_request:
+    paths:
+      - 'infra/wonderspace/railway-sandboxes/**'
+      - 'infra/wonderspace/customer-controller/**'
+      - 'apps/web/app/api/wonderspace/sandboxes/**'
+      - 'apps/web/lib/wonderspace/**'
+      - 'apps/web/app/wonderspace/on-demand/**'
+      - '.github/workflows/wonderspace-sandbox-runtime.yml'
+  push:
+    branches:
+      - Master
+    paths:
+      - 'infra/wonderspace/railway-sandboxes/**'
+      - 'infra/wonderspace/customer-controller/**'
+permissions:
+  contents: read
+jobs:
+  gateway-and-controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test isolated signed gateway, Python archive scripts and checkpoint syntax
+        run: |
+          npm install --prefix infra/wonderspace/railway-sandboxes --ignore-scripts --no-audit --no-fund
+          npm run check --prefix infra/wonderspace/railway-sandboxes
+      - name: Validate server-only customer controller entrypoint
+        run: |
+          npm install --prefix infra/wonderspace/customer-controller --ignore-scripts --no-audit --no-fund
+          npm run check --prefix infra/wonderspace/customer-controller
