@@ -9,7 +9,6 @@ import { setTimeout as delay } from "node:timers/promises";
 const HOST = "sandbox-test.up.railway.app";
 const SECRET = "ab".repeat(32);
 const WORKSPACE = randomUUID();
-const SERVER = "http://127.0.0.1:8080";
 function ticket() {
   const payload = Buffer.from(JSON.stringify({
     w: WORKSPACE, id: randomUUID(), exp: Date.now() + 45000,
