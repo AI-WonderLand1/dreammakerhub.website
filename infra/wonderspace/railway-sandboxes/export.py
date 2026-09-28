@@ -11,7 +11,7 @@ OUTPUT = Path("/tmp/wonderspace-save.tar.gz")
 MAX_FILES = 10000
 MAX_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE = 16 * 1024 * 1024
-if len(sys.argv) != 1 or not ROOT.is_dir() or OUTPUT.is_symlink():
+if len(sys.argv) != 1 or ROOT.is_symlink() or not ROOT.is_dir() or OUTPUT.is_symlink():
     raise SystemExit("Invalid workspace export")
 files = 0
 total = 0
