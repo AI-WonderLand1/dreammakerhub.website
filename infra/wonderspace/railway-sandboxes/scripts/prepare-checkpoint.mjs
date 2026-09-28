@@ -10,7 +10,7 @@ if (!process.env.RAILWAY_API_TOKEN || !process.env.RAILWAY_ENVIRONMENT_ID) {
   throw new Error("Set Railway credentials privately in the execution environment.");
 }
 
-const CHECKPOINT = "wonderspace-clean-v1";
+const CHECKPOINT = "wonderspace-clean-v2";
 const existing = await Sandbox.checkpoints();
 if (existing.some((item) => item.key === CHECKPOINT)) {
   console.log("Clean WonderSpace checkpoint already exists; leaving it unchanged.");
