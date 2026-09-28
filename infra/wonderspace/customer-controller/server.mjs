@@ -203,7 +203,7 @@ async function startWorkspace(user, id) {
     await restoreArchive(sandbox, created.data);
     await background(sandbox, "runuser -u coder -- code-server --bind-addr 127.0.0.1:8081 --auth none --disable-telemetry --disable-update-check /home/coder/project");
     await background(sandbox, "node /opt/wonderspace/gateway.mjs");
-    await checked("curl -fsS --retry 5 --retry-delay 1 http://127.0.0.1:8080/healthz", sandbox, 25);
+    await checked("curl -fsS -H 'Host: probe.up.railway.app' --retry 5 --retry-delay 1 http://127.0.0.1:8080/healthz", sandbox, 25);
     const domain = domainName(sandbox);
     const running = await db.from("wonderspace_sandbox_workspaces")
       .update({ state: "running", gateway_domain: domain,
@@ -292,7 +292,8 @@ async function autosave(row) {
 }
 let sweeping = false;
 async function sweep() {
-  if (sweeping || process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED !== "true") return;
+  // Cleanup must continue even when public launch is disabled or paused.
+  if (sweeping) return;
   sweeping = true;
   try {
     const result = await db.from("wonderspace_sandbox_workspaces").select("*")
