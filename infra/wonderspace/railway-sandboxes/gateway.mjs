@@ -93,7 +93,7 @@ function handleAuth(req, res) {
   res.writeHead(303, {
     Location: "/",
     "Set-Cookie": "__Host-wonderspace=" + raw + "." + sign(raw) +
-      "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=" + Math.ceil((exp - now) / 1000),
+      "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + Math.ceil((exp - now) / 1000),
     "Cache-Control": "private, no-store",
     "Referrer-Policy": "no-referrer",
     "X-Frame-Options": "DENY",
@@ -113,8 +113,11 @@ const server = http.createServer((req, res) => {
   if (Date.now() >= deadline) return headers(req, res, 410, "Workspace session expired");
   if (path === "/auth/start" && req.method === "GET") return handleAuth(req, res);
   if (!authorized(req)) return headers(req, res, 401, "Sign in through DreamMakerHub");
-  if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && req.headers.origin &&
-      !sameOrigin(req)) return headers(req, res, 403, "Wrong origin");
+  if (!["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+      ((req.headers.origin && !sameOrigin(req)) ||
+       req.headers["sec-fetch-site"] === "cross-site")) {
+    return headers(req, res, 403, "Wrong origin");
+  }
   res.setHeader("Cache-Control", "private, no-store");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("X-Frame-Options", "DENY");
