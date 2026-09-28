@@ -17,26 +17,26 @@ export type PaidAIUser = {
  * not a paid subscription tier.
  */
 export async function requirePaidAIUser(req: NextRequest): Promise<PaidAIUser | NextResponse> {
-  let userId: string | null = null;
+  const unauthorized = () => NextResponse.json(
+    { ok: false, error: { code: "UNAUTHENTICATED", message: "Login required" } },
+    { status: 401 },
+  );
+
+  // Prefer the explicit browser/CLI Bearer identity when supplied. The project
+  // storage layer uses this same token for RLS; never mix a cookie identity
+  // from one account with the Bearer token from another account.
+  if (req.headers.has("authorization")) {
+    if (!/^Bearer\s+\S+$/i.test(req.headers.get("authorization")?.trim() || "")) return unauthorized();
+    const userId = await requireUserId(req);
+    return userId ? { userId } : unauthorized();
+  }
 
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (!error && user?.id) userId = user.id;
+    if (!error && user?.id) return { userId: user.id };
   } catch {
-    // Fall through to explicit bearer-token verification below.
+    // Fail closed when the server session cannot be verified.
   }
-
-  if (!userId && req.headers.get("authorization")?.startsWith("Bearer ")) {
-    userId = await requireUserId(req);
-  }
-
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: { code: "UNAUTHENTICATED", message: "Login required" } },
-      { status: 401 },
-    );
-  }
-
-  return { userId };
+  return unauthorized();
 }
