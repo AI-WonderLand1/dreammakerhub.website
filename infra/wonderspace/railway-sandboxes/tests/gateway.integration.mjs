@@ -18,10 +18,21 @@ function ticket() {
     .update(payload).digest("base64url");
 }
 async function request(path, extras = {}) {
-  return fetch(SERVER + path, {
-    redirect: "manual",
-    headers: { Host: HOST, ...(extras.headers || {}) },
-    ...extras,
+  return new Promise((resolve, reject) => {
+    const request = http.request({
+      hostname: "127.0.0.1", port: 8080, path, method: extras.method || "GET",
+      headers: { Host: HOST, ...(extras.headers || {}) },
+    }, response => {
+      const chunks = [];
+      response.on("data", chunk => chunks.push(chunk));
+      response.on("end", () => resolve({
+        status: response.statusCode,
+        headers: { get: key => response.headers[key.toLowerCase()] || null },
+        text: async () => Buffer.concat(chunks).toString("utf8"),
+      }));
+    });
+    request.on("error", reject);
+    request.end(extras.body);
   });
 }
 function websocketAttempt(cookie) {
@@ -57,14 +68,16 @@ test("gateway rejects anonymous users, replayed tickets and cross-origin websock
   child.stderr.on("data", chunk => { stderr += chunk.toString(); });
   try {
     let ready = false;
+    let lastHealthStatus = 'no response';
     for (let attempt = 0; attempt < 40; attempt++) {
       try {
         const health = await request("/healthz");
+        lastHealthStatus = health.status;
         if (health.status === 200) { ready = true; break; }
       } catch {}
       await delay(100);
     }
-    assert.ok(ready, "Gateway did not become healthy: " + stderr);
+    assert.ok(ready, "Gateway did not become healthy (last HTTP status: " + lastHealthStatus + "): " + stderr);
     assert.equal((await request("/")).status, 401);
     const link = "/auth/start?ticket=" + encodeURIComponent(ticket());
     const login = await request(link);
