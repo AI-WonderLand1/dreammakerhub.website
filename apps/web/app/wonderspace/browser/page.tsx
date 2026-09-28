@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 
 type Project = {
   id: string;
@@ -32,6 +32,7 @@ export default function WonderSpaceBrowserPage() {
       setState('loading');
       setError('');
       try {
+        await ensureSupabaseConfig();
         const supabase = createClient();
         if (!supabase) throw new Error('Project authentication is not configured.');
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -41,7 +42,12 @@ export default function WonderSpaceBrowserPage() {
           return;
         }
 
-        const response = await fetch('/api/projects', { cache: 'no-store', credentials: 'same-origin' });
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch('/api/projects', {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: session?.access_token ? { Authorization: 'Bearer ' + session.access_token } : {},
+        });
         if (!active) return;
         if (response.status === 401 || response.status === 403) {
           setState('signin');
@@ -78,11 +84,18 @@ export default function WonderSpaceBrowserPage() {
     setCreating(true);
     setError('');
     try {
+      await ensureSupabaseConfig();
+      const supabase = createClient();
+      const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+      if (!session?.access_token) {
+        setState('signin');
+        return;
+      }
       const response = await fetch('/api/projects', {
         method: 'POST',
         cache: 'no-store',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
         body: JSON.stringify({ name: name.trim(), type: 'workspace' }),
       });
       const result = await response.json().catch(() => null);
