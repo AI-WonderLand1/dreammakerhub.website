@@ -135,6 +135,8 @@ async function saveArchive(sandbox, row) {
   if (upload.error) throw new HttpError(503, "Could not save private workspace snapshot");
   const update = await db.from("wonderspace_sandbox_workspaces").update({
     snapshot_path: path, snapshot_sha256: hash, snapshot_bytes: bytes.length,
+    previous_snapshot_path: row.snapshot_path || null,
+    previous_snapshot_sha256: row.snapshot_sha256 || null,
     snapshot_version: row.snapshot_version + 1,
     last_autosave_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   }).eq("id", row.id).eq("user_id", row.user_id)
@@ -143,6 +145,13 @@ async function saveArchive(sandbox, row) {
     // Do not move the pointer if a concurrent save won. An orphaned immutable
     // object may be deleted later, without risking the previously committed snapshot.
     throw new HttpError(503, "Snapshot metadata not committed; workspace stays running");
+  }
+  // Keep at most two committed gzip generations per customer workspace.
+  // Only delete the previous-previous file *after* the pointer moves.
+  const expired = row.previous_snapshot_path;
+  if (typeof expired === "string" && expired.startsWith(row.user_id + "/" + row.id + "/") &&
+      expired !== row.snapshot_path && expired !== path) {
+    try { await db.storage.from(BUCKET).remove([expired]); } catch { /* safe orphan cleanup later */ }
   }
 }
 async function createWorkspace(user, body) {
