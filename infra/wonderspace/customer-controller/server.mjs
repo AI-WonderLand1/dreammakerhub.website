@@ -182,9 +182,14 @@ async function startWorkspace(user, id) {
   try {
     const checkpoints = await Sandbox.checkpoints();
     if (!checkpoints.some(cp => cp.key === CHECKPOINT)) throw new HttpError(503, "Clean IDE checkpoint has not been prepared");
+    const checkpointPrefix = "ws-v1-" + row.id.replaceAll("-", "") + "-";
+    const privateName = typeof row.last_disk_checkpoint === "string" &&
+      row.last_disk_checkpoint.startsWith(checkpointPrefix) &&
+      checkpoints.some(cp => cp.key === row.last_disk_checkpoint)
+      ? row.last_disk_checkpoint : null;
     const deadline = Date.now() + DURATION_MINUTES * 60_000;
     const secret = deriveSecret(update.data);
-    sandbox = await Sandbox.create(CHECKPOINT, {
+    sandbox = await Sandbox.create(privateName || CHECKPOINT, {
       idleTimeoutMinutes: 15,
       networkIsolation: "PRIVATE",
       domains: [{ port: 8080 }],
@@ -200,13 +205,16 @@ async function startWorkspace(user, id) {
       .eq("id", id).eq("user_id", user.id).eq("state", "starting")
       .select("*").single();
     if (created.error || !created.data) throw new HttpError(503, "Sandbox tracking unavailable");
-    await restoreArchive(sandbox, created.data);
+    // A private full-disk checkpoint already contains the customer home;
+    // otherwise restore the newest checksum-verified portable gzip archive.
+    if (!privateName) await restoreArchive(sandbox, created.data);
     await background(sandbox, "runuser -u coder -- code-server --bind-addr 127.0.0.1:8081 --auth none --disable-telemetry --disable-update-check /home/coder/project");
     await background(sandbox, "node /opt/wonderspace/gateway.mjs");
     await checked("curl -fsS -H 'Host: probe.up.railway.app' --retry 5 --retry-delay 1 http://127.0.0.1:8080/healthz", sandbox, 25);
     const domain = domainName(sandbox);
     const running = await db.from("wonderspace_sandbox_workspaces")
       .update({ state: "running", gateway_domain: domain,
+        last_disk_checkpoint: null,
         expires_at: new Date(deadline).toISOString(), updated_at: new Date().toISOString() })
       .eq("id", id).eq("user_id", user.id).eq("state", "starting")
       .select("*").single();
@@ -259,6 +267,25 @@ async function saveAndStop(row, reason = "user") {
       const sandbox = await Sandbox.connect(current.sandbox_id);
       // Persist the immutable gzip blob and its SHA-256 before deleting the VM.
       await saveArchive(sandbox, current);
+      // Native checkpoint retains the *entire private VM disk* (including
+      // customer-installed tools, extensions and home files) for quick resume.
+      // gzip remains the portable recovery source when checkpoints expire.
+      let checkpointName = null;
+      const prefix = "ws-v1-" + current.id.replaceAll("-", "") + "-";
+      try {
+        const candidate = prefix + randomBytes(8).toString("hex");
+        await sandbox.checkpoint(candidate);
+        checkpointName = candidate;
+      } catch {
+        // Checkpoint quota/storage failure must not discard a saved gzip.
+      }
+      const checkpointWrite = await db.from("wonderspace_sandbox_workspaces")
+        .update({ last_disk_checkpoint: checkpointName })
+        .eq("id", row.id).eq("state", "saving")
+        .eq("sandbox_id", current.sandbox_id).select("id").maybeSingle();
+      if (checkpointWrite.error || !checkpointWrite.data) {
+        throw new HttpError(503, "Checkpoint state could not be committed; retaining the running VM");
+      }
       await sandbox.destroy();
       const finish = await db.from("wonderspace_sandbox_workspaces").update({
         state: "stopped", sandbox_id: null, gateway_domain: null,
@@ -266,6 +293,17 @@ async function saveAndStop(row, reason = "user") {
         updated_at: new Date().toISOString(),
       }).eq("id", row.id).eq("state", "saving").eq("sandbox_id", current.sandbox_id);
       if (finish.error) throw finish.error;
+      // Keep only the current full-disk checkpoint for this workspace.
+      // Cleanup never deletes the clean golden image or other users\u0027 snapshots.
+      const prefix = "ws-v1-" + current.id.replaceAll("-", "") + "-";
+      try {
+        const all = await Sandbox.checkpoints();
+        for (const cp of all) {
+          if (cp.key.startsWith(prefix) && cp.key !== checkpointName) {
+            try { await Sandbox.deleteCheckpoint(cp.id); } catch { /* safe to retry later */ }
+          }
+        }
+      } catch { /* Retain unused checkpoints rather than risk live data. */ }
     } catch {
       // Fail closed. Preserve the VM if it might still contain unsaved work,
       // and block new starts while reconciliation retries.
