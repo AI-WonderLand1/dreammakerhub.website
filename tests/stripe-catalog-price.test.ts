@@ -22,7 +22,7 @@ function price(
   return {
     id, product, unit_amount: amount, currency: "usd",
     type: "recurring", active, recurring: {
-      interval, usage_type: "licensed",
+      interval, interval_count: 1, usage_type: "licensed",
     },
   } as unknown as Stripe.Price;
 }
@@ -59,6 +59,13 @@ describe("Stripe catalogue checkout and signed-webhook price matching", () => {
     )).toBeNull();
     expect(stripePriceMatchesPlan(wrongAmount, pro, "month")).toBe(false);
     expect(stripePriceMatchesPlan(wrongTerm, pro, "month")).toBe(false);
+    const everyThreeMonths = price("price_three_months", "prod_new_pro", 3900, "month");
+    everyThreeMonths.recurring!.interval_count = 3;
+    expect(stripePriceMatchesPlan(everyThreeMonths, pro, "month")).toBe(false);
+    expect(selectCatalogCheckoutPriceId([everyThreeMonths], pro, "month")).toBeNull();
+    const everyTwoYears = price("price_two_years", "prod_new_pro", 39000, "year");
+    everyTwoYears.recurring!.interval_count = 2;
+    expect(stripePriceMatchesPlan(everyTwoYears, pro, "year")).toBe(false);
   });
 
   it("accepts a legacy explicit price only if no product was configured", () => {
