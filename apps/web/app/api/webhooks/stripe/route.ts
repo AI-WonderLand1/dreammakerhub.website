@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { logger } from '@/lib/logger';
 import { stripe } from "@/lib/stripe";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { stripePriceMatchesPlan } from "@/lib/billing/stripe-catalog-price";
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -26,18 +27,13 @@ function resolvedPaidPlan(subscription: Stripe.Subscription): {
 
   for (const id of ["pro", "team"] as const) {
     const plan = PLANS[id];
-    const monthlyMatch = Boolean(plan.stripePriceId) &&
-      price.id === plan.stripePriceId &&
-      price.unit_amount === plan.price &&
-      price.recurring.interval === "month" &&
-      price.recurring.usage_type === "licensed";
+    // Match the verified Stripe product AND the advertised recurring amount.
+    // The same matcher is used by checkout, so a valid payment never grants
+    // a different subscription merely because its metadata names that plan.
+    const monthlyMatch = stripePriceMatchesPlan(price, plan, "month");
     if (monthlyMatch) return { plan: id, interval: "month", priceId: price.id };
 
-    const yearlyMatch = Boolean(plan.stripePriceYearlyId) &&
-      price.id === plan.stripePriceYearlyId &&
-      price.unit_amount === plan.yearlyPrice &&
-      price.recurring.interval === "year" &&
-      price.recurring.usage_type === "licensed";
+    const yearlyMatch = stripePriceMatchesPlan(price, plan, "year");
     if (yearlyMatch) return { plan: id, interval: "year", priceId: price.id };
   }
   return null;

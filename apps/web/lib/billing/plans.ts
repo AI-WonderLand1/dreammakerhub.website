@@ -12,6 +12,8 @@ export type PlanDefinition = {
   interval: "month" | "year";
   description: string;
   features: string[];
+  // Stripe product ID is the stable catalogue identity; checkout resolves its verified Price.
+  stripeProductId?: string;
   stripePriceId?: string;
   stripePriceYearlyId?: string;
   highlight?: boolean;
@@ -49,6 +51,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     yearlyPriceDisplay: "$390/yr ($32.50/mo)",
     interval: "month",
     description: "For builders who want long-lived saved environments, larger AI usage, and more simultaneous compute.",
+    stripeProductId: process.env.STRIPE_CATALOG_PRODUCT_PRO_ID,
     stripePriceId: process.env.STRIPE_PRICE_PRO_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_PRO_YEARLY_ID,
     highlight: true,
@@ -74,6 +77,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     yearlyPriceDisplay: "$1,290/yr ($107.50/mo)",
     interval: "month",
     description: "A pooled workspace and AI budget for teams that need many saved environments without keeping every machine running.",
+    stripeProductId: process.env.STRIPE_CATALOG_PRODUCT_GUILD_ID,
     stripePriceId: process.env.STRIPE_PRICE_TEAM_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_TEAM_YEARLY_ID,
     trialDays: 7,
