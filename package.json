@@ -57,7 +57,8 @@
     "typescript": "^5.4.0",
     "typescript-eslint": "^8.61.0",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.2",
+    "vite": "^8.2.1"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.2",
@@ -130,5 +131,8 @@
     "zod": "^4.4.3",
     "mongodb": "^7.6.0"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  }
 }
