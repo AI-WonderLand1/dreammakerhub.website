@@ -55,6 +55,14 @@
 - Training a foundation model, new 3D engines, major builder redesigns, and optional integrations.
 - Retiring UpCloud before backed-up services have verified Railway/AWS replacements.
 
+### Deferred: Lightning AI on-demand 3D GPU
+- [ ] Verify the current Lightning AI plan, free GPU allowance, Studio versus deployed endpoint, and supported programmatic start/sleep controls for the Qwen2.5-Coder-1.5B-Instruct 8-bit 3D AI setup. Do not assume free GPUs can always auto-start.
+- [ ] Implement an authenticated, rate-limited 3D generation request endpoint on Railway that creates durable, user-owned jobs in Supabase; reject duplicates and enforce a maximum queue size.
+- [ ] Build a worker/trigger that starts or wakes the Lightning GPU only when a queued job exists, waits for model readiness, processes jobs in bounded batches, and reports queued/running/failed/completed status.
+- [ ] Set a configurable maximum GPU runtime and idle timeout; stop or sleep the GPU after the queue drains. Prevent overlapping starts, handle failed startups and interrupted jobs, and never silently switch to paid compute or purchase credits.
+- [ ] Save generated 3D outputs, job state, training checkpoints and LoRA adapters to persistent storage outside ephemeral GPU sessions before shutdown. Keep training jobs separate from customer inference.
+- [ ] Test end to end with a test account: idle GPU -> request -> startup -> Qwen/code-and-3D tool execution -> saved asset -> idle shutdown; simulate free-capacity exhaustion, restart, retry and billing-limit conditions. Document observed Lightning usage and cost.
+
 ## Verified starting point (Sept 26; recheck before closing tasks)
 - Railway latest deployments: main website, AI-PLAYGROUND and wonderplay-3D **SUCCESS**; Railway Postgres **FAILED**.
 - Railway custom domains are attached, but that alone does not validate public DNS/TLS or customer functionality.
