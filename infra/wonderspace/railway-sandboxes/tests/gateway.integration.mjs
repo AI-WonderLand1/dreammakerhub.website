@@ -56,7 +56,7 @@ function websocketAttempt(cookie, origin) {
 test("gateway rejects anonymous users, replayed tickets and cross-origin websocket access", async () => {
   const backend = http.createServer((_req, res) => res.end("isolated code-server mock"));
   backend.on("upgrade", (_req, socket) => {
-    socket.write("HTTP/1.1 101 Switching Protocols\\r\\nConnection: Upgrade\\r\\nUpgrade: websocket\\r\\n\\r\\n");
+    socket.write("HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n");
   });
   await new Promise(resolve => backend.listen(8081, "127.0.0.1", resolve));
   const child = spawn(process.execPath, ["gateway.mjs"], {
