@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   requirePaidAIUser: vi.fn(),
   getProjectMetadata: vi.fn(),
   listFiles: vi.fn(),
+  listInternalProjectFilesByPrefix: vi.fn(),
+  updateProjectFileAtomically: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   loggerError: vi.fn(),
@@ -17,6 +19,8 @@ vi.mock("@/app/api/ai/auth", () => ({ requirePaidAIUser: mocks.requirePaidAIUser
 vi.mock("@/lib/projects/storage", () => ({
   getProjectMetadata: mocks.getProjectMetadata,
   listFiles: mocks.listFiles,
+  listInternalProjectFilesByPrefix: mocks.listInternalProjectFilesByPrefix,
+  updateProjectFileAtomically: mocks.updateProjectFileAtomically,
   readFile: mocks.readFile,
   writeFile: mocks.writeFile,
 }));
@@ -46,6 +50,18 @@ beforeEach(() => {
   mocks.requirePaidAIUser.mockResolvedValue({ userId: owner });
   mocks.getProjectMetadata.mockResolvedValue({ id: projectId, ownerId: owner });
   mocks.listFiles.mockImplementation(async () => Array.from(files.keys()));
+  mocks.listInternalProjectFilesByPrefix.mockImplementation(async (_project: string, _user: string, prefix: string) =>
+    Array.from(files.entries()).filter(([path]) => path.startsWith(prefix))
+      .map(([path, content]) => ({ path, content })));
+  mocks.updateProjectFileAtomically.mockImplementation(async (
+    _project: string, _user: string, path: string, mutate: (value: string) => string,
+  ) => {
+    const existing = files.get(path);
+    if (existing === undefined) throw new Error("ITEM_NOT_FOUND");
+    const next = mutate(existing);
+    files.set(path, next);
+    return next;
+  });
   mocks.readFile.mockImplementation(async (_project: string, _user: string, path: string) => files.get(path) ?? null);
   mocks.writeFile.mockImplementation(async (_project: string, _user: string, path: string, content: string) => {
     files.set(path, content);
@@ -100,7 +116,7 @@ describe("WonderSpace native project issues and discussion threads", () => {
     expect(denied.status).toBe(401);
     expect(mocks.writeFile).not.toHaveBeenCalled();
 
-    mocks.listFiles.mockRejectedValueOnce(new Error("Forbidden"));
+    mocks.listInternalProjectFilesByPrefix.mockRejectedValueOnce(new Error("Forbidden"));
     const foreign = await listItems(request("/work-items?kind=issue"), context);
     expect(foreign.status).toBe(403);
     expect(mocks.readFile).not.toHaveBeenCalled();
@@ -147,6 +163,12 @@ describe("general code editor cannot overwrite first-party repository metadata",
     expect(route).toContain('value === ".wonderspace" || value.startsWith(".wonderspace/")');
     expect(route).toContain("if (reservedNativePath(path)) continue");
     expect(route).toContain("!reservedNativePath(value)");
+    const storage = readFileSync(join(process.cwd(), "apps/web/lib/projects/storage.ts"), "utf8");
+    expect(storage).toContain("isReservedWonderSpacePath(normalized)");
+    expect(storage).toContain("isReservedWonderSpacePath(oldNormalized) || isReservedWonderSpacePath(newNormalized)");
+    expect(storage).toContain('.eq("updated_at", previousTimestamp)');
+    expect(storage).toContain("listInternalProjectFilesByPrefix");
+
   });
 
   it("does not send first-party project tabs to GitHub", () => {
