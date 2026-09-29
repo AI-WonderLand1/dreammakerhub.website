@@ -4,7 +4,7 @@ import { requirePaidAIUser } from "@/app/api/ai/auth";
 import { logger } from "@/lib/logger";
 import {
   captureSourceVersion, listSourceVersions, loadSourceVersion,
-  listFiles, readFile, isReservedWonderSpacePath,
+  readCurrentProjectSourceFiles,
 } from "@/lib/projects/storage";
 
 type Context = { params: Promise<{ projectId: string }> };
@@ -22,6 +22,11 @@ function fail(error: unknown): NextResponse {
     return NextResponse.json({
       error: "Version history is full (50). Export your versions before continuing.",
     }, { status: 409, headers: noStore });
+  }
+  if (reason === "SOURCE_COMPARE_TOO_LARGE") {
+    return NextResponse.json({
+      error: "Too many working-tree files to compare; download this version instead.",
+    }, { status: 413, headers: noStore });
   }
   if (reason === "SOURCE_CHECKPOINT_TOO_LARGE") {
     return NextResponse.json({
@@ -78,18 +83,7 @@ export async function GET(req: NextRequest, { params }: Context) {
       });
     }
 
-    const current: Record<string, string> = {};
-    const paths = (await listFiles(projectId, auth.userId))
-      .filter(path => !isReservedWonderSpacePath(path));
-    if (paths.length > 200) {
-      return NextResponse.json({
-        error: "Too many working-tree files to compare; download this saved version instead.",
-      }, { status: 413, headers: noStore });
-    }
-    for (const path of paths) {
-      const content = await readFile(projectId, auth.userId, path);
-      if (content !== null) current[path] = content;
-    }
+    const current = await readCurrentProjectSourceFiles(projectId, auth.userId);
     const saved = version.files;
     const savedKeys = Object.keys(saved);
     const currentKeys = Object.keys(current);
