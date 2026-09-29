@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import {
   Bell,
   Bot,
@@ -66,7 +67,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    fetch("/api/projects")
+    fetchAuthenticatedProject("/api/projects")
       .then(async (response) => response.ok ? response.json() : { projects: [] })
       .then((data) => {
         if (!cancelled) setProjects(Array.isArray(data.projects) ? data.projects : []);
