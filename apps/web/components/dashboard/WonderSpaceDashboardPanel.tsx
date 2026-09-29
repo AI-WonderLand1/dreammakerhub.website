@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Code2, FolderOpen, Monitor, Plus } from "lucide-react";
@@ -17,21 +17,18 @@ export default function WonderSpaceDashboardPanel({
   requestedProjectId?: string | null;
   onCreate: () => void;
 }) {
-  const [selection, setSelection] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectProject = (projectId: string) => {
-    setSelection(projectId);
+    if (!projects.some(project => project.id === projectId)) return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("projectId", projectId);
     router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
   };
   const selected = useMemo(
-    () => projects.find(item => item.id === selection) ||
-      projects.find(item => item.id === requestedProjectId) ||
-      projects[0] || null,
-    [projects, requestedProjectId, selection],
+    () => projects.find(item => item.id === requestedProjectId) || projects[0] || null,
+    [projects, requestedProjectId],
   );
   const editHref = selected
     ? `/dashboard/projects/${encodeURIComponent(selected.id)}/files`
@@ -44,12 +41,6 @@ export default function WonderSpaceDashboardPanel({
     params.set("projectId", selected.id);
     router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
   }, [pathname, requestedProjectId, router, searchParams, selected]);
-
-  useEffect(() => {
-    // When navigating to a dashboard URL carrying an explicit project, reset
-    // the local selection so code, AI tools and repo tabs use that project.
-    setSelection(null);
-  }, [requestedProjectId]);
 
   return (
     <section aria-label="WonderSpace dashboard" className="mb-5 space-y-3">
