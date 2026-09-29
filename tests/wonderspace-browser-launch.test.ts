@@ -36,7 +36,8 @@ describe('WonderSpace launch-safe browser IDE', () => {
     expect(gate).toContain('href="/wonderspace/browser"');
     expect(gate).toContain('<BrowserIdeEntry />');
     expect(gate).toContain('<CloudIdePaused />');
-    expect(gate).toContain('<CloudIdePaused />');
+    expect(gate).toContain('<CustomerSandboxIdeEntry />');
+    expect(gate).not.toContain('CustomerWorkspaceLaunch');
     expect(dashboard).toContain('label: "Browser IDE"');
     expect(dashboard).toContain('/dashboard/projects/');
     expect(browser).toContain('a Linux terminal and isolated cloud runtime are not included');
