@@ -27,18 +27,10 @@ USING (
   )
 );
 
-CREATE POLICY "Owners create their source versions"
-ON public._project_source_versions FOR INSERT TO authenticated
-WITH CHECK (
-  owner_id = auth.uid()::text
-  AND EXISTS (
-    SELECT 1 FROM public._projects project
-    WHERE project.id = project_id AND project.owner_id = auth.uid()::text
-  )
-);
-
-REVOKE ALL ON public._project_source_versions FROM anon;
-GRANT SELECT, INSERT ON public._project_source_versions TO authenticated;
+-- Clients can READ their own versions but cannot insert unbounded or forged
+-- snapshots directly. The tightly scoped RPC is the only creation path.
+REVOKE ALL ON public._project_source_versions FROM anon, authenticated;
+GRANT SELECT ON public._project_source_versions TO authenticated;
 
 -- PostgreSQL captures a consistent file tree within one query/transaction,
 -- assigns the next version under a project-scoped lock, and refuses excess
@@ -49,7 +41,7 @@ CREATE OR REPLACE FUNCTION public.capture_project_source_version(
 )
 RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY INVOKER
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
@@ -73,6 +65,7 @@ BEGIN
     RAISE EXCEPTION 'SOURCE_INVALID_TITLE' USING ERRCODE = 'P0001';
   END IF;
 
+  -- Serialize only version creation for this project, not every editor save.
   PERFORM pg_advisory_xact_lock(hashtextextended(p_project_id, 783221));
 
   IF (
