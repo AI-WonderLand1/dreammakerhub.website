@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --test release-gates.test.mjs"
+    "check": "node --check server.mjs && node --test release-gates.node-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
