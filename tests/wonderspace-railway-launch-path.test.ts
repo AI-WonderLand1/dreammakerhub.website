@@ -28,6 +28,15 @@ describe("Railway-only customer IDE entry", () => {
     expect(gate).toContain("Private Railway IDE: setup in progress");
   });
 
+  it("accepts actual Railway controller domains, not escaped backslash hostnames", () => {
+    const allowedHost = /^[a-z0-9-]+\.up\.railway\.app$/i;
+    expect(allowedHost.test("controller.up.railway.app")).toBe(true);
+    expect(allowedHost.test("wonderspace-controller-abc.up.railway.app")).toBe(true);
+    expect(allowedHost.test("controller.up.railway.app.attacker.test")).toBe(false);
+    expect(allowedHost.test("attacker.example.com")).toBe(false);
+    expect(page).toContain(String.raw`/^[a-z0-9-]+\.up\.railway\.app$/i`);
+  });
+
   it("creates, starts and opens the user sandbox in one explicit paid click", () => {
     expect(onDemand).toContain("Create & open IDE");
     expect(onDemand).toContain("Resume & open");
