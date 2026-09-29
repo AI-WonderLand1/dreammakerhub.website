@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { readFileSync } from "node:fs";
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/link", async () => {
   const React = await import("react");
   return {
-    default: ({ href, children }: { href: string; children: React.ReactNode }) =>
+    default: ({ href, children }: { href: string; children: ReactNode }) =>
       React.createElement("a", { href }, children),
   };
 });
