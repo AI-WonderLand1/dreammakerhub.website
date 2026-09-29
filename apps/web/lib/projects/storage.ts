@@ -474,3 +474,129 @@ export async function restoreRevision(projectId: string, ownerId: string, revisi
 export async function createSnapshot(projectId: string, ownerId: string): Promise<Revision> {
   return createRevision(projectId, ownerId, await listFiles(projectId, ownerId));
 }
+
+/**
+ * Independent, owner-scoped WonderSpace source checkpoints. Unlike builder
+ * revisions, these cannot be pruned by visual-editor undo history. Capturing
+ * a version is a single authenticated Postgres transaction; file editing
+ * remains in _project_files. Checkpoints are not Git repositories.
+ */
+export type SourceVersionSummary = {
+  id: string;
+  title: string;
+  versionNumber: number;
+  createdAt: string;
+};
+
+export type SourceVersion = SourceVersionSummary & {
+  files: Record<string, string>;
+};
+/**
+ * Match the first-party files API path rules, not the stricter 512-character
+ * rename limit. A legitimate long imported path must remain downloadable.
+ */
+function validSourceSnapshotPath(filePath: string): boolean {
+  return Boolean(filePath) && !filePath.startsWith("/") &&
+    !/[\\\x00-\x1f\x7f]/.test(filePath) &&
+    !isReservedWonderSpacePath(filePath) &&
+    filePath.split("/").every(part => part !== "" && part !== "." && part !== "..");
+}
+
+
+export async function listSourceVersions(projectId: string, ownerId: string): Promise<SourceVersionSummary[]> {
+  await assertOwner(projectId, ownerId);
+  const supabase = await getClient();
+  const { data, error } = await supabase.from("_project_source_versions")
+    .select("id,title,version_number,created_at")
+    .eq("project_id", projectId).eq("owner_id", ownerId)
+    .order("version_number", { ascending: false }).limit(50);
+  if (error) throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  return (data ?? []).map(row => ({
+    id: String(row.id),
+    title: String(row.title),
+    versionNumber: Number(row.version_number),
+    createdAt: String(row.created_at),
+  }));
+}
+
+export async function captureSourceVersion(
+  projectId: string, ownerId: string, title: string,
+): Promise<SourceVersionSummary & { fileCount: number }> {
+  await assertOwner(projectId, ownerId);
+  const supabase = await getClient();
+  // This RPC uses auth.uid() and RLS; do not invoke it with service-role keys.
+  const { data, error } = await supabase.rpc("capture_project_source_version", {
+    p_project_id: projectId, p_title: title,
+  });
+  if (error) {
+    const message = String(error.message ?? "");
+    if (/SOURCE_HISTORY_LIMIT/.test(message)) throw new Error("SOURCE_HISTORY_LIMIT");
+    if (/SOURCE_CHECKPOINT_TOO_LARGE/.test(message)) throw new Error("SOURCE_CHECKPOINT_TOO_LARGE");
+    if (/SOURCE_INVALID_TITLE/.test(message)) throw new Error("SOURCE_INVALID_TITLE");
+    if (/SOURCE_PROJECT_NOT_FOUND/.test(message)) throw new Error("Forbidden");
+    throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  }
+  if (!data || typeof data !== "object" || typeof data.id !== "string") {
+    throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  }
+  return {
+    id: data.id,
+    title: String(data.title),
+    versionNumber: Number(data.versionNumber),
+    createdAt: String(data.createdAt),
+    fileCount: Number(data.fileCount),
+  };
+}
+
+export async function loadSourceVersion(
+  projectId: string, ownerId: string, versionId: string,
+): Promise<SourceVersion> {
+  await assertOwner(projectId, ownerId);
+  const supabase = await getClient();
+  const { data, error } = await supabase.from("_project_source_versions")
+    .select("id,title,version_number,created_at,snapshot")
+    .eq("project_id", projectId).eq("owner_id", ownerId)
+    .eq("id", versionId).maybeSingle();
+  if (error) throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  if (!data) throw new Error("SOURCE_VERSION_NOT_FOUND");
+  if (!data.snapshot || typeof data.snapshot !== "object" ||
+      Array.isArray(data.snapshot)) throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+
+  // RLS protects owner identity; additionally validate every stored path
+  // before using it in ZIP exports or a diff. Never serve internal metadata.
+  const files: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const [filePath, content] of Object.entries(data.snapshot as Record<string, unknown>)) {
+    if (!validSourceSnapshotPath(filePath) ||
+        typeof content !== "string") throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+    files[filePath] = content;
+  }
+  return {
+    id: String(data.id), title: String(data.title),
+    versionNumber: Number(data.version_number),
+    createdAt: String(data.created_at), files,
+  };
+}
+
+/** One consistent owner-scoped SELECT for source comparisons, not N file requests. */
+export async function readCurrentProjectSourceFiles(
+  projectId: string, ownerId: string,
+): Promise<Record<string, string>> {
+  await assertOwner(projectId, ownerId);
+  const supabase = await getClient();
+  const { data, error } = await supabase.from("_project_files")
+    .select("file_path,content").eq("project_id", projectId)
+    .neq("file_path", ".wonderspace")
+    .not("file_path", "like", ".wonderspace/%")
+    .order("file_path", { ascending: true }).limit(201);
+  if (error) throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  if ((data ?? []).length > 200) throw new Error("SOURCE_COMPARE_TOO_LARGE");
+  const files: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const row of data ?? []) {
+    const filePath = String(row.file_path);
+    if (!validSourceSnapshotPath(filePath)) {
+      throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+    }
+    files[filePath] = String(row.content ?? "");
+  }
+  return files;
+}
