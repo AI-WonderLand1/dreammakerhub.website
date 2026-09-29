@@ -23,7 +23,7 @@ async function railwayCustomerPilot(): Promise<boolean> {
     const endpoint = new URL(configured);
     // Never let an operator-supplied or compromised env URL trigger SSRF.
     if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password ||
-        !/^[a-z0-9-]+\\.up\\.railway\\.app$/i.test(endpoint.hostname) ||
+        !/^[a-z0-9-]+\.up\.railway\.app$/i.test(endpoint.hostname) ||
         (endpoint.pathname !== '/' && endpoint.pathname !== '') ||
         endpoint.search || endpoint.hash || endpoint.port) return false;
     // A visible Create button requires a deployed responding controller,
@@ -46,10 +46,7 @@ export default async function WonderSpacePage() {
   // If the SSR cookie is missing, do not guess that the visitor is a customer.
   // The browser can have a verified Supabase session even when the proxy drops
   // SSR cookies. The client gate rechecks the role using a verified Bearer token.
-  if (isOperator) {
-    const customerPilot = await railwayCustomerPilot();
-    return <OperatorIdePanel customerPilot={customerPilot} />;
-  }
+  if (isOperator) return <OperatorIdePanel />;
 
   // No customer Coder/EKS form: the customer pilot uses isolated Railway
   // Sandboxes and stays invisible until its own runtime/controller gates pass.
