@@ -44,9 +44,9 @@ describe('Coder API remains the WonderSpace engine', () => {
     // Customer provisioning is deliberately unavailable until the pilot is enabled.
     expect(page).toContain('WonderSpaceOperatorGate');
     expect(operatorGate).toContain('<OperatorIdePanel />');
-    expect(operatorGate).toContain('<CustomerSandboxIdeEntry />');
+    expect(operatorGate).not.toContain('CustomerSandboxIdeEntry');
     expect(operatorGate).not.toContain('CustomerWorkspaceLaunch');
-    expect(operatorGate).toContain('Private Railway IDE: setup in progress');
+    expect(operatorGate).toContain('Customer VS Code IDE: setup in progress');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
   it('keeps repository selection visible but prevents launch when the template does not support it', () => {
