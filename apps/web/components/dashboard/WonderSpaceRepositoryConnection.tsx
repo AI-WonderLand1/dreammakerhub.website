@@ -14,7 +14,16 @@ export default function WonderSpaceRepositoryConnection({ projectId }: { project
 
   useEffect(() => {
     let live = true;
-    fetchAuthenticatedProject(path).then(async response => {
+    Promise.resolve().then(async () => {
+      await ensureSupabaseConfig();
+      const client = createClient();
+      const session = client ? (await client.auth.getSession()).data.session : null;
+      const githubToken = session?.provider_token && session.user.app_metadata?.provider === "github"
+        ? session.provider_token : null;
+      return fetchAuthenticatedProject(path, {
+        headers: githubToken ? { "x-github-oauth-token": githubToken } : {},
+      });
+    }).then(async response => {
       if (!response.ok) throw new Error("Repository status unavailable.");
       return response.json();
     }).then(result => {
