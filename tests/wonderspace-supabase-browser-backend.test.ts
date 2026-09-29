@@ -39,6 +39,17 @@ describe('Supabase-backed WonderSpace browser file API', () => {
     expect(second.redirect).toBe('error');
   });
 
+  it('also sends the refreshed token for dashboard project listing and creation', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { access_token: 'dashboard-token' } } });
+    await fetchAuthenticatedProject('/api/projects');
+    await fetchAuthenticatedProject('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const calls = vi.mocked(globalThis.fetch).mock.calls;
+    expect(calls.map(call => call[0])).toEqual(['/api/projects', '/api/projects']);
+    for (const [, init] of calls) {
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer dashboard-token');
+    }
+  });
+
   it('preserves cookie authentication when the browser has no Bearer session', async () => {
     mocks.getSession.mockResolvedValue({ data: { session: null } });
     await fetchAuthenticatedProject('/api/projects/p1/files');
