@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, GitCommitHorizontal, GitCompareArrows, RotateCcw } from "lucide-react";
+import { Download, GitCommitHorizontal, GitCompareArrows } from "lucide-react";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 
 type Version = {
