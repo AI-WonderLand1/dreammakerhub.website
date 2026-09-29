@@ -5,35 +5,19 @@ import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'WonderSpace | AI Wonderland',
-  description: 'Launch your private Coder cloud development workspace.',
+  description: 'Browser editor and separately isolated Railway Sandbox development environments.',
 };
 
 /**
- * UI readiness is not provisioning authorization: the API separately checks
- * owner identity, the pinned template, and a fresh usage controller heartbeat.
- * Do not present the customer creation wizard when known hard gates are off.
+ * The customer pathway is Railway Sandboxes, not AWS, EKS or the operator's
+ * shared Coder service. Both server authorization and public UI release must
+ * be enabled following the isolated, billable two-user smoke test.
+ * API/controller enforce their own independent owner and cost checks.
  */
-function customerCreationUiReady(): boolean {
-  const flags = [
-    'CODER_CUSTOMER_PROVISIONING_ENABLED',
-    'CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED',
-    'CODER_CUSTOMER_HARD_STOP_VERIFIED',
-    'CODER_SUPABASE_OIDC_VERIFIED',
-    'BILLABLE_OPERATIONS_ENABLED',
-    'CODER_WORKSPACE_CREATION_ENABLED',
-  ] as const;
-  return flags.every(name => process.env[name] === 'true') &&
-    [
-      'CODER_CUSTOMER_TEMPLATE_ID',
-      'CODER_CUSTOMER_TEMPLATE_VERSION_ID',
-      'CODER_CUSTOMER_TEMPLATE_NAME',
-      'CODER_OPERATOR_TEMPLATE_ID',
-      'CODER_OPERATOR_USER_ID',
-      'CODER_FREE_COMPUTE_MINUTES',
-      'CODER_CUSTOMER_RUNNER_SECRET',
-      'CODER_API_URL',
-      'CODER_API_TOKEN',
-    ].every(name => Boolean(process.env[name]));
+function railwayCustomerPilot(): boolean {
+  return process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED === 'true' &&
+    process.env.NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED === 'true' &&
+    Boolean(process.env.WONDERSPACE_CONTROLLER_URL);
 }
 
 export default async function WonderSpacePage() {
@@ -45,13 +29,12 @@ export default async function WonderSpacePage() {
   // The browser can have a verified Supabase session even when the proxy drops
   // SSR cookies. The client gate rechecks the role using a verified Bearer token.
   if (isOperator) {
-    const customerPilot = customerCreationUiReady();
+    const customerPilot = railwayCustomerPilot();
     return <OperatorIdePanel customerPilot={customerPilot} />;
   }
 
-  // Customer pod provisioning and browser IDE opening are deliberately
-  // independent. A private pod/PVC may be prepared while the direct-open route
-  // remains fail-closed until the DreamMakerHub-only gateway is verified.
-  const customerPilot = customerCreationUiReady();
+  // No customer Coder/EKS form: the customer pilot uses isolated Railway
+  // Sandboxes and stays invisible until its own runtime/controller gates pass.
+  const customerPilot = railwayCustomerPilot();
   return <WonderSpaceOperatorGate customerPilot={customerPilot} />;
 }
