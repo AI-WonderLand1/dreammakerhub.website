@@ -152,6 +152,16 @@ describe("one-page project workspace", () => {
     expect(shared.url).not.toContain("workspaceTab=code");
     expect(container.querySelector('[data-testid="real-editor-mount"]')).toBeNull();
     expect(container.textContent).toContain("Second site");
+    // Return to A without opening Code in B: do not issue a hidden refetch of A.
+    const chooser = container.querySelector("select") as HTMLSelectElement;
+    await act(async () => {
+      chooser.value = "first";
+      chooser.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await renderPanel();
+    expect(shared.url).toContain("projectId=first");
+    expect(container.querySelector('[data-testid="real-editor-mount"]')).toBeNull();
+    expect(shared.editorMounts).toBe(1);
   });
 
   it("warns rather than silently discarding unsaved code on project switch", async () => {
