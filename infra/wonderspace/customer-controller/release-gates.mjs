@@ -22,7 +22,7 @@ export function assertSafeControllerEnvironment(env) {
   // A pilot must be able to demonstrate independent identity boundaries.
   // This checks configuration shape, not successful two-user testing.
   const testers = (env.WONDERSPACE_TESTER_USER_IDS || "").split(",")
-    .map(id => id.trim()).filter(Boolean);
+    .map(id => id.trim().toLowerCase()).filter(Boolean);
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   if (testers.length < 2 || new Set(testers).size !== testers.length ||
       testers.some(id => !uuid.test(id))) {
