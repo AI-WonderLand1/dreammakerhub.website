@@ -20,7 +20,7 @@ function fail(error: unknown): NextResponse {
   }
   if (reason === "SOURCE_HISTORY_LIMIT") {
     return NextResponse.json({
-      error: "Version history is full (50). Export your versions before continuing.",
+      error: "Version history is full (50). Existing versions remain safe; archive support is coming.",
     }, { status: 409, headers: noStore });
   }
   if (reason === "SOURCE_COMPARE_TOO_LARGE") {
