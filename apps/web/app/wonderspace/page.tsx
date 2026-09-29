@@ -32,7 +32,7 @@ async function railwayCustomerPilot(): Promise<boolean> {
       cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(2500),
     });
     const status = response.ok ? await response.json().catch(() => null) : null;
-    return status?.ok === true;
+    return status?.ok === true && status?.runtimeEnabled === true;
   } catch {
     return false;
   }
