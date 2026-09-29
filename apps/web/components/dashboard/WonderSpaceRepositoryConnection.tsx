@@ -53,6 +53,7 @@ export default function WonderSpaceRepositoryConnection({ projectId }: { project
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.repository?.fullName) throw new Error(result.message || "Could not link repository.");
       setRepository(result.repository.fullName);
+      window.dispatchEvent(new Event("wonderspace:github-link-updated"));
       setInput("");
       setMessage("Repository linked. Reopen this project to refresh the navigation. Files are not synced automatically.");
     } catch (error) {
@@ -70,6 +71,7 @@ export default function WonderSpaceRepositoryConnection({ projectId }: { project
       const response = await fetchAuthenticatedProject(path, { method: "DELETE" });
       if (!response.ok) throw new Error("Could not unlink repository.");
       setRepository(null);
+      window.dispatchEvent(new Event("wonderspace:github-link-updated"));
       setMessage("Repository shortcut removed. Project files were not changed.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to unlink repository.");
