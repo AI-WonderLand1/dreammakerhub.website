@@ -491,6 +491,17 @@ export type SourceVersionSummary = {
 export type SourceVersion = SourceVersionSummary & {
   files: Record<string, string>;
 };
+/**
+ * Match the first-party files API path rules, not the stricter 512-character
+ * rename limit. A legitimate long imported path must remain downloadable.
+ */
+function validSourceSnapshotPath(filePath: string): boolean {
+  return Boolean(filePath) && !filePath.startsWith("/") &&
+    !/[\\\x00-\x1f\x7f]/.test(filePath) &&
+    !isReservedWonderSpacePath(filePath) &&
+    filePath.split("/").every(part => part !== "" && part !== "." && part !== "..");
+}
+
 
 export async function listSourceVersions(projectId: string, ownerId: string): Promise<SourceVersionSummary[]> {
   await assertOwner(projectId, ownerId);
@@ -553,9 +564,9 @@ export async function loadSourceVersion(
 
   // RLS protects owner identity; additionally validate every stored path
   // before using it in ZIP exports or a diff. Never serve internal metadata.
-  const files: Record<string, string> = {};
+  const files: Record<string, string> = Object.create(null) as Record<string, string>;
   for (const [filePath, content] of Object.entries(data.snapshot as Record<string, unknown>)) {
-    if (!validRenameInput(filePath) || isReservedWonderSpacePath(filePath) ||
+    if (!validSourceSnapshotPath(filePath) ||
         typeof content !== "string") throw new Error("SOURCE_HISTORY_UNAVAILABLE");
     files[filePath] = content;
   }
@@ -579,10 +590,10 @@ export async function readCurrentProjectSourceFiles(
     .order("file_path", { ascending: true }).limit(201);
   if (error) throw new Error("SOURCE_HISTORY_UNAVAILABLE");
   if ((data ?? []).length > 200) throw new Error("SOURCE_COMPARE_TOO_LARGE");
-  const files: Record<string, string> = {};
+  const files: Record<string, string> = Object.create(null) as Record<string, string>;
   for (const row of data ?? []) {
     const filePath = String(row.file_path);
-    if (!validRenameInput(filePath) || isReservedWonderSpacePath(filePath)) {
+    if (!validSourceSnapshotPath(filePath)) {
       throw new Error("SOURCE_HISTORY_UNAVAILABLE");
     }
     files[filePath] = String(row.content ?? "");
