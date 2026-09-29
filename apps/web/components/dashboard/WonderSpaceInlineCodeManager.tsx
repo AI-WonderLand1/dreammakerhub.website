@@ -88,8 +88,31 @@ function ActiveProjectFiles({ project }: { project: DashboardProject }) {
  * First-party project navigator and file editor share a project ID, without
  * an external code host or starting a VM. The actual editor fetches lazily.
  */
-export default function WonderSpaceInlineCodeManager({ project }: { project: DashboardProject | null }) {
+export default function WonderSpaceInlineCodeManager({
+  project, embedded = false,
+}: {
+  project: DashboardProject | null;
+  embedded?: boolean;
+}) {
   const [open, setOpen] = useState(false);
+  if (embedded) return (
+    <section aria-label="Native project code manager" className="overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0a1727]">
+      {project ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <p className="text-sm font-semibold text-white">Edit {project.name}</p>
+            <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/files`}
+              className="inline-flex items-center gap-1.5 text-xs text-cyan-200 hover:underline">
+              <ExternalLink size={14} aria-hidden="true" /> Full-page editor
+            </Link>
+          </div>
+          <ActiveProjectFiles key={project.id} project={project} />
+        </>
+      ) : (
+        <p className="p-4 text-sm text-slate-400">Select a project to manage its files.</p>
+      )}
+    </section>
+  );
   return (
     <section aria-label="Native project code manager" className="overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0a1727]">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
