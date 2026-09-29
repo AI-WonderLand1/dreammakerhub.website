@@ -26,12 +26,34 @@ export async function GET(req: NextRequest, { params }: Params) {
     const parsed: unknown = JSON.parse(file);
     const record = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
     const repository = parseGithubRepository(record.repository);
+    if (!repository) return NextResponse.json({ ok: true, repository: null });
+    // The link file can be edited through the customer's own file manager.
+    // Revalidate on EVERY navigation read; never trust its embedded timestamp
+    // as proof of GitHub access or allow it to grant backend permissions.
+    const githubToken = req.headers.get("x-github-oauth-token")?.trim();
+    if (githubToken && (githubToken.length > 1024 || /\s/.test(githubToken))) {
+      return fail("Invalid GitHub session.", 400);
+    }
+    const verified = await fetch(`https://api.github.com/repos/${repository}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
+      },
+      signal: AbortSignal.timeout(8000),
+      ...(githubToken ? { cache: "no-store" as const } : { next: { revalidate: 300 } }),
+    });
+    if (!verified.ok) return fail("GitHub repository could not be reverified.", 503);
+    const info = await verified.json();
+    if (parseGithubRepository(info?.full_name)?.toLowerCase() !== repository.toLowerCase()) {
+      return fail("GitHub returned a different repository.", 503);
+    }
+    if (info.private && !githubToken) return fail("Private repository authorization required.", 403);
     return NextResponse.json({
       ok: true,
-      repository: repository ? { fullName: repository, verifiedAt: typeof record.verifiedAt === "string" ? record.verifiedAt : null } : null,
+      repository: { fullName: info.full_name, verifiedAt: new Date().toISOString() },
     });
   } catch {
-    return fail("Project not found or connection unavailable.", 404);
+    return fail("GitHub connection unavailable or project access denied.", 503);
   }
 }
 
