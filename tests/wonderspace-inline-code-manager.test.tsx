@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 
 const mocks = vi.hoisted(() => ({
   fetchAuthenticatedProject: vi.fn(),
 }));
 
 vi.mock("next/link", () => ({
-  default: ({ href, children }: { href: string; children: unknown }) =>
+  default: ({ href, children }: { href: string; children: ReactNode }) =>
     createElement("a", { href }, children),
 }));
 vi.mock("@/lib/wonderspace/browser-project-fetch", () => ({
