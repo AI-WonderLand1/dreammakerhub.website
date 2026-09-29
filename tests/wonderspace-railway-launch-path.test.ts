@@ -10,6 +10,7 @@ describe("Railway-only customer IDE entry", () => {
   const proxy = source("apps/web/lib/wonderspace/customer-sandbox-controller.server.ts");
   const controller = source("infra/wonderspace/customer-controller/server.mjs");
   const release = source("infra/wonderspace/customer-controller/release-gates.mjs");
+  const onDemand = source("apps/web/app/wonderspace/on-demand/page.tsx");
 
   it("routes customers to per-user Railway sandboxes, never the shared operator Coder", () => {
     expect(page).toContain("async function railwayCustomerPilot()");
@@ -23,6 +24,16 @@ describe("Railway-only customer IDE entry", () => {
     expect(gate).toContain("/wonderspace/on-demand");
     expect(gate).not.toContain("CustomerWorkspaceLaunch");
     expect(gate).toContain("Private Railway IDE: setup in progress");
+  });
+
+  it("creates, starts and opens the user sandbox in one explicit paid click", () => {
+    expect(onDemand).toContain("Create & open IDE");
+    expect(onDemand).toContain("Resume & open");
+    expect(onDemand).toContain("sendAction(access, body.workspace.id, 'start')");
+    expect(onDemand).toContain("await openTicket(access, body.workspace.id)");
+    expect(onDemand).toContain("Workspace saved, but opening failed:");
+    expect(onDemand).toContain("Starts one metered ten-minute pilot session.");
+    expect(onDemand).not.toContain("Start IDE</button>");
   });
 
   it("requires a separate network, valid ownership, and bounded budget", () => {
