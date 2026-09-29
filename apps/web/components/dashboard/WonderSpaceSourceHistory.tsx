@@ -12,7 +12,7 @@ type Version = {
 };
 type Changes = { added: string[]; deleted: string[]; modified: string[] };
 type Comparison = { version: Version; changes: Changes; unchanged: number };
-type Props = { projectId: string };
+type Props = { projectId: string; hasUnsavedEdits?: boolean };
 
 const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
@@ -20,7 +20,7 @@ const formatTime = (timestamp: string) => {
 };
 
 /** One-click version checkpoints of already-saved files; no GitHub or VM. */
-export default function WonderSpaceSourceHistory({ projectId }: Props) {
+export default function WonderSpaceSourceHistory({ projectId, hasUnsavedEdits = false }: Props) {
   const [versions, setVersions] = useState<Version[]>([]);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function WonderSpaceSourceHistory({ projectId }: Props) {
   }, [endpoint]);
 
   async function saveVersion() {
-    if (busy) return;
+    if (busy || hasUnsavedEdits) return;
     setBusy(true);
     setError("");
     setComparison(null);
@@ -149,12 +149,17 @@ export default function WonderSpaceSourceHistory({ projectId }: Props) {
             maxLength={100} placeholder="Version note (optional)"
             className="w-full rounded-lg border border-white/15 bg-[#08111e] px-3 py-2 text-sm text-white placeholder:text-white/40" />
         </label>
-        <button type="button" disabled={busy || loading || versions.length >= 50}
+        <button type="button" disabled={busy || loading || hasUnsavedEdits || versions.length >= 50}
           onClick={() => void saveVersion()}
           className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">
           {busy ? "Working…" : "Save version"}
         </button>
       </div>
+      {hasUnsavedEdits && (
+        <p role="alert" className="mt-2 text-xs text-amber-200">
+          Save your current file in Code before creating a version. Only saved files are included.
+        </p>
+      )}
       <p className="mt-2 text-[11px] text-slate-500">
         Checkpoints are manual and limited to 50; current release supports text projects up to 1 MB.
         This is portable history, not Git branches or automatic Linux IDE sync.
