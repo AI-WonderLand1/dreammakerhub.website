@@ -42,15 +42,15 @@ export default function WonderSpaceProjectNavigation({
     { label: "Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/wonderspace/browser", selected: currentTab === "code" },
     { label: "History", icon: GitCommitHorizontal, href: projectPath ? `${projectPath}/files#version-history` : null, description: "Select a project to save, compare or download source versions." },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
-    { label: "Pull requests", icon: GitPullRequest, href: null, description: "Native branch reviews will be available after the WonderSpace version-control backend is verified." },
+    { label: "Pull requests", icon: GitPullRequest, href: null, description: "Native branch reviews will be available after the WonderSpace version-control backend is verified." , advanced: true },
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
-    { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." },
-    { label: "Actions", icon: PlayCircle, href: null, description: "Native CI runs are not connected yet. Existing customers' projects are not automatically executed." },
+    { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." , advanced: true },
+    { label: "Actions", icon: PlayCircle, href: null, description: "Native CI runs are not connected yet. Existing customers' projects are not automatically executed." , advanced: true },
     { label: "Projects", icon: PanelsTopLeft, href: id ? `/dashboard?projectId=${id}#projects` : "/dashboard#projects", selected: currentTab === "projects" },
-    { label: "Wiki", icon: BookOpen, href: projectPath ? `${projectPath}/wiki` : null, selected: currentTab === "wiki", description: "Select a DreamMakerHub project to edit its wiki." },
-    { label: "Security & quality", icon: ShieldCheck, href: `/dashboard/aetherguard${query}` },
-    { label: "Usage & insights", icon: Activity, href: `/dashboard/usage${query}` },
-    { label: "Settings", icon: Settings, href: `/dashboard/settings${query}` },
+    { label: "Wiki", icon: BookOpen, href: projectPath ? `${projectPath}/wiki` : null, selected: currentTab === "wiki", description: "Select a DreamMakerHub project to edit its wiki." , advanced: true },
+    { label: "Security & quality", icon: ShieldCheck, href: `/dashboard/aetherguard${query}` , advanced: true },
+    { label: "Usage & insights", icon: Activity, href: `/dashboard/usage${query}` , advanced: true },
+    { label: "Settings", icon: Settings, href: `/dashboard/settings${query}` , advanced: true },
   ];
 
   return (
