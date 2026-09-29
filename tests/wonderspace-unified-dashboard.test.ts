@@ -122,10 +122,25 @@ describe("owner-scoped GitHub repo shortcut API", () => {
     expect(mocks.writeFile).not.toHaveBeenCalled();
   });
 
+  it("does not trust a forged editable repo record as verified without a live GitHub check", async () => {
+    mocks.readFile.mockResolvedValue(JSON.stringify({
+      repository: "forged/private-repository", verifiedAt: "2099-01-01T00:00:00Z",
+    }));
+    vi.mocked(fetch).mockResolvedValue(new Response("", { status: 404 }));
+    const res = await GET(new NextRequest("http://localhost/api/projects/project-1/github-connection"), params);
+    expect(res.status).toBe(503);
+    expect(mocks.writeFile).not.toHaveBeenCalled();
+  });
+
   it("reads and unlinks the project-specific shortcut without deleting project files", async () => {
     mocks.readFile.mockResolvedValue(JSON.stringify({ repository: "owner/repo" }));
+    vi.mocked(fetch).mockResolvedValue(Response.json({ full_name: "owner/repo", private: false }));
     const req = new NextRequest("http://localhost/api/projects/project-1/github-connection");
     expect((await (await GET(req, params)).json()).repository.fullName).toBe("owner/repo");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.github.com/repos/owner/repo", expect.objectContaining({ headers: { Accept: "application/vnd.github+json" } }),
+    );
+    expect(mocks.readFile).toHaveBeenCalledWith(projectId, ownerId, ".wonderspace/github-repository.json");
     const res = await DELETE(new NextRequest(req.url, { method: "DELETE" }), params);
     expect(res.status).toBe(200);
     expect(mocks.deleteFile).toHaveBeenCalledWith(projectId, ownerId, ".wonderspace/github-repository.json");
