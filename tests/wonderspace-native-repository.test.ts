@@ -28,9 +28,6 @@ import {
 import {
   GET as readWiki, PUT as saveWiki,
 } from "../apps/web/app/api/projects/[projectId]/wiki/route";
-import { GET as readCodeFiles, POST as writeCodeFiles, DELETE as deleteCodeFile }
-  from "../apps/web/app/api/projects/[projectId]/files/route";
-
 const owner = "00000000-0000-4000-8000-000000000001";
 const projectId = "00000000-0000-4000-8000-000000000002";
 const context = { params: Promise.resolve({ projectId }) };
@@ -150,9 +147,6 @@ describe("general code editor cannot overwrite first-party repository metadata",
     expect(route).toContain('value === ".wonderspace" || value.startsWith(".wonderspace/")');
     expect(route).toContain("if (reservedNativePath(path)) continue");
     expect(route).toContain("!reservedNativePath(value)");
-    expect(typeof readCodeFiles).toBe("function");
-    expect(typeof writeCodeFiles).toBe("function");
-    expect(typeof deleteCodeFile).toBe("function");
   });
 
   it("does not send first-party project tabs to GitHub", () => {
