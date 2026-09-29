@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       repository: repository ? { fullName: repository, verifiedAt: typeof record.verifiedAt === "string" ? record.verifiedAt : null } : null,
     });
   } catch {
-    return fail("Cannot read your project's GitHub connection.", 500);
+    return fail("Project not found or connection unavailable.", 404);
   }
 }
 
@@ -95,6 +95,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     await deleteFile(projectId, owner, connectionPath);
     return NextResponse.json({ ok: true, repository: null });
   } catch {
-    return fail("Unable to unlink this GitHub repository.", 500);
+    return fail("Project not found or repository could not be unlinked.", 404);
   }
 }
