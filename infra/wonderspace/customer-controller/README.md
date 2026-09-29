@@ -4,24 +4,31 @@
 two-customer isolation checks, measured Railway usage, and safe restore tests
 have completed. This service does not connect to the operator's IDE.
 
-Proposed location: the **existing** Railway project `lucid-integrity`.
+Proposed location: the **existing** Railway project `lucid-integrity`,
+but in a **separate empty environment** such as `customer-ide-test`, never
+inside the production environment that hosts the website and database.
+Railway Sandbox public domains currently require `networkIsolation: "PRIVATE"`,
+which otherwise permits customer VMs to contact other services on that
+environment's private network. Separate environments create the needed
+network boundary; do not copy production services or their secrets into the
+customer sandbox environment.
+
 This is a deployment plan only: do not create any service, environment, or
-project without separate operator approval. If approved, the controller must
-be its own service, not the existing personal `WonderSpace-IDE` or its disk.
-Production project tokens can reach other services in their environment;
-review token scope and environment isolation before turning on customer VMs.
-Connect the confirmed `AI-WonderLand1/dreammakerhub.website` GitHub repository
-on `Master`, root `/infra/wonderspace/customer-controller`, with
-`infra/wonderspace/customer-controller/railway.toml`. Use one replica.
-The controller needs a generated HTTPS public hostname. Never use the
-operator's `ide.dreammakerhub.website` hostname.
+billable sandbox without separate operator approval. If approved, create ONE
+isolated controller service there, not another shared IDE or another project.
+Connect the existing repository on `Master`, service root
+`/infra/wonderspace/customer-controller`, one replica. Its public HTTPS
+Railway domain is used only by the website's authenticated server proxy.
+Never use the operator's `ide.dreammakerhub.website` hostname.
+Actual two-user isolation, gateway authentication and independently enforced
+cost cutoff must pass before public provisioning.
 
 **Private Railway variables (do not paste these into GitHub or chat):**
 - `SUPABASE_URL` — existing DreamMakerHub Supabase project URL.
 - `SUPABASE_PUBLISHABLE_KEY` — project public publishable key.
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only secret with access to project
   storage/ledger. Only on the approved controller service. Never in a sandbox.
-- `RAILWAY_TOKEN` — environment-scoped **project token**, generated in the explicitly approved environment of the existing Railway project Settings → Tokens. Railway's Sandbox SDK automatically detects this name and applies the correct project-token authentication. Do not use a broad account token. Never put it into the sandbox VM.
+- `RAILWAY_TOKEN` — **scoped project token** for ONLY the separately approved sandbox environment. The controller rejects broader `RAILWAY_API_TOKEN` fallback. Never put either token into a customer VM.
 - `RAILWAY_ENVIRONMENT_ID` — Railway automatically injects it into the
   deployed controller. For a local smoke test, supply the approved environment's
   test environment ID privately.
@@ -30,8 +37,17 @@ operator's `ide.dreammakerhub.website` hostname.
   unique short-lived derived gateway key.
 - `WONDERSPACE_CUSTOMER_RUNTIME_ENABLED` — `false` until the test
   checkpoint and cost gates have passed.
-- `WONDERSPACE_TESTER_USER_IDS` — comma-separated verified Supabase
-  auth.user UUIDs (two distinct non-operator test accounts).
+- `WONDERSPACE_CUSTOMER_ISOLATED_ENVIRONMENT_ID` — exactly the Railway-generated
+  ID of the separately approved empty sandbox environment.
+- `WONDERSPACE_PRIVATE_NETWORK_REVIEWED` — leave unset until you've
+  verified the sandbox environment does not contain production services,
+  database replicas, production secrets or the shared operator IDE; set to
+  `true` only after reviewing that isolation. Boot rejects an enabled
+  customer runtime in an environment called production, with an unexpected
+  environment ID, or with an unreviewed private network.
+- `WONDERSPACE_TESTER_USER_IDS` — two **distinct** verified non-operator
+  Supabase test accounts, configured directly on the isolated controller.
+  No account IDs need to be sent through chat.
 - `WONDERSPACE_MONTHLY_RESERVED_MINUTES` — test limit `30` initially.
   This is **not** an account-wide Railway billing ceiling.
 
