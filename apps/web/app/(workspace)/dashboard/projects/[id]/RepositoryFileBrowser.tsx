@@ -35,6 +35,7 @@ type RepositoryFileBrowserProps = {
   updatedLabel?: string;
   initialPath?: string | null;
   onFilesChange?: (files: Record<string, string>) => void;
+  onUnsavedChange?: (unsaved: boolean) => void;
 };
 
 const encoder = new TextEncoder();
@@ -288,6 +289,7 @@ export default function RepositoryFileBrowser({
   updatedLabel,
   initialPath,
   onFilesChange,
+  onUnsavedChange,
 }: RepositoryFileBrowserProps) {
   const [managedFiles, setManagedFiles] = useState<Record<string, string>>(files);
   const [currentPath, setCurrentPath] = useState("");
@@ -297,6 +299,11 @@ export default function RepositoryFileBrowser({
   const [exporting, setExporting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const unsaved = Boolean(selectedPath && (saving || fileContent !== (managedFiles[selectedPath] ?? "")));
+
+  useEffect(() => {
+    onUnsavedChange?.(unsaved);
+  }, [unsaved, onUnsavedChange]);
 
   useEffect(() => {
     setManagedFiles(files);

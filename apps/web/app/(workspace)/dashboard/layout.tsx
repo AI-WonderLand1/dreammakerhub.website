@@ -50,6 +50,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [librariesOpen, setLibrariesOpen] = useState(false);
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
@@ -106,9 +107,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return `${href}${separator}projectId=${encodeURIComponent(currentProject.id)}`;
   };
 
+  // Five destinations; secondary features live behind one "More" menu.
   const primaryItems = [
     { href: "/dashboard", label: "Home", icon: Home },
     { href: "/dashboard#projects", label: "Projects", icon: Folder },
+    { href: withProject("/wonder-build/builder"), label: "Build", icon: Pencil },
+    { href: withProject("/dashboard?workspaceTab=code"), label: "Code", icon: Code2 },
+    { href: withProject("/dashboard/3dhub"), label: "3D", icon: Box },
   ];
 
   const libraryItems = [
@@ -119,8 +124,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   ];
 
   const toolItems = [
-    { href: withProject("/wonder-build/builder"), label: "WonderBuild", icon: Pencil },
-    { href: withProject("/wonderspace"), label: "WonderSpace IDE", icon: Code2 },
+    { href: withProject("/wonderspace"), label: "Cloud Linux IDE (pilot)", icon: Code2 },
     { href: withProject("/dashboard/npc"), label: "My NPCs", icon: Bot },
     { href: withProject("/wonder-play"), label: "NPC-AI-SIM", icon: Bot },
     { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
@@ -129,7 +133,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/dashboard") return pathname === "/dashboard" && !["code", "history", "tools"].includes(searchParams.get("workspaceTab") || "");
+    if (href.startsWith("/dashboard?workspaceTab=code")) return pathname === "/dashboard" && searchParams.get("workspaceTab") === "code";
     if (href === "/dashboard#projects") return isProjectRoute;
     if (/^https?:\/\//.test(href)) return false;
     const pathOnly = href.split("?")[0].split("#")[0];
@@ -137,10 +142,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const libraryActive = libraryItems.some(({ href }) => isActive(href));
+  const extraActive = toolItems.some(({ href }) => isActive(href));
 
   useEffect(() => {
     if (libraryActive) setLibrariesOpen(true);
-  }, [libraryActive]);
+    if (libraryActive || extraActive) setExtrasOpen(true);
+  }, [libraryActive, extraActive]);
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -166,7 +173,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const activityHref = currentProject
     ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}#project-activity`
-    : "/dashboard#workspace-activity";
+    : "/dashboard#projects";
 
   const renderNavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Home }) => (
     <Link
@@ -205,7 +212,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Link href="/dashboard?create=project#projects" className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-blue-950/20">
               <Plus size={16} /> <span className="hidden sm:inline">Create</span><ChevronDown size={13} className="hidden sm:block" />
             </Link>
-            <Link href={activityHref} aria-label="Recent activity" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/65 hover:bg-white/5 hover:text-white">
+            <Link href={activityHref} aria-label={currentProject ? "Project activity" : "View projects"} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/65 hover:bg-white/5 hover:text-white">
               <Bell size={18} />
             </Link>
             <div className="relative hidden sm:block">
@@ -229,20 +236,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
                   >
                     <Settings size={16} /> Settings
-                  </Link>
-                  <Link
-                    href={withProject("/dashboard/npc")}
-                    onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
-                  >
-                    <Bot size={16} /> My NPCs
-                  </Link>
-                  <Link
-                    href={withProject("/wonder-play")}
-                    onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
-                  >
-                    <Bot size={16} /> NPC-AI-SIM
                   </Link>
                   <button
                     type="button"
@@ -282,16 +275,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </div>
             </Link>
 
-            {!isProjectRoute && (
-              <div className="rounded-xl border border-white/10 bg-[#0b1726] p-3">
-                <p className="text-[10px] font-semibold text-white/45">Organization <span className="font-normal text-white/25">(Optional)</span></p>
-                <p className="pb-2 pt-1 text-[10px] leading-4 text-white/35">No organization workspace is connected yet.</p>
-                <Link href="/dashboard/collaboration" className="mt-1 flex items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs text-white/65 hover:bg-white/5 hover:text-white">
-                  <Users size={13} /> Open team tools
-                </Link>
-              </div>
-            )}
-
             {isProjectRoute && currentProject && (
               <>
                 <Link href="/dashboard" className="block rounded-lg border border-white/10 px-3 py-2.5 text-xs text-blue-300 hover:bg-white/5">← Back to workspace</Link>
@@ -320,35 +303,48 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <nav className="px-3 pb-3">
             {primaryItems.map(renderNavLink)}
 
-            <div className="mb-1">
-              <button
-                type="button"
-                onClick={() => setLibrariesOpen((open) => !open)}
-                aria-expanded={librariesOpen}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${libraryActive ? "bg-blue-600/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
-              >
-                <Library size={18} />
-                <span className="flex-1 text-left">Libraries</span>
-                <ChevronDown size={14} className={`transition-transform ${librariesOpen ? "rotate-180" : ""}`} />
+            <div className="mt-1">
+              <button type="button" onClick={() => setExtrasOpen(value => !value)}
+                aria-expanded={extrasOpen} aria-controls="dashboard-more-tools"
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${(extraActive || libraryActive) ? "bg-blue-600/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}>
+                <Settings size={18} />
+                <span className="flex-1 text-left">More</span>
+                <ChevronDown size={14} className={`transition-transform ${extrasOpen ? "rotate-180" : ""}`} />
               </button>
-
-              {librariesOpen && (
-                <div className="ml-5 mt-1 border-l border-white/10 pl-2">
-                  {libraryItems.map(({ href, label, icon: Icon }) => (
-                    <Link
-                      key={`${label}-${href}`}
-                      href={href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition ${isActive(href) ? "bg-violet-500/15 text-violet-200" : "text-white/50 hover:bg-white/5 hover:text-white"}`}
+              {extrasOpen && (
+                <div id="dashboard-more-tools" className="ml-4 mt-1 border-l border-white/10 pl-2">
+      <div className="mb-1">
+                    <button
+                      type="button"
+                      onClick={() => setLibrariesOpen((open) => !open)}
+                      aria-expanded={librariesOpen}
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${libraryActive ? "bg-blue-600/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
                     >
-                      <Icon size={15} /> {label}
-                    </Link>
-                  ))}
+                      <Library size={18} />
+                      <span className="flex-1 text-left">Libraries</span>
+                      <ChevronDown size={14} className={`transition-transform ${librariesOpen ? "rotate-180" : ""}`} />
+                    </button>
+      
+                    {librariesOpen && (
+                      <div className="ml-5 mt-1 border-l border-white/10 pl-2">
+                        {libraryItems.map(({ href, label, icon: Icon }) => (
+                          <Link
+                            key={`${label}-${href}`}
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition ${isActive(href) ? "bg-violet-500/15 text-violet-200" : "text-white/50 hover:bg-white/5 hover:text-white"}`}
+                          >
+                            <Icon size={15} /> {label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {toolItems.map(renderNavLink)}
                 </div>
               )}
             </div>
 
-            {toolItems.map(renderNavLink)}
           </nav>
 
           <div className="mx-4 mb-4 overflow-hidden rounded-xl border border-violet-500/30 bg-[radial-gradient(circle_at_80%_20%,rgba(99,102,241,.55),transparent_35%),linear-gradient(135deg,#1e1b4b,#0b1630)] p-4">

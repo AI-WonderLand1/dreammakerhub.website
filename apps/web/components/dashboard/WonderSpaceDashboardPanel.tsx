@@ -1,15 +1,90 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Code2, FolderOpen, GitBranch, Monitor, Plus } from "lucide-react";
+import { Code2, FolderOpen, Plus, Settings2 } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
 import WonderSpaceInlineCodeManager from "./WonderSpaceInlineCodeManager";
 import WonderSpaceSourceHistory from "./WonderSpaceSourceHistory";
 
 type DashboardProject = { id: string; name: string; tool?: string | null; type?: string | null };
+export type WorkspaceTab = "overview" | "code" | "history" | "tools";
+const tabs: Array<{ key: WorkspaceTab; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "code", label: "Code" },
+  { key: "history", label: "History" },
+  { key: "tools", label: "More tools" },
+];
 
+function projectTool(project: DashboardProject): { label: string; href: string } {
+  const id = encodeURIComponent(project.id);
+  const kind = (project.tool || project.type || "").toLowerCase();
+  if (["workspace", "code"].includes(kind)) return { label: "Linux IDE status", href: `/wonderspace?projectId=${id}` };
+  if (["game", "3d", "3d_scene", "playcanvas"].includes(kind)) return { label: "Open 3D builder", href: `/dashboard/3dhub?projectId=${id}` };
+  if (kind === "npc") return { label: "Open NPC studio", href: `/wonder-play?projectId=${id}` };
+  if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(kind)) return { label: "Open AI tools", href: `/dashboard/agents?projectId=${id}` };
+  return { label: "Open visual builder", href: `/wonder-build/builder?projectId=${id}` };
+}
+
+/**
+ * Project-keyed tab body. Going from A to B (even back to A) creates a fresh
+ * instance, so neither historical "visited" state nor unsaved file data is
+ * silently reused for the wrong project.
+ */
+function ProjectWorkspaceViews({
+  selected, activeTab, unsavedCurrent, reportDirty,
+}: {
+  selected: DashboardProject | null;
+  activeTab: WorkspaceTab;
+  unsavedCurrent: boolean;
+  reportDirty: (projectId: string, dirty: boolean) => void;
+}) {
+  const [visitedCode, setVisitedCode] = useState(false);
+  const [visitedHistory, setVisitedHistory] = useState(false);
+  useEffect(() => {
+    if (activeTab === "code") setVisitedCode(true);
+    if (activeTab === "history") setVisitedHistory(true);
+  }, [activeTab]);
+  const codeMounted = Boolean(selected && (activeTab === "code" || visitedCode));
+  const historyMounted = Boolean(selected && (activeTab === "history" || visitedHistory));
+  return (
+    <>
+      {codeMounted && (
+        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
+          <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
+        </div>
+      )}
+      {historyMounted && selected && (
+        <div hidden={activeTab !== "history"} className="p-3 sm:p-4">
+          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
+        </div>
+      )}
+      {activeTab === "tools" && (
+        <div className="space-y-3 p-3 sm:p-4">
+          <WonderSpaceProjectNavigation projectId={selected?.id} advancedOnly />
+          {selected && (
+            <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
+              className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline">
+              <FolderOpen size={16} aria-hidden="true" /> Project details and settings
+            </Link>
+          )}
+          <p className="flex items-center gap-2 text-xs text-slate-400">
+            <Settings2 size={14} aria-hidden="true" />
+            Git pull requests and cloud CI are shown as planned until their backends are ready.
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * One project selector and four in-place views. Existing routes remain valid
+ * for deep links and advanced workflows; they are not extra onboarding steps.
+ * Once the user opens Code, keep its editor mounted across tab changes so
+ * unsaved local edits aren't silently discarded by opening History or Tools.
+ */
 export default function WonderSpaceDashboardPanel({
   projects,
   requestedProjectId,
@@ -23,20 +98,43 @@ export default function WonderSpaceDashboardPanel({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const selectProject = (projectId: string) => {
-    if (!projects.some(project => project.id === projectId)) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("projectId", projectId);
-    setShowGitHubConnection(false);
-    router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
-  };
+  const [dirtyProjectId, setDirtyProjectId] = useState<string | null>(null);
+  const reportDirty = useCallback((projectId: string, dirty: boolean) => {
+    setDirtyProjectId(current => dirty ? projectId : current === projectId ? null : current);
+  }, []);
   const selected = useMemo(
     () => projects.find(item => item.id === requestedProjectId) || projects[0] || null,
     [projects, requestedProjectId],
   );
-  const editHref = selected
-    ? `/dashboard/projects/${encodeURIComponent(selected.id)}/files`
-    : "/wonderspace/browser";
+  const unsavedCurrent = Boolean(selected && dirtyProjectId === selected.id);
+  const requestedTab = searchParams.get("workspaceTab");
+  const activeTab: WorkspaceTab = selected && tabs.some(tab => tab.key === requestedTab)
+    ? requestedTab as WorkspaceTab : "overview";
+
+  const replaceUrl = (projectId: string | null, tab: WorkspaceTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (projectId) params.set("projectId", projectId);
+    else params.delete("projectId");
+    if (tab === "overview") params.delete("workspaceTab");
+    else params.set("workspaceTab", tab);
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}${window.location.hash}`, { scroll: false });
+  };
+  const selectProject = (projectId: string) => {
+    if (!projects.some(project => project.id === projectId)) return;
+    if (projectId === selected?.id) return;
+    if (unsavedCurrent && !window.confirm("This project has unsaved code edits. Switch anyway and discard them?")) return;
+    setDirtyProjectId(null);
+    // Project switching resets view to Overview, preventing stale editor focus.
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("projectId", projectId);
+    params.delete("workspaceTab");
+    router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
+  };
+  const selectTab = (tab: WorkspaceTab) => {
+    if (!selected && tab !== "overview") return;
+    replaceUrl(selected?.id ?? null, tab);
+  };
 
   useEffect(() => {
     // Establish URL-level project context even for a normal /dashboard visit.
@@ -46,63 +144,34 @@ export default function WonderSpaceDashboardPanel({
     router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
   }, [pathname, requestedProjectId, router, searchParams, selected]);
 
+  const destination = selected ? projectTool(selected) : null;
+
   return (
-    <section aria-label="WonderSpace dashboard" className="mb-5 space-y-3">
-      <div className="rounded-2xl border border-cyan-400/30 bg-[#0e2030] p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-5">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-bold uppercase tracking-[.17em] text-cyan-200">
-              Available without a cloud VM
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-white">WonderSpace browser code editor</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              Open your DreamMakerHub project, create files and folders, edit code, and save to the same
-              account that powers your dashboard. The isolated Linux terminal is a separate pilot.
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Link href={editHref}
-                className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300">
-                <Code2 size={17} aria-hidden="true" /> {selected ? "Open selected project's editor" : "Open browser editor"}
-              </Link>
-              {selected && (
-                <button type="button" onClick={() => setShowGitHubConnection(value => !value)}
-                  aria-expanded={showGitHubConnection} aria-controls="wonderspace-dashboard-github"
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2.5 text-sm text-white hover:border-cyan-300/50">
-                  <GitBranch size={16} aria-hidden="true" /> {showGitHubConnection ? "Hide GitHub connection" : "Connect GitHub"}
-                </button>
-              )}
-              <Link href="/wonderspace"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2.5 text-sm text-white hover:border-cyan-300/50">
-                <Monitor size={16} aria-hidden="true" /> Linux IDE pilot
-              </Link>
-            </div>
-          </div>
-          <div className="w-full max-w-xs rounded-xl border border-white/10 bg-black/20 p-3">
-            <label htmlFor="wonderspace-selected-project" className="mb-2 block text-xs font-semibold text-cyan-200">
-              Current project
-            </label>
-            {projects.length > 0 ? (
-              <select id="wonderspace-selected-project" value={selected?.id ?? ""}
-                onChange={event => selectProject(event.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-[#081525] px-3 py-2 text-sm text-white">
+    <section aria-label="WonderSpace dashboard" className="mb-5 overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#0b1929]">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-5">
+        <div>
+          <h2 className="text-lg font-bold text-white">Project workspace</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Pick a project once. Edit, save versions and find its tools here.
+          </p>
+        </div>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          {projects.length > 0 ? (
+            <label className="min-w-0 flex-1 sm:w-60 sm:flex-none">
+              <span className="sr-only">Current project</span>
+              <select value={selected?.id ?? ""} onChange={event => selectProject(event.target.value)}
+                aria-label="Current project"
+                className="w-full rounded-lg border border-white/15 bg-[#081525] px-3 py-2.5 text-sm text-white">
                 {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
-            ) : (
-              <p className="rounded-lg border border-dashed border-white/20 p-3 text-xs text-slate-300">
-                Create a project to use the repository navigation.
-              </p>
-            )}
-            {selected && (
-              <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
-                className="mt-3 inline-flex items-center gap-2 text-xs text-cyan-200 hover:underline">
-                <FolderOpen size={14} aria-hidden="true" /> Open project overview
-              </Link>
-            )}
-            <button type="button" onClick={onCreate}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-300/30 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/10">
-              <Plus size={14} aria-hidden="true" /> Create a project
-            </button>
-          </div>
+            </label>
+          ) : (
+            <span className="text-xs text-slate-400">No project yet</span>
+          )}
+          <button type="button" onClick={onCreate}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-400 px-3 py-2.5 text-sm font-semibold text-slate-950">
+            <Plus size={15} aria-hidden="true" /> New project
+          </button>
         </div>
         <div className="mt-5 border-t border-white/10 pt-3">
           <p className="mb-2 text-xs text-slate-400">
@@ -118,9 +187,61 @@ export default function WonderSpaceDashboardPanel({
           </div>
         )}
       </div>
-      <WonderSpaceProjectNavigation projectId={selected?.id} />
-      <WonderSpaceInlineCodeManager project={selected} />
-      {selected && <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} />}
+
+      <nav aria-label="Project workspace views" className="flex items-center gap-1 overflow-x-auto border-y border-white/10 px-3 sm:px-4">
+        {tabs.map(tab => (
+          <button key={tab.key} type="button"
+            aria-current={activeTab === tab.key ? "page" : undefined}
+            disabled={!selected && tab.key !== "overview"}
+            onClick={() => selectTab(tab.key)}
+            className={`shrink-0 border-b-2 px-3 py-3 text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              activeTab === tab.key
+                ? "border-cyan-400 font-semibold text-white"
+                : "border-transparent text-slate-400 hover:text-white"
+            }`}>
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {unsavedCurrent && (
+        <p role="alert" className="mx-4 mt-3 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+          You have unsaved code edits. Go to Code and save your file before switching projects or saving a version.
+        </p>
+      )}
+
+      {activeTab === "overview" && (
+        <div className="px-4 py-5 sm:px-5">
+          {selected ? (
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <h3 className="truncate text-lg font-semibold text-white">{selected.name}</h3>
+                <p className="mt-1 text-sm text-slate-400">
+                  Your project files, versions and tools stay connected to this project.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => selectTab("code")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950">
+                  <Code2 size={16} aria-hidden="true" /> Edit files here
+                </button>
+                {destination && (
+                  <Link href={destination.href}
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-4 py-2.5 text-sm text-slate-100 hover:bg-white/5">
+                    {destination.label}
+                  </Link>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-300">Create your first project to open its editor and version history.</p>
+          )}
+        </div>
+      )}
+
+      <ProjectWorkspaceViews key={selected?.id ?? "no-project"}
+        selected={selected} activeTab={activeTab}
+        unsavedCurrent={unsavedCurrent} reportDirty={reportDirty} />
     </section>
   );
 }
