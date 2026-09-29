@@ -19,6 +19,9 @@ function fail(error: unknown) {
   if (message === "WORK_ITEM_LIMIT_REACHED") {
     return NextResponse.json({ error: "Project item limit reached" }, { status: 409 });
   }
+  if (message === "WORK_ITEM_CONFLICT") {
+    return NextResponse.json({ error: "This item changed in another tab. Reload and retry." }, { status: 409 });
+  }
   logger.error("[wonderspace/work-items] operation failed", error);
   return NextResponse.json({ error: "Unable to access project items" }, { status: 500 });
 }
