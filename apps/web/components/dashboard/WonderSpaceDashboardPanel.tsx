@@ -28,6 +28,58 @@ function projectTool(project: DashboardProject): { label: string; href: string }
 }
 
 /**
+ * Project-keyed tab body. Going from A to B (even back to A) creates a fresh
+ * instance, so neither historical "visited" state nor unsaved file data is
+ * silently reused for the wrong project.
+ */
+function ProjectWorkspaceViews({
+  selected, activeTab, unsavedCurrent, reportDirty,
+}: {
+  selected: DashboardProject | null;
+  activeTab: WorkspaceTab;
+  unsavedCurrent: boolean;
+  reportDirty: (projectId: string, dirty: boolean) => void;
+}) {
+  const [visitedCode, setVisitedCode] = useState(false);
+  const [visitedHistory, setVisitedHistory] = useState(false);
+  useEffect(() => {
+    if (activeTab === "code") setVisitedCode(true);
+    if (activeTab === "history") setVisitedHistory(true);
+  }, [activeTab]);
+  const codeMounted = Boolean(selected && (activeTab === "code" || visitedCode));
+  const historyMounted = Boolean(selected && (activeTab === "history" || visitedHistory));
+  return (
+    <>
+      {codeMounted && (
+        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
+          <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
+        </div>
+      )}
+      {historyMounted && selected && (
+        <div hidden={activeTab !== "history"} className="p-3 sm:p-4">
+          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
+        </div>
+      )}
+      {activeTab === "tools" && (
+        <div className="space-y-3 p-3 sm:p-4">
+          <WonderSpaceProjectNavigation projectId={selected?.id} />
+          {selected && (
+            <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
+              className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline">
+              <FolderOpen size={16} aria-hidden="true" /> Project details and settings
+            </Link>
+          )}
+          <p className="flex items-center gap-2 text-xs text-slate-400">
+            <Settings2 size={14} aria-hidden="true" />
+            Git pull requests and cloud CI are shown as planned until their backends are ready.
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
  * One project selector and four in-place views. Existing routes remain valid
  * for deep links and advanced workflows; they are not extra onboarding steps.
  * Once the user opens Code, keep its editor mounted across tab changes so
@@ -45,8 +97,6 @@ export default function WonderSpaceDashboardPanel({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [visitedCodeProject, setVisitedCodeProject] = useState<string | null>(null);
-  const [visitedHistoryProject, setVisitedHistoryProject] = useState<string | null>(null);
   const [dirtyProjectId, setDirtyProjectId] = useState<string | null>(null);
   const reportDirty = useCallback((projectId: string, dirty: boolean) => {
     setDirtyProjectId(current => dirty ? projectId : current === projectId ? null : current);
@@ -57,7 +107,7 @@ export default function WonderSpaceDashboardPanel({
   );
   const unsavedCurrent = Boolean(selected && dirtyProjectId === selected.id);
   const requestedTab = searchParams.get("workspaceTab");
-  const activeTab: WorkspaceTab = tabs.some(tab => tab.key === requestedTab)
+  const activeTab: WorkspaceTab = selected && tabs.some(tab => tab.key === requestedTab)
     ? requestedTab as WorkspaceTab : "overview";
 
   const replaceUrl = (projectId: string | null, tab: WorkspaceTab) => {
@@ -82,8 +132,6 @@ export default function WonderSpaceDashboardPanel({
   };
   const selectTab = (tab: WorkspaceTab) => {
     if (!selected && tab !== "overview") return;
-    if (tab === "code") setVisitedCodeProject(selected?.id ?? null);
-    if (tab === "history") setVisitedHistoryProject(selected?.id ?? null);
     replaceUrl(selected?.id ?? null, tab);
   };
 
@@ -95,15 +143,6 @@ export default function WonderSpaceDashboardPanel({
     router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
   }, [pathname, requestedProjectId, router, searchParams, selected]);
 
-  useEffect(() => {
-    // Also support directly opening a bookmarked /dashboard?workspaceTab=code link.
-    if (!selected) return;
-    if (activeTab === "code") setVisitedCodeProject(selected.id);
-    if (activeTab === "history") setVisitedHistoryProject(selected.id);
-  }, [activeTab, selected]);
-
-  const codeMounted = Boolean(selected && (activeTab === "code" || visitedCodeProject === selected.id));
-  const historyMounted = Boolean(selected && (activeTab === "history" || visitedHistoryProject === selected.id));
   const destination = selected ? projectTool(selected) : null;
 
   return (
@@ -186,31 +225,9 @@ export default function WonderSpaceDashboardPanel({
         </div>
       )}
 
-      {codeMounted && (
-        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
-          <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
-        </div>
-      )}
-      {historyMounted && selected && (
-        <div hidden={activeTab !== "history"} className="p-3 sm:p-4">
-          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
-        </div>
-      )}
-      {activeTab === "tools" && (
-        <div className="space-y-3 p-3 sm:p-4">
-          <WonderSpaceProjectNavigation projectId={selected?.id} />
-          {selected && (
-            <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
-              className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline">
-              <FolderOpen size={16} aria-hidden="true" /> Project details and settings
-            </Link>
-          )}
-          <p className="flex items-center gap-2 text-xs text-slate-400">
-            <Settings2 size={14} aria-hidden="true" />
-            Git pull requests and cloud CI are shown as planned until their backends are ready.
-          </p>
-        </div>
-      )}
+      <ProjectWorkspaceViews key={selected?.id ?? "no-project"}
+        selected={selected} activeTab={activeTab}
+        unsavedCurrent={unsavedCurrent} reportDirty={reportDirty} />
     </section>
   );
 }
