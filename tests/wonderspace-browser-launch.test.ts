@@ -35,8 +35,8 @@ describe('WonderSpace launch-safe browser IDE', () => {
   it('offers the browser editor to both customer and operator without enabling Coder pods', () => {
     expect(gate).toContain('href="/wonderspace/browser"');
     expect(gate).toContain('<BrowserIdeEntry />');
-    expect(gate).toContain('<CustomerWorkspaceLaunch provisioningEnabled={false} />');
-    expect(gate).toContain('<CustomerWorkspaceLaunch operatorPreview embedded />');
+    expect(gate).toContain('<CloudIdePaused />');
+    expect(gate).toContain('<CloudIdePaused />');
     expect(dashboard).toContain('label: "Browser IDE"');
     expect(dashboard).toContain('/dashboard/projects/');
     expect(browser).toContain('a Linux terminal and isolated cloud runtime are not included');
