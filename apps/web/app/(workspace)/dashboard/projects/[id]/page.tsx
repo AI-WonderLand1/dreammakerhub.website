@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import WonderRealtimeWidget from "@/app/(workspace)/dashboard/components/WonderRealtimeWidget";
 import RepositoryFileBrowser from "./RepositoryFileBrowser";
+import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import ProjectDeleteButton from "@/app/(workspace)/dashboard/components/ProjectDeleteButton";
 
 type Project = {
@@ -114,8 +116,8 @@ export default function ProjectHubPage() {
     if (showLoader) setLoading(true);
     try {
       const [projectResponse, filesResponse, publishedResponse] = await Promise.all([
-        fetch(`/api/projects/${encodeURIComponent(projectId)}`),
-        fetch(`/api/projects/${encodeURIComponent(projectId)}/files`),
+        fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}`),
+        fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}/files`),
         fetch("/api/pages?limit=100"),
       ]);
 
@@ -243,19 +245,6 @@ export default function ProjectHubPage() {
           ? { href: `/dashboard/3dhub?${projectQuery}`, label: "Open 3D Studio", icon: Pencil }
           : { href: `/wonder-build/builder?${projectQuery}`, label: "Open WonderBuild", icon: Pencil };
 
-  const repoTabs = [
-    { label: "Code", href: `/dashboard/projects/${project.id}/files`, icon: Code2, active: false },
-    { label: "Issues", href: `/dashboard/support?${projectQuery}`, icon: CircleDot },
-    { label: "Pull requests", href: `/dashboard/collaboration?${projectQuery}&view=reviews`, icon: GitPullRequest },
-    { label: "Agents", href: `/dashboard/agents?${projectQuery}`, icon: Bot },
-    { label: "Discussions", href: `/dashboard/collaboration?${projectQuery}`, icon: MessageSquare },
-    { label: "Actions", href: `/dashboard/usage?${projectQuery}`, icon: PlayCircle },
-    { label: "Projects", href: "/dashboard#projects", icon: PanelsTopLeft },
-    { label: "Wiki", href: "/docs", icon: BookOpen },
-    { label: "Security & quality", href: `/dashboard/aetherguard?${projectQuery}`, icon: ShieldCheck },
-    { label: "Insights", href: `/dashboard/analytics?${projectQuery}`, icon: BarChart3 },
-    { label: "Settings", href: `/dashboard/settings?${projectQuery}`, icon: Settings },
-  ];
 
   const PrimaryIcon = primaryAction.icon;
 
@@ -319,19 +308,9 @@ export default function ProjectHubPage() {
             </div>
           </section>
 
-          <nav className="mb-4 flex items-center gap-1 overflow-x-auto border-b border-white/10 text-sm text-white/60">
-            {repoTabs.map(({ label, href, icon: TabIcon, active }) => (
-              <Link
-                key={label}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 transition hover:bg-white/[.035] hover:text-white ${active ? "border-violet-500 font-semibold text-white" : "border-transparent"}`}
-              >
-                <TabIcon size={17}/>
-                <span>{label}</span>
-              </Link>
-            ))}
-          </nav>
+          <div className="mb-4">
+            <WonderSpaceProjectNavigation projectId={project.id} />
+          </div>
 
           {error && (
             <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>
