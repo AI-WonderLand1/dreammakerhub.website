@@ -16,7 +16,6 @@ import {
 import RepositoryFileBrowser from "../RepositoryFileBrowser";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
-import WonderSpaceRepositoryConnection from "@/components/dashboard/WonderSpaceRepositoryConnection";
 
 type Project = {
   id: string;
@@ -208,7 +207,15 @@ export default function ProjectCodeManagerPage() {
             </dl>
           </section>
 
-          <WonderSpaceRepositoryConnection projectId={project.id} />
+          <section className="rounded-2xl border border-cyan-400/15 bg-[#0c1625] p-4">
+            <h2 className="text-sm font-bold">WonderSpace project tools</h2>
+            <p className="mt-2 text-xs text-white/50">This project and its repository tools are stored by DreamMakerHub, not GitHub.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/issues`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Issues</Link>
+              <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/discussions`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Discussions</Link>
+              <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/wiki`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Wiki</Link>
+            </div>
+          </section>
 
           <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
             <h2 className="text-sm font-bold">Wonderland Tools</h2>

@@ -170,16 +170,21 @@ describe("one dashboard/project/browser navigation", () => {
     expect(browser).toContain("<WonderSpaceProjectNavigation />");
   });
 
-  it("does not fabricate GitHub issues, PRs, repository access, or IDE pods", () => {
+  it("routes project tools to first-party storage, without outbound GitHub dependencies", () => {
     const nav = read("apps/web/components/dashboard/WonderSpaceProjectNavigation.tsx");
-    const api = read("apps/web/app/api/projects/[projectId]/github-connection/route.ts");
+    const manager = read("apps/web/app/(workspace)/dashboard/projects/[id]/files/page.tsx");
+    const itemsApi = read("apps/web/app/api/projects/[projectId]/work-items/route.ts");
+    const wikiApi = read("apps/web/app/api/projects/[projectId]/wiki/route.ts");
+    expect(nav).toContain('`${projectPath}/issues`');
+    expect(nav).toContain('`${projectPath}/discussions`');
+    expect(nav).toContain('`${projectPath}/wiki`');
+    expect(nav).toContain('href: null');
     expect(nav).toContain("aria-disabled");
-    expect(nav).toContain('href: github("issues")');
-    expect(nav).toContain('href: github("pulls")');
-    expect(nav).toContain("no automatic push or pull");
-    expect(api).toContain("await getProjectMetadata(projectId, auth.userId)");
-    expect(api).toContain("syncEnabled: false");
-    expect(api).not.toContain("service_role");
-    expect(nav).not.toContain("CODER_API_TOKEN");
+    expect(nav).not.toContain("github(");
+    expect(nav).not.toContain("api.github.com");
+    expect(manager).not.toContain("WonderSpaceRepositoryConnection");
+    expect(manager).toContain('<RepositoryFileBrowser');
+    expect(itemsApi).toContain("await requirePaidAIUser(req)");
+    expect(wikiApi).toContain("await requirePaidAIUser(req)");
   });
 });

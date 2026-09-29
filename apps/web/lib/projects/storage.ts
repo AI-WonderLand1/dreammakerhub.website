@@ -47,6 +47,62 @@ function normalizeFilePath(filePath: string) {
   return normalized;
 }
 
+// Internal metadata is never a user-importable/movable code path.
+export function isReservedWonderSpacePath(filePath: string): boolean {
+  return filePath === ".wonderspace" || filePath.startsWith(".wonderspace/");
+}
+
+/** One owner check and one filtered query for native issues/discussions. */
+export async function listInternalProjectFilesByPrefix(
+  projectId: string, ownerId: string, prefix: string, limit = 251,
+): Promise<Array<{ path: string; content: string }>> {
+  if (prefix !== ".wonderspace/work-items/issue/" &&
+      prefix !== ".wonderspace/work-items/discussion/") {
+    throw new Error("Invalid internal project prefix");
+  }
+  await assertOwner(projectId, ownerId);
+  const supabase = await getClient();
+  const { data, error } = await supabase.from("_project_files")
+    .select("file_path,content").eq("project_id", projectId)
+    .like("file_path", `${prefix}%`)
+    .order("file_path", { ascending: true })
+    .limit(Math.min(Math.max(1, Math.floor(limit)), 251));
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(row => ({ path: String(row.file_path), content: String(row.content ?? "") }));
+}
+
+/** Owner-scoped compare-and-swap; retry concurrent updates instead of losing comments. */
+export async function updateProjectFileAtomically(
+  projectId: string, ownerId: string, filePath: string,
+  mutate: (previousContent: string) => string,
+): Promise<string> {
+  await assertOwner(projectId, ownerId);
+  const normalized = normalizeFilePath(filePath);
+  if (!isReservedWonderSpacePath(normalized)) throw new Error("Invalid internal project path");
+  const supabase = await getClient();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: current, error: readError } = await supabase.from("_project_files")
+      .select("content,updated_at").eq("project_id", projectId)
+      .eq("file_path", normalized).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!current) throw new Error("ITEM_NOT_FOUND");
+    const nextContent = mutate(String(current.content ?? ""));
+    const previousTimestamp = String(current.updated_at);
+    const previousMs = Date.parse(previousTimestamp);
+    if (!Number.isFinite(previousMs)) throw new Error("Invalid project timestamp");
+    // Ensure the row's version always advances, including same-millisecond writes.
+    const updatedAt = new Date(Math.max(Date.now(), previousMs + 1)).toISOString();
+    const { data: changed, error: updateError } = await supabase.from("_project_files")
+      .update({ content: nextContent, updated_at: updatedAt })
+      .eq("project_id", projectId).eq("file_path", normalized)
+      .eq("updated_at", previousTimestamp)
+      .select("file_path");
+    if (updateError) throw new Error(updateError.message);
+    if (Array.isArray(changed) && changed.length === 1) return nextContent;
+  }
+  throw new Error("WORK_ITEM_CONFLICT");
+}
+
 function mapProjectRow(row: ProjectRow): ProjectMetadata {
   return {
     id: row.id,
@@ -222,12 +278,14 @@ export async function writeFiles(projectId: string, ownerId: string, entries: Fi
   await assertOwner(projectId, ownerId);
   if (!entries.length) return;
   const now = new Date().toISOString();
-  const rows = entries.map((entry) => ({
-    project_id: projectId,
-    file_path: normalizeFilePath(entry.path),
-    content: entry.content ?? "",
-    updated_at: now,
-  }));
+  const rows = entries.map((entry) => {
+    const normalized = normalizeFilePath(entry.path);
+    if (isReservedWonderSpacePath(normalized)) throw new Error("Invalid project file path");
+    return {
+      project_id: projectId, file_path: normalized,
+      content: entry.content ?? "", updated_at: now,
+    };
+  });
   const supabase = await getClient();
   const { error } = await supabase.from("_project_files").upsert(rows, { onConflict: "project_id,file_path" });
   if (error) throw new Error(error.message);
@@ -249,6 +307,7 @@ export async function deleteFile(projectId: string, ownerId: string, filePath: s
 export async function deletePath(projectId: string, ownerId: string, targetPath: string): Promise<number> {
   await assertOwner(projectId, ownerId);
   const normalized = normalizeFilePath(targetPath);
+  if (isReservedWonderSpacePath(normalized)) throw new Error("Invalid project file path");
   const supabase = await getClient();
   const { data, error } = await supabase
     .from("_project_files")
@@ -278,6 +337,9 @@ export async function renamePath(projectId: string, ownerId: string, oldPath: st
   }
   const oldNormalized = normalizeFilePath(oldPath);
   const newNormalized = normalizeFilePath(newPath);
+  if (isReservedWonderSpacePath(oldNormalized) || isReservedWonderSpacePath(newNormalized)) {
+    throw new Error("Invalid project file path");
+  }
   const supabase = await getClient();
   const { data, error } = await supabase.rpc("rename_builder_project_path", {
     p_project_id: projectId,

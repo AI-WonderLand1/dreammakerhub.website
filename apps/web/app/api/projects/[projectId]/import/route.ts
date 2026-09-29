@@ -63,6 +63,9 @@ export async function POST(
       fileCount: Object.keys(files).length,
     });
   } catch (err: any) {
+    if (err instanceof Error && (err.message === "Invalid project file path" || err.message === "Invalid path")) {
+      return NextResponse.json({ ok: false, message: "Archive contains invalid or reserved internal project paths" }, { status: 400 });
+    }
     logger.error('Import error:', err);
     return NextResponse.json(
       { ok: false, message: err.message || 'Import failed' },
