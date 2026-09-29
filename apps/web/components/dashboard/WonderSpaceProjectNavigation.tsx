@@ -66,7 +66,7 @@ export default function WonderSpaceProjectNavigation({
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
     { label: "Discussions", icon: MessageSquare, href: github("discussions"), external: true },
     { label: "Actions", icon: PlayCircle, href: github("actions"), external: true },
-    { label: "Projects", icon: PanelsTopLeft, href: "/dashboard#projects" },
+    { label: "Projects", icon: PanelsTopLeft, href: id ? `/dashboard?projectId=${id}#projects` : "/dashboard#projects" },
     { label: "Wiki", icon: BookOpen, href: github("wiki"), external: true },
     { label: "Security & quality", icon: ShieldCheck, href: `/dashboard/aetherguard${query}` },
     { label: "Usage & insights", icon: Activity, href: `/dashboard/usage${query}` },
