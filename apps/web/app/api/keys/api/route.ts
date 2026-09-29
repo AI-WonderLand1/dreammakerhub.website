@@ -1,111 +1,25 @@
+// Compatibility route: all key creation/listing uses one implementation.
+export { GET, POST } from "../route";
 import { NextResponse } from "next/server";
-import crypto from "crypto";
-import { createSupabaseServerClient } from "@/lib/supabase/server-client";
-import { logger } from '@/lib/logger';
+import { supabaseRouteClient } from "@/lib/supabase/route";
+import { revokeWonderlandKey } from "@/lib/wonderland-api-keys/server";
 
-/**
- * API: /api/keys/api
- * Manages user API keys.
- *
- * Methods:
- *  - GET: List API keys for logged-in user
- *  - POST: Create a new API key
- *  - DELETE: Revoke an API key by ID
- */
+export const runtime = "nodejs";
 
-export async function GET() {
-  const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function DELETE(request: Request) {
+  const supabase = await supabaseRouteClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = await request.json().catch(() => null);
+  if (typeof body?.id !== "string" || !/^[0-9a-f-]{36}$/i.test(body.id)) {
+    return NextResponse.json({ error: "Valid key ID required" }, { status: 400 });
   }
-
-  const { data, error } = await supabase
-    .from("api_keys")
-    .select("id, name, created_at, last_used_at")
-    .eq("user_id", session.user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const revoked = await revokeWonderlandKey(data.user.id, body.id);
+    return revoked
+      ? NextResponse.json({ ok: true })
+      : NextResponse.json({ error: "Key not found" }, { status: 404 });
+  } catch {
+    return NextResponse.json({ error: "Key revocation unavailable" }, { status: 503 });
   }
-
-  return NextResponse.json({ keys: data });
-}
-
-export async function POST(req: Request) {
-  const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { name } = await req.json();
-
-  if (!name) {
-    return NextResponse.json(
-      { error: "Missing key name" },
-      { status: 400 }
-    );
-  }
-
-  // Generate secure 40-character API key
-  const key = crypto.randomBytes(20).toString("hex");
-
-  // Hash the key for storage (never store plaintext)
-  const keyHash = crypto.createHash("sha256").update(key).digest("hex");
-
-  const { data, error } = await supabase.from("api_keys").insert([
-    {
-      user_id: session.user.id,
-      name,
-      key_hash: keyHash,
-      created_at: new Date().toISOString(),
-    },
-  ]);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    success: true,
-    key, // return once (user should copy it)
-    data,
-  });
-}
-
-export async function DELETE(req: Request) {
-  const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await req.json();
-
-  if (!id) {
-    return NextResponse.json({ error: "Missing key ID" }, { status: 400 });
-  }
-
-  const { error } = await supabase
-    .from("api_keys")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", session.user.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
 }
