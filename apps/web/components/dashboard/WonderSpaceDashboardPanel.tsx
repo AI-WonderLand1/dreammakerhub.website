@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Code2, FolderOpen, Monitor, Plus } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
 
@@ -17,6 +18,15 @@ export default function WonderSpaceDashboardPanel({
   onCreate: () => void;
 }) {
   const [selection, setSelection] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectProject = (projectId: string) => {
+    setSelection(projectId);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("projectId", projectId);
+    router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
+  };
   const selected = useMemo(
     () => projects.find(item => item.id === selection) ||
       projects.find(item => item.id === requestedProjectId) ||
@@ -26,6 +36,14 @@ export default function WonderSpaceDashboardPanel({
   const editHref = selected
     ? `/dashboard/projects/${encodeURIComponent(selected.id)}/files`
     : "/wonderspace/browser";
+
+  useEffect(() => {
+    // Establish URL-level project context even for a normal /dashboard visit.
+    if (!selected || requestedProjectId === selected.id) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("projectId", selected.id);
+    router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
+  }, [pathname, requestedProjectId, router, searchParams, selected]);
 
   useEffect(() => {
     // When navigating to a dashboard URL carrying an explicit project, reset
@@ -63,7 +81,7 @@ export default function WonderSpaceDashboardPanel({
             </label>
             {projects.length > 0 ? (
               <select id="wonderspace-selected-project" value={selected?.id ?? ""}
-                onChange={event => setSelection(event.target.value)}
+                onChange={event => selectProject(event.target.value)}
                 className="w-full rounded-lg border border-white/15 bg-[#081525] px-3 py-2 text-sm text-white">
                 {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
