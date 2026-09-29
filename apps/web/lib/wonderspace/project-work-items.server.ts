@@ -51,7 +51,7 @@ export async function listWorkItems(projectId: string, ownerId: string, kind: Wo
   if (rows.length > MAX_ITEMS) throw new Error("WORK_ITEM_LIMIT_REACHED");
   return rows
     .filter(row => row.path.endsWith(".json") &&
-      ID_PATTERN.test(row.path.slice(prefixFor(kind).length).replace(/\\.json$/, "")))
+      ID_PATTERN.test(row.path.slice(prefixFor(kind).length, -5)))
     .map(row => parseItem(row.content, kind))
     .filter((item): item is ProjectWorkItem => item !== null)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
