@@ -1,95 +1,147 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createElement, type ReactNode } from "react";
+import { act, type ReactNode } from "react";
+import { createRoot, type Root } from "react-dom/client";
 
 const mocks = vi.hoisted(() => ({
   fetchAuthenticatedProject: vi.fn(),
   browserCallbacks: new Map<string, (files: Record<string, string>) => void>(),
 }));
 
-vi.mock("next/link", () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) =>
-    createElement("a", { href }, children),
-}));
+vi.mock("next/link", async () => {
+  const React = await import("react");
+  return {
+    default: ({ href, children }: { href: string; children: ReactNode }) =>
+      React.createElement("a", { href }, children),
+  };
+});
 vi.mock("@/lib/wonderspace/browser-project-fetch", () => ({
   fetchAuthenticatedProject: mocks.fetchAuthenticatedProject,
 }));
-vi.mock("../apps/web/app/(workspace)/dashboard/projects/[id]/RepositoryFileBrowser", () => ({
-  default: ({ projectId, files, onFilesChange }: { projectId: string; files: Record<string, string>; onFilesChange: (files: Record<string, string>) => void }) => {
-    mocks.browserCallbacks.set(projectId, onFilesChange);
-    return createElement("div", { "data-testid": "native-file-browser", "data-project-id": projectId },
-      Object.keys(files).join(", "));
-  },
-}));
-
+vi.mock("../apps/web/app/(workspace)/dashboard/projects/[id]/RepositoryFileBrowser", async () => {
+  const React = await import("react");
+  return {
+    default: ({ projectId, files, onFilesChange }: {
+      projectId: string;
+      files: Record<string, string>;
+      onFilesChange: (files: Record<string, string>) => void;
+    }) => {
+      mocks.browserCallbacks.set(projectId, onFilesChange);
+      return React.createElement(
+        "div",
+        { "data-testid": "native-file-browser", "data-project-id": projectId },
+        Object.keys(files).join(", "),
+      );
+    },
+  };
+});
 import WonderSpaceInlineCodeManager from "../apps/web/components/dashboard/WonderSpaceInlineCodeManager";
 
 const first = { id: "first-project", name: "First", tool: "workspace" };
 const second = { id: "second-project", name: "Second", tool: "workspace" };
+let container: HTMLDivElement;
+let root: Root;
 
-beforeEach(() => { vi.resetAllMocks(); mocks.browserCallbacks.clear(); });
-afterEach(() => cleanup());
+const successfulResponse = (files: Record<string, string>) => ({
+  ok: true, status: 200, json: async () => ({ files }),
+});
+
+function button(name: string): HTMLButtonElement {
+  const result = [...container.querySelectorAll("button")]
+    .find(element => element.textContent?.includes(name));
+  if (!result) throw new Error(`Missing button: ${name}`);
+  return result;
+}
+
+function browser(): HTMLElement | null {
+  return container.querySelector('[data-testid="native-file-browser"]');
+}
+
+async function show(project: typeof first | null) {
+  await act(async () => {
+    root.render(<WonderSpaceInlineCodeManager project={project} />);
+  });
+}
+
+async function click(name: string) {
+  await act(async () => {
+    button(name).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.browserCallbacks.clear();
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+});
+afterEach(async () => {
+  await act(async () => { root.unmount(); });
+  container.remove();
+  vi.unstubAllGlobals();
+});
 
 describe("native dashboard code manager", () => {
-  it("does not fetch every customer's project files until the inline editor is opened", () => {
-    render(<WonderSpaceInlineCodeManager project={first} />);
-    expect(screen.getByText("Native code manager")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Open code here" })).toBeTruthy();
+  it("does not fetch every customer's project files until the editor is opened", async () => {
+    await show(first);
+    expect(container.textContent).toContain("Native code manager");
+    expect(button("Open code here")).toBeTruthy();
     expect(mocks.fetchAuthenticatedProject).not.toHaveBeenCalled();
   });
 
   it("uses the same authenticated project API and full-page editor route", async () => {
     mocks.fetchAuthenticatedProject.mockResolvedValue(
-      Response.json({ files: { "src/index.ts": "export {}" } }),
+      successfulResponse({ "src/index.ts": "export {}" }),
     );
-    render(<WonderSpaceInlineCodeManager project={first} />);
-    expect(screen.getByRole("link", { name: /full-page editor/i }).getAttribute("href"))
+    await show(first);
+    expect(container.querySelector("a")?.getAttribute("href"))
       .toBe("/dashboard/projects/first-project/files");
-    fireEvent.click(screen.getByRole("button", { name: "Open code here" }));
-    const browser = await screen.findByTestId("native-file-browser");
-    expect(browser.getAttribute("data-project-id")).toBe(first.id);
-    expect(browser.textContent).toContain("src/index.ts");
+    await click("Open code here");
+    expect(browser()?.getAttribute("data-project-id")).toBe(first.id);
+    expect(browser()?.textContent).toContain("src/index.ts");
     expect(mocks.fetchAuthenticatedProject)
       .toHaveBeenCalledWith("/api/projects/first-project/files");
   });
 
-  it("reloads only the newly selected project and never shows another project's old files", async () => {
+  it("isolates each project so late callbacks cannot overwrite a new selection", async () => {
     mocks.fetchAuthenticatedProject
-      .mockResolvedValueOnce(Response.json({ files: { "first.txt": "one" } }))
-      .mockResolvedValueOnce(Response.json({ files: { "second.txt": "two" } }));
-    const view = render(<WonderSpaceInlineCodeManager project={first} />);
-    fireEvent.click(screen.getByRole("button", { name: "Open code here" }));
-    expect((await screen.findByTestId("native-file-browser")).textContent).toContain("first.txt");
-    const staleFirstProjectCallback = mocks.browserCallbacks.get(first.id);
-    expect(staleFirstProjectCallback).toBeTypeOf("function");
-    view.rerender(<WonderSpaceInlineCodeManager project={second} />);
-    await waitFor(() =>
-      expect(screen.getByTestId("native-file-browser").getAttribute("data-project-id")).toBe(second.id),
-    );
-    expect(screen.getByTestId("native-file-browser").textContent).toContain("second.txt");
-    expect(screen.getByTestId("native-file-browser").textContent).not.toContain("first.txt");
-    // A late mutation of the unmounted project's browser must not bleed into B.
-    staleFirstProjectCallback?.({ "late-first-project.ts": "private A data" });
-    expect(screen.getByTestId("native-file-browser").textContent).not.toContain("late-first-project.ts");
-    expect(screen.getByTestId("native-file-browser").getAttribute("data-project-id")).toBe(second.id);
+      .mockResolvedValueOnce(successfulResponse({ "first.txt": "one" }))
+      .mockResolvedValueOnce(successfulResponse({ "second.txt": "two" }));
+    await show(first);
+    await click("Open code here");
+    expect(browser()?.textContent).toContain("first.txt");
+    const staleCallback = mocks.browserCallbacks.get(first.id);
+    expect(staleCallback).toBeTypeOf("function");
+
+    await show(second);
+    expect(browser()?.getAttribute("data-project-id")).toBe(second.id);
+    expect(browser()?.textContent).toContain("second.txt");
+    expect(browser()?.textContent).not.toContain("first.txt");
+
+    await act(async () => { staleCallback?.({ "late-first-project.ts": "private A data" }); });
+    expect(browser()?.textContent).not.toContain("late-first-project.ts");
+    expect(browser()?.getAttribute("data-project-id")).toBe(second.id);
   });
 
   it("shows an actionable error and safely retries failures", async () => {
     mocks.fetchAuthenticatedProject
-      .mockResolvedValueOnce(Response.json({ error: "Session expired" }, { status: 401 }))
-      .mockResolvedValueOnce(Response.json({ files: {} }));
-    render(<WonderSpaceInlineCodeManager project={first} />);
-    fireEvent.click(screen.getByRole("button", { name: "Open code here" }));
-    expect(await screen.findByText("Sign in again to edit your project.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByTestId("native-file-browser")).toBeTruthy();
+      .mockResolvedValueOnce({
+        ok: false, status: 401, json: async () => ({ error: "Session expired" }),
+      })
+      .mockResolvedValueOnce(successfulResponse({}));
+    await show(first);
+    await click("Open code here");
+    expect(container.textContent).toContain("Sign in again to edit your project.");
+    await click("Retry");
+    expect(browser()?.getAttribute("data-project-id")).toBe(first.id);
     expect(mocks.fetchAuthenticatedProject).toHaveBeenCalledTimes(2);
   });
 
-  it("does not expose a file manager before a user has selected a project", () => {
-    render(<WonderSpaceInlineCodeManager project={null} />);
-    expect(screen.getByRole("button", { name: "Open code here" }).hasAttribute("disabled")).toBe(true);
+  it("does not expose a file manager before a project is selected", async () => {
+    await show(null);
+    expect(button("Open code here").disabled).toBe(true);
     expect(mocks.fetchAuthenticatedProject).not.toHaveBeenCalled();
   });
 });
