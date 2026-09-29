@@ -93,6 +93,20 @@ describe("authenticated owner-only native source history", () => {
     expect(mocks.loadSourceVersion).toHaveBeenCalledWith(projectId, ownerId, versionId);
   });
 
+  it("compares prototype-named files as ordinary paths instead of inherited properties", async () => {
+    mocks.loadSourceVersion.mockResolvedValueOnce({
+      ...version, files: Object.fromEntries([["old.txt", "old"], ["__proto__", "previous"]]),
+    });
+    mocks.readCurrentProjectSourceFiles.mockResolvedValueOnce(
+      Object.fromEntries([["toString", "new"], ["__proto__", "updated"]]),
+    );
+    const response = await GET(request(`?versionId=${versionId}`), params);
+    expect(response.status).toBe(200);
+    expect((await response.json()).changes).toEqual({
+      added: ["toString"], modified: ["__proto__"], deleted: ["old.txt"],
+    });
+  });
+
   it("exports only a requested owner-validated checkpoint as portable source ZIP", async () => {
     const response = await GET(request(`?versionId=${versionId}&format=zip`), params);
     expect(response.status).toBe(200);
