@@ -56,6 +56,28 @@ export default function OnDemandWonderSpace() {
     return () => window.clearInterval(timer);
   }, [refresh]);
 
+  // A single authenticated click can start and open the same isolated VM.
+  // The controller alone enforces owner ID, one-running-VM and budget limits.
+  const sendAction = async (access: string, id: string, actionName: 'start' | 'stop' | 'ticket') => {
+    const response = await fetch('/api/wonderspace/sandboxes/' + encodeURIComponent(id), {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + access, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: actionName }),
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(result?.error || 'Workspace operation unavailable');
+    return result;
+  };
+
+  const openTicket = async (access: string, id: string) => {
+    const result = await sendAction(access, id, 'ticket');
+    if (typeof result?.url !== 'string') throw new Error('IDE sign-in link missing.');
+    const next = new URL(result.url);
+    if (next.protocol !== 'https:' || !/^[a-z0-9-]+\.up\.railway\.app$/i.test(next.hostname) ||
+        next.pathname !== '/auth/start') throw new Error('Unexpected IDE address');
+    window.location.assign(next.href);
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = newName.trim();
@@ -76,6 +98,18 @@ export default function OnDemandWonderSpace() {
       if (!response.ok || !body?.workspace?.id) throw new Error(body?.error || 'Could not create workspace');
       setNewName('');
       await refresh(true);
+      // Keep this freshly created workspace even if the billable start fails.
+      // Never silently create a replacement or retry a paid start.
+      setWorking('launch');
+      try {
+        const started = await sendAction(access, body.workspace.id, 'start');
+        if (started?.workspace?.state !== 'running') throw new Error('Workspace is still preparing.');
+        await openTicket(access, body.workspace.id);
+      } catch (cause) {
+        setMessage('Workspace saved, but opening failed: ' +
+          (cause instanceof Error ? cause.message : 'Try Resume & open.'));
+        await refresh(true);
+      }
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : 'Could not create workspace.');
     } finally { setWorking(null); }
@@ -86,23 +120,16 @@ export default function OnDemandWonderSpace() {
     try {
       const access = await token();
       if (!access) { setState('signin'); return; }
-      const response = await fetch('/api/wonderspace/sandboxes/' + encodeURIComponent(workspace.id), {
-        method: 'POST',
-        headers: { Authorization: 'Bearer ' + access, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: what }),
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.error || 'Workspace operation unavailable');
       if (what === 'ticket') {
-        const raw = body?.url;
-        if (typeof raw !== 'string') throw new Error('IDE sign-in link missing.');
-        const next = new URL(raw);
-        if (next.protocol !== 'https:' || !/^[a-z0-9-]+\.up\.railway\.app$/i.test(next.hostname) ||
-            next.pathname !== '/auth/start') throw new Error('Unexpected IDE address');
-        window.location.assign(next.href);
+        await openTicket(access, workspace.id);
         return;
       }
-      if (what === 'start') setMessage('Preparing your private Linux IDE. This may take a minute.');
+      const body = await sendAction(access, workspace.id, what);
+      if (what === 'start') {
+        if (body?.workspace?.state !== 'running') throw new Error('Workspace is still preparing.');
+        await openTicket(access, workspace.id);
+        return;
+      }
       if (what === 'stop') setMessage('Your compressed project snapshot has been saved and the VM stopped.');
       await refresh(true);
     } catch (cause) {
@@ -145,9 +172,13 @@ export default function OnDemandWonderSpace() {
                 autoComplete="off" placeholder="my-linux-project" maxLength={32}
                 className="min-w-0 flex-1 rounded-xl border border-white/20 bg-slate-950 px-4 py-3 text-white" />
               <button disabled={!!working} className="rounded-xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 disabled:opacity-60">
-                {working === 'create' ? 'Creating…' : 'Create'}
+                {working === 'create' || working === 'launch' ? 'Opening…' : 'Create & open IDE'}
               </button>
             </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Starts one metered ten-minute pilot session. Files persist through private snapshots;
+              save open editor tabs before expiry.
+            </p>
           </form>
           <div className="space-y-4">
             {workspaces.length === 0 && <p className="text-slate-400">No saved customer workspaces yet.</p>}
@@ -169,7 +200,7 @@ export default function OnDemandWonderSpace() {
                 <div className="flex flex-wrap gap-2">
                   {workspace.state === 'stopped' && <button disabled={!!working}
                     onClick={() => { void action(workspace, 'start'); }}
-                    className="rounded-xl bg-emerald-400 px-4 py-2 font-semibold text-slate-950 disabled:opacity-60">Start IDE</button>}
+                    className="rounded-xl bg-emerald-400 px-4 py-2 font-semibold text-slate-950 disabled:opacity-60">Resume & open</button>}
                   {workspace.state === 'running' && <>
                     <button disabled={!!working} onClick={() => { void action(workspace, 'ticket'); }}
                       className="rounded-xl bg-cyan-400 px-4 py-2 font-semibold text-slate-950 disabled:opacity-60">
