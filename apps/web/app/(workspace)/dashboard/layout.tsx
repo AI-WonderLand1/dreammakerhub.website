@@ -173,7 +173,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const activityHref = currentProject
     ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}#project-activity`
-    : "/dashboard#workspace-activity";
+    : "/dashboard#projects";
 
   const renderNavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Home }) => (
     <Link
@@ -212,7 +212,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Link href="/dashboard?create=project#projects" className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-blue-950/20">
               <Plus size={16} /> <span className="hidden sm:inline">Create</span><ChevronDown size={13} className="hidden sm:block" />
             </Link>
-            <Link href={activityHref} aria-label="Recent activity" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/65 hover:bg-white/5 hover:text-white">
+            <Link href={activityHref} aria-label={currentProject ? "Project activity" : "View projects"} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/65 hover:bg-white/5 hover:text-white">
               <Bell size={18} />
             </Link>
             <div className="relative hidden sm:block">
