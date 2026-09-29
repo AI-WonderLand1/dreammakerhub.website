@@ -42,7 +42,7 @@ CREATE OR REPLACE FUNCTION public.capture_project_source_version(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
   actor TEXT := auth.uid()::text;
