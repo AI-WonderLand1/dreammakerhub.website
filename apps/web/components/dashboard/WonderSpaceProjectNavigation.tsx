@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, Bot, BookOpen, CircleDot, Code2, GitPullRequest,
+  Activity, Bot, BookOpen, CircleDot, Code2, GitCommitHorizontal, GitPullRequest,
   MessageSquare, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
 } from "lucide-react";
 
@@ -13,6 +14,7 @@ type Item = {
   href: string | null;
   description?: string;
   selected?: boolean;
+  advanced?: boolean;
 };
 
 export default function WonderSpaceProjectNavigation({
@@ -23,6 +25,7 @@ export default function WonderSpaceProjectNavigation({
   active?: "code" | "projects" | "issues" | "discussions" | "wiki";
 }) {
   const pathname = usePathname();
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const id = projectId ? encodeURIComponent(projectId) : null;
   const projectPath = id ? `/dashboard/projects/${id}` : null;
   const query = id ? `?projectId=${id}` : "";
@@ -37,6 +40,7 @@ export default function WonderSpaceProjectNavigation({
   // authenticated project storage. No tab navigates to an external code host.
   const items: Item[] = [
     { label: "Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/wonderspace/browser", selected: currentTab === "code" },
+    { label: "History", icon: GitCommitHorizontal, href: projectPath ? `${projectPath}/files#version-history` : null, description: "Select a project to save, compare or download source versions." },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
     { label: "Pull requests", icon: GitPullRequest, href: null, description: "Native branch reviews will be available after the WonderSpace version-control backend is verified." },
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
@@ -52,7 +56,7 @@ export default function WonderSpaceProjectNavigation({
   return (
     <div className="rounded-xl border border-white/10 bg-[#0b111e]">
       <nav aria-label="WonderSpace project tools" className="flex items-center gap-0.5 overflow-x-auto px-2 text-sm">
-        {items.map(({ label, icon: Icon, href, description, selected }) => {
+        {items.filter(item => !item.advanced || showAdvanced || Boolean(item.selected)).map(({ label, icon: Icon, href, description, selected }) => {
           const cls = `inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm transition ${selected ? "border-cyan-400 font-semibold text-white" : "border-transparent text-slate-300 hover:border-white/25 hover:bg-white/5 hover:text-white"}`;
           if (!href) return (
             <span
@@ -71,6 +75,11 @@ export default function WonderSpaceProjectNavigation({
             </Link>
           );
         })}
+        <button type="button" onClick={() => setShowAdvanced(value => !value)}
+          aria-expanded={showAdvanced} aria-label="Toggle more project tools"
+          className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-xs text-cyan-200 hover:bg-white/5">
+          {showAdvanced ? "Fewer tools" : "More tools"}
+        </button>
       </nav>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[.07] px-3 py-2 text-[11px] text-slate-400">
         <span>
