@@ -18,9 +18,15 @@ async function ownerOf(req: NextRequest, projectId: string) {
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { projectId } = await params;
+  let owner: string;
   try {
-    const owner = await ownerOf(req, projectId);
-    if (typeof owner !== "string") return owner;
+    const result = await ownerOf(req, projectId);
+    if (typeof result !== "string") return result;
+    owner = result;
+  } catch {
+    return fail("Project not found or access was denied.", 404);
+  }
+  try {
     const file = await readFile(projectId, owner, connectionPath);
     if (!file) return NextResponse.json({ ok: true, repository: null });
     const parsed: unknown = JSON.parse(file);
