@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -162,8 +163,9 @@ export function OperatorIdePanel() {
 }
 
 /** When SSR cookies are missing, do not misclassify an operator as a customer. */
-export default function WonderSpaceOperatorGate({ customerPilot }: { customerPilot: boolean }) {
+export default function WonderSpaceOperatorGate({ customerPilot: _customerPilot }: { customerPilot: boolean }) {
   const { user, session, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [role, setRole] = useState<Role>('checking');
   const [retry, setRetry] = useState(0);
   const operatorRefreshAttempted = useRef(false);
@@ -228,6 +230,10 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
     return () => controller.abort();
   }, [authLoading, user?.id, session?.access_token, retry]);
 
+  useEffect(() => {
+    if (role === 'customer') router.replace('/wonderspace/browser');
+  }, [role, router]);
+
   async function retrySessionCheck() {
     operatorRefreshAttempted.current = false;
     const client = getSupabaseClient();
@@ -245,14 +251,10 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
   if (role === 'operator') return <OperatorIdePanel />;
 
   if (role === 'customer') {
-    return (
-      <main className="min-h-screen bg-[#080d22] px-5 py-8 text-white">
-        <BrowserIdeEntry />
-        {customerPilot ? <CustomerSandboxIdeEntry /> : (
-          <div className="mt-5"><CloudIdePaused /></div>
-        )}
-      </main>
-    );
+    return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
+      <p>Opening your browser IDE…</p>
+      <Link href="/wonderspace/browser" className="mt-4 inline-block text-cyan-300 underline">Open browser IDE</Link>
+    </main>;
   }
 
   return (
