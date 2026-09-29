@@ -26,8 +26,15 @@ export default function WonderSpaceProjectNavigation({
 }) {
   const [repo, setRepo] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<"none" | "loading" | "ready" | "unavailable">("none");
+  const [refreshKey, setRefreshKey] = useState(0);
   const id = projectId ? encodeURIComponent(projectId) : null;
   const query = id ? `?projectId=${id}` : "";
+
+  useEffect(() => {
+    const refresh = () => setRefreshKey(key => key + 1);
+    window.addEventListener("wonderspace:github-link-updated", refresh);
+    return () => window.removeEventListener("wonderspace:github-link-updated", refresh);
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -49,7 +56,7 @@ export default function WonderSpaceProjectNavigation({
       })
       .catch(() => { if (live) setConnectionStatus("unavailable"); });
     return () => { live = false; };
-  }, [projectId]);
+  }, [projectId, refreshKey]);
 
   const github = (section: GithubSection) => repo ? githubRepositoryLink(repo, section) : null;
   const items: Item[] = [
