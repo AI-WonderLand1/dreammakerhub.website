@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ProjectDeleteButton from "./components/ProjectDeleteButton";
 import CoderAvailabilityIndicator from "@/components/engines/CoderAvailabilityIndicator";
+import WonderSpaceDashboardPanel from "@/components/dashboard/WonderSpaceDashboardPanel";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import {
   Bot,
   Box,
@@ -133,7 +135,7 @@ export default function DashboardPage() {
 
       try {
         const [projectsResponse, assetsResponse] = await Promise.all([
-          fetch("/api/projects"),
+          fetchAuthenticatedProject("/api/projects"),
           fetch("/api/assets/user"),
         ]);
 
@@ -204,7 +206,7 @@ export default function DashboardPage() {
     setCreating(true);
     setCreateError("");
     try {
-      const response = await fetch("/api/projects", {
+      const response = await fetchAuthenticatedProject("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, tool: newProjectType, type: newProjectType }),
@@ -294,6 +296,12 @@ export default function DashboardPage() {
             )}
           </div>
 
+          <WonderSpaceDashboardPanel
+            projects={sortedProjects}
+            requestedProjectId={searchParams.get("projectId")}
+            onCreate={openCreate}
+          />
+
           <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_82%_55%,rgba(124,58,237,.26),transparent_30%),radial-gradient(circle_at_92%_42%,rgba(56,189,248,.15),transparent_20%),linear-gradient(120deg,#111827,#07111e)] p-6 lg:p-7">
             <div className="pointer-events-none absolute inset-y-0 right-0 w-2/5 opacity-65 [clip-path:polygon(100%_34%,88%_42%,76%_38%,65%_56%,52%_46%,38%_67%,25%_58%,0_82%,100%_100%)] bg-gradient-to-t from-violet-700/40 via-blue-700/20 to-transparent" />
             <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -322,18 +330,7 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <nav className="mb-5 flex gap-7 overflow-x-auto border-b border-white/10 px-1 pt-3 text-sm text-white/55">
-            <a href="#overview" className="border-b-2 border-violet-500 px-1 py-3 font-semibold text-violet-300">Overview</a>
-            <a href="#projects" className="px-1 py-3 hover:text-white">Projects</a>
-            {mostRecentProject ? (
-              <Link href={`/dashboard/projects/${mostRecentProject.id}/files`} className="px-1 py-3 hover:text-cyan-200">File Manager</Link>
-            ) : (
-              <button type="button" onClick={openCreate} className="px-1 py-3 hover:text-cyan-200">File Manager</button>
-            )}
-            <Link href="/dashboard/collaboration" className="px-1 py-3 hover:text-white">Members</Link>
-            <a href="#workspace-activity" className="px-1 py-3 hover:text-white">Activity</a>
-            <Link href="/dashboard/settings" className="px-1 py-3 hover:text-white">Settings</Link>
-          </nav>
+
 
           {projectLoadError && (
             <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
