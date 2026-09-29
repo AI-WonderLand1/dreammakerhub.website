@@ -21,6 +21,7 @@ export default function WonderSpaceBrowserPage() {
   const router = useRouter();
   const [state, setState] = useState<State>('loading');
   const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
   const [reload, setReload] = useState(0);
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
@@ -65,6 +66,7 @@ export default function WonderSpaceBrowserPage() {
         );
         if (active) {
           setProjects(verified);
+          setSelectedProjectId(current => verified.some(project => project.id === current) ? current : verified[0]?.id || '');
           setState('ready');
         }
       } catch (cause) {
@@ -128,7 +130,27 @@ export default function WonderSpaceBrowserPage() {
           </p>
         </header>
 
-        <div className="mt-4"><WonderSpaceProjectNavigation /></div>
+        {state === 'ready' && projects.length > 0 && (
+          <section className="mt-4 rounded-xl border border-white/10 bg-[#101931] p-4">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+              <label htmlFor="browser-project-tools" className="text-sm font-semibold text-slate-200">
+                Active project
+                <select id="browser-project-tools" value={selectedProjectId}
+                  onChange={event => setSelectedProjectId(event.target.value)}
+                  className="mt-2 block w-full min-w-52 rounded-lg border border-white/20 bg-[#080d22] px-3 py-2 text-sm text-white">
+                  {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
+                </select>
+              </label>
+              {selectedProjectId && (
+                <Link href={`/dashboard/projects/${encodeURIComponent(selectedProjectId)}/files`}
+                  className="inline-flex rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950">
+                  Edit selected project
+                </Link>
+              )}
+            </div>
+            <WonderSpaceProjectNavigation projectId={selectedProjectId} active="code" />
+          </section>
+        )}
 
         {state === 'loading' && <p role="status" className="mt-7 text-slate-300">Loading your projects…</p>}
         {state === 'signin' && (
