@@ -7,7 +7,7 @@ type Params = { params: Promise<{ projectId: string }> };
 
 // Native repository metadata cannot be overwritten using the general code editor.
 function reservedNativePath(value: string): boolean {
-  return value.startsWith(".wonderspace/work-items/") || value.startsWith(".wonderspace/wiki/");
+  return value === ".wonderspace" || value.startsWith(".wonderspace/");
 }
 
 function validFilePath(value: string): boolean {
