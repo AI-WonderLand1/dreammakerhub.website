@@ -299,7 +299,7 @@ export default function DashboardPage() {
           <WonderSpaceDashboardPanel
             projects={sortedProjects}
             requestedProjectId={searchParams.get("projectId")}
-            onCreate={openCreate}
+            onCreate={() => { setNewProjectType("workspace"); openCreate(); }}
           />
 
           <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_82%_55%,rgba(124,58,237,.26),transparent_30%),radial-gradient(circle_at_92%_42%,rgba(56,189,248,.15),transparent_20%),linear-gradient(120deg,#111827,#07111e)] p-6 lg:p-7">
