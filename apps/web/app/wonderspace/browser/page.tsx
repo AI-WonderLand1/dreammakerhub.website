@@ -223,15 +223,15 @@ export default function WonderSpaceBrowserPage() {
               <section className="rounded-2xl border border-white/10 bg-[#101931] p-5">
                 <h2 className="text-lg font-semibold">Need a full Linux terminal?</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  You can launch a GitHub Codespace for a repository you are authorized to access,
-                  using your own GitHub account. This is optional and does not automatically sync
-                  your DreamMakerHub project files.
+                  Your browser files belong to DreamMakerHub and do not require an external repository
+                  or GitHub account. Private WonderSpace Linux workspaces are a separate pilot;
+                  customer creation will open only after isolation, restoration, and compute limits are tested.
+                  Your browser project does not automatically sync to the separate Linux runtime yet.
                 </p>
-                <a href="https://github.com/codespaces/new" target="_blank" rel="noopener noreferrer"
+                <Link href="/wonderspace"
                   className="mt-4 inline-block rounded-lg border border-cyan-300/40 px-4 py-2 text-sm font-semibold text-cyan-200">
-                  Open GitHub Codespaces ↗
-                </a>
-                <p className="mt-3 text-xs text-slate-400">GitHub's usage allowances and billing apply to your GitHub account.</p>
+                  WonderSpace Linux IDE status →
+                </Link>
               </section>
             </aside>
           </div>
