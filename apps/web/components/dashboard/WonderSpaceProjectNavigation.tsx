@@ -20,9 +20,11 @@ type Item = {
 export default function WonderSpaceProjectNavigation({
   projectId,
   active,
+  advancedOnly = false,
 }: {
   projectId?: string | null;
   active?: "code" | "projects" | "issues" | "discussions" | "wiki";
+  advancedOnly?: boolean;
 }) {
   const pathname = usePathname();
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -56,7 +58,10 @@ export default function WonderSpaceProjectNavigation({
   return (
     <div className="rounded-xl border border-white/10 bg-[#0b111e]">
       <nav aria-label="WonderSpace project tools" className="flex items-center gap-0.5 overflow-x-auto px-2 text-sm">
-        {items.filter(item => !item.advanced || showAdvanced || Boolean(item.selected)).map(({ label, icon: Icon, href, description, selected }) => {
+        {items.filter(item => advancedOnly
+          ? !["Code", "History", "Projects"].includes(item.label)
+          : !item.advanced || showAdvanced || Boolean(item.selected)
+        ).map(({ label, icon: Icon, href, description, selected }) => {
           const cls = `inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm transition ${selected ? "border-cyan-400 font-semibold text-white" : "border-transparent text-slate-300 hover:border-white/25 hover:bg-white/5 hover:text-white"}`;
           if (!href) return (
             <span
@@ -75,13 +80,13 @@ export default function WonderSpaceProjectNavigation({
             </Link>
           );
         })}
-        <button type="button" onClick={() => setShowAdvanced(value => !value)}
+        {!advancedOnly && <button type="button" onClick={() => setShowAdvanced(value => !value)}
           aria-expanded={showAdvanced} aria-label="Toggle more project tools"
           className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-xs text-cyan-200 hover:bg-white/5">
           {showAdvanced ? "Fewer tools" : "More tools"}
-        </button>
+        </button>}
       </nav>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[.07] px-3 py-2 text-[11px] text-slate-400">
+      {!advancedOnly && <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[.07] px-3 py-2 text-[11px] text-slate-400">
         <span>
           {projectPath
             ? "WonderSpace-native project · Code, Issues, Discussions and Wiki share your DreamMakerHub project."
@@ -92,7 +97,7 @@ export default function WonderSpaceProjectNavigation({
             Open project files →
           </Link>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
