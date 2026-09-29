@@ -19,7 +19,7 @@ function BrowserIdeEntry() {
       <h2 className="mt-2 text-xl font-semibold">WonderSpace browser code editor</h2>
       <p className="mt-2 text-sm text-slate-300">
         Open your own projects, create files and folders, edit code, and save directly to DreamMakerHub.
-        The private Linux terminal is a separate Railway Sandbox pilot.
+        Full cloud VS Code workspaces are being consolidated behind Coder. Your existing project files are preserved.
       </p>
       <Link
         href="/wonderspace/browser"
@@ -36,10 +36,10 @@ function CloudIdePaused() {
   return (
     <section role="status" aria-label="Cloud IDE availability"
       className="mx-auto max-w-4xl rounded-2xl border border-amber-300/20 bg-[#101931] p-5 text-white">
-      <h2 className="text-lg font-semibold">Private Railway IDE: setup in progress</h2>
+      <h2 className="text-lg font-semibold">Customer VS Code IDE: setup in progress</h2>
       <p className="mt-2 text-sm text-slate-300">
-        Your browser editor works now. Separate customer Linux workspaces will appear here only after
-        account isolation, template, persistent storage and compute shutoff checks pass.
+        The existing browser file editor remains available. Full customer VS Code workspaces will open
+        only after separate Coder identities, isolated compute, persistent storage and a secure gateway are verified.
         No shared IDE password and no customer charge while setup is paused.
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
@@ -48,23 +48,6 @@ function CloudIdePaused() {
           Edit my project now
         </Link>
       </div>
-    </section>
-  );
-}
-
-/** Link to the separately isolated customer Railway Sandbox pilot only after release gates. */
-function CustomerSandboxIdeEntry() {
-  if (process.env.NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED !== 'true') return null;
-  return (
-    <section className="mx-auto mt-5 max-w-4xl rounded-2xl border border-emerald-300/30 bg-emerald-400/[.06] p-6 text-white">
-      <h2 className="text-xl font-semibold">WonderSpace private Linux IDE</h2>
-      <p className="mt-2 text-sm text-slate-300">
-        Your own on-demand Linux terminal and code editor, restored from a private compressed snapshot.
-        Use your DreamMakerHub login. Never share your editor link or your account session.
-      </p>
-      <Link href="/wonderspace/on-demand" className="mt-4 inline-flex rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-slate-950">
-        Create or resume private IDE
-      </Link>
     </section>
   );
 }
@@ -162,7 +145,7 @@ export function OperatorIdePanel() {
 }
 
 /** When SSR cookies are missing, do not misclassify an operator as a customer. */
-export default function WonderSpaceOperatorGate({ customerPilot }: { customerPilot: boolean }) {
+export default function WonderSpaceOperatorGate() {
   const { user, session, loading: authLoading } = useAuth();
   const [role, setRole] = useState<Role>('checking');
   const [retry, setRetry] = useState(0);
@@ -248,9 +231,7 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
     return (
       <main className="min-h-screen bg-[#080d22] px-5 py-8 text-white">
         <BrowserIdeEntry />
-        {customerPilot ? <CustomerSandboxIdeEntry /> : (
-          <div className="mt-5"><CloudIdePaused /></div>
-        )}
+        <div className="mt-5"><CloudIdePaused /></div>
       </main>
     );
   }
