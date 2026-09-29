@@ -168,6 +168,11 @@ describe("general code editor cannot overwrite first-party repository metadata",
     expect(storage).toContain("isReservedWonderSpacePath(oldNormalized) || isReservedWonderSpacePath(newNormalized)");
     expect(storage).toContain('.eq("updated_at", previousTimestamp)');
     expect(storage).toContain("listInternalProjectFilesByPrefix");
+    const exportRoute = readFileSync(join(process.cwd(), "apps/web/app/api/projects/[projectId]/export/route.ts"), "utf8");
+    expect(exportRoute).toContain("!isReservedWonderSpacePath(path)");
+    const importRoute = readFileSync(join(process.cwd(), "apps/web/app/api/projects/[projectId]/import/route.ts"), "utf8");
+    expect(importRoute).toContain("Archive contains invalid or reserved internal project paths");
+
 
   });
 
