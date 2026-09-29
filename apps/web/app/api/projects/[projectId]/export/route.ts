@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
-import { listFiles, readFile } from '@/lib/projects/storage';
+import { listFiles, readFile, isReservedWonderSpacePath } from '@/lib/projects/storage';
 import { logger } from '@/lib/logger';
 
 export async function GET(
@@ -21,7 +21,8 @@ export async function GET(
       const filePaths = await listFiles(projectId, userId);
       const zip = new JSZip();
 
-      for (const filePath of filePaths) {
+      // Portable code ZIPs exclude WonderSpace's app-managed metadata.
+      for (const filePath of filePaths.filter(path => !isReservedWonderSpacePath(path))) {
         const content = await readFile(projectId, userId, filePath);
         if (content !== null) {
           zip.file(filePath, content);
