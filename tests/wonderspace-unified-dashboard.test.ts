@@ -162,12 +162,20 @@ describe("one dashboard/project/browser navigation", () => {
     expect(panel).toContain('params.set("projectId", selected.id)');
     expect(nav).toContain('href: id ? `/dashboard?projectId=${id}#projects`');
     expect(panel).toContain("<WonderSpaceProjectNavigation projectId={selected?.id}");
+    const inline = read("apps/web/components/dashboard/WonderSpaceInlineCodeManager.tsx");
+    expect(panel).toContain("<WonderSpaceInlineCodeManager project={selected} />");
+    expect(inline).toContain("fetchAuthenticatedProject(");
+    expect(inline).toContain("<RepositoryFileBrowser");
+    expect(inline).toContain("loadedProjectId === projectId");
+    expect(inline).not.toContain("github.com/codespaces");
     expect(nav).toContain("dashboard/projects/");
     expect(overview).toContain("<WonderSpaceProjectNavigation projectId={project.id}");
     expect(manager).toContain('<WonderSpaceProjectNavigation projectId={project.id} active="code" />');
     expect(manager).toContain("<RepositoryFileBrowser");
     expect(layout).toContain("<WonderSpaceProjectNavigation projectId={currentProject.id}");
     expect(browser).toContain("<WonderSpaceProjectNavigation />");
+    expect(browser).not.toContain("github.com/codespaces/new");
+    expect(browser).toContain('href="/wonderspace"');
   });
 
   it("routes project tools to first-party storage, without outbound GitHub dependencies", () => {
