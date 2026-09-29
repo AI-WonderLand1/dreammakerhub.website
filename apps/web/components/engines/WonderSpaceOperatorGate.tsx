@@ -53,23 +53,6 @@ function CloudIdePaused() {
   );
 }
 
-/** Link to the separately isolated customer Railway Sandbox pilot only after release gates. */
-function CustomerSandboxIdeEntry() {
-  if (process.env.NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED !== 'true') return null;
-  return (
-    <section className="mx-auto mt-5 max-w-4xl rounded-2xl border border-emerald-300/30 bg-emerald-400/[.06] p-6 text-white">
-      <h2 className="text-xl font-semibold">WonderSpace private Linux IDE</h2>
-      <p className="mt-2 text-sm text-slate-300">
-        Your own on-demand Linux terminal and code editor, restored from a private compressed snapshot.
-        Use your DreamMakerHub login. Never share your editor link or your account session.
-      </p>
-      <Link href="/wonderspace/on-demand" className="mt-4 inline-flex rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-slate-950">
-        Create or resume private IDE
-      </Link>
-    </section>
-  );
-}
-
 /** The personal operator workspace is never created through the customer form. */
 export function OperatorIdePanel() {
   const { session } = useAuth();
