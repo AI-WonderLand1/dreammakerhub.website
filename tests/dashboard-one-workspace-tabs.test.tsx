@@ -10,6 +10,7 @@ const shared = vi.hoisted(() => ({
   replace: vi.fn(),
   editorMounts: 0,
   onCreate: vi.fn(),
+  reportDirty: null as null | ((projectId: string, dirty: boolean) => void),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -27,7 +28,8 @@ vi.mock("next/link", async () => {
 vi.mock("../apps/web/components/dashboard/WonderSpaceInlineCodeManager", async () => {
   const React = await import("react");
   return {
-    default: ({ project, embedded }: { project: { id: string } | null; embedded?: boolean }) => {
+    default: ({ project, embedded, onDirtyChange }: { project: { id: string } | null; embedded?: boolean; onDirtyChange?: (id: string, dirty: boolean) => void }) => {
+      shared.reportDirty = onDirtyChange || null;
       React.useEffect(() => {
         shared.editorMounts += 1;
       }, []);
@@ -42,8 +44,8 @@ vi.mock("../apps/web/components/dashboard/WonderSpaceInlineCodeManager", async (
 vi.mock("../apps/web/components/dashboard/WonderSpaceSourceHistory", async () => {
   const React = await import("react");
   return {
-    default: ({ projectId }: { projectId: string }) =>
-      React.createElement("div", { "data-testid": "source-history", "data-project-id": projectId }),
+    default: ({ projectId, hasUnsavedEdits }: { projectId: string; hasUnsavedEdits?: boolean }) =>
+      React.createElement("div", { "data-testid": "source-history", "data-project-id": projectId, "data-unsaved": String(hasUnsavedEdits) }),
   };
 });
 vi.mock("../apps/web/components/dashboard/WonderSpaceProjectNavigation", async () => {
@@ -85,6 +87,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   shared.url = "http://localhost/dashboard?projectId=first";
   shared.editorMounts = 0;
+  shared.reportDirty = null;
   shared.replace.mockImplementation((url: string) => {
     shared.url = new URL(url, "http://localhost").toString();
   });
@@ -149,6 +152,25 @@ describe("one-page project workspace", () => {
     expect(shared.url).not.toContain("workspaceTab=code");
     expect(container.querySelector('[data-testid="real-editor-mount"]')).toBeNull();
     expect(container.textContent).toContain("Second site");
+  });
+
+  it("warns rather than silently discarding unsaved code on project switch", async () => {
+    await renderPanel();
+    await chooseTab("Code");
+    await act(async () => { shared.reportDirty?.("first", true); });
+    expect(container.textContent).toContain("You have unsaved code edits.");
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const dropdown = container.querySelector("select") as HTMLSelectElement;
+    await act(async () => {
+      dropdown.value = "second";
+      dropdown.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await renderPanel();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(shared.url).toContain("projectId=first");
+    await chooseTab("History");
+    expect(container.querySelector('[data-testid="source-history"]')?.getAttribute("data-unsaved")).toBe("true");
   });
 
   it("keeps a safe empty state when there is no project", async () => {
