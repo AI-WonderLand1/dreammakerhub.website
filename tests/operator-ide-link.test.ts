@@ -104,8 +104,8 @@ describe('Existing operator IDE link', () => {
     const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
     const customer = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     expect(gate).toContain("role === 'customer'");
-    expect(gate).toContain('customerPilot ? <CustomerSandboxIdeEntry />');
-    expect(gate).toContain('Private Railway IDE: setup in progress');
+    expect(gate).not.toContain('CustomerSandboxIdeEntry');
+    expect(gate).toContain('Customer VS Code IDE: setup in progress');
     expect(gate).toContain('<CloudIdePaused />');
     expect(customer).toContain('operatorPreview');
     // The dashboard link is intentionally available for browsing the caller's own
