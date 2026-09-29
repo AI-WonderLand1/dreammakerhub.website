@@ -5,8 +5,38 @@ import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'WonderSpace | AI Wonderland',
-  description: 'Launch your private Coder cloud development workspace.',
+  description: 'Browser editor and separately isolated Railway Sandbox development environments.',
 };
+
+/**
+ * The customer pathway is Railway Sandboxes, not AWS, EKS or the operator's
+ * shared Coder service. Both server authorization and public UI release must
+ * be enabled following the isolated, billable two-user smoke test.
+ * API/controller enforce their own independent owner and cost checks.
+ */
+async function railwayCustomerPilot(): Promise<boolean> {
+  if (process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED !== 'true' ||
+      process.env.NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED !== 'true') return false;
+  const configured = process.env.WONDERSPACE_CONTROLLER_URL;
+  if (!configured) return false;
+  try {
+    const endpoint = new URL(configured);
+    // Never let an operator-supplied or compromised env URL trigger SSRF.
+    if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password ||
+        !/^[a-z0-9-]+\.up\.railway\.app$/i.test(endpoint.hostname) ||
+        (endpoint.pathname !== '/' && endpoint.pathname !== '') ||
+        endpoint.search || endpoint.hash || endpoint.port) return false;
+    // A visible Create button requires a deployed responding controller,
+    // not merely an environment variable. This is UI readiness only.
+    const response = await fetch(endpoint.origin + '/healthz', {
+      cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(2500),
+    });
+    const status = response.ok ? await response.json().catch(() => null) : null;
+    return status?.ok === true && status?.runtimeEnabled === true;
+  } catch {
+    return false;
+  }
+}
 
 export default async function WonderSpacePage() {
   const supabase = await createClient();
@@ -16,14 +46,10 @@ export default async function WonderSpacePage() {
   // If the SSR cookie is missing, do not guess that the visitor is a customer.
   // The browser can have a verified Supabase session even when the proxy drops
   // SSR cookies. The client gate rechecks the role using a verified Bearer token.
-  if (isOperator) {
-    const customerPilot = process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true';
-    return <OperatorIdePanel customerPilot={customerPilot} />;
-  }
+  if (isOperator) return <OperatorIdePanel />;
 
-  // Customer pod provisioning and browser IDE opening are deliberately
-  // independent. A private pod/PVC may be prepared while the direct-open route
-  // remains fail-closed until the DreamMakerHub-only gateway is verified.
-  const customerPilot = process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true';
+  // No customer Coder/EKS form: the customer pilot uses isolated Railway
+  // Sandboxes and stays invisible until its own runtime/controller gates pass.
+  const customerPilot = await railwayCustomerPilot();
   return <WonderSpaceOperatorGate customerPilot={customerPilot} />;
 }

@@ -22,11 +22,11 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain('!operatorRefreshAttempted.current');
     expect(gate).toContain('operatorRefreshAttempted.current = true');
     expect(gate).toContain('refreshUserId.current !== user.id');
-    expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel customerPilot={customerPilot} />");
+    expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
-    expect(gate).toContain('<CustomerWorkspaceLaunch operatorPreview embedded />');
+    expect(gate).toContain('<CloudIdePaused />');
     expect(gate).not.toContain('href="/dashboard"');
     expect(role).toContain("authenticatedSupabaseUser(request)");
     expect(role).toContain("from '@/lib/supabase/authenticated-user.server'");
@@ -103,9 +103,10 @@ describe('Existing operator IDE link', () => {
   it('keeps the customer launcher gated for customers while still showing the operator preview form', () => {
     const gate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
     const customer = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
-    expect(gate).toContain("role === 'customer' && customerPilot");
-    expect(gate).toContain('Cloud IDE access is private');
-    expect(gate).toContain('<CustomerWorkspaceLaunch operatorPreview embedded />');
+    expect(gate).toContain("role === 'customer'");
+    expect(gate).toContain('customerPilot ? <CustomerSandboxIdeEntry />');
+    expect(gate).toContain('Private Railway IDE: setup in progress');
+    expect(gate).toContain('<CloudIdePaused />');
     expect(customer).toContain('operatorPreview');
     // The dashboard link is intentionally available for browsing the caller's own
     // site projects; it cannot open or provision the operator's Coder workspace.
