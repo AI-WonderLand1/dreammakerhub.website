@@ -19,6 +19,8 @@ describe("Railway-only customer IDE entry", () => {
     expect(page).toContain("WONDERSPACE_CONTROLLER_URL");
     expect(page).toContain("'/healthz'");
     expect(page).toContain("AbortSignal.timeout(2500)");
+    expect(page).toContain("status?.runtimeEnabled === true");
+    expect(controller).toContain("runtimeEnabled: process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED");
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).toContain("customerPilot ? <CustomerSandboxIdeEntry />");
     expect(gate).toContain("/wonderspace/on-demand");
