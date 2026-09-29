@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Code2, FolderOpen, History, Plus, Settings2 } from "lucide-react";
+import { Code2, FolderOpen, Plus, Settings2 } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
 import WonderSpaceInlineCodeManager from "./WonderSpaceInlineCodeManager";
 import WonderSpaceSourceHistory from "./WonderSpaceSourceHistory";
