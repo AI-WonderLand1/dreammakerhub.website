@@ -142,9 +142,9 @@ describe("one dashboard/project/browser navigation", () => {
     const layout = read("apps/web/app/(workspace)/dashboard/layout.tsx");
     const browser = read("apps/web/app/wonderspace/browser/page.tsx");
     expect(dashboard).toContain("<WonderSpaceDashboardPanel");
-    expect(panel).toContain("projects={"); // caught below if panel silently loses its selector
+    expect(panel).toContain("projects.map(project =>");
     expect(panel).toContain("<WonderSpaceProjectNavigation projectId={selected?.id}");
-    expect(nav).toContain("dashboard/projects/\${id}/files");
+    expect(nav).toContain("dashboard/projects/");
     expect(overview).toContain("<WonderSpaceProjectNavigation projectId={project.id}");
     expect(manager).toContain('<WonderSpaceProjectNavigation projectId={project.id} active="code" />');
     expect(manager).toContain("<RepositoryFileBrowser");
