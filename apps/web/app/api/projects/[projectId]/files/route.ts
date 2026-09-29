@@ -5,8 +5,14 @@ import { logger } from '@/lib/logger';
 
 type Params = { params: Promise<{ projectId: string }> };
 
+// Native repository metadata cannot be overwritten using the general code editor.
+function reservedNativePath(value: string): boolean {
+  return value.startsWith(".wonderspace/work-items/") || value.startsWith(".wonderspace/wiki/");
+}
+
 function validFilePath(value: string): boolean {
-  return Boolean(value) && !value.startsWith('/') && !/[\\\x00-\x1f\x7f]/.test(value) &&
+  return Boolean(value) && !value.startsWith('/') && !reservedNativePath(value) &&
+    !/[\\\x00-\x1f\x7f]/.test(value) &&
     value.split('/').every((part) => part !== '' && part !== '.' && part !== '..');
 }
 
@@ -31,6 +37,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const fileList = await listFiles(projectId, auth.userId);
     const files: Record<string, string> = {};
     for (const path of fileList) {
+      if (reservedNativePath(path)) continue;
       const content = await readFile(projectId, auth.userId, path);
       if (content !== null) files[path] = content;
     }
