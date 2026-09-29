@@ -9,8 +9,7 @@ const mocks = vi.hoisted(() => ({
   listSourceVersions: vi.fn(),
   captureSourceVersion: vi.fn(),
   loadSourceVersion: vi.fn(),
-  listFiles: vi.fn(),
-  readFile: vi.fn(),
+  readCurrentProjectSourceFiles: vi.fn(),
   loggerError: vi.fn(),
 }));
 vi.mock("@/app/api/ai/auth", () => ({ requirePaidAIUser: mocks.requirePaidAIUser }));
@@ -18,10 +17,7 @@ vi.mock("@/lib/projects/storage", () => ({
   listSourceVersions: mocks.listSourceVersions,
   captureSourceVersion: mocks.captureSourceVersion,
   loadSourceVersion: mocks.loadSourceVersion,
-  listFiles: mocks.listFiles,
-  readFile: mocks.readFile,
-  isReservedWonderSpacePath: (path: string) =>
-    path === ".wonderspace" || path.startsWith(".wonderspace/"),
+  readCurrentProjectSourceFiles: mocks.readCurrentProjectSourceFiles,
 }));
 vi.mock("@/lib/logger", () => ({ logger: { error: mocks.loggerError } }));
 
@@ -46,9 +42,7 @@ beforeEach(() => {
   mocks.loadSourceVersion.mockResolvedValue({
     ...version, files: { "src/main.ts": "before", "old.txt": "old" },
   });
-  mocks.listFiles.mockResolvedValue(["src/main.ts", "new.txt", ".wonderspace/wiki/home.md"]);
-  mocks.readFile.mockImplementation(async (_project: string, _owner: string, path: string) =>
-    ({ "src/main.ts": "after", "new.txt": "new" } as Record<string, string>)[path] ?? null);
+  mocks.readCurrentProjectSourceFiles.mockResolvedValue({ "src/main.ts": "after", "new.txt": "new" });
 });
 
 describe("authenticated owner-only native source history", () => {
@@ -95,7 +89,7 @@ describe("authenticated owner-only native source history", () => {
     expect((await response.json()).changes).toEqual({
       added: ["new.txt"], modified: ["src/main.ts"], deleted: ["old.txt"],
     });
-    expect(mocks.readFile).not.toHaveBeenCalledWith(projectId, ownerId, ".wonderspace/wiki/home.md");
+    expect(mocks.readCurrentProjectSourceFiles).toHaveBeenCalledWith(projectId, ownerId);
     expect(mocks.loadSourceVersion).toHaveBeenCalledWith(projectId, ownerId, versionId);
   });
 
@@ -109,7 +103,7 @@ describe("authenticated owner-only native source history", () => {
     expect(Object.keys(zip.files).sort()).toContain("old.txt");
     expect((await zip.file("src/main.ts")?.async("string"))).toBe("before");
     expect(Object.keys(zip.files).some(path => path.startsWith(".wonderspace"))).toBe(false);
-    expect(mocks.listFiles).not.toHaveBeenCalled();
+    expect(mocks.readCurrentProjectSourceFiles).not.toHaveBeenCalled();
   });
 
   it("handles missing versions, unauthorized projects and quota failures without leaking data", async () => {
