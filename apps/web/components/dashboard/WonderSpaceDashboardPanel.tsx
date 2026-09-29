@@ -62,7 +62,7 @@ function ProjectWorkspaceViews({
       )}
       {activeTab === "tools" && (
         <div className="space-y-3 p-3 sm:p-4">
-          <WonderSpaceProjectNavigation projectId={selected?.id} />
+          <WonderSpaceProjectNavigation projectId={selected?.id} advancedOnly />
           {selected && (
             <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
               className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline">
