@@ -10,10 +10,15 @@ const filesApi = read('apps/web/app/api/projects/[projectId]/files/route.ts');
 
 describe('VM-independent dashboard file manager access', () => {
   it("has a visible direct file manager entry and supports a new user\'s project creation", () => {
-    expect(dashboard).toContain('File Manager');
-    expect(dashboard).toContain('(no VM)');
-    expect(dashboard).toContain('/dashboard/projects/${mostRecentProject.id}/files');
+    const panel = read('apps/web/components/dashboard/WonderSpaceDashboardPanel.tsx');
+    const embedded = read('apps/web/components/dashboard/WonderSpaceInlineCodeManager.tsx');
+    expect(dashboard).toContain('<WonderSpaceDashboardPanel');
+    expect(dashboard).toContain('workspaceTab=code');
     expect(dashboard).toContain('onClick={openCreate}');
+    expect(panel).toContain('label: "Code"');
+    expect(panel).toContain('<WonderSpaceInlineCodeManager project={selected} embedded');
+    expect(embedded).toContain('<ActiveProjectFiles key={project.id}');
+    expect(embedded).toContain('/api/projects/${encodeURIComponent(project.id)}/files');
   });
 
   it('reports project load failures rather than silently pretending there are zero files', () => {

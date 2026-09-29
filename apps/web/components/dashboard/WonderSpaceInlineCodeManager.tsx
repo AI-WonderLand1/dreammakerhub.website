@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Code2, ExternalLink, RotateCcw } from "lucide-react";
 import RepositoryFileBrowser from "../../app/(workspace)/dashboard/projects/[id]/RepositoryFileBrowser";
@@ -13,7 +13,17 @@ type LoadState = "loading" | "ready" | "error";
  * Separate, project-keyed component: asynchronous file mutations belonging
  * to an old project cannot update the newly selected project's file state.
  */
-function ActiveProjectFiles({ project }: { project: DashboardProject }) {
+type DirtyChange = (projectId: string, dirty: boolean) => void;
+function ActiveProjectFiles({
+  project, onDirtyChange,
+}: {
+  project: DashboardProject;
+  onDirtyChange?: DirtyChange;
+}) {
+  const reportUnsaved = useCallback(
+    (dirty: boolean) => onDirtyChange?.(project.id, dirty),
+    [onDirtyChange, project.id],
+  );
   const [reload, setReload] = useState(0);
   const [status, setStatus] = useState<LoadState>("loading");
   const [files, setFiles] = useState<Record<string, string>>({});
@@ -78,6 +88,7 @@ function ActiveProjectFiles({ project }: { project: DashboardProject }) {
           projectType={project.tool || project.type}
           files={files}
           onFilesChange={setFiles}
+          onUnsavedChange={reportUnsaved}
         />
       )}
     </div>
@@ -88,8 +99,32 @@ function ActiveProjectFiles({ project }: { project: DashboardProject }) {
  * First-party project navigator and file editor share a project ID, without
  * an external code host or starting a VM. The actual editor fetches lazily.
  */
-export default function WonderSpaceInlineCodeManager({ project }: { project: DashboardProject | null }) {
+export default function WonderSpaceInlineCodeManager({
+  project, embedded = false, onDirtyChange,
+}: {
+  project: DashboardProject | null;
+  embedded?: boolean;
+  onDirtyChange?: DirtyChange;
+}) {
   const [open, setOpen] = useState(false);
+  if (embedded) return (
+    <section aria-label="Native project code manager" className="overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0a1727]">
+      {project ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <p className="text-sm font-semibold text-white">Edit {project.name}</p>
+            <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/files`}
+              className="inline-flex items-center gap-1.5 text-xs text-cyan-200 hover:underline">
+              <ExternalLink size={14} aria-hidden="true" /> Full-page editor
+            </Link>
+          </div>
+          <ActiveProjectFiles key={project.id} project={project} onDirtyChange={onDirtyChange} />
+        </>
+      ) : (
+        <p className="p-4 text-sm text-slate-400">Select a project to manage its files.</p>
+      )}
+    </section>
+  );
   return (
     <section aria-label="Native project code manager" className="overflow-hidden rounded-xl border border-cyan-400/20 bg-[#0a1727]">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -117,7 +152,7 @@ export default function WonderSpaceInlineCodeManager({ project }: { project: Das
           </button>
         </div>
       </div>
-      {open && project && <ActiveProjectFiles key={project.id} project={project} />}
+      {open && project && <ActiveProjectFiles key={project.id} project={project} onDirtyChange={onDirtyChange} />}
     </section>
   );
 }
