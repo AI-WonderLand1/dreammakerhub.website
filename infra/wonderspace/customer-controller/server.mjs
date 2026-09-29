@@ -365,7 +365,9 @@ async function sweep() {
   } finally { sweeping = false; }
 }
 const server = http.createServer(async (req, res) => {
-  if (req.url === "/healthz" && req.method === "GET") return send(res, 200, { ok: true });
+  if (req.url === "/healthz" && req.method === "GET") return send(res, 200, {
+    ok: true, runtimeEnabled: process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED === "true" && testerIds.size >= 2,
+  });
   try {
     gate();
     const user = await authenticated(req);
