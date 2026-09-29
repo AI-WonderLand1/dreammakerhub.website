@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
+import WonderSpaceProjectNavigation from '@/components/dashboard/WonderSpaceProjectNavigation';
 
 type Project = {
   id: string;
@@ -114,7 +115,7 @@ export default function WonderSpaceBrowserPage() {
   return (
     <main className="min-h-screen bg-[#080d22] px-5 py-10 text-white">
       <div className="mx-auto max-w-5xl">
-        <Link href="/wonderspace" className="text-sm text-cyan-300 hover:underline">← WonderSpace</Link>
+        <div className="flex flex-wrap gap-4"><Link href="/dashboard" className="text-sm text-cyan-300 hover:underline">← Dashboard</Link><Link href="/wonderspace" className="text-sm text-slate-300 hover:underline">Linux IDE pilot</Link></div>
         <header className="mt-5 rounded-2xl border border-cyan-400/20 bg-[#101931] p-7">
           <span className="text-xs font-semibold uppercase tracking-widest text-cyan-300">WonderSpace • Browser editor</span>
           <h1 className="mt-3 text-3xl font-bold">Open your projects and code</h1>
@@ -126,6 +127,8 @@ export default function WonderSpaceBrowserPage() {
             Browser editor only: a Linux terminal and isolated cloud runtime are not included in this mode.
           </p>
         </header>
+
+        <div className="mt-4"><WonderSpaceProjectNavigation /></div>
 
         {state === 'loading' && <p role="status" className="mt-7 text-slate-300">Loading your projects…</p>}
         {state === 'signin' && (

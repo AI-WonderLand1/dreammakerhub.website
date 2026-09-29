@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
+import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import {
   Bell,
   Bot,
@@ -66,7 +68,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    fetch("/api/projects")
+    fetchAuthenticatedProject("/api/projects")
       .then(async (response) => response.ok ? response.json() : { projects: [] })
       .then((data) => {
         if (!cancelled) setProjects(Array.isArray(data.projects) ? data.projects : []);
@@ -368,7 +370,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {mobileOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-[55] bg-black/60 lg:hidden" />}
 
       <main className="min-h-screen pt-[72px] lg:pl-[286px]">
-        <div className="mx-auto max-w-[1640px] p-4 sm:p-5 lg:p-6">{children}</div>
+        <div className="mx-auto max-w-[1640px] p-4 sm:p-5 lg:p-6">
+          {currentProject && pathname !== "/dashboard" && !isProjectRoute && (
+            <div className="mb-5">
+              <WonderSpaceProjectNavigation projectId={currentProject.id} />
+            </div>
+          )}
+          {children}
+        </div>
       </main>
     </div>
   );
