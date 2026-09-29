@@ -565,3 +565,27 @@ export async function loadSourceVersion(
     createdAt: String(data.created_at), files,
   };
 }
+
+/** One consistent owner-scoped SELECT for source comparisons, not N file requests. */
+export async function readCurrentProjectSourceFiles(
+  projectId: string, ownerId: string,
+): Promise<Record<string, string>> {
+  await assertOwner(projectId, ownerId);
+  const supabase = await getClient();
+  const { data, error } = await supabase.from("_project_files")
+    .select("file_path,content").eq("project_id", projectId)
+    .neq("file_path", ".wonderspace")
+    .not("file_path", "like", ".wonderspace/%")
+    .order("file_path", { ascending: true }).limit(201);
+  if (error) throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  if ((data ?? []).length > 200) throw new Error("SOURCE_COMPARE_TOO_LARGE");
+  const files: Record<string, string> = {};
+  for (const row of data ?? []) {
+    const filePath = String(row.file_path);
+    if (!validRenameInput(filePath) || isReservedWonderSpacePath(filePath)) {
+      throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+    }
+    files[filePath] = String(row.content ?? "");
+  }
+  return files;
+}
