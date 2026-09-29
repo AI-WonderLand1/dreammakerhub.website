@@ -19,11 +19,14 @@ describe('customer IDE opening security hold', () => {
   it('retains paused Coder customer route without the competing Railway customer launch', () => {
     const page = file('apps/web/app/wonderspace/page.tsx');
     const gate = file('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
-    expect(page).toContain("process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED !== 'true'");
-    expect(page).toContain("status?.runtimeEnabled === true");
-    expect(page).not.toContain("process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED === 'true'");
+    // Railway customer UI retired; the distinct operator path is preserved.
+    expect(page).not.toContain('railwayCustomerPilot');
+    expect(page).not.toContain('WONDERSPACE_CONTROLLER_URL');
+    expect(page).toContain('WonderSpaceOperatorGate');
+    expect(gate).toContain('<CloudIdePaused />');
+    expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
-    expect(gate).not.toContain("CustomerWorkspaceLaunch");
+    expect(gate).not.toContain('<CustomerWorkspaceLaunch');
   });
 
   it('removes direct customer-to-Coder navigation from both customer views', () => {
