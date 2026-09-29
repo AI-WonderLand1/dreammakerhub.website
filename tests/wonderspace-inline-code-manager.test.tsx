@@ -5,6 +5,7 @@ import { createElement, type ReactNode } from "react";
 
 const mocks = vi.hoisted(() => ({
   fetchAuthenticatedProject: vi.fn(),
+  browserCallbacks: new Map<string, (files: Record<string, string>) => void>(),
 }));
 
 vi.mock("next/link", () => ({
@@ -15,9 +16,11 @@ vi.mock("@/lib/wonderspace/browser-project-fetch", () => ({
   fetchAuthenticatedProject: mocks.fetchAuthenticatedProject,
 }));
 vi.mock("../apps/web/app/(workspace)/dashboard/projects/[id]/RepositoryFileBrowser", () => ({
-  default: ({ projectId, files }: { projectId: string; files: Record<string, string> }) =>
-    createElement("div", { "data-testid": "native-file-browser", "data-project-id": projectId },
-      Object.keys(files).join(", ")),
+  default: ({ projectId, files, onFilesChange }: { projectId: string; files: Record<string, string>; onFilesChange: (files: Record<string, string>) => void }) => {
+    mocks.browserCallbacks.set(projectId, onFilesChange);
+    return createElement("div", { "data-testid": "native-file-browser", "data-project-id": projectId },
+      Object.keys(files).join(", "));
+  },
 }));
 
 import WonderSpaceInlineCodeManager from "../apps/web/components/dashboard/WonderSpaceInlineCodeManager";
@@ -25,7 +28,7 @@ import WonderSpaceInlineCodeManager from "../apps/web/components/dashboard/Wonde
 const first = { id: "first-project", name: "First", tool: "workspace" };
 const second = { id: "second-project", name: "Second", tool: "workspace" };
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => { vi.resetAllMocks(); mocks.browserCallbacks.clear(); });
 afterEach(() => cleanup());
 
 describe("native dashboard code manager", () => {
@@ -58,12 +61,18 @@ describe("native dashboard code manager", () => {
     const view = render(<WonderSpaceInlineCodeManager project={first} />);
     fireEvent.click(screen.getByRole("button", { name: "Open code here" }));
     expect((await screen.findByTestId("native-file-browser")).textContent).toContain("first.txt");
+    const staleFirstProjectCallback = mocks.browserCallbacks.get(first.id);
+    expect(staleFirstProjectCallback).toBeTypeOf("function");
     view.rerender(<WonderSpaceInlineCodeManager project={second} />);
     await waitFor(() =>
       expect(screen.getByTestId("native-file-browser").getAttribute("data-project-id")).toBe(second.id),
     );
     expect(screen.getByTestId("native-file-browser").textContent).toContain("second.txt");
     expect(screen.getByTestId("native-file-browser").textContent).not.toContain("first.txt");
+    // A late mutation of the unmounted project's browser must not bleed into B.
+    staleFirstProjectCallback?.({ "late-first-project.ts": "private A data" });
+    expect(screen.getByTestId("native-file-browser").textContent).not.toContain("late-first-project.ts");
+    expect(screen.getByTestId("native-file-browser").getAttribute("data-project-id")).toBe(second.id);
   });
 
   it("shows an actionable error and safely retries failures", async () => {
