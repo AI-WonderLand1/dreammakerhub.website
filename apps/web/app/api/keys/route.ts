@@ -1,47 +1,43 @@
 import { NextResponse } from "next/server";
 import { supabaseRouteClient } from "@/lib/supabase/route";
-import { makeApiToken } from "@/lib/crypto/token";
-import { logger } from '@/lib/logger';
+import { createWonderlandKey, listWonderlandKeys } from "@/lib/wonderland-api-keys/server";
 
-export async function GET() {
-  const supabase = await supabaseRouteClient();
-  const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const runtime = "nodejs";
 
-  const { data, error } = await supabase
-    .from("api_keys")
-    .select("id,name,prefix,last_used_at,revoked_at,created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ keys: data ?? [] });
+async function currentUser() {
+  const db = await supabaseRouteClient();
+  const { data, error } = await db.auth.getUser();
+  if (error || !data.user) return null;
+  return data.user;
 }
 
-export async function POST(req: Request) {
-  const supabase = await supabaseRouteClient();
-  const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    return NextResponse.json({ keys: await listWonderlandKeys(user.id) });
+  } catch {
+    return NextResponse.json({ error: "Key storage unavailable" }, { status: 503 });
+  }
+}
 
-  const body = await req.json().catch(() => ({}));
-  const name = String(body?.name ?? "").trim();
-  if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
-  if (name.length > 64) return NextResponse.json({ error: "Name too long" }, { status: 400 });
-
-  const prefix = process.env.WONDER_API_KEY_PREFIX ?? "wb_live_";
-  const { token, token_hash, prefix: prefix12 } = await makeApiToken(prefix);
-
-  const { error } = await supabase.from("api_keys").insert({
-    user_id: auth.user.id,
-    name,
-    prefix: prefix12,
-    token_hash,
-  });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  // IMPORTANT: return token only once
-  return NextResponse.json({
-    token,
-    prefix: prefix12,
-  });
+export async function POST(request: Request) {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = await request.json().catch(() => null);
+  if (typeof body?.name !== "string" || !body.name.trim() || body.name.trim().length > 64) {
+    return NextResponse.json({ error: "Key name must be 1-64 characters" }, { status: 400 });
+  }
+  try {
+    const result = await createWonderlandKey(user.id, body.name.trim());
+    if ("limitReached" in result) {
+      return NextResponse.json({ error: "Maximum five active keys per account" }, { status: 429 });
+    }
+    return NextResponse.json(result, {
+      status: 201,
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch {
+    return NextResponse.json({ error: "Key creation unavailable" }, { status: 503 });
+  }
 }
