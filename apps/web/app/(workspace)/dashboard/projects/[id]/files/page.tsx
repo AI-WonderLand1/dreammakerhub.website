@@ -16,6 +16,7 @@ import {
 import RepositoryFileBrowser from "../RepositoryFileBrowser";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
+import WonderSpaceSourceHistory from "@/components/dashboard/WonderSpaceSourceHistory";
 
 type Project = {
   id: string;
@@ -173,6 +174,7 @@ export default function ProjectCodeManagerPage() {
         </main>
 
         <aside className="space-y-4">
+          <WonderSpaceSourceHistory key={project.id} projectId={project.id} />
           <section className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-[#0c1425] p-4">
             <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_10%,rgba(124,58,237,.28),transparent_34%),radial-gradient(circle_at_10%_90%,rgba(6,182,212,.16),transparent_38%)]" />
             <div className="relative">
