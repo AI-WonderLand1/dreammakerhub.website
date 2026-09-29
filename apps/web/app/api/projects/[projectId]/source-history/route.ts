@@ -87,16 +87,16 @@ export async function GET(req: NextRequest, { params }: Context) {
     const saved = version.files;
     const savedKeys = Object.keys(saved);
     const currentKeys = Object.keys(current);
-    const added = currentKeys.filter(path => !(path in saved)).sort();
-    const deleted = savedKeys.filter(path => !(path in current)).sort();
-    const modified = currentKeys.filter(path => path in saved && current[path] !== saved[path]).sort();
+    const added = currentKeys.filter(path => !Object.prototype.hasOwnProperty.call(saved, path)).sort();
+    const deleted = savedKeys.filter(path => !Object.prototype.hasOwnProperty.call(current, path)).sort();
+    const modified = currentKeys.filter(path => Object.prototype.hasOwnProperty.call(saved, path) && current[path] !== saved[path]).sort();
     return NextResponse.json({
       version: {
         id: version.id, title: version.title,
         versionNumber: version.versionNumber, createdAt: version.createdAt,
       },
       changes: { added, deleted, modified },
-      unchanged: currentKeys.filter(path => path in saved && current[path] === saved[path]).length,
+      unchanged: currentKeys.filter(path => Object.prototype.hasOwnProperty.call(saved, path) && current[path] === saved[path]).length,
     }, { headers: noStore });
   } catch (error) {
     return fail(error);
