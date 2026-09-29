@@ -4,23 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
-  BarChart3,
-  Bot,
-  CircleDot,
   Code2,
   Cpu,
   ExternalLink,
   FileCode2,
-  GitPullRequest,
   HardDrive,
-  PlayCircle,
-  Settings,
   ShieldCheck,
   Sparkles,
   WandSparkles,
 } from "lucide-react";
 import RepositoryFileBrowser from "../RepositoryFileBrowser";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
+import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
+import WonderSpaceRepositoryConnection from "@/components/dashboard/WonderSpaceRepositoryConnection";
 
 type Project = {
   id: string;
@@ -107,16 +103,6 @@ export default function ProjectCodeManagerPage() {
   const initialPath = searchParams.get("path");
   const storage = useMemo(() => formatBytes(files), [files]);
 
-  const tabs = [
-    { label: "Code", href: `/dashboard/projects/${projectId}/files`, icon: Code2, active: true },
-    { label: "Issues", href: `/dashboard/support?${projectQuery}`, icon: CircleDot },
-    { label: "Pull requests", href: `/dashboard/collaboration?${projectQuery}&view=reviews`, icon: GitPullRequest },
-    { label: "AI Agents", href: `/dashboard/agents?${projectQuery}`, icon: Bot },
-    { label: "Actions", href: `/dashboard/usage?${projectQuery}`, icon: PlayCircle },
-    { label: "Security", href: `/dashboard/aetherguard?${projectQuery}`, icon: ShieldCheck },
-    { label: "Insights", href: `/dashboard/analytics?${projectQuery}`, icon: BarChart3 },
-    { label: "Settings", href: `/dashboard/settings?${projectQuery}`, icon: Settings },
-  ];
 
   if (loading) {
     return <div className="grid min-h-[55vh] place-items-center text-sm text-white/45">Opening AI Wonderland Code Manager...</div>;
@@ -162,24 +148,14 @@ export default function ProjectCodeManagerPage() {
               href={`/wonderspace?${projectQuery}`}
               className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 px-3 py-2 text-xs font-bold shadow-lg shadow-violet-950/30"
             >
-              <ExternalLink size={15}/> Open WonderSpace IDE
+              <ExternalLink size={15}/> Linux IDE (pilot)
             </Link>
           </div>
         </div>
 
-        <nav className="flex items-center gap-1 overflow-x-auto border-t border-white/10 px-2 text-sm text-white/55">
-          {tabs.map(({ label, href, icon: Icon, active }) => (
-            <Link
-              key={label}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 transition hover:bg-white/[.03] hover:text-white ${active ? "border-violet-500 bg-violet-500/[.04] font-semibold text-white" : "border-transparent"}`}
-            >
-              <Icon size={16}/>
-              <span>{label}</span>
-            </Link>
-          ))}
-        </nav>
+        <div className="border-t border-white/10">
+          <WonderSpaceProjectNavigation projectId={project.id} active="code" />
+        </div>
       </header>
 
       {error && (
@@ -232,11 +208,13 @@ export default function ProjectCodeManagerPage() {
             </dl>
           </section>
 
+          <WonderSpaceRepositoryConnection projectId={project.id} />
+
           <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
             <h2 className="text-sm font-bold">Wonderland Tools</h2>
             <div className="mt-3 space-y-2">
               <Link href={`/wonderspace?${projectQuery}`} className="flex items-center gap-2 rounded-lg border border-cyan-400/15 bg-cyan-400/[.035] px-3 py-2.5 text-xs text-cyan-100 hover:bg-cyan-400/[.07]">
-                <Code2 size={14}/> WonderSpace IDE
+                <Code2 size={14}/> Linux IDE (pilot)
               </Link>
               <Link href={`/wonder-build/builder?${projectQuery}`} className="flex items-center gap-2 rounded-lg border border-violet-400/15 bg-violet-400/[.035] px-3 py-2.5 text-xs text-violet-100 hover:bg-violet-400/[.07]">
                 <WandSparkles size={14}/> WonderBuild
