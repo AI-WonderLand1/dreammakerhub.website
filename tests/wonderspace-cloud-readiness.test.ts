@@ -11,18 +11,12 @@ describe('Cloud IDE launch safety', () => {
   const release = read('infra/wonderspace/customer-controller/release-gates.mjs');
   const backend = read('apps/web/lib/coder/customer-provisioning.server.ts');
 
-  it('keeps Railway customer UI off until server flags and remote controller health agree', () => {
-    expect(page).toContain('async function railwayCustomerPilot()');
-    expect(page).toContain('WONDERSPACE_CUSTOMER_RUNTIME_ENABLED');
-    expect(page).toContain('NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED');
-    expect(page).toContain('WONDERSPACE_CONTROLLER_URL');
-    expect(page).toContain('status?.runtimeEnabled === true');
-    expect(page).toContain('const customerPilot = await railwayCustomerPilot()');
+  it('removes the undeployed Railway customer entry but keeps legacy backend safety gates', () => {
+    expect(page).not.toContain('railwayCustomerPilot');
+    expect(page).toContain('WonderSpaceOperatorGate');
+    expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(release).toContain('WONDERSPACE_CUSTOMER_ISOLATED_ENVIRONMENT_ID');
-    expect(release).toContain('WONDERSPACE_PRIVATE_NETWORK_REVIEWED');
     expect(controller).toContain('assertSafeControllerEnvironment(process.env)');
-    // Older Coder customer queue exists for compatibility, but isn't exposed
-    // as the new customer launch path and remains independently fail-closed.
     expect(backend).toContain('await assertFreshUsageController()');
     expect(backend).toContain('await verifiedCustomerTemplateId()');
     expect(backend).toContain('await verifiedCustomerCoderOwner(user)');
@@ -33,7 +27,7 @@ describe('Cloud IDE launch safety', () => {
     expect(gate).toContain('href="/dashboard?workspaceTab=code"');
     expect(gate).toContain('href="/wonderspace/browser"');
     expect(gate).toContain('<CloudIdePaused />');
-    expect(gate).toContain('customerPilot ? <CustomerSandboxIdeEntry />');
+    expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('CustomerWorkspaceLaunch');
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
   });

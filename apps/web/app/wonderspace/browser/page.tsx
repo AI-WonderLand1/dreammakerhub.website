@@ -115,7 +115,7 @@ export default function WonderSpaceBrowserPage() {
   return (
     <main className="min-h-screen bg-[#080d22] px-5 py-10 text-white">
       <div className="mx-auto max-w-5xl">
-        <div className="flex flex-wrap gap-4"><Link href="/dashboard" className="text-sm text-cyan-300 hover:underline">← Dashboard</Link><Link href="/wonderspace" className="text-sm text-slate-300 hover:underline">Linux IDE pilot</Link></div>
+        <div className="flex flex-wrap gap-4"><Link href="/dashboard" className="text-sm text-cyan-300 hover:underline">← Dashboard</Link><Link href="/wonderspace" className="text-sm text-slate-300 hover:underline">WonderSpace</Link></div>
         <header className="mt-5 rounded-2xl border border-cyan-400/20 bg-[#101931] p-7">
           <span className="text-xs font-semibold uppercase tracking-widest text-cyan-300">WonderSpace • Browser editor</span>
           <h1 className="mt-3 text-3xl font-bold">Open your projects and code</h1>
@@ -202,13 +202,13 @@ export default function WonderSpaceBrowserPage() {
                 <h2 className="text-lg font-semibold">Need a full Linux terminal?</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
                   Your browser files belong to DreamMakerHub and do not require an external repository
-                  or GitHub account. Private WonderSpace Linux workspaces are a separate pilot;
-                  customer creation will open only after isolation, restoration, and compute limits are tested.
-                  Your browser project does not automatically sync to the separate Linux runtime yet.
+                  or GitHub account. Full WonderSpace VS Code workspaces will use Coder after the dedicated customer
+                  gateway, isolated compute and persistence have been verified.
+                  Your browser project does not automatically sync to the separate cloud runtime yet.
                 </p>
                 <Link href="/wonderspace"
                   className="mt-4 inline-block rounded-lg border border-cyan-300/40 px-4 py-2 text-sm font-semibold text-cyan-200">
-                  WonderSpace Linux IDE status →
+                  Full VS Code workspace status →
                 </Link>
               </section>
             </aside>

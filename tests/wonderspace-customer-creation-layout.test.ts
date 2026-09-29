@@ -60,7 +60,7 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain("disabled={loading || provisioningPaused || source !== 'blank'}");
     expect(form).toContain('if (operatorPreview || !provisioningEnabled)');
     expect(gate).toContain('<CloudIdePaused />');
-    expect(gate).toContain('customerPilot ? <CustomerSandboxIdeEntry />');
+    expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('CustomerWorkspaceLaunch');
     expect(gate).not.toContain('href="/dashboard"');
   });
