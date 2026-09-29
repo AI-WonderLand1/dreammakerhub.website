@@ -50,6 +50,10 @@ test("pilot needs two distinct valid test identities and bounded resource reserv
       "," + base.WONDERSPACE_TESTER_USER_IDS.split(",")[0],
   }), /Two distinct/);
   assert.throws(() => assertSafeControllerEnvironment({
+    ...base, WONDERSPACE_TESTER_USER_IDS: base.WONDERSPACE_TESTER_USER_IDS.split(",")[0] +
+      "," + base.WONDERSPACE_TESTER_USER_IDS.split(",")[0].toUpperCase(),
+  }), /Two distinct/);
+  assert.throws(() => assertSafeControllerEnvironment({
     ...base, WONDERSPACE_MONTHLY_RESERVED_MINUTES: "999999",
   }), /15-60/);
 });
