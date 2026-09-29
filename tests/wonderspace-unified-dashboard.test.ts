@@ -166,7 +166,7 @@ describe("one dashboard/project/browser navigation", () => {
     expect(panel).toContain("<WonderSpaceInlineCodeManager project={selected} />");
     expect(inline).toContain("fetchAuthenticatedProject(");
     expect(inline).toContain("<RepositoryFileBrowser");
-    expect(inline).toContain("loadedProjectId === projectId");
+    expect(inline).toContain("<ActiveProjectFiles key={project.id} project={project} />");
     expect(inline).not.toContain("github.com/codespaces");
     expect(nav).toContain("dashboard/projects/");
     expect(overview).toContain("<WonderSpaceProjectNavigation projectId={project.id}");
