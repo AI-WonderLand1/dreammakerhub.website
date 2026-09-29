@@ -7,6 +7,7 @@ import {
   MessageSquare, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
 } from "lucide-react";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
+import { createClient, ensureSupabaseConfig } from "@/lib/supabase/client";
 import { githubRepositoryLink, parseGithubRepository, type GithubSection } from "@/lib/wonderspace/github-repository";
 
 type Item = {
@@ -44,8 +45,16 @@ export default function WonderSpaceProjectNavigation({
       return;
     }
     setConnectionStatus("loading");
-    fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}/github-connection`)
-      .then(async (response) => {
+    Promise.resolve().then(async () => {
+      await ensureSupabaseConfig();
+      const client = createClient();
+      const session = client ? (await client.auth.getSession()).data.session : null;
+      const githubToken = session?.provider_token && session.user.app_metadata?.provider === "github"
+        ? session.provider_token : null;
+      return fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}/github-connection`, {
+        headers: githubToken ? { "x-github-oauth-token": githubToken } : {},
+      });
+    }).then(async (response) => {
         if (!response.ok) throw new Error("Repository connection unavailable");
         return response.json();
       })
