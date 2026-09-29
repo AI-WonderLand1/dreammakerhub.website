@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import CustomerWorkspaceLaunch from './CustomerWorkspaceLaunch';
 
 type Role = 'checking' | 'operator' | 'customer' | 'unauthorized' | 'error';
 
@@ -20,7 +19,7 @@ function BrowserIdeEntry() {
       <h2 className="mt-2 text-xl font-semibold">WonderSpace browser code editor</h2>
       <p className="mt-2 text-sm text-slate-300">
         Open your own projects, create files and folders, edit code, and save directly to DreamMakerHub.
-        The Linux terminal and isolated Coder workspaces are a separate pilot.
+        The private Linux terminal is a separate Railway Sandbox pilot.
       </p>
       <Link
         href="/wonderspace/browser"
@@ -37,7 +36,7 @@ function CloudIdePaused() {
   return (
     <section role="status" aria-label="Cloud IDE availability"
       className="mx-auto max-w-4xl rounded-2xl border border-amber-300/20 bg-[#101931] p-5 text-white">
-      <h2 className="text-lg font-semibold">Private cloud IDE: setup in progress</h2>
+      <h2 className="text-lg font-semibold">Private Railway IDE: setup in progress</h2>
       <p className="mt-2 text-sm text-slate-300">
         Your browser editor works now. Separate customer Linux workspaces will appear here only after
         account isolation, template, persistent storage and compute shutoff checks pass.
@@ -48,16 +47,12 @@ function CloudIdePaused() {
           className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
           Edit my project now
         </Link>
-        <Link href="/wonderspace/workspaces"
-          className="rounded-lg border border-white/20 px-4 py-2 text-sm text-slate-100">
-          Existing workspaces
-        </Link>
       </div>
     </section>
   );
 }
 
-/** Expose customer VM creation only after the isolated Railway pilot is verified. */
+/** Link to the separately isolated customer Railway Sandbox pilot only after release gates. */
 function CustomerSandboxIdeEntry() {
   if (process.env.NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED !== 'true') return null;
   return (
@@ -75,7 +70,7 @@ function CustomerSandboxIdeEntry() {
 }
 
 /** The personal operator workspace is never created through the customer form. */
-export function OperatorIdePanel({ customerPilot = false }: { customerPilot?: boolean }) {
+export function OperatorIdePanel() {
   const { session } = useAuth();
   const [opening, setOpening] = useState(false);
   const [openError, setOpenError] = useState('');
@@ -141,7 +136,7 @@ export function OperatorIdePanel({ customerPilot = false }: { customerPilot?: bo
     <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,rgba(96,76,218,0.4),transparent_42%),radial-gradient(ellipse_at_85%_75%,rgba(18,148,206,0.28),transparent_45%),radial-gradient(ellipse_at_60%_0%,rgba(224,83,197,0.17),transparent_35%)]" />
       <div className="relative mx-auto max-w-4xl space-y-6">
-        <BrowserIdeEntry /><CustomerSandboxIdeEntry />
+        <BrowserIdeEntry />
         <section className="rounded-3xl border border-emerald-300/25 bg-[#101931]/90 p-8 shadow-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-200">Operator IDE</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight">Your existing production workspace</h1>
@@ -161,7 +156,6 @@ export function OperatorIdePanel({ customerPilot = false }: { customerPilot?: bo
           <p className="mt-5 text-sm text-slate-400">This button does not create another workspace or change its persistent disk.</p>
         </section>
         <CloudIdePaused />
-        {!customerPilot && <p className="mt-4 text-sm text-amber-200">Customer provisioning is currently paused by the server safety switches, but the form remains visible so the WonderSpace flow can be reviewed.</p>}
       </div>
     </main>
   );
@@ -248,21 +242,16 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
   if (authLoading || role === 'checking') {
     return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">Checking your DreamMakerHub session…</main>;
   }
-  if (role === 'operator') return <OperatorIdePanel customerPilot={customerPilot} />;
-  if (role === 'customer' && customerPilot) return (
-    <>
-      <div className="bg-[#080d22] px-5 pt-8"><BrowserIdeEntry /><CustomerSandboxIdeEntry /></div>
-      <CustomerWorkspaceLaunch />
-    </>
-  );
+  if (role === 'operator') return <OperatorIdePanel />;
 
   if (role === 'customer') {
     return (
-      <div className="bg-[#080d22] text-white">
-        <h1 className="sr-only">Cloud IDE access is private</h1>
-        <div className="px-5 pt-8"><BrowserIdeEntry /><CustomerSandboxIdeEntry /></div>
-        <div className="px-5 pb-10 pt-5"><CloudIdePaused /></div>
-      </div>
+      <main className="min-h-screen bg-[#080d22] px-5 py-8 text-white">
+        <BrowserIdeEntry />
+        {customerPilot ? <CustomerSandboxIdeEntry /> : (
+          <div className="mt-5"><CloudIdePaused /></div>
+        )}
+      </main>
     );
   }
 
