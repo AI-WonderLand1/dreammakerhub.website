@@ -2,14 +2,12 @@ import http from "node:http";
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { Sandbox } from "railway";
+import { assertSafeControllerEnvironment } from "./release-gates.mjs";
 
 const required = ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY",
   "RAILWAY_ENVIRONMENT_ID", "WONDERSPACE_GATEWAY_MASTER_SECRET"];
-// Railway SDK prefers RAILWAY_TOKEN (environment-scoped project token), with
-// RAILWAY_API_TOKEN (broader bearer account/workspace token) only as a fallback.
-if (!process.env.RAILWAY_TOKEN && !process.env.RAILWAY_API_TOKEN) {
-  throw new Error("Set a Railway project token as RAILWAY_TOKEN for this isolated environment.");
-}
+// Never use a broad Railway account token or a production shared network.
+assertSafeControllerEnvironment(process.env);
 for (const name of required) {
   if (!process.env[name]) throw new Error("Missing required private controller variable: " + name);
 }
