@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Code2, FolderOpen, Monitor, Plus } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
+import WonderSpaceInlineCodeManager from "./WonderSpaceInlineCodeManager";
 
 type DashboardProject = { id: string; name: string; tool?: string | null; type?: string | null };
 
@@ -95,6 +96,7 @@ export default function WonderSpaceDashboardPanel({
         </div>
       </div>
       <WonderSpaceProjectNavigation projectId={selected?.id} />
+      <WonderSpaceInlineCodeManager project={selected} />
     </section>
   );
 }
