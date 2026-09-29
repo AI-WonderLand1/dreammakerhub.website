@@ -16,10 +16,14 @@ describe('customer IDE opening security hold', () => {
     expect(route).not.toContain('export async function POST');
   });
 
-  it('allows the customer pod pilot to render without pretending the browser gateway exists', () => {
+  it('retains the old Coder customer route as paused and uses a gated Railway customer launch', () => {
     const page = file('apps/web/app/wonderspace/page.tsx');
-    expect(page).toContain("process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true'");
+    const gate = file('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
+    expect(page).toContain("process.env.WONDERSPACE_CUSTOMER_RUNTIME_ENABLED !== 'true'");
+    expect(page).toContain("status?.runtimeEnabled === true");
     expect(page).not.toContain("process.env.CODER_CUSTOMER_IDE_GATEWAY_VERIFIED === 'true'");
+    expect(gate).toContain("customerPilot ? <CustomerSandboxIdeEntry />");
+    expect(gate).not.toContain("CustomerWorkspaceLaunch");
   });
 
   it('removes direct customer-to-Coder navigation from both customer views', () => {
