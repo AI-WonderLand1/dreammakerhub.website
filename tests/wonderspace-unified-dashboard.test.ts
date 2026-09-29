@@ -158,6 +158,9 @@ describe("one dashboard/project/browser navigation", () => {
     const browser = read("apps/web/app/wonderspace/browser/page.tsx");
     expect(dashboard).toContain("<WonderSpaceDashboardPanel");
     expect(panel).toContain("projects.map(project =>");
+    expect(panel).toContain('params.set("projectId", projectId)');
+    expect(panel).toContain('params.set("projectId", selected.id)');
+    expect(nav).toContain('href: id ? `/dashboard?projectId=${id}#projects`');
     expect(panel).toContain("<WonderSpaceProjectNavigation projectId={selected?.id}");
     expect(nav).toContain("dashboard/projects/");
     expect(overview).toContain("<WonderSpaceProjectNavigation projectId={project.id}");
