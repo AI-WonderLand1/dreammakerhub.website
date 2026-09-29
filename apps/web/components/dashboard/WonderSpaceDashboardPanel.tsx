@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Code2, FolderOpen, Monitor, Plus } from "lucide-react";
+import { Code2, FolderOpen, GitBranch, Monitor, Plus } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
+import WonderSpaceRepositoryConnection from "./WonderSpaceRepositoryConnection";
 
 type DashboardProject = { id: string; name: string; tool?: string | null; type?: string | null };
 
@@ -17,6 +18,7 @@ export default function WonderSpaceDashboardPanel({
   requestedProjectId?: string | null;
   onCreate: () => void;
 }) {
+  const [showGitHubConnection, setShowGitHubConnection] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -24,6 +26,7 @@ export default function WonderSpaceDashboardPanel({
     if (!projects.some(project => project.id === projectId)) return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("projectId", projectId);
+    setShowGitHubConnection(false);
     router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
   };
   const selected = useMemo(
@@ -60,6 +63,13 @@ export default function WonderSpaceDashboardPanel({
                 className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300">
                 <Code2 size={17} aria-hidden="true" /> {selected ? "Open selected project's editor" : "Open browser editor"}
               </Link>
+              {selected && (
+                <button type="button" onClick={() => setShowGitHubConnection(value => !value)}
+                  aria-expanded={showGitHubConnection} aria-controls="wonderspace-dashboard-github"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2.5 text-sm text-white hover:border-cyan-300/50">
+                  <GitBranch size={16} aria-hidden="true" /> {showGitHubConnection ? "Hide GitHub connection" : "Connect GitHub"}
+                </button>
+              )}
               <Link href="/wonderspace"
                 className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2.5 text-sm text-white hover:border-cyan-300/50">
                 <Monitor size={16} aria-hidden="true" /> Linux IDE pilot
@@ -93,8 +103,20 @@ export default function WonderSpaceDashboardPanel({
             </button>
           </div>
         </div>
+        <div className="mt-5 border-t border-white/10 pt-3">
+          <p className="mb-2 text-xs text-slate-400">
+            {selected
+              ? `Project tools for ${selected.name}. Code opens the same saved files; linked GitHub tabs open this project's repository.`
+              : "Create or select a project to connect code, GitHub and project tools."}
+          </p>
+          <WonderSpaceProjectNavigation projectId={selected?.id} active={selected ? "code" : undefined} />
+        </div>
+        {selected && showGitHubConnection && (
+          <div id="wonderspace-dashboard-github" className="mt-3 max-w-2xl">
+            <WonderSpaceRepositoryConnection key={selected.id} projectId={selected.id} />
+          </div>
+        )}
       </div>
-      <WonderSpaceProjectNavigation projectId={selected?.id} />
     </section>
   );
 }
