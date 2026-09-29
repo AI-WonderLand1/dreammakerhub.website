@@ -32,6 +32,31 @@ function BrowserIdeEntry() {
   );
 }
 
+/** One honest status panel instead of a large disabled cloud-creation wizard. */
+function CloudIdePaused() {
+  return (
+    <section role="status" aria-label="Cloud IDE availability"
+      className="mx-auto max-w-4xl rounded-2xl border border-amber-300/20 bg-[#101931] p-5 text-white">
+      <h2 className="text-lg font-semibold">Private cloud IDE: setup in progress</h2>
+      <p className="mt-2 text-sm text-slate-300">
+        Your browser editor works now. Separate customer Linux workspaces will appear here only after
+        account isolation, template, persistent storage and compute shutoff checks pass.
+        No shared IDE password and no customer charge while setup is paused.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Link href="/dashboard?workspaceTab=code"
+          className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
+          Edit my project now
+        </Link>
+        <Link href="/wonderspace/workspaces"
+          className="rounded-lg border border-white/20 px-4 py-2 text-sm text-slate-100">
+          Existing workspaces
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 /** Expose customer VM creation only after the isolated Railway pilot is verified. */
 function CustomerSandboxIdeEntry() {
   if (process.env.NEXT_PUBLIC_WONDERSPACE_SANDBOX_UI_ENABLED !== 'true') return null;
@@ -135,7 +160,7 @@ export function OperatorIdePanel({ customerPilot = false }: { customerPilot?: bo
           {needsSignIn && <Link href={DREAMMAKERHUB_SIGN_IN} className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">Sign in to DreamMakerHub</Link>}
           <p className="mt-5 text-sm text-slate-400">This button does not create another workspace or change its persistent disk.</p>
         </section>
-        <CustomerWorkspaceLaunch operatorPreview embedded />
+        <CloudIdePaused />
         {!customerPilot && <p className="mt-4 text-sm text-amber-200">Customer provisioning is currently paused by the server safety switches, but the form remains visible so the WonderSpace flow can be reviewed.</p>}
       </div>
     </main>
@@ -236,7 +261,7 @@ export default function WonderSpaceOperatorGate({ customerPilot }: { customerPil
       <div className="bg-[#080d22] text-white">
         <h1 className="sr-only">Cloud IDE access is private</h1>
         <div className="px-5 pt-8"><BrowserIdeEntry /><CustomerSandboxIdeEntry /></div>
-        <CustomerWorkspaceLaunch provisioningEnabled={false} />
+        <div className="px-5 pb-10 pt-5"><CloudIdePaused /></div>
       </div>
     );
   }
