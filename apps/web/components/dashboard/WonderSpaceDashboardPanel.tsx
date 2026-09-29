@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Code2, FolderOpen, Plus, Settings2 } from "lucide-react";
@@ -47,10 +47,15 @@ export default function WonderSpaceDashboardPanel({
   const searchParams = useSearchParams();
   const [visitedCodeProject, setVisitedCodeProject] = useState<string | null>(null);
   const [visitedHistoryProject, setVisitedHistoryProject] = useState<string | null>(null);
+  const [dirtyProjectId, setDirtyProjectId] = useState<string | null>(null);
+  const reportDirty = useCallback((projectId: string, dirty: boolean) => {
+    setDirtyProjectId(current => dirty ? projectId : current === projectId ? null : current);
+  }, []);
   const selected = useMemo(
     () => projects.find(item => item.id === requestedProjectId) || projects[0] || null,
     [projects, requestedProjectId],
   );
+  const unsavedCurrent = Boolean(selected && dirtyProjectId === selected.id);
   const requestedTab = searchParams.get("workspaceTab");
   const activeTab: WorkspaceTab = tabs.some(tab => tab.key === requestedTab)
     ? requestedTab as WorkspaceTab : "overview";
@@ -66,6 +71,9 @@ export default function WonderSpaceDashboardPanel({
   };
   const selectProject = (projectId: string) => {
     if (!projects.some(project => project.id === projectId)) return;
+    if (projectId === selected?.id) return;
+    if (unsavedCurrent && !window.confirm("This project has unsaved code edits. Switch anyway and discard them?")) return;
+    setDirtyProjectId(null);
     // Project switching resets view to Overview, preventing stale editor focus.
     const params = new URLSearchParams(searchParams.toString());
     params.set("projectId", projectId);
@@ -143,6 +151,12 @@ export default function WonderSpaceDashboardPanel({
         ))}
       </nav>
 
+      {unsavedCurrent && (
+        <p role="alert" className="mx-4 mt-3 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+          You have unsaved code edits. Go to Code and save your file before switching projects or saving a version.
+        </p>
+      )}
+
       {activeTab === "overview" && (
         <div className="px-4 py-5 sm:px-5">
           {selected ? (
@@ -174,12 +188,12 @@ export default function WonderSpaceDashboardPanel({
 
       {codeMounted && (
         <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
-          <WonderSpaceInlineCodeManager project={selected} embedded />
+          <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
         </div>
       )}
       {historyMounted && selected && (
         <div hidden={activeTab !== "history"} className="p-3 sm:p-4">
-          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} />
+          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
         </div>
       )}
       {activeTab === "tools" && (
