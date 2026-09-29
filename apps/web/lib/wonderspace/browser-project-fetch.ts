@@ -8,7 +8,7 @@ import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
  * customer Supabase access token when SSR cookies are missing at the proxy.
  */
 export async function fetchAuthenticatedProject(path: string, init: RequestInit = {}): Promise<Response> {
-  if (!path.startsWith('/api/projects/') || path.startsWith('//') || path.includes('\\')) {
+  if (!(path === '/api/projects' || path.startsWith('/api/projects/')) || path.startsWith('//') || path.includes('\\')) {
     throw new Error('Only same-origin project API requests are allowed.');
   }
   await ensureSupabaseConfig();
