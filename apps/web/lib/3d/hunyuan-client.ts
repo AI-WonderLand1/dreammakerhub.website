@@ -127,16 +127,20 @@ function parseCompletedSse(body: string): unknown {
 export async function generateHunyuanGlb(input: {
   prompt: string;
   negativePrompt?: string;
+  addTexture?: boolean;
 }): Promise<Buffer> {
   const baseUrl = getBaseUrl();
-  const apiName = process.env.HUNYUAN3D_API_NAME?.trim() || "generate_3d_text";
+  const configuredApiName = process.env.HUNYUAN3D_API_NAME?.trim() || "/generate_3d_text";
+  const apiName = configuredApiName.replace(/^\/+/, "");
   const submitUrl = `${baseUrl}/gradio_api/call/${encodeURIComponent(apiName)}`;
 
   const submit = await fetch(submitUrl, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify({
-      data: [input.prompt, false],
+      // Confirmed by the live Gradio "Use via API" contract:
+      // client.predict(prompt=..., add_texture=..., api_name="/generate_3d_text")
+      data: [input.prompt, Boolean(input.addTexture)],
     }),
     signal: AbortSignal.timeout(30_000),
   });
