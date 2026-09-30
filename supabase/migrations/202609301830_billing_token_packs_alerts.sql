@@ -19,6 +19,19 @@ CREATE POLICY "Users can read their own token balance"
 GRANT SELECT ON public.user_token_balances TO authenticated;
 GRANT ALL ON public.user_token_balances TO service_role;
 
+ALTER TABLE public.user_token_balances REPLICA IDENTITY FULL;
+DO $
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'user_token_balances'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.user_token_balances;
+  END IF;
+END $;
+
 CREATE TABLE IF NOT EXISTS public.token_purchase_events (
   stripe_checkout_session_id TEXT PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
