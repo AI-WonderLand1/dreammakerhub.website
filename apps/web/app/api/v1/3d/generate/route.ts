@@ -86,10 +86,11 @@ export async function POST(req: NextRequest) {
     });
 
     await logUsage({
-      userId: userId,
+      userId,
       projectId,
-      action: "api.call",
+      action: "3d.generation",
       apiCalls: 1,
+      threeDGenerations: 1,
     });
 
     return NextResponse.json({

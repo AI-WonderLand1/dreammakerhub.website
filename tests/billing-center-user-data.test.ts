@@ -21,9 +21,10 @@ describe("billing center user ownership and reference layout", () => {
 
   it("loads Stripe billing data only after resolving the authenticated user", () => {
     const route = read("apps/web/app/api/billing/account/route.ts");
+    const resolver = read("apps/web/lib/billing/stripe-customer.server.ts");
     expect(route).toContain("authenticatedSupabaseUser(request)");
-    expect(route).toContain('.eq("id", user.id)');
-    expect(route).toContain('.eq("user_id", user.id)');
+    expect(resolver).toContain('.eq("id", user.id)');
+    expect(resolver).toContain('.eq("user_id", user.id)');
     expect(route).toContain("stripe.customers.retrieve(customerId)");
     expect(route).toContain("stripe.invoices.list({ customer: customerId");
     expect(route).toContain("stripe.subscriptions.list({ customer: customerId");
