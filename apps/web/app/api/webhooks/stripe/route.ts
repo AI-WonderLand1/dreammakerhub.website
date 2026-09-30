@@ -6,6 +6,7 @@ import { stripe } from "@/lib/stripe";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { stripePriceMatchesPlan } from "@/lib/billing/stripe-catalog-price";
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
+import { resolveTokenPack } from "@/lib/billing/token-packs.server";
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 type PaidPlanId = Extract<PlanId, "pro" | "team">;
@@ -146,6 +147,46 @@ export async function POST(request: NextRequest) {
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
+
+        if (session.metadata?.kind === "token_pack") {
+          if (!userId || session.status !== "complete" || session.payment_status !== "paid") {
+            logger.info("Token pack checkout is not ready to grant", {
+              sessionId: session.id,
+              status: session.status,
+              paymentStatus: session.payment_status,
+            });
+            break;
+          }
+
+          const pack = resolveTokenPack(session.metadata?.tokenPack);
+          if (!pack || !pack.priceId || String(pack.tokens) !== session.metadata?.tokenAmount) {
+            throw new Error("Token pack checkout metadata does not match a configured pack");
+          }
+
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2 });
+          if (lineItems.data.length !== 1 || lineItems.data[0]?.quantity !== 1 ||
+              lineItems.data[0]?.price?.id !== pack.priceId) {
+            throw new Error("Token pack checkout price does not match the configured pack");
+          }
+
+          const { error: grantError } = await supabase.rpc("grant_purchased_ai_tokens", {
+            p_user_id: userId,
+            p_checkout_session_id: session.id,
+            p_pack_id: pack.id,
+            p_tokens: pack.tokens,
+            p_price_id: pack.priceId,
+          });
+          if (grantError) throw grantError;
+
+          logger.info("Verified AI token pack purchase processed", {
+            sessionId: session.id,
+            userId,
+            pack: pack.id,
+            tokens: pack.tokens,
+          });
+          break;
+        }
+
         const metadataPlan = session.metadata?.plan;
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
