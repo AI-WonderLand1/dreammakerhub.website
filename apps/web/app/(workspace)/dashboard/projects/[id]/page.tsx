@@ -269,7 +269,7 @@ export default function ProjectHubPage() {
                 </div>
               ) : (
                 <iframe
-                  src={`/preview/${encodeURIComponent(project.id)}`}
+                  src={`/preview/${encodeURIComponent(project.id)}?v=${encodeURIComponent(project.updatedAt || project.updated_at || "")}`}
                   title={`${project.name} preview thumbnail`}
                   className="h-full w-full border-0 bg-[#08111e] pointer-events-none"
                   loading="lazy"
@@ -291,8 +291,8 @@ export default function ProjectHubPage() {
                 <Link href={primaryAction.href} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
                   <PrimaryIcon size={15}/> {primaryAction.label}
                 </Link>
-                <Link href={`/wonderspace?projectId=${encodeURIComponent(project.id)}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
-                  <Code2 size={15}/> Open in WonderSpace IDE
+                <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/files`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
+                  <Code2 size={15}/> Open files
                 </Link>
                 {canPreview && (
                   <Link href={`/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
