@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import CustomerWorkspaceLaunch from '@/components/engines/CustomerWorkspaceLaunch';
 
 type Role = 'checking' | 'operator' | 'customer' | 'unauthorized' | 'error';
 
@@ -231,7 +232,7 @@ export default function WonderSpaceOperatorGate() {
     return (
       <main className="min-h-screen bg-[#080d22] px-5 py-8 text-white">
         <BrowserIdeEntry />
-        <div className="mt-5"><CloudIdePaused /></div>
+        <CustomerWorkspaceLaunch embedded />
       </main>
     );
   }
