@@ -299,7 +299,7 @@ export default function DashboardPage() {
                       <Link href={`/dashboard/projects/${project.id}`} className="relative block h-40 overflow-hidden border-b border-white/10 bg-[#08111e]">
                         {previewable ? (
                           <iframe
-                            src={`/preview/${encodeURIComponent(project.id)}`}
+                            src={`/preview/${encodeURIComponent(project.id)}?v=${encodeURIComponent(project.updatedAt || project.updated_at || "")}`}
                             title={`${project.name} preview`}
                             className="h-full w-full border-0 bg-[#08111e] pointer-events-none"
                             loading="lazy"
