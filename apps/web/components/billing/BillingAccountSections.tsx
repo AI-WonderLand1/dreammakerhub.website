@@ -102,7 +102,7 @@ function BillingPortalButton() {
         className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10 disabled:opacity-50"
       >
         <ExternalLink size={14} />
-        {loading ? "Opening…" : "Manage in Stripe"}
+        {loading ? "Opening…" : "Manage billing"}
       </button>
       {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
     </div>
@@ -208,21 +208,21 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
           <div className="rounded-xl border border-white/15 bg-white/[.025] p-4">
             <div className="text-sm font-semibold text-white/80">Active subscriptions</div>
             <div className="mt-3 text-3xl font-semibold">{account?.subscriptions.length ?? 0}</div>
-            <p className="mt-2 text-xs text-white/45">From this user's Stripe customer only.</p>
+            <p className="mt-2 text-xs text-white/45">From this DreamMakerHub billing account.</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/[.025] p-4">
             <div className="text-sm font-semibold text-white/80">Next payment due</div>
             <div className="mt-3 text-2xl font-semibold">
               {account?.nextPaymentDue ? new Date(account.nextPaymentDue).toLocaleDateString() : "—"}
             </div>
-            <p className="mt-2 text-xs text-white/45">Based on the current Stripe subscription period.</p>
+            <p className="mt-2 text-xs text-white/45">Based on your current DreamMakerHub billing period.</p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-semibold">Subscriptions</h3>
-            <p className="text-xs text-white/45">Only subscriptions owned by the signed-in billing customer are shown.</p>
+            <p className="text-xs text-white/45">Your active DreamMakerHub subscriptions.</p>
           </div>
           <BillingPortalButton />
         </div>
@@ -246,7 +246,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
           })}
           {(account?.subscriptions ?? []).length === 0 && (
             <div className="rounded-xl border border-white/10 bg-white/[.025] p-4 text-sm text-white/45">
-              No paid Stripe subscription is attached to this account.
+              No paid DreamMakerHub subscription is active on this account.
             </div>
           )}
         </div>
@@ -256,7 +256,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">Payment information</h2>
-            <p className="mt-1 text-sm text-white/45">Safe billing summary for the signed-in user's Stripe customer.</p>
+            <p className="mt-1 text-sm text-white/45">Billing information for the signed-in DreamMakerHub account.</p>
           </div>
           <BillingPortalButton />
         </div>
@@ -283,7 +283,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
                 <div>Expires {String(method.expMonth ?? "").padStart(2, "0")}/{method.expYear}</div>
               </div>
             ) : (
-              <div className="mt-2 text-sm text-white/45">No saved card returned by Stripe.</div>
+              <div className="mt-2 text-sm text-white/45">No saved payment method is on file.</div>
             )}
           </div>
         </div>
@@ -340,7 +340,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
             <div className="mt-1">{customer?.email || account?.email || "Not available"}</div>
           </div>
           <div className="rounded-lg border border-white/10 p-3">
-            <div className="text-white/45">Stripe customer</div>
+            <div className="text-white/45">Billing account</div>
             <div className="mt-1 font-mono text-xs">{customer?.id ? `••••${customer.id.slice(-8)}` : "Not created yet"}</div>
           </div>
         </div>
