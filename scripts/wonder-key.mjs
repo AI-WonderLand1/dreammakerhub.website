@@ -1,10 +1,26 @@
 #!/usr/bin/env node
-import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
 import process from "node:process";
+
+function loadEnvFile(file) {
+  if (!fs.existsSync(file)) return;
+  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const idx = trimmed.indexOf("=");
+    if (idx <= 0) continue;
+    const key = trimmed.slice(0, idx).trim();
+    if (!key || process.env[key] !== undefined) continue;
+    let value = trimmed.slice(idx + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
 
 for (const candidate of [
   ".env.local",
@@ -12,8 +28,7 @@ for (const candidate of [
   "apps/web/.env.local",
   "apps/web/.env",
 ]) {
-  const full = path.resolve(process.cwd(), candidate);
-  if (fs.existsSync(full)) dotenv.config({ path: full, override: false });
+  loadEnvFile(path.resolve(process.cwd(), candidate));
 }
 
 function arg(name) {
@@ -92,17 +107,25 @@ async function main() {
   const email = arg("--email") || process.env.DREAMMAKERHUB_EMAIL || await promptText("DreamMakerHub email");
   const password = process.env.DREAMMAKERHUB_PASSWORD || await promptHidden("DreamMakerHub password");
 
-  const supabase = createClient(supabaseUrl, publishableKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.session?.access_token) {
-    throw new Error(error?.message || "DreamMakerHub sign-in failed");
+  const authResponse = await fetch(
+    `${supabaseUrl.replace(/\/$/, "")}/auth/v1/token?grant_type=password`,
+    {
+      method: "POST",
+      headers: {
+        apikey: publishableKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    },
+  );
+  const authBody = await authResponse.json().catch(() => ({}));
+  if (!authResponse.ok || !authBody?.access_token) {
+    throw new Error(authBody?.msg || authBody?.error_description || authBody?.error || "DreamMakerHub sign-in failed");
   }
 
   const headers = {
-    Authorization: `Bearer ${data.session.access_token}`,
+    Authorization: `Bearer ${authBody.access_token}`,
     "Content-Type": "application/json",
     Accept: "application/json",
   };
