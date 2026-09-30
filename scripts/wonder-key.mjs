@@ -91,19 +91,30 @@ async function promptHidden(label) {
 }
 
 async function main() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const publishableKey =
+  const baseUrl = (arg("--url") || process.env.DREAMMAKERHUB_URL || "https://dreammakerhub.website").replace(/\/$/, "");
+
+  let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  let publishableKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !publishableKey) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL and a Supabase publishable/anon key in .env.local or environment",
-    );
+    const configResponse = await fetch(`${baseUrl}/api/auth/config`, {
+      headers: { Accept: "application/json" },
+    });
+    const config = await configResponse.json().catch(() => ({}));
+    if (configResponse.ok) {
+      supabaseUrl ||= config.supabaseUrl;
+      publishableKey ||= config.publishableKey;
+    }
   }
 
-  const baseUrl = (arg("--url") || process.env.DREAMMAKERHUB_URL || "https://dreammakerhub.website").replace(/\/$/, "");
+  if (!supabaseUrl || !publishableKey) {
+    throw new Error(
+      "DreamMakerHub public auth configuration is unavailable. Deploy the current Master or provide NEXT_PUBLIC_SUPABASE_URL and a publishable/anon key locally.",
+    );
+  }
   const email = arg("--email") || process.env.DREAMMAKERHUB_EMAIL || await promptText("DreamMakerHub email");
   const password = process.env.DREAMMAKERHUB_PASSWORD || await promptHidden("DreamMakerHub password");
 
