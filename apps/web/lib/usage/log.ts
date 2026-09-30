@@ -7,7 +7,8 @@ export type UsageAction =
   | "ide.session"
   | "runtime.minute"
   | "compute.credit"
-  | "storage.byte";
+  | "storage.byte"
+  | "3d.generation";
 
 export type UsageEvent = {
   userId: string;
@@ -17,6 +18,7 @@ export type UsageEvent = {
   tokensUsed?: number;
   computeCreditsUsed?: number;
   runtimeMinutes?: number;
+  threeDGenerations?: number;
 };
 
 let serviceClient: ReturnType<typeof createClient<any>> | null = null;
@@ -47,8 +49,22 @@ export async function logUsage(event: UsageEvent): Promise<void> {
       tokens_used: event.tokensUsed ?? 0,
       compute_credits_used: event.computeCreditsUsed ?? 0,
       runtime_minutes: event.runtimeMinutes ?? 0,
+      three_d_generations: event.threeDGenerations ?? 0,
     });
-    if (error) logger.error("logUsage insert failed:", error.message);
+    if (error) {
+      logger.error("logUsage insert failed:", error.message);
+      return;
+    }
+
+    // Evaluate saved billing alarms after a real usage event is recorded.
+    // The evaluator is server-only and provider-gated, so missing email/SMS
+    // configuration never fabricates a successful delivery.
+    try {
+      const { evaluateUsageAlerts } = await import("@/lib/billing/usage-alerts.server");
+      await evaluateUsageAlerts(event.userId);
+    } catch (alertError) {
+      logger.error("usage alert evaluation failed:", alertError);
+    }
   } catch (e) {
     logger.error("logUsage errored:", e);
   }
