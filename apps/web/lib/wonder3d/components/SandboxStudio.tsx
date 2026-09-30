@@ -235,6 +235,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
         body: JSON.stringify({
           prompt: effectivePrompt,
           format: 'glb',
+          addTexture: true,
         }),
       });
 
