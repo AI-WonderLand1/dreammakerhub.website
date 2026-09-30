@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateWonderApiKey } from "@/lib/api-keys/authenticate";
+import { requireUserId } from "@/lib/auth";
 import {
   generateHunyuanGlb,
   HunyuanConfigurationError,
@@ -15,10 +16,24 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const principal = await authenticateWonderApiKey(req);
-    if (!principal) {
+    const hasAuthorizationHeader = req.headers.has("authorization");
+    const apiPrincipal = hasAuthorizationHeader
+      ? await authenticateWonderApiKey(req)
+      : null;
+    const sessionUserId = hasAuthorizationHeader ? null : await requireUserId(req);
+    const userId = apiPrincipal?.userId ?? sessionUserId;
+
+    // Never fall back to cookie auth when an explicit Authorization header was
+    // supplied but invalid. This prevents accidental cross-authentication.
+    if (!userId) {
       return NextResponse.json(
-        { ok: false, error: { code: "UNAUTHORIZED", message: "Invalid API key" } },
+        {
+          ok: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: hasAuthorizationHeader ? "Invalid API key" : "Authentication required",
+          },
+        },
         { status: 401 },
       );
     }
@@ -62,14 +77,14 @@ export async function POST(req: NextRequest) {
     const assetId = `3d_${randomUUID()}`;
     const stored = await saveGeneratedGlb({
       id: assetId,
-      userId: principal.userId,
+      userId: userId,
       projectId,
       prompt,
       glb,
     });
 
     await logUsage({
-      userId: principal.userId,
+      userId: userId,
       projectId,
       action: "api.call",
       apiCalls: 1,
