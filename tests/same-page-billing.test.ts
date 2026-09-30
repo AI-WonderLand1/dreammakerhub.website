@@ -17,17 +17,24 @@ describe("same-page DreamMakerHub billing",()=>{
     expect(editor).toContain("Country code");
   });
 
-  it("uses Stripe.js inline secure card entry without sending raw card data to DreamMakerHub",()=>{
+  it("uses Stripe Payment Element + SetupIntent without sending raw payment data to DreamMakerHub",()=>{
     const editor=read("apps/web/components/billing/InlineBillingEditor.tsx");
     const setup=read("apps/web/app/api/billing/payment-method/setup-intent/route.ts");
     const save=read("apps/web/app/api/billing/payment-method/default/route.ts");
     expect(editor).toContain("https://js.stripe.com/v3/");
-    expect(editor).toContain('elements.create("card"');
-    expect(editor).toContain("confirmCardSetup");
+    expect(editor).toContain('elements.create("payment"');
+    expect(editor).toContain("elements.submit()");
+    expect(editor).toContain("confirmSetup");
     expect(editor).toContain('fetch("/api/billing/payment-method/default"');
+    expect(editor).toContain("payment_method_data");
+    expect(editor).toContain("billing_details");
     expect(setup).toContain("stripe.setupIntents.create");
     expect(setup).toContain('payment_method_types: ["card"]');
+    expect(save).toContain("setupIntents.retrieve(setupIntentId)");
     expect(save).toContain("paymentMethods.retrieve(paymentMethodId)");
+    expect(save).toContain('setupIntent.status !== "succeeded"');
+    expect(save).toContain("setupPaymentMethod !== paymentMethodId");
+    expect(save).toContain("setupIntent.metadata?.dreammakerhubUserId !== user.id");
     expect(save).toContain("default_payment_method: paymentMethodId");
     expect(save).not.toContain("card.number");
     expect(save).not.toContain("cvc");
