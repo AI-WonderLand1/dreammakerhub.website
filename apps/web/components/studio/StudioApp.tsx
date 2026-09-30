@@ -58,7 +58,7 @@ const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 /** One editor route: site navigation is tucked into the top bar, not a permanent sidebar. */
 export default function StudioApp() {
   const [workspace, setWorkspace] = useState<Workspace>("create");
-  const [createTool, setCreateTool] = useState<CreateTool>("game");
+  const [createTool, setCreateTool] = useState<CreateTool>("factory");
   const [captureTool, setCaptureTool] = useState<CaptureTool>("movie");
   const activeTool = workspace === "create" ? createTool : captureTool;
 

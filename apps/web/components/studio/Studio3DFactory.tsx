@@ -82,6 +82,13 @@ export default function Studio3DFactory() {
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadProjectFiles = useCallback(async () => {
+    if (!projectId || projectId === "default") {
+      setProjectFiles([]);
+      setFilesError(null);
+      setFilesLoading(false);
+      return;
+    }
+
     setFilesLoading(true);
     setFilesError(null);
     try {
