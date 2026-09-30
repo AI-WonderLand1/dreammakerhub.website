@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const prompt = String(body?.prompt ?? "").trim();
     const negativePrompt = String(body?.negativePrompt ?? "").trim();
+    const addTexture = body?.addTexture === true || body?.add_texture === true;
     const format = String(body?.format ?? "glb").toLowerCase();
     const projectId = body?.projectId ? String(body.projectId).trim() : null;
 
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
     const glb = await generateHunyuanGlb({
       prompt,
       negativePrompt: negativePrompt || undefined,
+      addTexture,
     });
 
     const assetId = `3d_${randomUUID()}`;
