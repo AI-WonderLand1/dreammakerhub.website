@@ -157,7 +157,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           icon: Code2,
         },
         { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
-        { href: "/settings/ai-providers", label: "SimpleRickSettings", icon: Sparkles },
+        { href: "/dashboard/settings/simplerick", label: "SimpleRickSettings", icon: Sparkles },
       ],
     },
     {
@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         { href: withProject("/dashboard/settings"), label: "Workspace Settings", icon: Settings },
         { href: "/dashboard/usage", label: "Usage & Limits", icon: Settings },
         { href: "/dashboard/subscription", label: "Subscription", icon: Settings },
-        { href: "/settings/account", label: "Account", icon: Settings },
+        { href: "/dashboard/settings/account", label: "Account", icon: Settings },
       ],
     },
   ];
@@ -392,7 +392,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </div>
 
                   <div className="space-y-1">
-                    <Link href="/settings/account" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                    <Link href="/dashboard/settings/account" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <User size={16} /> Profile
                     </Link>
                     <Link href="/dashboard#projects" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
@@ -406,7 +406,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <Link href={withProject("/dashboard/settings")} onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <Settings size={16} /> Settings
                     </Link>
-                    <Link href="/settings/ai-providers" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                    <Link href="/dashboard/settings/simplerick" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <Sparkles size={16} /> SimpleRickSettings
                     </Link>
                     <Link href="/dashboard/usage" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
