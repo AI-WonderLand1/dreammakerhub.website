@@ -5,7 +5,7 @@ import { makeApiToken, verifyToken } from "@/lib/crypto/token";
 // Never fall back to an anon or publishable key for credential operations.
 function admin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !secret) throw new Error("Wonderland key storage is not configured");
   return createClient(url, secret, {
     auth: { autoRefreshToken: false, persistSession: false },
