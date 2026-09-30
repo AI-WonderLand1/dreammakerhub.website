@@ -1,14 +1,5 @@
-import { logger } from '@/lib/logger';
-export const metadata = {
-  title: 'Billing & Licensing | AI Wonderland',
-  description: 'Manage billing and licensing for your account.',
-};
+import { redirect } from "next/navigation";
 
-export default function BillingSettingsPage() {
-  return (
-    <section>
-      <h1>Billing & Licensing</h1>
-      <p>View usage, manage payment methods, and review subscription details.</p>
-    </section>
-  );
+export default function RetiredBillingSettingsPage() {
+  redirect("/dashboard/usage");
 }
