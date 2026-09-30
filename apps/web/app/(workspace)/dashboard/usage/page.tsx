@@ -373,6 +373,10 @@ export default function BillingUsagePage() {
         </div>
       )}
 
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="font-semibold">Billable usage</h2>
+        <span className="text-xs text-white/40">Live metered usage for the current billing period</span>
+      </div>
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="mb-2 flex items-center gap-2 text-sm text-white/50"><Zap size={14} /> AI Tokens</div>
@@ -424,7 +428,8 @@ export default function BillingUsagePage() {
         <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
           <div className="mb-4 flex items-center gap-2 text-sm text-amber-300"><Activity size={14} /> Current Billing Period</div>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between gap-4"><span className="text-white/60">AI tokens</span><span>{formatNumber(tokensUsed)}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/60">AI tokens used</span><span>{formatNumber(tokensUsed)}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/60">Purchased token balance</span><span>{formatNumber(purchasedTokens)}</span></div>
             <div className="flex justify-between gap-4"><span className="text-white/60">API requests</span><span>{formatNumber(apiCallsUsed)}</span></div>
             <div className="flex justify-between gap-4"><span className="text-white/60">Storage reported</span><span>{formatBytes(storageUsed)}</span></div>
             {usage?.period_start && (
@@ -458,6 +463,108 @@ export default function BillingUsagePage() {
           <p className="mt-4 text-xs text-white/35">Only key metadata is shown here; full secrets are never returned after creation.</p>
         </section>
       </div>
+
+      <section className="mb-6 rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-violet-200">
+              <Coins size={17} />
+              <h2 className="font-semibold">Buy AI tokens</h2>
+            </div>
+            <p className="mt-1 text-sm text-white/45">
+              Purchased token packs are credited only after Stripe confirms a paid Checkout session.
+            </p>
+          </div>
+          <div className="rounded-lg border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-right">
+            <div className="text-[10px] uppercase tracking-wider text-violet-300/70">Purchased balance</div>
+            <div className="text-lg font-bold text-violet-100">{formatNumber(purchasedTokens)}</div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {tokenPacks.map((pack) => (
+            <div key={pack.id} className="rounded-lg border border-white/10 bg-black/20 p-4">
+              <div className="font-medium text-white">{pack.label}</div>
+              <div className="mt-1 text-2xl font-bold">{formatNumber(pack.tokens)}</div>
+              <div className="mt-1 text-xs text-white/45">
+                {pack.amount !== null && pack.currency
+                  ? new Intl.NumberFormat(undefined, { style: "currency", currency: pack.currency.toUpperCase() }).format(pack.amount / 100)
+                  : "Stripe price not configured"}
+              </div>
+              <button
+                type="button"
+                onClick={() => void buyTokenPack(pack.id)}
+                disabled={!pack.available || buyingPack !== null}
+                className="mt-4 w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {buyingPack === pack.id ? "Opening checkout…" : pack.available ? "Buy tokens" : "Unavailable"}
+              </button>
+            </div>
+          ))}
+          {tokenPacks.length === 0 && (
+            <p className="text-sm text-white/40">Token packs are not configured yet.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Bell size={17} className="text-amber-300" />
+              <h2 className="font-semibold">Usage alarms</h2>
+            </div>
+            <p className="mt-1 text-sm text-white/45">
+              Choose when DreamMakerHub warns you inside the billing dashboard.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-white/70">
+            <input
+              type="checkbox"
+              checked={preferences.in_app_alerts}
+              onChange={(event) => setPreferences((current) => ({ ...current, in_app_alerts: event.target.checked }))}
+            />
+            In-app alarms
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          {([
+            ["token_alert_percent", "AI tokens"],
+            ["api_alert_percent", "API requests"],
+            ["storage_alert_percent", "Storage"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="rounded-lg border border-white/10 bg-black/20 p-3">
+              <span className="text-xs text-white/50">{label} warning</span>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  min={50}
+                  max={100}
+                  step={5}
+                  value={preferences[key]}
+                  onChange={(event) => {
+                    const value = Math.max(50, Math.min(100, Number(event.target.value) || 50));
+                    setPreferences((current) => ({ ...current, [key]: value }));
+                  }}
+                  className="w-20 rounded-md border border-white/10 bg-[#07111d] px-2 py-1.5 text-sm text-white"
+                />
+                <span className="text-sm text-white/50">% used</span>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => void saveAlertPreferences()}
+          disabled={savingPreferences}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10 disabled:opacity-50"
+        >
+          <Save size={14} />
+          {savingPreferences ? "Saving…" : "Save alarm settings"}
+        </button>
+      </section>
 
       <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -505,12 +612,14 @@ export default function BillingUsagePage() {
         </p>
       </section>
 
-      {(tokenPct >= 75 || apiPct >= 75 || storagePct >= 75) && (
+      {alerts.length > 0 && (
         <div className="mb-6 flex gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-yellow-400" />
           <div>
-            <h3 className="font-semibold text-yellow-300">Usage warning</h3>
-            <p className="mt-1 text-sm text-white/60">One of your active tracked limits is above 75%.</p>
+            <h3 className="font-semibold text-yellow-300">Usage alarm</h3>
+            <div className="mt-1 space-y-1 text-sm text-white/60">
+              {alerts.map((alert) => <p key={alert}>{alert}</p>)}
+            </div>
           </div>
         </div>
       )}
