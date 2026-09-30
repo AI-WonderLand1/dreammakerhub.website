@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, ExternalLink, ReceiptText, RefreshCw } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import InlineBillingEditor from "@/components/billing/InlineBillingEditor";
+import { CreditCard, ReceiptText, RefreshCw } from "lucide-react";
 
 type Money = { amount: number; currency: string };
 
@@ -67,48 +67,6 @@ function formatMoney(value: Money | { amount: number; currency: string }) {
   }).format(value.amount / 100);
 }
 
-function BillingPortalButton() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const openPortal = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const supabase = createClient();
-      if (!supabase) throw new Error("Authentication is unavailable.");
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !data.session?.access_token) throw new Error("Please sign in again.");
-      const response = await fetch("/api/subscription/portal", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-        credentials: "same-origin",
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || !payload?.url) throw new Error(payload?.error || "Could not open billing portal.");
-      window.location.assign(payload.url);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not open billing portal.");
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => void openPortal()}
-        disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10 disabled:opacity-50"
-      >
-        <ExternalLink size={14} />
-        {loading ? "Opening…" : "Manage billing"}
-      </button>
-      {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
-    </div>
-  );
-}
-
 export function BillingCenterSidebar() {
   const pathname = usePathname();
   const items = [
@@ -158,12 +116,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      if (!supabase) throw new Error("Authentication is unavailable.");
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !data.session?.access_token) throw new Error("Please sign in again.");
       const response = await fetch("/api/billing/account", {
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
         credentials: "same-origin",
         cache: "no-store",
       });
@@ -224,7 +177,12 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
             <h3 className="font-semibold">Subscriptions</h3>
             <p className="text-xs text-white/45">Your active DreamMakerHub subscriptions.</p>
           </div>
-          <BillingPortalButton />
+          <Link
+            href="/subscription"
+            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10"
+          >
+            Manage plan
+          </Link>
         </div>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {(account?.subscriptions ?? []).map((subscription) => {
@@ -253,39 +211,21 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
       </section>}
 
       {section === "payment-information" && <section className="mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">Payment information</h2>
-            <p className="mt-1 text-sm text-white/45">Billing information for the signed-in DreamMakerHub account.</p>
-          </div>
-          <BillingPortalButton />
+        <div>
+          <h2 className="text-lg font-semibold">Payment information</h2>
+          <p className="mt-1 text-sm text-white/45">
+            Edit your DreamMakerHub billing information and payment method without leaving this page.
+          </p>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-white/10 p-4">
-            <div className="text-sm font-semibold">Billing information</div>
-            <div className="mt-2 space-y-1 text-sm text-white/60">
-              <div>{customer?.name || account?.email || "No billing name on file"}</div>
-              {address?.line1 && <div>{address.line1}</div>}
-              {address?.line2 && <div>{address.line2}</div>}
-              {(address?.city || address?.state || address?.postal_code) && (
-                <div>{[address.city, address.state, address.postal_code].filter(Boolean).join(", ")}</div>
-              )}
-              {address?.country && <div>{address.country}</div>}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-white/10 p-4">
-            <div className="text-sm font-semibold">Payment method</div>
-            {method ? (
-              <div className="mt-2 text-sm text-white/60">
-                <div className="capitalize">{method.brand} ending in {method.last4}</div>
-                <div>Expires {String(method.expMonth ?? "").padStart(2, "0")}/{method.expYear}</div>
-              </div>
-            ) : (
-              <div className="mt-2 text-sm text-white/45">No saved payment method is on file.</div>
-            )}
-          </div>
+        <div className="mt-4">
+          <InlineBillingEditor
+            initialName={customer?.name || account?.email || ""}
+            initialPhone={customer?.phone || ""}
+            initialAddress={address || {}}
+            paymentMethod={method}
+            onSaved={() => void load()}
+          />
         </div>
       </section>}
 
@@ -325,7 +265,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
                 </tr>
               ))}
               {(account?.invoices ?? []).length === 0 && (
-                <tr><td colSpan={5} className="py-6 text-center text-white/40">No Stripe invoice history for this user.</td></tr>
+                <tr><td colSpan={5} className="py-6 text-center text-white/40">No invoice history for this DreamMakerHub account.</td></tr>
               )}
             </tbody>
           </table>
