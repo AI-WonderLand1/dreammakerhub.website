@@ -1,147 +1,169 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
-import { EmptyState, SkeletonGrid } from "@/app/components/feedback/EmptyState";
-import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
-import { logger } from '@/lib/logger';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw, Users } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 
+type Project = { id: string; name: string };
 type SessionUser = {
-  id?: string;
-  user_id?: string;
-  project_id?: string;
-  last_seen?: string;
+  user_id: string;
+  project_id: string;
+  last_seen: string;
+  is_active: boolean;
+  cursor_position?: unknown;
 };
 
-function toastId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
 export default function CollaborationPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [users, setUsers] = useState<SessionUser[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [live, setLive] = useState(false);
+  const [error, setError] = useState("");
 
-  const pushToast = useCallback((message: string, tone: ToastItem["tone"]) => {
-    const id = toastId();
-    setToasts((prev) => [...prev, { id, message, tone }]);
-    window.setTimeout(() => {
-      setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, 3000);
+  const selected = useMemo(() => projects.find(project => project.id === projectId) ?? null, [projects, projectId]);
+
+  const loadProjects = useCallback(async () => {
+    const response = await fetchAuthenticatedProject("/api/projects");
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !Array.isArray(payload?.projects)) throw new Error(payload?.error || "Could not load projects.");
+    const rows = payload.projects.map((project: any) => ({ id: String(project.id), name: String(project.name || "Project") }));
+    setProjects(rows);
+    setProjectId(current => rows.some((project: Project) => project.id === current) ? current : rows[0]?.id || "");
   }, []);
 
   const loadSessions = useCallback(async () => {
+    if (!projectId) {
+      setUsers([]);
+      return;
+    }
+    const response = await fetch(`/api/collaboration?projectId=${encodeURIComponent(projectId)}`, { cache: "no-store" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error || "Could not load collaboration sessions.");
+    setUsers(Array.isArray(payload?.users) ? payload.users : []);
+  }, [projectId]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    void loadProjects()
+      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Could not load projects."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [loadProjects]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    let active = true;
     setLoading(true);
     setError("");
+    void loadSessions()
+      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Could not load sessions."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [loadSessions, projectId]);
 
-    try {
-      const trimmed = projectId.trim();
-      const res = await fetch(`/api/collaboration?projectId=${encodeURIComponent(trimmed)}`);
-      const payload = await res.json();
+  useEffect(() => {
+    if (!projectId) return;
+    const heartbeat = async (active = true) => {
+      await fetch("/api/collaboration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId, active }),
+        keepalive: !active,
+      }).catch(() => null);
+    };
 
-      if (!res.ok) {
-        const message = payload?.error || `Failed to load collaboration sessions (${res.status})`;
-        setError(message);
-        pushToast(message, "error");
-        return;
-      }
+    void heartbeat(true);
+    const id = window.setInterval(() => void heartbeat(true), 30_000);
+    return () => {
+      window.clearInterval(id);
+      void heartbeat(false);
+    };
+  }, [projectId]);
 
-      const list = Array.isArray(payload?.users) ? payload.users : [];
-      setUsers(list);
-      if (!list.length) {
-        pushToast("No active collaborators found.", "success");
-      }
-    } catch (err: any) {
-      const message = err?.message || "Network error while loading collaboration sessions";
-      setError(message);
-      pushToast(message, "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, pushToast]);
+  useEffect(() => {
+    if (!projectId) return;
+    const supabase = createClient();
+    if (!supabase) return;
+    const channel = supabase
+      .channel(`collaboration:${projectId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "collaboration_sessions",
+        filter: `project_id=eq.${projectId}`,
+      }, () => {
+        void loadSessions();
+      })
+      .subscribe(status => setLive(status === "SUBSCRIBED"));
 
-  const canLoad = useMemo(() => projectId.trim().length > 0, [projectId]);
+    return () => {
+      setLive(false);
+      void supabase.removeChannel(channel);
+    };
+  }, [loadSessions, projectId]);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8 text-white">
-      <ToastStack toasts={toasts} />
+    <div className="space-y-5 text-white">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-bold"><Users size={22} /> Collaboration</h1>
+        <p className="mt-1 text-sm text-white/50">Live collaboration presence for your DreamMakerHub projects.</p>
+      </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <h2 className="text-xl font-bold">Collaboration Sessions</h2>
-        <p className="mt-2 text-sm text-white/65">
-          Monitor active collaborators for a project. Uses <code>/api/collaboration</code> with inline retry + toast feedback.
-        </p>
-
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <input
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            placeholder="Enter project ID"
-            aria-label="Project ID"
-            className="h-10 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-sm"
-          />
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="min-w-0 flex-1">
+            <span className="mb-1 block text-xs text-white/50">Project</span>
+            <select
+              value={projectId}
+              onChange={event => setProjectId(event.target.value)}
+              disabled={projects.length === 0}
+              className="w-full rounded-lg border border-white/15 bg-[#081525] px-3 py-2.5 text-sm"
+            >
+              {projects.length === 0 ? <option value="">No projects</option> : projects.map(project => (
+                <option key={project.id} value={project.id}>{project.name}</option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
-            onClick={loadSessions}
-            disabled={!canLoad || loading}
-            aria-label="Load collaboration sessions"
-            className="h-10 rounded-lg bg-cyan-600 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => void loadSessions()}
+            disabled={!projectId || loading}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm hover:bg-white/5 disabled:opacity-50"
           >
-            {loading ? "Loading…" : "Load Sessions"}
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
           </button>
-          <Link
-            href="/wonder-build/agent"
-            className="inline-flex h-10 items-center rounded-lg border border-white/15 bg-white/5 px-4 text-sm font-semibold hover:bg-white/10"
-          >
-            Open Builder
-          </Link>
+          <span className="mt-5 inline-flex items-center gap-2 text-xs text-white/45">
+            <span className={`h-2 w-2 rounded-full ${live ? "bg-emerald-400" : "bg-amber-400"}`} />
+            {live ? "Live" : "Connecting"}
+          </span>
         </div>
+      </section>
 
-        {error ? (
-          <div className="mt-4 rounded-lg border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">
-            <div>{error}</div>
-            <button
-              type="button"
-              onClick={loadSessions}
-              className="mt-2 rounded-md border border-red-300/40 bg-red-500/20 px-3 py-1 text-xs font-semibold"
-              aria-label="Retry loading collaboration sessions"
-            >
-              Retry
-            </button>
+      {error && <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
+
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">{selected?.name || "Project"} collaborators</h2>
+          <span className="text-xs text-white/45">{users.length} active</span>
+        </div>
+        {loading ? (
+          <p className="mt-4 text-sm text-white/40">Loading active collaborators…</p>
+        ) : users.length === 0 ? (
+          <p className="mt-4 text-sm text-white/40">No active collaboration sessions for this project.</p>
+        ) : (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {users.map(user => (
+              <article key={user.user_id} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                <div className="text-sm font-semibold">User {user.user_id.slice(0, 8)}…</div>
+                <div className="mt-1 text-xs text-white/45">Last seen {new Date(user.last_seen).toLocaleString()}</div>
+              </article>
+            ))}
           </div>
-        ) : null}
-
-        <div className="mt-5">
-          {loading ? (
-            <SkeletonGrid cards={3} />
-          ) : users.length === 0 ? (
-            <EmptyState
-              title="No active collaboration sessions"
-              description="Start collaborating in Wonder Build to see active user sessions here."
-              cta={
-                <Link
-                  href="/wonder-build/agent"
-                  className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 px-4 text-sm font-bold"
-                >
-                  Start a Collaboration Session
-                </Link>
-              }
-            />
-          ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {users.map((user, index) => (
-                <div key={`${user.user_id || "user"}-${index}`} className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  <div className="text-sm font-semibold">User: {user.user_id || "Unknown"}</div>
-                  <div className="mt-1 text-xs text-white/60">Project: {user.project_id || projectId}</div>
-                  <div className="mt-1 text-xs text-white/50">Last seen: {user.last_seen || "Unknown"}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </section>
     </div>
   );
 }
