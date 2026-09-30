@@ -20,36 +20,44 @@ type RemoteWorkspace = {
  */
 async function customerDeletionOwner(userId: string, email: string | undefined,
   confirmed: string | undefined, slotId: string): Promise<{ ownerId: string; templateId: string }> {
-  const operatorId = process.env.CODER_OPERATOR_USER_ID;
-  const approvedTemplateId = process.env.CODER_CUSTOMER_TEMPLATE_ID;
-  if (process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true' ||
-      !operatorId || !UUID.test(operatorId) || !approvedTemplateId || !UUID.test(approvedTemplateId) ||
-      !confirmed || !email) {
-    throw new CostGateError('Customer deletion requires verified independent Coder identities. Contact support.');
+  if (!confirmed || !email) {
+    throw new CostGateError('A confirmed DreamMakerHub account is required for customer workspace deletion.');
   }
+
   const expectedEmail = email.trim().toLowerCase();
   const db = coderServiceClient();
-  const [identityResult, jobResult] = await Promise.all([
+
+  const [operatorResponse, identityResult, jobResult] = await Promise.all([
+    coderApiRequest('/api/v2/users/me', 'GET'),
     db.from('coder_customer_identities').select('coder_user_id,verified_email')
       .eq('user_id', userId).maybeSingle(),
     db.from('coder_customer_jobs').select('coder_user_id,template_id,status')
       .eq('user_id', userId).eq('slot_id', slotId).maybeSingle(),
   ]);
+
+  const operator = operatorResponse.ok
+    ? await operatorResponse.json().catch(() => null) as CoderIdentity | null
+    : null;
   const identity = identityResult.data;
   const job = jobResult.data;
-  if (identityResult.error || jobResult.error || !identity || !job ||
-      !UUID.test(identity.coder_user_id) || identity.coder_user_id === operatorId ||
+
+  if (!operator?.id || !UUID.test(operator.id) ||
+      identityResult.error || jobResult.error || !identity || !job ||
+      !UUID.test(identity.coder_user_id) || identity.coder_user_id === operator.id ||
       identity.verified_email !== expectedEmail || job.coder_user_id !== identity.coder_user_id ||
-      job.template_id !== approvedTemplateId || job.status !== 'ready') {
+      !UUID.test(job.template_id) || job.status !== 'ready') {
     throw new CostGateError('Customer workspace ownership is not verified. No deletion was attempted.');
   }
+
   const response = await coderApiRequest(`/api/v2/users/${encodeURIComponent(identity.coder_user_id)}`, 'GET');
   const owner = response.ok ? await response.json().catch(() => null) as CoderIdentity | null : null;
+
   if (!owner || owner.id !== identity.coder_user_id || owner.email?.trim().toLowerCase() !== expectedEmail ||
       owner.login_type !== 'oidc' || owner.status !== 'active' || owner.is_service_account === true) {
     throw new CostGateError('Coder customer account cannot be verified. No deletion was attempted.');
   }
-  return { ownerId: owner.id, templateId: approvedTemplateId };
+
+  return { ownerId: owner.id, templateId: job.template_id };
 }
 
 export async function DELETE(request: Request, { params }: Context) {
