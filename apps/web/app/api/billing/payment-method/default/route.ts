@@ -9,20 +9,42 @@ export async function POST(request: Request) {
   if (!stripe) return NextResponse.json({ error: "Billing processor is unavailable" }, { status: 503 });
 
   const body = await request.json().catch(() => ({}));
+  const setupIntentId = typeof (body as any).setupIntentId === "string"
+    ? (body as any).setupIntentId.trim()
+    : "";
   const paymentMethodId = typeof (body as any).paymentMethodId === "string"
     ? (body as any).paymentMethodId.trim()
     : "";
-  if (!paymentMethodId) return NextResponse.json({ error: "paymentMethodId is required" }, { status: 400 });
+  if (!setupIntentId || !paymentMethodId) {
+    return NextResponse.json({ error: "setupIntentId and paymentMethodId are required" }, { status: 400 });
+  }
 
   const { customerId } = await resolveStripeCustomer(user, { createIfMissing: true });
   if (!customerId) return NextResponse.json({ error: "Billing account is unavailable" }, { status: 503 });
 
-  const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+  const [setupIntent, paymentMethod] = await Promise.all([
+    stripe.setupIntents.retrieve(setupIntentId),
+    stripe.paymentMethods.retrieve(paymentMethodId),
+  ]);
+
+  const setupCustomer = typeof setupIntent.customer === "string"
+    ? setupIntent.customer
+    : setupIntent.customer?.id || null;
+  const setupPaymentMethod = typeof setupIntent.payment_method === "string"
+    ? setupIntent.payment_method
+    : setupIntent.payment_method?.id || null;
   const attachedCustomer = typeof paymentMethod.customer === "string"
     ? paymentMethod.customer
     : paymentMethod.customer?.id || null;
-  if (attachedCustomer !== customerId) {
-    return NextResponse.json({ error: "Payment method does not belong to this billing account" }, { status: 403 });
+
+  if (
+    setupIntent.status !== "succeeded" ||
+    setupCustomer !== customerId ||
+    setupPaymentMethod !== paymentMethodId ||
+    attachedCustomer !== customerId ||
+    setupIntent.metadata?.dreammakerhubUserId !== user.id
+  ) {
+    return NextResponse.json({ error: "Payment method setup could not be verified" }, { status: 403 });
   }
 
   await stripe.customers.update(customerId, {
