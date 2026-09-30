@@ -11,7 +11,6 @@ import {
   BookOpen,
   Bot,
   Box,
-  Accessibility,
   CreditCard,
   ChevronDown,
   CircleHelp,
@@ -42,7 +41,7 @@ type Project = {
 
 const projectTypeLabel = (value?: string | null) => {
   if (["game", "3d", "3d_scene", "playcanvas"].includes(value || "")) return "3D Experience";
-  if (["workspace", "code"].includes(value || "")) return "Code / IDE";
+  if (["workspace", "code"].includes(value || "")) return "Code / Files";
   if (value === "npc") return "NPC AI";
   if (["ai", "ai_app", "playground"].includes(value || "")) return "AI App";
   return "Website";
@@ -193,7 +192,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       icon: Code2,
       items: [
         { href: withProject("/dashboard?workspaceTab=code"), label: "Project Code", icon: Code2 },
-        { href: withProject("/wonderspace"), label: "Cloud Linux IDE", icon: Code2 },
         { href: withProject("/dashboard/agents"), label: "AI Coding Agents", icon: Bot },
       ],
     },
@@ -400,9 +398,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <Link href="/dashboard#projects" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <Folder size={16} /> Projects
                     </Link>
-                    <Link href="/dashboard/teams" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
-                      <Users size={16} /> Teams & Organizations
-                    </Link>
                   </div>
 
                   <div className="my-2 border-t border-white/10" />
@@ -413,9 +408,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     </Link>
                     <Link href="/settings/ai-providers" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <Sparkles size={16} /> SimpleRickSettings
-                    </Link>
-                    <Link href="/settings/accessibility" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
-                      <Accessibility size={16} /> Accessibility
                     </Link>
                     <Link href="/dashboard/usage" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <CreditCard size={16} /> Billing & usage
