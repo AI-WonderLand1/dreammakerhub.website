@@ -16,6 +16,7 @@ import RepositoryFileBrowser from "../RepositoryFileBrowser";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import WonderSpaceSourceHistory from "@/components/dashboard/WonderSpaceSourceHistory";
+import BrowserTerminalPanel from "@/components/dashboard/BrowserTerminalPanel";
 
 type Project = {
   id: string;
@@ -163,13 +164,16 @@ export default function ProjectCodeManagerPage() {
 
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_300px]">
         <main className="min-w-0">
-          <RepositoryFileBrowser
-            projectId={project.id}
-            projectType={tool}
-            files={files}
-            initialPath={initialPath}
-            onFilesChange={setFiles}
-          />
+          <div className="space-y-4">
+            <RepositoryFileBrowser
+              projectId={project.id}
+              projectType={tool}
+              files={files}
+              initialPath={initialPath}
+              onFilesChange={setFiles}
+            />
+            <BrowserTerminalPanel projectId={project.id} />
+          </div>
         </main>
 
         <aside className="space-y-4">
