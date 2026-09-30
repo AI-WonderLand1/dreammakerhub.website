@@ -522,8 +522,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         for (const light of lights) {
           const entity = new pc.Entity(light.id || "SceneLight");
           const isDir = light.type === "directional";
+          // Generated scenes use the generic "point" light name. PlayCanvas
+          // calls the equivalent runtime light type "omni".
+          const playcanvasLightType = light.type === "point" ? "omni" : light.type;
           entity.addComponent("light", {
-            type: light.type,
+            type: playcanvasLightType,
             color: new pc.Color(light.color[0], light.color[1], light.color[2]),
             intensity: light.intensity ?? 1,
             castShadows: isDir && shadowsRef.current,
