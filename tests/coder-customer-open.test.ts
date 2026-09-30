@@ -23,7 +23,8 @@ describe('customer IDE opening security hold', () => {
     expect(page).not.toContain('railwayCustomerPilot');
     expect(page).not.toContain('WONDERSPACE_CONTROLLER_URL');
     expect(page).toContain('WonderSpaceOperatorGate');
-    expect(gate).toContain('<CloudIdePaused />');
+    expect(gate).toContain('function BrowserIdeEntry()');
+    expect(gate).toContain('href="/dashboard#projects"');
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('<CustomerWorkspaceLaunch');
