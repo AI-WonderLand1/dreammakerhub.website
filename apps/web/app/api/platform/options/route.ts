@@ -4,12 +4,12 @@ type Option = {
   id: string;
   name: string;
   summary: string;
-  status: "ready" | "beta";
+  status: "ready";
   href: string;
 };
 
-function option(id: string, name: string, summary: string, href: string, status: "ready" | "beta" = "ready"): Option {
-  return { id, name, summary, href, status };
+function option(id: string, name: string, summary: string, href: string): Option {
+  return { id, name, summary, href, status: "ready" };
 }
 
 export async function GET() {
@@ -17,19 +17,15 @@ export async function GET() {
     ai: [
       option("wonderbuild", "WonderBuild", "Create websites and web apps with AI, templates, visual editing, code, preview, and publish.", "/wonder-build"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
-      option("playground", "AI Playground", "Test prompts, providers, models, and agent workflows.", "https://playground.dreammakerhub.website/", "beta"),
+      option("playground", "AI Playground", "Use the live DreamMakerHub AI Playground.", "https://playground.dreammakerhub.website/"),
     ],
     agents: [
-      option("dashboard-agents", "Dashboard Agents", "Configure and compare agent patterns for product tasks.", "/dashboard/agents"),
-      option("playcanvas-bridge", "PlayCanvas Bridge", "Use Theia handoff payloads for forked PlayCanvas editor workflows.", "/dashboard/editor-playcanvas"),
+      option("playcanvas-bridge", "PlayCanvas Bridge", "Open the working PlayCanvas integration and project artifact tools.", "/dashboard/editor-playcanvas"),
+      option("collaboration", "Collaboration", "View active project collaboration sessions.", "/dashboard/collaboration"),
     ],
-    runners: [
-      option("project-runner", "Project Runner API", "Execute sandboxed runtime actions.", "/dashboard/projects", "beta"),
-      option("collaboration", "Collaboration Runner", "Operate shared workspace actions and comments in one place.", "/dashboard/collaboration"),
-    ],
+    runners: [],
     workers: [
-      option("terminal-worker", "Terminal Exec", "Run controlled terminal execution via SSH/terminal endpoints.", "/dashboard/settings", "beta"),
-      option("settings-security", "Security Controls", "Manage access and security posture for automation surfaces.", "/settings/security"),
+      option("security", "Security Controls", "Review live DreamMakerHub security checks and findings.", "/dashboard/aetherguard"),
     ],
-  });
+  }, { headers: { "Cache-Control": "private, no-store" } });
 }
