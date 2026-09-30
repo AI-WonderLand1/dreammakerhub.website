@@ -82,7 +82,7 @@ export default function BillingUsagePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [live, setLive] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);\n  const [openingBilling, setOpeningBilling] = useState(false);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadUsage = useCallback(async () => {
@@ -230,10 +230,22 @@ export default function BillingUsagePage() {
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             Refresh
           </button>
-          <Link href="/subscription" className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 font-medium text-white">
-            <CreditCard size={16} />
-            Upgrade Plan
-          </Link>
+          {plan === "free" ? (
+            <Link href="/subscription" className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 font-medium text-white">
+              <CreditCard size={16} />
+              Upgrade Plan
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void openBillingPortal()}
+              disabled={openingBilling}
+              className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 font-medium text-white disabled:opacity-50"
+            >
+              <CreditCard size={16} />
+              {openingBilling ? "Opening…" : "Manage Billing"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -325,9 +337,7 @@ export default function BillingUsagePage() {
               ))}
             </div>
           )}
-          <Link href="/dashboard/settings/api-keys" className="mt-4 inline-block text-xs font-semibold text-cyan-300 hover:underline">
-            Manage API keys →
-          </Link>
+          <p className="mt-4 text-xs text-white/35">Only key metadata is shown here; full secrets are never returned after creation.</p>
         </section>
       </div>
 
