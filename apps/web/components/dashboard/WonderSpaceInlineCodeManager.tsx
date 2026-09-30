@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Code2, ExternalLink, RotateCcw } from "lucide-react";
 import RepositoryFileBrowser from "../../app/(workspace)/dashboard/projects/[id]/RepositoryFileBrowser";
-import BrowserTerminalPanel from "./BrowserTerminalPanel";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 
 type DashboardProject = { id: string; name: string; tool?: string | null; type?: string | null };
@@ -120,9 +119,6 @@ export default function WonderSpaceInlineCodeManager({
             </Link>
           </div>
           <ActiveProjectFiles key={project.id} project={project} onDirtyChange={onDirtyChange} />
-          <div className="border-t border-white/10 p-3 sm:p-4">
-            <BrowserTerminalPanel projectId={project.id} />
-          </div>
         </>
       ) : (
         <p className="p-4 text-sm text-slate-400">Select a project to manage its files.</p>
@@ -159,9 +155,6 @@ export default function WonderSpaceInlineCodeManager({
       {open && project && (
         <>
           <ActiveProjectFiles key={project.id} project={project} onDirtyChange={onDirtyChange} />
-          <div className="border-t border-white/10 p-3 sm:p-4">
-            <BrowserTerminalPanel projectId={project.id} />
-          </div>
         </>
       )}
     </section>

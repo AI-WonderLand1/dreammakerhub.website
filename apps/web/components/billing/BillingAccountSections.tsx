@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CreditCard, ExternalLink, ReceiptText, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -108,15 +110,16 @@ function BillingPortalButton() {
 }
 
 export function BillingCenterSidebar() {
+  const pathname = usePathname();
   const items = [
-    ["#billing-overview", "Overview"],
-    ["#billing-usage", "Usage"],
-    ["#billing-ai", "AI usage"],
-    ["#billing-alerts", "Budgets & alerts"],
-    ["#billing-licensing", "Licensing"],
-    ["#billing-payment-information", "Payment information"],
-    ["#billing-payment-history", "Payment history"],
-    ["#billing-additional-details", "Additional billing details"],
+    ["/dashboard/usage", "Overview"],
+    ["/dashboard/usage/metered", "Usage"],
+    ["/dashboard/usage/ai", "AI usage"],
+    ["/dashboard/usage/alerts", "Budgets & alerts"],
+    ["/dashboard/usage/licensing", "Licensing"],
+    ["/dashboard/usage/payment-information", "Payment information"],
+    ["/dashboard/usage/payment-history", "Payment history"],
+    ["/dashboard/usage/additional-details", "Additional billing details"],
   ] as const;
 
   return (
@@ -126,21 +129,27 @@ export function BillingCenterSidebar() {
         Billing and licensing
       </div>
       <nav className="space-y-1" aria-label="Billing sections">
-        {items.map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
-            className="block rounded-lg px-3 py-2 text-sm text-white/65 hover:bg-white/5 hover:text-white"
-          >
-            {label}
-          </a>
-        ))}
+        {items.map(([href, label]) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`block rounded-lg px-3 py-2 text-sm transition ${
+                active ? "bg-white/10 font-semibold text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );
 }
 
-export function BillingAccountSections() {
+export function BillingAccountSections({ section = "overview" }: { section?: "overview" | "payment-information" | "payment-history" | "additional-details" }) {
   const [account, setAccount] = useState<BillingAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +189,7 @@ export function BillingAccountSections() {
 
   return (
     <>
-      <section id="billing-overview" className="scroll-mt-24 mb-6">
+      {section === "overview" && <section className="mb-6">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">Overview</h2>
           <button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 text-xs text-white/50 hover:text-white">
@@ -241,9 +250,9 @@ export function BillingAccountSections() {
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
-      <section id="billing-payment-information" className="scroll-mt-24 mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
+      {section === "payment-information" && <section className="mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">Payment information</h2>
@@ -278,9 +287,9 @@ export function BillingAccountSections() {
             )}
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section id="billing-payment-history" className="scroll-mt-24 mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
+      {section === "payment-history" && <section className="mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
         <div className="flex items-center gap-2">
           <ReceiptText size={17} />
           <h2 className="text-lg font-semibold">Payment history</h2>
@@ -321,9 +330,9 @@ export function BillingAccountSections() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section>}
 
-      <section id="billing-additional-details" className="scroll-mt-24 mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
+      {section === "additional-details" && <section className="mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
         <h2 className="text-lg font-semibold">Additional billing details</h2>
         <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
           <div className="rounded-lg border border-white/10 p-3">
@@ -335,7 +344,7 @@ export function BillingAccountSections() {
             <div className="mt-1 font-mono text-xs">{customer?.id ? `••••${customer.id.slice(-8)}` : "Not created yet"}</div>
           </div>
         </div>
-      </section>
+      </section>}
     </>
   );
 }

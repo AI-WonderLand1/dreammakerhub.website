@@ -6,15 +6,16 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("billing center token packs and usage alarms", () => {
   it("keeps one canonical dashboard with live billable usage, token purchases and alarm controls", () => {
-    const page = read("apps/web/app/(workspace)/dashboard/usage/page.tsx");
-    expect(page).toContain("Billable usage");
+    const page = read("apps/web/components/billing/BillingLiveUsagePanel.tsx");
+    expect(page).toContain("Live metered usage for the current billing period.");
     expect(page).toContain("Buy AI tokens");
     expect(page).toContain("Purchased token balance");
     expect(page).toContain("Usage alarms");
     expect(page).toContain("Save alarm settings");
     expect(page).toContain('fetch("/api/billing/token-packs"');
     expect(page).toContain('fetch("/api/billing/preferences"');
-    expect(page).toContain('fetch("/api/subscription/portal"');
+    const account = read("apps/web/components/billing/BillingAccountSections.tsx");
+    expect(account).toContain('fetch("/api/subscription/portal"');
     expect(page).not.toContain("Email alerts");
   });
 

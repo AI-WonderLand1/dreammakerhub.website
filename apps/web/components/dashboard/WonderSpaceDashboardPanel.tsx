@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Code2, FolderOpen, Plus, Settings2 } from "lucide-react";
+import { Code2, FolderOpen, Plus } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
 import WonderSpaceInlineCodeManager from "./WonderSpaceInlineCodeManager";
 import WonderSpaceSourceHistory from "./WonderSpaceSourceHistory";
@@ -20,7 +20,7 @@ const tabs: Array<{ key: WorkspaceTab; label: string }> = [
 function projectTool(project: DashboardProject): { label: string; href: string } {
   const id = encodeURIComponent(project.id);
   const kind = (project.tool || project.type || "").toLowerCase();
-  if (["workspace", "code"].includes(kind)) return { label: "Linux IDE status", href: `/wonderspace?projectId=${id}` };
+  if (["workspace", "code"].includes(kind)) return { label: "Open files", href: `/dashboard/projects/${id}/files` };
   if (["game", "3d", "3d_scene", "playcanvas"].includes(kind)) return { label: "Open 3D builder", href: `/dashboard/3dhub?projectId=${id}` };
   if (kind === "npc") return { label: "Open NPC studio", href: `/wonder-play?projectId=${id}` };
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(kind)) return { label: "Open AI tools", href: `/dashboard/agents?projectId=${id}` };
@@ -77,10 +77,6 @@ function ProjectWorkspaceViews({
             >
               <FolderOpen size={16} aria-hidden="true" /> Project details and settings
             </Link>
-            <p className="flex items-center gap-2 text-xs text-slate-400">
-              <Settings2 size={14} aria-hidden="true" />
-              Git pull requests and cloud CI are shown as planned until their backends are ready.
-            </p>
           </section>
         </div>
       )}

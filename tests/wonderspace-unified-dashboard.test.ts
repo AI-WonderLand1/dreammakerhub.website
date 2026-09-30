@@ -189,8 +189,9 @@ describe("one dashboard/project/browser navigation", () => {
     expect(nav).toContain('`${projectPath}/issues`');
     expect(nav).toContain('`${projectPath}/discussions`');
     expect(nav).toContain('`${projectPath}/wiki`');
-    expect(nav).toContain('href: null');
-    expect(nav).toContain("aria-disabled");
+    expect(nav).not.toContain('label: "Changes"');
+    expect(nav).not.toContain('label: "Actions"');
+    expect(nav).not.toContain("aria-disabled");
     expect(nav).not.toContain("github(");
     expect(nav).not.toContain("api.github.com");
     expect(manager).not.toContain("WonderSpaceRepositoryConnection");

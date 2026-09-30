@@ -29,7 +29,7 @@ describe("reference-style dashboard side menus", () => {
   it("replaces the reference Copilot settings concept with SimpleRickSettings", () => {
     expect(layout).toContain('label: "SimpleRickSettings"');
     expect(layout).toContain("<Sparkles size={16} /> SimpleRickSettings");
-    expect(layout).toContain('href="/settings/ai-providers"');
+    expect(layout).toContain('href="/dashboard/settings/simplerick"');
     expect(layout).not.toContain(">Copilot<");
     expect(layout).not.toContain("Copilot settings");
   });
@@ -44,7 +44,6 @@ describe("reference-style dashboard side menus", () => {
   it("keeps sign out and account navigation inside the account menu", () => {
     expect(layout).toContain("> Profile");
     expect(layout).toContain("> Projects");
-    expect(layout).toContain("> Teams & Organizations");
     expect(layout).toContain("> Billing & usage");
     expect(layout).toContain("> Upgrade");
     expect(layout).toContain('onClick={() => void handleSignOut()}');

@@ -5,19 +5,18 @@ import { join } from "node:path";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("billing center user ownership and reference layout", () => {
-  it("uses one canonical billing page with reference-style sections", () => {
-    const page = read("apps/web/app/(workspace)/dashboard/usage/page.tsx");
+  it("uses real routed billing subpages instead of same-page anchor scrolling", () => {
+    const layout = read("apps/web/app/(workspace)/dashboard/usage/layout.tsx");
     const sections = read("apps/web/components/billing/BillingAccountSections.tsx");
-    expect(page).toContain("<BillingCenterSidebar");
-    expect(page).toContain("<BillingAccountSections");
-    expect(page).toContain('id="billing-usage"');
-    expect(page).toContain('id="billing-ai"');
-    expect(page).toContain('id="billing-alerts"');
-    expect(page).toContain('id="billing-licensing"');
-    expect(sections).toContain("Overview");
-    expect(sections).toContain("Payment information");
-    expect(sections).toContain("Payment history");
-    expect(sections).toContain("Additional billing details");
+    expect(layout).toContain("<BillingCenterSidebar");
+    expect(sections).toContain('"/dashboard/usage/metered"');
+    expect(sections).toContain('"/dashboard/usage/ai"');
+    expect(sections).toContain('"/dashboard/usage/alerts"');
+    expect(sections).toContain('"/dashboard/usage/licensing"');
+    expect(sections).toContain('"/dashboard/usage/payment-information"');
+    expect(sections).toContain('"/dashboard/usage/payment-history"');
+    expect(sections).toContain('"/dashboard/usage/additional-details"');
+    expect(sections).not.toContain('"#billing-');
   });
 
   it("loads Stripe billing data only after resolving the authenticated user", () => {
@@ -32,9 +31,10 @@ describe("billing center user ownership and reference layout", () => {
 
   it("never embeds example personal billing identity from screenshots", () => {
     const page = read("apps/web/app/(workspace)/dashboard/usage/page.tsx");
+    const live = read("apps/web/components/billing/BillingLiveUsagePanel.tsx");
     const sections = read("apps/web/components/billing/BillingAccountSections.tsx");
     const route = read("apps/web/app/api/billing/account/route.ts");
-    const combined = page + sections + route;
+    const combined = page + live + sections + route;
     expect(combined).not.toContain("Michael Waite");
     expect(combined).not.toContain("Mikey");
     expect(combined).not.toContain("Marshall");
