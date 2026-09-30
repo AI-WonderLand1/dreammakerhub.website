@@ -32,7 +32,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { data, error } = await supabase.rpc("get_usage_summary");
+    const [{ data, error }, balanceResult] = await Promise.all([
+      supabase.rpc("get_usage_summary"),
+      supabase
+        .from("user_token_balances")
+        .select("purchased_tokens")
+        .eq("user_id", userData.user.id)
+        .maybeSingle(),
+    ]);
     if (error || !data) {
       return NextResponse.json(
         { error: error?.message || "Failed to load usage" },
@@ -40,7 +47,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ ok: true, usage: data });
+    return NextResponse.json({
+      ok: true,
+      usage: {
+        ...data,
+        purchased_tokens: Number(balanceResult.data?.purchased_tokens ?? 0),
+      },
+    });
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message || "Server error" },
