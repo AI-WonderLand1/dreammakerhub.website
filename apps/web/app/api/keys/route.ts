@@ -1,35 +1,28 @@
 import { NextResponse } from "next/server";
-import { supabaseRouteClient } from "@/lib/supabase/route";
+import { requireUserId } from "@/lib/auth";
 import { createWonderlandKey, listWonderlandKeys } from "@/lib/wonderland-api-keys/server";
 
 export const runtime = "nodejs";
 
-async function currentUser() {
-  const db = await supabaseRouteClient();
-  const { data, error } = await db.auth.getUser();
-  if (error || !data.user) return null;
-  return data.user;
-}
-
-export async function GET() {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(request: Request) {
+  const userId = await requireUserId(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    return NextResponse.json({ keys: await listWonderlandKeys(user.id) });
+    return NextResponse.json({ keys: await listWonderlandKeys(userId) });
   } catch {
     return NextResponse.json({ error: "Key storage unavailable" }, { status: 503 });
   }
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await requireUserId(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json().catch(() => null);
   if (typeof body?.name !== "string" || !body.name.trim() || body.name.trim().length > 64) {
     return NextResponse.json({ error: "Key name must be 1-64 characters" }, { status: 400 });
   }
   try {
-    const result = await createWonderlandKey(user.id, body.name.trim());
+    const result = await createWonderlandKey(userId, body.name.trim());
     if ("limitReached" in result) {
       return NextResponse.json({ error: "Maximum five active keys per account" }, { status: 429 });
     }
