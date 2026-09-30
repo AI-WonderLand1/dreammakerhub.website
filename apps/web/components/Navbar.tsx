@@ -138,9 +138,8 @@ const DIRECT_LINKS = [
   { label: 'Community', href: '/community', icon: Users },
   {
     label: 'Give Feedback',
-    href: 'https://feedback.link/aiwonderlandinnovati',
+    href: '/dashboard/support',
     icon: MessageSquareText,
-    external: true,
   },
   { label: 'Blog', href: '/blog', icon: Newspaper },
 ] as const;
