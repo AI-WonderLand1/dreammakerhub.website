@@ -52,6 +52,7 @@ interface HistoryItem {
   modelType: Model3DType;
   primaryColor: string;
   thumbnailUrl: string;
+  glbUrl?: string;
 }
 
 export const SandboxStudio: React.FC<SandboxStudioProps> = ({
@@ -310,6 +311,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
         modelType: newAsset.modelType,
         primaryColor: newAsset.primaryColor,
         thumbnailUrl: newAsset.thumbnailImage,
+        glbUrl: newAsset.glbUrl,
       };
       setHistory((prev) => [newHistItem, ...prev]);
     } catch (error) {
@@ -759,6 +761,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                           formats: ['.GLTF', '.FBX', '.USDZ'],
                           modelType: item.modelType,
                           thumbnailImage: item.thumbnailUrl,
+                          glbUrl: item.glbUrl,
                           isAiGenerated: true,
                           licenseType: 'Standard',
                           previewBgGradient: 'from-cyan-950 via-slate-900 to-black',
