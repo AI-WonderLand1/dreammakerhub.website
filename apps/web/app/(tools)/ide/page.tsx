@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import { redirect } from "next/navigation";
 
-export default function LegacyIdePage() {
-  redirect('/wonderspace');
+export default function RetiredIdeRoute() {
+  redirect("/dashboard?workspaceTab=code");
 }
