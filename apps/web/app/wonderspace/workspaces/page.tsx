@@ -26,9 +26,7 @@ export default function CoderWorkspaceManager() {
       if (!response.ok) throw new Error(result.error || 'Unable to load workspaces.');
       if (!Array.isArray(result.slots)) throw new Error('Workspace list was invalid.');
       setSlots(result.slots);
-      // Customer direct-Coder opening is intentionally disabled until the
-      // DreamMakerHub workspace-only IDE gateway is deployed.
-      setCanOpen(result.canOpen === true && result.openMode === 'operator');
+      setCanOpen(result.canOpen === true && ['operator', 'customer'].includes(result.openMode));
       setOpenMode(result.openMode === 'operator' ? 'operator' : result.openMode === 'customer' ? 'customer' : 'disabled');
       setError('');
     } catch (cause) {
@@ -46,7 +44,7 @@ export default function CoderWorkspaceManager() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   const openExisting = async (slot: Slot) => {
-    if (!canOpen || openMode !== 'operator' || !slot.workspace_id || slot.state !== 'provisioned' || working) return;
+    if (!canOpen || openMode === 'disabled' || !slot.workspace_id || slot.state !== 'provisioned' || working) return;
     setWorking(slot.id);
     setError('');
     setNotice('Checking your existing Coder workspace…');
@@ -98,8 +96,8 @@ export default function CoderWorkspaceManager() {
         <Link href="/wonderspace" className="text-sm text-cyan-300 hover:text-white">← WonderSpace launchpad</Link>
         <h1 className="mt-8 text-3xl font-semibold">Your cloud workspaces</h1>
         <p className="mt-3 text-slate-300">Open a workspace you already created without creating another. Stopped workspaces keep their files and disk allocation. A new IDE is created only from the launchpad, within your allowance.</p>
-        {openMode === 'customer' && !loading && <p className="mt-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-100">Your workspace records and storage remain intact. Customer IDE opening is temporarily paused while the DreamMakerHub-only gateway is secured. You will not be redirected into the Coder dashboard.</p>}
-        {openMode !== 'customer' && !canOpen && !loading && <p className="mt-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-100">IDE access is paused until account and workspace access can be verified.</p>}
+        {openMode === 'customer' && canOpen && !loading && <p className="mt-4 rounded-lg border border-cyan-400/40 bg-cyan-500/10 p-4 text-sm text-cyan-100">Your workspace is owned by your verified Coder account. Opening it may ask you to complete Coder OIDC sign-in if that browser session is not already authenticated.</p>}
+        {!canOpen && !loading && <p className="mt-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-100">IDE access could not be verified. Make sure your DreamMakerHub email has an active matching Coder OIDC account.</p>}
         {error && <p role="alert" className="mt-5 rounded-lg border border-red-400/40 p-4 text-red-200">{error}</p>}
         {notice && <p role="status" className="mt-5 rounded-lg border border-cyan-400/40 p-4 text-cyan-200">{notice}</p>}
         {loading ? <p className="mt-8 text-slate-300">Checking workspace allocations…</p> : (
@@ -111,7 +109,7 @@ export default function CoderWorkspaceManager() {
                 <h2 className="text-lg font-semibold">{slot.workspace_name}</h2>
                 <p className="mt-1 text-sm text-slate-300">{slot.state === 'reserved' ? 'Provisioning status uncertain. Contact support before retrying.' : slot.state === 'deleting' ? 'Coder deletion pending.' : 'Allocated workspace and persistent storage.'}</p>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  {canOpen && openMode === 'operator' && slot.workspace_id && slot.state === 'provisioned' && <button type="button" disabled={working !== null} onClick={() => void openExisting(slot)} className="rounded-lg border border-cyan-400/50 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/10 disabled:opacity-40">{working === slot.id ? 'Opening existing IDE…' : 'Open existing IDE'}</button>}
+                  {canOpen && openMode !== 'disabled' && slot.workspace_id && slot.state === 'provisioned' && <button type="button" disabled={working !== null} onClick={() => void openExisting(slot)} className="rounded-lg border border-cyan-400/50 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/10 disabled:opacity-40">{working === slot.id ? 'Opening existing IDE…' : 'Open existing IDE'}</button>}
                   {slot.workspace_id && <button type="button" disabled={working !== null} onClick={() => void remove(slot)} className="rounded-lg border border-red-400/50 px-4 py-2 text-sm text-red-200 hover:bg-red-400/10 disabled:opacity-40">{working === slot.id ? 'Checking Coder…' : slot.state === 'deleting' ? 'Check deletion and release slot' : 'Permanently delete workspace'}</button>}
                 </div>
               </section>
