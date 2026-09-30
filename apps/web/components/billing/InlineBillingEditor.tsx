@@ -44,7 +44,23 @@ type StripeClient = {
   confirmSetup: (options: {
     elements: StripeElements;
     clientSecret: string;
-    confirmParams: { return_url: string };
+    confirmParams: {
+      return_url: string;
+      payment_method_data: {
+        billing_details: {
+          name?: string;
+          phone?: string;
+          address?: {
+            line1?: string;
+            line2?: string;
+            city?: string;
+            state?: string;
+            postal_code?: string;
+            country?: string;
+          };
+        };
+      };
+    };
     redirect: "if_required";
   }) => Promise<{
     error?: { message?: string };
@@ -224,6 +240,20 @@ export default function InlineBillingEditor({
         clientSecret,
         confirmParams: {
           return_url: window.location.href,
+          payment_method_data: {
+            billing_details: {
+              name: name || undefined,
+              phone: phone || undefined,
+              address: {
+                line1: address.line1 || undefined,
+                line2: address.line2 || undefined,
+                city: address.city || undefined,
+                state: address.state || undefined,
+                postal_code: address.postal_code || undefined,
+                country: address.country || undefined,
+              },
+            },
+          },
         },
         redirect: "if_required",
       });
