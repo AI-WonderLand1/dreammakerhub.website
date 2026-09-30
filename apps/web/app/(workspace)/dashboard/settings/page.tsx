@@ -7,14 +7,9 @@ import { logger } from '@/lib/logger';
 export default function SettingsHomePage() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Link href="/dashboard/subscription" className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
-        <div className="text-xs font-black uppercase tracking-widest text-white/70">Subscription</div>
-        <div className="mt-2 text-white/55">Upgrade or manage billing.</div>
-      </Link>
-
       <Link href="/dashboard/usage" className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
-        <div className="text-xs font-black uppercase tracking-widest text-white/70">Usage & Limits</div>
-        <div className="mt-2 text-white/55">View token usage and limits.</div>
+        <div className="text-xs font-black uppercase tracking-widest text-white/70">Usage & Billing</div>
+        <div className="mt-2 text-white/55">Live usage, plan limits, upgrades, and billing.</div>
       </Link>
 
       <Link href="/dashboard/agents" className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-6 hover:bg-violet-500/10 transition">

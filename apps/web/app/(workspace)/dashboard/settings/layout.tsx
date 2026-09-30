@@ -15,7 +15,6 @@ function cx(...xs: Array<string | false | undefined | null>) {
 const TABS = [
   { href: "/dashboard/settings", label: "Overview" },
   { href: "/dashboard/settings/coder", label: "WonderSpace IDE" },
-  { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/usage", label: "Usage & Billing" },
   { href: "/dashboard/settings/webhooks", label: "Webhooks" },
   { href: "/dashboard/settings/byoc", label: "BYOC" },
