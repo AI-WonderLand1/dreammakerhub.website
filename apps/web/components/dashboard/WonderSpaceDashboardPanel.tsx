@@ -3,23 +3,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Code2, Plus } from "lucide-react";
+import { Code2, FolderOpen, Plus, Settings2 } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
 import WonderSpaceInlineCodeManager from "./WonderSpaceInlineCodeManager";
 import WonderSpaceSourceHistory from "./WonderSpaceSourceHistory";
 
 type DashboardProject = { id: string; name: string; tool?: string | null; type?: string | null };
-export type WorkspaceTab = "overview" | "code" | "history";
+export type WorkspaceTab = "overview" | "code" | "history" | "tools";
 const tabs: Array<{ key: WorkspaceTab; label: string }> = [
   { key: "overview", label: "Overview" },
   { key: "code", label: "Code" },
   { key: "history", label: "History" },
+  { key: "tools", label: "More tools" },
 ];
 
 function projectTool(project: DashboardProject): { label: string; href: string } {
   const id = encodeURIComponent(project.id);
   const kind = (project.tool || project.type || "").toLowerCase();
-  if (["workspace", "code"].includes(kind)) return { label: "Open files", href: `/dashboard/projects/${id}/files` };
+  if (["workspace", "code"].includes(kind)) return { label: "Linux IDE status", href: `/wonderspace?projectId=${id}` };
   if (["game", "3d", "3d_scene", "playcanvas"].includes(kind)) return { label: "Open 3D builder", href: `/dashboard/3dhub?projectId=${id}` };
   if (kind === "npc") return { label: "Open NPC studio", href: `/wonder-play?projectId=${id}` };
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(kind)) return { label: "Open AI tools", href: `/dashboard/agents?projectId=${id}` };
@@ -50,9 +51,8 @@ function ProjectWorkspaceViews({
   return (
     <>
       {codeMounted && (
-        <div hidden={activeTab !== "code"} className="space-y-3 p-3 sm:p-4">
+        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
           <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
-          <WonderSpaceProjectNavigation projectId={selected?.id} advancedOnly />
         </div>
       )}
       {historyMounted && selected && (
@@ -60,15 +60,30 @@ function ProjectWorkspaceViews({
           <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
         </div>
       )}
+      {activeTab === "tools" && (
+        <div className="space-y-3 p-3 sm:p-4">
+          <WonderSpaceProjectNavigation projectId={selected?.id} advancedOnly />
+          {selected && (
+            <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
+              className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline">
+              <FolderOpen size={16} aria-hidden="true" /> Project details and settings
+            </Link>
+          )}
+          <p className="flex items-center gap-2 text-xs text-slate-400">
+            <Settings2 size={14} aria-hidden="true" />
+            Git pull requests and cloud CI are shown as planned until their backends are ready.
+          </p>
+        </div>
+      )}
     </>
   );
 }
 
 /**
- * One project selector and three in-place views. Existing routes remain valid
+ * One project selector and four in-place views. Existing routes remain valid
  * for deep links and advanced workflows; they are not extra onboarding steps.
  * Once the user opens Code, keep its editor mounted across tab changes so
- * unsaved local edits aren't silently discarded by opening History.
+ * unsaved local edits aren't silently discarded by opening History or Tools.
  */
 export default function WonderSpaceDashboardPanel({
   projects,
@@ -136,7 +151,7 @@ export default function WonderSpaceDashboardPanel({
         <div>
           <h2 className="text-lg font-bold text-white">Project workspace</h2>
           <p className="mt-1 text-xs text-slate-400">
-            Pick a project once. Code and project tools live together; history stays separate.
+            Pick a project once. Edit, save versions and find its tools here.
           </p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -188,7 +203,7 @@ export default function WonderSpaceDashboardPanel({
               <div className="min-w-0">
                 <h3 className="truncate text-lg font-semibold text-white">{selected.name}</h3>
                 <p className="mt-1 text-sm text-slate-400">
-                  Your project files and tools stay together in Code; saved versions stay in History.
+                  Your project files, versions and tools stay connected to this project.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
