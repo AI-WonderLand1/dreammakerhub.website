@@ -59,10 +59,10 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain('const provisioningPaused = operatorPreview || !provisioningEnabled');
     expect(form).toContain("disabled={loading || provisioningPaused || source !== 'blank'}");
     expect(form).toContain('if (operatorPreview || !provisioningEnabled)');
-    expect(gate).toContain('<CloudIdePaused />');
+    expect(gate).toContain('function BrowserIdeEntry()');
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('CustomerWorkspaceLaunch');
-    expect(gate).not.toContain('href="/dashboard"');
+    expect(gate).toContain('href="/dashboard#projects"');
   });
 
   it('preserves the operator IDE path without letting customers inherit it', () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -15,39 +16,17 @@ const DREAMMAKERHUB_SIGN_IN = '/public-pages/auth?redirectTo=%2Fwonderspace';
 function BrowserIdeEntry() {
   return (
     <section className="mx-auto max-w-4xl rounded-2xl border border-cyan-300/30 bg-cyan-400/[.06] p-6 text-white">
-      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200">Available without a cloud VM</p>
-      <h2 className="mt-2 text-xl font-semibold">WonderSpace browser code editor</h2>
+      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200">DreamMakerHub project files</p>
+      <h2 className="mt-2 text-xl font-semibold">Open your project files</h2>
       <p className="mt-2 text-sm text-slate-300">
-        Open your own projects, create files and folders, edit code, and save directly to DreamMakerHub.
-        Full cloud VS Code workspaces are being consolidated behind Coder. Your existing project files are preserved.
+        Choose a project once from your dashboard, then create files and folders, edit code, and save directly to DreamMakerHub.
       </p>
       <Link
-        href="/wonderspace/browser"
+        href="/dashboard#projects"
         className="mt-4 inline-flex rounded-lg bg-cyan-400 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-300"
       >
-        Open browser editor
+        Open project files
       </Link>
-    </section>
-  );
-}
-
-/** One honest status panel instead of a large disabled cloud-creation wizard. */
-function CloudIdePaused() {
-  return (
-    <section role="status" aria-label="Cloud IDE availability"
-      className="mx-auto max-w-4xl rounded-2xl border border-amber-300/20 bg-[#101931] p-5 text-white">
-      <h2 className="text-lg font-semibold">Customer VS Code IDE: setup in progress</h2>
-      <p className="mt-2 text-sm text-slate-300">
-        The existing browser file editor remains available. Full customer VS Code workspaces will open
-        only after separate Coder identities, isolated compute, persistent storage and a secure gateway are verified.
-        No shared IDE password and no customer charge while setup is paused.
-      </p>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Link href="/dashboard?workspaceTab=code"
-          className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
-          Edit my project now
-        </Link>
-      </div>
     </section>
   );
 }
@@ -138,7 +117,6 @@ export function OperatorIdePanel() {
           {needsSignIn && <Link href={DREAMMAKERHUB_SIGN_IN} className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">Sign in to DreamMakerHub</Link>}
           <p className="mt-5 text-sm text-slate-400">This button does not create another workspace or change its persistent disk.</p>
         </section>
-        <CloudIdePaused />
       </div>
     </main>
   );
@@ -147,6 +125,7 @@ export function OperatorIdePanel() {
 /** When SSR cookies are missing, do not misclassify an operator as a customer. */
 export default function WonderSpaceOperatorGate() {
   const { user, session, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [role, setRole] = useState<Role>('checking');
   const [retry, setRetry] = useState(0);
   const operatorRefreshAttempted = useRef(false);
@@ -211,6 +190,10 @@ export default function WonderSpaceOperatorGate() {
     return () => controller.abort();
   }, [authLoading, user?.id, session?.access_token, retry]);
 
+  useEffect(() => {
+    if (role === 'customer') router.replace('/dashboard#projects');
+  }, [role, router]);
+
   async function retrySessionCheck() {
     operatorRefreshAttempted.current = false;
     const client = getSupabaseClient();
@@ -229,9 +212,9 @@ export default function WonderSpaceOperatorGate() {
 
   if (role === 'customer') {
     return (
-      <main className="min-h-screen bg-[#080d22] px-5 py-8 text-white">
-        <BrowserIdeEntry />
-        <div className="mt-5"><CloudIdePaused /></div>
+      <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
+        <p>Opening your projects…</p>
+        <Link href="/dashboard#projects" className="mt-4 inline-block text-cyan-300 underline">Open project files</Link>
       </main>
     );
   }

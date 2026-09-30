@@ -38,7 +38,7 @@ export default function WonderSpaceProjectNavigation({
   // A WonderSpace project is first-party: all working tabs use its own
   // authenticated project storage. No tab navigates to an external code host.
   const items: Item[] = [
-    { label: "Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/wonderspace/browser", selected: currentTab === "code" },
+    { label: "Files & Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/dashboard#projects", selected: currentTab === "code" },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
     { label: "Changes", icon: GitPullRequest, href: null, description: "Native branch reviews / pull-request change review are not connected yet." },
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },

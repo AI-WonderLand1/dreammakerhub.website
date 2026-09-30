@@ -20,11 +20,10 @@ describe('WonderSpace availability hint', () => {
     expect(indicator).not.toContain('CODER_API_TOKEN');
   });
 
-  it('appears at the project IDE choice, its IDE action, and the WonderSpace launch button', () => {
+  it('stays on the parked Coder launcher but is removed from the normal dashboard file flow', () => {
     const dashboard = read('apps/web/app/(workspace)/dashboard/page.tsx');
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
-    expect(dashboard).toContain('value === "workspace" ? <CoderAvailabilityIndicator');
-    expect(dashboard).toContain('<CoderAvailabilityIndicator>');
+    expect(dashboard).not.toContain('CoderAvailabilityIndicator');
     expect(launch).toContain('<CoderAvailabilityIndicator>');
     expect(launch).toContain("fetch('/api/user-workspace/provision'");
   });

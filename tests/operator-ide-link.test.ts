@@ -26,8 +26,8 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain("role === 'customer'");
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
-    expect(gate).toContain('<CloudIdePaused />');
-    expect(gate).not.toContain('href="/dashboard"');
+    expect(gate).toContain('function BrowserIdeEntry()');
+    expect(gate).toContain('href="/dashboard#projects"');
     expect(role).toContain("authenticatedSupabaseUser(request)");
     expect(role).toContain("from '@/lib/supabase/authenticated-user.server'");
     expect(role).toContain('isConfiguredCoderOperator(user.id)');
@@ -105,8 +105,8 @@ describe('Existing operator IDE link', () => {
     const customer = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     expect(gate).toContain("role === 'customer'");
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
-    expect(gate).toContain('Customer VS Code IDE: setup in progress');
-    expect(gate).toContain('<CloudIdePaused />');
+    expect(gate).toContain('DreamMakerHub project files');
+    expect(gate).toContain('Open project files');
     expect(customer).toContain('operatorPreview');
     // The dashboard link is intentionally available for browsing the caller's own
     // site projects; it cannot open or provision the operator's Coder workspace.

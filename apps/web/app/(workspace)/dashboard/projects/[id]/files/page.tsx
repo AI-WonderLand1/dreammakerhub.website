@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
   Code2,
-  Cpu,
-  ExternalLink,
+  Eye,
   FileCode2,
   HardDrive,
   ShieldCheck,
@@ -32,7 +31,7 @@ const normalizeType = (value?: string | null) => (value || "").toLowerCase();
 
 const projectTypeLabel = (value?: string | null) => {
   const type = normalizeType(value);
-  if (["workspace", "code"].includes(type)) return "Code / IDE";
+  if (["workspace", "code"].includes(type)) return "Code / Files";
   if (["game", "3d", "3d_scene", "playcanvas"].includes(type)) return "3D Experience";
   if (type === "npc") return "NPC AI";
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(type)) return "AI App";
@@ -105,13 +104,13 @@ export default function ProjectCodeManagerPage() {
 
 
   if (loading) {
-    return <div className="grid min-h-[55vh] place-items-center text-sm text-white/45">Opening AI Wonderland Code Manager...</div>;
+    return <div className="grid min-h-[55vh] place-items-center text-sm text-white/45">Opening DreamMakerHub Quick IDE...</div>;
   }
 
   if (!project) {
     return (
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
-        <p className="font-semibold text-red-200">Code manager could not open.</p>
+        <p className="font-semibold text-red-200">Quick IDE could not open.</p>
         <p className="mt-2 text-sm text-red-200/70">{error || "Project not found"}</p>
         {error.includes("Sign in") && (
           <Link href={`/public-pages/auth?redirectTo=${encodeURIComponent(`/dashboard/projects/${projectId}/files`)}`} className="mt-3 block text-sm font-semibold text-cyan-300 hover:underline">Sign in again</Link>
@@ -134,7 +133,7 @@ export default function ProjectCodeManagerPage() {
                 {projectTypeLabel(tool)}
               </span>
             </div>
-            <p className="mt-1 text-xs text-white/35">Project code, files, AI tools, and cloud IDE in one route.</p>
+            <p className="mt-1 text-xs text-white/35">Fast browser IDE: edit files, save versions, preview, and use AI without starting a VM or container.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -145,10 +144,10 @@ export default function ProjectCodeManagerPage() {
               <Sparkles size={15}/> Ask AI Wonderland
             </Link>
             <Link
-              href={`/wonderspace?${projectQuery}`}
+              href={`/preview/${encodeURIComponent(project.id)}`}
               className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 px-3 py-2 text-xs font-bold shadow-lg shadow-violet-950/30"
             >
-              <ExternalLink size={15}/> Linux IDE (pilot)
+              <Eye size={15}/> Preview
             </Link>
           </div>
         </div>
@@ -192,7 +191,7 @@ export default function ProjectCodeManagerPage() {
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
-            <h2 className="text-sm font-bold">Project Runtime</h2>
+            <h2 className="text-sm font-bold">Quick IDE</h2>
             <dl className="mt-3 divide-y divide-white/10 text-xs">
               <div className="flex items-center justify-between gap-3 py-2.5">
                 <dt className="flex items-center gap-2 text-white/40"><FileCode2 size={14}/> Files</dt>
@@ -203,8 +202,8 @@ export default function ProjectCodeManagerPage() {
                 <dd className="font-semibold">{storage}</dd>
               </div>
               <div className="flex items-center justify-between gap-3 py-2.5">
-                <dt className="flex items-center gap-2 text-white/40"><Cpu size={14}/> Project type</dt>
-                <dd className="text-right font-semibold">{projectTypeLabel(tool)}</dd>
+                <dt className="flex items-center gap-2 text-white/40"><Code2 size={14}/> Mode</dt>
+                <dd className="text-right font-semibold">Browser editor</dd>
               </div>
             </dl>
           </section>
@@ -222,9 +221,6 @@ export default function ProjectCodeManagerPage() {
           <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
             <h2 className="text-sm font-bold">Wonderland Tools</h2>
             <div className="mt-3 space-y-2">
-              <Link href={`/wonderspace?${projectQuery}`} className="flex items-center gap-2 rounded-lg border border-cyan-400/15 bg-cyan-400/[.035] px-3 py-2.5 text-xs text-cyan-100 hover:bg-cyan-400/[.07]">
-                <Code2 size={14}/> Linux IDE (pilot)
-              </Link>
               <Link href={`/wonder-build/builder?${projectQuery}`} className="flex items-center gap-2 rounded-lg border border-violet-400/15 bg-violet-400/[.035] px-3 py-2.5 text-xs text-violet-100 hover:bg-violet-400/[.07]">
                 <WandSparkles size={14}/> WonderBuild
               </Link>
@@ -232,6 +228,13 @@ export default function ProjectCodeManagerPage() {
                 <ShieldCheck size={14}/> Security & Quality
               </Link>
             </div>
+          </section>
+
+          <section className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[.035] p-4">
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-300/70">Fast mode</p>
+            <p className="mt-2 text-xs leading-5 text-white/55">
+              This is the launch IDE: browser files + Monaco editor + saved versions + preview. Heavy Coder/Kubernetes workspaces are parked for a future upgrade and are not required here.
+            </p>
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-[linear-gradient(145deg,#10172a,#0a1320)] p-4">

@@ -40,39 +40,54 @@ function ProjectWorkspaceViews({
   unsavedCurrent: boolean;
   reportDirty: (projectId: string, dirty: boolean) => void;
 }) {
-  const [visitedCode, setVisitedCode] = useState(false);
+  const [visitedWorkbench, setVisitedWorkbench] = useState(false);
   const [visitedHistory, setVisitedHistory] = useState(false);
+
   useEffect(() => {
-    if (activeTab === "code") setVisitedCode(true);
+    if (activeTab === "code" || activeTab === "tools") setVisitedWorkbench(true);
     if (activeTab === "history") setVisitedHistory(true);
   }, [activeTab]);
-  const codeMounted = Boolean(selected && (activeTab === "code" || visitedCode));
+
+  const workbenchMounted = Boolean(
+    selected && (activeTab === "code" || activeTab === "tools" || visitedWorkbench)
+  );
   const historyMounted = Boolean(selected && (activeTab === "history" || visitedHistory));
+
   return (
     <>
-      {codeMounted && (
-        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
-          <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
+      {workbenchMounted && selected && (
+        <div hidden={activeTab !== "code" && activeTab !== "tools"} className="space-y-4 p-3 sm:p-4">
+          <section
+            id="workspace-code"
+            className={activeTab === "code" ? "rounded-xl ring-1 ring-cyan-400/20" : ""}
+          >
+            <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
+          </section>
+
+          <section
+            id="workspace-tools"
+            className={`space-y-3 rounded-xl border border-white/10 bg-white/[.02] p-3 sm:p-4 ${
+              activeTab === "tools" ? "ring-1 ring-cyan-400/30" : ""
+            }`}
+          >
+            <WonderSpaceProjectNavigation projectId={selected.id} advancedOnly />
+            <Link
+              href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
+              className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline"
+            >
+              <FolderOpen size={16} aria-hidden="true" /> Project details and settings
+            </Link>
+            <p className="flex items-center gap-2 text-xs text-slate-400">
+              <Settings2 size={14} aria-hidden="true" />
+              Git pull requests and cloud CI are shown as planned until their backends are ready.
+            </p>
+          </section>
         </div>
       )}
+
       {historyMounted && selected && (
         <div hidden={activeTab !== "history"} className="p-3 sm:p-4">
           <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
-        </div>
-      )}
-      {activeTab === "tools" && (
-        <div className="space-y-3 p-3 sm:p-4">
-          <WonderSpaceProjectNavigation projectId={selected?.id} advancedOnly />
-          {selected && (
-            <Link href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
-              className="inline-flex items-center gap-2 text-sm text-cyan-300 hover:underline">
-              <FolderOpen size={16} aria-hidden="true" /> Project details and settings
-            </Link>
-          )}
-          <p className="flex items-center gap-2 text-xs text-slate-400">
-            <Settings2 size={14} aria-hidden="true" />
-            Git pull requests and cloud CI are shown as planned until their backends are ready.
-          </p>
         </div>
       )}
     </>
@@ -80,10 +95,10 @@ function ProjectWorkspaceViews({
 }
 
 /**
- * One project selector and four in-place views. Existing routes remain valid
+ * One project selector with a shared Code + More tools workbench. Existing routes remain valid
  * for deep links and advanced workflows; they are not extra onboarding steps.
- * Once the user opens Code, keep its editor mounted across tab changes so
- * unsaved local edits aren't silently discarded by opening History or Tools.
+ * Once the user opens Code or More tools, keep the shared workbench mounted so
+ * unsaved local edits aren't silently discarded by switching between Code, More tools, or History.
  */
 export default function WonderSpaceDashboardPanel({
   projects,
@@ -151,7 +166,7 @@ export default function WonderSpaceDashboardPanel({
         <div>
           <h2 className="text-lg font-bold text-white">Project workspace</h2>
           <p className="mt-1 text-xs text-slate-400">
-            Pick a project once. Edit, save versions and find its tools here.
+            Pick a project once. Code and More tools share one workbench, so nothing is duplicated or lost.
           </p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -203,7 +218,7 @@ export default function WonderSpaceDashboardPanel({
               <div className="min-w-0">
                 <h3 className="truncate text-lg font-semibold text-white">{selected.name}</h3>
                 <p className="mt-1 text-sm text-slate-400">
-                  Your project files, versions and tools stay connected to this project.
+                  Your editor, files and project tools stay connected in one workbench; saved versions remain in History.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

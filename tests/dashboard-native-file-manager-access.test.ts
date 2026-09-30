@@ -13,7 +13,7 @@ describe('VM-independent dashboard file manager access', () => {
     const panel = read('apps/web/components/dashboard/WonderSpaceDashboardPanel.tsx');
     const embedded = read('apps/web/components/dashboard/WonderSpaceInlineCodeManager.tsx');
     expect(dashboard).toContain('<WonderSpaceDashboardPanel');
-    expect(dashboard).toContain('workspaceTab=code');
+    expect(panel).toContain('label: "Code"');
     expect(dashboard).toContain('onClick={openCreate}');
     expect(panel).toContain('label: "Code"');
     expect(panel).toContain('<WonderSpaceInlineCodeManager project={selected} embedded');

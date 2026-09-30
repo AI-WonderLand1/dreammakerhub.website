@@ -17,8 +17,8 @@ describe('retired Railway customer entry and preserved backend gates', () => {
     expect(page).not.toContain('railwayCustomerPilot');
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
-    expect(gate).toContain('Customer VS Code IDE: setup in progress');
-    expect(gate).toContain('href="/wonderspace/browser"');
+    expect(gate).toContain('DreamMakerHub project files');
+    expect(gate).toContain('href="/dashboard#projects"');
     expect(onDemand).toContain("redirect('/wonderspace')");
     expect(onDemand).not.toContain('Create & open IDE');
   });
