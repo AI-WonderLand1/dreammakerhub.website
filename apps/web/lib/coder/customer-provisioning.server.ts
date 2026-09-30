@@ -102,6 +102,26 @@ export async function provisionCustomerWorkspace(
     throw new CostGateError('Workspace allowance reached or name already reserved.', 429);
   }
 
+  const parameterResponse = await coderApiRequest(
+    `/api/v2/templateversions/${encodeURIComponent(template.versionId)}/rich-parameters`,
+    'GET',
+  );
+  const parameters = parameterResponse.ok ? await parameterResponse.json().catch(() => []) : [];
+  const parameterNames = new Set(
+    Array.isArray(parameters)
+      ? parameters.map((parameter: { name?: unknown }) => parameter.name).filter((name: unknown): name is string => typeof name === 'string')
+      : [],
+  );
+  const richParameterValues: { name: string; value: string }[] = [];
+  if (parameterNames.has('ide_image')) richParameterValues.push({ name: 'ide_image', value: 'linux' });
+  if (parameterNames.has('machine_profile')) {
+    richParameterValues.push({ name: 'machine_profile', value: profile.id });
+  } else {
+    if (parameterNames.has('cpu')) richParameterValues.push({ name: 'cpu', value: String(profile.cpu) });
+    if (parameterNames.has('memory')) richParameterValues.push({ name: 'memory', value: String(profile.memoryGiB) });
+  }
+  if (parameterNames.has('home_disk_size')) richParameterValues.push({ name: 'home_disk_size', value: '10' });
+
   const existing = await coderApiRequest(
     `/api/v2/users/${encodeURIComponent(coderUserId)}/workspace/${encodeURIComponent(name)}`,
     'GET',
@@ -117,11 +137,7 @@ export async function provisionCustomerWorkspace(
       {
         name,
         template_version_id: template.versionId,
-        rich_parameter_values: [
-          { name: 'ide_image', value: 'linux' },
-          { name: 'machine_profile', value: profile.id },
-          { name: 'home_disk_size', value: '10' },
-        ],
+        rich_parameter_values: richParameterValues,
         ttl_ms: 60 * 60 * 1000,
       },
     );
@@ -141,7 +157,7 @@ export async function provisionCustomerWorkspace(
     throw new CostGateError('Coder returned a workspace that did not match the authenticated customer.');
   }
 
-  await db.from('coder_customer_jobs').upsert({
+  const jobWrite = await db.from('coder_customer_jobs').upsert({
     slot_id: slotId,
     user_id: user.id,
     coder_user_id: coderUserId,
@@ -156,7 +172,11 @@ export async function provisionCustomerWorkspace(
     updated_at: new Date().toISOString(),
   }, { onConflict: 'slot_id' });
 
-  await db.from('coder_customer_compute_usage').upsert({
+  if (jobWrite.error) {
+    throw new CostGateError('Coder created the workspace but DreamMakerHub could not record its owner. Do not create a duplicate.');
+  }
+
+  const usageWrite = await db.from('coder_customer_compute_usage').upsert({
     slot_id: slotId,
     workspace_id: workspace.id,
     user_id: user.id,
@@ -165,11 +185,16 @@ export async function provisionCustomerWorkspace(
     last_checked_at: new Date().toISOString(),
   }, { onConflict: 'slot_id' });
 
-  const { error: attachError } = await db.from('coder_workspace_slots')
-    .update({ workspace_id: workspace.id, state: 'provisioned', updated_at: new Date().toISOString() })
-    .eq('id', slotId).eq('user_id', user.id).eq('state', 'reserved');
+  if (usageWrite.error) {
+    throw new CostGateError('Coder created the workspace but DreamMakerHub could not initialize usage tracking. Do not create a duplicate.');
+  }
 
-  if (attachError) {
+  const attach = await db.from('coder_workspace_slots')
+    .update({ workspace_id: workspace.id, state: 'provisioned', updated_at: new Date().toISOString() })
+    .eq('id', slotId).eq('user_id', user.id).eq('state', 'reserved')
+    .select('id').maybeSingle();
+
+  if (attach.error || !attach.data) {
     throw new CostGateError('Coder created the workspace but DreamMakerHub could not finish tracking it. Do not create a duplicate.');
   }
 
