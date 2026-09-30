@@ -2,7 +2,8 @@ import 'server-only';
 import { getClient } from '@/lib/supabase-service';
 import { PLAN_LIMITS, type SubscriptionPlan } from '@/lib/billing/limits';
 
-type BillableFeature = 'ai_tokens' | 'ai_requests' | 'agent_requests' | 'workspace_launches';
+type BillableFeature = 'ai_tokens' | 'ai_requests' | 'agent_requests' | 'workspace_launches' | 'render_credits';
+type UsageSource = 'dreammakerhub' | 'ai-playground' | 'npc-ai-sim';
 
 export class CostGateError extends Error {
   constructor(message: string, public readonly status: 402 | 429 | 503 = 503) {
@@ -44,6 +45,7 @@ export async function reserveBillableUnits(
   feature: BillableFeature,
   units: number,
   limit: number,
+  source: UsageSource = 'dreammakerhub',
 ): Promise<void> {
   if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true') {
     throw new CostGateError('Paid operations are paused until billing safeguards are activated.');
@@ -52,17 +54,25 @@ export async function reserveBillableUnits(
     throw new CostGateError('Invalid usage limit. Operation blocked.');
   }
   const client = serviceClient();
-  const { data, error } = await client.rpc('reserve_billable_units', {
+  const { data, error } = await client.rpc('reserve_billable_units_v2', {
     p_user_id: userId,
     p_feature: feature,
     p_units: units,
     p_limit: limit,
+    p_source: source,
   });
   // A missing migration, DB timeout, or permission error must NOT become unlimited usage.
   if (error || typeof data !== 'boolean') {
     throw new CostGateError('Usage accounting is unavailable. Paid operations are paused.');
   }
-  if (!data) throw new CostGateError('Monthly usage limit reached.', 429);
+  if (!data) {
+    const message = feature === 'render_credits'
+      ? 'Not enough 3D render credits.'
+      : feature === 'ai_tokens'
+        ? 'AI token allowance and purchased token balance are exhausted.'
+        : 'Monthly usage limit reached.';
+    throw new CostGateError(message, 429);
+  }
 }
 
 export async function reserveAiRequest(userId: string, inputCharacters: number, outputTokens: number) {
