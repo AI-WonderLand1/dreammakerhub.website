@@ -136,3 +136,47 @@ BEGIN
 END $$;
 
 GRANT EXECUTE ON FUNCTION public.get_usage_summary() TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.get_usage_totals_for_alerts(p_user_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+  p RECORD;
+  period_start TIMESTAMPTZ;
+  result JSON;
+BEGIN
+  SELECT * INTO p FROM public.user_profiles WHERE id = p_user_id;
+  period_start := COALESCE(p.usage_period_start, date_trunc('month', now()));
+
+  SELECT json_build_object(
+    'plan', COALESCE(p.subscription_plan, 'free'),
+    'period_start', period_start,
+    'api_requests', COALESCE((
+      SELECT SUM(api_calls) FROM public.usage_logs
+      WHERE user_id = p_user_id AND created_at >= period_start
+    ), 0),
+    'ai_tokens', COALESCE((
+      SELECT SUM(tokens_used) FROM public.usage_logs
+      WHERE user_id = p_user_id AND created_at >= period_start
+    ), 0),
+    'three_d_generations', COALESCE((
+      SELECT SUM(three_d_generations) FROM public.usage_logs
+      WHERE user_id = p_user_id AND created_at >= period_start
+    ), 0),
+    'storage', COALESCE((
+      SELECT SUM(storage_used) FROM public.projects
+      WHERE owner_id = p_user_id AND status <> 'deleted'
+    ), 0)
+  ) INTO result;
+
+  RETURN result;
+END $$;
+
+REVOKE ALL ON FUNCTION public.get_usage_totals_for_alerts(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.get_usage_totals_for_alerts(UUID) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.get_usage_totals_for_alerts(UUID) TO service_role;
