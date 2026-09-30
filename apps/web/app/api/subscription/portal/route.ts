@@ -25,20 +25,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("stripe_customer_id")
-      .eq("id", userRes.user.id)
-      .single();
+    const [{ data: profile }, { data: subscription }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("stripe_customer_id")
+        .eq("id", userRes.user.id)
+        .maybeSingle(),
+      supabase
+        .from("subscriptions")
+        .select("stripe_customer_id")
+        .eq("user_id", userRes.user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    if (!profile?.stripe_customer_id) {
+    const customerId = profile?.stripe_customer_id || subscription?.stripe_customer_id || null;
+    if (!customerId) {
       return NextResponse.json({ error: "No Stripe customer found" }, { status: 400 });
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://dreammakerhub.website";
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
+      customer: customerId,
       return_url: `${baseUrl}/dashboard/usage`,
     });
 

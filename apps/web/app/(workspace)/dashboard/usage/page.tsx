@@ -19,6 +19,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import { formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
+import { BillingAccountSections, BillingCenterSidebar } from "@/components/billing/BillingAccountSections";
 
 type PlanName = keyof typeof PLAN_LIMITS;
 
@@ -323,7 +324,10 @@ export default function BillingUsagePage() {
   ].filter((value): value is string => Boolean(value)) : [];
 
   return (
-    <div className="max-w-5xl p-6">
+    <div className="mx-auto max-w-7xl p-6">
+      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <BillingCenterSidebar />
+        <main className="min-w-0">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -378,7 +382,7 @@ export default function BillingUsagePage() {
         </div>
       )}
 
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div id="billing-usage" className="scroll-mt-24 mb-3 flex items-center justify-between gap-3">
         <h2 className="font-semibold">Billable usage</h2>
         <span className="text-xs text-white/40">Live metered usage for the current billing period</span>
       </div>
@@ -469,7 +473,7 @@ export default function BillingUsagePage() {
         </section>
       </div>
 
-      <section className="mb-6 rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
+      <section id="billing-ai" className="scroll-mt-24 mb-6 rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-violet-200">
@@ -512,7 +516,7 @@ export default function BillingUsagePage() {
         </div>
       </section>
 
-      <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+      <section id="billing-alerts" className="scroll-mt-24 mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -604,7 +608,7 @@ export default function BillingUsagePage() {
         </div>
       </section>
 
-      <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+      <section id="billing-licensing" className="scroll-mt-24 mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
         <h2 className="mb-4 font-semibold">Active Plan Limits</h2>
         <div className="grid gap-3 text-sm md:grid-cols-2">
           <div className="flex justify-between"><span className="text-white/60">Projects</span><span>{limits.projectsLimit}</span></div>
@@ -629,6 +633,8 @@ export default function BillingUsagePage() {
         </div>
       )}
 
+      <BillingAccountSections />
+
       <div className="border-t border-white/10 pt-6">
         <h2 className="mb-4 font-semibold">Billing & Storage</h2>
         <div className="grid gap-4 md:grid-cols-2">
@@ -641,6 +647,8 @@ export default function BillingUsagePage() {
             <div className="mt-1 text-xs text-white/50">Upgrade your plan or continue to billing management.</div>
           </Link>
         </div>
+      </div>
+        </main>
       </div>
     </div>
   );
