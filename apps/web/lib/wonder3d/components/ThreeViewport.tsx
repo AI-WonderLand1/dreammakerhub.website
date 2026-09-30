@@ -36,6 +36,8 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
   autoRotateDefault = true,
   className = '',
   showControlsBar = true,
+  glbUrl,
+  glbFilePath,
   interactive = true,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
