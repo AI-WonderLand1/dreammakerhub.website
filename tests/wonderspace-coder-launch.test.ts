@@ -46,7 +46,8 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(operatorGate).toContain('<OperatorIdePanel />');
     expect(operatorGate).not.toContain('CustomerSandboxIdeEntry');
     expect(operatorGate).not.toContain('CustomerWorkspaceLaunch');
-    expect(operatorGate).toContain('Customer VS Code IDE: setup in progress');
+    expect(operatorGate).toContain('DreamMakerHub project files');
+    expect(operatorGate).toContain('Open project files');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
   it('keeps repository selection visible but prevents launch when the template does not support it', () => {
