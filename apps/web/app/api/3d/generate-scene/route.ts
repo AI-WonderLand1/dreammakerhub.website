@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateScene } from "@/lib/scene/generateScene";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
 import { logger } from "@/lib/logger";
+import { logUsage } from "@/lib/usage/log";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,6 +25,13 @@ export async function POST(req: NextRequest) {
       meshQuality,
       polyCount,
       textureRes,
+    });
+
+    await logUsage({
+      userId: auth.userId,
+      action: "3d.generation",
+      apiCalls: 1,
+      threeDGenerations: 1,
     });
 
     return NextResponse.json({ ok: true, scene, mode: mode ?? "text" });
