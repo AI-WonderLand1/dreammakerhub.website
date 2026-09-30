@@ -28,22 +28,48 @@ type Props = {
   onSaved: () => void;
 };
 
-type StripeCardElement = {
+type StripePaymentElement = {
   mount: (target: HTMLElement | string) => void;
   unmount: () => void;
   destroy?: () => void;
 };
 
 type StripeElements = {
-  create: (type: "card", options?: Record<string, unknown>) => StripeCardElement;
+  create: (type: "payment", options?: Record<string, unknown>) => StripePaymentElement;
+  submit: () => Promise<{ error?: { message?: string } }>;
 };
 
 type StripeClient = {
-  elements: () => StripeElements;
-  confirmCardSetup: (
-    clientSecret: string,
-    options: Record<string, unknown>,
-  ) => Promise<{ error?: { message?: string }; setupIntent?: { payment_method?: string | { id?: string } | null } }>;
+  elements: (options: Record<string, unknown>) => StripeElements;
+  confirmSetup: (options: {
+    elements: StripeElements;
+    clientSecret: string;
+    confirmParams: {
+      return_url: string;
+      payment_method_data: {
+        billing_details: {
+          name?: string;
+          phone?: string;
+          address?: {
+            line1?: string;
+            line2?: string;
+            city?: string;
+            state?: string;
+            postal_code?: string;
+            country?: string;
+          };
+        };
+      };
+    };
+    redirect: "if_required";
+  }) => Promise<{
+    error?: { message?: string };
+    setupIntent?: {
+      id?: string;
+      status?: string;
+      payment_method?: string | { id?: string } | null;
+    };
+  }>;
 };
 
 declare global {
@@ -101,9 +127,10 @@ export default function InlineBillingEditor({
     country: initialAddress.country || "US",
   });
 
-  const cardHostRef = useRef<HTMLDivElement | null>(null);
+  const paymentHostRef = useRef<HTMLDivElement | null>(null);
   const stripeRef = useRef<StripeClient | null>(null);
-  const cardRef = useRef<StripeCardElement | null>(null);
+  const elementsRef = useRef<StripeElements | null>(null);
+  const paymentElementRef = useRef<StripePaymentElement | null>(null);
   const clientSecretRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -122,24 +149,37 @@ export default function InlineBillingEditor({
       }
 
       await loadStripeScript();
-      if (cancelled || !window.Stripe || !cardHostRef.current) return;
+      if (cancelled || !window.Stripe || !paymentHostRef.current) return;
 
       const stripe = window.Stripe(payload.publishableKey);
-      const elements = stripe.elements();
-      const card = elements.create("card", {
-        hidePostalCode: true,
-        style: {
-          base: {
-            color: "#ffffff",
-            fontSize: "16px",
-            "::placeholder": { color: "#64748b" },
+      const elements = stripe.elements({
+        clientSecret: payload.clientSecret,
+        appearance: {
+          theme: "night",
+          variables: {
+            colorPrimary: "#7c3aed",
+            colorBackground: "#07111d",
+            colorText: "#ffffff",
+            colorDanger: "#fca5a5",
+            borderRadius: "8px",
           },
-          invalid: { color: "#fca5a5" },
         },
       });
-      card.mount(cardHostRef.current);
+      const paymentElement = elements.create("payment", {
+        layout: { type: "tabs", defaultCollapsed: false },
+        fields: {
+          billingDetails: {
+            name: "never",
+            email: "never",
+            phone: "never",
+            address: "never",
+          },
+        },
+      });
+      paymentElement.mount(paymentHostRef.current);
       stripeRef.current = stripe;
-      cardRef.current = card;
+      elementsRef.current = elements;
+      paymentElementRef.current = paymentElement;
       clientSecretRef.current = payload.clientSecret;
     };
 
@@ -149,9 +189,10 @@ export default function InlineBillingEditor({
 
     return () => {
       cancelled = true;
-      try { cardRef.current?.unmount(); } catch {}
-      try { cardRef.current?.destroy?.(); } catch {}
-      cardRef.current = null;
+      try { paymentElementRef.current?.unmount(); } catch {}
+      try { paymentElementRef.current?.destroy?.(); } catch {}
+      paymentElementRef.current = null;
+      elementsRef.current = null;
       stripeRef.current = null;
       clientSecretRef.current = null;
     };
@@ -181,9 +222,9 @@ export default function InlineBillingEditor({
 
   const saveCard = async () => {
     const stripe = stripeRef.current;
-    const card = cardRef.current;
+    const elements = elementsRef.current;
     const clientSecret = clientSecretRef.current;
-    if (!stripe || !card || !clientSecret) {
+    if (!stripe || !elements || !clientSecret) {
       setMessage("Secure card entry is still loading.");
       return;
     }
@@ -191,35 +232,50 @@ export default function InlineBillingEditor({
     setSavingCard(true);
     setMessage(null);
     try {
-      const result = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card,
-          billing_details: {
-            name: name || undefined,
-            phone: phone || undefined,
-            address: {
-              line1: address.line1 || undefined,
-              line2: address.line2 || undefined,
-              city: address.city || undefined,
-              state: address.state || undefined,
-              postal_code: address.postal_code || undefined,
-              country: address.country || undefined,
+      const submitted = await elements.submit();
+      if (submitted.error) throw new Error(submitted.error.message || "Payment details are incomplete.");
+
+      const result = await stripe.confirmSetup({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: window.location.href,
+          payment_method_data: {
+            billing_details: {
+              name: name || undefined,
+              phone: phone || undefined,
+              address: {
+                line1: address.line1 || undefined,
+                line2: address.line2 || undefined,
+                city: address.city || undefined,
+                state: address.state || undefined,
+                postal_code: address.postal_code || undefined,
+                country: address.country || undefined,
+              },
             },
           },
         },
+        redirect: "if_required",
       });
 
-      if (result.error) throw new Error(result.error.message || "Card setup failed.");
-      const paymentMethodId = typeof result.setupIntent?.payment_method === "string"
+      if (result.error) throw new Error(result.error.message || "Payment method setup failed.");
+      if (result.setupIntent?.status !== "succeeded") {
+        throw new Error("Payment method setup did not complete successfully.");
+      }
+
+      const setupIntentId = result.setupIntent.id || "";
+      const paymentMethodId = typeof result.setupIntent.payment_method === "string"
         ? result.setupIntent.payment_method
-        : result.setupIntent?.payment_method?.id || "";
-      if (!paymentMethodId) throw new Error("Secure card setup did not return a payment method.");
+        : result.setupIntent.payment_method?.id || "";
+      if (!setupIntentId || !paymentMethodId) {
+        throw new Error("Secure payment setup did not return the expected confirmation.");
+      }
 
       const response = await fetch("/api/billing/payment-method/default", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ paymentMethodId }),
+        body: JSON.stringify({ setupIntentId, paymentMethodId }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || "Could not save payment method.");
@@ -299,10 +355,10 @@ export default function InlineBillingEditor({
         {editingCard ? (
           <div className="mt-4">
             <div className="rounded-lg border border-white/15 bg-[#07111d] p-3">
-              <div ref={cardHostRef} className="min-h-6" />
+              <div ref={paymentHostRef} className="min-h-10" />
             </div>
             <p className="mt-2 text-xs text-white/40">
-              Card number and CVC are entered directly into Stripe's secure field and are not stored by DreamMakerHub.
+              Payment details are entered directly into Stripe's secure Payment Element and are not stored by DreamMakerHub.
             </p>
             <button
               type="button"
