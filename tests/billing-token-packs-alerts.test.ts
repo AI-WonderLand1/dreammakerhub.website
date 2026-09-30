@@ -10,13 +10,14 @@ describe("billing center token packs and usage alarms", () => {
     expect(page).toContain("Live metered usage for the current billing period.");
     expect(page).toContain("Buy AI tokens");
     expect(page).toContain("Purchased token balance");
-    expect(page).toContain("Usage alarms");
-    expect(page).toContain("Save alarm settings");
+    const alarms = read("apps/web/components/billing/UsageAlertsPanel.tsx");
+    expect(alarms).toContain("Budgets & alerts");
+    expect(alarms).toContain("New alarm");
+    expect(alarms).toContain("3D generations");
+    expect(alarms).toContain('fetch("/api/billing/alerts"');
     expect(page).toContain('fetch("/api/billing/token-packs"');
-    expect(page).toContain('fetch("/api/billing/preferences"');
     const account = read("apps/web/components/billing/BillingAccountSections.tsx");
-    expect(account).toContain('fetch("/api/subscription/portal"');
-    expect(page).not.toContain("Email alerts");
+    expect(account).not.toContain('fetch("/api/subscription/portal"');
   });
 
   it("creates only configured one-time Stripe token checkouts owned by the authenticated user", () => {
@@ -43,13 +44,13 @@ describe("billing center token packs and usage alarms", () => {
     expect(migration).toContain("TO service_role");
   });
 
-  it("keeps alarm preferences server-owned and exposes purchased balance through live usage", () => {
-    const prefs = read("apps/web/app/api/billing/preferences/route.ts");
+  it("keeps dynamic alarms server-owned and exposes purchased balance through live usage", () => {
+    const alerts = read("apps/web/app/api/billing/alerts/route.ts");
     const usage = read("apps/web/app/api/usage/route.ts");
-    expect(prefs).toContain("authenticatedSupabaseUser(request)");
-    expect(prefs).toContain('from("user_billing_preferences")');
-    expect(prefs).toContain("token_alert_percent");
-    expect(prefs).toContain("storage_alert_percent");
+    expect(alerts).toContain("authenticatedSupabaseUser(request)");
+    expect(alerts).toContain('from("user_usage_alerts")');
+    expect(alerts).toContain("three_d_generations");
+    expect(alerts).toContain("destination_phone");
     expect(usage).toContain('from("user_token_balances")');
     expect(usage).toContain("purchased_tokens");
   });
