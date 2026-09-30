@@ -97,7 +97,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       });
       const result = await response.json() as Setup;
       if (!response.ok) throw new Error(result.error || 'Workspace creation is paused.');
-      if (!result.slotId || result.status !== 'queued') throw new Error('The job queue did not confirm this request.');
+      if (!result.slotId || !['ready', 'starting'].includes(result.status)) throw new Error('Coder did not confirm this workspace request.');
       setSetup(result);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Workspace creation failed.');
@@ -140,8 +140,8 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
         <p className="mt-3 text-slate-300">{setup.status === 'needs_reconciliation'
           ? 'Coder may have created your workspace, but confirmation was interrupted. Contact support. Do not request a replacement.'
           : setup.status === 'ready'
-            ? 'Your private workspace is allocated and preserved. Opening is temporarily paused while the DreamMakerHub-only IDE gateway is secured; you will not be sent to the Coder dashboard.'
-            : 'The runner is preparing your workspace. Do not submit a duplicate request.'}</p>
+            ? 'Your private Coder workspace is ready. Open it from Manage workspaces.'
+            : 'Coder is starting your private workspace. Do not submit a duplicate request.'}</p>
         <Link className="mt-4 inline-block text-sm font-semibold text-cyan-200 underline" href="/wonderspace/workspaces">Manage workspaces</Link>
         {error && <p role="alert" className="mt-3 text-amber-200">{error}</p>}
       </section>
@@ -160,7 +160,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                 { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
                 { id: 'site', label: 'My DreamMakerHub projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
                 { id: 'github', label: 'My GitHub repositories', description: 'Only repositories authorized by your own connected GitHub account, not public repository search.', status: 'Secure connection pending' },
-                { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside an AWS pod.', status: 'Upload not available' },
+                { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside a remote Coder workspace.', status: 'Upload not available' },
               ] as const).map((option) => (
                 <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
                   <input type="radio" name="workspaceSource" checked={source === option.id}
@@ -190,7 +190,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               GitHub repository import requires a separate, account-authorized GitHub connection with access limited to repositories you select. Signing in with GitHub alone does not confirm repository access. Public repository search and anonymous URL imports are disabled. No repository names, contents or tokens are displayed or transferred here.
             </div>}
             {source === 'local' && <div className="mt-4 rounded-xl border border-white/15 bg-slate-950 p-4 text-sm text-slate-300">
-              Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated AWS customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
+              Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated Coder customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
             </div>}
             {source !== 'blank' && <p role="status" className="mt-4 text-sm text-amber-200">This source can be inspected, but is not yet eligible for customer workspace creation. Nothing will be imported or charged.</p>}
           </fieldset>
@@ -209,7 +209,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                   </option>
                 ))}
               </select>
-              <p className="mt-2 text-xs text-slate-400">Compute: 1 credit per CPU-minute. Persistent home disk: 10 GiB. Infrastructure assigns the AWS region; customers do not need to choose it.</p>
+              <p className="mt-2 text-xs text-slate-400">Persistent home disk: 10 GiB. Coder and vCluster handle workspace placement; customers do not choose infrastructure regions.</p>
             </div>
           </div>
           <details className="px-5 py-4 md:px-7">
