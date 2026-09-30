@@ -18,7 +18,6 @@ const TABS = [
   { href: "/dashboard/settings/simplerick", label: "SimpleRickSettings" },
   { href: "/dashboard/usage", label: "Usage & Billing" },
   { href: "/dashboard/settings/webhooks", label: "Webhooks" },
-  { href: "/dashboard/settings/byoc", label: "BYOC" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
