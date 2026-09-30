@@ -42,14 +42,14 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
       id: 'projects',
       label: 'View Projects',
       description: 'Browse and manage your projects',
-      href: '/dashboard/projects',
+      href: '/dashboard#projects',
       icon: '📁'
     },
     {
       id: 'analytics',
       label: 'View Analytics',
       description: 'Check usage and performance metrics',
-      href: '/dashboard/analytics',
+      href: '/dashboard/usage/metered',
       icon: '📊'
     },
     {
@@ -78,7 +78,7 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
       id: 'playground',
       label: 'AI Playground',
       description: 'Visit the AI Playground',
-      href: '/wonder-build',
+      href: 'https://playground.dreammakerhub.website/',
       icon: '🎮'
     }
   ];
