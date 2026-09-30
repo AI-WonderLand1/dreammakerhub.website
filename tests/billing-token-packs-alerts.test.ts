@@ -14,7 +14,8 @@ describe("billing center token packs and usage alarms", () => {
     expect(page).toContain("Save alarm settings");
     expect(page).toContain('fetch("/api/billing/token-packs"');
     expect(page).toContain('fetch("/api/billing/preferences"');
-    expect(page).toContain('fetch("/api/subscription/portal"');
+    const account = read("apps/web/components/billing/BillingAccountSections.tsx");
+    expect(account).toContain('fetch("/api/subscription/portal"');
     expect(page).not.toContain("Email alerts");
   });
 
