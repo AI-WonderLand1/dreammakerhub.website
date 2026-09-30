@@ -1,24 +1,28 @@
 import "server-only";
 
-const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
+const DEFAULT_TIMEOUT_MS = 8 * 60 * 1000;
 const MAX_MODEL_BYTES = 100 * 1024 * 1024;
 
 export class HunyuanConfigurationError extends Error {}
 export class HunyuanGenerationError extends Error {}
 
-function getEndpoint(): string {
-  const endpoint = process.env.HUNYUAN3D_API_URL?.trim();
-  if (!endpoint) {
+function getBaseUrl(): string {
+  const value = process.env.HUNYUAN3D_API_URL?.trim();
+  if (!value) {
     throw new HunyuanConfigurationError("HUNYUAN3D_API_URL is not configured");
   }
-  return endpoint;
+
+  try {
+    const url = new URL(value);
+    return url.origin;
+  } catch {
+    throw new HunyuanConfigurationError("HUNYUAN3D_API_URL is invalid");
+  }
 }
 
-function getHeaders(): HeadersInit {
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-    accept: "application/json, model/gltf-binary, application/octet-stream",
-  };
+function getHeaders(includeJson = false): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (includeJson) headers["content-type"] = "application/json";
 
   const token = process.env.HUNYUAN3D_API_TOKEN?.trim();
   if (token) headers.authorization = `Bearer ${token}`;
@@ -33,29 +37,23 @@ async function readBinaryResponse(response: Response): Promise<Buffer> {
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.byteLength === 0) {
+  if (!buffer.byteLength) {
     throw new HunyuanGenerationError("3D provider returned an empty model");
   }
   if (buffer.byteLength > MAX_MODEL_BYTES) {
     throw new HunyuanGenerationError("Generated model exceeds the 100 MB limit");
   }
-
   return buffer;
 }
 
 async function downloadModel(url: string): Promise<Buffer> {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new HunyuanGenerationError("3D provider returned an invalid model URL");
-  }
-
+  const parsed = new URL(url);
   if (!["https:", "http:"].includes(parsed.protocol)) {
     throw new HunyuanGenerationError("3D provider returned an unsupported model URL");
   }
 
   const response = await fetch(parsed, {
+    headers: getHeaders(false),
     redirect: "follow",
     signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
   });
@@ -69,74 +67,116 @@ async function downloadModel(url: string): Promise<Buffer> {
   return readBinaryResponse(response);
 }
 
-function nestedString(payload: any, keys: string[]): string | null {
-  for (const key of keys) {
-    const value = key.split(".").reduce((current, part) => current?.[part], payload);
-    if (typeof value === "string" && value.trim()) return value.trim();
+function findGlbUrl(value: unknown): string | null {
+  if (typeof value === "string") {
+    if (/^https?:\/\//i.test(value) && /\.glb(?:\?|$)/i.test(value)) return value;
+    return null;
   }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findGlbUrl(item);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["url", "path", "download_url", "value"]) {
+      const candidate = record[key];
+      if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) {
+        if (/\.glb(?:\?|$)/i.test(candidate) || key === "url") return candidate;
+      }
+    }
+    for (const nested of Object.values(record)) {
+      const found = findGlbUrl(nested);
+      if (found) return found;
+    }
+  }
+
   return null;
+}
+
+function parseCompletedSse(body: string): unknown {
+  const lines = body.split(/\r?\n/);
+  let currentEvent = "";
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      currentEvent = line.slice(6).trim();
+      continue;
+    }
+    if (!line.startsWith("data:")) continue;
+
+    const raw = line.slice(5).trim();
+    if (currentEvent === "error") {
+      throw new HunyuanGenerationError(raw || "Hunyuan Space generation failed");
+    }
+    if (currentEvent !== "complete") continue;
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new HunyuanGenerationError("Hunyuan Space returned invalid completion data");
+    }
+  }
+
+  throw new HunyuanGenerationError("Hunyuan Space did not return a completed result");
 }
 
 export async function generateHunyuanGlb(input: {
   prompt: string;
   negativePrompt?: string;
 }): Promise<Buffer> {
-  const response = await fetch(getEndpoint(), {
+  const baseUrl = getBaseUrl();
+  const apiName = process.env.HUNYUAN3D_API_NAME?.trim() || "generate_3d_text";
+  const submitUrl = `${baseUrl}/gradio_api/call/${encodeURIComponent(apiName)}`;
+
+  const submit = await fetch(submitUrl, {
     method: "POST",
-    headers: getHeaders(),
+    headers: getHeaders(true),
     body: JSON.stringify({
-      prompt: input.prompt,
-      negative_prompt: input.negativePrompt || undefined,
-      format: "glb",
+      data: [input.prompt, false],
     }),
-    signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    signal: AbortSignal.timeout(30_000),
   });
 
-  if (!response.ok) {
-    const detail = (await response.text().catch(() => "")).slice(0, 500);
+  if (!submit.ok) {
+    const detail = (await submit.text().catch(() => "")).slice(0, 500);
     throw new HunyuanGenerationError(
-      `3D provider failed (${response.status})${detail ? `: ${detail}` : ""}`,
+      `Hunyuan Space rejected the request (${submit.status})${detail ? `: ${detail}` : ""}`,
     );
   }
 
-  const contentType = response.headers.get("content-type")?.toLowerCase() || "";
-  if (
-    contentType.includes("model/gltf-binary") ||
-    contentType.includes("application/octet-stream")
-  ) {
-    return readBinaryResponse(response);
+  const queued = (await submit.json().catch(() => null)) as { event_id?: string } | null;
+  const eventId = queued?.event_id;
+  if (!eventId) {
+    throw new HunyuanGenerationError("Hunyuan Space did not return an event ID");
   }
 
-  const payload = await response.json().catch(() => null);
-  if (!payload) {
-    throw new HunyuanGenerationError("3D provider returned an unreadable response");
-  }
-
-  const base64 = nestedString(payload, [
-    "glb_base64",
-    "data.glb_base64",
-    "result.glb_base64",
-  ]);
-  if (base64) {
-    const model = Buffer.from(base64, "base64");
-    if (!model.byteLength || model.byteLength > MAX_MODEL_BYTES) {
-      throw new HunyuanGenerationError("3D provider returned an invalid GLB payload");
-    }
-    return model;
-  }
-
-  const modelUrl = nestedString(payload, [
-    "url",
-    "model_url",
-    "output_url",
-    "data.url",
-    "data.model_url",
-    "result.url",
-    "result.model_url",
-  ]);
-  if (modelUrl) return downloadModel(modelUrl);
-
-  throw new HunyuanGenerationError(
-    "3D provider response did not contain GLB bytes, base64, or a model URL",
+  const result = await fetch(
+    `${submitUrl}/${encodeURIComponent(eventId)}`,
+    {
+      headers: {
+        ...getHeaders(false),
+        accept: "text/event-stream",
+      },
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    },
   );
+
+  if (!result.ok) {
+    const detail = (await result.text().catch(() => "")).slice(0, 500);
+    throw new HunyuanGenerationError(
+      `Hunyuan Space result request failed (${result.status})${detail ? `: ${detail}` : ""}`,
+    );
+  }
+
+  const payload = parseCompletedSse(await result.text());
+  const modelUrl = findGlbUrl(payload);
+  if (!modelUrl) {
+    throw new HunyuanGenerationError("Hunyuan Space completed without a GLB URL");
+  }
+
+  return downloadModel(modelUrl);
 }
