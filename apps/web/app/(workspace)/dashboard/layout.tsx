@@ -53,9 +53,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    Projects: true,
-  });
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
@@ -233,7 +231,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard" && !["code", "history", "tools"].includes(searchParams.get("workspaceTab") || "");
+    if (href.startsWith("/dashboard?create=project")) {
+      return pathname === "/dashboard" && searchParams.get("create") === "project";
+    }
+    if (href === "/dashboard") return pathname === "/dashboard" && !["code", "history", "tools"].includes(searchParams.get("workspaceTab") || "") && searchParams.get("create") !== "project";
     if (href.startsWith("/dashboard?workspaceTab=code")) return pathname === "/dashboard" && searchParams.get("workspaceTab") === "code";
     if (href === "/dashboard#projects") return isProjectRoute;
     if (/^https?:\/\//.test(href)) return false;
@@ -267,8 +268,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}#project-activity`
     : "/dashboard#projects";
 
-  const toggleGroup = (label: string) => {
-    setExpandedGroups((current) => ({ ...current, [label]: !current[label] }));
+  const toggleGroup = (label: string, open: boolean) => {
+    setExpandedGroups((current) => ({ ...current, [label]: !open }));
   };
 
   const renderSubLink = ({ href, label, icon: Icon, external }: SiteMenuItem) => {
@@ -421,12 +422,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {menuGroups.map((group) => {
               const Icon = group.icon;
               const groupActive = group.items.some((item) => isActive(item.href));
-              const open = expandedGroups[group.label] || groupActive;
+              const open = expandedGroups[group.label] ?? groupActive;
               return (
                 <div key={group.label} className="mb-1">
                   <button
                     type="button"
-                    onClick={() => toggleGroup(group.label)}
+                    onClick={() => toggleGroup(group.label, open)}
                     aria-expanded={open}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${groupActive ? "bg-blue-600/15 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"}`}
                   >
