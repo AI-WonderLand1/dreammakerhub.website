@@ -35,7 +35,7 @@ export async function createWonderlandKey(userId: string, name: string) {
 
   // Prefix is customer-visible and uniquely identifies the database row.
   // Full token is revealed once and must not be logged or persisted in plaintext.
-  const configured = (process.env.WONDER_API_KEY_PREFIX || "wl_live").replace(/_+$/, "");
+  const configured = (process.env.WONDER_API_KEY_PREFIX || "wai_live").replace(/_+$/, "");
   if (!/^[a-z][a-z0-9_]{0,20}$/.test(configured)) {
     throw new Error("Invalid WONDER_API_KEY_PREFIX");
   }
