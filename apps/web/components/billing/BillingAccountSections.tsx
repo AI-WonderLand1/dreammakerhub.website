@@ -39,6 +39,7 @@ type BillingAccount = {
   paymentMethod: {
     id: string;
     brand: string | null;
+    funding: string | null;
     last4: string | null;
     expMonth: number | null;
     expYear: number | null;
