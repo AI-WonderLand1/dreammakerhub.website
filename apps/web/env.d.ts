@@ -41,6 +41,7 @@ declare namespace NodeJS {
     HUGGINGFACE_TOKEN?: string;
     HUNYUAN3D_API_URL?: string;
     HUNYUAN3D_API_TOKEN?: string;
+    HUNYUAN3D_API_NAME?: string;
     WONDER_3D_ASSET_BUCKET?: string;
     WONDER_API_KEY_PREFIX?: string;
     GITHUB_WEBHOOK_SECRET?: string;
