@@ -8,9 +8,11 @@ import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fet
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import {
   Bell,
+  BookOpen,
   Bot,
   Box,
   ChevronDown,
+  CircleHelp,
   Code2,
   Folder,
   Home,
@@ -22,6 +24,8 @@ import {
   Plus,
   Search,
   Settings,
+  ShoppingBag,
+  Sparkles,
   Users,
   X,
 } from "lucide-react";
@@ -49,8 +53,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
-  const [librariesOpen, setLibrariesOpen] = useState(false);
-  const [extrasOpen, setExtrasOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    Projects: true,
+  });
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
@@ -107,29 +112,124 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return `${href}${separator}projectId=${encodeURIComponent(currentProject.id)}`;
   };
 
-  // Five destinations; secondary features live behind one "More" menu.
-  const primaryItems = [
-    { href: "/dashboard", label: "Home", icon: Home },
-    { href: "/dashboard#projects", label: "Projects", icon: Folder },
-    { href: withProject("/wonder-build/builder"), label: "Build", icon: Pencil },
-    { href: withProject("/dashboard?workspaceTab=code"), label: "Code", icon: Code2 },
-    { href: withProject("/dashboard/3dhub"), label: "3D", icon: Box },
-  ];
+  type SiteMenuItem = {
+    href: string;
+    label: string;
+    icon: typeof Home;
+    external?: boolean;
+  };
 
-  const libraryItems = [
-    { href: "/wonder-build/templates", label: "Template Library", icon: LayoutTemplate },
-    { href: withProject("/library"), label: "Asset Library", icon: Folder },
-    { href: withProject("/3d-library"), label: "3D Asset Library", icon: Box },
-    { href: "/ai-modules", label: "AI Modules", icon: Bot },
-  ];
+  type SiteMenuGroup = {
+    label: string;
+    icon: typeof Home;
+    items: SiteMenuItem[];
+  };
 
-  const toolItems = [
-    { href: withProject("/wonderspace"), label: "Cloud Linux IDE (pilot)", icon: Code2 },
-    { href: withProject("/dashboard/npc"), label: "My NPCs", icon: Bot },
-    { href: withProject("/wonder-play"), label: "NPC-AI-SIM", icon: Bot },
-    { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Bot },
-    { href: withProject("/dashboard/collaboration"), label: "Team", icon: Users },
-    { href: withProject("/dashboard/settings"), label: "Settings", icon: Settings },
+  // Site-wide hamburger navigation. Every destination is grouped under a
+  // submenu so users can stay in one shell and drill into the exact tool.
+  const menuGroups: SiteMenuGroup[] = [
+    {
+      label: "Home",
+      icon: Home,
+      items: [
+        { href: "/dashboard", label: "Workspace Home", icon: Home },
+        { href: "/community", label: "Community", icon: Users },
+        { href: "/blog", label: "Blog", icon: BookOpen },
+      ],
+    },
+    {
+      label: "Projects",
+      icon: Folder,
+      items: [
+        { href: "/dashboard#projects", label: "All Projects", icon: Folder },
+        { href: "/dashboard?create=project#projects", label: "Create Project", icon: Plus },
+        { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
+      ],
+    },
+    {
+      label: "Build",
+      icon: Pencil,
+      items: [
+        { href: "/wonder-build", label: "Start / Templates", icon: LayoutTemplate },
+        { href: withProject("/wonder-build/builder"), label: "Visual Builder", icon: Pencil },
+        { href: "/wonder-build/templates", label: "Template Library", icon: LayoutTemplate },
+      ],
+    },
+    {
+      label: "Code",
+      icon: Code2,
+      items: [
+        { href: withProject("/dashboard?workspaceTab=code"), label: "Project Code", icon: Code2 },
+        { href: withProject("/wonderspace"), label: "Cloud Linux IDE", icon: Code2 },
+        { href: withProject("/dashboard/agents"), label: "AI Coding Agents", icon: Bot },
+      ],
+    },
+    {
+      label: "3D",
+      icon: Box,
+      items: [
+        { href: withProject("/dashboard/3dhub"), label: "3D Studio", icon: Box },
+        { href: withProject("/dashboard/ai-generator"), label: "3D AI Generator", icon: Sparkles },
+        { href: withProject("/3d-library"), label: "3D Asset Library", icon: Library },
+        { href: withProject("/dashboard/npc"), label: "My NPCs", icon: Bot },
+        { href: withProject("/wonder-play"), label: "NPC-AI-SIM", icon: Bot },
+      ],
+    },
+    {
+      label: "AI",
+      icon: Sparkles,
+      items: [
+        { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Sparkles, external: true },
+        { href: withProject("/dashboard/agents"), label: "AI Agents", icon: Bot },
+        { href: "/ai-modules", label: "AI Modules", icon: Library },
+      ],
+    },
+    {
+      label: "Libraries",
+      icon: Library,
+      items: [
+        { href: "/wonder-build/templates", label: "Template Library", icon: LayoutTemplate },
+        { href: withProject("/library"), label: "Asset Library", icon: Folder },
+        { href: withProject("/3d-library"), label: "3D Asset Library", icon: Box },
+        { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
+      ],
+    },
+    {
+      label: "Team",
+      icon: Users,
+      items: [
+        { href: withProject("/dashboard/collaboration"), label: "Collaboration", icon: Users },
+        { href: currentProject ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}/discussions` : "/community", label: "Discussions", icon: Users },
+      ],
+    },
+    {
+      label: "Docs",
+      icon: BookOpen,
+      items: [
+        { href: "/docs", label: "Documentation", icon: BookOpen },
+        { href: "/tutorials", label: "Tutorials", icon: BookOpen },
+        { href: "/api-reference", label: "API Reference", icon: Code2 },
+      ],
+    },
+    {
+      label: "Support",
+      icon: CircleHelp,
+      items: [
+        { href: "/support", label: "Support", icon: CircleHelp },
+        { href: "/community", label: "Community", icon: Users },
+        { href: "/status", label: "Service Status", icon: Bell },
+      ],
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      items: [
+        { href: withProject("/dashboard/settings"), label: "Workspace Settings", icon: Settings },
+        { href: "/dashboard/usage", label: "Usage & Limits", icon: Settings },
+        { href: "/dashboard/subscription", label: "Subscription", icon: Settings },
+        { href: "/settings/account", label: "Account", icon: Settings },
+      ],
+    },
   ];
 
   const isActive = (href: string) => {
@@ -140,14 +240,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const pathOnly = href.split("?")[0].split("#")[0];
     return pathname === pathOnly || pathname.startsWith(`${pathOnly}/`);
   };
-
-  const libraryActive = libraryItems.some(({ href }) => isActive(href));
-  const extraActive = toolItems.some(({ href }) => isActive(href));
-
-  useEffect(() => {
-    if (libraryActive) setLibrariesOpen(true);
-    if (libraryActive || extraActive) setExtrasOpen(true);
-  }, [libraryActive, extraActive]);
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -175,23 +267,48 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}#project-activity`
     : "/dashboard#projects";
 
-  const renderNavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Home }) => (
-    <Link
-      key={`${label}-${href}`}
-      href={href}
-      onClick={() => setMobileOpen(false)}
-      className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive(href) ? "bg-blue-600/25 text-white shadow-[inset_3px_0_0_#a855f7]" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
-    >
-      <Icon size={18} /> {label}
-    </Link>
-  );
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((current) => ({ ...current, [label]: !current[label] }));
+  };
+
+  const renderSubLink = ({ href, label, icon: Icon, external }: SiteMenuItem) => {
+    const classes = `mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition ${isActive(href) ? "bg-violet-500/15 text-violet-200" : "text-white/55 hover:bg-white/5 hover:text-white"}`;
+    if (external) {
+      return (
+        <a
+          key={`${label}-${href}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setMobileOpen(false)}
+          className={classes}
+        >
+          <Icon size={15} /> {label}
+        </a>
+      );
+    }
+    return (
+      <Link
+        key={`${label}-${href}`}
+        href={href}
+        onClick={() => setMobileOpen(false)}
+        className={classes}
+      >
+        <Icon size={15} /> {label}
+      </Link>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#06101c] text-white">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-[72px] items-center border-b border-white/10 bg-[#07111e]/95 px-4 backdrop-blur lg:pl-[302px]">
-        <button type="button" onClick={() => setMobileOpen(true)} className="mr-3 rounded-lg p-2 hover:bg-white/5 lg:hidden" aria-label="Open navigation">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-[72px] items-center border-b border-white/10 bg-[#07111e]/95 px-4 backdrop-blur">
+        <button type="button" onClick={() => setMobileOpen(true)} className="mr-3 grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/10 hover:bg-white/5" aria-label="Open site navigation">
           <Menu size={20} />
         </button>
+        <Link href="/dashboard" className="mr-4 hidden shrink-0 items-center gap-2 md:flex">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[radial-gradient(circle_at_65%_35%,#38bdf8,transparent_30%),linear-gradient(135deg,#7c3aed,#2563eb)] text-xs font-black">◇</span>
+          <b className="text-base tracking-tight">Dream<span className="text-fuchsia-400">Maker</span><span className="text-blue-400">Hub</span></b>
+        </Link>
 
         <div className="mx-auto flex w-full max-w-[1640px] items-center justify-between gap-4">
           <form onSubmit={submitSearch} className="relative w-full max-w-[700px]">
@@ -252,7 +369,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <aside className={`fixed inset-y-0 left-0 z-[60] flex w-[286px] flex-col overflow-hidden border-r border-white/10 bg-[#081321] transition-transform lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[60] flex w-[300px] max-w-[92vw] flex-col overflow-hidden border-r border-white/10 bg-[#081321] shadow-2xl transition-transform ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-white/10 px-5">
           <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
             <span className="grid h-10 w-12 shrink-0 place-items-center rounded-2xl bg-[radial-gradient(circle_at_65%_35%,#38bdf8,transparent_30%),linear-gradient(135deg,#7c3aed,#2563eb)] text-sm font-black shadow-lg shadow-violet-950/30">☁</span>
@@ -261,7 +378,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <small className="block text-[10px] text-white/40">Build Tomorrow, Together</small>
             </span>
           </Link>
-          <button type="button" onClick={() => setMobileOpen(false)} className="rounded p-1 text-white/50 lg:hidden" aria-label="Close navigation"><X size={18} /></button>
+          <button type="button" onClick={() => setMobileOpen(false)} className="rounded p-1 text-white/50 hover:bg-white/5 hover:text-white" aria-label="Close navigation"><X size={18} /></button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -300,51 +417,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <nav className="px-3 pb-3">
-            {primaryItems.map(renderNavLink)}
-
-            <div className="mt-1">
-              <button type="button" onClick={() => setExtrasOpen(value => !value)}
-                aria-expanded={extrasOpen} aria-controls="dashboard-more-tools"
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${(extraActive || libraryActive) ? "bg-blue-600/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}>
-                <Settings size={18} />
-                <span className="flex-1 text-left">More</span>
-                <ChevronDown size={14} className={`transition-transform ${extrasOpen ? "rotate-180" : ""}`} />
-              </button>
-              {extrasOpen && (
-                <div id="dashboard-more-tools" className="ml-4 mt-1 border-l border-white/10 pl-2">
-      <div className="mb-1">
-                    <button
-                      type="button"
-                      onClick={() => setLibrariesOpen((open) => !open)}
-                      aria-expanded={librariesOpen}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${libraryActive ? "bg-blue-600/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
-                    >
-                      <Library size={18} />
-                      <span className="flex-1 text-left">Libraries</span>
-                      <ChevronDown size={14} className={`transition-transform ${librariesOpen ? "rotate-180" : ""}`} />
-                    </button>
-      
-                    {librariesOpen && (
-                      <div className="ml-5 mt-1 border-l border-white/10 pl-2">
-                        {libraryItems.map(({ href, label, icon: Icon }) => (
-                          <Link
-                            key={`${label}-${href}`}
-                            href={href}
-                            onClick={() => setMobileOpen(false)}
-                            className={`mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition ${isActive(href) ? "bg-violet-500/15 text-violet-200" : "text-white/50 hover:bg-white/5 hover:text-white"}`}
-                          >
-                            <Icon size={15} /> {label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {toolItems.map(renderNavLink)}
+          <nav className="px-3 pb-3" aria-label="DreamMakerHub site navigation">
+            {menuGroups.map((group) => {
+              const Icon = group.icon;
+              const groupActive = group.items.some((item) => isActive(item.href));
+              const open = expandedGroups[group.label] || groupActive;
+              return (
+                <div key={group.label} className="mb-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.label)}
+                    aria-expanded={open}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${groupActive ? "bg-blue-600/15 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"}`}
+                  >
+                    <Icon size={18} />
+                    <span className="flex-1 text-left font-medium">{group.label}</span>
+                    <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                  </button>
+                  {open && (
+                    <div className="ml-4 mt-1 border-l border-white/10 pl-2">
+                      {group.items.map(renderSubLink)}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
+              );
+            })}
           </nav>
 
           <div className="mx-4 mb-4 overflow-hidden rounded-xl border border-violet-500/30 bg-[radial-gradient(circle_at_80%_20%,rgba(99,102,241,.55),transparent_35%),linear-gradient(135deg,#1e1b4b,#0b1630)] p-4">
@@ -363,9 +460,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {mobileOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-[55] bg-black/60 lg:hidden" />}
+      {mobileOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-[55] bg-black/65" />}
 
-      <main className="min-h-screen pt-[72px] lg:pl-[286px]">
+      <main className="min-h-screen pt-[72px]">
         <div className="mx-auto max-w-[1640px] p-4 sm:p-5 lg:p-6">
           {currentProject && pathname !== "/dashboard" && !isProjectRoute && (
             <div className="mb-5">
