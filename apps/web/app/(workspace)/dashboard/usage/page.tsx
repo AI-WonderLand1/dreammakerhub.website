@@ -83,7 +83,7 @@ export default function BillingUsagePage() {
   const [live, setLive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [openingBilling, setOpeningBilling] = useState(false);
+  const [openingBilling] = useState(false);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadUsage = useCallback(async () => {
