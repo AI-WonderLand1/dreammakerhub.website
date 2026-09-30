@@ -16,7 +16,6 @@ import RepositoryFileBrowser from "../RepositoryFileBrowser";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import WonderSpaceSourceHistory from "@/components/dashboard/WonderSpaceSourceHistory";
-import BrowserTerminalPanel from "@/components/dashboard/BrowserTerminalPanel";
 
 type Project = {
   id: string;
@@ -164,16 +163,13 @@ export default function ProjectCodeManagerPage() {
 
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_300px]">
         <main className="min-w-0">
-          <div className="space-y-4">
-            <RepositoryFileBrowser
-              projectId={project.id}
-              projectType={tool}
-              files={files}
-              initialPath={initialPath}
-              onFilesChange={setFiles}
-            />
-            <BrowserTerminalPanel projectId={project.id} />
-          </div>
+          <RepositoryFileBrowser
+            projectId={project.id}
+            projectType={tool}
+            files={files}
+            initialPath={initialPath}
+            onFilesChange={setFiles}
+          />
         </main>
 
         <aside className="space-y-4">
@@ -195,7 +191,7 @@ export default function ProjectCodeManagerPage() {
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
-            <h2 className="text-sm font-bold">Quick IDE</h2>
+            <h2 className="text-sm font-bold">Browser editor</h2>
             <dl className="mt-3 divide-y divide-white/10 text-xs">
               <div className="flex items-center justify-between gap-3 py-2.5">
                 <dt className="flex items-center gap-2 text-white/40"><FileCode2 size={14}/> Files</dt>
@@ -232,13 +228,6 @@ export default function ProjectCodeManagerPage() {
                 <ShieldCheck size={14}/> Security & Quality
               </Link>
             </div>
-          </section>
-
-          <section className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[.035] p-4">
-            <p className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-300/70">Fast mode</p>
-            <p className="mt-2 text-xs leading-5 text-white/55">
-              This is the launch IDE: browser files + Monaco editor + saved versions + preview. Heavy Coder/Kubernetes workspaces are parked for a future upgrade and are not required here.
-            </p>
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-[linear-gradient(145deg,#10172a,#0a1320)] p-4">
