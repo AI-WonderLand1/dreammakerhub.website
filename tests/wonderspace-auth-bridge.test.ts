@@ -39,7 +39,6 @@ describe('WonderSpace Supabase auth bridge', () => {
       'apps/web/components/engines/WonderSpaceLaunch.tsx',
       'apps/web/components/engines/CustomerWorkspaceLaunch.tsx',
       'apps/web/components/engines/CoderAvailabilityIndicator.tsx',
-      'apps/web/app/wonderspace/workspaces/page.tsx',
     ]) {
       const source = read(path);
       expect(source).toContain('session?.access_token');

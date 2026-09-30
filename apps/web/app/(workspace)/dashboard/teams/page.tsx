@@ -1,7 +1,5 @@
-export const metadata = {
-  title: 'Team Management | AI Wonderland',
-  description: 'Manage your team and members.',
-};
+import { redirect } from "next/navigation";
 
-import TeamsPage from "../TeamsPage";
-export default TeamsPage;
+export default function TeamRoute() {
+  redirect("/dashboard/collaboration");
+}

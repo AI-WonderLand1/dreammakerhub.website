@@ -36,16 +36,15 @@ describe('Existing Coder workspace resume', () => {
     expect(route).toContain("process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
   });
 
-  it('keeps operator restart available but customer direct-Coder handoff disabled', () => {
+  it('keeps operator backend restart capability while the retired customer page redirects to browser code', () => {
     expect(list).toContain('const operator = isConfiguredCoderOperator(user.id)');
-    expect(page).toContain("openMode !== 'operator'");
+    expect(page).toContain('redirect("/dashboard?workspaceTab=code")');
     expect(page).not.toContain('/api/user-workspace/customer/open/');
-    expect(page).toContain('/api/user-workspace/coder/');
-    expect(page).toContain('window.location.assign(result.url)');
+    expect(page).not.toContain('/api/user-workspace/coder/');
     expect(page).not.toContain("fetch('/api/user-workspace/provision'");
     expect(customerRoute).toContain('CUSTOMER_IDE_GATEWAY_REQUIRED');
     expect(customerRoute).toContain('status: 503');
     expect(customerRoute).not.toContain('coderApiRequest(');
     expect(customerRoute).not.toContain("transition: 'start'");
-  });;
+  });
 });

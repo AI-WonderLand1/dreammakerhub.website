@@ -40,36 +40,39 @@ function ProjectWorkspaceViews({
   unsavedCurrent: boolean;
   reportDirty: (projectId: string, dirty: boolean) => void;
 }) {
-  const [visitedWorkbench, setVisitedWorkbench] = useState(false);
+  const [visitedCode, setVisitedCode] = useState(false);
   const [visitedHistory, setVisitedHistory] = useState(false);
 
   useEffect(() => {
-    if (activeTab === "code" || activeTab === "tools") setVisitedWorkbench(true);
+    if (activeTab === "code") setVisitedCode(true);
     if (activeTab === "history") setVisitedHistory(true);
   }, [activeTab]);
 
-  const workbenchMounted = Boolean(
-    selected && (activeTab === "code" || activeTab === "tools" || visitedWorkbench)
-  );
+  const codeMounted = Boolean(selected && (activeTab === "code" || visitedCode));
   const historyMounted = Boolean(selected && (activeTab === "history" || visitedHistory));
 
   return (
     <>
-      {workbenchMounted && selected && (
-        <div hidden={activeTab !== "code" && activeTab !== "tools"} className="space-y-4 p-3 sm:p-4">
-          <section
-            id="workspace-code"
-            className={activeTab === "code" ? "rounded-xl ring-1 ring-cyan-400/20" : ""}
-          >
+      {codeMounted && selected && (
+        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
+          <section id="workspace-code" className="rounded-xl ring-1 ring-cyan-400/20">
             <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
           </section>
+        </div>
+      )}
 
+      {selected && activeTab === "tools" && (
+        <div className="p-3 sm:p-4">
           <section
             id="workspace-tools"
-            className={`space-y-3 rounded-xl border border-white/10 bg-white/[.02] p-3 sm:p-4 ${
-              activeTab === "tools" ? "ring-1 ring-cyan-400/30" : ""
-            }`}
+            className="space-y-3 rounded-xl border border-white/10 bg-white/[.02] p-3 sm:p-4 ring-1 ring-cyan-400/30"
           >
+            <div>
+              <h3 className="text-sm font-semibold text-white">Project tools</h3>
+              <p className="mt-1 text-xs text-white/45">
+                Open project-specific tools without loading the code editor.
+              </p>
+            </div>
             <WonderSpaceProjectNavigation projectId={selected.id} advancedOnly />
             <Link
               href={`/dashboard/projects/${encodeURIComponent(selected.id)}`}
@@ -91,10 +94,9 @@ function ProjectWorkspaceViews({
 }
 
 /**
- * One project selector with a shared Code + More tools workbench. Existing routes remain valid
- * for deep links and advanced workflows; they are not extra onboarding steps.
- * Once the user opens Code or More tools, keep the shared workbench mounted so
- * unsaved local edits aren't silently discarded by switching between Code, More tools, or History.
+ * One project selector with separate dashboard subviews.
+ * Code stays mounted after first use so unsaved local edits survive tab switches,
+ * while More tools renders its own project-tools view instead of duplicating Code.
  */
 export default function WonderSpaceDashboardPanel({
   projects,
@@ -162,7 +164,7 @@ export default function WonderSpaceDashboardPanel({
         <div>
           <h2 className="text-lg font-bold text-white">Project workspace</h2>
           <p className="mt-1 text-xs text-slate-400">
-            Pick a project once. Code and More tools share one workbench, so nothing is duplicated or lost.
+            Pick a project once. Code, History and More tools each have their own view.
           </p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">

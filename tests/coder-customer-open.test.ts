@@ -30,15 +30,15 @@ describe('customer IDE opening security hold', () => {
     expect(gate).not.toContain('<CustomerWorkspaceLaunch');
   });
 
-  it('removes direct customer-to-Coder navigation from both customer views', () => {
+  it('removes direct customer-to-Coder navigation and retires the old workspace manager', () => {
     const launch = file('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     const manager = file('apps/web/app/wonderspace/workspaces/page.tsx');
     expect(launch).not.toContain('/api/user-workspace/customer/open/');
     expect(launch).not.toContain('Open my private IDE');
     expect(launch).toContain('you will not be sent to the Coder dashboard');
+    expect(manager).toContain('redirect("/dashboard?workspaceTab=code")');
     expect(manager).not.toContain('/api/user-workspace/customer/open/');
-    expect(manager).toContain("openMode !== 'operator'");
-    expect(manager).toContain('DreamMakerHub-only gateway');
+    expect(manager).not.toContain('DreamMakerHub-only gateway');
   });
 
   it('hardens Coder deployment defaults while direct customer access is paused', () => {

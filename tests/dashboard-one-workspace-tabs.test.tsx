@@ -125,19 +125,21 @@ describe("one-page project workspace", () => {
     expect(container.textContent).not.toContain("Open code here");
   });
 
-  it("keeps one mounted shared Code and More tools workbench while protecting in-memory edits", async () => {
+  it("keeps Code mounted but hidden while More tools renders its own view", async () => {
     await renderPanel();
     await chooseTab("Code");
     const editor = container.querySelector('[data-testid="real-editor-mount"]');
     await chooseTab("More tools");
     expect(container.querySelector('[data-testid="advanced-tools"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="real-editor-mount"]')).toBe(editor);
+    expect(editor?.closest('[hidden]')).toBeTruthy();
     await chooseTab("History");
     expect(container.querySelector('[data-testid="source-history"]')).toBeTruthy();
     expect(editor?.closest('[hidden]')).toBeTruthy();
     await chooseTab("Code");
     expect(shared.editorMounts).toBe(1);
     expect(container.querySelector('[data-testid="real-editor-mount"]')).toBe(editor);
+    expect(editor?.closest('[hidden]')).toBeNull();
   });
 
   it("switches project and returns to Overview without exposing the previous editor", async () => {
@@ -208,7 +210,8 @@ describe("dashboard simplification contracts", () => {
     expect(panel).toContain('params.set("workspaceTab", tab)');
     expect(page).not.toContain("setProjectOpen");
     expect(page).not.toContain("Recent Projects");
-    expect(panel).toContain('hidden={activeTab !== "code" && activeTab !== "tools"}');
+    expect(panel).toContain('hidden={activeTab !== "code"}');
+    expect(panel).toContain('activeTab === "tools"');
     expect(layout).toContain('label: "Build"');
     expect(layout).toContain('label: "Code"');
     expect(layout).toContain('label: "3D"');

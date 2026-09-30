@@ -5,12 +5,11 @@ import { join } from 'node:path';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('Coder allocation lookup safety', () => {
-  it('does not mistake a failed lookup for an empty workspace list', () => {
+  it('retires the customer allocation UI instead of presenting stale workspace state', () => {
     const page = read('apps/web/app/wonderspace/workspaces/page.tsx');
-    expect(page).toContain('setSlots([]);');
-    expect(page).toContain('setCanOpen(false);');
-    expect(page).toContain('!error && slots.length === 0');
-    expect(page).toContain('Workspace availability could not be verified.');
+    expect(page).toContain('redirect("/dashboard?workspaceTab=code")');
+    expect(page).not.toContain('setSlots([]);');
+    expect(page).not.toContain('Workspace availability could not be verified.');
   });
 
   it('logs a diagnostic code without exposing row contents or credentials', () => {
