@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, Bot, BookOpen, CircleDot, Code2, GitCommitHorizontal, GitPullRequest,
-  MessageSquare, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
+  Activity, Bot, BookOpen, CircleDot, Code2, GitCommitHorizontal, GitPullRequest, MessageSquare, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
 } from "lucide-react";
 
 type Item = {
@@ -14,7 +13,6 @@ type Item = {
   href: string | null;
   description?: string;
   selected?: boolean;
-  advanced?: boolean;
 };
 
 export default function WonderSpaceProjectNavigation({
@@ -27,7 +25,6 @@ export default function WonderSpaceProjectNavigation({
   advancedOnly?: boolean;
 }) {
   const pathname = usePathname();
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const id = projectId ? encodeURIComponent(projectId) : null;
   const projectPath = id ? `/dashboard/projects/${id}` : null;
   const query = id ? `?projectId=${id}` : "";
@@ -42,62 +39,46 @@ export default function WonderSpaceProjectNavigation({
   // authenticated project storage. No tab navigates to an external code host.
   const items: Item[] = [
     { label: "Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/wonderspace/browser", selected: currentTab === "code" },
-    { label: "History", icon: GitCommitHorizontal, href: projectPath ? `${projectPath}/files#version-history` : null, description: "Select a project to save, compare or download source versions." },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
-    { label: "Pull requests", icon: GitPullRequest, href: null, description: "Native branch reviews will be available after the WonderSpace version-control backend is verified." , advanced: true },
+    { label: "Changes", icon: GitPullRequest, href: null, description: "Native branch reviews / pull-request change review are not connected yet." },
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
-    { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." , advanced: true },
-    { label: "Actions", icon: PlayCircle, href: null, description: "Native CI runs are not connected yet. Existing customers' projects are not automatically executed." , advanced: true },
+    { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." },
+    { label: "Actions", icon: PlayCircle, href: null, description: "Native CI runs are not connected yet." },
     { label: "Projects", icon: PanelsTopLeft, href: id ? `/dashboard?projectId=${id}#projects` : "/dashboard#projects", selected: currentTab === "projects" },
-    { label: "Wiki", icon: BookOpen, href: projectPath ? `${projectPath}/wiki` : null, selected: currentTab === "wiki", description: "Select a DreamMakerHub project to edit its wiki." , advanced: true },
-    { label: "Security & quality", icon: ShieldCheck, href: `/dashboard/aetherguard${query}` , advanced: true },
-    { label: "Usage & insights", icon: Activity, href: `/dashboard/usage${query}` , advanced: true },
-    { label: "Settings", icon: Settings, href: `/dashboard/settings${query}` , advanced: true },
+    { label: "History", icon: GitCommitHorizontal, href: projectPath ? `${projectPath}/files#version-history` : null, description: "Select a project to save, compare or download source versions." },
+    { label: "Wiki", icon: BookOpen, href: projectPath ? `${projectPath}/wiki` : null, selected: currentTab === "wiki", description: "Select a DreamMakerHub project to edit its wiki." },
+    { label: "Security", icon: ShieldCheck, href: `/dashboard/aetherguard${query}` },
+    { label: "Insights", icon: Activity, href: `/dashboard/usage${query}` },
+    { label: "Settings", icon: Settings, href: `/dashboard/settings${query}` },
   ];
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#0b111e]">
-      <nav aria-label="WonderSpace project tools" className="flex items-center gap-0.5 overflow-x-auto px-2 text-sm">
-        {items.filter(item => advancedOnly
-          ? !["Code", "History", "Projects"].includes(item.label)
-          : !item.advanced || showAdvanced || Boolean(item.selected)
-        ).map(({ label, icon: Icon, href, description, selected }) => {
-          const cls = `inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm transition ${selected ? "border-cyan-400 font-semibold text-white" : "border-transparent text-slate-300 hover:border-white/25 hover:bg-white/5 hover:text-white"}`;
-          if (!href) return (
-            <span
-              key={label}
-              aria-disabled="true"
-              title={description || "WonderSpace native support is being developed."}
-              className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm text-white/35"
-            >
-              <Icon size={16} aria-hidden="true" /> {label}
-              {label === "Pull requests" || label === "Actions" ? <span className="text-[9px] text-amber-300/70">Planned</span> : null}
-            </span>
-          );
+    <div className="border-b border-white/10 bg-[#070d17]">
+      <nav
+        aria-label="Project navigation"
+        className="flex w-full items-center gap-1 overflow-x-auto whitespace-nowrap px-1 text-sm"
+      >
+        {items.map(({ label, icon: Icon, href, description, selected }) => {
+          const cls = `inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm transition ${selected ? "border-cyan-400 font-semibold text-white" : "border-transparent text-slate-300 hover:border-white/25 hover:text-white"}`;
+          if (!href) {
+            return (
+              <span
+                key={label}
+                aria-disabled="true"
+                title={description || "Not connected yet"}
+                className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm text-white/35"
+              >
+                <Icon size={16} aria-hidden="true" /> {label}
+              </span>
+            );
+          }
           return (
             <Link key={label} href={href} aria-current={selected ? "page" : undefined} className={cls}>
-              <Icon size={16} aria-hidden="true" />{label}
+              <Icon size={16} aria-hidden="true" /> {label}
             </Link>
           );
         })}
-        {!advancedOnly && <button type="button" onClick={() => setShowAdvanced(value => !value)}
-          aria-expanded={showAdvanced} aria-label="Toggle more project tools"
-          className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-xs text-cyan-200 hover:bg-white/5">
-          {showAdvanced ? "Fewer tools" : "More tools"}
-        </button>}
       </nav>
-      {!advancedOnly && <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[.07] px-3 py-2 text-[11px] text-slate-400">
-        <span>
-          {projectPath
-            ? "WonderSpace-native project · Code, Issues, Discussions and Wiki share your DreamMakerHub project."
-            : "Create or select a DreamMakerHub project to open its native repository tools."}
-        </span>
-        {projectPath && (
-          <Link href={`${projectPath}/files`} className="font-semibold text-cyan-300 hover:underline">
-            Open project files →
-          </Link>
-        )}
-      </div>}
     </div>
   );
 }
