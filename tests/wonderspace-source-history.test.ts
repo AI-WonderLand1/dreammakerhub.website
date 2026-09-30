@@ -153,7 +153,9 @@ describe("authenticated owner-only native source history", () => {
     expect(migration).toContain("pg_advisory_xact_lock");
     expect(migration).toContain("SOURCE_CHECKPOINT_TOO_LARGE");
     expect(nav).toContain('label: "History"');
-    expect(nav).toContain("showAdvanced");
+    expect(nav).toContain('label: "Discussions"');
+    expect(nav).toContain('label: "Wiki"');
+    expect(nav).not.toContain("showAdvanced");
     expect(dashboard).toContain("<WonderSpaceSourceHistory key={selected.id}");
   });
 });
