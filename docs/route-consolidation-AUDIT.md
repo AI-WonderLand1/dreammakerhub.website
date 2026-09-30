@@ -53,7 +53,7 @@ All page routes under `apps/web/app`. URL path is what appears in the browser
 | Route | Purpose | Action |
 |---|---|---|
 | `/dashboard` + `/dashboard/*` (projects, agents, aetherguard, analytics, collaboration, npc, teams, usage, settings·byoc·coder·webhooks, subscription, support) | Authenticated workspace shell | KEEP |
-| `/dashboard/ai-generator` | legacy AI generator page | REDIRECT → `/dashboard/agents` (page exists standalone) |
+| `/dashboard/ai-generator` | Wonderland 3D AI GLB generator | KEEP under authenticated workspace shell |
 | `/dashboard/features` | **BROKEN** — referenced but no route | Fix links → `/dashboard/settings` |
 | `/dashboard/overview` | **BROKEN** — referenced in API, no route | Fix → `/dashboard` |
 | `/settings/*` | Standalone settings | KEEP |
@@ -188,5 +188,5 @@ Status: consolidated nav live; builds green (see 7.4).
 
 ### 7.6 Deferred (documented, not changed)
 - The four near-identical SSE agent clients (`/api/build/stream` consumers in `SovereignOSContext`, `ai-builder/page`, `studio/AIAssistantModal`, `wonderspace/page`) — merge later, not now.
-- `/dashboard/ai-generator` orphan page — left untouched (live, no nav reference).
+- `/dashboard/ai-generator` is the canonical Wonderland 3D AI generator and is linked from the authenticated 3D submenu.
 - AI routes (`/api/builder/generate`, `/api/wonder-build/ai/*`, etc.) kept, only mapped-not-deleted.

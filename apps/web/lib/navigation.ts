@@ -85,6 +85,8 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     href: "/dashboard/3dhub",
     items: [
       { label: "WonderPlay", href: "/dashboard/3dhub", description: "Start and manage realtime 3D projects." },
+      { label: "3D AI Generator", href: "/dashboard/ai-generator", description: "Generate GLB assets with the Wonderland 3D agent." },
+      { label: "3D Asset Library", href: "/3d-library", description: "Browse and reuse saved 3D assets." },
       { label: "NPC-AI-SIM", href: "/wonder-play", description: "Create, configure, test, and export intelligent characters." },
     ],
   },
