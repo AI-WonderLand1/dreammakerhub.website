@@ -177,9 +177,8 @@ describe("one dashboard/project/browser navigation", () => {
     expect(manager).toContain('<WonderSpaceProjectNavigation projectId={project.id} active="code" />');
     expect(manager).toContain("<RepositoryFileBrowser");
     expect(layout).toContain("<WonderSpaceProjectNavigation projectId={currentProject.id}");
-    expect(browser).toContain("<WonderSpaceProjectNavigation />");
+    expect(browser).toContain("redirect('/dashboard#projects')");
     expect(browser).not.toContain("github.com/codespaces/new");
-    expect(browser).toContain('href="/wonderspace"');
   });
 
   it("routes project tools to first-party storage, without outbound GitHub dependencies", () => {
