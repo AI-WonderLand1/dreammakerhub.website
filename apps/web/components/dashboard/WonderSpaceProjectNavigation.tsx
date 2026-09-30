@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CircleDot, Code2, GitPullRequest, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
+  Activity, Bot, BookOpen, CircleDot, Code2, GitCommitHorizontal, GitPullRequest, MessageSquare, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
 } from "lucide-react";
 
 type Item = {
@@ -40,10 +40,15 @@ export default function WonderSpaceProjectNavigation({
   const items: Item[] = [
     { label: "Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/wonderspace/browser", selected: currentTab === "code" },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
-    { label: "Changes", icon: GitPullRequest, href: null, description: "Native pull-request/change review is not connected yet." },
+    { label: "Changes", icon: GitPullRequest, href: null, description: "Native branch reviews / pull-request change review are not connected yet." },
+    { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
+    { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." },
     { label: "Actions", icon: PlayCircle, href: null, description: "Native CI runs are not connected yet." },
     { label: "Projects", icon: PanelsTopLeft, href: id ? `/dashboard?projectId=${id}#projects` : "/dashboard#projects", selected: currentTab === "projects" },
+    { label: "History", icon: GitCommitHorizontal, href: projectPath ? `${projectPath}/files#version-history` : null, description: "Select a project to save, compare or download source versions." },
+    { label: "Wiki", icon: BookOpen, href: projectPath ? `${projectPath}/wiki` : null, selected: currentTab === "wiki", description: "Select a DreamMakerHub project to edit its wiki." },
     { label: "Security", icon: ShieldCheck, href: `/dashboard/aetherguard${query}` },
+    { label: "Insights", icon: Activity, href: `/dashboard/usage${query}` },
     { label: "Settings", icon: Settings, href: `/dashboard/settings${query}` },
   ];
 
