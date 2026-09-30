@@ -25,8 +25,6 @@ jobs:
         run: node .github/scripts/check-primary-deployment-policy.mjs
       - name: Validate AWS fallback deployment shell syntax
         run: bash -n deploy/aws-fallback/deploy-web.sh
-      - name: Validate suspended customer runner installer shell syntax
-        run: bash -n infra/coder/install-paused-customer-workers.sh
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
