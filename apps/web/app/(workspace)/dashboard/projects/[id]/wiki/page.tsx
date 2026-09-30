@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
+import { useProjectRealtimeInvalidation } from "@/lib/wonderspace/use-project-realtime-invalidation";
 
 export default function ProjectWikiPage() {
   const params = useParams();
@@ -16,6 +17,17 @@ export default function ProjectWikiPage() {
   const [message, setMessage] = useState("");
   const [dirty, setDirty] = useState(false);
   const url = `/api/projects/${encodeURIComponent(projectId)}/wiki`;
+
+  const reloadWiki = async () => {
+    const wikiRes = await fetchAuthenticatedProject(url);
+    const wiki = await wikiRes.json().catch(() => null);
+    if (!wikiRes.ok) throw new Error(wiki?.error || "Unable to refresh wiki.");
+    if (!dirty) setContent(typeof wiki?.content === "string" ? wiki.content : "");
+  };
+
+  const announceWikiChange = useProjectRealtimeInvalidation(projectId, "wiki", () => {
+    if (!dirty) void reloadWiki();
+  });
 
   useEffect(() => {
     let live = true;
@@ -51,6 +63,7 @@ export default function ProjectWikiPage() {
       if (!response.ok || !data?.saved) throw new Error(data?.error || "Unable to save wiki.");
       setDirty(false);
       setMessage("Saved to your DreamMakerHub project.");
+      await announceWikiChange();
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Unable to save wiki.");
     } finally { setSaving(false); }
