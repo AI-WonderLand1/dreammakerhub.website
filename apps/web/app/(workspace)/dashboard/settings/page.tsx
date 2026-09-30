@@ -22,11 +22,6 @@ export default function SettingsHomePage() {
         <div className="mt-2 text-white/55">Set up automation webhooks.</div>
       </Link>
 
-      <Link href="/dashboard/settings/byoc" className="rounded-2xl border border-blue-400/20 bg-blue-500/5 p-6 hover:bg-blue-500/10 transition">
-        <div className="text-xs font-black uppercase tracking-widest text-blue-300/80">Cloud Storage (BYOC)</div>
-        <div className="mt-2 text-white/55">Connect your own cloud storage.</div>
-      </Link>
-
       <Link href="/support" className="rounded-2xl border border-green-400/20 bg-green-500/5 p-6 hover:bg-green-500/10 transition">
         <div className="text-xs font-black uppercase tracking-widest text-green-300/80">Support</div>
         <div className="mt-2 text-white/55">Get help and report issues.</div>
