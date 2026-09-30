@@ -37,74 +37,19 @@ export default function SettingsMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-white/10 bg-[#0b1220] shadow-xl overflow-hidden z-50">
-          <Link
-            href="/dashboard/settings"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            Settings Home
-          </Link>
-
-          <div className="h-px bg-white/10" />
-
-          <Link
-            href="/dashboard/usage"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            Subscription
-          </Link>
-
-          <Link
-            href="/dashboard/settings"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            Features
-          </Link>
-
-          <Link
-            href="/dashboard/settings/webhooks"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            Webhooks
-          </Link>
-
-          <Link
-            href="/dashboard/settings/coder"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            WonderSpace Workspaces
-          </Link>
-
-          <Link
-            href="/dashboard/settings/byoc"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            BYOC Storage
-          </Link>
-
-          <div className="h-px bg-white/10" />
-
-          <Link
-            href="/dashboard/teams"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            Team & Access
-          </Link>
-
-          <Link
-            href="/dashboard/support"
-            className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-            onClick={() => setOpen(false)}
-          >
-            Support
-          </Link>
+        <div className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1220] shadow-xl z-50">
+          {[
+            ["/dashboard/settings","Settings Home"],
+            ["/dashboard/settings/account","Account"],
+            ["/dashboard/settings/simplerick","SimpleRickSettings"],
+            ["/dashboard/usage","Usage & Billing"],
+            ["/dashboard/settings/webhooks","Webhooks"],
+            ["/support","Support"],
+          ].map(([href,label]) => (
+            <Link key={href} href={href} className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5" onClick={() => setOpen(false)}>
+              {label}
+            </Link>
+          ))}
         </div>
       )}
     </div>
