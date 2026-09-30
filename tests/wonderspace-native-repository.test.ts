@@ -180,7 +180,9 @@ describe("general code editor cannot overwrite first-party repository metadata",
     const nav = readFileSync(join(process.cwd(), "apps/web/components/dashboard/WonderSpaceProjectNavigation.tsx"), "utf8");
     expect(nav).not.toContain("api.github.com");
     expect(nav).not.toContain("githubRepositoryLink");
-    expect(nav).toContain("Native branch reviews");
-    expect(nav).toContain("Native CI runs are not connected yet");
+    expect(nav).not.toContain('label: "Changes"');
+    expect(nav).not.toContain('label: "Actions"');
+    expect(nav).not.toContain("Native branch reviews");
+    expect(nav).not.toContain("Native CI runs are not connected yet");
   });
 });
