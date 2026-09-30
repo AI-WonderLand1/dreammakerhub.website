@@ -11,6 +11,8 @@ import {
   BookOpen,
   Bot,
   Box,
+  Accessibility,
+  CreditCard,
   ChevronDown,
   CircleHelp,
   Code2,
@@ -26,6 +28,7 @@ import {
   Settings,
   ShoppingBag,
   Sparkles,
+  User,
   Users,
   X,
 } from "lucide-react";
@@ -126,6 +129,38 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   // Site-wide hamburger navigation. Every destination is grouped under a
   // submenu so users can stay in one shell and drill into the exact tool.
   const menuGroups: SiteMenuGroup[] = [
+    {
+      label: "Quick access",
+      icon: Home,
+      items: [
+        { href: "/dashboard", label: "Home", icon: Home },
+        { href: "/community", label: "Feed", icon: Users },
+        { href: "/dashboard#projects", label: "All Projects", icon: Folder },
+        {
+          href: currentProject
+            ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}/issues`
+            : "/dashboard#projects",
+          label: currentProject ? "Project Issues" : "Issues",
+          icon: CircleHelp,
+        },
+        {
+          href: currentProject
+            ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}/discussions`
+            : "/community",
+          label: currentProject ? "Project Discussions" : "Discussions",
+          icon: Users,
+        },
+        {
+          href: currentProject
+            ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}/files`
+            : "/dashboard#projects",
+          label: "Files & Code",
+          icon: Code2,
+        },
+        { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
+        { href: "/settings/ai-providers", label: "SimpleRickSettings", icon: Sparkles },
+      ],
+    },
     {
       label: "Home",
       icon: Home,
@@ -347,19 +382,54 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
 
               {accountMenuOpen && (
-                <div className="absolute right-0 top-12 z-[70] w-56 overflow-hidden rounded-xl border border-white/15 bg-[#0b1626] p-2 shadow-2xl">
-                  <Link
-                    href={withProject("/dashboard/settings")}
-                    onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
-                  >
-                    <Settings size={16} /> Settings
-                  </Link>
+                <div className="absolute right-0 top-12 z-[70] w-72 overflow-hidden rounded-2xl border border-white/15 bg-[#070d17] p-2 shadow-2xl">
+                  <div className="mb-2 flex items-center gap-3 border-b border-white/10 px-3 pb-3 pt-2">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-blue-600 text-sm font-bold ring-1 ring-white/20">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">{displayName}</div>
+                      <div className="truncate text-xs text-white/40">{user.email || "Signed-in account"}</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Link href="/settings/account" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <User size={16} /> Profile
+                    </Link>
+                    <Link href="/dashboard#projects" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Folder size={16} /> Projects
+                    </Link>
+                    <Link href="/dashboard/teams" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Users size={16} /> Teams & Organizations
+                    </Link>
+                  </div>
+
+                  <div className="my-2 border-t border-white/10" />
+
+                  <div className="space-y-1">
+                    <Link href={withProject("/dashboard/settings")} onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Settings size={16} /> Settings
+                    </Link>
+                    <Link href="/settings/ai-providers" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Sparkles size={16} /> SimpleRickSettings
+                    </Link>
+                    <Link href="/settings/accessibility" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Accessibility size={16} /> Accessibility
+                    </Link>
+                    <Link href="/dashboard/usage" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <CreditCard size={16} /> Billing & usage
+                    </Link>
+                    <Link href="/subscription" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Sparkles size={16} /> Upgrade
+                    </Link>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => void handleSignOut()}
                     disabled={signingOut}
-                    className="mt-1 flex w-full items-center gap-2 border-t border-white/10 px-3 py-2.5 text-left text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                    className="mt-2 flex w-full items-center gap-3 rounded-lg border border-white/10 bg-white/[.025] px-3 py-2.5 text-left text-sm text-white/75 hover:bg-white/5 hover:text-white disabled:opacity-50"
                   >
                     <LogOut size={16} /> {signingOut ? "Signing out..." : "Sign out"}
                   </button>
