@@ -56,17 +56,17 @@ END $$;
 INSERT INTO public.user_usage_alerts (
   user_id, metric, threshold_kind, threshold_value, channels, enabled
 )
-SELECT p.user_id, values.metric, 'percent', values.threshold, ARRAY['in_app']::TEXT[], p.in_app_alerts
+SELECT p.user_id, v.metric, 'percent', v.threshold, ARRAY['in_app']::TEXT[], p.in_app_alerts
 FROM public.user_billing_preferences p
 CROSS JOIN LATERAL (
   VALUES
     ('ai_tokens'::TEXT, p.token_alert_percent::NUMERIC),
     ('api_requests'::TEXT, p.api_alert_percent::NUMERIC),
     ('storage'::TEXT, p.storage_alert_percent::NUMERIC)
-) AS values(metric, threshold)
+) AS v(metric, threshold)
 WHERE NOT EXISTS (
   SELECT 1 FROM public.user_usage_alerts a
-  WHERE a.user_id = p.user_id AND a.metric = values.metric
+  WHERE a.user_id = p.user_id AND a.metric = v.metric
 );
 
 CREATE OR REPLACE FUNCTION public.get_usage_summary()
