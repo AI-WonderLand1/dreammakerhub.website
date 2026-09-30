@@ -6,11 +6,14 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
+  Bell,
+  Coins,
   CreditCard,
   Database,
   FolderKanban,
   Key,
   RefreshCw,
+  Save,
   Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +42,7 @@ type UsageSummary = {
   runtime_minutes: number;
   projects_count: number;
   storage_used: number;
+  purchased_tokens: number;
   recent_activity: UsageActivity[];
 };
 
@@ -50,6 +54,29 @@ type ApiKeyRow = {
   last_used_at: string | null;
   expires_at: string | null;
   revoked_at: string | null;
+};
+
+type TokenPack = {
+  id: string;
+  label: string;
+  tokens: number;
+  available: boolean;
+  amount: number | null;
+  currency: string | null;
+};
+
+type BillingPreferences = {
+  token_alert_percent: number;
+  api_alert_percent: number;
+  storage_alert_percent: number;
+  in_app_alerts: boolean;
+};
+
+const DEFAULT_PREFERENCES: BillingPreferences = {
+  token_alert_percent: 80,
+  api_alert_percent: 80,
+  storage_alert_percent: 80,
+  in_app_alerts: true,
 };
 
 const normalizePlan = (value: unknown): PlanName => {
@@ -77,13 +104,17 @@ export default function BillingUsagePage() {
   const [plan, setPlan] = useState<PlanName>("free");
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKeyRow[]>([]);
+  const [tokenPacks, setTokenPacks] = useState<TokenPack[]>([]);
+  const [preferences, setPreferences] = useState<BillingPreferences>(DEFAULT_PREFERENCES);
   const [projectCount, setProjectCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [live, setLive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [openingBilling] = useState(false);
+  const [openingBilling, setOpeningBilling] = useState(false);
+  const [buyingPack, setBuyingPack] = useState<string | null>(null);
+  const [savingPreferences, setSavingPreferences] = useState(false);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadUsage = useCallback(async () => {
@@ -104,7 +135,7 @@ export default function BillingUsagePage() {
       if (!token) throw new Error("You must be signed in to view usage.");
 
       const authHeaders = { Authorization: `Bearer ${token}` };
-      const [usageResponse, keysResponse, projectsResponse] = await Promise.all([
+      const [usageResponse, keysResponse, projectsResponse, packsResponse, preferencesResponse] = await Promise.all([
         fetch("/api/usage", {
           headers: authHeaders,
           credentials: "same-origin",
@@ -116,11 +147,19 @@ export default function BillingUsagePage() {
           cache: "no-store",
         }),
         fetchAuthenticatedProject("/api/projects"),
+        fetch("/api/billing/token-packs", { credentials: "same-origin", cache: "no-store" }),
+        fetch("/api/billing/preferences", {
+          headers: authHeaders,
+          credentials: "same-origin",
+          cache: "no-store",
+        }),
       ]);
 
       const usagePayload = await usageResponse.json().catch(() => ({}));
       const keysPayload = await keysResponse.json().catch(() => ({}));
       const projectsPayload = await projectsResponse.json().catch(() => ({}));
+      const packsPayload = await packsResponse.json().catch(() => ({}));
+      const preferencesPayload = await preferencesResponse.json().catch(() => ({}));
 
       if (!usageResponse.ok || !usagePayload?.usage) {
         throw new Error(usagePayload?.error || "Live usage could not be loaded.");
@@ -136,6 +175,10 @@ export default function BillingUsagePage() {
       setUsage(summary);
       setPlan(normalizePlan(summary.plan));
       setApiKeys(Array.isArray(keysPayload?.keys) ? keysPayload.keys : []);
+      setTokenPacks(Array.isArray(packsPayload?.packs) ? packsPayload.packs : []);
+      if (preferencesResponse.ok && preferencesPayload?.preferences) {
+        setPreferences({ ...DEFAULT_PREFERENCES, ...preferencesPayload.preferences });
+      }
       setProjectCount(projectsPayload.projects.length);
       setLastUpdated(new Date());
     } catch (cause) {
@@ -145,6 +188,74 @@ export default function BillingUsagePage() {
       setRefreshing(false);
     }
   }, []);
+
+  const currentAccessToken = async () => {
+    const supabase = createClient();
+    if (!supabase) throw new Error("Authentication is unavailable.");
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !data.session?.access_token) throw new Error("Please sign in again.");
+    return data.session.access_token;
+  };
+
+  const openBillingPortal = async () => {
+    setOpeningBilling(true);
+    setError(null);
+    try {
+      const token = await currentAccessToken();
+      const response = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "same-origin",
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "Could not open billing portal.");
+      window.location.assign(payload.url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not open billing portal.");
+      setOpeningBilling(false);
+    }
+  };
+
+  const buyTokenPack = async (packId: string) => {
+    setBuyingPack(packId);
+    setError(null);
+    try {
+      const token = await currentAccessToken();
+      const response = await fetch("/api/billing/token-packs", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ pack: packId }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "Could not start token checkout.");
+      window.location.assign(payload.url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not start token checkout.");
+      setBuyingPack(null);
+    }
+  };
+
+  const saveAlertPreferences = async () => {
+    setSavingPreferences(true);
+    setError(null);
+    try {
+      const token = await currentAccessToken();
+      const response = await fetch("/api/billing/preferences", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(preferences),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.preferences) throw new Error(payload?.error || "Could not save usage alerts.");
+      setPreferences({ ...DEFAULT_PREFERENCES, ...payload.preferences });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save usage alerts.");
+    } finally {
+      setSavingPreferences(false);
+    }
+  };
 
   useEffect(() => {
     void loadUsage();
@@ -194,11 +305,17 @@ export default function BillingUsagePage() {
   const tokensUsed = Number(usage?.tokens_used ?? 0);
   const apiCallsUsed = Number(usage?.api_calls_used ?? 0);
   const storageUsed = Number(usage?.storage_used ?? 0);
+  const purchasedTokens = Number(usage?.purchased_tokens ?? 0);
   const tokenPct = percent(tokensUsed, limits.aiTokensMonthly);
   const apiPct = percent(apiCallsUsed, limits.apiCallsMonthly);
   const storagePct = percent(storageUsed, limits.storageLimit);
   const activeKeys = apiKeys.filter((key) => !key.revoked_at);
   const recentActivity = usage?.recent_activity ?? [];
+  const alerts = preferences.in_app_alerts ? [
+    tokenPct >= preferences.token_alert_percent ? `AI token usage is at ${tokenPct}%.` : null,
+    apiPct >= preferences.api_alert_percent ? `API request usage is at ${apiPct}%.` : null,
+    storagePct >= preferences.storage_alert_percent ? `Storage usage is at ${storagePct}%.` : null,
+  ].filter((value): value is string => Boolean(value)) : [];
 
   return (
     <div className="max-w-5xl p-6">
