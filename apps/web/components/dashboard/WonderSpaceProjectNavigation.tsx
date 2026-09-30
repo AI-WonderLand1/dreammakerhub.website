@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, Bot, BookOpen, CircleDot, Code2, GitCommitHorizontal, GitPullRequest, MessageSquare, PanelsTopLeft, PlayCircle, Settings, ShieldCheck,
+  Activity, Bot, BookOpen, CircleDot, Code2, GitCommitHorizontal, MessageSquare, PanelsTopLeft, Settings, ShieldCheck,
 } from "lucide-react";
 
 type Item = {
@@ -40,10 +40,8 @@ export default function WonderSpaceProjectNavigation({
   const items: Item[] = [
     { label: "Files & Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/dashboard#projects", selected: currentTab === "code" },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
-    { label: "Changes", icon: GitPullRequest, href: null, description: "Native branch reviews / pull-request change review are not connected yet." },
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
     { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." },
-    { label: "Actions", icon: PlayCircle, href: null, description: "Native CI runs are not connected yet." },
     { label: "Projects", icon: PanelsTopLeft, href: id ? `/dashboard?projectId=${id}#projects` : "/dashboard#projects", selected: currentTab === "projects" },
     { label: "History", icon: GitCommitHorizontal, href: projectPath ? `${projectPath}/files#version-history` : null, description: "Select a project to save, compare or download source versions." },
     { label: "Wiki", icon: BookOpen, href: projectPath ? `${projectPath}/wiki` : null, selected: currentTab === "wiki", description: "Select a DreamMakerHub project to edit its wiki." },
@@ -58,20 +56,9 @@ export default function WonderSpaceProjectNavigation({
         aria-label="Project navigation"
         className="flex w-full items-center gap-1 overflow-x-auto whitespace-nowrap px-1 text-sm"
       >
-        {items.map(({ label, icon: Icon, href, description, selected }) => {
+        {items.map(({ label, icon: Icon, href, selected }) => {
+          if (!href) return null;
           const cls = `inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm transition ${selected ? "border-cyan-400 font-semibold text-white" : "border-transparent text-slate-300 hover:border-white/25 hover:text-white"}`;
-          if (!href) {
-            return (
-              <span
-                key={label}
-                aria-disabled="true"
-                title={description || "Not connected yet"}
-                className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm text-white/35"
-              >
-                <Icon size={16} aria-hidden="true" /> {label}
-              </span>
-            );
-          }
           return (
             <Link key={label} href={href} aria-current={selected ? "page" : undefined} className={cls}>
               <Icon size={16} aria-hidden="true" /> {label}
