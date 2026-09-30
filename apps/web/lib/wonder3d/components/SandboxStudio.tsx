@@ -52,6 +52,7 @@ interface HistoryItem {
   modelType: Model3DType;
   primaryColor: string;
   thumbnailUrl: string;
+  glbUrl?: string;
 }
 
 export const SandboxStudio: React.FC<SandboxStudioProps> = ({
@@ -116,6 +117,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
   const [enableSymmetry, setEnableSymmetry] = useState<boolean>(true);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<number>(0);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Viewport Settings
   const [lighting, setLighting] = useState<ViewportLighting>('cyberpunk');
@@ -198,95 +200,129 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
     { id: 'sci_fi', name: 'Sci-Fi Metallic', desc: 'Polished titanium & gold foil accents' },
   ];
 
-  // Handle AI Generation simulation with live feedback
-  const handleGenerate = () => {
+  // Real Wonderland 3D generation through the first-party API.
+  const handleGenerate = async () => {
     if (isGenerating) return;
     sounds.playClick();
+    setGenerationError(null);
+
+    if (activeMode !== 'text_to_3d') {
+      setGenerationError('Text to 3D is live first. Image, texture, and animation modes are not wired to Hunyuan yet.');
+      return;
+    }
+
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) {
+      setGenerationError('Enter a prompt before generating.');
+      return;
+    }
+
     setIsGenerating(true);
-    setGenerationProgress(10);
+    setGenerationProgress(12);
 
-    const modelTypes: Model3DType[] = ['mech', 'quantum_core', 'crystal', 'portal_vfx', 'hoverbike'];
-    const randomType = modelTypes[Math.floor(Math.random() * modelTypes.length)];
-    const randomColors = ['#00F0FF', '#A855F7', '#10B981', '#F59E0B', '#EF4444'];
-    const chosenColor = randomColors[Math.floor(Math.random() * randomColors.length)];
+    const progressTimer = window.setInterval(() => {
+      setGenerationProgress((current) => Math.min(92, current + Math.max(1, Math.round((96 - current) * 0.08))));
+    }, 1200);
 
-    let current = 10;
-    const interval = setInterval(() => {
-      current += Math.floor(Math.random() * 22) + 12;
-      if (current >= 100) {
-        current = 100;
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsGenerating(false);
-          sounds.playModeChange();
+    try {
+      const style = artStyles.find((item) => item.id === artStyle)?.name;
+      const effectivePrompt = style ? `${trimmedPrompt}. Visual style: ${style}.` : trimmedPrompt;
 
-          const generatedTitle = prompt.length > 28 ? prompt.substring(0, 28) + '...' : prompt || 'New 3D Asset';
-          const newAsset: AssetItem = {
-            id: `gen-${Date.now()}`,
-            title: generatedTitle,
-            description: prompt,
-            category: 'models',
-            tags: ['AI Generated', artStyle],
-            creator: {
-              id: 'omni-ai',
-              name: 'OmniAI Studio',
-              avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80',
-              badge: 'Pro Engine',
-              rating: 5.0,
-              sales: 2400,
-              verified: true,
-            },
-            price: 0,
-            rating: 5.0,
-            reviewsCount: 1,
-            downloadCount: 1,
-            likesCount: 1,
-            viewsCount: 12,
-            dateAdded: new Date().toISOString().split('T')[0],
-            formats: ['.GLTF', '.FBX', '.USDZ'],
-            modelType: randomType,
-            thumbnailImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-            isAiGenerated: true,
-            licenseType: 'Standard',
-            previewBgGradient: 'from-cyan-950 via-slate-900 to-black',
-            primaryColor: chosenColor,
-            specs: {
-              polyCount: detailLevel === 'ultra' ? 84000 : detailLevel === 'high' ? 42000 : 18000,
-              vertexCount: detailLevel === 'ultra' ? 92000 : 46000,
-              meshCount: 1,
-              textureResolution: `${textureRes} PBR`,
-              rigged: activeMode === 'animate',
-              animated: activeMode === 'animate',
-              pbrReady: true,
-              uvUnwrapped: true,
-              fileSizeMB: detailLevel === 'ultra' ? 38.5 : 19.2,
-              engineCompatibility: ['Unreal 5', 'Unity', 'Three.js'],
-            },
-            reviews: [],
-          };
+      const response = await fetch('/api/v1/3d/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          prompt: effectivePrompt,
+          format: 'glb',
+          addTexture: true,
+        }),
+      });
 
-          setActiveAsset(newAsset);
-          setPrimaryColor(chosenColor);
-
-          // Add to history list
-          const newHistItem: HistoryItem = {
-            id: newAsset.id,
-            title: generatedTitle,
-            prompt: prompt,
-            mode: activeMode,
-            polyCount: newAsset.specs.polyCount,
-            format: 'GLB',
-            fileSize: `${newAsset.specs.fileSizeMB} MB`,
-            timestamp: 'Just now',
-            modelType: randomType,
-            primaryColor: chosenColor,
-            thumbnailUrl: newAsset.thumbnailImage,
-          };
-          setHistory(prev => [newHistItem, ...prev]);
-        }, 300);
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok || !payload?.asset?.url) {
+        throw new Error(payload?.error?.message || `3D generation failed (${response.status})`);
       }
-      setGenerationProgress(Math.min(current, 100));
-    }, 200);
+
+      const bytes = Number(payload.asset.bytes || 0);
+      const fileSizeMB = bytes > 0 ? Number((bytes / 1024 / 1024).toFixed(1)) : 0;
+      const generatedTitle = trimmedPrompt.length > 38
+        ? trimmedPrompt.substring(0, 38) + '...'
+        : trimmedPrompt;
+
+      const newAsset: AssetItem = {
+        id: payload.asset.id,
+        title: generatedTitle,
+        description: trimmedPrompt,
+        category: 'models',
+        tags: ['AI Generated', 'Hunyuan3D', artStyle],
+        creator: {
+          id: 'wonderland-3d',
+          name: 'Wonderland 3D Agent',
+          avatar: '',
+          badge: 'AI Core',
+          rating: 5,
+          sales: 0,
+          verified: true,
+        },
+        price: 0,
+        rating: 5,
+        reviewsCount: 0,
+        downloadCount: 0,
+        likesCount: 0,
+        viewsCount: 0,
+        dateAdded: new Date().toISOString().split('T')[0],
+        formats: ['.GLTF'],
+        modelType: 'mech',
+        thumbnailImage: '',
+        glbUrl: payload.asset.url,
+        isAiGenerated: true,
+        licenseType: 'Standard',
+        previewBgGradient: 'from-cyan-950 via-slate-900 to-black',
+        primaryColor: '#00F0FF',
+        specs: {
+          polyCount: 0,
+          vertexCount: 0,
+          meshCount: 1,
+          textureResolution: textureRes,
+          rigged: false,
+          animated: false,
+          pbrReady: true,
+          uvUnwrapped: true,
+          fileSizeMB,
+          engineCompatibility: ['PlayCanvas', 'Three.js', 'Godot', 'Unity', 'Unreal'],
+        },
+        reviews: [],
+      };
+
+      setActiveAsset(newAsset);
+      setPrimaryColor(newAsset.primaryColor);
+      setGenerationProgress(100);
+      sounds.playModeChange();
+
+      const newHistItem: HistoryItem = {
+        id: newAsset.id,
+        title: generatedTitle,
+        prompt: trimmedPrompt,
+        mode: activeMode,
+        polyCount: 0,
+        format: 'GLB',
+        fileSize: fileSizeMB ? `${fileSizeMB} MB` : 'GLB',
+        timestamp: 'Just now',
+        modelType: newAsset.modelType,
+        primaryColor: newAsset.primaryColor,
+        thumbnailUrl: newAsset.thumbnailImage,
+        glbUrl: newAsset.glbUrl,
+      };
+      setHistory((prev) => [newHistItem, ...prev]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '3D generation failed';
+      setGenerationError(message);
+      setGenerationProgress(0);
+    } finally {
+      window.clearInterval(progressTimer);
+      setIsGenerating(false);
+    }
   };
 
   // Quick Post-Processing Action
@@ -496,6 +532,11 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
 
           {/* Fixed Generate Button at Bottom of Left Rail */}
           <div className="p-4 bg-slate-950 border-t border-slate-800/80 shrink-0 space-y-2">
+            {generationError && (
+              <div className="rounded-lg border border-red-500/30 bg-red-950/30 px-3 py-2 text-[11px] text-red-300">
+                {generationError}
+              </div>
+            )}
             {isGenerating && (
               <div className="space-y-1">
                 <div className="flex justify-between text-[10px] font-mono text-cyan-400">
@@ -586,7 +627,15 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
               <button
                 onClick={() => {
                   sounds.playClick();
-                  alert(`Exporting ${activeAsset.title} as standard GLB 3D model container!`);
+                  if (!activeAsset.glbUrl) {
+                    setGenerationError('Generate a real GLB before exporting.');
+                    return;
+                  }
+                  const link = document.createElement('a');
+                  link.href = activeAsset.glbUrl;
+                  link.download = `${activeAsset.title.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 60) || 'wonderland-3d'}.glb`;
+                  link.rel = 'noopener';
+                  link.click();
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 text-black text-xs font-bold hover:bg-cyan-400 transition-all shadow-md shadow-cyan-500/20"
               >
@@ -602,6 +651,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
             {/* Live 3D Viewport Component */}
             <ThreeViewport
               modelType={activeAsset.modelType}
+              glbUrl={activeAsset.glbUrl}
               primaryColor={primaryColor}
               showControlsBar={true}
               autoRotateDefault={true}
@@ -712,6 +762,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                           formats: ['.GLTF', '.FBX', '.USDZ'],
                           modelType: item.modelType,
                           thumbnailImage: item.thumbnailUrl,
+                          glbUrl: item.glbUrl,
                           isAiGenerated: true,
                           licenseType: 'Standard',
                           previewBgGradient: 'from-cyan-950 via-slate-900 to-black',

@@ -36,6 +36,8 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
   autoRotateDefault = true,
   className = '',
   showControlsBar = true,
+  glbUrl,
+  glbFilePath,
   interactive = true,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -594,7 +596,7 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
           scene.add(modelGroup);
         } catch (error) {
           console.error("Failed to load GLTF model:", error);
-          setCustomModelError(error.message);
+          setCustomModelError(error instanceof Error ? error.message : 'Failed to load GLB model');
           // Fallback to procedural model
           const modelGroup = createProceduralModel(modelType, primaryColor);
           mainGroupRef.current = modelGroup;
@@ -673,7 +675,7 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
       resizeObserver.disconnect();
       if (rendererRef.current) rendererRef.current.dispose();
     };
-  }, [modelType, primaryColor]);
+  }, [modelType, primaryColor, glbUrl, glbFilePath]);
 
   // Update Camera position from orbit coordinates
   const updateCameraPosition = () => {
