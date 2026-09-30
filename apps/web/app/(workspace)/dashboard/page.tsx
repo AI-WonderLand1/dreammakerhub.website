@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ProjectDeleteButton from "./components/ProjectDeleteButton";
-import CoderAvailabilityIndicator from "@/components/engines/CoderAvailabilityIndicator";
 import WonderSpaceDashboardPanel from "@/components/dashboard/WonderSpaceDashboardPanel";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import {
@@ -48,7 +47,7 @@ const projectIcon = (type?: string | null) => {
 const projectLabel = (type?: string | null) => {
   const value = normalizedType(type);
   if (["game", "3d", "3d_scene", "playcanvas"].includes(value)) return "3D Experience";
-  if (["workspace", "code"].includes(value)) return "Code / IDE";
+  if (["workspace", "code"].includes(value)) return "Code / Files";
   if (value === "npc") return "NPC AI";
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(value)) return "AI App";
   return "Website";
@@ -57,7 +56,7 @@ const projectLabel = (type?: string | null) => {
 const projectToolAction = (type: string | null | undefined, projectId: string) => {
   const value = normalizedType(type);
   const projectQuery = `projectId=${encodeURIComponent(projectId)}`;
-  if (["workspace", "code"].includes(value)) return { label: "Browser IDE", href: `/dashboard/projects/${encodeURIComponent(projectId)}/files` };
+  if (["workspace", "code"].includes(value)) return { label: "Files", href: `/dashboard/projects/${encodeURIComponent(projectId)}/files` };
   if (["game", "3d", "3d_scene", "playcanvas"].includes(value)) return { label: "3D Studio", href: `/dashboard/3dhub?${projectQuery}` };
   if (value === "npc") return { label: "NPC Studio", href: `/wonder-play?${projectQuery}` };
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(value)) return { label: "AI Tools", href: `/dashboard/agents?${projectQuery}` };
@@ -318,15 +317,9 @@ export default function DashboardPage() {
                         <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-white/45">{project.description || "No description yet."}</p>
                         <p className="mt-3 text-xs text-white/40">Updated {relativeDate(project.updatedAt || project.updated_at)}</p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
-                          <Link href={`/dashboard?projectId=${encodeURIComponent(project.id)}&workspaceTab=code`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">Open in workspace</Link>
+                          <Link href={["workspace", "code"].includes(value) ? `/dashboard/projects/${encodeURIComponent(project.id)}/files` : `/dashboard/projects/${encodeURIComponent(project.id)}`} className="rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-2 py-2 text-center text-xs font-semibold">{["workspace", "code"].includes(value) ? "Open files" : "Open project"}</Link>
                           <Link href={`/dashboard/projects/${project.id}`} className="rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">Details</Link>
-                          {["workspace", "code"].includes(normalizedType(type)) ? (
-                            <CoderAvailabilityIndicator>
-                              <Link href={toolAction.href} className="block truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
-                            </CoderAvailabilityIndicator>
-                          ) : (
-                            <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
-                          )}
+                          <Link href={toolAction.href} className="truncate rounded-md border border-white/10 px-2 py-2 text-center text-xs hover:bg-white/5">{toolAction.label}</Link>
                         </div>
               <div className="mt-2 flex justify-end">
                 <ProjectDeleteButton
@@ -371,7 +364,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {([
                 ["wonderbuild", "Website", Globe2],
-                ["workspace", "Code / IDE", Code2],
+                ["workspace", "Code / Files", Code2],
                 ["game", "3D / Game", Gamepad2],
                 ["npc", "NPC AI", Bot],
                 ["ai", "AI App", Sparkles],
@@ -386,7 +379,7 @@ export default function DashboardPage() {
                   <Icon size={17} /> {label}
                 </button>
                 );
-                return value === "workspace" ? <CoderAvailabilityIndicator key={value}>{option}</CoderAvailabilityIndicator> : option;
+                return option;
               })}
             </div>
 
