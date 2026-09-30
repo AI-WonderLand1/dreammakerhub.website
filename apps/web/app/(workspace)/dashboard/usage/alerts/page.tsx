@@ -1,2 +1,5 @@
-import BillingLiveUsagePanel from "@/components/billing/BillingLiveUsagePanel";
-export default function BillingAlertsPage(){return <BillingLiveUsagePanel view="alerts" />;}
+import UsageAlertsPanel from "@/components/billing/UsageAlertsPanel";
+
+export default function BillingAlertsPage() {
+  return <UsageAlertsPanel />;
+}
