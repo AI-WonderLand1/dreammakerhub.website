@@ -39,6 +39,10 @@ declare namespace NodeJS {
     
     // Other services
     HUGGINGFACE_TOKEN?: string;
+    HUNYUAN3D_API_URL?: string;
+    HUNYUAN3D_API_TOKEN?: string;
+    WONDER_3D_ASSET_BUCKET?: string;
+    WONDER_API_KEY_PREFIX?: string;
     GITHUB_WEBHOOK_SECRET?: string;
     BLOB_READ_WRITE_TOKEN?: string;
     
