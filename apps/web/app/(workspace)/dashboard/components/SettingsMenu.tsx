@@ -49,7 +49,7 @@ export default function SettingsMenu() {
           <div className="h-px bg-white/10" />
 
           <Link
-            href="/dashboard/subscription"
+            href="/dashboard/usage"
             className="block px-4 py-3 text-sm text-white/80 hover:bg-white/5"
             onClick={() => setOpen(false)}
           >
