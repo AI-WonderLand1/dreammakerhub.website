@@ -287,6 +287,11 @@ export default function BillingUsagePage() {
           { event: "*", schema: "public", table: "user_profiles", filter: `id=eq.${data.user.id}` },
           scheduleRefresh,
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "user_token_balances", filter: `user_id=eq.${data.user.id}` },
+          scheduleRefresh,
+        )
         .subscribe((status: string) => setLive(status === "SUBSCRIBED"));
     });
 
