@@ -6,11 +6,14 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
+  Bell,
+  Coins,
   CreditCard,
   Database,
   FolderKanban,
   Key,
   RefreshCw,
+  Save,
   Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +42,7 @@ type UsageSummary = {
   runtime_minutes: number;
   projects_count: number;
   storage_used: number;
+  purchased_tokens: number;
   recent_activity: UsageActivity[];
 };
 
@@ -50,6 +54,29 @@ type ApiKeyRow = {
   last_used_at: string | null;
   expires_at: string | null;
   revoked_at: string | null;
+};
+
+type TokenPack = {
+  id: string;
+  label: string;
+  tokens: number;
+  available: boolean;
+  amount: number | null;
+  currency: string | null;
+};
+
+type BillingPreferences = {
+  token_alert_percent: number;
+  api_alert_percent: number;
+  storage_alert_percent: number;
+  in_app_alerts: boolean;
+};
+
+const DEFAULT_PREFERENCES: BillingPreferences = {
+  token_alert_percent: 80,
+  api_alert_percent: 80,
+  storage_alert_percent: 80,
+  in_app_alerts: true,
 };
 
 const normalizePlan = (value: unknown): PlanName => {
@@ -77,13 +104,17 @@ export default function BillingUsagePage() {
   const [plan, setPlan] = useState<PlanName>("free");
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKeyRow[]>([]);
+  const [tokenPacks, setTokenPacks] = useState<TokenPack[]>([]);
+  const [preferences, setPreferences] = useState<BillingPreferences>(DEFAULT_PREFERENCES);
   const [projectCount, setProjectCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [live, setLive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [openingBilling] = useState(false);
+  const [openingBilling, setOpeningBilling] = useState(false);
+  const [buyingPack, setBuyingPack] = useState<string | null>(null);
+  const [savingPreferences, setSavingPreferences] = useState(false);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadUsage = useCallback(async () => {
@@ -104,7 +135,7 @@ export default function BillingUsagePage() {
       if (!token) throw new Error("You must be signed in to view usage.");
 
       const authHeaders = { Authorization: `Bearer ${token}` };
-      const [usageResponse, keysResponse, projectsResponse] = await Promise.all([
+      const [usageResponse, keysResponse, projectsResponse, packsResponse, preferencesResponse] = await Promise.all([
         fetch("/api/usage", {
           headers: authHeaders,
           credentials: "same-origin",
@@ -116,11 +147,19 @@ export default function BillingUsagePage() {
           cache: "no-store",
         }),
         fetchAuthenticatedProject("/api/projects"),
+        fetch("/api/billing/token-packs", { credentials: "same-origin", cache: "no-store" }),
+        fetch("/api/billing/preferences", {
+          headers: authHeaders,
+          credentials: "same-origin",
+          cache: "no-store",
+        }),
       ]);
 
       const usagePayload = await usageResponse.json().catch(() => ({}));
       const keysPayload = await keysResponse.json().catch(() => ({}));
       const projectsPayload = await projectsResponse.json().catch(() => ({}));
+      const packsPayload = await packsResponse.json().catch(() => ({}));
+      const preferencesPayload = await preferencesResponse.json().catch(() => ({}));
 
       if (!usageResponse.ok || !usagePayload?.usage) {
         throw new Error(usagePayload?.error || "Live usage could not be loaded.");
@@ -136,6 +175,10 @@ export default function BillingUsagePage() {
       setUsage(summary);
       setPlan(normalizePlan(summary.plan));
       setApiKeys(Array.isArray(keysPayload?.keys) ? keysPayload.keys : []);
+      setTokenPacks(Array.isArray(packsPayload?.packs) ? packsPayload.packs : []);
+      if (preferencesResponse.ok && preferencesPayload?.preferences) {
+        setPreferences({ ...DEFAULT_PREFERENCES, ...preferencesPayload.preferences });
+      }
       setProjectCount(projectsPayload.projects.length);
       setLastUpdated(new Date());
     } catch (cause) {
@@ -145,6 +188,74 @@ export default function BillingUsagePage() {
       setRefreshing(false);
     }
   }, []);
+
+  const currentAccessToken = async () => {
+    const supabase = createClient();
+    if (!supabase) throw new Error("Authentication is unavailable.");
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !data.session?.access_token) throw new Error("Please sign in again.");
+    return data.session.access_token;
+  };
+
+  const openBillingPortal = async () => {
+    setOpeningBilling(true);
+    setError(null);
+    try {
+      const token = await currentAccessToken();
+      const response = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "same-origin",
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "Could not open billing portal.");
+      window.location.assign(payload.url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not open billing portal.");
+      setOpeningBilling(false);
+    }
+  };
+
+  const buyTokenPack = async (packId: string) => {
+    setBuyingPack(packId);
+    setError(null);
+    try {
+      const token = await currentAccessToken();
+      const response = await fetch("/api/billing/token-packs", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ pack: packId }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "Could not start token checkout.");
+      window.location.assign(payload.url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not start token checkout.");
+      setBuyingPack(null);
+    }
+  };
+
+  const saveAlertPreferences = async () => {
+    setSavingPreferences(true);
+    setError(null);
+    try {
+      const token = await currentAccessToken();
+      const response = await fetch("/api/billing/preferences", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(preferences),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.preferences) throw new Error(payload?.error || "Could not save usage alerts.");
+      setPreferences({ ...DEFAULT_PREFERENCES, ...payload.preferences });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save usage alerts.");
+    } finally {
+      setSavingPreferences(false);
+    }
+  };
 
   useEffect(() => {
     void loadUsage();
@@ -176,6 +287,11 @@ export default function BillingUsagePage() {
           { event: "*", schema: "public", table: "user_profiles", filter: `id=eq.${data.user.id}` },
           scheduleRefresh,
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "user_token_balances", filter: `user_id=eq.${data.user.id}` },
+          scheduleRefresh,
+        )
         .subscribe((status: string) => setLive(status === "SUBSCRIBED"));
     });
 
@@ -194,11 +310,17 @@ export default function BillingUsagePage() {
   const tokensUsed = Number(usage?.tokens_used ?? 0);
   const apiCallsUsed = Number(usage?.api_calls_used ?? 0);
   const storageUsed = Number(usage?.storage_used ?? 0);
+  const purchasedTokens = Number(usage?.purchased_tokens ?? 0);
   const tokenPct = percent(tokensUsed, limits.aiTokensMonthly);
   const apiPct = percent(apiCallsUsed, limits.apiCallsMonthly);
   const storagePct = percent(storageUsed, limits.storageLimit);
   const activeKeys = apiKeys.filter((key) => !key.revoked_at);
   const recentActivity = usage?.recent_activity ?? [];
+  const alerts = preferences.in_app_alerts ? [
+    tokenPct >= preferences.token_alert_percent ? `AI token usage is at ${tokenPct}%.` : null,
+    apiPct >= preferences.api_alert_percent ? `API request usage is at ${apiPct}%.` : null,
+    storagePct >= preferences.storage_alert_percent ? `Storage usage is at ${storagePct}%.` : null,
+  ].filter((value): value is string => Boolean(value)) : [];
 
   return (
     <div className="max-w-5xl p-6">
@@ -256,6 +378,10 @@ export default function BillingUsagePage() {
         </div>
       )}
 
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="font-semibold">Billable usage</h2>
+        <span className="text-xs text-white/40">Live metered usage for the current billing period</span>
+      </div>
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="mb-2 flex items-center gap-2 text-sm text-white/50"><Zap size={14} /> AI Tokens</div>
@@ -307,7 +433,8 @@ export default function BillingUsagePage() {
         <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
           <div className="mb-4 flex items-center gap-2 text-sm text-amber-300"><Activity size={14} /> Current Billing Period</div>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between gap-4"><span className="text-white/60">AI tokens</span><span>{formatNumber(tokensUsed)}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/60">AI tokens used</span><span>{formatNumber(tokensUsed)}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/60">Purchased token balance</span><span>{formatNumber(purchasedTokens)}</span></div>
             <div className="flex justify-between gap-4"><span className="text-white/60">API requests</span><span>{formatNumber(apiCallsUsed)}</span></div>
             <div className="flex justify-between gap-4"><span className="text-white/60">Storage reported</span><span>{formatBytes(storageUsed)}</span></div>
             {usage?.period_start && (
@@ -341,6 +468,108 @@ export default function BillingUsagePage() {
           <p className="mt-4 text-xs text-white/35">Only key metadata is shown here; full secrets are never returned after creation.</p>
         </section>
       </div>
+
+      <section className="mb-6 rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-violet-200">
+              <Coins size={17} />
+              <h2 className="font-semibold">Buy AI tokens</h2>
+            </div>
+            <p className="mt-1 text-sm text-white/45">
+              Purchased token packs are credited only after Stripe confirms a paid Checkout session.
+            </p>
+          </div>
+          <div className="rounded-lg border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-right">
+            <div className="text-[10px] uppercase tracking-wider text-violet-300/70">Purchased balance</div>
+            <div className="text-lg font-bold text-violet-100">{formatNumber(purchasedTokens)}</div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {tokenPacks.map((pack) => (
+            <div key={pack.id} className="rounded-lg border border-white/10 bg-black/20 p-4">
+              <div className="font-medium text-white">{pack.label}</div>
+              <div className="mt-1 text-2xl font-bold">{formatNumber(pack.tokens)}</div>
+              <div className="mt-1 text-xs text-white/45">
+                {pack.amount !== null && pack.currency
+                  ? new Intl.NumberFormat(undefined, { style: "currency", currency: pack.currency.toUpperCase() }).format(pack.amount / 100)
+                  : "Stripe price not configured"}
+              </div>
+              <button
+                type="button"
+                onClick={() => void buyTokenPack(pack.id)}
+                disabled={!pack.available || buyingPack !== null}
+                className="mt-4 w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {buyingPack === pack.id ? "Opening checkout…" : pack.available ? "Buy tokens" : "Unavailable"}
+              </button>
+            </div>
+          ))}
+          {tokenPacks.length === 0 && (
+            <p className="text-sm text-white/40">Token packs are not configured yet.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Bell size={17} className="text-amber-300" />
+              <h2 className="font-semibold">Usage alarms</h2>
+            </div>
+            <p className="mt-1 text-sm text-white/45">
+              Choose when DreamMakerHub warns you inside the billing dashboard.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-white/70">
+            <input
+              type="checkbox"
+              checked={preferences.in_app_alerts}
+              onChange={(event) => setPreferences((current) => ({ ...current, in_app_alerts: event.target.checked }))}
+            />
+            In-app alarms
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          {([
+            ["token_alert_percent", "AI tokens"],
+            ["api_alert_percent", "API requests"],
+            ["storage_alert_percent", "Storage"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="rounded-lg border border-white/10 bg-black/20 p-3">
+              <span className="text-xs text-white/50">{label} warning</span>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  min={50}
+                  max={100}
+                  step={5}
+                  value={preferences[key]}
+                  onChange={(event) => {
+                    const value = Math.max(50, Math.min(100, Number(event.target.value) || 50));
+                    setPreferences((current) => ({ ...current, [key]: value }));
+                  }}
+                  className="w-20 rounded-md border border-white/10 bg-[#07111d] px-2 py-1.5 text-sm text-white"
+                />
+                <span className="text-sm text-white/50">% used</span>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => void saveAlertPreferences()}
+          disabled={savingPreferences}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium hover:bg-white/10 disabled:opacity-50"
+        >
+          <Save size={14} />
+          {savingPreferences ? "Saving…" : "Save alarm settings"}
+        </button>
+      </section>
 
       <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -388,12 +617,14 @@ export default function BillingUsagePage() {
         </p>
       </section>
 
-      {(tokenPct >= 75 || apiPct >= 75 || storagePct >= 75) && (
+      {alerts.length > 0 && (
         <div className="mb-6 flex gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-yellow-400" />
           <div>
-            <h3 className="font-semibold text-yellow-300">Usage warning</h3>
-            <p className="mt-1 text-sm text-white/60">One of your active tracked limits is above 75%.</p>
+            <h3 className="font-semibold text-yellow-300">Usage alarm</h3>
+            <div className="mt-1 space-y-1 text-sm text-white/60">
+              {alerts.map((alert) => <p key={alert}>{alert}</p>)}
+            </div>
           </div>
         </div>
       )}
