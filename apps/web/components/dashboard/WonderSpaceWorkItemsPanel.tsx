@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CircleDot, MessageSquare, Plus, RefreshCw } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
+import { useProjectRealtimeInvalidation } from "@/lib/wonderspace/use-project-realtime-invalidation";
 import type { ProjectWorkItem, WorkItemKind } from "@/lib/wonderspace/project-work-items.server";
 
 export default function WonderSpaceWorkItemsPanel({
@@ -46,6 +47,12 @@ export default function WonderSpaceWorkItemsPanel({
 
   useEffect(() => { void load(); }, [load]);
 
+  const announceChange = useProjectRealtimeInvalidation(
+    projectId,
+    kind === "issue" ? "issues" : "discussions",
+    () => { void load(); },
+  );
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (sending || !title.trim()) return;
@@ -60,6 +67,7 @@ export default function WonderSpaceWorkItemsPanel({
       if (!response.ok || !result?.item) throw new Error(result?.error || "Unable to create item.");
       setItems(current => [result.item, ...current]);
       setTitle(""); setBody(""); setSelected(result.item.id);
+      await announceChange();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to create item.");
     } finally { setSending(false); }
@@ -78,6 +86,7 @@ export default function WonderSpaceWorkItemsPanel({
       if (!response.ok || !result?.item) throw new Error(result?.error || "Unable to update item.");
       setItems(current => current.map(item => item.id === id ? result.item : item));
       setComment("");
+      await announceChange();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to update item.");
     } finally { setSending(false); }
