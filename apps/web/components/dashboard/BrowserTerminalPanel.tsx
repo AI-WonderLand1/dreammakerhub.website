@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, GripHorizontal, TerminalSquare, X } from "lucide-react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { ChevronDown, ChevronUp, GripHorizontal, SquareTerminal, X } from "lucide-react";
 
 type TerminalTab = "terminal" | "problems" | "output";
 
@@ -43,7 +43,7 @@ export default function BrowserTerminalPanel({ projectId }: { projectId?: string
     try { window.localStorage.setItem(TAB_KEY, next); } catch {}
   };
 
-  const startResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const startResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     dragging.current = { startY: event.clientY, startHeight: height };
     event.currentTarget.setPointerCapture?.(event.pointerId);
 
@@ -134,7 +134,7 @@ export default function BrowserTerminalPanel({ projectId }: { projectId?: string
           {tab === "terminal" && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-cyan-300">
-                <TerminalSquare size={14} aria-hidden="true" />
+                <SquareTerminal size={14} aria-hidden="true" />
                 <span>DreamMakerHub browser terminal</span>
                 {projectId && <span className="text-slate-500">· project {projectId}</span>}
               </div>
