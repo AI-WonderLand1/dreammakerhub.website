@@ -222,3 +222,49 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_cross_repo_usage_summary(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_cross_repo_usage_summary(UUID) TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.get_usage_totals_for_alerts(p_user_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+  period_start DATE := date_trunc('month', now() AT TIME ZONE 'UTC')::date;
+  plan_name TEXT := 'free';
+  result JSON;
+BEGIN
+  SELECT COALESCE(s.plan, 'free') INTO plan_name
+  FROM public.subscriptions s
+  WHERE s.user_id = p_user_id AND s.status IN ('active','trialing')
+  ORDER BY s.updated_at DESC
+  LIMIT 1;
+
+  SELECT json_build_object(
+    'plan', COALESCE(plan_name, 'free'),
+    'period_start', period_start,
+    'api_requests', COALESCE((
+      SELECT units FROM public.billable_usage_counters
+      WHERE user_id=p_user_id AND period_start=get_usage_totals_for_alerts.period_start AND feature='ai_requests'
+    ),0),
+    'ai_tokens', COALESCE((
+      SELECT units FROM public.billable_usage_counters
+      WHERE user_id=p_user_id AND period_start=get_usage_totals_for_alerts.period_start AND feature='ai_tokens'
+    ),0),
+    'three_d_generations', COALESCE((
+      SELECT units FROM public.billable_usage_counters
+      WHERE user_id=p_user_id AND period_start=get_usage_totals_for_alerts.period_start AND feature='render_credits'
+    ),0),
+    'storage', COALESCE((
+      SELECT SUM(storage_used) FROM public.projects
+      WHERE owner_id=p_user_id AND status <> 'deleted'
+    ),0)
+  ) INTO result;
+
+  RETURN result;
+END $$;
+
+REVOKE ALL ON FUNCTION public.get_usage_totals_for_alerts(UUID) FROM PUBLIC, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_usage_totals_for_alerts(UUID) TO service_role;
