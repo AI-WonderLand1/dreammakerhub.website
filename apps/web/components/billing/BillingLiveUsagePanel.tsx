@@ -125,7 +125,7 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
   const tokenPct=pct(tokens,limits.aiTokensMonthly), apiPct=pct(api,limits.apiCallsMonthly), storagePct=pct(storage,limits.storageLimit);
   const activeKeys=apiKeys.filter(k=>!k.revoked_at);
   const sourceUsage=Object.entries(usage?.by_source??{});
-  const sourceLabel=(source:string)=>source==="dreammakerhub"?"DreamMakerHub":source==="ai-playground"?"AI Playground":source==="npc-ai-sim"?"NPC AI SIM":pretty(source);
+  const sourceLabel=(source:string)=>source==="dreammakerhub"?"AI WONDERLAND":source==="ai-playground"?"AI Playground":source==="npc-ai-sim"?"NPC AI SIM":pretty(source);
 
   const titles={usage:["Usage","Live metered usage for the current billing period."],ai:["AI usage","AI token consumption and purchased token balance."],licensing:["Licensing","Your active plan limits and included allowances."]} as const;
   const title=titles[view];
@@ -153,7 +153,7 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
       </div>
       <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
         <h2 className="font-semibold">Usage by service</h2>
-        <p className="mt-1 text-xs text-white/40">One billing account across DreamMakerHub, AI Playground, and NPC AI SIM.</p>
+        <p className="mt-1 text-xs text-white/40">One billing account across AI WONDERLAND, AI Playground, and NPC AI SIM.</p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {sourceUsage.map(([source,totals])=><div key={source} className="rounded-lg border border-white/10 bg-black/20 p-3">
             <div className="font-medium">{sourceLabel(source)}</div>
