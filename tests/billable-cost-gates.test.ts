@@ -14,7 +14,7 @@ describe('platform-funded cost guards', () => {
     expect(guard).toContain(".select('plan,status,stripe_subscription_id')");
     expect(guard).toContain("subscription.stripe_subscription_id.startsWith('sub_')");
     expect(migration).toContain("p_source NOT IN ('dreammakerhub','ai-playground','npc-ai-sim')");
-    expect(migration).toContain("purchased_needed > purchased_tokens");
+    expect(migration).toContain("purchased_needed > v_purchased_tokens");
     expect(migration).toContain("purchased_render_credits = purchased_render_credits - purchased_needed");
     expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.reserve_billable_units_v2");
   });
