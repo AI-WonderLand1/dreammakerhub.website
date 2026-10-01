@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { authenticatedSupabaseUser } from "@/lib/supabase/authenticated-user.server";
 import { PLAN_LIMITS } from "@/lib/billing/limits";
+import { evaluateUsageAlerts } from "@/lib/billing/usage-alerts.server";
 import {
   CostGateError,
   reserveBillableUnits,
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       limit,
       source as "ai-playground" | "npc-ai-sim",
     );
+    await evaluateUsageAlerts(user.id);
 
     return NextResponse.json({
       ok: true,
