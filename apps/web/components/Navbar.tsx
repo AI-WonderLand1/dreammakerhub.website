@@ -172,9 +172,8 @@ const ABOUT_COLUMNS = [
       { label: 'Community', href: '/community', icon: Users },
       {
         label: 'Give Feedback',
-        href: 'https://feedback.link/aiwonderlandinnovati',
+        href: '/dashboard/support',
         icon: MessageSquareText,
-        external: true,
       },
       { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: Github, external: true },
     ],
