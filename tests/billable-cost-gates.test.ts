@@ -7,14 +7,16 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('platform-funded cost guards', () => {
   it('denies usage when accounting is disabled or unavailable and reserves atomically', () => {
     const guard = read('apps/web/lib/billing/cost-guard.server.ts');
-    const migration = read('supabase/migrations/202609201800_atomic_billable_usage.sql');
+    const migration = read('supabase/migrations/202610010010_cross_repo_usage_credits.sql');
     expect(guard).toContain("process.env.BILLABLE_OPERATIONS_ENABLED !== 'true'");
-    expect(guard).toContain("client.rpc('reserve_billable_units'");
+    expect(guard).toContain("client.rpc('reserve_billable_units_v2'");
     expect(guard).toContain('if (error || typeof data !== \'boolean\')');
     expect(guard).toContain(".select('plan,status,stripe_subscription_id')");
     expect(guard).toContain("subscription.stripe_subscription_id.startsWith('sub_')");
-    expect(migration).toContain('units <= p_limit - p_units');
-    expect(migration).toContain('GRANT EXECUTE ON FUNCTION public.reserve_billable_units(uuid, text, integer, integer) TO service_role');
+    expect(migration).toContain("p_source NOT IN ('dreammakerhub','ai-playground','npc-ai-sim')");
+    expect(migration).toContain("purchased_needed > v_purchased_tokens");
+    expect(migration).toContain("purchased_render_credits = purchased_render_credits - purchased_needed");
+    expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.reserve_billable_units_v2");
   });
 
   it('reserves usage before model and Coder workspace creation', () => {

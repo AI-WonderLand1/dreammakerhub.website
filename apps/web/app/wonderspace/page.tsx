@@ -4,8 +4,8 @@ import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'WonderSpace | DreamMakerHub',
-  description: 'Browser project files and private VS Code workspaces managed through DreamMakerHub.',
+  title: 'WonderSpace | AI WONDERLAND',
+  description: 'Browser project files and private VS Code workspaces managed through AI WONDERLAND.',
 };
 
 export default async function WonderSpacePage() {

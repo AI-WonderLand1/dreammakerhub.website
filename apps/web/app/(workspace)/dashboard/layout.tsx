@@ -341,7 +341,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </button>
         <Link href="/dashboard" className="mr-4 hidden shrink-0 items-center gap-2 md:flex">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[radial-gradient(circle_at_65%_35%,#38bdf8,transparent_30%),linear-gradient(135deg,#7c3aed,#2563eb)] text-xs font-black">◇</span>
-          <b className="text-base tracking-tight">Dream<span className="text-fuchsia-400">Maker</span><span className="text-blue-400">Hub</span></b>
+          <b className="text-base tracking-tight">AI <span className="text-fuchsia-400">WONDER</span><span className="text-blue-400">LAND</span></b>
         </Link>
 
         <div className="mx-auto flex w-full max-w-[1640px] items-center justify-between gap-4">
@@ -437,7 +437,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
             <span className="grid h-10 w-12 shrink-0 place-items-center rounded-2xl bg-[radial-gradient(circle_at_65%_35%,#38bdf8,transparent_30%),linear-gradient(135deg,#7c3aed,#2563eb)] text-sm font-black shadow-lg shadow-violet-950/30">☁</span>
             <span className="min-w-0">
-              <b className="block truncate text-xl tracking-tight">Dream<span className="text-fuchsia-400">Maker</span><span className="text-blue-400">Hub</span></b>
+              <b className="block truncate text-xl tracking-tight">AI <span className="text-fuchsia-400">WONDER</span><span className="text-blue-400">LAND</span></b>
               <small className="block text-[10px] text-white/40">Build Tomorrow, Together</small>
             </span>
           </Link>
@@ -480,7 +480,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <nav className="px-3 pb-3" aria-label="DreamMakerHub site navigation">
+          <nav className="px-3 pb-3" aria-label="AI WONDERLAND site navigation">
             {menuGroups.map((group) => {
               const Icon = group.icon;
               const groupActive = group.items.some((item) => isActive(item.href));

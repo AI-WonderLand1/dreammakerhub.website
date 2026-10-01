@@ -14,14 +14,14 @@ const serverAuthOptions = {
 export function getClient(): SupabaseClient {
   if (!_client) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl) {
       logger.warn("[supabase-service] NEXT_PUBLIC_SUPABASE_URL not set");
     }
 
     if (!supabaseServiceKey) {
-      logger.warn("[supabase-service] SUPABASE_SERVICE_ROLE_KEY not set — server-side operations will lack elevated permissions");
+      logger.warn("[supabase-service] SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY not set — server-side operations will lack elevated permissions");
     }
 
     _client = createClient(

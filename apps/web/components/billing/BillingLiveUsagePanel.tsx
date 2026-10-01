@@ -8,10 +8,29 @@ import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fet
 import { formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
 
 type PlanName = keyof typeof PLAN_LIMITS;
-type UsageActivity = { action:string; tokens_used:number; api_calls:number; runtime_minutes:number; created_at:string };
+type UsageActivity = {
+  action:string;
+  source?:string;
+  tokens_used:number;
+  api_calls:number;
+  render_credits_used?:number;
+  runtime_minutes?:number;
+  created_at:string;
+};
+type SourceUsage = { ai_tokens:number; api_requests:number; render_credits:number };
 type UsageSummary = {
-  plan:string; api_calls_used:number; tokens_used:number; storage_used:number; purchased_tokens:number;
-  three_d_generations:number; period_start:string; period_reset:string; recent_activity:UsageActivity[];
+  plan:string;
+  api_calls_used:number;
+  tokens_used:number;
+  storage_used:number;
+  purchased_tokens:number;
+  purchased_render_credits:number;
+  render_credits_used:number;
+  three_d_generations:number;
+  period_start:string;
+  period_reset:string;
+  by_source:Record<string,SourceUsage>;
+  recent_activity:UsageActivity[];
 };
 type ApiKeyRow = { id:string; name:string; prefix:string; last_used_at:string|null; revoked_at:string|null };
 type TokenPack = { id:string; label:string; tokens:number; available:boolean; amount:number|null; currency:string|null };
@@ -79,6 +98,7 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
       channel=supabase.channel(`billing:${data.user.id}`)
         .on("postgres_changes",{event:"*",schema:"public",table:"usage_logs",filter:`user_id=eq.${data.user.id}`},refresh)
         .on("postgres_changes",{event:"*",schema:"public",table:"user_token_balances",filter:`user_id=eq.${data.user.id}`},refresh)
+        .on("postgres_changes",{event:"*",schema:"public",table:"cross_repo_usage_events",filter:`user_id=eq.${data.user.id}`},refresh)
         .subscribe((status:string)=>setLive(status==="SUBSCRIBED"));
     })();
     return()=>{cancelled=true;if(timer.current)clearTimeout(timer.current);if(channel&&supabase)void supabase.removeChannel(channel);};
@@ -104,6 +124,8 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
   const threeD=Number(usage?.three_d_generations??0);
   const tokenPct=pct(tokens,limits.aiTokensMonthly), apiPct=pct(api,limits.apiCallsMonthly), storagePct=pct(storage,limits.storageLimit);
   const activeKeys=apiKeys.filter(k=>!k.revoked_at);
+  const sourceUsage=Object.entries(usage?.by_source??{});
+  const sourceLabel=(source:string)=>source==="dreammakerhub"?"AI WONDERLAND":source==="ai-playground"?"AI Playground":source==="npc-ai-sim"?"NPC AI SIM":pretty(source);
 
   const titles={usage:["Usage","Live metered usage for the current billing period."],ai:["AI usage","AI token consumption and purchased token balance."],licensing:["Licensing","Your active plan limits and included allowances."]} as const;
   const title=titles[view];
@@ -129,7 +151,22 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
         <section className="rounded-xl border border-white/10 bg-white/5 p-4"><h2 className="font-semibold">Current billing period</h2><div className="mt-4 space-y-3 text-sm"><div className="flex justify-between"><span className="text-white/55">AI tokens</span><span>{formatNumber(tokens)}</span></div><div className="flex justify-between"><span className="text-white/55">API requests</span><span>{formatNumber(api)}</span></div><div className="flex justify-between"><span className="text-white/55">Storage</span><span>{formatBytes(storage)}</span></div>{usage?.period_start&&<div className="flex justify-between"><span className="text-white/55">Started</span><span>{new Date(usage.period_start).toLocaleDateString()}</span></div>}{usage?.period_reset&&<div className="flex justify-between"><span className="text-white/55">Resets</span><span>{new Date(usage.period_reset).toLocaleDateString()}</span></div>}</div></section>
         <section className="rounded-xl border border-white/10 bg-white/5 p-4"><div className="flex items-center gap-2"><Key size={15} className="text-cyan-300"/><h2 className="font-semibold">API keys</h2></div><div className="mt-4 space-y-2">{activeKeys.slice(0,6).map(key=><div key={key.id} className="flex items-center justify-between gap-3 text-sm"><div><div>{key.name}</div><div className="text-xs text-white/35">{key.last_used_at?`Last used ${ago(key.last_used_at)}`:"Never used"}</div></div><code className="text-xs text-white/40">{key.prefix}</code></div>)}{activeKeys.length===0&&<p className="text-sm text-white/40">No active API keys.</p>}</div></section>
       </div>
-      <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"><h2 className="font-semibold">Recent metered activity</h2><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b border-white/10 text-left text-white/45"><th className="py-2">Action</th><th className="py-2 text-right">API</th><th className="py-2 text-right">Tokens</th><th className="py-2 text-right">When</th></tr></thead><tbody className="divide-y divide-white/5">{(usage?.recent_activity??[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="py-2">{pretty(row.action)}</td><td className="py-2 text-right">{row.api_calls}</td><td className="py-2 text-right">{formatNumber(row.tokens_used)}</td><td className="py-2 text-right text-white/40">{ago(row.created_at)}</td></tr>)}{(usage?.recent_activity??[]).length===0&&<tr><td colSpan={4} className="py-6 text-center text-white/35">No metered activity this billing period.</td></tr>}</tbody></table></div></section>
+      <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
+        <h2 className="font-semibold">Usage by service</h2>
+        <p className="mt-1 text-xs text-white/40">One billing account across AI WONDERLAND, AI Playground, and NPC AI SIM.</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {sourceUsage.map(([source,totals])=><div key={source} className="rounded-lg border border-white/10 bg-black/20 p-3">
+            <div className="font-medium">{sourceLabel(source)}</div>
+            <div className="mt-3 space-y-1 text-xs text-white/55">
+              <div className="flex justify-between"><span>AI tokens</span><span>{formatNumber(Number(totals.ai_tokens||0))}</span></div>
+              <div className="flex justify-between"><span>API requests</span><span>{formatNumber(Number(totals.api_requests||0))}</span></div>
+              <div className="flex justify-between"><span>3D/render</span><span>{formatNumber(Number(totals.render_credits||0))}</span></div>
+            </div>
+          </div>)}
+          {sourceUsage.length===0&&<div className="text-sm text-white/40">No metered service usage yet this billing period.</div>}
+        </div>
+      </section>
+      <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"><h2 className="font-semibold">Recent metered activity</h2><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[680px] text-sm"><thead><tr className="border-b border-white/10 text-left text-white/45"><th className="py-2">Service</th><th className="py-2">Action</th><th className="py-2 text-right">API</th><th className="py-2 text-right">Tokens / credits</th><th className="py-2 text-right">When</th></tr></thead><tbody className="divide-y divide-white/5">{(usage?.recent_activity??[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="py-2">{sourceLabel(row.source||"dreammakerhub")}</td><td className="py-2">{pretty(row.action)}</td><td className="py-2 text-right">{row.api_calls}</td><td className="py-2 text-right">{formatNumber(row.tokens_used||row.render_credits_used||0)}</td><td className="py-2 text-right text-white/40">{ago(row.created_at)}</td></tr>)}{(usage?.recent_activity??[]).length===0&&<tr><td colSpan={5} className="py-6 text-center text-white/35">No metered activity this billing period.</td></tr>}</tbody></table></div></section>
     </>}
 
     {view==="ai"&&<>

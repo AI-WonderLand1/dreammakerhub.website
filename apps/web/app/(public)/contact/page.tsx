@@ -27,7 +27,7 @@ export default function ContactPage() {
       mounted.current = false;
       openRequested.current = false;
       // Next.js can retain third-party scripts between client-side navigations.
-      // Never leave the support widget floating over the rest of DreamMakerHub.
+      // Never leave the support widget floating over the rest of AI WONDERLAND.
       window.zE?.("messenger", "hide");
     };
   }, []);
@@ -96,7 +96,7 @@ export default function ContactPage() {
           <p className="text-xs uppercase tracking-[0.25em] text-slate-400">AI WONDERLAND INNOVATION</p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">Contact</h1>
           <p className="max-w-2xl text-slate-300">
-            Use the address that best matches your request. DreamMakerHub is an independently developed project, so response times can vary while development is active.
+            Use the address that best matches your request. AI WONDERLAND is an independently developed project, so response times can vary while development is active.
           </p>
         </header>
 
@@ -127,7 +127,7 @@ export default function ContactPage() {
               </button>
               <a
                 className="inline-flex text-sm text-sky-200 hover:text-sky-100"
-                href={`mailto:${zendeskSupportEmail}?subject=DreamMakerHub%20Support`}
+                href={`mailto:${zendeskSupportEmail}?subject=AI WONDERLAND%20Support`}
               >
                 Email support
               </a>

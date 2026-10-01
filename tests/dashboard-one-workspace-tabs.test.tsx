@@ -217,6 +217,6 @@ describe("dashboard simplification contracts", () => {
     expect(layout).toContain('label: "3D"');
     expect(layout).toContain("const menuGroups: SiteMenuGroup[] = [");
     expect(layout).toContain('label: "3D AI Generator"');
-    expect(layout).toContain('aria-label="DreamMakerHub site navigation"');
+    expect(layout).toContain('aria-label="AI WONDERLAND site navigation"');
   });
 });
