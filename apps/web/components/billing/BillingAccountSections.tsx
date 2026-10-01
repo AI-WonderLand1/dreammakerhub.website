@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import InlineBillingEditor from "@/components/billing/InlineBillingEditor";
+import CreditPurchaseSliders from "@/components/billing/CreditPurchaseSliders";
 import { CreditCard, ReceiptText, RefreshCw } from "lucide-react";
 
 type Money = { amount: number; currency: string };
@@ -285,6 +286,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
             <div className="mt-1 font-mono text-xs">{customer?.id ? `••••${customer.id.slice(-8)}` : "Not created yet"}</div>
           </div>
         </div>
+        <CreditPurchaseSliders />
       </section>}
     </>
   );
