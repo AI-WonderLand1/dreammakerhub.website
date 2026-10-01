@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Sign In | DreamMakerHub Docs',
-  description: 'Sign in to DreamMakerHub and open your projects.',
+  title: 'Sign In | AI WONDERLAND Docs',
+  description: 'Sign in to AI WONDERLAND and open your projects.',
 };
 
 const toc = [
@@ -76,7 +76,7 @@ export default function SignInDocsPage() {
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
           <Link href="/docs" className="flex items-center gap-2 font-black tracking-tight">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600">D</span>
-            <span>DreamMakerHub <span className="font-medium text-slate-400">Docs</span></span>
+            <span>AI WONDERLAND <span className="font-medium text-slate-400">Docs</span></span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/support" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">Help</Link>
@@ -117,7 +117,7 @@ export default function SignInDocsPage() {
                 <LogIn className="h-4 w-4" /> Step 2
               </div>
               <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Sign in and return to your projects</h1>
-              <p className="mt-4 text-lg leading-8 text-slate-600">Use the account you already created. DreamMakerHub signs you in, checks your session, and normally sends you to Projects unless you were headed to another protected part of the app.</p>
+              <p className="mt-4 text-lg leading-8 text-slate-600">Use the account you already created. AI WONDERLAND signs you in, checks your session, and normally sends you to Projects unless you were headed to another protected part of the app.</p>
             </div>
 
             <section id="before-you-sign-in" className="scroll-mt-28 pt-12">
@@ -135,22 +135,22 @@ export default function SignInDocsPage() {
 
             <section id="email-sign-in" className="scroll-mt-28 pt-14">
               <h2 className="text-3xl font-black tracking-tight">Sign in with email and password</h2>
-              <p className="mt-3 leading-7 text-slate-600">The current DreamMakerHub account page has an Email field, a Password field, and a Sign In button.</p>
+              <p className="mt-3 leading-7 text-slate-600">The current AI WONDERLAND account page has an Email field, a Password field, and a Sign In button.</p>
 
               <div className="mt-7"><AuthPreview /></div>
 
               <div className="mt-8 space-y-6">
                 <Step number={1} title="Open the account page">
-                  Open <Link href="/public-pages/auth" className="font-semibold text-blue-700 underline underline-offset-4">DreamMakerHub Sign In</Link>. If you already have an active verified session, the page may redirect you before the form appears.
+                  Open <Link href="/public-pages/auth" className="font-semibold text-blue-700 underline underline-offset-4">AI WONDERLAND Sign In</Link>. If you already have an active verified session, the page may redirect you before the form appears.
                 </Step>
                 <Step number={2} title="Enter your email">
-                  Use the email connected to your DreamMakerHub account.
+                  Use the email connected to your AI WONDERLAND account.
                 </Step>
                 <Step number={3} title="Enter your password">
                   Enter the password for that account. The password stays hidden in the password field while you type.
                 </Step>
                 <Step number={4} title="Select Sign In">
-                  DreamMakerHub submits the email and password to the authentication service. If the credentials are rejected, the returned error is shown underneath the fields.
+                  AI WONDERLAND submits the email and password to the authentication service. If the credentials are rejected, the returned error is shown underneath the fields.
                 </Step>
               </div>
             </section>
@@ -163,12 +163,12 @@ export default function SignInDocsPage() {
                 <div className="rounded-2xl border border-slate-200 p-5">
                   <GitBranch className="h-6 w-6" />
                   <h3 className="mt-4 font-bold">GitHub</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, finish GitHub authorization, and allow the browser to return to DreamMakerHub.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose GitHub, finish GitHub authorization, and allow the browser to return to AI WONDERLAND.</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 p-5">
                   <div className="grid h-6 w-6 place-items-center rounded-full border border-slate-300 text-xs font-black">G</div>
                   <h3 className="mt-4 font-bold">Google</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose Google, select the Google account you use with DreamMakerHub, and complete the provider flow.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Choose Google, select the Google account you use with AI WONDERLAND, and complete the provider flow.</p>
                 </div>
               </div>
             </section>
@@ -180,8 +180,8 @@ export default function SignInDocsPage() {
                   <Route className="mt-0.5 h-6 w-6 shrink-0 text-blue-700" />
                   <div>
                     <p className="font-bold">Normal destination: Projects</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">When there is no other destination, DreamMakerHub sends a successful sign-in to <Link href="/dashboard/projects" className="font-semibold text-blue-700 underline underline-offset-4">your Projects dashboard</Link>.</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">If another protected DreamMakerHub page sent you to sign in, the site can return you to that internal destination after authentication.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">When there is no other destination, AI WONDERLAND sends a successful sign-in to <Link href="/dashboard/projects" className="font-semibold text-blue-700 underline underline-offset-4">your Projects dashboard</Link>.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">If another protected AI WONDERLAND page sent you to sign in, the site can return you to that internal destination after authentication.</p>
                   </div>
                 </div>
               </div>
@@ -196,11 +196,11 @@ export default function SignInDocsPage() {
               <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
                 <div className="p-5">
                   <h3 className="font-bold">The account page immediately sends me somewhere else</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">That usually means DreamMakerHub found an active verified session. It redirects signed-in users to the requested destination, or to Projects when no other destination was requested.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">That usually means AI WONDERLAND found an active verified session. It redirects signed-in users to the requested destination, or to Projects when no other destination was requested.</p>
                 </div>
                 <div className="p-5">
                   <h3 className="font-bold">My email or password is rejected</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Check that you are using the account you originally created and that the email is typed correctly. DreamMakerHub displays the authentication service's returned error underneath the form instead of silently failing.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Check that you are using the account you originally created and that the email is typed correctly. AI WONDERLAND displays the authentication service's returned error underneath the form instead of silently failing.</p>
                 </div>
                 <div className="p-5">
                   <h3 className="font-bold">I just signed up and cannot sign in</h3>
@@ -212,7 +212,7 @@ export default function SignInDocsPage() {
                 </div>
                 <div className="p-5">
                   <h3 className="font-bold">GitHub or Google fails</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Return to the account page and retry. DreamMakerHub currently reports provider rejection, missing OAuth responses, session-exchange failures, and callback failures on the account screen.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Return to the account page and retry. AI WONDERLAND currently reports provider rejection, missing OAuth responses, session-exchange failures, and callback failures on the account screen.</p>
                 </div>
                 <div className="p-5">
                   <h3 className="font-bold">I forgot my password</h3>
@@ -229,7 +229,7 @@ export default function SignInDocsPage() {
               <div className="rounded-3xl bg-slate-950 p-7 text-white sm:p-8">
                 <CheckCircle2 className="h-7 w-7 text-emerald-400" />
                 <h2 className="mt-4 text-2xl font-black">What happens next</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-300">Once you are signed in, the next documentation step is Start Your Project. That section will help you choose the actual DreamMakerHub build system for what you want to make, instead of teaching you how DreamMakerHub itself is built.</p>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-300">Once you are signed in, the next documentation step is Start Your Project. That section will help you choose the actual AI WONDERLAND build system for what you want to make, instead of teaching you how AI WONDERLAND itself is built.</p>
                 <Link href="/docs#start-project" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold hover:bg-blue-500">
                   Next: Start Your Project <ArrowRight className="h-4 w-4" />
                 </Link>
