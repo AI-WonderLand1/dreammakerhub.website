@@ -13,18 +13,23 @@ import {
   CircleHelp,
   Cloud,
   Code2,
+  CreditCard,
+  Database,
   ExternalLink,
   Eye,
   FileText,
   FolderOpen,
   Gamepad2,
+  Gauge,
   Layers3,
   Menu,
+  MessageSquareText,
   MonitorPlay,
   Package,
   Palette,
   Rocket,
   Search,
+  ShoppingBag,
   Smartphone,
   Sparkles,
   ThumbsDown,
@@ -47,13 +52,15 @@ type NavGroup = {
 
 const topTabs = [
   { label: 'Overview', href: '#overview' },
+  { label: 'Platform', href: '#platform' },
+  { label: 'Projects', href: '#projects' },
   { label: 'WonderBuild', href: '#wonderbuild' },
   { label: 'WonderSpace', href: '#wonderspace' },
-  { label: 'AI', href: '#ai-editing' },
+  { label: 'AI', href: '#ai-platform' },
   { label: '3D', href: '#wonderplay' },
-  { label: 'Cloud & Storage', href: '#projects' },
+  { label: 'Usage & Billing', href: '#billing' },
+  { label: 'Marketplace', href: '#marketplace' },
   { label: 'Developer', href: '#developer' },
-  { label: 'Account', href: '#account' },
   { label: 'Help', href: '#help' },
 ] as const;
 
@@ -90,9 +97,15 @@ const navGroups: NavGroup[] = [
   {
     label: 'More Tools',
     items: [
+      { label: 'Platform Snapshot', href: '#platform' },
+      { label: 'Projects & File Manager', href: '#projects' },
       { label: 'WonderSpace', href: '#wonderspace' },
+      { label: 'AI & Playground', href: '#ai-platform' },
       { label: 'WonderPlay / 3D Hub', href: '#wonderplay' },
+      { label: 'Usage, Credits & Billing', href: '#billing' },
+      { label: 'Marketplace', href: '#marketplace' },
       { label: 'API Reference', href: '#developer' },
+      { label: 'Support & Feedback', href: '#support' },
       { label: 'Tutorials', href: '#tutorials' },
       { label: 'FAQ & Help', href: '#help' },
     ],
@@ -101,15 +114,16 @@ const navGroups: NavGroup[] = [
 
 const onThisPage = [
   { label: 'Overview', href: '#overview' },
+  { label: 'Platform snapshot', href: '#platform' },
+  { label: 'Projects', href: '#projects' },
   { label: 'WonderBuild', href: '#wonderbuild' },
-  { label: 'Pages', href: '#pages' },
-  { label: 'Components', href: '#components' },
-  { label: 'Content & CMS', href: '#content' },
-  { label: 'Assets', href: '#assets' },
-  { label: 'AI Editing', href: '#ai-editing' },
-  { label: 'Responsive', href: '#responsive' },
-  { label: 'Preview', href: '#preview' },
-  { label: 'Publish', href: '#publish' },
+  { label: 'WonderSpace', href: '#wonderspace' },
+  { label: 'AI & Playground', href: '#ai-platform' },
+  { label: 'WonderPlay / 3D', href: '#wonderplay' },
+  { label: 'Usage & Billing', href: '#billing' },
+  { label: 'Marketplace', href: '#marketplace' },
+  { label: 'Developer', href: '#developer' },
+  { label: 'Support', href: '#support' },
 ];
 
 const projectChoices = [
@@ -250,7 +264,7 @@ function DocsLogo() {
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 shadow-lg shadow-blue-950/40">
         <BookOpen className="h-5 w-5" />
       </span>
-      <span className="text-lg sm:text-xl">DreamMakerHub</span>
+      <span className="text-lg sm:text-xl">AI WONDERLAND</span>
       <span className="hidden text-sm font-medium text-slate-400 sm:inline">Docs</span>
     </Link>
   );
@@ -427,9 +441,9 @@ export default function DocsPage() {
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
                   <Sparkles className="h-4 w-4" /> Documentation home
                 </div>
-                <h1 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Build with DreamMakerHub without leaving the docs by accident</h1>
+                <h1 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Build with AI WONDERLAND — current platform documentation</h1>
                 <p className="mt-4 text-lg leading-8 text-slate-600">
-                  The documentation navigation stays inside documentation. Product-launch buttons are labeled separately, so reading the next step no longer throws you into an editor or dashboard.
+                  This page is the current product map for the AI WONDERLAND platform: projects, WonderBuild, WonderSpace, AI, 3D, usage and credits, billing, marketplace, APIs, support, and the services that connect them. Product-launch buttons are labeled separately so the documentation remains a reference instead of silently opening a tool.
                 </p>
               </div>
 
@@ -484,6 +498,34 @@ export default function DocsPage() {
               </div>
             </section>
 
+            <section id="platform" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-7 sm:p-8">
+                <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Current platform snapshot · October 2026</p>
+                <h2 className="mt-2 text-3xl font-black">What AI WONDERLAND contains now</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  AI WONDERLAND is the product brand. DreamMakerHub.website remains the main web domain and repository name. The platform combines the account/dashboard shell, project and file workflows, WonderBuild visual creation, WonderSpace cloud coding, AI Playground and assistant surfaces, WonderPlay 3D tools, usage metering and credits, subscriptions, marketplace surfaces, APIs, and support.
+                </p>
+                <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {[
+                    ['Projects', 'Owned project records, source selection, files, project actions, save/reopen flows, preview and publish.'],
+                    ['WonderBuild', 'Template, AI or blank start → visual editor → responsive preview → publish/export.'],
+                    ['WonderSpace', 'Coder-managed VS Code workspace flow backed by Railway projects, services and persistent home volumes.'],
+                    ['AI', 'Site assistant, AI Playground, AI modules, OpenRouter-backed model routes, prompt/model tooling and usage accounting.'],
+                    ['3D / WonderPlay', '3D Hub, 3D Factory, 360 viewing, game/movie tooling, assets, NPC AI surfaces and 3D generation routes.'],
+                    ['Commerce', 'Subscriptions, Stripe checkout/webhooks, AI token packs, render/3D credit packs, metered usage, limits and alerts.'],
+                  ].map(([title, body]) => (
+                    <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
+                      <h3 className="font-black text-slate-900">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+                  <strong>Readiness note:</strong> AI WONDERLAND is under active development. A route or integration being present in the codebase does not automatically mean every production dependency is enabled for every account. The docs distinguish the intended current architecture from features that still depend on deployment, credentials, provider availability, or final production verification.
+                </div>
+              </div>
+            </section>
+
             <section id="wonderbuild" className="scroll-mt-36 pt-16">
               <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl shadow-slate-200/50">
                 <div className="grid lg:grid-cols-[0.8fr_1.2fr]">
@@ -512,8 +554,16 @@ export default function DocsPage() {
               <div className="rounded-3xl border border-blue-200 bg-blue-50 p-7 sm:p-8">
                 <Code2 className="h-8 w-8 text-blue-700" />
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-blue-700">WonderSpace</p>
-                <h2 className="mt-2 text-3xl font-black">Code projects and cloud development</h2>
-                <p className="mt-3 max-w-3xl leading-7 text-slate-600">WonderSpace is the code-project path. The current project documentation describes it as the place for project files, terminal access, Git, a VS Code-style cloud IDE, and AI-assisted coding. Opening WonderSpace launches the workspace flow rather than the visual website builder.</p>
+                <h2 className="mt-2 text-3xl font-black">Coder-managed VS Code workspaces on Railway</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  The main IDE runtime no longer depends on Kubernetes/vCluster/Envbox. Coder remains the workspace control plane, while the Railway GraphQL template creates one Railway project, one workspace service, and one persistent <code>/home/coder</code> volume for each workspace. Stopping the workspace cancels the running deployment while preserving the project and home volume.
+                </p>
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Persistent home</strong><p className="mt-1 text-sm leading-6 text-slate-600">Projects, editor state, npm/pnpm caches, Python user packages and user-installed tools under <code>/home/coder</code> survive workspace restarts.</p></div>
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Baked development image</strong><p className="mt-1 text-sm leading-6 text-slate-600">The AI WONDERLAND workspace image includes Node.js 22, npm, pnpm, TypeScript, Python/pip/venv, Git, compiler/build tools, SSH, jq, ripgrep, SQLite, tmux, vim/nano and common archive/network utilities.</p></div>
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Railway isolation</strong><p className="mt-1 text-sm leading-6 text-slate-600">Each Coder workspace receives a separate Railway project/service. Optional Railway CLI access uses a project-scoped token rather than exposing the master Railway token.</p></div>
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Operator-controlled image</strong><p className="mt-1 text-sm leading-6 text-slate-600">Users cannot submit arbitrary workspace image URLs. The published Coder template controls the image and exposes the supported Railway region choice.</p></div>
+                </div>
                 <Link href="/wonderspace" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-bold text-white hover:bg-blue-600">Open WonderSpace <ExternalLink className="h-4 w-4" /></Link>
               </div>
             </section>
@@ -531,10 +581,96 @@ export default function DocsPage() {
             <section id="projects" className="scroll-mt-36 pt-16">
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-7 sm:p-8">
                 <FolderOpen className="h-8 w-8 text-slate-800" />
-                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Projects</p>
-                <h2 className="mt-2 text-3xl font-black">Continue a project you already started</h2>
-                <p className="mt-3 max-w-3xl leading-7 text-slate-600">Use the Projects dashboard when the project already exists. The current flow lists saved projects and provides actions for opening the editor or related project destinations instead of forcing you through the new-project start flow again.</p>
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Projects & files</p>
+                <h2 className="mt-2 text-3xl font-black">The dashboard is the control center for saved work</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  The project workflow is built around real owned projects rather than fabricated defaults. Users choose or create a project, select an allowed source, work with project files, and then open the appropriate builder or IDE. Source choices are designed around AI WONDERLAND website projects, GitHub, and local/import flows; outside repository sources require explicit authentication instead of silently exposing a shared credential.
+                </p>
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4"><strong>Project selection</strong><p className="mt-1 text-sm leading-6 text-slate-600">Select the organization/project/source before entering the editor so the workspace knows which files belong to the user.</p></div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4"><strong>File workflow</strong><p className="mt-1 text-sm leading-6 text-slate-600">Create, upload, open, edit, rename and delete project files from the project workspace instead of requiring a VM just to manage files.</p></div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4"><strong>Git & CI</strong><p className="mt-1 text-sm leading-6 text-slate-600">GitHub can be connected as a source and CI/status links are surfaced separately from the file manager.</p></div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4"><strong>Persistence</strong><p className="mt-1 text-sm leading-6 text-slate-600">Save/reopen behavior is expected to use the user-owned project record; failures must be reported instead of inventing a successful save.</p></div>
+                </div>
                 <Link href="/dashboard/projects" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800">Open My Projects <ExternalLink className="h-4 w-4" /></Link>
+              </div>
+            </section>
+
+            <section id="ai-platform" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-fuchsia-200 bg-fuchsia-50 p-7 sm:p-8">
+                <Bot className="h-8 w-8 text-fuchsia-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-fuchsia-700">AI platform</p>
+                <h2 className="mt-2 text-3xl font-black">Assistant, Playground, modules and generation routes</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  AI WONDERLAND includes a site assistant, a separate AI Playground, AI modules, OpenRouter-backed model access, image/generation routes, and AI-assisted editing inside product surfaces. Usage is metered rather than treated as unlimited compute, and AI token consumption can be backed by plan limits or purchased credit packs.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <a href="https://playground.dreammakerhub.website/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-fuchsia-700 px-5 py-3 text-sm font-bold text-white hover:bg-fuchsia-600">Open AI Playground <ExternalLink className="h-4 w-4" /></a>
+                  <Link href="/ai-modules" className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-300 bg-white px-5 py-3 text-sm font-bold text-fuchsia-900">AI Modules <ArrowRight className="h-4 w-4" /></Link>
+                </div>
+              </div>
+            </section>
+
+            <section id="billing" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-7 sm:p-8">
+                <CreditCard className="h-8 w-8 text-emerald-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-emerald-700">Usage, credits & billing</p>
+                <h2 className="mt-2 text-3xl font-black">Plans, metered usage, token packs and 3D/render credits</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  Billing is tied to AI WONDERLAND products and usage. Stripe handles checkout/webhooks for subscriptions and credit purchases; the platform ledger tracks usage across the main site, AI Playground and NPC/3D services. AI token packs and render/3D credit packs are separate purchase types, and usage alerts can notify users when configured thresholds are reached.
+                </p>
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-xl border border-emerald-200 bg-white p-4"><Gauge className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Live usage</strong><p className="mt-1 text-sm leading-6 text-slate-600">Usage surfaces show plan consumption and purchased balances instead of treating Stripe itself as the product.</p></div>
+                  <div className="rounded-xl border border-emerald-200 bg-white p-4"><CreditCard className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Credit packs</strong><p className="mt-1 text-sm leading-6 text-slate-600">Users can purchase additional AI tokens and 3D/render credits using the billing purchase controls.</p></div>
+                  <div className="rounded-xl border border-emerald-200 bg-white p-4"><MessageSquareText className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Usage alerts</strong><p className="mt-1 text-sm leading-6 text-slate-600">Threshold alerts can cover AI and 3D usage and support configured notification channels such as email or text where enabled.</p></div>
+                </div>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/settings/billing" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-600">Open Billing <ExternalLink className="h-4 w-4" /></Link>
+                  <Link href="/dashboard/usage/metered" className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-900">View Metered Usage <ArrowRight className="h-4 w-4" /></Link>
+                </div>
+              </div>
+            </section>
+
+            <section id="marketplace" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-orange-200 bg-orange-50 p-7 sm:p-8">
+                <ShoppingBag className="h-8 w-8 text-orange-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-orange-700">Marketplace</p>
+                <h2 className="mt-2 text-3xl font-black">Platform marketplace and external commerce are separate</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  The AI WONDERLAND marketplace is the product surface for platform assets, themes, extensions and related listings. External affiliate commerce, including Amazon-associated pages, should remain clearly separated from first-party marketplace purchases so users know what is sold by AI WONDERLAND and what leaves the platform.
+                </p>
+                <Link href="/marketplace" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-700 px-5 py-3 text-sm font-bold text-white hover:bg-orange-600">Open Marketplace <ExternalLink className="h-4 w-4" /></Link>
+              </div>
+            </section>
+
+            <section id="architecture" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-indigo-200 bg-indigo-50 p-7 sm:p-8">
+                <Database className="h-8 w-8 text-indigo-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-indigo-700">Platform services</p>
+                <h2 className="mt-2 text-3xl font-black">How the major services fit together</h2>
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Supabase</strong><p className="mt-1 text-sm leading-6 text-slate-600">Authentication, owned project/application data, usage/billing records and realtime-backed product data.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Railway</strong><p className="mt-1 text-sm leading-6 text-slate-600">Application/service hosting and the current per-workspace compute target for Coder-managed WonderSpace IDEs.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Coder</strong><p className="mt-1 text-sm leading-6 text-slate-600">Workspace control plane and browser IDE/agent layer. The published template creates and controls the Railway workspace resources.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>GitHub & CI</strong><p className="mt-1 text-sm leading-6 text-slate-600">Repository source, pull-request review, Actions/CodeQL and GHCR images, including the baked AI WONDERLAND Coder workspace image.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Stripe</strong><p className="mt-1 text-sm leading-6 text-slate-600">Checkout and payment events for AI WONDERLAND subscriptions and eligible credit purchases.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Cloudflare / domain</strong><p className="mt-1 text-sm leading-6 text-slate-600">Public DNS/proxy layer for dreammakerhub.website and product subdomains where configured.</p></div>
+                </div>
+              </div>
+            </section>
+
+            <section id="support" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-rose-200 bg-rose-50 p-7 sm:p-8">
+                <MessageSquareText className="h-8 w-8 text-rose-700" />
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-rose-700">Support & feedback</p>
+                <h2 className="mt-2 text-3xl font-black">Customer feedback stays inside AI WONDERLAND</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">
+                  The site navigation sends Give Feedback to the internal support/feedback surface instead of a broken external invitation link. Product, account, billing and technical issues should use the platform support flow; broader documentation questions can use FAQ and tutorials.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/dashboard/support" className="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-5 py-3 text-sm font-bold text-white hover:bg-rose-600">Give Feedback / Get Support <ExternalLink className="h-4 w-4" /></Link>
+                  <Link href="/faq" className="inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-white px-5 py-3 text-sm font-bold text-rose-900">Open FAQ <ArrowRight className="h-4 w-4" /></Link>
+                </div>
               </div>
             </section>
 
@@ -542,8 +678,8 @@ export default function DocsPage() {
               <div className="rounded-3xl border border-violet-200 bg-violet-50 p-7 sm:p-8">
                 <Braces className="h-8 w-8 text-violet-700" />
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-violet-700">Developer</p>
-                <h2 className="mt-2 text-3xl font-black">API reference is a separate reference surface</h2>
-                <p className="mt-3 max-w-3xl leading-7 text-slate-600">The Docs navigation now brings you here first instead of silently routing you away. Use the explicit button below when you actually want to open the API Reference.</p>
+                <h2 className="mt-2 text-3xl font-black">APIs, CLI, source integrations and automation</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">The developer surface includes REST endpoints, authentication, project/publishing operations, AI/3D routes, internal usage reservation flows, the AI WONDERLAND CLI packages, GitHub-connected source workflows and CI links. Secrets and provider credentials stay server-side; browser clients should receive scoped capabilities rather than master credentials.</p>
                 <Link href="/api-reference" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-700 px-5 py-3 text-sm font-bold text-white hover:bg-violet-600">Open API Reference <ExternalLink className="h-4 w-4" /></Link>
               </div>
             </section>
@@ -619,8 +755,8 @@ export default function DocsPage() {
 
           <div className="mt-8 rounded-2xl border border-slate-200 p-4">
             <Cloud className="h-5 w-5 text-blue-600" />
-            <p className="mt-3 text-sm font-bold">Docs navigation stays in Docs</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Only buttons explicitly labeled to open the app, API reference, tutorial library, or FAQ leave this documentation page.</p>
+            <p className="mt-3 text-sm font-bold">Current platform map</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">This overview tracks the current AI WONDERLAND product architecture and links to product surfaces explicitly. It is updated as major runtime, billing, project, AI and 3D workflows change.</p>
           </div>
         </aside>
       </div>

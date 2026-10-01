@@ -3,14 +3,14 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Documentation',
   description:
-    'Step-by-step AI WONDERLAND documentation for signing in, starting a project, building, previewing, troubleshooting, and publishing.',
+    'Current AI WONDERLAND documentation for projects, WonderBuild, WonderSpace, AI, 3D, usage and credits, billing, marketplace, APIs, support, preview, and publishing.',
   alternates: {
     canonical: '/docs',
   },
   openGraph: {
     title: 'AI WONDERLAND Documentation',
     description:
-      'Guides for signing in, starting projects, building, previewing, troubleshooting, and publishing with AI WONDERLAND.',
+      'Current guides for AI WONDERLAND projects, visual building, Railway-backed cloud IDE workspaces, AI, 3D, usage and billing, marketplace, APIs, support, and publishing.',
     url: 'https://dreammakerhub.website/docs',
     type: 'website',
   },
