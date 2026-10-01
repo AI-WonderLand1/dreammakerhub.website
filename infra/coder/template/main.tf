@@ -66,13 +66,12 @@ variable "enable_project_management" {
 
 variable "workspace_image" {
   type        = string
-  default     = "ghcr.io/bpmct/railway-coder-workspace:latest"
+  default     = "ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest"
   description = <<-EOT
     Pre-built workspace image. The image's ENTRYPOINT must consume the
     CODER_INIT_SCRIPT_B64, CODER_AGENT_TOKEN, and RAILWAY_RUN_UID env
-    vars. The default image is public; see
-    https://github.com/bpmct/coder-railway/tree/main/build for the
-    Dockerfile if you want to build your own.
+    vars. The default image is built from infra/coder/workspace-image in this repository
+    and published to GHCR by .github/workflows/coder-workspace-image.yml.
   EOT
 }
 
@@ -82,7 +81,7 @@ variable "image_registry_username" {
   description = <<-EOT
     Optional registry username for private image pulls. Leave empty
     when pointing at the public default image
-    (ghcr.io/bpmct/railway-coder-workspace) or any other public
+    (ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace) or any other public
     registry.
   EOT
 }
@@ -94,7 +93,7 @@ variable "image_registry_password" {
   description = <<-EOT
     Optional registry password / PAT for private image pulls. Leave
     empty when pointing at the public default image
-    (ghcr.io/bpmct/railway-coder-workspace) or any other public
+    (ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace) or any other public
     registry.
   EOT
 }
