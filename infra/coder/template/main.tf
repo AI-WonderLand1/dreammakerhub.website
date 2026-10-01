@@ -13,33 +13,52 @@ terraform {
 
 provider "coder" {}
 
-provider "kubernetes" {}
+variable "use_kubeconfig" {
+  type        = bool
+  default     = true
+  description = <<-EOF
+  Use host kubeconfig? (true/false)
+  Set this to false if the Coder host is itself running as a Pod on the same
+  Kubernetes cluster as workspaces. Set it to true when Coder is outside the
+  workspace cluster/vCluster and a valid ~/.kube/config is mounted on Coder.
+  EOF
+}
 
 variable "namespace" {
   type        = string
-  description = "The Kubernetes namespace to create workspaces in"
-  default     = "coder" # Keep this as "coder" - Coder service account has permissions here
+  description = "Namespace used for isolated AI WONDERLAND Coder workspaces."
+  default     = "coder-workspaces"
+}
+
+variable "create_tun" {
+  type        = bool
+  description = "Add a TUN device to the workspace."
+  default     = false
+}
+
+variable "create_fuse" {
+  type        = bool
+  description = "Add a FUSE device to the workspace."
+  default     = false
+}
+
+provider "kubernetes" {
+  config_path = var.use_kubeconfig ? "~/.kube/config" : null
 }
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
-locals {
-  default_ttl = "4h"
-  max_ttl     = "12h"
-}
-
 data "coder_parameter" "cpu" {
   name         = "cpu"
   display_name = "CPU"
-  description  = "CPU cores (max 4)"
-  default      = "1"
+  description  = "Maximum CPU cores for this workspace."
   type         = "number"
-  icon         = "/icon/memory.svg"
+  default      = 1
   mutable      = true
   validation {
     min = 1
-    max = 4
+    max = 2
   }
   option {
     name  = "1 Core"
@@ -49,27 +68,18 @@ data "coder_parameter" "cpu" {
     name  = "2 Cores"
     value = 2
   }
-  option {
-    name  = "3 Cores"
-    value = 3
-  }
-  option {
-    name  = "4 Cores"
-    value = 4
-  }
 }
 
 data "coder_parameter" "memory" {
   name         = "memory"
   display_name = "Memory"
-  description  = "Memory in GB (max 8)"
-  default      = 2
+  description  = "Maximum memory in GiB for this workspace."
   type         = "number"
-  icon         = "/icon/memory.svg"
+  default      = 2
   mutable      = true
   validation {
     min = 1
-    max = 8
+    max = 4
   }
   option {
     name  = "1 GB"
@@ -83,75 +93,58 @@ data "coder_parameter" "memory" {
     name  = "4 GB"
     value = 4
   }
-  option {
-    name  = "8 GB"
-    value = 8
-  }
 }
 
 data "coder_parameter" "home_disk_size" {
   name         = "home_disk_size"
-  display_name = "Home disk size (GB)"
-  default      = "10"
+  display_name = "Home disk size"
+  description  = "Persistent /home/coder disk size in GiB."
   type         = "number"
-  icon         = "/emojis/1f4be.png"
+  default      = 10
   mutable      = false
   validation {
-    min = 1
-    max = 50
+    min = 10
+    max = 10
   }
 }
 
 data "coder_parameter" "ssh_public_key" {
   name         = "ssh_public_key"
   display_name = "SSH public key"
-  description  = "Optional public key supplied by DreamMakerHub for this workspace"
-  default      = ""
+  description  = "Optional public key supplied by AI WONDERLAND for this workspace."
   type         = "string"
+  default      = ""
   mutable      = true
 }
 
-variable "autostop" {
-  description = "Autostop after inactivity (hours)"
-  default     = 4
-  type        = number
-}
-
 resource "coder_agent" "main" {
-  os             = "linux"
-  arch           = "amd64"
+  os   = "linux"
+  arch = "amd64"
+
   startup_script = <<-EOT
+    #!/bin/bash
     set -e
-
-    mkdir -p /home/coder/wonderspace /home/coder/.ssh
-    chmod 700 /home/coder/.ssh
-
-    # Accept the public key supplied by DreamMakerHub without requiring a
-    # separate shared IDE pod. Coder's own `coder ssh` remains the canonical
-    # authenticated SSH path.
-    if [ -n "$${DREAMMAKER_SSH_PUBLIC_KEY:-}" ]; then
-      touch /home/coder/.ssh/authorized_keys
-      if ! grep -qxF "$${DREAMMAKER_SSH_PUBLIC_KEY}" /home/coder/.ssh/authorized_keys 2>/dev/null; then
-        printf '%s\n' "$${DREAMMAKER_SSH_PUBLIC_KEY}" >> /home/coder/.ssh/authorized_keys
+    if [ ! -f ~/.profile ]; then
+      cp /etc/skel/.profile "$HOME"
+    fi
+    if [ ! -f ~/.bashrc ]; then
+      cp /etc/skel/.bashrc "$HOME"
+    fi
+    mkdir -p "$HOME/projects" "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    if [ -n "$$${AIW_SSH_PUBLIC_KEY:-}" ]; then
+      touch "$HOME/.ssh/authorized_keys"
+      if ! grep -qxF "$$${AIW_SSH_PUBLIC_KEY}" "$HOME/.ssh/authorized_keys" 2>/dev/null; then
+        printf '%s\n' "$$${AIW_SSH_PUBLIC_KEY}" >> "$HOME/.ssh/authorized_keys"
       fi
-      chmod 600 /home/coder/.ssh/authorized_keys
+      chmod 600 "$HOME/.ssh/authorized_keys"
     fi
-
-    # Install code-server inside the user's isolated workspace pod.
-    if [ ! -x /tmp/code-server/bin/code-server ]; then
-      curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
-    fi
-
-    # Coder proxies this localhost-only app and enforces workspace ownership.
-    /tmp/code-server/bin/code-server \
-      --auth none \
-      --port 13337 \
-      --host 127.0.0.1 \
-      /home/coder/wonderspace \
-      >/tmp/code-server.log 2>&1 &
-
-    echo "WonderSpace IDE ready"
+    git config --global init.defaultBranch main || true
   EOT
+
+  env = {
+    AIW_SSH_PUBLIC_KEY = data.coder_parameter.ssh_public_key.value
+  }
 
   metadata {
     display_name = "CPU Usage"
@@ -171,44 +164,41 @@ resource "coder_agent" "main" {
 
   metadata {
     display_name = "Home Disk"
-    key          = "3_home_disk"
+    key          = "2_home_disk"
     script       = "coder stat disk --path $$HOME"
     interval     = 60
     timeout      = 1
   }
 }
 
-resource "coder_app" "code-server" {
-  agent_id     = coder_agent.main.id
-  slug         = "code-server"
-  display_name = "VS Code"
-  icon         = "/icon/code.svg"
-  url          = "http://localhost:13337/?folder=/home/coder/wonderspace"
-  # Keep the editor and dev-server port previews on isolated origins rather
-  # than sharing the Coder dashboard origin. Requires wildcard DNS + valid TLS.
-  subdomain    = true
-  share        = "owner"
+module "code-server" {
+  count   = data.coder_workspace.me.start_count
+  source  = "registry.coder.com/coder/code-server/coder"
+  version = "~> 1.0"
+  agent_id = coder_agent.main.id
+  order    = 1
+  folder   = "/home/coder/projects"
+}
 
-  healthcheck {
-    url       = "http://localhost:13337/healthz"
-    interval  = 3
-    threshold = 10
-  }
+module "jetbrains" {
+  count   = data.coder_workspace.me.start_count
+  source  = "registry.coder.com/coder/jetbrains/coder"
+  version = "~> 1.0"
+  agent_id = coder_agent.main.id
+  folder   = "/home/coder/projects"
 }
 
 resource "kubernetes_persistent_volume_claim_v1" "home" {
   metadata {
-    name      = "coder-${data.coder_workspace.me.id}-home"
+    name      = "coder-${lower(data.coder_workspace_owner.me.name)}-${lower(data.coder_workspace.me.name)}-home"
     namespace = var.namespace
     labels = {
-      "app.kubernetes.io/name"     = "coder-pvc"
-      "app.kubernetes.io/instance" = "coder-pvc-${data.coder_workspace.me.id}"
-      "app.kubernetes.io/part-of"  = "coder"
-      "com.coder.resource"         = "true"
-      "com.coder.workspace.id"     = data.coder_workspace.me.id
-      "com.coder.workspace.name"   = data.coder_workspace.me.name
-      "com.coder.user.id"          = data.coder_workspace_owner.me.id
-      "com.coder.user.username"    = data.coder_workspace_owner.me.name
+      "app.kubernetes.io/part-of" = "ai-wonderland"
+      "com.coder.resource"        = "true"
+      "com.coder.workspace.id"    = data.coder_workspace.me.id
+      "com.coder.workspace.name"  = data.coder_workspace.me.name
+      "com.coder.user.id"         = data.coder_workspace_owner.me.id
+      "com.coder.user.username"   = data.coder_workspace_owner.me.name
     }
   }
   wait_until_bound = false
@@ -222,102 +212,163 @@ resource "kubernetes_persistent_volume_claim_v1" "home" {
   }
 }
 
-resource "kubernetes_deployment_v1" "main" {
+resource "kubernetes_pod_v1" "main" {
   count = data.coder_workspace.me.start_count
-  wait_for_rollout = false
+
   metadata {
-    name      = "coder-${data.coder_workspace.me.id}"
+    name      = "coder-${lower(data.coder_workspace_owner.me.name)}-${lower(data.coder_workspace.me.name)}"
     namespace = var.namespace
     labels = {
-      "app.kubernetes.io/name"     = "coder-workspace"
-      "app.kubernetes.io/instance" = "coder-workspace-${data.coder_workspace.me.id}"
-      "app.kubernetes.io/part-of"  = "coder"
-      "com.coder.resource"         = "true"
-      "com.coder.workspace.id"     = data.coder_workspace.me.id
-      "com.coder.workspace.name"   = data.coder_workspace.me.name
-      "com.coder.user.id"          = data.coder_workspace_owner.me.id
-      "com.coder.user.username"    = data.coder_workspace_owner.me.name
+      "app.kubernetes.io/name"    = "ai-wonderland-workspace"
+      "app.kubernetes.io/part-of" = "ai-wonderland"
+      "com.coder.resource"        = "true"
+      "com.coder.workspace.id"    = data.coder_workspace.me.id
+      "com.coder.workspace.name"  = data.coder_workspace.me.name
+      "com.coder.user.id"         = data.coder_workspace_owner.me.id
+      "com.coder.user.username"   = data.coder_workspace_owner.me.name
     }
   }
 
   spec {
-    replicas = 1
-    selector {
-      match_labels = {
-        "app.kubernetes.io/name"     = "coder-workspace"
-        "app.kubernetes.io/instance" = "coder-workspace-${data.coder_workspace.me.id}"
-        "app.kubernetes.io/part-of"  = "coder"
-        "com.coder.resource"         = "true"
-        "com.coder.workspace.id"     = data.coder_workspace.me.id
-        "com.coder.workspace.name"   = data.coder_workspace.me.name
-        "com.coder.user.id"          = data.coder_workspace_owner.me.id
-        "com.coder.user.username"    = data.coder_workspace_owner.me.name
+    restart_policy = "Never"
+
+    container {
+      name              = "dev"
+      image             = "ghcr.io/coder/envbox:latest"
+      image_pull_policy = "IfNotPresent"
+      command           = ["/envbox", "docker"]
+
+      security_context {
+        privileged = true
       }
-    }
-    strategy {
-      type = "Recreate"
+
+      resources {
+        requests = {
+          cpu    = "250m"
+          memory = "512Mi"
+        }
+        limits = {
+          cpu    = tostring(data.coder_parameter.cpu.value)
+          memory = "${data.coder_parameter.memory.value}Gi"
+        }
+      }
+
+      env {
+        name  = "CODER_AGENT_TOKEN"
+        value = coder_agent.main.token
+      }
+      env {
+        name  = "CODER_AGENT_URL"
+        value = data.coder_workspace.me.access_url
+      }
+      env {
+        name  = "CODER_INNER_IMAGE"
+        value = "index.docker.io/codercom/enterprise-base:ubuntu-20240812"
+      }
+      env {
+        name  = "CODER_INNER_USERNAME"
+        value = "coder"
+      }
+      env {
+        name  = "CODER_BOOTSTRAP_SCRIPT"
+        value = coder_agent.main.init_script
+      }
+      env {
+        name  = "CODER_MOUNTS"
+        value = "/home/coder:/home/coder"
+      }
+      env {
+        name  = "CODER_ADD_FUSE"
+        value = tostring(var.create_fuse)
+      }
+      env {
+        name  = "CODER_INNER_HOSTNAME"
+        value = data.coder_workspace.me.name
+      }
+      env {
+        name  = "CODER_ADD_TUN"
+        value = tostring(var.create_tun)
+      }
+      env {
+        name = "CODER_CPUS"
+        value_from {
+          resource_field_ref {
+            resource = "limits.cpu"
+          }
+        }
+      }
+      env {
+        name = "CODER_MEMORY"
+        value_from {
+          resource_field_ref {
+            resource = "limits.memory"
+          }
+        }
+      }
+
+      volume_mount {
+        mount_path = "/home/coder"
+        name       = "home"
+        read_only  = false
+        sub_path   = "home"
+      }
+      volume_mount {
+        mount_path = "/var/lib/coder/docker"
+        name       = "home"
+        sub_path   = "cache/docker"
+      }
+      volume_mount {
+        mount_path = "/var/lib/coder/containers"
+        name       = "home"
+        sub_path   = "cache/containers"
+      }
+      volume_mount {
+        mount_path = "/var/lib/sysbox"
+        name       = "sysbox"
+      }
+      volume_mount {
+        mount_path = "/var/lib/containers"
+        name       = "home"
+        sub_path   = "envbox/containers"
+      }
+      volume_mount {
+        mount_path = "/var/lib/docker"
+        name       = "home"
+        sub_path   = "envbox/docker"
+      }
+      volume_mount {
+        mount_path = "/usr/src"
+        name       = "usr-src"
+      }
+      volume_mount {
+        mount_path = "/lib/modules"
+        name       = "lib-modules"
+      }
     }
 
-    template {
-      metadata {
-        labels = {
-          "app.kubernetes.io/name"     = "coder-workspace"
-          "app.kubernetes.io/instance" = "coder-workspace-${data.coder_workspace.me.id}"
-          "app.kubernetes.io/part-of"  = "coder"
-          "com.coder.resource"         = "true"
-          "com.coder.workspace.id"     = data.coder_workspace.me.id
-          "com.coder.workspace.name"   = data.coder_workspace.me.name
-          "com.coder.user.id"          = data.coder_workspace_owner.me.id
-          "com.coder.user.username"    = data.coder_workspace_owner.me.name
-        }
+    volume {
+      name = "home"
+      persistent_volume_claim {
+        claim_name = kubernetes_persistent_volume_claim_v1.home.metadata[0].name
+        read_only  = false
       }
-      spec {
-        security_context {
-          run_as_user     = 1000
-          fs_group        = 1000
-          run_as_non_root = true
-        }
-        container {
-          name              = "dev"
-          image             = "codercom/enterprise-base:ubuntu"
-          image_pull_policy = "IfNotPresent"
-          command           = ["sh", "-c", coder_agent.main.init_script]
-          security_context {
-            run_as_user                = "1000"
-            run_as_non_root            = true
-            allow_privilege_escalation = false
-          }
-          env {
-            name  = "CODER_AGENT_TOKEN"
-            value = coder_agent.main.token
-          }
-          env {
-            name  = "DREAMMAKER_SSH_PUBLIC_KEY"
-            value = data.coder_parameter.ssh_public_key.value
-          }
-          resources {
-            requests = {
-              "cpu"    = "250m"
-              "memory" = "512Mi"
-            }
-            limits = {
-              "cpu"    = "${data.coder_parameter.cpu.value}"
-              "memory" = "${data.coder_parameter.memory.value}Gi"
-            }
-          }
-          volume_mount {
-            mount_path = "/home/coder"
-            name       = "home"
-            read_only  = false
-          }
-        }
-        volume {
-          name = "home"
-          persistent_volume_claim {
-            claim_name = kubernetes_persistent_volume_claim_v1.home.metadata.0.name
-            read_only  = false
-          }
-        }
+    }
+    volume {
+      name = "sysbox"
+      empty_dir {}
+    }
+    volume {
+      name = "usr-src"
+      host_path {
+        path = "/usr/src"
+        type = ""
+      }
+    }
+    volume {
+      name = "lib-modules"
+      host_path {
+        path = "/lib/modules"
+        type = ""
       }
     }
   }
