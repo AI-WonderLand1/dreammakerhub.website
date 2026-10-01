@@ -62,7 +62,7 @@ describe('Approved IDE images: discovery and provisioning', () => {
     expect(route).not.toContain('body.imageUrl');
     expect(template).toContain('variable "workspace_image"');
     expect(template).toContain('WORKSPACE_IMAGE         = var.workspace_image');
-    expect(template).toContain('ghcr.io/bpmct/railway-coder-workspace:latest');
+    expect(template).toContain('ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest');
     expect(launch).toContain('Open an existing IDE instead');
   });
 });
