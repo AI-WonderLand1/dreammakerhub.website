@@ -8,9 +8,6 @@
 #   PROJECT_NAME - Railway project name (used by lookup helpers)
 #   STATE_DIR    - Local state directory holding *_id files
 
-# Send a GraphQL query/mutation. The query string is embedded inside a
-# JSON envelope via a temp file so we never need to shell-escape it.
-# Stdout is the response body. Caller decides how to parse.
 gql() {
   local query="$1"
   local tmpjson
@@ -25,24 +22,6 @@ gql() {
   return $rc
 }
 
-# Lookup project id + first environment id by $PROJECT_NAME. Prints
-# "<project_id> <env_id>" on success, empty on miss. Always returns 0.
-lookup_project_and_env() {
-  local resp pid env_id
-  resp=$(gql '{ projects { edges { node { id name environments { edges { node { id name } } } } } } }' || echo '')
-  pid=$(echo "$resp" | grep -o '"id":"[^"]*","name":"'"$PROJECT_NAME"'"' \
-    | sed 's/.*"id":"\([^"]*\)".*/\1/' | head -1 || true)
-  if [ -z "$pid" ]; then return 0; fi
-  env_id=$(echo "$resp" | sed 's/.*"id":"'"$pid"'","name":"'"$PROJECT_NAME"'","environments":{"edges":\[{"node":{"id":"\([^"]*\)".*/\1/' | head -1 || true)
-  # Detect "no replacement" case: sed prints the input unchanged. Falls
-  # back to a coarser grep that picks the first environment id seen.
-  if [ "${#env_id}" -gt 100 ]; then
-    env_id=$(echo "$resp" | grep -o '"environments":{"edges":\[{"node":{"id":"[^"]*"' \
-      | sed 's/.*"id":"\([^"]*\)".*/\1/' | head -1 || true)
-  fi
-  printf '%s %s\n' "$pid" "$env_id"
-}
-
 # Lookup project id only. Prints the id, empty on miss. Always returns 0.
 lookup_project_id() {
   local resp
@@ -51,9 +30,20 @@ lookup_project_id() {
     | sed 's/.*"id":"\([^"]*\)".*/\1/' | head -1 || true
 }
 
-# Lookup service id and env id inside a project. Args: project_id.
-# Prints "<service_id> <env_id>". Service name fixed to "workspace",
-# env name fixed to "production" to match the rest of the template.
+# Lookup project id and its production environment id. Query the selected
+# project separately so an environment from another project can never be
+# mistaken for this workspace.
+lookup_project_and_env() {
+  local pid resp env_id
+  pid=$(lookup_project_id)
+  [ -z "$pid" ] && return 0
+  resp=$(gql "{ project(id: \\\"$pid\\\") { environments { edges { node { id name } } } } }" || echo '')
+  env_id=$(echo "$resp" | grep -o '"id":"[^"]*","name":"production"' \
+    | sed 's/.*"id":"\([^"]*\)".*/\1/' | head -1 || true)
+  printf '%s %s\n' "$pid" "$env_id"
+}
+
+# Lookup service id and production environment id inside a project.
 lookup_service_and_env() {
   local pid="$1"
   local resp svc_id env_id
@@ -65,9 +55,39 @@ lookup_service_and_env() {
   printf '%s %s\n' "$svc_id" "$env_id"
 }
 
-# Load PROJECT_ID, SERVICE_ID, ENV_ID from $STATE_DIR if files exist.
-# Sets the globals; never errors. Intended to be called before any
-# fallback Railway API lookup.
+# Resolve project/service/environment IDs with retries for Railway's eventual
+# consistency after projectCreate/serviceCreate. Persists recovered IDs so all
+# later provisioners use the exact same resources.
+resolve_workspace_ids() {
+  local attempt se
+  load_state
+
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if [ -z "$PROJECT_ID" ]; then
+      PROJECT_ID=$(lookup_project_id)
+    fi
+    if [ -n "$PROJECT_ID" ] && { [ -z "$SERVICE_ID" ] || [ -z "$ENV_ID" ]; }; then
+      se=$(lookup_service_and_env "$PROJECT_ID")
+      [ -z "$SERVICE_ID" ] && SERVICE_ID=$(echo "$se" | awk '{print $1}')
+      [ -z "$ENV_ID" ] && ENV_ID=$(echo "$se" | awk '{print $2}')
+    fi
+
+    if [ -n "$PROJECT_ID" ] && [ -n "$SERVICE_ID" ] && [ -n "$ENV_ID" ]; then
+      if [ -n "${STATE_DIR:-}" ]; then
+        mkdir -p "$STATE_DIR"
+        printf '%s\n' "$PROJECT_ID" > "$STATE_DIR/project_id"
+        printf '%s\n' "$SERVICE_ID" > "$STATE_DIR/service_id"
+        printf '%s\n' "$ENV_ID" > "$STATE_DIR/environment_id"
+      fi
+      return 0
+    fi
+
+    [ "$attempt" -lt 10 ] && sleep 2
+  done
+
+  return 1
+}
+
 load_state() {
   [ -n "${STATE_DIR:-}" ] || return 0
   [ -f "$STATE_DIR/project_id" ] && PROJECT_ID=$(cat "$STATE_DIR/project_id")

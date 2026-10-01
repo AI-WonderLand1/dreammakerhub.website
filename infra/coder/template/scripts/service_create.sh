@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Create (or look up) the "workspace" service inside the Railway
-# project. Idempotent. Writes service_id to $STATE_DIR.
-#
-# Env vars required: API, TOKEN, PROJECT_NAME, STATE_DIR
+# Create (or look up) the "workspace" service inside the Railway project.
+# Idempotent. Writes service_id and environment_id to $STATE_DIR.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
-# Read project_id from state (same apply) or fall back to API lookup.
+mkdir -p "$STATE_DIR"
+
 PROJECT_ID=""
-[ -f "$STATE_DIR/project_id" ] && PROJECT_ID=$(cat "$STATE_DIR/project_id")
+SERVICE_ID=""
+ENV_ID=""
+load_state
+
 if [ -z "$PROJECT_ID" ]; then
   PROJECT_ID=$(lookup_project_id)
 fi
@@ -17,31 +19,62 @@ fi
   exit 1
 }
 
-# If a "workspace" service already exists, reuse it.
-EXISTING=$(gql "{ project(id: \\\"$PROJECT_ID\\\") { services { edges { node { id name } } } } }")
-EXISTING_SVC=$(echo "$EXISTING" | grep -o '"id":"[^"]*","name":"workspace"' \
-  | sed 's/.*"id":"\([^"]*\)".*/\1/' | head -1 || true)
+# Reuse an existing service if a previous attempt created it.
+SE=$(lookup_service_and_env "$PROJECT_ID")
+EXISTING_SVC=$(echo "$SE" | awk '{print $1}')
+ENV_ID=$(echo "$SE" | awk '{print $2}')
 if [ -n "$EXISTING_SVC" ]; then
   echo "Service already exists: $EXISTING_SVC"
-  mkdir -p "$STATE_DIR"
   echo "$EXISTING_SVC" > "$STATE_DIR/service_id"
+  [ -n "$ENV_ID" ] && echo "$ENV_ID" > "$STATE_DIR/environment_id"
   exit 0
 fi
 
-# Retry serviceCreate. Railway can return "Not Authorized" briefly
-# after projectCreate due to auth propagation delay.
-RESP=""
-for ATTEMPT in 1 2 3 4 5; do
-  RESP=$(gql "mutation { serviceCreate(input: { name: \\\"workspace\\\", projectId: \\\"$PROJECT_ID\\\" }) { id } }")
+# Railway can be eventually consistent immediately after project creation.
+# Only accept serviceCreate as success when an actual id is returned.
+for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+  RESP=$(gql "mutation { serviceCreate(input: { name: \\\"workspace\\\", projectId: \\\"$PROJECT_ID\\\" }) { id } }" || echo '')
   echo "$RESP"
-  if echo "$RESP" | grep -q '"serviceCreate"'; then break; fi
-  echo "serviceCreate attempt $ATTEMPT failed, retrying in 3s..."
-  [ "$ATTEMPT" -lt 5 ] && sleep 3
+
+  SERVICE_ID=$(echo "$RESP" | sed -n 's/.*"serviceCreate":{"id":"\([^"]*\)".*/\1/p' | head -1)
+  if [ -n "$SERVICE_ID" ]; then
+    break
+  fi
+
+  # The mutation may have landed even if the edge response was lost.
+  SE=$(lookup_service_and_env "$PROJECT_ID")
+  SERVICE_ID=$(echo "$SE" | awk '{print $1}')
+  ENV_ID=$(echo "$SE" | awk '{print $2}')
+  if [ -n "$SERVICE_ID" ]; then
+    echo "Found service created by attempt $ATTEMPT: $SERVICE_ID"
+    break
+  fi
+
+  echo "serviceCreate attempt $ATTEMPT failed; retrying..."
+  [ "$ATTEMPT" -lt 10 ] && sleep 3
 done
-if ! echo "$RESP" | grep -q '"serviceCreate"'; then
-  echo "FATAL: serviceCreate failed"
+
+[ -z "$SERVICE_ID" ] && {
+  echo "FATAL: serviceCreate failed after 10 attempts"
   exit 1
+}
+
+echo "$SERVICE_ID" > "$STATE_DIR/service_id"
+
+# Resolve and persist the production environment before downstream volume/env
+# resources run. This prevents env_vars_create from failing with
+# "service/env not found" during Railway propagation delays.
+if [ -z "$ENV_ID" ]; then
+  for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+    SE=$(lookup_service_and_env "$PROJECT_ID")
+    ENV_ID=$(echo "$SE" | awk '{print $2}')
+    [ -n "$ENV_ID" ] && break
+    [ "$ATTEMPT" -lt 10 ] && sleep 2
+  done
 fi
 
-mkdir -p "$STATE_DIR"
-echo "$RESP" | sed 's/.*"serviceCreate":{"id":"\([^"]*\)".*/\1/' > "$STATE_DIR/service_id"
+[ -z "$ENV_ID" ] && {
+  echo "FATAL: production environment not found"
+  exit 1
+}
+echo "$ENV_ID" > "$STATE_DIR/environment_id"
