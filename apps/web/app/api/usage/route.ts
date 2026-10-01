@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const user = await authenticatedSupabaseUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY)) {
       return NextResponse.json({ error: "Usage accounting is unavailable" }, { status: 503 });
     }
 
