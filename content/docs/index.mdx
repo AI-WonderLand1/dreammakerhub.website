@@ -1,27 +1,72 @@
 ---
-title: "Welcome to AI-WONDER Documentation"
-description: "Explore comprehensive guides, tutorials, API references, and best practices to build powerful AI-powered applications."
+title: "AI WONDERLAND Documentation"
+description: "Current platform documentation for projects, WonderBuild, WonderSpace, AI, 3D, usage, billing, marketplace, APIs, support, and publishing."
 ---
 
-# Welcome to AI-WONDER Documentation
+# AI WONDERLAND Documentation
 
-Explore comprehensive guides, tutorials, API references, and best practices to build powerful AI‑powered applications.
+AI WONDERLAND combines the main account and project shell, WonderBuild visual creation, WonderSpace cloud coding, AI tools, WonderPlay/3D workflows, usage and credits, billing, marketplace surfaces, APIs, and support.
 
-## Quick Links
+DreamMakerHub.website remains the main web domain and repository name. **AI WONDERLAND** is the product brand shown to users.
 
-- [Getting Started](/docs/getting-started) - Set up your environment and start building
-- [API Reference](/docs/api-reference) - REST endpoints and authentication
-- [Authentication](/docs/authentication) - Supabase Auth and OAuth
-- [Billing & Subscriptions](/docs/billing) - Plans, payments, Stripe integration
-- [Marketplace](/docs/marketplace) - Extensions and plugins
-- [FAQ](/docs/faq) - Frequently asked questions
+## Start here
 
-## Architecture Overview
+- [Documentation overview](/docs) — current platform map and major workflows
+- [Sign up](/docs/getting-started/sign-up) — create an account
+- [Sign in](/docs/getting-started/sign-in) — authentication and sessions
+- [Start your project](/docs/getting-started/start-your-project) — choose the right creation path
+- [WonderBuild](/docs/wonderbuild/start) — website/app visual builder
+- [WonderBuild editor](/docs/wonderbuild/editor) — pages, components, assets, AI editing, responsive preview and publish
+- [WonderSpace](/wonderspace) — project files and Coder-managed VS Code workspaces
+- [3D Hub](/dashboard/3dhub) — WonderPlay and 3D tools
+- [AI Modules](/ai-modules) — platform AI modules
+- [API Reference](/api-reference) — developer API surface
+- [Billing](/settings/billing) — subscriptions, usage and credit purchases
+- [Metered Usage](/dashboard/usage/metered) — plan and purchased usage balances
+- [Marketplace](/marketplace) — AI WONDERLAND marketplace
+- [Support / Feedback](/dashboard/support) — customer support and internal feedback
+- [FAQ](/faq) — broader product questions
 
-<iframe
-  src="https://skybox.blockadelabs.com/e/6aa9d9fa2e747c8737d275e7a08a5e4f"
-  width="100%"
-  height="500"
-  style={{ border: 'none', borderRadius: '8px' }}
-  allowFullScreen
-></iframe>
+## Current service architecture
+
+| Service | Current role |
+| --- | --- |
+| Supabase | Authentication, owned project data, usage/billing records and realtime-backed product data |
+| Railway | Application/service hosting and the per-workspace compute target for WonderSpace Coder IDEs |
+| Coder | Workspace control plane and browser IDE/agent layer |
+| GitHub / GHCR | Source, pull requests, CI/CodeQL and AI WONDERLAND container images |
+| Stripe | Checkout and payment events for subscriptions and eligible credit purchases |
+| Cloudflare / domain | Public DNS/proxy layer for dreammakerhub.website and configured product subdomains |
+
+## WonderSpace runtime
+
+The main IDE path uses **Coder + Railway**, not the old Kubernetes/vCluster/Envbox runtime.
+
+Each workspace is designed to receive:
+
+- a separate Railway project
+- a Railway workspace service
+- a persistent `/home/coder` volume
+- the AI WONDERLAND baked development image
+- code-server through the Coder agent
+- an optional project-scoped Railway token when workspace project management is enabled
+
+The baked workspace image includes Node.js 22, npm, pnpm, TypeScript, Python/pip/venv, Git, build tools, SSH, jq, ripgrep, SQLite, tmux, vim/nano, rsync, curl/wget and archive utilities. User-level package state and project files under `/home/coder` persist across workspace restarts.
+
+## Usage and credits
+
+AI WONDERLAND tracks billable usage across product surfaces instead of treating provider services as the product itself.
+
+Current billing work includes:
+
+- subscription plans
+- live/metered usage
+- AI token usage and token packs
+- 3D/render credit usage and credit packs
+- Stripe checkout/webhooks
+- usage thresholds and alerts
+- shared usage accounting across the main site and connected AI/3D services
+
+## Readiness
+
+AI WONDERLAND is under active development. A route, integration, or deployment file existing in the repository does not by itself prove that every production dependency is enabled for every user. Documentation should distinguish current architecture and implemented flows from items that still need provider credentials, deployment, account-level enablement, or final production verification.
