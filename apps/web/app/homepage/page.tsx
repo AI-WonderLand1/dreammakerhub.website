@@ -2,26 +2,26 @@ import type { Metadata } from "next";
 import Homepage from "./Homepage";
 
 export const metadata: Metadata = {
-  title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+  title: "AI WONDERLAND | AI-Powered Web, App & 3D Creation",
   description:
-    "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with DreamMakerHub by AI WONDERLAND INNOVATION.",
+    "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with AI WONDERLAND by AI WONDERLAND INNOVATION.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+    title: "AI WONDERLAND | AI-Powered Web, App & 3D Creation",
     description:
-      "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with DreamMakerHub.",
+      "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with AI WONDERLAND.",
     url: "https://dreammakerhub.website",
-    siteName: "DreamMakerHub",
+    siteName: "AI WONDERLAND",
     type: "website",
     images: ["/images/ai-wonderland-homepage.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+    title: "AI WONDERLAND | AI-Powered Web, App & 3D Creation",
     description:
-      "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with DreamMakerHub.",
+      "Build websites, apps, AI workflows, cloud projects, and interactive 3D experiences with AI WONDERLAND.",
     images: ["/images/ai-wonderland-homepage.png"],
   },
 };

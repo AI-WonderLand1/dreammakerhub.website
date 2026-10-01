@@ -11,7 +11,7 @@ const values = [
   {
     icon: ShieldCheck,
     title: "Be honest about readiness",
-    description: "DreamMakerHub is under active development. We distinguish working features from experiments and planned capabilities.",
+    description: "AI WONDERLAND is under active development. We distinguish working features from experiments and planned capabilities.",
   },
   {
     icon: HeartHandshake,
@@ -46,9 +46,9 @@ export default function AboutPage() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-slate-400">AI WONDERLAND INNOVATION</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">About DreamMakerHub</h1>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">About AI WONDERLAND</h1>
             <p className="mt-3 max-w-3xl text-slate-300">
-              DreamMakerHub is an independent software project focused on bringing AI-assisted web, app, cloud development,
+              AI WONDERLAND is an independent software project focused on bringing AI-assisted web, app, cloud development,
               and interactive 3D creation into one platform.
             </p>
           </div>
@@ -126,7 +126,7 @@ export default function AboutPage() {
             </div>
           </div>
           <p className="mt-4 max-w-3xl text-slate-300">
-            AI WONDERLAND INNOVATION is currently a founder-led independent project. DreamMakerHub and its related systems
+            AI WONDERLAND INNOVATION is currently a founder-led independent project. AI WONDERLAND and its related systems
             are being developed iteratively, with features at different stages of testing and readiness. We do not present
             placeholder team members or unfinished systems as established production capabilities.
           </p>

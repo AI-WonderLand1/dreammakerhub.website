@@ -103,7 +103,7 @@ export function GlobalNavigation({ className = '', variant = 'full' }: GlobalNav
     <nav className={`border-b border-cyan-500/30 bg-black/50 backdrop-blur ${className}`}>
       <div className="px-4 py-3 flex items-center justify-between flex-wrap gap-4">
         <Link href="/" className="cyberpunk-text text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-blue-500 to-green-500">
-          AI-WONDERLAND
+          AI WONDERLAND
         </Link>
 
         <div className="flex gap-6 flex-wrap items-center">

@@ -212,7 +212,7 @@ export default function MockupHomepage() {
           <div className="grid items-center gap-5 rounded-[22px] border border-white/40 bg-blue-950/60 p-5 text-white shadow-xl backdrop-blur-md lg:grid-cols-[.9fr_1.1fr]">
             <div className="grid gap-4 sm:grid-cols-[120px_1fr] sm:items-center">
               <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border border-cyan-300/25 bg-cyan-400/10">
-                <Image src="/images/3DWONDERPLAYIMAGE.webp" alt="DreamMakerHub AI" fill className="object-cover" sizes="112px" />
+                <Image src="/images/3DWONDERPLAYIMAGE.webp" alt="AI WONDERLAND AI" fill className="object-cover" sizes="112px" />
               </div>
               <div>
                 <h2 className="text-2xl font-black leading-tight">AI that works<br />with your project.</h2>
@@ -255,7 +255,7 @@ export default function MockupHomepage() {
           </div>
           <div className="rounded-2xl border border-white/70 bg-blue-950/45 text-white p-5 shadow-sm backdrop-blur-md">
             <div className="flex items-start gap-3"><FileCode2 className="mt-1 h-6 w-6 text-cyan-200" /><div><h2 className="text-xl font-black">From Our Blog</h2><p className="mt-1 text-sm text-blue-50">Product updates, tutorials, and stories from the build.</p></div></div>
-            <div className="mt-4 grid gap-2 text-xs"><Link href="/blog/why-im-building-dreammakerhub" className="rounded-lg bg-slate-950/40 px-3 py-2 font-bold">Why I’m Building DreamMakerHub</Link><Link href="/blog" className="rounded-lg bg-slate-950/40 px-3 py-2 font-bold">Building an AI Platform While Learning to Code</Link></div>
+            <div className="mt-4 grid gap-2 text-xs"><Link href="/blog/why-im-building-dreammakerhub" className="rounded-lg bg-slate-950/40 px-3 py-2 font-bold">Why I’m Building AI WONDERLAND</Link><Link href="/blog" className="rounded-lg bg-slate-950/40 px-3 py-2 font-bold">Building an AI Platform While Learning to Code</Link></div>
           </div>
         </section>
 

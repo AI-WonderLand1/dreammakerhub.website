@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About DreamMakerHub',
+  title: 'About AI WONDERLAND',
   description:
-    'Learn about DreamMakerHub, the founder-led AI WONDERLAND INNOVATION project building AI-assisted web, app, cloud, and 3D creation tools.',
+    'Learn about AI WONDERLAND, the founder-led AI WONDERLAND INNOVATION project building AI-assisted web, app, cloud, and 3D creation tools.',
   alternates: {
     canonical: '/about',
   },
   openGraph: {
-    title: 'About DreamMakerHub',
+    title: 'About AI WONDERLAND',
     description:
-      'DreamMakerHub is a founder-led independent project building AI-assisted web, app, cloud, and 3D creation tools.',
+      'AI WONDERLAND is a founder-led independent project building AI-assisted web, app, cloud, and 3D creation tools.',
     url: 'https://dreammakerhub.website/about',
     type: 'website',
   },

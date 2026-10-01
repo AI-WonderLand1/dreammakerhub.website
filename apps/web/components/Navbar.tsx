@@ -121,7 +121,7 @@ const PRODUCT_MENUS = [
           {
             label: '3D CLI',
             href: '/3d-cli',
-            description: 'Use DreamMakerHub 3D tooling from the command line.',
+            description: 'Use AI WONDERLAND 3D tooling from the command line.',
           },
           {
             label: 'NPC-AI-SIM',
@@ -138,19 +138,18 @@ const DIRECT_LINKS = [
   { label: 'Community', href: '/community', icon: Users },
   {
     label: 'Give Feedback',
-    href: 'https://feedback.link/aiwonderlandinnovati',
+    href: '/dashboard/support',
     icon: MessageSquareText,
-    external: true,
   },
   { label: 'Blog', href: '/blog', icon: Newspaper },
 ] as const;
 
 const ABOUT_COLUMNS = [
   {
-    title: 'About DreamMakerHub',
+    title: 'About AI WONDERLAND',
     subtitle: 'Your platform. Your vision. Then make it.',
     items: [
-      { label: 'What is DreamMakerHub?', href: '/about', icon: FileText },
+      { label: 'What is AI WONDERLAND?', href: '/about', icon: FileText },
       { label: 'Our Mission', href: '/about', icon: Sparkles },
       { label: 'Pricing', href: '/#pricing', icon: Building2 },
     ],
@@ -173,9 +172,8 @@ const ABOUT_COLUMNS = [
       { label: 'Community', href: '/community', icon: Users },
       {
         label: 'Give Feedback',
-        href: 'https://feedback.link/aiwonderlandinnovati',
+        href: '/dashboard/support',
         icon: MessageSquareText,
-        external: true,
       },
       { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: Github, external: true },
     ],
@@ -226,12 +224,12 @@ export default function Navbar() {
   return (
     <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#030814]/88 shadow-[0_10px_30px_rgba(0,0,0,.28)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" onClick={closeMenus} className="flex shrink-0 items-center gap-3" aria-label="DreamMakerHub home">
+        <Link href="/" onClick={closeMenus} className="flex shrink-0 items-center gap-3" aria-label="AI WONDERLAND home">
           <span className="grid h-9 w-9 place-items-center rounded-full border border-cyan-300/25 bg-[radial-gradient(circle_at_35%_30%,#22d3ee,transparent_25%),conic-gradient(from_180deg,#7c3aed,#06b6d4,#7c3aed)] shadow-[0_0_22px_rgba(34,211,238,.18)]">
             <span className="h-4 w-4 rounded-full border-2 border-white/80" />
           </span>
           <span className="hidden min-[430px]:block">
-            <span className="block text-[16px] font-black tracking-tight text-white">Dream<span className="text-violet-300">Maker</span><span className="text-cyan-300">Hub</span></span>
+            <span className="block text-[16px] font-black tracking-tight text-white">AI <span className="text-violet-300">WONDER</span><span className="text-cyan-300">LAND</span></span>
             <span className="mt-0.5 block text-[8px] font-semibold uppercase tracking-[.16em] text-white/35">Create · Build · Explore · Together</span>
           </span>
         </Link>

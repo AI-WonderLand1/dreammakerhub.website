@@ -4,8 +4,8 @@ import { BookOpen, CalendarDays, ArrowRight } from 'lucide-react';
 const posts = [
   {
     slug: 'why-im-building-dreammakerhub',
-    title: "Why I'm Building DreamMakerHub",
-    excerpt: 'A look at the idea behind DreamMakerHub: one place to create, edit, run, and publish projects with AI, visual tools, and a real development workspace.',
+    title: "Why I'm Building AI WONDERLAND",
+    excerpt: 'A look at the idea behind AI WONDERLAND: one place to create, edit, run, and publish projects with AI, visual tools, and a real development workspace.',
     date: 'September 15, 2026',
     category: 'Founder Notes',
   },
@@ -17,11 +17,11 @@ export default function BlogPage() {
       <section className="mx-auto max-w-6xl px-5 py-16 md:px-8">
         <div className="max-w-3xl">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300">
-            <BookOpen className="h-3.5 w-3.5" /> DreamMakerHub Blog
+            <BookOpen className="h-3.5 w-3.5" /> AI WONDERLAND Blog
           </div>
           <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">Building in public.</h1>
           <p className="mt-4 text-base leading-7 text-zinc-400 md:text-lg">
-            Product updates, technical lessons, founder notes, and the messy parts of building DreamMakerHub. Anyone can read. No account required.
+            Product updates, technical lessons, founder notes, and the messy parts of building AI WONDERLAND. Anyone can read. No account required.
           </p>
         </div>
 
