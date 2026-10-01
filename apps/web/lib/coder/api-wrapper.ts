@@ -554,29 +554,10 @@ export class CoderAPIWrapper {
    * Build rich parameter values for Coder API request
    */
   private buildRichParameterValues(options: ProvisionOptions): Array<{ name: string; value: string }> {
-    const richParameterValues: Array<{ name: string; value: string }> = [
-      {
-        name: 'cpu',
-        value: String(options.cpu || 2),
-      },
-      {
-        name: 'memory',
-        value: String(options.memory || 4),
-      },
-      {
-        name: 'home_disk_size',
-        value: '10',
-      },
-    ];
-    
-    if (options.sshPublicKey) {
-      richParameterValues.push({
-        name: 'ssh_public_key',
-        value: options.sshPublicKey,
-      });
+    const richParameterValues: Array<{ name: string; value: string }> = [];
+    if (options.region) {
+      richParameterValues.push({ name: 'region', value: options.region });
     }
-    
-
     return richParameterValues;
   }
 
