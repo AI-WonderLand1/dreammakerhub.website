@@ -101,7 +101,6 @@ export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
     .map((option) => ({ label: option.name || option.value, value: option.value }));
   const cpu = choices('cpu');
   const memory = choices('memory');
-  if (!cpu.length || !memory.length) throw new Error('The published Coder template has no selectable CPU and memory options.');
   const images = choices('ide_image').filter((choice) =>
     (APPROVED_IDE_PROFILE_IDS as readonly string[]).includes(choice.value));
   // An image parameter without approved choices must not silently select an
