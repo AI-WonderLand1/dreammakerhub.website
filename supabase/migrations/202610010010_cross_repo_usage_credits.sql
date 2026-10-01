@@ -38,7 +38,7 @@ GRANT SELECT ON TABLE public.cross_repo_usage_events TO authenticated;
 GRANT SELECT, INSERT ON TABLE public.cross_repo_usage_events TO service_role;
 
 ALTER TABLE public.cross_repo_usage_events REPLICA IDENTITY FULL;
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables
@@ -48,7 +48,7 @@ BEGIN
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.cross_repo_usage_events;
   END IF;
-END $;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.reserve_billable_units_v2(
   p_user_id UUID,
