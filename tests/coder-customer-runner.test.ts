@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const file = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
@@ -13,19 +13,12 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain(".from('coder_customer_identities')");
   });
 
-  it('does not reserve until the customer identity, active template, and usage watcher are validated', () => {
+  it('keeps the legacy queued customer path fail-closed until explicitly reverified', () => {
     const source = file('apps/web/lib/coder/customer-provisioning.server.ts');
-    const owner = source.indexOf('await verifiedCustomerCoderOwner(user)');
-    const template = source.indexOf('await verifiedCustomerTemplateId()');
-    const controller = source.indexOf('await assertFreshUsageController()');
-    const reserve = source.indexOf(".rpc('reserve_coder_workspace_slot'");
-    expect(owner).toBeGreaterThan(0);
-    expect(template).toBeGreaterThan(owner);
-    expect(controller).toBeGreaterThan(template);
-    expect(reserve).toBeGreaterThan(controller);
     expect(source).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
+    expect(source).toContain('CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED');
     expect(source).toContain('CODER_CUSTOMER_HARD_STOP_VERIFIED');
-    expect(source).not.toContain('CODER_CUSTOMER_IDE_GATEWAY_VERIFIED');
+    expect(source).toContain('CODER_SUPABASE_OIDC_VERIFIED');
   });
 
   it('creates under the verified customer UUID and keeps uncertain slots allocated', () => {
@@ -37,18 +30,14 @@ describe('customer-only Coder provisioning', () => {
     expect(worker).not.toContain('/users/me/workspaces');
   });
 
-  it('keeps a locked customer namespace and a separate per-workspace disk and pod', () => {
-    const template = file('infra/coder/customer-template/main.tf');
-    expect(template).toContain('default     = "coder-customers"');
-    expect(template).toContain('automount_service_account_token = false');
-    expect(template).toContain('read_only_root_filesystem  = true');
-    expect(template).toContain('share        = "owner"');
-    expect(template).toContain('data.coder_workspace.me.id');
-    expect(template).toContain('customer-${data.coder_workspace.me.id}-home');
-    expect(template).not.toContain('curl -fsSL https://code-server.dev/install.sh');
-    const policy = file('infra/coder/customer-isolation.yaml');
-    expect(policy).toContain('name: customer-default-deny');
-    expect(policy).toContain('podSelector: {}');
+  it('does not ship the removed Kubernetes customer template beside the Railway IDE template', () => {
+    expect(existsSync(join(process.cwd(), 'infra/coder/customer-template/main.tf'))).toBe(false);
+    const template = file('infra/coder/template/main.tf');
+    expect(template).toContain('variable "railway_token"');
+    expect(template).toContain('resource "terraform_data" "project"');
+    expect(template).toContain('resource "terraform_data" "service"');
+    expect(template).toContain('resource "terraform_data" "volume"');
+    expect(template).not.toContain('provider "kubernetes"');
   });
 
   it('uses a restricted queue and atomic cumulative ledger instead of inactivity TTL for billing', () => {
