@@ -7,6 +7,7 @@ import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { stripePriceMatchesPlan } from "@/lib/billing/stripe-catalog-price";
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
 import { resolveTokenPack } from "@/lib/billing/token-packs.server";
+import { resolveRenderCreditPack } from "@/lib/billing/render-credit-packs.server";
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 type PaidPlanId = Extract<PlanId, "pro" | "team">;
@@ -183,6 +184,46 @@ export async function POST(request: NextRequest) {
             userId,
             pack: pack.id,
             tokens: pack.tokens,
+          });
+          break;
+        }
+
+        if (session.metadata?.kind === "render_credit_pack") {
+          if (!userId || session.status !== "complete" || session.payment_status !== "paid") {
+            logger.info("3D render credit checkout is not ready to grant", {
+              sessionId: session.id,
+              status: session.status,
+              paymentStatus: session.payment_status,
+            });
+            break;
+          }
+
+          const pack = resolveRenderCreditPack(session.metadata?.renderPack);
+          if (!pack || !pack.priceId || !pack.credits ||
+              String(pack.credits) !== session.metadata?.renderCredits) {
+            throw new Error("3D render credit checkout metadata does not match a configured pack");
+          }
+
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2 });
+          if (lineItems.data.length !== 1 || lineItems.data[0]?.quantity !== 1 ||
+              lineItems.data[0]?.price?.id !== pack.priceId) {
+            throw new Error("3D render credit checkout price does not match the configured pack");
+          }
+
+          const { error: grantError } = await supabase.rpc("grant_purchased_render_credits", {
+            p_user_id: userId,
+            p_checkout_session_id: session.id,
+            p_pack_id: pack.id,
+            p_credits: pack.credits,
+            p_price_id: pack.priceId,
+          });
+          if (grantError) throw grantError;
+
+          logger.info("Verified 3D render credit purchase processed", {
+            sessionId: session.id,
+            userId,
+            pack: pack.id,
+            credits: pack.credits,
           });
           break;
         }
