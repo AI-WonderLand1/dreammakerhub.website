@@ -123,6 +123,26 @@ REVOKE ALL ON FUNCTION public.reserve_billable_units_v2(UUID,TEXT,INTEGER,INTEGE
 GRANT EXECUTE ON FUNCTION public.reserve_billable_units_v2(UUID,TEXT,INTEGER,INTEGER,TEXT)
   TO service_role;
 
+CREATE TABLE IF NOT EXISTS public.render_credit_purchase_events (
+  stripe_checkout_session_id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  pack_id TEXT NOT NULL,
+  credits BIGINT NOT NULL CHECK (credits > 0),
+  stripe_price_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS render_credit_purchase_events_user_created_idx
+  ON public.render_credit_purchase_events(user_id, created_at DESC);
+
+ALTER TABLE public.render_credit_purchase_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can read their own render credit purchases" ON public.render_credit_purchase_events;
+CREATE POLICY "Users can read their own render credit purchases"
+  ON public.render_credit_purchase_events FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+GRANT SELECT ON public.render_credit_purchase_events TO authenticated;
+GRANT ALL ON public.render_credit_purchase_events TO service_role;
+
 CREATE OR REPLACE FUNCTION public.grant_purchased_render_credits(
   p_user_id UUID,
   p_checkout_session_id TEXT,
@@ -143,10 +163,10 @@ BEGIN
     RAISE EXCEPTION 'Invalid render credit grant';
   END IF;
 
-  INSERT INTO public.token_purchase_events(
-    stripe_checkout_session_id, user_id, pack_id, tokens, stripe_price_id
+  INSERT INTO public.render_credit_purchase_events(
+    stripe_checkout_session_id, user_id, pack_id, credits, stripe_price_id
   )
-  VALUES (p_checkout_session_id, p_user_id, 'render:' || p_pack_id, p_credits, p_price_id)
+  VALUES (p_checkout_session_id, p_user_id, p_pack_id, p_credits, p_price_id)
   ON CONFLICT (stripe_checkout_session_id) DO NOTHING;
 
   GET DIAGNOSTICS inserted = ROW_COUNT;
