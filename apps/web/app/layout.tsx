@@ -17,14 +17,14 @@ import AmplitudeAnalytics from "@/components/analytics/AmplitudeAnalytics";
 
 const siteUrl = "https://dreammakerhub.website";
 const siteDescription =
-  "DreamMakerHub by AI WONDERLAND INNOVATION is an independent platform for building websites, apps, AI workflows, cloud workspaces, and interactive 3D experiences.";
+  "AI WONDERLAND by AI WONDERLAND INNOVATION is an independent platform for building websites, apps, AI workflows, cloud workspaces, and interactive 3D experiences.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "DreamMakerHub",
+  applicationName: "AI WONDERLAND",
   title: {
-    default: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
-    template: "%s | DreamMakerHub",
+    default: "AI WONDERLAND | AI-Powered Web, App & 3D Creation",
+    template: "%s | AI WONDERLAND",
   },
   description: siteDescription,
   icons: {
@@ -38,14 +38,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    siteName: "DreamMakerHub",
-    title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+    siteName: "AI WONDERLAND",
+    title: "AI WONDERLAND | AI-Powered Web, App & 3D Creation",
     description: siteDescription,
     images: ["/images/ai-wonderland-homepage.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DreamMakerHub | AI-Powered Web, App & 3D Creation",
+    title: "AI WONDERLAND | AI-Powered Web, App & 3D Creation",
     description: siteDescription,
     images: ["/images/ai-wonderland-homepage.png"],
   },
@@ -93,7 +93,7 @@ const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "@id": `${siteUrl}/#website`,
-  name: "DreamMakerHub",
+  name: "AI WONDERLAND",
   alternateName: "AI Wonderland",
   url: siteUrl,
   description: siteDescription,
