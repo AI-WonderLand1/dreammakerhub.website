@@ -232,7 +232,7 @@ STABLE
 SET search_path = public
 AS $$
 DECLARE
-  period_start DATE := date_trunc('month', now() AT TIME ZONE 'UTC')::date;
+  v_period_start DATE := date_trunc('month', now() AT TIME ZONE 'UTC')::date;
   plan_name TEXT := 'free';
   result JSON;
 BEGIN
@@ -244,18 +244,18 @@ BEGIN
 
   SELECT json_build_object(
     'plan', COALESCE(plan_name, 'free'),
-    'period_start', period_start,
+    'period_start', v_period_start,
     'api_requests', COALESCE((
       SELECT units FROM public.billable_usage_counters
-      WHERE user_id=p_user_id AND period_start=get_usage_totals_for_alerts.period_start AND feature='ai_requests'
+      WHERE user_id=p_user_id AND period_start=v_period_start AND feature='ai_requests'
     ),0),
     'ai_tokens', COALESCE((
       SELECT units FROM public.billable_usage_counters
-      WHERE user_id=p_user_id AND period_start=get_usage_totals_for_alerts.period_start AND feature='ai_tokens'
+      WHERE user_id=p_user_id AND period_start=v_period_start AND feature='ai_tokens'
     ),0),
     'three_d_generations', COALESCE((
       SELECT units FROM public.billable_usage_counters
-      WHERE user_id=p_user_id AND period_start=get_usage_totals_for_alerts.period_start AND feature='render_credits'
+      WHERE user_id=p_user_id AND period_start=v_period_start AND feature='render_credits'
     ),0),
     'storage', COALESCE((
       SELECT SUM(storage_used) FROM public.projects
