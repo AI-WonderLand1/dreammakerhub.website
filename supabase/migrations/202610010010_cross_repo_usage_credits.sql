@@ -29,7 +29,26 @@ CREATE INDEX IF NOT EXISTS cross_repo_usage_events_source_idx
 
 ALTER TABLE public.cross_repo_usage_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.cross_repo_usage_events FROM PUBLIC, anon, authenticated;
+DROP POLICY IF EXISTS "Users can read their own cross repo usage" ON public.cross_repo_usage_events;
+CREATE POLICY "Users can read their own cross repo usage"
+  ON public.cross_repo_usage_events
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+GRANT SELECT ON TABLE public.cross_repo_usage_events TO authenticated;
 GRANT SELECT, INSERT ON TABLE public.cross_repo_usage_events TO service_role;
+
+ALTER TABLE public.cross_repo_usage_events REPLICA IDENTITY FULL;
+DO $
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname='supabase_realtime'
+      AND schemaname='public'
+      AND tablename='cross_repo_usage_events'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.cross_repo_usage_events;
+  END IF;
+END $;
 
 CREATE OR REPLACE FUNCTION public.reserve_billable_units_v2(
   p_user_id UUID,
