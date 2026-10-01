@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
         api_calls_used: counters.get("ai_requests") || 0,
         tokens_used: counters.get("ai_tokens") || 0,
         render_credits_used: counters.get("render_credits") || 0,
+        three_d_generations: counters.get("render_credits") || 0,
         purchased_tokens: Number(balanceResult.data?.purchased_tokens ?? 0),
         purchased_render_credits: Number(balanceResult.data?.purchased_render_credits ?? 0),
         storage_used: storageUsed,
