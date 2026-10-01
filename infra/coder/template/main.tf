@@ -155,10 +155,62 @@ resource "coder_agent" "main" {
 
   startup_script = <<-EOT
     set -e
-    if [ ! -f ~/.init_done ]; then
-      cp -rT /etc/skel ~ 2>/dev/null || true
-      touch ~/.init_done
+
+    # /home/coder is the Railway persistent volume. Keep projects, editor
+    # state, package caches, and user-installed tools underneath HOME so they
+    # survive workspace stop/start and service redeploys.
+    if [ ! -f "$HOME/.init_done" ]; then
+      cp -rT /etc/skel "$HOME" 2>/dev/null || true
+      touch "$HOME/.init_done"
     fi
+
+    mkdir -p \
+      "$HOME/projects" \
+      "$HOME/.local/bin" \
+      "$HOME/.local/lib" \
+      "$HOME/.cache/pip" \
+      "$HOME/.npm-global" \
+      "$HOME/.npm-cache" \
+      "$HOME/.local/share/pnpm" \
+      "$HOME/.cache/pnpm" \
+      "$HOME/.cache/yarn" \
+      "$HOME/.cache/bun"
+
+    # Persist package-manager state on the mounted home volume.
+    if command -v npm >/dev/null 2>&1; then
+      npm config set prefix "$HOME/.npm-global" --location=user >/dev/null 2>&1 || true
+      npm config set cache "$HOME/.npm-cache" --location=user >/dev/null 2>&1 || true
+    fi
+
+    if command -v pnpm >/dev/null 2>&1; then
+      pnpm config set store-dir "$HOME/.local/share/pnpm/store" --global >/dev/null 2>&1 || true
+    fi
+
+    if command -v yarn >/dev/null 2>&1; then
+      yarn config set cache-folder "$HOME/.cache/yarn" >/dev/null 2>&1 || true
+    fi
+
+    # Add persistent user-level tool locations to every shell without
+    # duplicating the block on each start.
+    for shell_rc in "$HOME/.profile" "$HOME/.bashrc"; do
+      touch "$shell_rc"
+      if ! grep -q "AI_WONDERLAND_PERSISTENT_TOOLS" "$shell_rc"; then
+        cat >> "$shell_rc" <<'PERSISTENT_TOOLS'
+# AI_WONDERLAND_PERSISTENT_TOOLS
+export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$HOME/.local/share/pnpm:$PATH"
+export PYTHONUSERBASE="$HOME/.local"
+export PIP_CACHE_DIR="$HOME/.cache/pip"
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export NPM_CONFIG_CACHE="$HOME/.npm-cache"
+export YARN_CACHE_FOLDER="$HOME/.cache/yarn"
+# AI_WONDERLAND_PERSISTENT_TOOLS_END
+PERSISTENT_TOOLS
+      fi
+    done
+
+    # Git repos and project-local dependencies installed below ~/projects are
+    # already persistent because the whole /home/coder path is a Railway volume.
+    git config --global init.defaultBranch main >/dev/null 2>&1 || true
   EOT
 
   metadata {
