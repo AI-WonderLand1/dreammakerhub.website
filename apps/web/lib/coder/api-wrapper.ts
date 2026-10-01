@@ -196,9 +196,9 @@ export class CoderAPIWrapper {
       owner_name: ownerName,
       owner_avatar_url: coderWorkspace.owner_avatar_url || '',
       template_id: coderWorkspace.template_id,
-      template_name: coderWorkspace.template_name || 'wonderspace-ide',
+      template_name: coderWorkspace.template_name || 'ai-wonderland-ide',
       template_version_id: coderWorkspace.template_version_id || '',
-      template_display_name: 'WonderSpace IDE',
+      template_display_name: 'AI WONDERLAND IDE',
       template_icon: '',
       status,
       health: coderWorkspace.health || { healthy: true, failing_agents: [] },
@@ -213,7 +213,7 @@ export class CoderAPIWrapper {
       updated_at: coderWorkspace.updated_at,
       ttl_ms: coderWorkspace.ttl_ms || 0,
       organization_id: coderWorkspace.organization_id || userId,
-      organization_name: coderWorkspace.organization_name || 'DreamMakerHub',
+      organization_name: coderWorkspace.organization_name || 'AI WONDERLAND',
     };
   }
 
@@ -534,8 +534,8 @@ export class CoderAPIWrapper {
   async createWorkspaceForApp(userId: string, options: ProvisionOptions): Promise<ProvisionResult> {
     const workspace = await this.createWorkspace(userId, {
       name: options.customName || `ai-wonder-space-${userId}-${Date.now().toString().slice(-6)}`,
-      template_id: options.templateId || 'wonderspace-ide',
-      rich_parameter_values: this.buildRichParameterValues(userId, options.templateId || 'wonderspace-ide', options),
+      template_id: options.templateId || 'ai-wonderland-ide',
+      rich_parameter_values: this.buildRichParameterValues(options),
       ttl_ms: 4 * 60 * 60 * 1000, // 4 hours
     });
     
@@ -553,46 +553,11 @@ export class CoderAPIWrapper {
   /**
    * Build rich parameter values for Coder API request
    */
-  private buildRichParameterValues(userId: string, templateId: string, options: ProvisionOptions): Array<{ name: string; value: string }> {
-    const richParameterValues: Array<{ name: string; value: string }> = [
-      {
-        name: 'cpu',
-        value: String(options.cpu || 2),
-      },
-      {
-        name: 'memory',
-        value: String(options.memory || 4),
-      },
-      {
-        name: 'home_disk_size',
-        value: '20',
-      },
-    ];
-    
-    if (options.sshPublicKey) {
-      richParameterValues.push({
-        name: 'ssh_public_key',
-        value: options.sshPublicKey,
-      });
+  private buildRichParameterValues(options: ProvisionOptions): Array<{ name: string; value: string }> {
+    const richParameterValues: Array<{ name: string; value: string }> = [];
+    if (options.region) {
+      richParameterValues.push({ name: 'region', value: options.region });
     }
-    
-    if (options.templateId === 'wonderspace-ide') {
-      richParameterValues.push({
-        name: 'environment',
-        value: 'ai-wonderland',
-      });
-      
-      richParameterValues.push({
-        name: 'ai_tools_enabled',
-        value: 'true',
-      });
-      
-      richParameterValues.push({
-        name: 'playcanvas_enabled',
-        value: 'true',
-      });
-    }
-    
     return richParameterValues;
   }
 

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
-import { getUserSSHKey } from '@/lib/coder/user-ssh-keys';
-import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
+import { getCoderLaunchConfig, getCoderTemplateId } from '@/lib/coder/launch-options';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { assertCoderOwnerIsolation, assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
@@ -51,10 +50,7 @@ export async function POST(request: Request) {
     if (!(await coder.healthCheck())) {
       return NextResponse.json({ error: 'WonderSpace cloud IDE is temporarily unavailable.' }, { status: 503 });
     }
-    const richParameterValues: { name: string; value: string }[] = [
-      { name: 'cpu', value: String(cpu) },
-      { name: 'memory', value: String(memory) },
-    ];
+    const richParameterValues: { name: string; value: string }[] = [];
     let templateId: string;
     if (podType === 'ide') {
       let config;
@@ -64,52 +60,17 @@ export async function POST(request: Request) {
       if (body.templateId && body.templateId !== config.templateId && body.templateId !== config.templateName) {
         return NextResponse.json({ error: 'Choose a supported Coder IDE template.' }, { status: 400 });
       }
-      if (!config.cpu.some((option) => option.value === String(cpu)) ||
-          !config.memory.some((option) => option.value === String(memory))) {
-        return NextResponse.json({ error: 'These resources are not available in the selected Coder template.' }, { status: 400 });
-      }
       templateId = config.templateId;
-      // Accept only a profile published on the template AND in our server-side
-      // allowlist. The browser cannot request an arbitrary Docker image/URL.
-      if (config.images.length) {
-        const imageProfile = body.ideImage === undefined ? config.images[0].value : body.ideImage;
-        if (typeof imageProfile !== 'string' ||
-            !config.images.some((option) => option.value === imageProfile)) {
-          return NextResponse.json({ error: 'Choose an approved IDE environment.' }, { status: 400 });
-        }
-        richParameterValues.push({ name: 'ide_image', value: imageProfile });
-      } else if (body.ideImage !== undefined) {
-        return NextResponse.json({ error: 'This Coder template does not support IDE environment selection.' }, { status: 400 });
-      }
-      if (config.diskSupported) richParameterValues.push({ name: 'home_disk_size', value: String(CODER_DISK_GIB) });
+      // Railway GraphQL template exposes region as its only end-user parameter.
+      // Image, service, volume, and Railway credentials are operator-controlled
+      // template variables and are never accepted from the browser.
       const region = typeof body.region === 'string' ? body.region : '';
       if (region && !config.regions.some((option) => option.value === region)) {
         return NextResponse.json({ error: 'This region is not supported by the Coder template.' }, { status: 400 });
       }
       if (region) richParameterValues.push({ name: 'region', value: region });
-      const requestedRepo = typeof body.repository === 'string' ? body.repository.trim() : '';
-      if (requestedRepo) {
-        if (!config.repositorySupported) {
-          return NextResponse.json({ error: 'Coder must publish the repository parameters before repository launch is available.' }, { status: 409 });
-        }
-        const normalized = normalizePublicGithubRepo(requestedRepo);
-        if (!normalized) return NextResponse.json({ error: 'Enter a valid public GitHub repository.' }, { status: 400 });
-        let publicRepo;
-        try { publicRepo = await getPublicGithubRepository(normalized); } catch {
-          return NextResponse.json({ error: 'Public GitHub repository or branch is unavailable. Private repositories are not supported yet.' }, { status: 422 });
-        }
-        const branch = typeof body.branch === 'string' && body.branch ? body.branch : publicRepo.defaultBranch;
-        if (!isSafeGithubBranch(branch) || !publicRepo.branches.includes(branch)) {
-          return NextResponse.json({ error: 'Select a branch that exists in the public repository.' }, { status: 400 });
-        }
-        richParameterValues.push({ name: 'repo_url', value: `https://github.com/${publicRepo.fullName}.git` });
-        richParameterValues.push({ name: 'repo_branch', value: branch });
-      } else if (body.branch) {
-        return NextResponse.json({ error: 'Select a repository before choosing a branch.' }, { status: 400 });
-      }
-      if (config.sshSupported) {
-        const sshKey = await getUserSSHKey(user.id, user.email || user.id);
-        richParameterValues.push({ name: 'ssh_public_key', value: sshKey.publicKey });
+      if (body.repository || body.branch || body.ideImage !== undefined) {
+        return NextResponse.json({ error: 'This Railway Coder template does not accept repository or image overrides.' }, { status: 400 });
       }
     } else {
       if (body.repository || body.branch || body.region || body.ideImage !== undefined ||
@@ -117,7 +78,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Unsupported PlayCanvas launch option.' }, { status: 400 });
       }
       templateId = await getCoderTemplateId('playcanvas-3d');
-      richParameterValues.push({ name: 'home_disk_size', value: String(CODER_DISK_GIB) });
+      richParameterValues.push(
+        { name: 'cpu', value: String(cpu) },
+        { name: 'memory', value: String(memory) },
+        { name: 'home_disk_size', value: String(CODER_DISK_GIB) },
+      );
     }
 
     // Counts ALLOCATED workspaces, not monthly starts. A stopped pod still has a

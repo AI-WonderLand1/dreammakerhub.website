@@ -29,8 +29,9 @@ describe('Coder allocated workspace cost guard', () => {
     expect(guard).toContain('CODER_DISK_GIB = 10');
     expect(guard).toContain('CODER_TTL_MS = 60 * 60 * 1000');
     expect(guard).toContain('p_origin: coderApiConfig().url');
-    expect(options).toContain('Number(option.value) <= MAX_CODER_CPU');
-    expect(options).toContain('Number(option.value) <= MAX_CODER_MEMORY_GIB');
+    expect(options).not.toContain('Number(option.value) <= MAX_CODER_CPU');
+    expect(options).not.toContain('Number(option.value) <= MAX_CODER_MEMORY_GIB');
+    expect(route).toContain("richParameterValues.push({ name: 'region', value: region })");
   });
 
   it('requires ownership and confirmed deletion, not a queued transition or changed server', () => {
@@ -46,20 +47,18 @@ describe('Coder allocated workspace cost guard', () => {
     expect(route).not.toContain("method: 'DELETE'");
   });
 
-  it('enforces Coder-side limits even when someone bypasses the website', () => {
-    for (const path of ['infra/coder/template/cost-guard.tf', 'infra/coder/templates/playcanvas-3d/cost-guard.tf']) {
-      const template = read(path);
-      expect(template).toContain('var.namespace == "coder-workspaces"');
-      expect(template).toContain('tonumber(data.coder_parameter.cpu.value) <= 2');
-      expect(template).toContain('tonumber(data.coder_parameter.memory.value) <= 4');
-      expect(template).toContain('tonumber(data.coder_parameter.home_disk_size.value) == 10');
-    }
-    const quota = read('deploy/k8s/coder-workspace-cost-guard.yaml');
-    expect(quota).toContain('kind: ResourceQuota');
-    expect(quota).toContain('pods: "5"');
-    expect(quota).toContain('persistentvolumeclaims: "5"');
-    expect(quota).toContain('requests.storage: 50Gi');
-    expect(quota).toContain('ephemeral-storage: 2Gi');
-    expect(quota).toContain('namespace: coder-workspaces');
+  it('keeps Railway IDE sizing operator-controlled while preserving PlayCanvas Kubernetes guards', () => {
+    const railway = read('infra/coder/template/main.tf');
+    expect(railway).not.toContain('data "coder_parameter" "cpu"');
+    expect(railway).not.toContain('data "coder_parameter" "memory"');
+    expect(railway).toContain('variable "workspace_image"');
+    expect(railway).toContain('variable "railway_token"');
+    expect(railway).toContain('sensitive   = true');
+
+    const playcanvas = read('infra/coder/templates/playcanvas-3d/cost-guard.tf');
+    expect(playcanvas).toContain('var.namespace == "coder-workspaces"');
+    expect(playcanvas).toContain('tonumber(data.coder_parameter.cpu.value) <= 2');
+    expect(playcanvas).toContain('tonumber(data.coder_parameter.memory.value) <= 4');
+    expect(playcanvas).toContain('tonumber(data.coder_parameter.home_disk_size.value) == 10');
   });
 });

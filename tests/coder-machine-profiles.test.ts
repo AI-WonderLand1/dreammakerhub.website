@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
-describe('WonderSpace weighted machine profiles', () => {
-  it('offers the four approved CPU/RAM shapes with proportional compute multipliers', () => {
+describe('WonderSpace compute metering and Railway IDE template', () => {
+  it('retains canonical compute profiles for billing and legacy metering', () => {
     const profiles = read('apps/web/lib/coder/workspace-profiles.ts');
     expect(profiles).toContain("id: 'micro'");
     expect(profiles).toMatch(/id: 'micro',[\s\S]*?cpu: 1,[\s\S]*?memoryGiB: 2,[\s\S]*?computeMultiplier: 1,/);
@@ -14,25 +14,14 @@ describe('WonderSpace weighted machine profiles', () => {
     expect(profiles).toMatch(/id: 'max',[\s\S]*?cpu: 8,[\s\S]*?memoryGiB: 16,[\s\S]*?computeMultiplier: 8,/);
   });
 
-  it('accepts a profile id from the browser but derives CPU, RAM and multiplier on the server', () => {
-    const form = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
-    const provision = read('apps/web/lib/coder/customer-provisioning.server.ts');
-    expect(form).toContain('JSON.stringify({ workspaceName, machineProfile })');
-    expect(form).not.toContain('JSON.stringify({ workspaceName, cpu, memory })');
-    expect(provision).toContain('workspaceProfile(body.machineProfile)');
-    expect(provision).toContain('cpu: profile.cpu');
-    expect(provision).toContain('memory_gib: profile.memoryGiB');
-    expect(provision).toContain('compute_multiplier: profile.computeMultiplier');
-  });
-
-  it('passes one immutable machine profile into the customer Coder template', () => {
-    const runner = read('apps/web/app/api/internal/coder/customer-runner/route.ts');
-    const template = read('infra/coder/customer-template/main.tf');
-    expect(runner).toContain("{ name: 'machine_profile', value: job.machine_profile }");
-    expect(runner).not.toContain("{ name: 'cpu', value: String(job.cpu) }");
-    expect(template).toContain('data "coder_parameter" "machine_profile"');
-    expect(template).toContain('Micro · 1 CPU / 2 GB · 1x compute');
-    expect(template).toContain('Max · 8 CPU / 16 GB · 8x compute');
+  it('keeps the Railway workspace image and credentials operator-controlled', () => {
+    const template = read('infra/coder/template/main.tf');
+    const provision = read('apps/web/app/api/user-workspace/provision/route.ts');
+    expect(template).toContain('variable "workspace_image"');
+    expect(template).toContain('variable "railway_token"');
+    expect(template).not.toContain('data "coder_parameter" "machine_profile"');
+    expect(provision).toContain('This Railway Coder template does not accept repository or image overrides.');
+    expect(provision).toContain("richParameterValues.push({ name: 'region', value: region })");
   });
 
   it('charges elapsed compute by multiplier and against one monthly user pool', () => {

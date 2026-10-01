@@ -94,10 +94,8 @@ export interface CreateWorkspaceRequest {
 
 export interface ProvisionOptions {
   customName?: string;
-  sshPublicKey?: string;
   templateId?: string;
-  cpu?: number;
-  memory?: number;
+  region?: string;
 }
 
 export interface WorkspaceConfig {
