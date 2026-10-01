@@ -44,7 +44,7 @@ jobs:
               { echo 'Configured role ARN does not match the pinned AWS account.'; exit 1; }
           fi
           bash -n infra/coder/aws-customer-pod-preflight.sh
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_EKS_READ_ONLY_ROLE_ARN }}
           role-session-name: wonderspace-readonly-preflight
