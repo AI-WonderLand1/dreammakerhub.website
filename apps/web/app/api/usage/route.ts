@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       1,
     )).toISOString().slice(0, 10);
 
-    const [counterResult, balanceResult, projectResult, recentResult] = await Promise.all([
+    const [counterResult, balanceResult, projectResult, recentResult, sourceSummaryResult] = await Promise.all([
       supabase
         .from("billable_usage_counters")
         .select("feature,units")
@@ -43,9 +43,10 @@ export async function GET(req: NextRequest) {
         .eq("period_start", monthStart)
         .order("created_at", { ascending: false })
         .limit(20),
+      supabase.rpc("get_cross_repo_usage_summary", { p_user_id: user.id }),
     ]);
 
-    if (counterResult.error || balanceResult.error || projectResult.error || recentResult.error) {
+    if (counterResult.error || balanceResult.error || projectResult.error || recentResult.error || sourceSummaryResult.error) {
       return NextResponse.json({ error: "Failed to load unified usage" }, { status: 500 });
     }
 
@@ -82,6 +83,7 @@ export async function GET(req: NextRequest) {
         purchased_render_credits: Number(balanceResult.data?.purchased_render_credits ?? 0),
         storage_used: storageUsed,
         projects_count: projects.length,
+        by_source: sourceSummaryResult.data?.by_source ?? {},
         recent_activity: (recentResult.data ?? []).map((event) => ({
           action: event.feature,
           source: event.source,
