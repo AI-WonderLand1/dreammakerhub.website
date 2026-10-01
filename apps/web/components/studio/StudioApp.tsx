@@ -65,11 +65,11 @@ export default function StudioApp() {
   return (
     <div className="wonderplay-app">
       <div className="wonderplay-menu">
-        <Link className="wonderplay-brand" href="/dashboard" aria-label="DreamMakerHub home">DreamMakerHub</Link>
+        <Link className="wonderplay-brand" href="/dashboard" aria-label="AI WONDERLAND home">AI WONDERLAND</Link>
         <span className="wonderplay-product-name">WonderPlay</span>
         <details className="wonderplay-site-menu">
           <summary><Menu size={14} aria-hidden="true" /> Navigate <ChevronDown size={12} aria-hidden="true" /></summary>
-          <nav aria-label="DreamMakerHub navigation" className="wonderplay-site-links">
+          <nav aria-label="AI WONDERLAND navigation" className="wonderplay-site-links">
             {SITE_LINKS.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href}><Icon size={15} aria-hidden="true" /> {label}</Link>
             ))}
