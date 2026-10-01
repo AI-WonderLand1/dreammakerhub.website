@@ -3,7 +3,7 @@ import { createClient } from '@/app/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'Account Settings | DreamMakerHub',
+  title: 'Account Settings | AI WONDERLAND',
   description: 'Manage account details and verified operator settings.',
 };
 

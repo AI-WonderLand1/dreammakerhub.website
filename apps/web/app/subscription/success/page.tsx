@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: 'Checkout status | DreamMakerHub',
+  title: 'Checkout status | AI WONDERLAND',
   description: 'Verify your payment status before assuming a subscription is active.',
 };
 

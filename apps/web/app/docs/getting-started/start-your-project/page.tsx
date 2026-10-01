@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Start Your Project | DreamMakerHub Docs',
-  description: 'Choose the DreamMakerHub product that matches what you want to build.',
+  title: 'Start Your Project | AI WONDERLAND Docs',
+  description: 'Choose the AI WONDERLAND product that matches what you want to build.',
 };
 
 const toc = [
@@ -74,7 +74,7 @@ export default function StartYourProjectDocsPage() {
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
           <Link href="/docs" className="flex items-center gap-2 font-black tracking-tight">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600">D</span>
-            <span>DreamMakerHub <span className="font-medium text-slate-400">Docs</span></span>
+            <span>AI WONDERLAND <span className="font-medium text-slate-400">Docs</span></span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/dashboard/projects" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">My Projects</Link>
@@ -116,7 +116,7 @@ export default function StartYourProjectDocsPage() {
                 <Box className="h-4 w-4" /> Step 3
               </div>
               <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Choose what you want to build</h1>
-              <p className="mt-4 text-lg leading-8 text-slate-600">DreamMakerHub has separate builders for different kinds of work. Pick the product that matches the thing you are making, then follow that product's build documentation.</p>
+              <p className="mt-4 text-lg leading-8 text-slate-600">AI WONDERLAND has separate builders for different kinds of work. Pick the product that matches the thing you are making, then follow that product's build documentation.</p>
             </div>
 
             <section id="choose" className="scroll-mt-28 pt-12">
@@ -188,7 +188,7 @@ export default function StartYourProjectDocsPage() {
                 <p className="mt-3 max-w-3xl leading-7 text-slate-600">Use NPC-AI-SIM when the thing you are building is an intelligent 3D character. The current product navigation describes it as the place to create, configure, test, and export intelligent characters.</p>
                 <div className="mt-5 rounded-2xl border border-fuchsia-200 bg-white/70 p-5">
                   <p className="font-bold">What happens when you open it</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">DreamMakerHub's <strong>/wonder-play</strong> route hands you off to the separate NPC-AI-SIM app. That is expected behavior, not a broken redirect.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">AI WONDERLAND's <strong>/wonder-play</strong> route hands you off to the separate NPC-AI-SIM app. That is expected behavior, not a broken redirect.</p>
                 </div>
                 <Link href="/wonder-play" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-fuchsia-700 px-5 py-3 text-sm font-bold text-white hover:bg-fuchsia-600">
                   Open NPC-AI-SIM <ExternalLink className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default function StartYourProjectDocsPage() {
               <div className="rounded-3xl border border-amber-200 bg-amber-50 p-7 sm:p-8">
                 <Sparkles className="h-7 w-7 text-amber-700" />
                 <h2 className="mt-4 text-3xl font-black">AI Playground is a testing workspace</h2>
-                <p className="mt-3 max-w-3xl leading-7 text-slate-600">AI Playground is available at its own DreamMakerHub subdomain for testing prompts, providers, models, and agent workflows. It is useful while building, but it is not the main saved-project destination for a website, code workspace, 3D project, or NPC.</p>
+                <p className="mt-3 max-w-3xl leading-7 text-slate-600">AI Playground is available at its own AI WONDERLAND subdomain for testing prompts, providers, models, and agent workflows. It is useful while building, but it is not the main saved-project destination for a website, code workspace, 3D project, or NPC.</p>
                 <a href="https://playground.dreammakerhub.website/" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-white px-5 py-3 text-sm font-bold text-amber-900 hover:border-amber-500">
                   Open AI Playground <ExternalLink className="h-4 w-4" />
                 </a>
@@ -237,7 +237,7 @@ export default function StartYourProjectDocsPage() {
                   <p className="mt-2 text-sm leading-6 text-slate-600">Creating a blank WonderBuild project requires an authenticated account. Sign in, then return to WonderBuild and start again.</p>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-bold">NPC-AI-SIM opens another DreamMakerHub address</h3>
+                  <h3 className="font-bold">NPC-AI-SIM opens another AI WONDERLAND address</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">That is expected. The current route redirects to the separate NPC-AI-SIM application.</p>
                 </div>
                 <div className="p-5">

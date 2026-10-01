@@ -35,7 +35,7 @@ describe('WonderPlay unified editor layout', () => {
 
   it('provides site navigation in a top-bar menu while hiding the dashboard sidebar on this page', () => {
     expect(studio).toContain('className="wonderplay-site-menu"');
-    expect(studio).toContain('aria-label="DreamMakerHub navigation"');
+    expect(studio).toContain('aria-label="AI WONDERLAND navigation"');
     for (const href of ['/dashboard', '/dashboard/projects', '/wonder-build/builder', '/wonderspace', '/dashboard/settings']) {
       expect(studio).toContain(`href: "${href}"`);
     }
