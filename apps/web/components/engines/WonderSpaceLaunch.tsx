@@ -36,8 +36,6 @@ export default function WonderSpaceLaunch() {
   const [repoLoading, setRepoLoading] = useState(false);
   const [repoError, setRepoError] = useState('');
   const [branch, setBranch] = useState('');
-  const [cpu, setCpu] = useState('');
-  const [memory, setMemory] = useState('');
   const [ideImage, setIdeImage] = useState('');
   const [region, setRegion] = useState('');
   const [stage, setStage] = useState<Stage>('form');
@@ -63,14 +61,12 @@ export default function WonderSpaceLaunch() {
       })
       .then((data) => {
         if (controller.signal.aborted) return;
-        if (!Array.isArray(data.cpu) || !data.cpu.length ||
-            !Array.isArray(data.memory) || !data.memory.length ||
+        if (!Array.isArray(data.cpu) ||
+            !Array.isArray(data.memory) ||
             !Array.isArray(data.regions) || !Array.isArray(data.images)) {
           throw new Error('Coder has not returned usable workspace options.');
         }
         setOptions(data);
-        setCpu(data.cpu[0].value);
-        setMemory(data.memory[0].value);
         setIdeImage(data.images[0]?.value || '');
         setRegion(data.regions[0]?.value || '');
         setOptionsError('');
@@ -112,7 +108,7 @@ export default function WonderSpaceLaunch() {
 
   const provision = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!options || optionsLoading || optionsError || !cpu || !memory) {
+    if (!options || optionsLoading || optionsError) {
       setError('Coder is not connected yet. Retry the connection before launching a workspace.');
       setStage('error');
       return;
@@ -145,8 +141,6 @@ export default function WonderSpaceLaunch() {
           podName: name,
           podType: 'ide',
           templateId: options.templateId,
-          cpu: Number(cpu),
-          memory: Number(memory),
           ...(options.images.length ? { ideImage } : {}),
           ...(region ? { region } : {}),
           ...(mode === 'repo' && verified ? { repository: verified.fullName, branch } : {}),
@@ -172,7 +166,7 @@ export default function WonderSpaceLaunch() {
     </div>
   );
 
-  const launchReady = Boolean(options && !optionsLoading && !optionsError && name && cpu && memory &&
+  const launchReady = Boolean(options && !optionsLoading && !optionsError && name &&
     (!options.images.length || ideImage) &&
     (mode === 'blank' || (options.repositorySupported && verified && branch)));
 
@@ -246,12 +240,11 @@ export default function WonderSpaceLaunch() {
                   </div>
                 )}
                 <div><label htmlFor="workspace-name" className="mb-1 block text-sm font-medium">Workspace name</label><input id="workspace-name" required minLength={3} maxLength={32} pattern="[a-z0-9][a-z0-9\-]{1,30}[a-z0-9]" value={name} onChange={(event) => setName(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3" /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label htmlFor="workspace-cpu" className="mb-1 block text-sm">CPU</label><select id="workspace-cpu" value={options ? cpu : ''} disabled={!options} onChange={(event) => setCpu(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3 disabled:opacity-60">{options ? options.cpu.map((item) => <option key={item.value} value={item.value}>{item.label}</option>) : <option value="">Waiting for Coder</option>}</select></div>
-                  <div><label htmlFor="workspace-memory" className="mb-1 block text-sm">Memory</label><select id="workspace-memory" value={options ? memory : ''} disabled={!options} onChange={(event) => setMemory(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3 disabled:opacity-60">{options ? options.memory.map((item) => <option key={item.value} value={item.value}>{item.label}</option>) : <option value="">Waiting for Coder</option>}</select></div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
+                  Railway manages workspace compute for this template. Choose the workspace region below.
                 </div>
                 {options && (options.regions.length ? <div><label htmlFor="workspace-region" className="mb-1 block text-sm">Region</label><select id="workspace-region" value={region} onChange={(event) => setRegion(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.regions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div> : <p className="text-xs text-slate-400">Location is determined by the existing Coder cluster.</p>)}
-                {!options && <p className="text-xs text-slate-300">CPU, RAM and IDE choices come from your published Coder template; no resources are reserved while disconnected.</p>}
+                {!options && <p className="text-xs text-slate-300">Workspace region and availability come from your published Coder Railway template; no workspace is created while disconnected.</p>}
                 <CoderAvailabilityIndicator>
                   <button type="submit" disabled={!launchReady} className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Create my private IDE</button>
                 </CoderAvailabilityIndicator>
