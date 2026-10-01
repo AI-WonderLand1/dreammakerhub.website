@@ -187,14 +187,14 @@ export default function CreditPurchaseSliders() {
       <div>
         <h2 className="text-lg font-semibold">Buy additional usage</h2>
         <p className="mt-1 text-sm text-white/45">
-          Add AI tokens or 3D/render credits to the same DreamMakerHub account used across all connected product services.
+          Add AI tokens or 3D/render credits to the same AI WONDERLAND account used across all connected product services.
         </p>
       </div>
       {error && <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <PurchaseSlider
           title="AI tokens"
-          description="Used by DreamMakerHub, AI Playground, and NPC AI calls."
+          description="Used by AI WONDERLAND, AI Playground, and NPC AI calls."
           icon={<Coins size={18} className="text-amber-300" />}
           packs={tokens}
           unitKey="tokens"
