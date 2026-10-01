@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Box, Coins, ExternalLink } from "lucide-react";
 
 type Pack = {
@@ -41,7 +41,7 @@ function PurchaseSlider({
 }: {
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   packs: Pack[];
   unitKey: "tokens" | "credits";
   balance: number;
