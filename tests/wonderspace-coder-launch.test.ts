@@ -56,8 +56,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain("aria-pressed={mode === 'repo'}");
     expect(launch).toContain('mode === \'repo\' && !options.repositorySupported');
     expect(launch).toContain('options.regions.length ?');
-    expect(route).toContain('if (!config.repositorySupported)');
-    expect(route).toContain('getPublicGithubRepository(normalized)');
+    expect(route).toContain('This Railway Coder template does not accept repository or image overrides.');
   });
   it('keeps the form visible during an outage, allows retry without resetting input, and gates provisioning', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
@@ -66,8 +65,8 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain('setRetryCount((count) => count + 1)');
     expect(launch).toContain('aria-pressed={mode === \'blank\'}');
     expect(launch).toContain('disabled={!launchReady}');
-    expect(launch).toContain('if (!options || optionsLoading || optionsError || !cpu || !memory)');
-    expect(launch).toContain('disabled={!options}');
+    expect(launch).toContain('if (!options || optionsLoading || optionsError)');
+    expect(launch).toContain('Railway manages workspace compute for this template.');
     expect(launch).not.toContain('window.location.reload()');
   });
   it('parses actual Coder template arrays and filters options to published capabilities', async () => {
@@ -94,24 +93,24 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(await getCoderTemplateId('playcanvas-3d')).toBe('playcanvas-template-id');
     expect(coderFetchMock).toHaveBeenCalled();
   });
-  it('recognizes an existing published kubernetes template when no override is set', async () => {
+  it('recognizes the published AI WONDERLAND Railway template when no override is set', async () => {
     vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
     vi.stubEnv('CODER_API_TOKEN', 'test-token');
     vi.stubEnv('CODER_IDE_TEMPLATE_NAME', '');
     coderFetchMock.mockImplementation(async (url: string) => ({
       ok: true,
       json: async () => url.endsWith('/api/v2/templates')
-        ? [{ id: 'live-template-id', name: 'kubernetes', active_version_id: 'live-version' }]
+        ? [{ id: 'live-template-id', name: 'ai-wonderland-ide', active_version_id: 'live-version' }]
         : [
-          { name: 'cpu', options: [{ name: '1 CPU', value: '1' }] },
-          { name: 'memory', options: [{ name: '2 GiB', value: '2' }] },
+          { name: 'region', options: [{ name: 'US East', value: 'us-east4' }] },
         ],
     } as Response));
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('live-template-id');
-    expect(config.templateName).toBe('kubernetes');
-    expect(config.cpu).toEqual([{ label: '1 CPU', value: '1' }]);
-    expect(config.memory).toEqual([{ label: '2 GiB', value: '2' }]);
+    expect(config.templateName).toBe('ai-wonderland-ide');
+    expect(config.cpu).toEqual([]);
+    expect(config.memory).toEqual([]);
+    expect(config.regions).toEqual([{ label: 'US East', value: 'us-east4' }]);
   });
   it('does not read nonexistent linked repository columns from production projects', () => {
     expect(read('apps/web/app/api/user-workspace/options/route.ts')).not.toContain(".select('id,name,github_repo')");
