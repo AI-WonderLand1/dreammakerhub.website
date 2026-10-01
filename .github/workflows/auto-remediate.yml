@@ -35,7 +35,7 @@ jobs:
           jq -r '.[] | ["CODEQL_ALERT", (.number|tostring), (.rule.id // "unknown"), (.rule.security_severity_level // .rule.severity // "unknown"), (.most_recent_instance.location.path // "unknown"), ((.most_recent_instance.location.start_line // 0)|tostring), (.rule.description // .rule.name // "unknown")] | join("|")' findings.json
 
       - name: Upload remediation queue
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codeql-remediation-queue
           path: findings.json
