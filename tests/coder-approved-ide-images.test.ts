@@ -53,19 +53,16 @@ describe('Approved IDE images: discovery and provisioning', () => {
     await expect(getCoderLaunchConfig()).rejects.toThrow('no approved IDE image profiles');
   });
 
-  it('never creates a workspace from a browser-supplied image URL or shared customer owner', () => {
+  it('keeps the Railway workspace image operator-controlled', () => {
     const route = read('apps/web/app/api/user-workspace/provision/route.ts');
-    const template = read('infra/coder/customer-template/main.tf');
+    const template = read('infra/coder/template/main.tf');
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(route.indexOf('assertCoderOwnerIsolation(user.id);')).toBeLessThan(route.indexOf('await request.json()'));
-    expect(route).toContain("name: 'ide_image', value: imageProfile");
-    expect(route).toContain('config.images.some((option) => option.value === imageProfile)');
+    expect(route).toContain('This Railway Coder template does not accept repository or image overrides.');
     expect(route).not.toContain('body.imageUrl');
-    expect(template).toContain('local.images[data.coder_parameter.ide_image.value]');
-    expect(template).toContain('share        = "owner"');
-    expect(template).toContain('automount_service_account_token = false');
-    expect(launch).toContain('options.images.map(');
-    expect(launch).toContain('ideImage');
+    expect(template).toContain('variable "workspace_image"');
+    expect(template).toContain('WORKSPACE_IMAGE         = var.workspace_image');
+    expect(template).toContain('ghcr.io/bpmct/railway-coder-workspace:latest');
     expect(launch).toContain('Open an existing IDE instead');
   });
 });
