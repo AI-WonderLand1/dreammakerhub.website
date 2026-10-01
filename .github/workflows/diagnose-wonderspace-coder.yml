@@ -118,7 +118,7 @@ jobs:
                     const templates = await templatesResponse.json();
                     if (!Array.isArray(templates)) return console.log("Coder template list shape: invalid");
                     const override = process.env.CODER_IDE_TEMPLATE_NAME;
-                    const expectedNames = override ? [override] : ["wonderspace-ide", "kubernetes-mvp", "kubernetes"];
+                    const expectedNames = override ? [override] : ["ai-wonderland-ide"];
                     const template = expectedNames
                       .map((name) => templates.find((item) => item && item.name === name))
                       .find((item) => item && item.id && item.active_version_id);
