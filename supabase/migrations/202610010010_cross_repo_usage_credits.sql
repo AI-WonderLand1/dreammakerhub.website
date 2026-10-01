@@ -45,8 +45,8 @@ AS $$
 DECLARE
   month_start DATE := date_trunc('month', now() AT TIME ZONE 'UTC')::date;
   current_units BIGINT := 0;
-  purchased_tokens BIGINT := 0;
-  purchased_render BIGINT := 0;
+  v_purchased_tokens BIGINT := 0;
+  v_purchased_render BIGINT := 0;
   included_remaining BIGINT := 0;
   purchased_needed BIGINT := 0;
 BEGIN
@@ -73,7 +73,7 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     SELECT purchased_tokens, purchased_render_credits
-      INTO purchased_tokens, purchased_render
+      INTO v_purchased_tokens, v_purchased_render
     FROM public.user_token_balances
     WHERE user_id = p_user_id
     FOR UPDATE;
@@ -81,10 +81,10 @@ BEGIN
     included_remaining := GREATEST(p_limit::BIGINT - current_units, 0);
     purchased_needed := GREATEST(p_units::BIGINT - included_remaining, 0);
 
-    IF p_feature = 'ai_tokens' AND purchased_needed > purchased_tokens THEN
+    IF p_feature = 'ai_tokens' AND purchased_needed > v_purchased_tokens THEN
       RETURN false;
     END IF;
-    IF p_feature = 'render_credits' AND purchased_needed > purchased_render THEN
+    IF p_feature = 'render_credits' AND purchased_needed > v_purchased_render THEN
       RETURN false;
     END IF;
 
