@@ -14,7 +14,7 @@ export class CostGateError extends Error {
 
 function serviceClient() {
   // getClient() has local placeholder fallbacks. A cost gate must never use them.
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)) {
     throw new CostGateError('Billing verification is not configured. Paid operations are paused.');
   }
   return getClient();
