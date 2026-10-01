@@ -9,6 +9,8 @@ import {
   verifiedCostPlan,
 } from "@/lib/billing/cost-guard.server";
 
+export const runtime = "nodejs";
+
 const SOURCES = new Set(["ai-playground", "npc-ai-sim"]);
 const FEATURES = new Set(["ai_tokens", "ai_requests", "render_credits"]);
 
