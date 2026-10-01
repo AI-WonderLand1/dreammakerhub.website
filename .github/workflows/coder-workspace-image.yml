@@ -1,0 +1,45 @@
+name: Build & Push Coder Workspace Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - Master
+    paths:
+      - "infra/coder/workspace-image/**"
+      - ".github/workflows/coder-workspace-image.yml"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: coder-workspace-image-master
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push AI WONDERLAND Coder workspace image
+        uses: docker/build-push-action@v7
+        with:
+          context: infra/coder/workspace-image
+          file: infra/coder/workspace-image/Dockerfile
+          push: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/AI-WonderLand1/dreammakerhub.website
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: |
+            ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest
+            ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:${{ github.sha }}
