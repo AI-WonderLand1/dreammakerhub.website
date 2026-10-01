@@ -104,7 +104,7 @@ locals {
   username     = data.coder_workspace_owner.me.name
   workspace    = lower(data.coder_workspace.me.name)
   started      = data.coder_workspace.me.start_count > 0
-  railway_api  = "https://backboard.railway.app/graphql/v2"
+  railway_api  = "https://backboard.railway.com/graphql/v2"
   state_dir    = "${path.module}/.railway-state"
   scripts_dir  = "${path.module}/scripts"
   project_name = lower(substr("coder-${local.username}-${local.workspace}", 0, 32))
@@ -276,7 +276,7 @@ resource "terraform_data" "project" {
     interpreter = ["bash", "-c"]
     command     = "bash ${self.input.scripts_dir}/project_destroy.sh"
     environment = {
-      API          = "https://backboard.railway.app/graphql/v2"
+      API          = "https://backboard.railway.com/graphql/v2"
       TOKEN        = self.input.token
       PROJECT_NAME = self.input.project_name
     }
@@ -309,7 +309,7 @@ resource "terraform_data" "service" {
     interpreter = ["bash", "-c"]
     command     = "bash ${self.input.scripts_dir}/service_destroy.sh"
     environment = {
-      API   = "https://backboard.railway.app/graphql/v2"
+      API   = "https://backboard.railway.com/graphql/v2"
       TOKEN = self.input.token
     }
   }
@@ -377,7 +377,7 @@ resource "terraform_data" "env_vars" {
     interpreter = ["bash", "-c"]
     command     = "bash ${self.input.scripts_dir}/env_vars_destroy.sh"
     environment = {
-      API          = "https://backboard.railway.app/graphql/v2"
+      API          = "https://backboard.railway.com/graphql/v2"
       TOKEN        = self.input.token
       PROJECT_NAME = self.input.project_name
     }
@@ -427,7 +427,7 @@ resource "terraform_data" "project_token" {
     interpreter = ["bash", "-c"]
     command     = "bash ${self.input.scripts_dir}/project_token_destroy.sh"
     environment = {
-      API          = "https://backboard.railway.app/graphql/v2"
+      API          = "https://backboard.railway.com/graphql/v2"
       TOKEN        = self.input.token
       PROJECT_NAME = self.input.project_name
     }
@@ -480,7 +480,7 @@ resource "terraform_data" "image_deploy" {
     interpreter = ["bash", "-c"]
     command     = "bash ${self.input.scripts_dir}/image_deploy_destroy.sh"
     environment = {
-      API          = "https://backboard.railway.app/graphql/v2"
+      API          = "https://backboard.railway.com/graphql/v2"
       TOKEN        = self.input.token
       PROJECT_NAME = self.input.project_name
     }
