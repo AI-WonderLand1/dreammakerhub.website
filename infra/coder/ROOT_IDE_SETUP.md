@@ -1,6 +1,6 @@
-# AI WONDERLAND Coder IDE
+# AI WONDERLAND Coder IDE on Railway
 
-The repository now uses one Coder workspace template source:
+The repository uses one Coder workspace template source:
 
 `infra/coder/template/`
 
@@ -10,32 +10,74 @@ The published Coder template should be named:
 
 ## Runtime
 
-The template creates one Kubernetes Pod per running Coder workspace and keeps the user's home directory on a persistent volume claim.
+This template uses the Coder Registry Railway (via GraphQL) design.
 
-The workspace uses Envbox with nested Docker support, code-server, the Coder agent, and optional JetBrains integration.
+For each Coder workspace it creates:
 
-## vCluster / Kubernetes connection
+- one isolated Railway project
+- one Railway service named `workspace`
+- one persistent Railway volume mounted at `/home/coder`
+- the Coder agent environment variables
+- a pre-built workspace image
+- optionally, a project-scoped Railway token for the workspace user
 
-When Coder runs outside the workspace Kubernetes cluster or vCluster, publish the template with `use_kubeconfig=true` and mount a valid kubeconfig on the Coder provisioner host.
+The master Railway account/team token is used only by the Coder provisioner and must never be exposed to the browser or workspace.
 
-When Coder runs inside the same cluster and is authenticated through its Kubernetes service account, use `use_kubeconfig=false`.
+## No Kubernetes requirement
 
-Do not commit kubeconfig files, service-account tokens, Coder API tokens, or cluster-admin credentials to this repository.
+This workspace path does not use Kubernetes, vCluster, Envbox, Pods, PVCs, kubeconfig, or `kubectl`.
 
-## Namespace
+Coder provisions workspaces directly through Railway's GraphQL API.
 
-The template defaults to `coder-workspaces`. The namespace must exist and the Coder provisioner identity must be allowed to create Pods and PVCs there.
+## Required template variable
 
-## Resource defaults
+Set the Railway account/team API token when publishing:
 
-The current customer guardrails are:
+```hcl
+railway_token = "<Railway account/team token>"
+```
 
-- CPU: 1 or 2 cores
-- Memory: 1, 2, or 4 GiB
-- Persistent home disk: 10 GiB
-- Workspace restart policy: Never
+Do not commit the real token.
 
-Stopping a Coder workspace removes the running Pod while the PVC remains for the next start.
+Optional operator variables include:
+
+- `enable_project_management`
+- `workspace_image`
+- `image_registry_username`
+- `image_registry_password`
+
+The default public workspace image is:
+
+`ghcr.io/bpmct/railway-coder-workspace:latest`
+
+## End-user parameter
+
+The only end-user rich parameter exposed by this template is `region`.
+
+Current choices are:
+
+- US West
+- US East
+- Europe West
+- Asia Southeast
+
+CPU, memory, image credentials, Railway project creation, service creation, and volume creation are not accepted from the browser.
+
+## Lifecycle
+
+Persistent across stop/start:
+
+- Railway project
+- Railway service
+- Railway volume
+- optional project-scoped Railway token
+
+Created only while the workspace is running:
+
+- Coder agent environment variables
+- image deployment
+
+Stopping a Coder workspace cancels its running Railway deployment while preserving the project and volume.
 
 ## Publish
 
@@ -43,13 +85,28 @@ From an authenticated Coder CLI:
 
 ```bash
 coder templates push ai-wonderland-ide \
-  --directory infra/coder/template
+  --directory infra/coder/template \
+  --variable railway_token="$RAILWAY_TOKEN"
 ```
 
-Or import the same Terraform files through the Coder Templates UI.
+To let a workspace user manage only their own Railway project:
 
-The website can override the template name with `CODER_IDE_TEMPLATE_NAME`; otherwise it looks for `ai-wonderland-ide`.
+```bash
+coder templates push ai-wonderland-ide \
+  --directory infra/coder/template \
+  --variable railway_token="$RAILWAY_TOKEN" \
+  --variable enable_project_management=true
+```
 
-## Security warning
+The website can override the template name with `CODER_IDE_TEMPLATE_NAME`; otherwise it expects `ai-wonderland-ide`.
 
-This Envbox template currently uses a privileged container plus host `/usr/src` and `/lib/modules` mounts to provide nested Docker functionality. That is materially more privileged than a normal Envbuilder workspace. Before opening customer access, verify that the host Kubernetes/vCluster environment explicitly supports this model and that customer workspaces cannot reach host or cluster credentials.
+## Security
+
+Never commit:
+
+- Railway account/team tokens
+- project-scoped Railway tokens
+- private registry passwords
+- Coder session/API tokens
+
+The Railway template creates project-scoped tokens only when explicitly enabled. The master Railway token is not passed into the workspace.
