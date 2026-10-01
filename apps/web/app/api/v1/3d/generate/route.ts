@@ -10,7 +10,7 @@ import {
 import { saveGeneratedGlb } from "@/lib/3d/generated-asset-store";
 import { logUsage } from "@/lib/usage/log";
 import { logger } from "@/lib/logger";
-import { reserveBillableUnits } from "@/lib/billing/cost-guard.server";
+import { CostGateError, reserveBillableUnits } from "@/lib/billing/cost-guard.server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -111,6 +111,13 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     logger.error("3D API generation failed:", error);
+
+    if (error instanceof CostGateError) {
+      return NextResponse.json(
+        { ok: false, error: { code: "USAGE_LIMIT", message: error.message } },
+        { status: error.status },
+      );
+    }
 
     if (error instanceof HunyuanConfigurationError) {
       return NextResponse.json(
