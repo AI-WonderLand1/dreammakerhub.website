@@ -46,9 +46,11 @@ Optional operator variables include:
 - `image_registry_username`
 - `image_registry_password`
 
-The default public workspace image is:
+The default workspace image is built from `infra/coder/workspace-image/` and published by `.github/workflows/coder-workspace-image.yml`:
 
-`ghcr.io/bpmct/railway-coder-workspace:latest`
+`ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest`
+
+It bakes in Node.js 22, npm, pnpm, TypeScript, Python 3/pip/venv, Git, compilers/build tools, SSH, jq, ripgrep, SQLite, tmux, vim/nano, rsync, curl/wget, unzip/zip, and other common CLI tools. User/project package state under `/home/coder` remains on the Railway volume.
 
 ## End-user parameter
 
