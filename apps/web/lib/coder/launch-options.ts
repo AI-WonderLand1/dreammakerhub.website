@@ -48,7 +48,7 @@ export async function getPublicGithubRepository(fullName: string): Promise<{
 }> {
   const repo = normalizePublicGithubRepo(fullName);
   if (!repo) throw new Error('Enter a valid public GitHub owner/repository.');
-  const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'DreamMakerHub-WonderSpace' };
+  const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'AI-WONDERLAND-IDE' };
   const info = await fetch(`https://api.github.com/repos/${repo}`, { headers, cache: 'no-store', signal: AbortSignal.timeout(10000) });
   if (!info.ok) throw new Error('Public GitHub repository unavailable. Private repositories require a user-authorized GitHub connection.');
   const metadata: { private?: boolean; full_name?: string; default_branch?: string } = await info.json();
@@ -91,9 +91,8 @@ export async function getCoderTemplateId(name: string): Promise<string> {
 
 export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const configured = process.env.CODER_IDE_TEMPLATE_NAME;
-  // Existing operator templates stay unchanged until the separate customer
-  // template is deliberately published and selected by the operator.
-  const names = configured ? [configured] : ['wonderspace-ide', 'kubernetes-mvp', 'kubernetes'];
+  // The website now targets the consolidated AI WONDERLAND Coder template.
+  const names = configured ? [configured] : ['ai-wonderland-ide'];
   const template = await getPublishedCoderTemplate(names);
   const parameters = await coderGet<CoderParameter[]>(`/api/v2/templateversions/${encodeURIComponent(template.active_version_id!)}/rich-parameters`);
   if (!Array.isArray(parameters)) throw new Error('Coder returned an invalid parameter list.');
