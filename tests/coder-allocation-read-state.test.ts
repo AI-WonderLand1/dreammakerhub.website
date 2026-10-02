@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('Coder allocation lookup safety', () => {
   it('retires the customer allocation UI instead of presenting stale workspace state', () => {
     const page = read('apps/web/app/wonderspace/workspaces/page.tsx');
-    expect(page).toContain('redirect("/dashboard?workspaceTab=code")');
+    expect(page).toContain('WONDERSPACE_CODE_HOME');
     expect(page).not.toContain('setSlots([]);');
     expect(page).not.toContain('Workspace availability could not be verified.');
   });
