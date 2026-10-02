@@ -134,6 +134,12 @@ const nextConfig = {
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
 
+  // Temporary compatibility gate: the dedicated TypeScript cleanup PR
+  // removes this once the pre-existing engine/infra/runners errors are fixed.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -141,9 +147,6 @@ const nextConfig = {
     ],
   },
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 
   webpack: (config) => {
     // Do not replace Next.js client splitChunks/cacheGroups here.

@@ -21,6 +21,7 @@ interface PipelineOptions {
   useLLMExtraction?: boolean;
   userApiKey?: string;
   baseUrl?: string;
+  beforeConfessionModelCall?: (inputCharacters: number, outputTokens: number) => Promise<void>;
 }
 
 export interface PipelineResult {
@@ -69,42 +70,54 @@ function parseConfessionsFromText(
 async function extractConfessionsWithLLM(
   text: string,
   language: string,
-  model: string
+  model: string,
+  userApiKey?: string,
+  baseUrl?: string,
+  beforeModelCall?: (inputCharacters: number, outputTokens: number) => Promise<void>,
 ): Promise<LocalizedConfession[]> {
-  const extractionPrompt = `You are an AI transparency analyzer. Analyze the following AI response and extract structured confessions about what the AI did, why, how, and the truth of its actions.
+  const extractionPrompt = `You are the AI Confessions transparency analyzer. Analyze the AI response and extract a user-facing record of what happened.
 
 For each confession, provide:
-- TRUTH: What actually happened/was determined
-- WHAT: What action was taken
-- WHY: The reasoning behind the decision
-- HOW: The method or technique used
+- TRUTH: What actually happened or was determined
+- WHAT: What action the AI took
+- WHY: Why it took that action
+- HOW: How it produced the result
 
-If no significant actions were taken, return an empty response.
+Do not invent hidden chain-of-thought. Describe observable actions, inputs, tools, provider/model behavior, limitations, uncertainty, and decisions at a useful summary level.
+
+If there is nothing meaningful to disclose, return an empty JSON array.
 
 AI Response to analyze:
 ${text.slice(0, 4000)}
 
-Respond in JSON format:
-[{"type": "UNCERTAINTY"|"LIMITATION"|"RISK_FLAG"|"TRUTH_VERIFIED", "title": "...", "detail": "...", "truth": "...", "what": "...", "why": "...", "how": "..."}]`;
+Respond as JSON only:
+[{"type":"UNCERTAINTY"|"LIMITATION"|"RISK_FLAG"|"TRUTH_VERIFIED","title":"...","detail":"...","truth":"...","what":"...","why":"...","how":"..."}]`;
 
   try {
+    const outputTokens = 2048;
+    if (beforeModelCall) {
+      await beforeModelCall(extractionPrompt.length, outputTokens);
+    }
+
     const result = await runModel({
       model,
       messages: [{ role: "user", content: extractionPrompt }],
       temperature: 0.3,
-      maxTokens: 2048,
+      maxTokens: outputTokens,
+      userApiKey,
+      baseUrl,
     });
 
     const responseText = ((result as Record<string, string>)?.text) ?? "";
-    
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
 
     const parsed = JSON.parse(jsonMatch[0]);
-    
+    if (!Array.isArray(parsed)) return [];
+
     return parsed.map((p: Record<string, string>) => ({
       type: p.type as ConfessionType,
-      title: p.title || "Extracted Confession",
+      title: p.title || "AI Confession",
       detail: p.detail || "",
       truth: p.truth || "",
       what: p.what || "",
@@ -112,7 +125,7 @@ Respond in JSON format:
       how: p.how || "",
       impactLevel: p.impactLevel || "LOW",
       relatedStepCode: "LLM_EXTRACTION",
-      machineTags: ["llm-extracted"],
+      machineTags: ["ai-confessions", "llm-extracted"],
       language,
     }));
   } catch {
@@ -121,7 +134,17 @@ Respond in JSON format:
 }
 
 export async function runAIPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { operationId, userPrompt, systemPrompt, language, model, useLLMExtraction = false, userApiKey, baseUrl } = options;
+  const {
+    operationId,
+    userPrompt,
+    systemPrompt,
+    language,
+    model,
+    useLLMExtraction = false,
+    userApiKey,
+    baseUrl,
+    beforeConfessionModelCall,
+  } = options;
   const confessions: LocalizedConfession[] = [];
 
   try {
@@ -224,20 +247,23 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       stepCode: "EXTRACT_CONFESSIONS",
       stepLabel: "Extracting transparency confessions",
       stepDetail: useLLMExtraction
-        ? "Using LLM to extract structured confessions"
-        : "Parsing structured confessions from response",
+        ? "Using the AI Confessions analyzer with the same provider credentials as the main request"
+        : "Parsing structured confessions locally",
       status: "RUNNING",
       severity: "INFO",
       language,
     });
 
-    let extractedConfessions: LocalizedConfession[] = [];
-
-    if (useLLMExtraction) {
-      extractedConfessions = await extractConfessionsWithLLM(text, language, model);
-    } else {
-      extractedConfessions = parseConfessionsFromText(text, language);
-    }
+    const extractedConfessions = useLLMExtraction
+      ? await extractConfessionsWithLLM(
+          text,
+          language,
+          model,
+          userApiKey,
+          baseUrl,
+          beforeConfessionModelCall,
+        )
+      : parseConfessionsFromText(text, language);
 
     confessions.push(...extractedConfessions);
 
