@@ -38,7 +38,7 @@ export default function PricingSection({ plans }: { plans: Plan[] }) {
           <p className="text-xs font-black uppercase tracking-[0.2em] text-violet-700">Pricing</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Start free. Compare before you upgrade.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-700 sm:text-base">
-            The prices and included features below come from the current plan configuration used by DreamMakerHub.
+            The prices and included features below come from the current plan configuration used by AI WONDERLAND.
           </p>
         </div>
 
