@@ -72,6 +72,14 @@ function PlayCanvasEditor() {
     enabled: !!sceneId && !!sceneData,
   });
 
+  const pushToast = useCallback((message: string, tone: ToastItem["tone"]) => {
+    const id = makeToastId();
+    setToasts((prev) => [...prev, { id, message, tone }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 3200);
+  }, []);
+
   useEffect(() => {
     if (!user) {
       setSavedNpcs([]);
@@ -145,14 +153,6 @@ function PlayCanvasEditor() {
       })
       .catch(() => {});
   }, [sceneId]);
-
-  const pushToast = useCallback((message: string, tone: ToastItem["tone"]) => {
-    const id = makeToastId();
-    setToasts((prev) => [...prev, { id, message, tone }]);
-    window.setTimeout(() => {
-      setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, 3200);
-  }, []);
 
   useEffect(() => {
     if (!sceneId || !bridgeLoading || bridgeFailed) return;
