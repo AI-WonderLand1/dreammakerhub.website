@@ -104,7 +104,7 @@ export default function ProjectCodeManagerPage() {
 
 
   if (loading) {
-    return <div className="grid min-h-[55vh] place-items-center text-sm text-white/45">Opening DreamMakerHub Quick IDE...</div>;
+    return <div className="grid min-h-[55vh] place-items-center text-sm text-white/45">Opening AI WONDERLAND Quick IDE...</div>;
   }
 
   if (!project) {
@@ -210,7 +210,7 @@ export default function ProjectCodeManagerPage() {
 
           <section className="rounded-2xl border border-cyan-400/15 bg-[#0c1625] p-4">
             <h2 className="text-sm font-bold">WonderSpace project tools</h2>
-            <p className="mt-2 text-xs text-white/50">This project and its repository tools are stored by DreamMakerHub, not GitHub.</p>
+            <p className="mt-2 text-xs text-white/50">This project and its repository tools are stored by AI WONDERLAND, not GitHub.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/issues`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Issues</Link>
               <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/discussions`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Discussions</Link>
