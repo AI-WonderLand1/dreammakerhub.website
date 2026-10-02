@@ -130,6 +130,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/projects/:id',
+        destination: '/dashboard/projects/:id',
+        permanent: true,
+      },
+      {
         source: '/wonder-projects/:projectId',
         destination: '/dashboard/projects/:projectId',
         permanent: true,
