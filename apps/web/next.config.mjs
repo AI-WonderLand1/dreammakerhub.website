@@ -75,6 +75,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/solutions/:path*',
+        destination: '/features',
+        permanent: true,
+      },
+      {
         source: '/wonder-build/preview',
         destination: '/wonder-build/builder?tab=preview',
         permanent: false,
@@ -130,18 +135,8 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/settings/billing',
-        destination: '/dashboard/usage',
-        permanent: true,
-      },
-      {
-        source: '/settings/subscriptions',
-        destination: '/dashboard/usage',
-        permanent: true,
-      },
-      {
-        source: '/dashboard/subscription',
-        destination: '/dashboard/usage',
+        source: '/projects/:id',
+        destination: '/dashboard/projects/:id',
         permanent: true,
       },
       {
