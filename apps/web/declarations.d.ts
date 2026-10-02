@@ -7,6 +7,13 @@ type PlayCanvasEditorInstance = {
   loadScene?: (scene: unknown, sceneId?: string) => void;
   getScene?: () => Promise<unknown>;
   onSceneChange?: (handler: (scene: unknown) => void) => void;
+  placeNpc?: (npc: {
+    id: string;
+    name: string;
+    modelUrl?: string | null;
+    position?: number[] | null;
+    rotation?: number[] | null;
+  }) => void;
   ready?: Promise<void>;
   iframe?: HTMLIFrameElement;
 };

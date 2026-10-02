@@ -4,7 +4,7 @@
 // (playcanvas.com) dependencies.
 //
 // Message protocol
-//   host -> editor:  { type: 'load_scene' | 'request_scene' | 'add_primitive' | 'clear_scene', ... }
+//   host -> editor:  { type: 'load_scene' | 'request_scene' | 'add_primitive' | 'add_npc' | 'clear_scene', ... }
 //   editor -> host:  { type: 'wonder_ready' | 'scene_loaded' | 'wonder_scene' | 'scene_changed', ..., source: 'wonder-editor' }
 (function() {
   'use strict';
@@ -145,6 +145,14 @@
       try { node.getComponent(LS.Components.MeshRenderer).material = material; } catch (e) {}
     } else if (material) {
       try { node.addComponent(material); } catch (e) {}
+    }
+
+    if (obj.npcId || obj.isAiNpc) {
+      node._wonderNpc = {
+        npcId: obj.npcId || obj.id || null,
+        npcName: obj.npcName || obj.name || name,
+        isAiNpc: true
+      };
     }
 
     LS.GlobalScene.root.addChild(node);
@@ -332,6 +340,12 @@
       }
     }
 
+    if (node._wonderNpc) {
+      obj.npcId = node._wonderNpc.npcId;
+      obj.npcName = node._wonderNpc.npcName;
+      obj.isAiNpc = true;
+    }
+
     var material = node.getComponent && node.getComponent(LS.Components.MeshRenderer);
     var mat = material && material.material;
     if (mat && mat.diffuse) {
@@ -381,7 +395,10 @@
       if (!node) continue;
       if (node.light) {
         scene.lights.push(nodeToLight(node));
-      } else if (node.getComponent && node.getComponent(LS.Components.GeometricPrimitive)) {
+      } else if (node.getComponent && (
+        node.getComponent(LS.Components.GeometricPrimitive) ||
+        node.getComponent(LS.Components.MeshRenderer)
+      )) {
         scene.objects.push(nodeToObject(node));
       }
     }
@@ -430,6 +447,31 @@
               { geometry: geometryValue, size: data.primitive.size || 1, subdivisions: 24 },
               data.primitive.type || 'cube'
             );
+            scheduleSceneExport();
+          } catch (e) {}
+        }
+        break;
+      case 'add_npc':
+        if (data.npc && data.npc.id) {
+          try {
+            var npc = data.npc;
+            addObject({
+              id: 'npc-' + npc.id,
+              name: npc.name || ('NPC ' + npc.id),
+              npcId: npc.id,
+              npcName: npc.name,
+              isAiNpc: true,
+              geometry: 'mesh',
+              meshUrl: npc.modelUrl || '/models/npc/RobotExpressive.glb',
+              transform: {
+                position: npc.position || [0, 0, 0],
+                rotation: npc.rotation || [0, 0, 0],
+                scale: [1, 1, 1]
+              }
+            }, 0);
+            scheduleSceneExport();
+            try { LS.GlobalScene.requestFrame(); } catch (e2) {}
+            try { RenderModule.requestFrame && RenderModule.requestFrame(); } catch (e3) {}
           } catch (e) {}
         }
         break;
@@ -488,7 +530,7 @@
     if (ready || !event || event.source === window) return;
     var data = event.data || {};
     if (!data || typeof data.type !== 'string') return;
-    if (data.type === 'load_scene' || data.type === 'request_scene' || data.type === 'clear_scene') {
+    if (data.type === 'load_scene' || data.type === 'request_scene' || data.type === 'add_npc' || data.type === 'clear_scene') {
       queuedMessages.push(event);
     }
   });
