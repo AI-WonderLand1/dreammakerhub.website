@@ -14,7 +14,6 @@ import { useAutoSave, cleanSceneData } from "@/lib/scene/auto-save";
 import { saveSceneToSupabase } from "@/lib/scene/supabase-store";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
 import { useAuth } from "@/lib/supabase/auth-context";
-import { createClient } from "@/lib/supabase/client";
 import { logger } from '@/lib/logger';
 
 type SceneVersion = {
@@ -88,25 +87,23 @@ function PlayCanvasEditor() {
 
     let cancelled = false;
     setNpcsLoading(true);
-    const supabase = createClient();
-    if (!supabase) {
-      setNpcsLoading(false);
-      return;
-    }
 
-    void supabase
-      .from("_npcs")
-      .select("id,name,model_url,position,rotation,personality,llm_provider")
-      .eq("owner_id", user.id)
-      .order("updated_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          pushToast("Could not load your AI NPCs.", "error");
-          setSavedNpcs([]);
-          return;
+    void fetch("/api/npc", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload?.ok === false || !Array.isArray(payload?.npcs)) {
+          throw new Error(payload?.message || "NPC library unavailable");
         }
-        setSavedNpcs((data || []) as SavedNpc[]);
+        if (!cancelled) setSavedNpcs(payload.npcs as SavedNpc[]);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        pushToast("Could not load your AI NPCs.", "error");
+        setSavedNpcs([]);
       })
       .finally(() => {
         if (!cancelled) setNpcsLoading(false);
