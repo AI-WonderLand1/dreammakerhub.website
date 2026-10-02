@@ -10,7 +10,7 @@ import {
   createRiskFlagConfession,
   createUncertaintyConfession,
 } from "../confessions/engine";
-import type { LocalizedConfession, ConfessionType } from "../confessions/types";
+import type { LocalizedConfession } from "../confessions/types";
 
 interface PipelineOptions {
   operationId: string;
@@ -66,62 +66,8 @@ function parseConfessionsFromText(
   return confessions;
 }
 
-async function extractConfessionsWithLLM(
-  text: string,
-  language: string,
-  model: string
-): Promise<LocalizedConfession[]> {
-  const extractionPrompt = `You are an AI transparency analyzer. Analyze the following AI response and extract structured confessions about what the AI did, why, how, and the truth of its actions.
-
-For each confession, provide:
-- TRUTH: What actually happened/was determined
-- WHAT: What action was taken
-- WHY: The reasoning behind the decision
-- HOW: The method or technique used
-
-If no significant actions were taken, return an empty response.
-
-AI Response to analyze:
-${text.slice(0, 4000)}
-
-Respond in JSON format:
-[{"type": "UNCERTAINTY"|"LIMITATION"|"RISK_FLAG"|"TRUTH_VERIFIED", "title": "...", "detail": "...", "truth": "...", "what": "...", "why": "...", "how": "..."}]`;
-
-  try {
-    const result = await runModel({
-      model,
-      messages: [{ role: "user", content: extractionPrompt }],
-      temperature: 0.3,
-      maxTokens: 2048,
-    });
-
-    const responseText = ((result as Record<string, string>)?.text) ?? "";
-    
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    
-    return parsed.map((p: Record<string, string>) => ({
-      type: p.type as ConfessionType,
-      title: p.title || "Extracted Confession",
-      detail: p.detail || "",
-      truth: p.truth || "",
-      what: p.what || "",
-      why: p.why || "",
-      how: p.how || "",
-      impactLevel: p.impactLevel || "LOW",
-      relatedStepCode: "LLM_EXTRACTION",
-      machineTags: ["llm-extracted"],
-      language,
-    }));
-  } catch {
-    return [];
-  }
-}
-
 export async function runAIPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { operationId, userPrompt, systemPrompt, language, model, useLLMExtraction = false, userApiKey, baseUrl } = options;
+  const { operationId, userPrompt, systemPrompt, language, model, userApiKey, baseUrl } = options;
   const confessions: LocalizedConfession[] = [];
 
   try {
@@ -223,21 +169,13 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       operationId,
       stepCode: "EXTRACT_CONFESSIONS",
       stepLabel: "Extracting transparency confessions",
-      stepDetail: useLLMExtraction
-        ? "Using LLM to extract structured confessions"
-        : "Parsing structured confessions from response",
+      stepDetail: "Parsing structured confessions locally without a second provider call",
       status: "RUNNING",
       severity: "INFO",
       language,
     });
 
-    let extractedConfessions: LocalizedConfession[] = [];
-
-    if (useLLMExtraction) {
-      extractedConfessions = await extractConfessionsWithLLM(text, language, model);
-    } else {
-      extractedConfessions = parseConfessionsFromText(text, language);
-    }
+    const extractedConfessions = parseConfessionsFromText(text, language);
 
     confessions.push(...extractedConfessions);
 
