@@ -75,6 +75,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/solutions/:path*',
+        destination: '/features',
+        permanent: true,
+      },
+      {
         source: '/wonder-build/preview',
         destination: '/wonder-build/builder?tab=preview',
         permanent: false,
@@ -127,6 +132,11 @@ const nextConfig = {
       {
         source: '/wonder-projects',
         destination: '/dashboard/projects',
+        permanent: true,
+      },
+      {
+        source: '/projects/:id',
+        destination: '/dashboard/projects/:id',
         permanent: true,
       },
       {
