@@ -114,6 +114,25 @@ data "coder_provisioner" "me" {}
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
+data "coder_parameter" "repo_url" {
+  name         = "repo_url"
+  display_name = "GitHub Repository"
+  description  = "Optional public GitHub repository in owner/repository format. DreamMakerHub validates this value before workspace creation."
+  icon         = "/icon/github.svg"
+  type         = "string"
+  default      = ""
+  mutable      = false
+}
+
+data "coder_parameter" "repo_branch" {
+  name         = "repo_branch"
+  display_name = "Repository Branch"
+  description  = "Branch to clone when a GitHub repository is selected."
+  icon         = "/icon/git.svg"
+  type         = "string"
+  default      = "main"
+  mutable      = false
+}
 data "coder_parameter" "region" {
   name         = "region"
   display_name = "Region"
@@ -210,6 +229,31 @@ PERSISTENT_TOOLS
     # Git repos and project-local dependencies installed below ~/projects are
     # already persistent because the whole /home/coder path is a Railway volume.
     git config --global init.defaultBranch main >/dev/null 2>&1 || true
+
+    # DreamMakerHub may pass a validated public GitHub repository and branch
+    # from the IDE launch form. Clone it once into the persistent home volume.
+    REPO_SLUG="${data.coder_parameter.repo_url.value}"
+    REPO_BRANCH="${data.coder_parameter.repo_branch.value}"
+    if [ -n "$REPO_SLUG" ]; then
+      REPO_NAME="$(basename "$REPO_SLUG")"
+      REPO_DIR="$HOME/projects/$REPO_NAME"
+      if [ ! -d "$REPO_DIR/.git" ]; then
+        echo "Cloning $REPO_SLUG ($REPO_BRANCH) into $REPO_DIR..."
+        git clone --branch "$REPO_BRANCH" --single-branch \
+          "https://github.com/$REPO_SLUG.git" "$REPO_DIR"
+      else
+        echo "Repository already present at $REPO_DIR; keeping persistent checkout."
+      fi
+
+      printf 'export AI_WONDERLAND_PROJECT=%q\n' "$REPO_DIR" > "$HOME/.ai-wonderland-project"
+      if ! grep -q "AI_WONDERLAND_PROJECT_FILE" "$HOME/.bashrc"; then
+        cat >> "$HOME/.bashrc" <<'PROJECT_DIR'
+# AI_WONDERLAND_PROJECT_FILE
+[ -f "$HOME/.ai-wonderland-project" ] && . "$HOME/.ai-wonderland-project"
+# AI_WONDERLAND_PROJECT_FILE_END
+PROJECT_DIR
+      fi
+    fi
   EOT
 
   metadata {
@@ -501,6 +545,14 @@ resource "coder_metadata" "workspace" {
   item {
     key   = "image"
     value = var.workspace_image
+  }
+  item {
+    key   = "repository"
+    value = data.coder_parameter.repo_url.value != "" ? data.coder_parameter.repo_url.value : "blank workspace"
+  }
+  item {
+    key   = "branch"
+    value = data.coder_parameter.repo_url.value != "" ? data.coder_parameter.repo_branch.value : "n/a"
   }
   item {
     key   = "project_id"
