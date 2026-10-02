@@ -1,6 +1,5 @@
 "use server";
 
-import path from "path";
 import { randomUUID } from "crypto";
 import { getDb } from "@/lib/db";
 
@@ -98,7 +97,7 @@ function toNpcMetadata(dbNpc: DbNpc): NpcMetadata {
 function toDbNpc(npc: NpcMetadata): DbNpc {
   return {
     id: npc.id,
-    ownerId: npc.ownerId,
+    owner_id: npc.ownerId,
     name: npc.name,
     world_id: npc.worldId ?? null,
     model_url: npc.modelUrl ?? null,
@@ -109,11 +108,11 @@ function toDbNpc(npc: NpcMetadata): DbNpc {
     llm_model: npc.llmModel ?? null,
     system_prompt: npc.systemPrompt ?? null,
     knowledge_base: npc.knowledgeBase ? JSON.stringify(npc.knowledgeBase) : null,
-    memory_size: npc.memorySize,
-    interaction_radius: npc.interactionRadius,
+    memory_size: npc.memorySize ?? null,
+    interaction_radius: npc.interactionRadius ?? null,
     voice_enabled: npc.voiceEnabled ?? false,
-    createdAt: npc.createdAt,
-    updatedAt: npc.updatedAt,
+    created_at: npc.createdAt,
+    updated_at: npc.updatedAt,
   };
 }
 
@@ -166,11 +165,11 @@ export async function createNpc(ownerId: string, input: Omit<NpcMetadata, "id" |
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
     )
   `, [
-    dbNpc.id, dbNpc.ownerId, dbNpc.name, dbNpc.world_id, dbNpc.model_url,
+    dbNpc.id, dbNpc.owner_id, dbNpc.name, dbNpc.world_id, dbNpc.model_url,
     dbNpc.position, dbNpc.rotation, dbNpc.personality, dbNpc.llm_provider,
     dbNpc.llm_model, dbNpc.system_prompt, dbNpc.knowledge_base,
     dbNpc.memory_size, dbNpc.interaction_radius, dbNpc.voice_enabled,
-    dbNpc.createdAt, dbNpc.updatedAt
+    dbNpc.created_at, dbNpc.updated_at
   ]);
   
   return npc;
@@ -214,7 +213,7 @@ export async function updateNpc(npcId: string, ownerId: string, updates: Partial
     dbNpc.name, dbNpc.world_id, dbNpc.model_url, dbNpc.position, dbNpc.rotation,
     dbNpc.personality, dbNpc.llm_provider, dbNpc.llm_model, dbNpc.system_prompt,
     dbNpc.knowledge_base, dbNpc.memory_size, dbNpc.interaction_radius,
-    dbNpc.voice_enabled, dbNpc.updatedAt, dbNpc.id, dbNpc.ownerId
+    dbNpc.voice_enabled, dbNpc.updated_at, dbNpc.id, dbNpc.owner_id
   ]);
   
   return npcToUpdate;
