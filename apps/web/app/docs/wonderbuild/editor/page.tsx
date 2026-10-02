@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'WonderBuild Editor Basics | DreamMakerHub Docs',
+  title: 'WonderBuild Editor Basics | AI WONDERLAND Docs',
   description: 'Learn the WonderBuild editor layout, canvas, panels, responsive controls, saving, preview, and publishing workflow.',
 };
 
@@ -80,7 +80,7 @@ export default function WonderBuildEditorDocsPage() {
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
           <Link href="/docs" className="flex items-center gap-2 font-black tracking-tight">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600">D</span>
-            <span>DreamMakerHub <span className="font-medium text-slate-400">Docs</span></span>
+            <span>AI WONDERLAND <span className="font-medium text-slate-400">Docs</span></span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/docs#wonderbuild" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">WonderBuild Docs</Link>
