@@ -140,6 +140,21 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/settings/billing',
+        destination: '/dashboard/usage',
+        permanent: true,
+      },
+      {
+        source: '/settings/subscriptions',
+        destination: '/dashboard/usage',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/subscription',
+        destination: '/dashboard/usage',
+        permanent: true,
+      },
+      {
         source: '/wonder-projects/:projectId',
         destination: '/dashboard/projects/:projectId',
         permanent: true,

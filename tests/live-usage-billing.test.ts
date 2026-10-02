@@ -27,14 +27,15 @@ describe("canonical live usage and billing dashboard", () => {
   });
 
   it("redirects old billing surfaces into one canonical dashboard", () => {
-    const subscription = read("apps/web/app/(workspace)/dashboard/subscription/page.tsx");
-    const settingsBilling = read("apps/web/app/settings/billing/page.tsx");
+    const nextConfig = read("apps/web/next.config.mjs");
     const settingsLayout = read("apps/web/app/(workspace)/dashboard/settings/layout.tsx");
     const settingsMenu = read("apps/web/app/(workspace)/dashboard/components/SettingsMenu.tsx");
     const portal = read("apps/web/app/api/subscription/portal/route.ts");
 
-    expect(subscription).toContain('redirect("/dashboard/usage")');
-    expect(settingsBilling).toContain('redirect("/dashboard/usage")');
+    expect(nextConfig).toContain("source: '/settings/billing'");
+    expect(nextConfig).toContain("source: '/settings/subscriptions'");
+    expect(nextConfig).toContain("source: '/dashboard/subscription'");
+    expect(nextConfig.match(/destination: '\/dashboard\/usage'/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
     expect(settingsLayout).not.toContain('href: "/dashboard/subscription"');
     expect(settingsMenu).not.toContain('href="/dashboard/subscription"');
     expect(settingsMenu).toContain('["/dashboard/usage","Usage & Billing"]');
