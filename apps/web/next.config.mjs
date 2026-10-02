@@ -96,7 +96,12 @@ const nextConfig = {
       },
       {
         source: '/builder/3d',
-        destination: '/wonder-build/webgl',
+        destination: '/dashboard/3dhub',
+        permanent: true,
+      },
+      {
+        source: '/builder/:id',
+        destination: '/wonder-build/builder?blueprint=:id',
         permanent: true,
       },
       {
@@ -110,8 +115,33 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/wonder-build-mobile',
+        destination: '/wonder-build/playcanvas',
+        permanent: true,
+      },
+      {
+        source: '/template_futuristic_city',
+        destination: '/dashboard/3dhub',
+        permanent: true,
+      },
+      {
         source: '/wonder-projects',
         destination: '/dashboard/projects',
+        permanent: true,
+      },
+      {
+        source: '/wonder-projects/:projectId',
+        destination: '/dashboard/projects/:projectId',
+        permanent: true,
+      },
+      {
+        source: '/my-workspace',
+        destination: '/dashboard/3dhub',
+        permanent: true,
+      },
+      {
+        source: '/my-workspace/:path*',
+        destination: '/dashboard/3dhub',
         permanent: true,
       },
     ];
