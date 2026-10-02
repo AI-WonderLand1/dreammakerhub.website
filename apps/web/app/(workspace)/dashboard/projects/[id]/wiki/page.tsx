@@ -62,7 +62,7 @@ export default function ProjectWikiPage() {
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.saved) throw new Error(data?.error || "Unable to save wiki.");
       setDirty(false);
-      setMessage("Saved to your DreamMakerHub project.");
+      setMessage("Saved to your AI WONDERLAND project.");
       await announceWikiChange();
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Unable to save wiki.");
