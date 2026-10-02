@@ -16,10 +16,10 @@ const DREAMMAKERHUB_SIGN_IN = '/public-pages/auth?redirectTo=%2Fwonderspace';
 function BrowserIdeEntry() {
   return (
     <section className="mx-auto max-w-4xl rounded-2xl border border-cyan-300/30 bg-cyan-400/[.06] p-6 text-white">
-      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200">DreamMakerHub project files</p>
+      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200">AI WONDERLAND project files</p>
       <h2 className="mt-2 text-xl font-semibold">Open your project files</h2>
       <p className="mt-2 text-sm text-slate-300">
-        Choose a project once from your dashboard, then create files and folders, edit code, and save directly to DreamMakerHub.
+        Choose a project once from your dashboard, then create files and folders, edit code, and save directly to AI WONDERLAND.
       </p>
       <Link
         href="/dashboard?workspaceTab=code#projects"
@@ -81,7 +81,7 @@ export function OperatorIdePanel() {
       if (!response.ok) {
         if (response.status === 401) setNeedsSignIn(true);
         throw new Error(response.status === 401
-          ? 'Your DreamMakerHub session expired. Sign in again to use this button, or open your IDE directly in Coder.'
+          ? 'Your AI WONDERLAND session expired. Sign in again to use this button, or open your IDE directly in Coder.'
           : result?.error || 'The existing IDE could not be opened.');
       }
       if (typeof result?.url !== 'string' || new URL(result.url).origin !== CODER_ORIGIN) {
@@ -114,7 +114,7 @@ export function OperatorIdePanel() {
             </a>
           </div>
           {openError && <p role="alert" className="mt-4 text-sm text-amber-200">{openError}</p>}
-          {needsSignIn && <Link href={DREAMMAKERHUB_SIGN_IN} className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">Sign in to DreamMakerHub</Link>}
+          {needsSignIn && <Link href={DREAMMAKERHUB_SIGN_IN} className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">Sign in to AI WONDERLAND</Link>}
           <p className="mt-5 text-sm text-slate-400">This button does not create another workspace or change its persistent disk.</p>
         </section>
       </div>
@@ -206,7 +206,7 @@ export default function WonderSpaceOperatorGate() {
   }
 
   if (authLoading || role === 'checking') {
-    return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">Checking your DreamMakerHub session…</main>;
+    return <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">Checking your AI WONDERLAND session…</main>;
   }
   if (role === 'operator') return <OperatorIdePanel />;
 
@@ -221,11 +221,11 @@ export default function WonderSpaceOperatorGate() {
 
   return (
     <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
-      <h1 className="text-2xl font-semibold">{role === 'unauthorized' ? 'Sign in to DreamMakerHub' : 'Your session could not be verified'}</h1>
-      <p className="mx-auto mt-3 max-w-lg text-slate-300">Your DreamMakerHub session must be verified before WonderSpace access can continue. Customer accounts are never given the operator Coder workspace link.</p>
+      <h1 className="text-2xl font-semibold">{role === 'unauthorized' ? 'Sign in to AI WONDERLAND' : 'Your session could not be verified'}</h1>
+      <p className="mx-auto mt-3 max-w-lg text-slate-300">Your AI WONDERLAND session must be verified before WonderSpace access can continue. Customer accounts are never given the operator Coder workspace link.</p>
       <div className="mt-6 flex flex-wrap justify-center gap-4">
         <button type="button" onClick={() => void retrySessionCheck()} className="rounded-lg border border-cyan-300/40 px-5 py-3 text-cyan-200">Retry session check</button>
-        <Link href={DREAMMAKERHUB_SIGN_IN} className="rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in to DreamMakerHub</Link>
+        <Link href={DREAMMAKERHUB_SIGN_IN} className="rounded-lg bg-cyan-500 px-5 py-3 font-semibold text-slate-950">Sign in to AI WONDERLAND</Link>
       </div>
     </main>
   );
