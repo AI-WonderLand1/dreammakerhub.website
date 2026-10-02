@@ -52,6 +52,7 @@
       loadScene: null,
       getScene: null,
       onSceneChange: null,
+      placeNpc: null,
       iframe: frame
     };
 
@@ -114,6 +115,11 @@
 
     api.onSceneChange = function(handler) {
       sceneChangeHandler = typeof handler === 'function' ? handler : null;
+    };
+
+    api.placeNpc = function(npc) {
+      if (destroyed || !npc || !npc.id) return;
+      postToFrame(frame, { type: 'add_npc', npc: npc });
     };
 
     api.destroy = function() {
