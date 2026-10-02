@@ -23,7 +23,7 @@ function uniqueWorkspaceName(userId: string): string {
   return `ws-${userId.slice(0, 8)}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-export default function WonderSpaceLaunch() {
+export default function WonderSpaceLaunch({ projectId }: { projectId?: string | null }) {
   const { user, session, loading: authLoading } = useAuth();
   const [options, setOptions] = useState<LaunchOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
@@ -174,13 +174,13 @@ export default function WonderSpaceLaunch() {
     <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,rgba(96,76,218,0.4),transparent_42%),radial-gradient(ellipse_at_85_75%,rgba(18,148,206,0.28),transparent_45%),radial-gradient(ellipse_at_60%_0%,rgba(224,83,197,0.17),transparent_35%)]" />
       <div className="relative mx-auto max-w-5xl">
-        <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white">← Back to Dashboard</Link>
+        <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}` : "/dashboard?workspaceTab=code#projects"} className="text-sm text-slate-300 hover:text-white">← Back to project</Link>
         <div className="mt-10 mb-9 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-300/30 bg-violet-500/20"><Sparkles size={31} /></div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-cyan-200">DreamMakerHub · Cloud IDE</p>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">WonderSpace launchpad</h1>
           <p className="mx-auto mt-3 max-w-xl text-slate-300">Choose an IDE environment and project on the same page. Coder prepares your private workspace when access is enabled.</p>
-          <Link href="/wonderspace/workspaces" className="mt-3 inline-block text-sm text-cyan-200 underline">Open an existing IDE instead</Link>
+          <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}/files` : "/dashboard?workspaceTab=code#projects"} className="mt-3 inline-block text-sm text-cyan-200 underline">{projectId ? "Open project files" : "Choose a project"}</Link>
         </div>
         {stage === 'ready' ? (
           <section className="mx-auto max-w-lg rounded-3xl border border-cyan-300/30 bg-[#101931]/90 p-8 text-center shadow-2xl">

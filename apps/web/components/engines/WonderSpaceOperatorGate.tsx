@@ -22,7 +22,7 @@ function BrowserIdeEntry() {
         Choose a project once from your dashboard, then create files and folders, edit code, and save directly to DreamMakerHub.
       </p>
       <Link
-        href="/dashboard#projects"
+        href="/dashboard?workspaceTab=code#projects"
         className="mt-4 inline-flex rounded-lg bg-cyan-400 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-300"
       >
         Open project files
@@ -191,7 +191,7 @@ export default function WonderSpaceOperatorGate() {
   }, [authLoading, user?.id, session?.access_token, retry]);
 
   useEffect(() => {
-    if (role === 'customer') router.replace('/dashboard#projects');
+    if (role === 'customer') router.replace('/dashboard?workspaceTab=code#projects');
   }, [role, router]);
 
   async function retrySessionCheck() {
@@ -214,7 +214,7 @@ export default function WonderSpaceOperatorGate() {
     return (
       <main className="min-h-screen bg-[#080d22] p-12 text-center text-white">
         <p>Opening your projects…</p>
-        <Link href="/dashboard#projects" className="mt-4 inline-block text-cyan-300 underline">Open project files</Link>
+        <Link href="/dashboard?workspaceTab=code#projects" className="mt-4 inline-block text-cyan-300 underline">Open project files</Link>
       </main>
     );
   }

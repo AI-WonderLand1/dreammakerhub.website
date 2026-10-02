@@ -178,7 +178,8 @@ describe("one dashboard/project/browser navigation", () => {
     expect(manager).toContain('<WonderSpaceProjectNavigation projectId={project.id} active="code" />');
     expect(manager).toContain("<RepositoryFileBrowser");
     expect(layout).toContain("<WonderSpaceProjectNavigation projectId={currentProject.id}");
-    expect(browser).toContain("redirect('/dashboard#projects')");
+    expect(browser).toContain("wonderSpaceProjectFiles");
+    expect(browser).toContain("WONDERSPACE_CODE_HOME");
     expect(browser).not.toContain("github.com/codespaces/new");
   });
 

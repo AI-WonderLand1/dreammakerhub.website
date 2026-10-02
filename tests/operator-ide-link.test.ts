@@ -27,7 +27,7 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain('Open / start production IDE');
     expect(gate).toContain('does not create another workspace');
     expect(gate).toContain('function BrowserIdeEntry()');
-    expect(gate).toContain('href="/dashboard#projects"');
+    expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
     expect(role).toContain("authenticatedSupabaseUser(request)");
     expect(role).toContain("from '@/lib/supabase/authenticated-user.server'");
     expect(role).toContain('isConfiguredCoderOperator(user.id)');

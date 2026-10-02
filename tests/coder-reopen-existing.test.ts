@@ -38,7 +38,7 @@ describe('Existing Coder workspace resume', () => {
 
   it('keeps operator backend restart capability while the retired customer page redirects to browser code', () => {
     expect(list).toContain('const operator = isConfiguredCoderOperator(user.id)');
-    expect(page).toContain('redirect("/dashboard?workspaceTab=code")');
+    expect(page).toContain('WONDERSPACE_CODE_HOME');
     expect(page).not.toContain('/api/user-workspace/customer/open/');
     expect(page).not.toContain('/api/user-workspace/coder/');
     expect(page).not.toContain("fetch('/api/user-workspace/provision'");
