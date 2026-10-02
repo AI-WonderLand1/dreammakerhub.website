@@ -28,7 +28,7 @@ describe('WonderSpace customer creation layout', () => {
   });
 
   it('restricts GitHub to a future user-authorized connection without public repository inspection', () => {
-    expect(form).toContain('My DreamMakerHub projects');
+    expect(form).toContain('My AI WONDERLAND projects');
     expect(form).toContain('My GitHub repositories');
     expect(form).toContain('separate, account-authorized GitHub connection');
     expect(form).toContain('Files on my computer');
