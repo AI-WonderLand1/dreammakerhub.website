@@ -62,7 +62,7 @@ describe('WonderSpace customer creation layout', () => {
     expect(gate).toContain('function BrowserIdeEntry()');
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('CustomerWorkspaceLaunch');
-    expect(gate).toContain('href="/dashboard#projects"');
+    expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
   });
 
   it('preserves the operator IDE path without letting customers inherit it', () => {
