@@ -13,7 +13,7 @@ type ExistingProject = { id: string; name: string; tool?: string | null; type?: 
 function siteProjectHref(project: ExistingProject): string {
   const kind = (project.type || project.tool || '').toLowerCase();
   const query = `projectId=${encodeURIComponent(project.id)}`;
-  if (['workspace', 'code'].includes(kind)) return `/wonderspace?${query}`;
+  if (['workspace', 'code'].includes(kind)) return `/dashboard/projects/${encodeURIComponent(project.id)}`;
   if (['game', '3d', '3d_scene', 'playcanvas'].includes(kind)) return `/dashboard/3dhub?${query}`;
   if (kind === 'npc') return `/wonder-play?${query}`;
   if (['ai', 'ai_app', 'ai-playground', 'ai_playground'].includes(kind)) return `/dashboard/agents?${query}`;
@@ -120,7 +120,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
         <p className="mt-2 text-slate-300">Choose where your code starts. We handle workspace naming and machine defaults for you.</p>
       </div>
       <div className="flex flex-wrap gap-3">
-        <Link href="/wonderspace/workspaces" className="rounded-xl border border-white/20 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-cyan-400">
+        <Link href="/dashboard?workspaceTab=code#projects" className="rounded-xl border border-white/20 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-cyan-400">
           Manage workspaces
         </Link>
       </div>
@@ -142,7 +142,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
           : setup.status === 'ready'
             ? 'Your private workspace is allocated and preserved. Opening is temporarily paused while the DreamMakerHub-only IDE gateway is secured; you will not be sent to the Coder dashboard.'
             : 'The runner is preparing your workspace. Do not submit a duplicate request.'}</p>
-        <Link className="mt-4 inline-block text-sm font-semibold text-cyan-200 underline" href="/wonderspace/workspaces">Manage workspaces</Link>
+        <Link className="mt-4 inline-block text-sm font-semibold text-cyan-200 underline" href="/dashboard?workspaceTab=code#projects">Manage workspaces</Link>
         {error && <p role="alert" className="mt-3 text-amber-200">{error}</p>}
       </section>
     ) : (
