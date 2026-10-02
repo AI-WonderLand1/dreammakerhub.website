@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireUserId } from "@/lib/auth";
 import { logger } from "@/lib/logger";
+import { getNpc } from "@/lib/npc/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +30,13 @@ export async function GET(req: NextRequest) {
   const npcId = searchParams.get("npcId")?.trim() ?? "";
   if (!npcId) {
     return new Response("Missing npcId", { status: 400 });
+  }
+
+  try {
+    await getNpc(npcId, userId);
+  } catch {
+    // Do not reveal whether another user's NPC exists.
+    return new Response("NPC not found", { status: 404 });
   }
 
   const wsUrl = WONDERPLAY_3D_URL.replace(/^http/, "ws") + `/live-npc?id=${encodeURIComponent(npcId)}`;
