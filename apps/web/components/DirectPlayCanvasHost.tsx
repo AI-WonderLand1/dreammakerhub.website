@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 
 const BRIDGE_READY_TIMEOUT_MS = 30_000;
 
-export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSceneChange }: PlayCanvasHostProps) {
+export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSceneChange, onInstance }: PlayCanvasHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<{ destroy?: () => void } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -18,13 +18,15 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSc
   const onErrorRef = useRef(onError);
   const onStatusRef = useRef(onStatus);
   const onSceneChangeRef = useRef(onSceneChange);
+  const onInstanceRef = useRef(onInstance);
 
   useEffect(() => {
     onReadyRef.current = onReady;
     onErrorRef.current = onError;
     onStatusRef.current = onStatus;
     onSceneChangeRef.current = onSceneChange;
-  }, [onReady, onError, onStatus, onSceneChange]);
+    onInstanceRef.current = onInstance;
+  }, [onReady, onError, onStatus, onSceneChange, onInstance]);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +71,7 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSc
 
         // Store cleanup in ref so it's accessible in cleanup function
         cleanupRef.current = cleanup || null;
+        onInstanceRef.current?.(cleanup || null);
 
         // Wire scene change notifications back to the host app
         if (cleanup && typeof cleanup.onSceneChange === "function") {
@@ -81,6 +84,7 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSc
           // If cancelled during mount, clean up immediately
           cleanup?.destroy?.();
           cleanupRef.current = null;
+          onInstanceRef.current?.(null);
           return;
         }
 
@@ -119,6 +123,7 @@ export function DirectPlayCanvasHost({ sceneId, onReady, onError, onStatus, onSc
       // Use ref to access cleanup, avoiding stale closure
       cleanupRef.current?.destroy?.();
       cleanupRef.current = null;
+      onInstanceRef.current?.(null);
     };
   }, [mountAttempt, sceneId]); // Removed callback dependencies - using refs instead
 
