@@ -13,7 +13,7 @@ export function customerProvisioningGate(): void {
   // Provisioning a private pod/PVC and exposing that IDE to a browser are
   // separate security boundaries. Keep workspace creation gated on identity,
   // template isolation and the independent hard-stop controls, while the
-  // customer open route remains fail-closed until the DreamMakerHub-only
+  // customer open route remains fail-closed until the AI WONDERLAND-only
   // browser gateway is independently verified.
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
