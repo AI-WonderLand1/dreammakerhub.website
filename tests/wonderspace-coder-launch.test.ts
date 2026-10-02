@@ -56,7 +56,8 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain("aria-pressed={mode === 'repo'}");
     expect(launch).toContain('mode === \'repo\' && !options.repositorySupported');
     expect(launch).toContain('options.regions.length ?');
-    expect(route).toContain('This Railway Coder template does not accept repository or image overrides.');
+    expect(route).toContain('Repository launch is not enabled on the published Coder template.');
+    expect(route).toContain('This Railway Coder template does not accept image overrides.');
   });
   it('keeps the form visible during an outage, allows retry without resetting input, and gates provisioning', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
