@@ -6,8 +6,8 @@ import PublishedBuilderPage from "@/lib/builder/components/PublishedBuilderPage"
 import type { BuilderTheme, CanvasElement, SitePage } from "@/lib/builder/types";
 
 export const metadata = {
-  title: "Project Preview | DreamMakerHub",
-  description: "Live preview of your DreamMakerHub project.",
+  title: "Project Preview | AI WONDERLAND",
+  description: "Live preview of your AI WONDERLAND project.",
 };
 
 export const runtime = "nodejs";
