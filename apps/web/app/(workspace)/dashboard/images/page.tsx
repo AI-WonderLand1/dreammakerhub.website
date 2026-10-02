@@ -116,6 +116,7 @@ export default function ImageStudioPage() {
             size,
             workspaceId: projectId || "image-studio",
             type: "image-studio",
+            saveTo,
           }),
         });
         const data = await response.json().catch(() => ({}));
