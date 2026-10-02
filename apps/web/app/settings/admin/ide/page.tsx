@@ -37,7 +37,7 @@ export default async function AdminIDEOperationsPage() {
         <p className="mt-2">The requested one-hour Coder TTL is an inactivity autostop, not a measured per-user time allowance. No cumulative usage meter or hard time cutoff has been verified. Do not advertise time-based access as active yet.</p>
       </div>
       <p className="text-sm text-white/70">Your existing personal Coder IDE is not managed or deleted by this page.</p>
-      <Link href="/wonderspace/workspaces" className="inline-block rounded-lg border border-white/25 px-4 py-2 text-sm hover:bg-white/10">View my website workspace records</Link>
+      <Link href="/dashboard?workspaceTab=code#projects" className="inline-block rounded-lg border border-white/25 px-4 py-2 text-sm hover:bg-white/10">View my website workspace records</Link>
     </section>
   );
 }
