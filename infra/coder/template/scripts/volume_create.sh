@@ -20,7 +20,7 @@ if [ -n "$EXISTING_VOL" ]; then
   exit 0
 fi
 
-RESP=$(gql "mutation { volumeCreate(input: { projectId: \\\"$PROJECT_ID\\\", serviceId: \\\"$SERVICE_ID\\\", environmentId: \\\"$ENV_ID\\\", mountPath: \\\"/home/coder\\\" }) { id } }")
+RESP=$(gql "mutation { volumeCreate(input: { projectId: \\\"$PROJECT_ID\\\", serviceId: \\\"$SERVICE_ID\\\", mountPath: \\\"/home/coder\\\" }) { id } }")
 echo "$RESP"
 VOL_ID=$(echo "$RESP" | sed -n 's/.*"volumeCreate":{"id":"\([^"]*\)".*/\1/p' | head -1)
 if [ -z "$VOL_ID" ]; then
