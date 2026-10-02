@@ -10,7 +10,7 @@ import {
   createRiskFlagConfession,
   createUncertaintyConfession,
 } from "../confessions/engine";
-import type { LocalizedConfession } from "../confessions/types";
+import type { LocalizedConfession, ConfessionType } from "../confessions/types";
 
 interface PipelineOptions {
   operationId: string;
@@ -21,6 +21,7 @@ interface PipelineOptions {
   useLLMExtraction?: boolean;
   userApiKey?: string;
   baseUrl?: string;
+  beforeConfessionModelCall?: (inputCharacters: number, outputTokens: number) => Promise<void>;
 }
 
 export interface PipelineResult {
@@ -66,8 +67,84 @@ function parseConfessionsFromText(
   return confessions;
 }
 
+async function extractConfessionsWithLLM(
+  text: string,
+  language: string,
+  model: string,
+  userApiKey?: string,
+  baseUrl?: string,
+  beforeModelCall?: (inputCharacters: number, outputTokens: number) => Promise<void>,
+): Promise<LocalizedConfession[]> {
+  const extractionPrompt = `You are the AI Confessions transparency analyzer. Analyze the AI response and extract a user-facing record of what happened.
+
+For each confession, provide:
+- TRUTH: What actually happened or was determined
+- WHAT: What action the AI took
+- WHY: Why it took that action
+- HOW: How it produced the result
+
+Do not invent hidden chain-of-thought. Describe observable actions, inputs, tools, provider/model behavior, limitations, uncertainty, and decisions at a useful summary level.
+
+If there is nothing meaningful to disclose, return an empty JSON array.
+
+AI Response to analyze:
+${text.slice(0, 4000)}
+
+Respond as JSON only:
+[{"type":"UNCERTAINTY"|"LIMITATION"|"RISK_FLAG"|"TRUTH_VERIFIED","title":"...","detail":"...","truth":"...","what":"...","why":"...","how":"..."}]`;
+
+  try {
+    const outputTokens = 2048;
+    if (beforeModelCall) {
+      await beforeModelCall(extractionPrompt.length, outputTokens);
+    }
+
+    const result = await runModel({
+      model,
+      messages: [{ role: "user", content: extractionPrompt }],
+      temperature: 0.3,
+      maxTokens: outputTokens,
+      userApiKey,
+      baseUrl,
+    });
+
+    const responseText = ((result as Record<string, string>)?.text) ?? "";
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((p: Record<string, string>) => ({
+      type: p.type as ConfessionType,
+      title: p.title || "AI Confession",
+      detail: p.detail || "",
+      truth: p.truth || "",
+      what: p.what || "",
+      why: p.why || "",
+      how: p.how || "",
+      impactLevel: p.impactLevel || "LOW",
+      relatedStepCode: "LLM_EXTRACTION",
+      machineTags: ["ai-confessions", "llm-extracted"],
+      language,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function runAIPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { operationId, userPrompt, systemPrompt, language, model, userApiKey, baseUrl } = options;
+  const {
+    operationId,
+    userPrompt,
+    systemPrompt,
+    language,
+    model,
+    useLLMExtraction = false,
+    userApiKey,
+    baseUrl,
+    beforeConfessionModelCall,
+  } = options;
   const confessions: LocalizedConfession[] = [];
 
   try {
@@ -169,13 +246,24 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       operationId,
       stepCode: "EXTRACT_CONFESSIONS",
       stepLabel: "Extracting transparency confessions",
-      stepDetail: "Parsing structured confessions locally without a second provider call",
+      stepDetail: useLLMExtraction
+        ? "Using the AI Confessions analyzer with the same provider credentials as the main request"
+        : "Parsing structured confessions locally",
       status: "RUNNING",
       severity: "INFO",
       language,
     });
 
-    const extractedConfessions = parseConfessionsFromText(text, language);
+    const extractedConfessions = useLLMExtraction
+      ? await extractConfessionsWithLLM(
+          text,
+          language,
+          model,
+          userApiKey,
+          baseUrl,
+          beforeConfessionModelCall,
+        )
+      : parseConfessionsFromText(text, language);
 
     confessions.push(...extractedConfessions);
 
