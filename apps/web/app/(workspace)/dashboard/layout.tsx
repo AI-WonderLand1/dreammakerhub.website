@@ -191,7 +191,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       label: "Code",
       icon: Code2,
       items: [
-        { href: withProject("/dashboard?workspaceTab=code"), label: "Project Code", icon: Code2 },
+        {
+          href: currentProject
+            ? `/dashboard/projects/${encodeURIComponent(currentProject.id)}/files`
+            : "/dashboard?workspaceTab=code#projects",
+          label: "Project Code",
+          icon: Code2,
+        },
         { href: withProject("/dashboard/agents"), label: "AI Coding Agents", icon: Bot },
       ],
     },
