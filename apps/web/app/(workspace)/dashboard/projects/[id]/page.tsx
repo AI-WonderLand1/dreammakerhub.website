@@ -294,6 +294,9 @@ export default function ProjectHubPage() {
                 <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/files`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
                   <Code2 size={15}/> Open files
                 </Link>
+                <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/ide`} className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-4 py-2.5 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/15">
+                  <Code2 size={15}/> Open IDE
+                </Link>
                 {canPreview && (
                   <Link href={`/preview/${project.id}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm hover:bg-white/5">
                     <ExternalLink size={15}/> Preview
