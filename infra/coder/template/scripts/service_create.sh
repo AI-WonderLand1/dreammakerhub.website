@@ -36,18 +36,24 @@ for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
   RESP=$(gql "mutation { serviceCreate(input: { name: \\\"workspace\\\", projectId: \\\"$PROJECT_ID\\\" }) { id } }" || echo '')
   echo "$RESP"
 
-  SERVICE_ID=$(echo "$RESP" | sed -n 's/.*"serviceCreate":{"id":"\([^"]*\)".*/\1/p' | head -1)
-  if [ -n "$SERVICE_ID" ]; then
-    break
-  fi
+  CANDIDATE_ID=$(echo "$RESP" | sed -n 's/.*"serviceCreate":{"id":"\([^"]*\)".*/\1/p' | head -1)
 
-  # The mutation may have landed even if the edge response was lost.
-  SE=$(lookup_service_and_env "$PROJECT_ID")
-  SERVICE_ID=$(echo "$SE" | awk '{print $1}')
-  ENV_ID=$(echo "$SE" | awk '{print $2}')
-  if [ -n "$SERVICE_ID" ]; then
-    echo "Found service created by attempt $ATTEMPT: $SERVICE_ID"
-    break
+  # Do not trust the mutation response alone. Railway can return an id before
+  # the service is queryable by project/volume APIs. Confirm that the service
+  # is visible inside this project before persisting it.
+  for VERIFY in 1 2 3 4 5; do
+    SE=$(lookup_service_and_env "$PROJECT_ID")
+    SERVICE_ID=$(echo "$SE" | awk '{print $1}')
+    ENV_ID=$(echo "$SE" | awk '{print $2}')
+    if [ -n "$SERVICE_ID" ]; then
+      echo "Confirmed workspace service: $SERVICE_ID"
+      break 2
+    fi
+    [ "$VERIFY" -lt 5 ] && sleep 2
+  done
+
+  if [ -n "$CANDIDATE_ID" ]; then
+    echo "serviceCreate returned $CANDIDATE_ID but Railway has not exposed it yet; retrying..."
   fi
 
   echo "serviceCreate attempt $ATTEMPT failed; retrying..."
