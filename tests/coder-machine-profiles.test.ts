@@ -20,7 +20,8 @@ describe('WonderSpace compute metering and Railway IDE template', () => {
     expect(template).toContain('variable "workspace_image"');
     expect(template).toContain('variable "railway_token"');
     expect(template).not.toContain('data "coder_parameter" "machine_profile"');
-    expect(provision).toContain('This Railway Coder template does not accept repository or image overrides.');
+    expect(provision).toContain('This Railway Coder template does not accept image overrides.');
+    expect(provision).toContain("{ name: 'repo_url', value: publicRepo.fullName }");
     expect(provision).toContain("richParameterValues.push({ name: 'region', value: region })");
   });
 

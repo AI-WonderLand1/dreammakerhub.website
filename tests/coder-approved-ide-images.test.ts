@@ -58,7 +58,7 @@ describe('Approved IDE images: discovery and provisioning', () => {
     const template = read('infra/coder/template/main.tf');
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(route.indexOf('assertCoderOwnerIsolation(user.id);')).toBeLessThan(route.indexOf('await request.json()'));
-    expect(route).toContain('This Railway Coder template does not accept repository or image overrides.');
+    expect(route).toContain('This Railway Coder template does not accept image overrides.');
     expect(route).not.toContain('body.imageUrl');
     expect(template).toContain('variable "workspace_image"');
     expect(template).toContain('WORKSPACE_IMAGE         = var.workspace_image');

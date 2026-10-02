@@ -206,7 +206,7 @@ export default function WonderSpaceLaunch() {
                   <Code2 className="text-cyan-300" /><span className="flex-1"><strong className="block">Blank workspace</strong><span className="text-sm text-slate-300">Start with an empty project.</span></span>
                 </button>
                 <button type="button" aria-pressed={mode === 'repo'} onClick={() => setMode('repo')} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'repo' ? 'border-violet-400 bg-violet-400/15' : 'border-white/20 bg-white/5'}`}>
-                  <Github className="text-violet-300" /><span className="flex-1"><strong className="block">Public GitHub repository</strong><span className="text-sm text-slate-300">Choose a repository and branch.</span></span>
+                  <Github className="text-violet-300" /><span className="flex-1"><strong className="block">Public GitHub repository</strong><span className="text-sm text-slate-300">Choose a repository and branch. WonderSpace clones it and opens it in the IDE automatically.</span></span>
                 </button>
               </div>
               {mode === 'repo' && (
@@ -217,7 +217,7 @@ export default function WonderSpaceLaunch() {
                   {verified && <><p className="text-sm text-emerald-300">Public repository verified: {verified.fullName}</p><label htmlFor="branch" className="flex items-center gap-2 text-sm"><GitBranch size={15} /> Branch</label><select id="branch" value={branch} onChange={(event) => setBranch(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{verified.branches.map((value) => <option key={value} value={value}>{value}</option>)}</select></>}
                   {repoError && <p role="alert" className="text-sm text-amber-200">{repoError}</p>}
                   {options && !options.repositorySupported && <p role="status" className="text-sm text-amber-200">Repository launch requires a published Coder template with repository support.</p>}
-                  <p className="text-xs text-slate-400">Private repositories need a user-authorized GitHub connection; no shared server credentials are sent to pods.</p>
+                  <p className="text-xs text-slate-400">The selected public repository is cloned into your persistent workspace and opened automatically. Private repositories need a user-authorized GitHub connection; no shared server credentials are sent to pods.</p>
                 </div>
               )}
             </section>

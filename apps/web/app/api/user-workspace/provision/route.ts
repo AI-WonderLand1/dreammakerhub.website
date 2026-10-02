@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CoderAPIWrapper } from '@/lib/coder/api-wrapper';
-import { getCoderLaunchConfig, getCoderTemplateId } from '@/lib/coder/launch-options';
+import { getCoderLaunchConfig, getCoderTemplateId, getPublicGithubRepository, isSafeGithubBranch, normalizePublicGithubRepo } from '@/lib/coder/launch-options';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { assertCoderOwnerIsolation, assertCoderResourceBudget, attachCoderWorkspace, CODER_DISK_GIB, CODER_TTL_MS, coderApiConfig, reserveCoderSlot } from '@/lib/coder/workspace-slots.server';
 import { trackFunnelEvent } from '@/lib/analytics/track-funnel-event.server';
@@ -61,16 +61,39 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Choose a supported Coder IDE template.' }, { status: 400 });
       }
       templateId = config.templateId;
-      // Railway GraphQL template exposes region as its only end-user parameter.
-      // Image, service, volume, and Railway credentials are operator-controlled
-      // template variables and are never accepted from the browser.
+      // Railway service/image/credentials remain operator-controlled. The
+      // browser may choose only published rich parameters that we validate
+      // server-side before they are sent to Coder.
       const region = typeof body.region === 'string' ? body.region : '';
       if (region && !config.regions.some((option) => option.value === region)) {
         return NextResponse.json({ error: 'This region is not supported by the Coder template.' }, { status: 400 });
       }
       if (region) richParameterValues.push({ name: 'region', value: region });
-      if (body.repository || body.branch || body.ideImage !== undefined) {
-        return NextResponse.json({ error: 'This Railway Coder template does not accept repository or image overrides.' }, { status: 400 });
+
+      const requestedRepo = typeof body.repository === 'string' ? normalizePublicGithubRepo(body.repository) : null;
+      const requestedBranch = typeof body.branch === 'string' ? body.branch.trim() : '';
+      if (body.repository || body.branch) {
+        if (!config.repositorySupported) {
+          return NextResponse.json({ error: 'Repository launch is not enabled on the published Coder template.' }, { status: 400 });
+        }
+        if (!requestedRepo || !isSafeGithubBranch(requestedBranch)) {
+          return NextResponse.json({ error: 'Choose a valid public GitHub repository and branch.' }, { status: 400 });
+        }
+
+        // Re-check the repository and branch on the server. Never trust the
+        // browser-side verification when constructing a clone target.
+        const publicRepo = await getPublicGithubRepository(requestedRepo);
+        if (!publicRepo.branches.includes(requestedBranch)) {
+          return NextResponse.json({ error: 'The selected GitHub branch no longer exists.' }, { status: 400 });
+        }
+        richParameterValues.push(
+          { name: 'repo_url', value: publicRepo.fullName },
+          { name: 'repo_branch', value: requestedBranch },
+        );
+      }
+
+      if (body.ideImage !== undefined) {
+        return NextResponse.json({ error: 'This Railway Coder template does not accept image overrides.' }, { status: 400 });
       }
     } else {
       if (body.repository || body.branch || body.region || body.ideImage !== undefined ||

@@ -28,7 +28,9 @@ describe('real root Coder IDE routing on Railway', () => {
     expect(template).not.toContain('provider "kubernetes"');
     expect(template).not.toContain('kubernetes_pod');
     expect(template).not.toContain('kubernetes_persistent_volume_claim');
-    expect(provision).toContain('This Railway Coder template does not accept repository or image overrides.');
+    expect(provision).toContain('This Railway Coder template does not accept image overrides.');
+    expect(provision).toContain("{ name: 'repo_url', value: publicRepo.fullName }");
+    expect(provision).toContain("{ name: 'repo_branch', value: requestedBranch }");
     expect(provision).toContain("richParameterValues.push({ name: 'region', value: region })");
     expect(provision).toContain('new CoderAPIWrapper(');
     expect(provision).toContain("ide: 'code-server'");
