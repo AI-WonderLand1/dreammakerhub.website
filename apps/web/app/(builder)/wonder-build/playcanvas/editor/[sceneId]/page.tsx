@@ -8,18 +8,31 @@ import { useParams } from "next/navigation";
 import { SkeletonGrid } from "@/app/components/feedback/EmptyState";
 import { ToastStack, type ToastItem } from "@/app/components/feedback/ToastStack";
 import SafeNpcPanel from "@/components/SafeNpcPanel";
-import PlayCanvasEditorHost from "@/components/PlayCanvasEditorHost";
+import PlayCanvasEditorHost, { type PlayCanvasHostInstance } from "@/components/PlayCanvasEditorHost";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { useAutoSave, cleanSceneData } from "@/lib/scene/auto-save";
 import { saveSceneToSupabase } from "@/lib/scene/supabase-store";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
 import { useAuth } from "@/lib/supabase/auth-context";
+import { createClient } from "@/lib/supabase/client";
 import { logger } from '@/lib/logger';
 
 type SceneVersion = {
   id: string;
   version: number;
   created_at: string;
+};
+
+type SavedNpc = {
+  id: string;
+  name: string;
+  modelUrl?: string | null;
+  model_url?: string | null;
+  position?: number[] | null;
+  rotation?: number[] | null;
+  personality?: string | null;
+  llmProvider?: string | null;
+  llm_provider?: string | null;
 };
 
 function makeToastId() {
@@ -41,12 +54,16 @@ function PlayCanvasEditor() {
   const [showVersions, setShowVersions] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(1);
   const [showAssetLib, setShowAssetLib] = useState(false);
+  const [showNpcLibrary, setShowNpcLibrary] = useState(false);
+  const [savedNpcs, setSavedNpcs] = useState<SavedNpc[]>([]);
+  const [npcsLoading, setNpcsLoading] = useState(false);
+  const [placingNpcId, setPlacingNpcId] = useState<string | null>(null);
   const [assetSearch, setAssetSearch] = useState("");
   const [assets, setAssets] = useState<ExternalAsset[]>([]);
   const [assetSearching, setAssetSearching] = useState(false);
   const [importingAsset, setImportingAsset] = useState<string | null>(null);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<PlayCanvasHostInstance | null>(null);
 
   const npcProvider = useMemo(() => createNpcProviderFromEnv(), []);
 
@@ -54,6 +71,69 @@ function PlayCanvasEditor() {
     intervalMs: 30000,
     enabled: !!sceneId && !!sceneData,
   });
+
+  useEffect(() => {
+    if (!user) {
+      setSavedNpcs([]);
+      return;
+    }
+
+    let cancelled = false;
+    setNpcsLoading(true);
+    const supabase = createClient();
+    if (!supabase) {
+      setNpcsLoading(false);
+      return;
+    }
+
+    void supabase
+      .from("_npcs")
+      .select("id,name,model_url,position,rotation,personality,llm_provider")
+      .eq("owner_id", user.id)
+      .order("updated_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          pushToast("Could not load your AI NPCs.", "error");
+          setSavedNpcs([]);
+          return;
+        }
+        setSavedNpcs((data || []) as SavedNpc[]);
+      })
+      .finally(() => {
+        if (!cancelled) setNpcsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, pushToast]);
+
+  const handlePlaceNpc = useCallback(async (npc: SavedNpc) => {
+    const instance = editorRef.current;
+    if (!instance?.placeNpc) {
+      pushToast("The 3D editor is not ready for NPC placement yet.", "error");
+      return;
+    }
+
+    setPlacingNpcId(npc.id);
+    try {
+      instance.placeNpc({
+        id: npc.id,
+        name: npc.name,
+        modelUrl: npc.modelUrl || npc.model_url || "/models/npc/RobotExpressive.glb",
+        position: npc.position || [0, 0, 0],
+        rotation: npc.rotation || [0, 0, 0],
+      });
+      pushToast(`${npc.name} placed in the scene. Use the scene gizmos to position the character.`, "success");
+      window.setTimeout(async () => {
+        const nextScene = await instance.getScene?.();
+        if (nextScene) setSceneData(nextScene);
+      }, 900);
+    } finally {
+      window.setTimeout(() => setPlacingNpcId(null), 700);
+    }
+  }, [pushToast]);
 
   useEffect(() => {
     if (!sceneId) return;
@@ -223,6 +303,12 @@ function PlayCanvasEditor() {
             >
               📦 Assets
             </button>
+            <button
+              onClick={() => setShowNpcLibrary(!showNpcLibrary)}
+              className="rounded bg-fuchsia-600/50 px-3 py-1 text-xs text-white/80 hover:bg-fuchsia-600"
+            >
+              🤖 AI NPCs
+            </button>
           </div>
         </div>
 
@@ -266,6 +352,60 @@ function PlayCanvasEditor() {
           </div>
         )}
 
+        {showNpcLibrary && (
+          <section className="rounded-lg border border-fuchsia-400/20 bg-fuchsia-500/[0.04] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-white">AI NPC Characters</h2>
+                <p className="mt-1 text-xs text-white/50">Place one of your saved AI NPCs directly into this 3D scene. Its NPC ID stays attached to the scene entity.</p>
+              </div>
+              <Link
+                href="/dashboard/npc"
+                className="rounded border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 hover:bg-white/10"
+              >
+                Manage NPCs
+              </Link>
+            </div>
+
+            <div className="mt-3">
+              {npcsLoading ? (
+                <p className="text-xs text-white/45">Loading your NPC characters…</p>
+              ) : savedNpcs.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-white/10 p-4 text-center">
+                  <p className="text-xs text-white/50">You do not have an AI NPC yet.</p>
+                  <Link href="/dashboard/npc/create" className="mt-2 inline-flex text-xs font-bold text-fuchsia-300 hover:text-fuchsia-200">
+                    Create AI NPC
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {savedNpcs.map((npc) => (
+                    <div key={npc.id} className="rounded-lg border border-white/10 bg-black/30 p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-fuchsia-500/10 text-lg">🤖</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">{npc.name}</p>
+                          <p className="mt-0.5 truncate text-[10px] text-white/40">
+                            {npc.llmProvider || npc.llm_provider || "AI NPC"} · {npc.personality || "Character"}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={bridgeLoading || bridgeFailed || placingNpcId === npc.id}
+                        onClick={() => { void handlePlaceNpc(npc); }}
+                        className="mt-3 w-full rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {placingNpcId === npc.id ? "Placing…" : "Place in Scene"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <div className="relative min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black/40">
           {bridgeFailed ? (
             <div className="p-6">
@@ -293,6 +433,9 @@ function PlayCanvasEditor() {
               )}
               <PlayCanvasEditorHost
                 sceneId={sceneId}
+                onInstance={(instance) => {
+                  editorRef.current = instance;
+                }}
                 onReady={() => {
                   setBridgeLoading(false);
                   setBridgeFailed(false);
