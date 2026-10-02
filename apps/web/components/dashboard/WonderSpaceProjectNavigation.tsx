@@ -21,7 +21,7 @@ export default function WonderSpaceProjectNavigation({
   advancedOnly = false,
 }: {
   projectId?: string | null;
-  active?: "code" | "projects" | "issues" | "discussions" | "wiki";
+  active?: "code" | "ide" | "projects" | "issues" | "discussions" | "wiki";
   advancedOnly?: boolean;
 }) {
   const pathname = usePathname();
@@ -30,6 +30,7 @@ export default function WonderSpaceProjectNavigation({
   const query = id ? `?projectId=${id}` : "";
   const currentTab = active ?? (
     pathname.endsWith("/files") ? "code" :
+    pathname.endsWith("/ide") ? "ide" :
     pathname.endsWith("/issues") ? "issues" :
     pathname.endsWith("/discussions") ? "discussions" :
     pathname.endsWith("/wiki") ? "wiki" : undefined
@@ -39,6 +40,7 @@ export default function WonderSpaceProjectNavigation({
   // authenticated project storage. No tab navigates to an external code host.
   const items: Item[] = [
     { label: "Files & Code", icon: Code2, href: projectPath ? `${projectPath}/files` : "/dashboard#projects", selected: currentTab === "code" },
+    { label: "IDE", icon: Code2, href: projectPath ? `${projectPath}/ide` : null, selected: currentTab === "ide", description: "Open the optional WonderSpace cloud IDE for this project." },
     { label: "Issues", icon: CircleDot, href: projectPath ? `${projectPath}/issues` : null, selected: currentTab === "issues", description: "Select a DreamMakerHub project to manage its issues." },
     { label: "Agents", icon: Bot, href: `/dashboard/agents${query}` },
     { label: "Discussions", icon: MessageSquare, href: projectPath ? `${projectPath}/discussions` : null, selected: currentTab === "discussions", description: "Select a DreamMakerHub project to open its discussions." },
