@@ -91,7 +91,7 @@ export default function WonderSpaceRepositoryConnection({ projectId }: { project
     <section id="github-repository-connection" className="scroll-mt-24 rounded-xl border border-cyan-400/20 bg-[#101d2b] p-4">
       <h2 className="text-sm font-semibold text-white">GitHub repository</h2>
       <p className="mt-2 text-xs leading-5 text-slate-300">
-        Link the repository you want beside your DreamMakerHub project. GitHub issues, pull requests,
+        Link the repository you want beside your AI WONDERLAND project. GitHub issues, pull requests,
         discussions and actions then open the matching repository using your own GitHub login.
         Linking does not automatically import, publish or push project files.
       </p>
