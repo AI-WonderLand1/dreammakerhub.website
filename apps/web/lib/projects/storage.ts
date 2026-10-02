@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createClient as createBearerClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
+import { getClient as getSupabaseServiceClient } from "@/lib/supabase-service";
 
 export type ProjectMetadata = {
   id: string;
@@ -522,11 +523,21 @@ export async function listSourceVersions(projectId: string, ownerId: string): Pr
 export async function captureSourceVersion(
   projectId: string, ownerId: string, title: string,
 ): Promise<SourceVersionSummary & { fileCount: number }> {
+  // Verify the caller against the normal user-scoped project path first.
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
-  // This RPC uses auth.uid() and RLS; do not invoke it with service-role keys.
-  const { data, error } = await supabase.rpc("capture_project_source_version", {
-    p_project_id: projectId, p_title: title,
+
+  // Snapshot creation is privileged because clients are not allowed to forge
+  // source-history rows directly. The privileged RPC is service-role-only;
+  // ordinary anon/authenticated clients cannot execute it.
+  if (!(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) ||
+      !(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)) {
+    throw new Error("SOURCE_HISTORY_UNAVAILABLE");
+  }
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase.rpc("capture_project_source_version_server", {
+    p_project_id: projectId,
+    p_owner_id: ownerId,
+    p_title: title,
   });
   if (error) {
     const message = String(error.message ?? "");

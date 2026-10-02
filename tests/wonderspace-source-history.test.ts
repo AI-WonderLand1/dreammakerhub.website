@@ -136,9 +136,14 @@ describe("authenticated owner-only native source history", () => {
   });
 
   it("documents and gates the native RPC, never a GitHub clone or unattended CI runner", () => {
-    const migration = readFileSync(join(
-      process.cwd(), "supabase/migrations/202609292301_native_source_versions.sql",
-    ), "utf8");
+    const migration = [
+      readFileSync(join(
+        process.cwd(), "supabase/migrations/202609292301_native_source_versions.sql",
+      ), "utf8"),
+      readFileSync(join(
+        process.cwd(), "supabase/migrations/202610021330_add_service_only_source_history_rpc.sql",
+      ), "utf8"),
+    ].join("\n");
     const nav = readFileSync(join(
       process.cwd(), "apps/web/components/dashboard/WonderSpaceProjectNavigation.tsx",
     ), "utf8");
@@ -149,7 +154,8 @@ describe("authenticated owner-only native source history", () => {
     expect(migration).toContain("SECURITY DEFINER");
     expect(migration).toContain("owner_id = auth.uid()::text");
     expect(migration).toContain("GRANT SELECT ON public._project_source_versions TO authenticated");
-    expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.capture_project_source_version");
+    expect(migration).toContain("REVOKE ALL ON FUNCTION public.capture_project_source_version_server");
+    expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.capture_project_source_version_server");
     expect(migration).toContain("pg_advisory_xact_lock");
     expect(migration).toContain("SOURCE_CHECKPOINT_TOO_LARGE");
     expect(nav).toContain('label: "History"');
