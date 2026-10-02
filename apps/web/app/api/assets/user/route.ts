@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     name: a.name,
     source: a.source,
     downloadUrl: a.local_url,
-    thumbnailUrl: "",
+    thumbnailUrl: a.source === "ai-image" ? a.local_url : "",
   }));
 
   return NextResponse.json({ assets: formatted });

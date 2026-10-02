@@ -192,6 +192,7 @@ export async function POST(req: Request) {
   const type = cleanText(body.type, 80) || "generated";
   const requestedSize = cleanText(body.size, 40);
   const size = ALLOWED_SIZES.has(requestedSize) ? requestedSize : "1536x1024";
+  const saveTo = cleanText(body.saveTo, 40) || "library";
 
   if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
 
@@ -245,12 +246,27 @@ export async function POST(req: Request) {
 
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from("ai-assets").getPublicUrl(path);
+
+      if (saveTo === "library") {
+        const safeName = prompt.replace(/[^a-zA-Z0-9\s-_]/g, "").trim().slice(0, 80) || "Generated image";
+        const { error: libraryError } = await supabase.from("user_assets").insert({
+          user_id: userId,
+          asset_id: `ai-image-${crypto.randomUUID()}`,
+          name: safeName,
+          source: "ai-image",
+          local_url: publicUrl,
+          downloaded_at: new Date().toISOString(),
+        });
+        if (libraryError) logger.warn("Generated image could not be added to the user asset library:", libraryError.message);
+      }
+
       return NextResponse.json({
         imageUrl: publicUrl,
         tempPath: path,
         provider: generated.provider,
         model: generated.model,
         size,
+        savedToLibrary: saveTo === "library",
       });
     }
 

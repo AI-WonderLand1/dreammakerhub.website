@@ -19,6 +19,7 @@ import {
   Home,
   LayoutTemplate,
   Library,
+  Image as ImageIcon,
   LogOut,
   Menu,
   Pencil,
@@ -218,6 +219,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       items: [
         { href: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: Sparkles, external: true },
         { href: withProject("/dashboard/agents"), label: "AI Agents", icon: Bot },
+        { href: withProject("/dashboard/images"), label: "Image Studio", icon: ImageIcon },
         { href: "/ai-modules", label: "AI Modules", icon: Library },
       ],
     },
@@ -227,6 +229,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       items: [
         { href: "/wonder-build/templates", label: "Template Library", icon: LayoutTemplate },
         { href: withProject("/library"), label: "Asset Library", icon: Folder },
+        { href: withProject("/dashboard/images#my-assets"), label: "Image & Asset Studio", icon: ImageIcon },
         { href: withProject("/3d-library"), label: "3D Asset Library", icon: Box },
         { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
       ],
