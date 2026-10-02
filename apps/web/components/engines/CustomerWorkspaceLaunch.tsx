@@ -140,7 +140,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
         <p className="mt-3 text-slate-300">{setup.status === 'needs_reconciliation'
           ? 'Coder may have created your workspace, but confirmation was interrupted. Contact support. Do not request a replacement.'
           : setup.status === 'ready'
-            ? 'Your private workspace is allocated and preserved. Opening is temporarily paused while the DreamMakerHub-only IDE gateway is secured; you will not be sent to the Coder dashboard.'
+            ? 'Your private workspace is allocated and preserved. Opening is temporarily paused while the AI WONDERLAND-only IDE gateway is secured; you will not be sent to the Coder dashboard.'
             : 'The runner is preparing your workspace. Do not submit a duplicate request.'}</p>
         <Link className="mt-4 inline-block text-sm font-semibold text-cyan-200 underline" href="/dashboard?workspaceTab=code#projects">Manage workspaces</Link>
         {error && <p role="alert" className="mt-3 text-amber-200">{error}</p>}
@@ -158,7 +158,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {([
                 { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
-                { id: 'site', label: 'My DreamMakerHub projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
+                { id: 'site', label: 'My AI WONDERLAND projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
                 { id: 'github', label: 'My GitHub repositories', description: 'Only repositories authorized by your own connected GitHub account, not public repository search.', status: 'Secure connection pending' },
                 { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside an AWS pod.', status: 'Upload not available' },
               ] as const).map((option) => (
