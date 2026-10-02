@@ -46,7 +46,7 @@ export default function HomepageServiceStatus() {
   }, []);
 
   return (
-    <aside aria-label="DreamMakerHub service availability" className="w-full rounded-2xl border border-white/15 bg-[#071323]/90 p-3 text-white shadow-xl backdrop-blur-md sm:p-4">
+    <aside aria-label="AI WONDERLAND service availability" className="w-full rounded-2xl border border-white/15 bg-[#071323]/90 p-3 text-white shadow-xl backdrop-blur-md sm:p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold tracking-wide">Service availability</h2>
         <p className="text-[11px] text-white/65">
