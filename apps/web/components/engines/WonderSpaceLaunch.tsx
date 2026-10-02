@@ -177,7 +177,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
         <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}` : "/dashboard?workspaceTab=code#projects"} className="text-sm text-slate-300 hover:text-white">← Back to project</Link>
         <div className="mt-10 mb-9 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-300/30 bg-violet-500/20"><Sparkles size={31} /></div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-cyan-200">DreamMakerHub · Cloud IDE</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-cyan-200">AI WONDERLAND · Cloud IDE</p>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">WonderSpace launchpad</h1>
           <p className="mx-auto mt-3 max-w-xl text-slate-300">Choose an IDE environment and project on the same page. Coder prepares your private workspace when access is enabled.</p>
           <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}/files` : "/dashboard?workspaceTab=code#projects"} className="mt-3 inline-block text-sm text-cyan-200 underline">{projectId ? "Open project files" : "Choose a project"}</Link>
