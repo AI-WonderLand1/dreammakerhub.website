@@ -20,11 +20,29 @@ if [ -n "$EXISTING_VOL" ]; then
   exit 0
 fi
 
-RESP=$(gql "mutation { volumeCreate(input: { projectId: \\\"$PROJECT_ID\\\", serviceId: \\\"$SERVICE_ID\\\", mountPath: \\\"/home/coder\\\" }) { id } }")
-echo "$RESP"
-VOL_ID=$(echo "$RESP" | sed -n 's/.*"volumeCreate":{"id":"\([^"]*\)".*/\1/p' | head -1)
+VOL_ID=""
+for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+  RESP=$(gql "mutation { volumeCreate(input: { projectId: \\\"$PROJECT_ID\\\", serviceId: \\\"$SERVICE_ID\\\", mountPath: \\\"/home/coder\\\" }) { id } }" || echo '')
+  echo "$RESP"
+  VOL_ID=$(echo "$RESP" | sed -n 's/.*"volumeCreate":{"id":"\([^"]*\)".*/\1/p' | head -1)
+  [ -n "$VOL_ID" ] && break
+
+  # "Service not found" can occur for a few seconds after serviceCreate even
+  # after the service id is returned. Refresh the authoritative service id
+  # from the project before retrying the volume mutation.
+  SE=$(lookup_service_and_env "$PROJECT_ID")
+  REFRESHED_SERVICE_ID=$(echo "$SE" | awk '{print $1}')
+  if [ -n "$REFRESHED_SERVICE_ID" ]; then
+    SERVICE_ID="$REFRESHED_SERVICE_ID"
+    echo "$SERVICE_ID" > "$STATE_DIR/service_id"
+  fi
+
+  echo "volumeCreate attempt $ATTEMPT failed; retrying..."
+  [ "$ATTEMPT" -lt 10 ] && sleep 3
+done
+
 if [ -z "$VOL_ID" ]; then
-  echo "FATAL: volumeCreate failed"
+  echo "FATAL: volumeCreate failed after 10 attempts"
   exit 1
 fi
 
