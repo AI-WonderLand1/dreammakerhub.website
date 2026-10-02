@@ -17,7 +17,7 @@ export async function GET() {
     ai: [
       option("wonderbuild", "WonderBuild", "Create websites and web apps with AI, templates, visual editing, code, preview, and publish.", "/wonder-build"),
       option("ai-modules", "AI Modules", "Browse model-backed modules and run prompt experiments.", "/ai-modules"),
-      option("playground", "AI Playground", "Use the live DreamMakerHub AI Playground.", "https://playground.dreammakerhub.website/"),
+      option("playground", "AI Playground", "Use the live AI WONDERLAND AI Playground.", "https://playground.dreammakerhub.website/"),
     ],
     agents: [
       option("playcanvas-bridge", "PlayCanvas Bridge", "Open the working PlayCanvas integration and project artifact tools.", "/dashboard/editor-playcanvas"),
@@ -25,7 +25,7 @@ export async function GET() {
     ],
     runners: [],
     workers: [
-      option("security", "Security Controls", "Review live DreamMakerHub security checks and findings.", "/dashboard/aetherguard"),
+      option("security", "Security Controls", "Review live AI WONDERLAND security checks and findings.", "/dashboard/aetherguard"),
     ],
   }, { headers: { "Cache-Control": "private, no-store" } });
 }
