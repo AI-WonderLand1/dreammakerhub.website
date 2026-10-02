@@ -158,26 +158,26 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
             <div className="mt-3 text-3xl font-semibold">
               {formatMoney({ amount: account?.periodSpend ?? 0, currency: account?.currency ?? "usd" })}
             </div>
-            <p className="mt-2 text-xs text-white/45">Paid DreamMakerHub invoices in the current calendar month.</p>
+            <p className="mt-2 text-xs text-white/45">Paid AI WONDERLAND invoices in the current calendar month.</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/[.025] p-4">
             <div className="text-sm font-semibold text-white/80">Active subscriptions</div>
             <div className="mt-3 text-3xl font-semibold">{account?.subscriptions.length ?? 0}</div>
-            <p className="mt-2 text-xs text-white/45">From this DreamMakerHub billing account.</p>
+            <p className="mt-2 text-xs text-white/45">From this AI WONDERLAND billing account.</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/[.025] p-4">
             <div className="text-sm font-semibold text-white/80">Next payment due</div>
             <div className="mt-3 text-2xl font-semibold">
               {account?.nextPaymentDue ? new Date(account.nextPaymentDue).toLocaleDateString() : "—"}
             </div>
-            <p className="mt-2 text-xs text-white/45">Based on your current DreamMakerHub billing period.</p>
+            <p className="mt-2 text-xs text-white/45">Based on your current AI WONDERLAND billing period.</p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-semibold">Subscriptions</h3>
-            <p className="text-xs text-white/45">Your active DreamMakerHub subscriptions.</p>
+            <p className="text-xs text-white/45">Your active AI WONDERLAND subscriptions.</p>
           </div>
           <Link
             href="/subscription"
@@ -206,7 +206,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
           })}
           {(account?.subscriptions ?? []).length === 0 && (
             <div className="rounded-xl border border-white/10 bg-white/[.025] p-4 text-sm text-white/45">
-              No paid DreamMakerHub subscription is active on this account.
+              No paid AI WONDERLAND subscription is active on this account.
             </div>
           )}
         </div>
@@ -216,7 +216,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
         <div>
           <h2 className="text-lg font-semibold">Payment information</h2>
           <p className="mt-1 text-sm text-white/45">
-            Edit your DreamMakerHub billing information and payment method without leaving this page.
+            Edit your AI WONDERLAND billing information and payment method without leaving this page.
           </p>
         </div>
 
@@ -267,7 +267,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
                 </tr>
               ))}
               {(account?.invoices ?? []).length === 0 && (
-                <tr><td colSpan={5} className="py-6 text-center text-white/40">No invoice history for this DreamMakerHub account.</td></tr>
+                <tr><td colSpan={5} className="py-6 text-center text-white/40">No invoice history for this AI WONDERLAND account.</td></tr>
               )}
             </tbody>
           </table>
