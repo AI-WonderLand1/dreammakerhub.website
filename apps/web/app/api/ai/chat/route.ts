@@ -194,6 +194,11 @@ export async function POST(req: NextRequest) {
     // Never trust a browser-provided plan header for paid AI or memory.
     const plan = billing.plan;
     const config = getConfessionConfig(plan, isMem0ServiceEnabled());
+    // AI Confessions is independent from Mem0. Paid plans use the richer
+    // analyzer; Mem0 only controls whether the resulting confessions are stored.
+    const useLLMExtraction = config.mode === "paid";
+    let confessionEstimatedTokens = 0;
+    let confessionApiCalls = 0;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
@@ -203,15 +208,27 @@ export async function POST(req: NextRequest) {
       systemPrompt: systemInstructions.join('\n\n'),
       language: detectedHumanLang,
       model: modelId,
+      useLLMExtraction,
       userApiKey,
       baseUrl,
+      beforeConfessionModelCall: useLLMExtraction
+        ? async (inputCharacters, outputTokens) => {
+            const reservation = await reserveAiRequest(
+              paidUser.userId,
+              inputCharacters,
+              outputTokens,
+            );
+            confessionEstimatedTokens += reservation.estimatedTokens;
+            confessionApiCalls += 1;
+          }
+        : undefined,
     });
 
     await logUsage({
       userId: paidUser.userId,
       action: "ai.token",
-      tokensUsed: billing.estimatedTokens,
-      apiCalls: 1,
+      tokensUsed: billing.estimatedTokens + confessionEstimatedTokens,
+      apiCalls: 1 + confessionApiCalls,
     });
 
     let memoryStore: { ok: boolean; bucket?: string; path?: string; error?: string } = { ok: true };
