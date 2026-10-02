@@ -576,6 +576,7 @@ module "code-server" {
   source   = "registry.coder.com/coder/code-server/coder"
   version  = "~> 1.0"
   agent_id = coder_agent.main.id
+  folder   = data.coder_parameter.repo_url.value != "" ? "/home/coder/projects/${basename(data.coder_parameter.repo_url.value)}" : "/home/coder/projects"
   order    = 1
 }
 
