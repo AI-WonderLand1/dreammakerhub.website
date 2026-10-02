@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   if (!user) {
     return NextResponse.json(
-      { error: 'Your DreamMakerHub session could not be verified.' },
+      { error: 'Your AI WONDERLAND session could not be verified.' },
       { status: 401, headers: NO_STORE },
     );
   }
