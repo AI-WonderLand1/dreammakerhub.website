@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Settings2,
   Sparkles,
-  Upload,
   WandSparkles,
 } from "lucide-react";
 
