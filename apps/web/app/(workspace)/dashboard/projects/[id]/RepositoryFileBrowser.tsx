@@ -107,14 +107,6 @@ function readmeAtPath(files: Record<string, string>, currentPath: string) {
   return null;
 }
 
-function safeHref(raw: string) {
-  const value = raw.trim();
-  if (/^https?:\/\//i.test(value)) return value;
-  if (/^(mailto:|tel:)/i.test(value)) return value;
-  if (value.startsWith("/") || value.startsWith("#") || value.startsWith("./") || value.startsWith("../")) return value;
-  return "#";
-}
-
 function renderInline(text: string): ReactNode[] {
   const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
   const nodes: ReactNode[] = [];
@@ -133,17 +125,10 @@ function renderInline(text: string): ReactNode[] {
     } else {
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (linkMatch) {
-        const href = safeHref(linkMatch[2]);
         nodes.push(
-          <a
-            key={`link-${key++}`}
-            href={href}
-            target={/^https?:\/\//i.test(href) ? "_blank" : undefined}
-            rel={/^https?:\/\//i.test(href) ? "noreferrer" : undefined}
-            className="text-blue-400 hover:underline"
-          >
-            {linkMatch[1]}
-          </a>,
+          <span key={`link-${key++}`} className="text-blue-300">
+            {linkMatch[1]} <span className="text-white/35">({linkMatch[2]})</span>
+          </span>,
         );
       } else {
         nodes.push(token);
