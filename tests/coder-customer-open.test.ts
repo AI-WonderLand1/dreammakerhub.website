@@ -24,7 +24,7 @@ describe('customer IDE opening security hold', () => {
     expect(page).not.toContain('WONDERSPACE_CONTROLLER_URL');
     expect(page).toContain('WonderSpaceOperatorGate');
     expect(gate).toContain('function BrowserIdeEntry()');
-    expect(gate).toContain('href="/dashboard#projects"');
+    expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('<CustomerWorkspaceLaunch');
@@ -36,7 +36,8 @@ describe('customer IDE opening security hold', () => {
     expect(launch).not.toContain('/api/user-workspace/customer/open/');
     expect(launch).not.toContain('Open my private IDE');
     expect(launch).toContain('you will not be sent to the Coder dashboard');
-    expect(manager).toContain('redirect("/dashboard?workspaceTab=code")');
+    expect(manager).toContain('wonderSpaceProjectIde');
+    expect(manager).toContain('WONDERSPACE_CODE_HOME');
     expect(manager).not.toContain('/api/user-workspace/customer/open/');
     expect(manager).not.toContain('DreamMakerHub-only gateway');
   });

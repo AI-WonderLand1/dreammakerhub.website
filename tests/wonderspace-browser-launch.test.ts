@@ -12,14 +12,15 @@ describe('WonderSpace direct project files flow', () => {
   const filesApi = read('apps/web/app/api/projects/[projectId]/files/route.ts');
 
   it('retires the duplicate browser project picker', () => {
-    expect(browser).toContain("redirect('/dashboard#projects')");
+    expect(browser).toContain("wonderSpaceProjectFiles");
+    expect(browser).toContain("WONDERSPACE_CODE_HOME");
     expect(browser).not.toContain("fetch('/api/projects'");
     expect(browser).not.toContain('Create and open editor');
   });
 
   it('sends customers to projects instead of another IDE landing page', () => {
-    expect(gate).toContain("router.replace('/dashboard#projects')");
-    expect(gate).toContain('href="/dashboard#projects"');
+    expect(gate).toContain("router.replace('/dashboard?workspaceTab=code#projects')");
+    expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
     expect(gate).not.toContain('CloudIdePaused');
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
   });

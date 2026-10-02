@@ -1,8 +1,19 @@
-import { redirect } from 'next/navigation';
+import { redirect } from "next/navigation";
+import {
+  normalizeWonderSpaceProjectId,
+  wonderSpaceProjectFiles,
+  WONDERSPACE_CODE_HOME,
+} from "@/lib/wonderspace/routes";
 
-// The old WonderSpace browser-editor project picker duplicated the dashboard.
-// Customers now choose a project once from the dashboard, then open its native
-// project file manager/editor directly.
-export default function RetiredWonderSpaceBrowserPicker() {
-  redirect('/dashboard#projects');
+// Legacy browser-editor links now preserve the selected project instead of
+// dropping users back at a generic dashboard route.
+export default async function RetiredWonderSpaceBrowserPicker({
+  searchParams,
+}: {
+  searchParams: Promise<{ projectId?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const projectId = normalizeWonderSpaceProjectId(params.projectId);
+  if (projectId) redirect(wonderSpaceProjectFiles(projectId));
+  redirect(WONDERSPACE_CODE_HOME);
 }

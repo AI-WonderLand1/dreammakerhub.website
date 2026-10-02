@@ -69,7 +69,7 @@ describe("real dashboard wiring and realtime contracts", () => {
     expect(routes).not.toContain("Create Workspace");
     expect(routes).not.toContain("Connection test passed");
     expect(routes).not.toContain("Customer IDE opening is temporarily paused");
-    expect(routes).toContain('redirect("/dashboard?workspaceTab=code")');
+    expect(routes).toContain("WONDERSPACE_CODE_HOME");
     expect(routes).toContain('redirect("/dashboard/collaboration")');
     expect(routes).toContain('redirect("/dashboard/settings")');
   });

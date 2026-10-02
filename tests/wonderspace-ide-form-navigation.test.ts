@@ -16,7 +16,7 @@ describe("WonderSpace IDE form navigation", () => {
     expect(project).toContain("Open IDE");
     expect(ide).toContain("WonderSpaceProjectNavigation");
     expect(ide).toContain('active="ide"');
-    expect(ide).toContain("<WonderSpaceLaunch />");
+    expect(ide).toContain("<WonderSpaceLaunch projectId={projectId} />");
     expect(ide).toContain("optional editor inside Edit / Design");
   });
 });

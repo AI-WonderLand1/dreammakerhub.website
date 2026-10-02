@@ -25,7 +25,7 @@ export default function ProjectIdePage() {
         WonderSpace is an optional editor inside Edit / Design. Choose a blank workspace or a repository below, then open code-server when the workspace is ready.
       </div>
 
-      <WonderSpaceLaunch />
+      <WonderSpaceLaunch projectId={projectId} />
     </div>
   );
 }

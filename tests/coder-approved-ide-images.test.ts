@@ -63,6 +63,6 @@ describe('Approved IDE images: discovery and provisioning', () => {
     expect(template).toContain('variable "workspace_image"');
     expect(template).toContain('WORKSPACE_IMAGE         = var.workspace_image');
     expect(template).toContain('ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest');
-    expect(launch).toContain('Open an existing IDE instead');
+    expect(launch).toContain('Open project files');
   });
 });
