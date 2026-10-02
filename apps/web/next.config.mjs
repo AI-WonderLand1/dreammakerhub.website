@@ -141,9 +141,6 @@ const nextConfig = {
     ],
   },
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 
   webpack: (config) => {
     // Do not replace Next.js client splitChunks/cacheGroups here.
