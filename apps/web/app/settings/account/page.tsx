@@ -26,7 +26,7 @@ export default async function AccountSettingsPage() {
           <Link href="/settings/admin/ide" className="mt-4 inline-block rounded-lg border border-cyan-300/40 px-4 py-2 text-sm font-semibold hover:bg-cyan-300/10">IDE operations</Link>
         </div>
       )}
-      <Link href="/wonderspace/workspaces" className="inline-block rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">My cloud workspaces</Link>
+      <Link href="/dashboard?workspaceTab=code#projects" className="inline-block rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10">My cloud workspaces</Link>
     </section>
   );
 }
