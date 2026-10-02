@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/app/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'IDE Operations | DreamMakerHub' };
+export const metadata = { title: 'IDE Operations | AI WONDERLAND' };
 
 export default async function AdminIDEOperationsPage() {
   const supabase = await createClient();

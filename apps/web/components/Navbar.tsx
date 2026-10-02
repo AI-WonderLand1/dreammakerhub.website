@@ -408,7 +408,7 @@ export default function Navbar() {
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(34,211,238,.4),transparent_28%),radial-gradient(circle_at_30%_80%,rgba(168,85,247,.45),transparent_34%)] opacity-40" />
                     <div className="relative flex h-full flex-col justify-between">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-200">DreamMakerHub</p>
+                        <p className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-200">AI WONDERLAND</p>
                         <h3 className="mt-3 text-2xl font-black leading-tight text-white">Ideas build brighter worlds.</h3>
                         <p className="mt-2 text-xs leading-5 text-white/55">Learn what we are building and why the platform exists.</p>
                       </div>

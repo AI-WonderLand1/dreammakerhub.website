@@ -111,7 +111,7 @@ export default function WonderSpaceWorkItemsPanel({
           <div>
             <h1 className="flex items-center gap-2 text-xl font-bold"><Icon size={22} /> {titleText}</h1>
             <p className="mt-2 text-sm text-slate-400">
-              Saved to this DreamMakerHub project, not an external repository.
+              Saved to this AI WONDERLAND project, not an external repository.
               {issue ? " Track and close your own project issues." : " Private project discussion threads. Team access is not enabled yet."}
             </p>
           </div>

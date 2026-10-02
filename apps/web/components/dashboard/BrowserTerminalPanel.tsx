@@ -135,7 +135,7 @@ export default function BrowserTerminalPanel({ projectId }: { projectId?: string
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-cyan-300">
                 <SquareTerminal size={14} aria-hidden="true" />
-                <span>DreamMakerHub browser terminal</span>
+                <span>AI WONDERLAND browser terminal</span>
                 {projectId && <span className="text-slate-500">· project {projectId}</span>}
               </div>
               <p className="text-slate-500">$ runtime status</p>

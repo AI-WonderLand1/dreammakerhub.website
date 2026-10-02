@@ -109,7 +109,7 @@ export default function CollaborationPage() {
     <div className="space-y-5 text-white">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold"><Users size={22} /> Collaboration</h1>
-        <p className="mt-1 text-sm text-white/50">Live collaboration presence for your DreamMakerHub projects.</p>
+        <p className="mt-1 text-sm text-white/50">Live collaboration presence for your AI WONDERLAND projects.</p>
       </div>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-4">

@@ -136,7 +136,7 @@ export default function WonderSpaceSourceHistory({ projectId, hasUnsavedEdits = 
       <div className="flex items-center gap-2">
         <GitCommitHorizontal size={20} className="text-cyan-300" aria-hidden="true" />
         <h3 className="font-semibold text-white">Version history</h3>
-        <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] text-cyan-200">DreamMakerHub</span>
+        <span className="rounded-full border border-cyan-400/20 px-2 py-0.5 text-[10px] text-cyan-200">AI WONDERLAND</span>
       </div>
       <p className="mt-1 text-xs text-slate-400">
         Keep a checkpoint of files you've already saved. No GitHub or virtual machine required.

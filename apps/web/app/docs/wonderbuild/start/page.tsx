@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Start a WonderBuild Project | DreamMakerHub Docs',
+  title: 'Start a WonderBuild Project | AI WONDERLAND Docs',
   description: 'Start WonderBuild blank, from a template, with AI, or by reopening an existing project.',
 };
 
@@ -60,7 +60,7 @@ export default function WonderBuildStartDocsPage() {
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
           <Link href="/docs" className="flex items-center gap-2 font-black tracking-tight">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600">D</span>
-            <span>DreamMakerHub <span className="font-medium text-slate-400">Docs</span></span>
+            <span>AI WONDERLAND <span className="font-medium text-slate-400">Docs</span></span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/docs#wonderbuild" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-900 sm:inline-flex">WonderBuild Docs</Link>

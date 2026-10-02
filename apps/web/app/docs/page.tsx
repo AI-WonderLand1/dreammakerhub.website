@@ -503,7 +503,7 @@ export default function DocsPage() {
                 <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Current platform snapshot · October 2026</p>
                 <h2 className="mt-2 text-3xl font-black">What AI WONDERLAND contains now</h2>
                 <p className="mt-3 max-w-4xl leading-7 text-slate-600">
-                  AI WONDERLAND is the product brand. DreamMakerHub.website remains the main web domain and repository name. The platform combines the account/dashboard shell, project and file workflows, WonderBuild visual creation, WonderSpace cloud coding, AI Playground and assistant surfaces, WonderPlay 3D tools, usage metering and credits, subscriptions, marketplace surfaces, APIs, and support.
+                  AI WONDERLAND is the product brand. AI WONDERLAND.website remains the main web domain and repository name. The platform combines the account/dashboard shell, project and file workflows, WonderBuild visual creation, WonderSpace cloud coding, AI Playground and assistant surfaces, WonderPlay 3D tools, usage metering and credits, subscriptions, marketplace surfaces, APIs, and support.
                 </p>
                 <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {[
