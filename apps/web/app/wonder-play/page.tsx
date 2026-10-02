@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const NPC_SIM_URL = 'https://npc-ai-sim.dreammakerhub.website';
+const NPC_SIM_URL = 'https://wonderplay-3d.dreammakerhub.website';
 
 export default function WonderPlayPage() {
   useEffect(() => {
