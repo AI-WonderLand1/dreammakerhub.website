@@ -194,7 +194,6 @@ export async function POST(req: NextRequest) {
     // Never trust a browser-provided plan header for paid AI or memory.
     const plan = billing.plan;
     const config = getConfessionConfig(plan, isMem0ServiceEnabled());
-    const useLLMExtraction = config.mode === "paid" && config.enableMem0;
 
     const project = await ensureDefaultProject(paidUser.userId, "AI Chat Project");
 
@@ -204,7 +203,6 @@ export async function POST(req: NextRequest) {
       systemPrompt: systemInstructions.join('\n\n'),
       language: detectedHumanLang,
       model: modelId,
-      useLLMExtraction,
       userApiKey,
       baseUrl,
     });
