@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/client";
-import { logger } from '@/lib/logger';
 
 export type SubscriptionPlan = "free" | "pro" | "team" | "enterprise";
 
@@ -83,139 +81,11 @@ export const TI_COSTS = {
   storage_mb_month: 10, // credits per MB/month
 };
 
-export async function getUserLimits(userId: string): Promise<UserLimits | null> {
-  const supabase = createClient();
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (error || !data) return null;
-
-  const storedPlan = typeof data.subscription_plan === "string" ? data.subscription_plan : "free";
-  const plan = (Object.prototype.hasOwnProperty.call(PLAN_LIMITS, storedPlan) ? storedPlan : "free") as SubscriptionPlan;
-  const canonical = PLAN_LIMITS[plan];
-
-  return {
-    ...canonical,
-    storageUsed: data.storage_used || 0,
-    computeUsed: data.compute_used || 0,
-    aiTokensUsed: data.ai_tokens_used || 0,
-    runtimeHoursUsed: data.runtime_hours_used || 0,
-    apiCallsUsed: data.api_calls_used || 0,
-  };
-}
-
-export async function checkProjectLimit(userId: string, limitType: keyof UserLimits): Promise<{ allowed: boolean; remaining: number; limit: number }> {
-  const supabase = createClient();
-  if (!supabase) return { allowed: false, remaining: 0, limit: 0 };
-
-  const limits = await getUserLimits(userId);
-  if (!limits) return { allowed: false, remaining: 0, limit: 0 };
-
-  switch (limitType) {
-    case "projectsLimit":
-      return {
-        allowed: (limits.projectsUsed || 0) < limits.projectsLimit,
-        remaining: limits.projectsLimit - (limits.projectsUsed || 0),
-        limit: limits.projectsLimit,
-      };
-    case "storageLimit":
-      return {
-        allowed: limits.storageLimit > limits.storageUsed,
-        remaining: limits.storageLimit - limits.storageUsed,
-        limit: limits.storageLimit,
-      };
-    case "aiTokensMonthly":
-      return {
-        allowed: limits.aiTokensMonthly > limits.aiTokensUsed,
-        remaining: limits.aiTokensMonthly - limits.aiTokensUsed,
-        limit: limits.aiTokensMonthly,
-      };
-    case "apiCallsMonthly":
-      return {
-        allowed: limits.apiCallsMonthly > limits.apiCallsUsed,
-        remaining: limits.apiCallsMonthly - limits.apiCallsUsed,
-        limit: limits.apiCallsMonthly,
-      };
-    default:
-      return { allowed: true, remaining: 999999, limit: 999999 };
-  }
-}
-
-export async function logUsage(
-  userId: string,
-  projectId: string | null,
-  action: string,
-  tokensUsed: number = 0,
-  computeCreditsUsed: number = 0,
-  runtimeMinutes: number = 0
-): Promise<void> {
-  const supabase = createClient();
-  if (!supabase) return;
-
-  const costCents = Math.floor(
-    (tokensUsed * 0.001 + computeCreditsUsed * 0.01 + runtimeMinutes * 0.1) * 100
-  );
-
-  await supabase.from("usage_logs").insert({
-    user_id: userId,
-    project_id: projectId,
-    action,
-    tokens_used: tokensUsed,
-    compute_credits_used: computeCreditsUsed,
-    runtime_minutes: runtimeMinutes,
-    cost_cents: costCents,
-  });
-}
-
-export async function updateUserUsage(
-  userId: string,
-  updates: {
-    storageUsed?: number;
-    aiTokensUsed?: number;
-    computeUsed?: number;
-    runtimeHoursUsed?: number;
-    apiCallsUsed?: number;
-  }
-): Promise<void> {
-  const supabase = createClient();
-  if (!supabase) return;
-
-  const set: Record<string, any> = { updated_at: new Date().toISOString() };
-  if (updates.storageUsed !== undefined) set.storage_used = updates.storageUsed;
-  if (updates.aiTokensUsed !== undefined) set.ai_tokens_used = updates.aiTokensUsed;
-  if (updates.computeUsed !== undefined) set.compute_used = updates.computeUsed;
-  if (updates.runtimeHoursUsed !== undefined) set.runtime_hours_used = updates.runtimeHoursUsed;
-  if (updates.apiCallsUsed !== undefined) set.api_calls_used = updates.apiCallsUsed;
-
-  await supabase.from("user_profiles").update(set).eq("id", userId);
-}
-
-export async function checkAndConsumeAITokens(
-  userId: string,
-  tokensNeeded: number
-): Promise<{ allowed: boolean; message?: string }> {
-  const limits = await getUserLimits(userId);
-  if (!limits) return { allowed: false, message: "Unable to verify limits" };
-
-  const remaining = limits.aiTokensMonthly - limits.aiTokensUsed;
-  if (remaining < tokensNeeded) {
-    return {
-      allowed: false,
-      message: `AI tokens limit reached. You have ${remaining} tokens remaining this month. Upgrade to Pro for more.`,
-    };
-  }
-
-  await logUsage(userId, null, "ai_usage", tokensNeeded);
-  await updateUserUsage(userId, { aiTokensUsed: limits.aiTokensUsed + tokensNeeded });
-
-  return { allowed: true };
-}
-
+/**
+ * Authoritative usage and entitlement checks are server-side only.
+ * See cost-guard.server.ts and reserve_billable_units_v2.
+ * This module intentionally contains plan constants and presentation helpers only.
+ */
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
   const k = 1024;
