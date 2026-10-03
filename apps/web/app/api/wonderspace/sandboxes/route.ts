@@ -4,7 +4,7 @@ import { customerSandboxRequest, PRIVATE_HEADERS, verifiedCustomerToken } from '
 export const dynamic = 'force-dynamic';
 async function forward(request: Request, method: 'GET' | 'POST') {
   const token = await verifiedCustomerToken(request);
-  if (!token) return NextResponse.json({ error: 'DreamMakerHub login required.' }, { status: 401, headers: PRIVATE_HEADERS });
+  if (!token) return NextResponse.json({ error: 'AI WONDERLAND login required.' }, { status: 401, headers: PRIVATE_HEADERS });
   try {
     const body = method === 'POST' ? await request.json().catch(() => null) : undefined;
     if (method === 'POST' && (!body || typeof body.name !== 'string' ||

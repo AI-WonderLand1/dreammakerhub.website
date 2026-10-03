@@ -137,7 +137,7 @@ export default function ProjectDeleteButton({
                 <div>
                   <h2 id={titleId} className="text-lg font-bold">Delete project?</h2>
                   <p id={descriptionId} className="mt-2 text-sm leading-6 text-white/60">
-                    This permanently deletes the DreamMakerHub project and its stored project files and revisions.
+                    This permanently deletes the AI WONDERLAND project and its stored project files and revisions.
                     External repositories, cloud resources, and separately published content are not automatically removed.
                   </p>
                 </div>
