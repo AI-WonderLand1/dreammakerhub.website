@@ -21,7 +21,7 @@ const ChatSchema = z.object({
   context: z.object({ page: z.string().max(300).optional() }).optional(),
 });
 
-const PAID_PLANS = new Set(["pro", "team", "enterprise"]);
+const PAID_PLANS = new Set(["creator", "pro", "studio", "team", "enterprise"]);
 const SHORT_ANSWER_RULE = "Answer normal questions directly and briefly, usually in 1-3 sentences. Expand only when the user requests steps, code, or depth. Do not claim to have inspected a page, changed files, or verified facts unless you actually did so. Clearly state material uncertainties.";
 
 export async function POST(req: NextRequest) {
@@ -95,9 +95,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Atomic database reservation MUST succeed before contacting any model.
-    // If configuration, metering or entitlement checks fail, remain paused.
-    await reserveAiRequest(userId, inputCharacters, 450);
+    // Usage reservations MUST succeed before contacting any model.
+    // AI-credit and request reservations are currently separate guarded steps;
+    // do not describe the combined operation as atomic until a single RPC owns both.
+    await reserveAiRequest(userId, inputCharacters, 450, resolved.tier === "premium" ? "premium" : "standard");
     let text = "";
     let tokens = 0;
     let provider = "openrouter";

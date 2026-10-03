@@ -84,8 +84,8 @@ export function useFeatureGate(feature: 'agents' | 'runners' | 'ai' | 'unlimited
       
       case 'unlimited':
         return { 
-          allowed: plan === 'pro' || plan === 'enterprise', 
-          reason: plan === 'pro' || plan === 'enterprise' ? '' : 'Unlimited features require Pro plan' 
+          allowed: plan === 'team' || plan === 'enterprise', 
+          reason: plan === 'team' || plan === 'enterprise' ? '' : 'This feature requires Guild or Enterprise' 
         };
       
       default:

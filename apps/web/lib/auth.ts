@@ -88,7 +88,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     if (!data?.user) return null;
 
     const plan = data.user.app_metadata?.plan ?? null;
-    const isPaid = plan === 'pro' || plan === 'team' || plan === 'enterprise';
+    const isPaid = ['creator', 'pro', 'studio', 'team', 'enterprise'].includes(plan || '');
 
     return {
       id: data.user.id,
