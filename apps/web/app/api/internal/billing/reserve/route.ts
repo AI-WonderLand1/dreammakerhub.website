@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { authenticatedSupabaseUser } from "@/lib/supabase/authenticated-user.server";
 import { PLAN_LIMITS } from "@/lib/billing/limits";
 import { evaluateUsageAlerts } from "@/lib/billing/usage-alerts.server";
+import { normalizeAiCredits, parseAiCostClass } from "@/lib/billing/ai-credit-policy";
 import {
   CostGateError,
   reserveBillableUnits,
@@ -37,34 +38,42 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const source = body && typeof body.source === "string" ? body.source : "";
   const feature = body && typeof body.feature === "string" ? body.feature : "";
-  const units = body && Number.isSafeInteger(body.units) ? body.units : 0;
+  const rawUnits = body && Number.isSafeInteger(body.units) ? body.units : 0;
+  const costClass = parseAiCostClass(body?.costClass);
 
-  if (!SOURCES.has(source) || !FEATURES.has(feature) || units < 1 || units > 1_000_000) {
+  if (!SOURCES.has(source) || !FEATURES.has(feature) || rawUnits < 1 || rawUnits > 1_000_000) {
     return NextResponse.json({ error: "Invalid usage reservation" }, { status: 400 });
   }
 
   try {
     const plan = await verifiedCostPlan(user.id);
     const limits = PLAN_LIMITS[plan];
+    const billedUnits = feature === "ai_tokens"
+      ? normalizeAiCredits(rawUnits, costClass)
+      : rawUnits;
     const limit =
       feature === "ai_tokens" ? limits.aiTokensMonthly :
       feature === "ai_requests" ? limits.apiCallsMonthly :
-      0;
+      limits.renderCreditsMonthly;
 
-    await reserveBillableUnits(
-      user.id,
-      feature as "ai_tokens" | "ai_requests" | "render_credits",
-      units,
-      limit,
-      source as "ai-playground" | "npc-ai-sim",
-    );
+    if (billedUnits > 0) {
+      await reserveBillableUnits(
+        user.id,
+        feature as "ai_tokens" | "ai_requests" | "render_credits",
+        billedUnits,
+        limit,
+        source as "ai-playground" | "npc-ai-sim",
+      );
+    }
     await evaluateUsageAlerts(user.id);
 
     return NextResponse.json({
       ok: true,
       plan,
       feature,
-      units,
+      rawUnits,
+      billedUnits,
+      costClass: feature === "ai_tokens" ? costClass : undefined,
       source,
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
