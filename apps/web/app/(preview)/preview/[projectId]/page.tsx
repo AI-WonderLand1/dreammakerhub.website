@@ -6,7 +6,7 @@ import PublishedBuilderPage from "@/lib/builder/components/PublishedBuilderPage"
 import type { BuilderTheme, CanvasElement, SitePage } from "@/lib/builder/types";
 
 export const metadata = {
-  title: "Project Preview | AI WONDERLAND",
+  title: "Project Preview",
   description: "Live preview of your AI WONDERLAND project.",
 };
 
