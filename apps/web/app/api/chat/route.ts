@@ -21,7 +21,7 @@ const ChatSchema = z.object({
   context: z.object({ page: z.string().max(300).optional() }).optional(),
 });
 
-const PAID_PLANS = new Set(["pro", "team", "enterprise"]);
+const PAID_PLANS = new Set(["creator", "pro", "studio", "team", "enterprise"]);
 const SHORT_ANSWER_RULE = "Answer normal questions directly and briefly, usually in 1-3 sentences. Expand only when the user requests steps, code, or depth. Do not claim to have inspected a page, changed files, or verified facts unless you actually did so. Clearly state material uncertainties.";
 
 export async function POST(req: NextRequest) {
