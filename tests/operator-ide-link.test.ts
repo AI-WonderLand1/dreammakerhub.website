@@ -105,7 +105,7 @@ describe('Existing operator IDE link', () => {
     const customer = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     expect(gate).toContain("role === 'customer'");
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
-    expect(gate).toContain('DreamMakerHub project files');
+    expect(gate).toContain('AI WONDERLAND project files');
     expect(gate).toContain('Open project files');
     expect(customer).toContain('operatorPreview');
     // The dashboard link is intentionally available for browsing the caller's own
