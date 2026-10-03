@@ -61,13 +61,20 @@ describe('Coder API remains the WonderSpace engine', () => {
   });
   it('keeps the form visible during an outage, allows retry without resetting input, and gates provisioning', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
-    expect(launch).toContain('Waiting for Coder connection');
-    expect(launch).toContain('Retry Coder connection');
+    expect(launch).toContain('Customer IDE access is paused');
+    expect(launch).toContain('Retry IDE availability check');
+    expect(launch).toContain("optionsErrorCode !== 'CUSTOMER_IDE_PAUSED'");
     expect(launch).toContain('setRetryCount((count) => count + 1)');
     expect(launch).toContain('aria-pressed={mode === \'blank\'}');
     expect(launch).toContain('disabled={!launchReady}');
     expect(launch).toContain('if (!options || optionsLoading || optionsError)');
     expect(launch).toContain('Railway manages workspace compute for this template.');
+    const optionsRoute = read('apps/web/app/api/user-workspace/options/route.ts');
+    expect(optionsRoute).toContain("code: 'CUSTOMER_IDE_PAUSED'");
+    expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true'");
+    expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED === 'true'");
+    expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED === 'true'");
+    expect(optionsRoute).toContain("process.env.CODER_SUPABASE_OIDC_VERIFIED === 'true'");
     expect(launch).not.toContain('window.location.reload()');
   });
   it('parses actual Coder template arrays and filters options to published capabilities', async () => {
