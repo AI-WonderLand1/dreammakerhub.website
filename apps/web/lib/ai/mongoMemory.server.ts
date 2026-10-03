@@ -33,7 +33,7 @@ async function mongoClient(): Promise<MongoClient> {
   }
   if (!clientPromise) {
     const client = new MongoClient(uri, {
-      appName: 'DreamMakerHub-AI-Memory',
+      appName: 'AI WONDERLAND-AI-Memory',
       maxPoolSize: 10,
       minPoolSize: 0,
       maxIdleTimeMS: 60_000,

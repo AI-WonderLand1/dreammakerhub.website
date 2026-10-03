@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const user = await authenticatedSupabaseUser(request);
-  if (!user) return NextResponse.json({ error: "Authenticated DreamMakerHub user required" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Authenticated AI WONDERLAND user required" }, { status: 401 });
 
   const body = await request.json().catch(() => null);
   const source = body && typeof body.source === "string" ? body.source : "";

@@ -70,7 +70,7 @@ describe('Existing operator IDE link', () => {
     expect(gate).toContain("method: 'POST'");
     expect(gate).not.toContain('Open existing IDE in Coder');
     expect(gate).toContain('Manage production in Coder');
-    expect(gate).toContain('Sign in to DreamMakerHub');
+    expect(gate).toContain('Sign in to AI WONDERLAND');
     expect(route).toContain("authenticatedSupabaseUser(request)");
     expect(route).toContain('if (mutation && !isSameOriginRequest(request))');
     expect(route).toContain("'/public-pages/auth?redirectTo=%2Fwonderspace'");
@@ -105,7 +105,7 @@ describe('Existing operator IDE link', () => {
     const customer = read('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
     expect(gate).toContain("role === 'customer'");
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
-    expect(gate).toContain('DreamMakerHub project files');
+    expect(gate).toContain('AI WONDERLAND project files');
     expect(gate).toContain('Open project files');
     expect(customer).toContain('operatorPreview');
     // The dashboard link is intentionally available for browsing the caller's own

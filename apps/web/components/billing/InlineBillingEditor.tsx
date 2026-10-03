@@ -358,7 +358,7 @@ export default function InlineBillingEditor({
               <div ref={paymentHostRef} className="min-h-10" />
             </div>
             <p className="mt-2 text-xs text-white/40">
-              Payment details are entered directly into Stripe's secure Payment Element and are not stored by DreamMakerHub.
+              Payment details are entered directly into Stripe's secure Payment Element and are not stored by AI WONDERLAND.
             </p>
             <button
               type="button"

@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'HTTP-Referer': process.env.NEXT_PUBLIC_URL || 'https://dreammakerhub.website',
-        'X-Title': 'DreamMakerHub',
+        'X-Title': 'AI WONDERLAND',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

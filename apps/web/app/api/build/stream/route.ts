@@ -83,7 +83,7 @@ Rules:
 
 Start your output with <!DOCTYPE html>`;
 
-const SPATIAL_SYSTEM = `You are an expert spatial world designer for the DreamMakerHub Spatial Engine.
+const SPATIAL_SYSTEM = `You are an expert spatial world designer for the AI WONDERLAND Spatial Engine.
 Build a complete SpatialWorld JSON definition that can be rendered with Gaussian Splatting and Three.js.
 Rules:
 - Output a valid SpatialWorld JSON object (no markdown fences, no explanation)
