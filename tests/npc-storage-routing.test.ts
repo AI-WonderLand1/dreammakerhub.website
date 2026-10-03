@@ -15,6 +15,12 @@ describe("canonical NPC storage and ownership", () => {
     expect(editor).not.toContain('.from("_npcs")');
   });
 
+  it("does not classify authenticated NPC CRUD as an unmetered AI model route", () => {
+    const middleware = read("apps/web/middleware.ts");
+    const blockedSet = middleware.match(/const UNMETERED_AI_PATHS = new Set\(\[([\s\S]*?)\]\);/)?.[1] || "";
+    expect(blockedSet).not.toContain('"/api/npc"');
+  });
+
   it("verifies NPC ownership before opening the live engine stream", () => {
     const live = read("apps/web/app/api/npc/live/route.ts");
     expect(live).toContain('await getNpc(npcId, userId)');
