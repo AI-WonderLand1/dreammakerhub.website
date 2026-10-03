@@ -127,7 +127,7 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
   const sourceUsage=Object.entries(usage?.by_source??{});
   const sourceLabel=(source:string)=>source==="dreammakerhub"?"AI WONDERLAND":source==="ai-playground"?"AI Playground":source==="npc-ai-sim"?"NPC AI SIM":pretty(source);
 
-  const titles={usage:["Usage","Live metered usage for the current billing period."],ai:["AI usage","AI token consumption and purchased AI credit balance."],licensing:["Licensing","Your active plan limits and included allowances."]} as const;
+  const titles={usage:["Usage","Live metered usage for the current billing period."],ai:["AI usage","AI credit consumption and purchased AI credit balance."],licensing:["Licensing","Your active plan limits and included allowances."]} as const;
   const title=titles[view];
 
   return <div>
