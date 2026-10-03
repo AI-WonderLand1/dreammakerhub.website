@@ -17,7 +17,6 @@ const UNMETERED_AI_PATHS = new Set([
   "/api/builder/generate",
   "/api/convai/chat",
   "/api/wonderspace/ai",
-  "/api/npc",
   "/api/3d/generate-scene",
   "/api/game-builder/create",
 ]);
