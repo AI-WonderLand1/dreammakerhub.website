@@ -46,7 +46,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(operatorGate).toContain('<OperatorIdePanel />');
     expect(operatorGate).not.toContain('CustomerSandboxIdeEntry');
     expect(operatorGate).not.toContain('CustomerWorkspaceLaunch');
-    expect(operatorGate).toContain('DreamMakerHub project files');
+    expect(operatorGate).toContain('AI WONDERLAND project files');
     expect(operatorGate).toContain('Open project files');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
