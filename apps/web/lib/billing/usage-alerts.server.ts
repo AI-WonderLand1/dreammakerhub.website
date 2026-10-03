@@ -49,11 +49,11 @@ export function usageAlertProviderStatus() {
 
 function normalizePlan(value: string) {
   const plan = value.toLowerCase();
-  return plan === "pro" || plan === "team" || plan === "enterprise" ? plan : "free";
+  return plan === "creator" || plan === "pro" || plan === "studio" || plan === "team" || plan === "enterprise" ? plan : "free";
 }
 
 function metricLabel(metric: AlertMetric) {
-  if (metric === "ai_tokens") return "AI tokens";
+  if (metric === "ai_tokens") return "AI credits";
   if (metric === "api_requests") return "API requests";
   if (metric === "storage") return "Storage";
   return "3D generations";
@@ -64,6 +64,7 @@ function metricLimit(metric: AlertMetric, plan: keyof typeof PLAN_LIMITS) {
   if (metric === "ai_tokens") return limits.aiTokensMonthly;
   if (metric === "api_requests") return limits.apiCallsMonthly;
   if (metric === "storage") return limits.storageLimit;
+  if (metric === "three_d_generations") return limits.renderCreditsMonthly;
   return null;
 }
 
@@ -163,7 +164,7 @@ export async function evaluateUsageAlerts(userId: string) {
     const valueText = alert.threshold_kind === "percent"
       ? `${Math.round(measured)}% used`
       : `${current} generations`;
-    const message = `DreamMakerHub usage alarm: ${label} reached ${valueText}. Your configured threshold is ${threshold}${alert.threshold_kind === "percent" ? "%" : ""}.`;
+    const message = `AI WONDERLAND usage alarm: ${label} reached ${valueText}. Your configured threshold is ${threshold}${alert.threshold_kind === "percent" ? "%" : ""}.`;
     const status: Record<string, string> = {};
 
     for (const channel of alert.channels || []) {
@@ -178,7 +179,7 @@ export async function evaluateUsageAlerts(userId: string) {
           continue;
         }
         try {
-          await sendEmail(alert.destination_email, `DreamMakerHub ${label} usage alarm`, message);
+          await sendEmail(alert.destination_email, `AI WONDERLAND ${label} usage alarm`, message);
           status.email = "sent";
         } catch (error) {
           logger.error("Usage alert email delivery failed", error);
