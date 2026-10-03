@@ -41,12 +41,12 @@ const products = [
   },
   {
     name: 'WonderSpace',
-    subtitle: 'Cloud Development Workspace',
+    subtitle: 'Cloud Workspace — Controlled Beta',
     href: '/wonderspace',
     image: '/images/screenshots/theia-builder.svg',
     accent: 'cyan',
-    cta: 'Open Workspace',
-    features: ['Real-time coding', 'Code editor', 'Terminal', 'Git integration', 'AI pair programming'],
+    cta: 'View Beta Status',
+    features: ['Coder workspace architecture', 'Files and terminal target', 'Identity and isolation gates', 'Controlled customer rollout', 'Availability not guaranteed'],
   },
   {
     name: 'WonderPlay',
@@ -64,17 +64,17 @@ const showcases = [
   { title: '3D Studio', subtitle: 'WonderPlay', image: '/images/3DWONDERPLAYIMAGE.webp', href: '/dashboard/3dhub' },
   { title: 'Project Dashboard', subtitle: 'Projects', image: '/images/dashboard-preview.svg', href: '/dashboard/projects' },
   { title: 'Interactive World', subtitle: '3D Experience', image: '/images/wonderland-theme.webp', href: '/wonder-play' },
-  { title: 'Cloud IDE', subtitle: 'WonderSpace', image: '/images/screenshots/theia-builder.svg', href: '/wonderspace' },
+  { title: 'Cloud IDE Beta', subtitle: 'WonderSpace', image: '/images/screenshots/theia-builder.svg', href: '/wonderspace' },
   { title: 'Community', subtitle: 'Questions & Showcases', image: '/images/community-preview.svg', href: '/community' },
 ] as const;
 
 const comparisonRows = [
-  ['Saved WonderSpace IDEs', '5', '100', 'Unlimited', 'Unlimited'],
-  ['Running IDEs at once', '2', '4', '8', 'Custom'],
-  ['Monthly compute pool', '150 core-hours', '300 core-hours', '1,000 pooled', 'Custom'],
-  ['AI tokens / month', '500K', '5M', '25M pooled', 'Custom'],
-  ['Included storage', '5 GB', '100 GB', '500 GB pooled', 'Custom'],
-  ['SSO + SCIM', '—', '—', '—', 'Included'],
+  ['AI credits / month', '500K', '2M', '5M', '12M', '25M pooled', 'Custom'],
+  ['3D credits / month', '10', '50', '150', '400', '1,000 pooled', 'Custom'],
+  ['Projects', '5', '25', '100', '250', 'Large pooled', 'Custom'],
+  ['Included storage', '5 GB', '25 GB', '100 GB', '250 GB', '500 GB pooled', 'Custom'],
+  ['AI / 3D top-ups', 'Available', 'Available', 'Available', 'Available', 'Available', 'Contract'],
+  ['WonderSpace cloud IDE', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'By agreement'],
 ] as const;
 
 function ProductCard({ product }: { product: (typeof products)[number] }) {
@@ -261,7 +261,7 @@ export default function MockupHomepage() {
 
         <section id="pricing" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
           <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Simple pricing for bigger ideas</p><h2 className="mt-2 text-3xl font-black">Choose the plan that fits your journey.</h2><p className="mt-1 text-sm text-slate-700">Start free. Upgrade when you are ready.</p></div>
-          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {PLANS.map((plan) => (
               <article key={plan.id} className={`relative flex flex-col rounded-2xl border p-5 shadow-lg backdrop-blur-md ${plan.highlight ? 'border-violet-400/60 bg-violet-950/78 text-white' : 'border-white/60 bg-slate-950/72 text-white'}`}>
                 {plan.highlight && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-violet-600 px-3 py-1 text-[10px] font-black text-white">Most Popular</span>}
@@ -275,7 +275,7 @@ export default function MockupHomepage() {
 
           <details className={styles.comparison}>
             <summary className="cursor-pointer px-5 py-4 font-bold">Compare all plan features</summary>
-            <div className="border-b border-slate-200/70 px-5 py-4"><h3 className="text-lg font-black">Plan comparison</h3><p className="text-xs text-slate-600">Current configured limits and included features.</p></div>
+            <div className="border-b border-slate-200/70 px-5 py-4"><h3 className="text-lg font-black">Plan comparison</h3><p className="text-xs text-slate-600">Membership price and included usage. Beta features are labeled rather than promised.</p></div>
             <div className="overflow-x-auto"><table className="min-w-[780px] w-full text-left text-xs"><thead><tr className="bg-slate-900 text-white"><th className="px-4 py-3">Feature</th>{PLANS.map((p) => <th key={p.id} className="px-4 py-3 text-center">{p.tier}</th>)}</tr></thead><tbody>{comparisonRows.map((row, i) => <tr key={row[0]} className={i % 2 ? 'bg-white/70' : 'bg-slate-50/70'}><th className="px-4 py-3 font-bold">{row[0]}</th>{row.slice(1).map((v, idx) => <td key={`${row[0]}-${idx}`} className="px-4 py-3 text-center text-slate-700">{v}</td>)}</tr>)}</tbody></table></div>
           </details>
         </section>
