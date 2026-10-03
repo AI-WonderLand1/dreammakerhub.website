@@ -95,8 +95,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Atomic database reservation MUST succeed before contacting any model.
-    // If configuration, metering or entitlement checks fail, remain paused.
+    // Usage reservations MUST succeed before contacting any model.
+    // AI-credit and request reservations are currently separate guarded steps;
+    // do not describe the combined operation as atomic until a single RPC owns both.
     await reserveAiRequest(userId, inputCharacters, 450);
     let text = "";
     let tokens = 0;
