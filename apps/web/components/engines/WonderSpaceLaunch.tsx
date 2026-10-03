@@ -27,6 +27,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const { user, session, loading: authLoading } = useAuth();
   const [options, setOptions] = useState<LaunchOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
+  const [optionsErrorCode, setOptionsErrorCode] = useState('');
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState<'blank' | 'repo'>('blank');
@@ -52,11 +53,16 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     const controller = new AbortController();
     setOptions(null);
     setOptionsError('');
+    setOptionsErrorCode('');
     setOptionsLoading(true);
     fetch('/api/user-workspace/options', { signal: controller.signal, cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined })
       .then(async (response) => {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Coder options unavailable.');
+        if (!response.ok) {
+          const failure = new Error(data.error || 'Coder options unavailable.') as Error & { code?: string };
+          failure.code = typeof data.code === 'string' ? data.code : '';
+          throw failure;
+        }
         return data as LaunchOptions;
       })
       .then((data) => {
@@ -70,9 +76,13 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
         setIdeImage(data.images[0]?.value || '');
         setRegion(data.regions[0]?.value || '');
         setOptionsError('');
+        setOptionsErrorCode('');
       })
       .catch((cause: unknown) => {
-        if (!controller.signal.aborted) setOptionsError(cause instanceof Error ? cause.message : 'Coder options unavailable.');
+        if (controller.signal.aborted) return;
+        const failure = cause as Error & { code?: string };
+        setOptionsError(cause instanceof Error ? cause.message : 'Coder options unavailable.');
+        setOptionsErrorCode(failure?.code || '');
       })
       .finally(() => {
         if (!controller.signal.aborted) setOptionsLoading(false);
@@ -225,10 +235,22 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
               <h2 className="mb-5 text-xl font-semibold">2. Choose your IDE</h2>
               <div className="space-y-5">
                 <div aria-live="polite" className={`rounded-xl border p-4 text-sm ${options ? 'border-emerald-400/30 bg-emerald-950/20' : 'border-amber-400/40 bg-amber-950/30'}`}>
-                  <p className="font-semibold">{optionsLoading ? 'Connecting to Coder…' : options ? 'Coder connected' : 'Waiting for Coder connection'}</p>
+                  <p className="font-semibold">
+                    {optionsLoading
+                      ? 'Checking IDE availability…'
+                      : options
+                        ? 'Coder connected'
+                        : optionsErrorCode === 'CUSTOMER_IDE_PAUSED'
+                          ? 'Customer IDE access is paused'
+                          : 'Coder launch options unavailable'}
+                  </p>
                   {options && <p className="mt-1">Template: {options.templateName}</p>}
                   {optionsError && <p role="alert" className="mt-2">{optionsError} Your choices remain saved. Launch stays disabled.</p>}
-                  {!options && !optionsLoading && <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-3 w-full rounded-xl bg-amber-300 px-5 py-3 font-bold text-slate-950">Retry Coder connection</button>}
+                  {!options && !optionsLoading && optionsErrorCode !== 'CUSTOMER_IDE_PAUSED' && (
+                    <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-3 w-full rounded-xl bg-amber-300 px-5 py-3 font-bold text-slate-950">
+                      Retry IDE availability check
+                    </button>
+                  )}
                 </div>
                 {options && options.images.length > 0 && (
                   <div>
@@ -248,7 +270,13 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                 <CoderAvailabilityIndicator>
                   <button type="submit" disabled={!launchReady} className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Create my private IDE</button>
                 </CoderAvailabilityIndicator>
-                {!launchReady && <p className="text-xs text-slate-300">Launch requires a working Coder connection, a workspace name and supported options.</p>}
+                {!launchReady && (
+                  <p className="text-xs text-slate-300">
+                    {optionsErrorCode === 'CUSTOMER_IDE_PAUSED'
+                      ? 'No customer workspace will be created until the required billing, identity, isolation, and hard-stop safeguards are enabled.'
+                      : 'Launch requires verified Coder options, a workspace name and supported settings.'}
+                  </p>
+                )}
               </div>
               {stage === 'error' && <p role="alert" className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">{error}</p>}
             </section>
