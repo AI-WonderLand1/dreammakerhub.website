@@ -57,7 +57,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain('mode === \'repo\' && !options.repositorySupported');
     expect(launch).toContain('options.regions.length ?');
     expect(route).toContain('Repository launch is not enabled on the published Coder template.');
-    expect(route).toContain('This Railway Coder template does not accept image overrides.');
+    expect(route).toContain('This Coder template does not accept image overrides.');
   });
   it('keeps the form visible during an outage, allows retry without resetting input, and gates provisioning', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
@@ -68,7 +68,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain('aria-pressed={mode === \'blank\'}');
     expect(launch).toContain('disabled={!launchReady}');
     expect(launch).toContain('if (!options || optionsLoading || optionsError)');
-    expect(launch).toContain('Railway manages workspace compute for this template.');
+    expect(launch).toContain('Google Cloud hosts workspace compute for this Coder Docker template.');
     const optionsRoute = read('apps/web/app/api/user-workspace/options/route.ts');
     expect(optionsRoute).toContain("code: 'CUSTOMER_IDE_PAUSED'");
     expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true'");
@@ -101,24 +101,22 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(await getCoderTemplateId('playcanvas-3d')).toBe('playcanvas-template-id');
     expect(coderFetchMock).toHaveBeenCalled();
   });
-  it('recognizes the published AI WONDERLAND Railway template when no override is set', async () => {
+  it('recognizes the published AI WONDERLAND Google Docker template when no override is set', async () => {
     vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
     vi.stubEnv('CODER_API_TOKEN', 'test-token');
     vi.stubEnv('CODER_IDE_TEMPLATE_NAME', '');
     coderFetchMock.mockImplementation(async (url: string) => ({
       ok: true,
       json: async () => url.endsWith('/api/v2/templates')
-        ? [{ id: 'live-template-id', name: 'ai-wonderland-ide', active_version_id: 'live-version' }]
-        : [
-          { name: 'region', options: [{ name: 'US East', value: 'us-east4' }] },
-        ],
+        ? [{ id: 'live-template-id', name: 'ai-wonderland-google', active_version_id: 'live-version' }]
+        : [],
     } as Response));
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('live-template-id');
-    expect(config.templateName).toBe('ai-wonderland-ide');
+    expect(config.templateName).toBe('ai-wonderland-google');
     expect(config.cpu).toEqual([]);
     expect(config.memory).toEqual([]);
-    expect(config.regions).toEqual([{ label: 'US East', value: 'us-east4' }]);
+    expect(config.regions).toEqual([]);
   });
   it('does not read nonexistent linked repository columns from production projects', () => {
     expect(read('apps/web/app/api/user-workspace/options/route.ts')).not.toContain(".select('id,name,github_repo')");
