@@ -34,7 +34,7 @@ describe('new account plan selection', () => {
   it('allows explicit free choice and separate paid checkout, never charging during registration', () => {
     // Calling ensureFree and immediately returning is equivalent to returning its promise.
     expect(subscription).toMatch(/(?:return\s+ensureFree\(\)|void\s+ensureFree\(\);\s*return;)/);
-    expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(plan.id)}');
+    expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`');
     expect(auth).not.toContain('/api/subscription/subscribe');
     expect(pricing).toContain('href: "/public-pages/auth?signup=true&redirectTo=%2Fsubscription"');
     expect(pricing).toContain('href: "/checkout?plan=pro&interval=month"');
@@ -42,7 +42,7 @@ describe('new account plan selection', () => {
   });
 
   it('does not trust a success URL as proof of payment', () => {
-    expect(subscription).toContain('Checkout status not verified');
+    expect(subscription).toContain('Returning from Checkout does not activate a plan by itself.');
     expect(checkoutStatus).toContain('stripe.checkout.sessions.retrieve(sessionId)');
     expect(checkoutStatus).toContain('checkout.metadata.userId !== user.id');
   });

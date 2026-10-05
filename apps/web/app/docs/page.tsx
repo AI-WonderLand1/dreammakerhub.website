@@ -137,7 +137,7 @@ const projectChoices = [
   {
     icon: Code2,
     title: 'Code Project',
-    description: 'Read how WonderSpace is used for files, terminal access, Git, and the cloud IDE workflow.',
+    description: 'Read the intended WonderSpace cloud-workspace flow and the current controlled-beta availability status.',
     href: '#wonderspace',
     action: 'Read WonderSpace docs',
   },
@@ -509,10 +509,10 @@ export default function DocsPage() {
                   {[
                     ['Projects', 'Owned project records, source selection, files, project actions, save/reopen flows, preview and publish.'],
                     ['WonderBuild', 'Template, AI or blank start → visual editor → responsive preview → publish/export.'],
-                    ['WonderSpace', 'Coder-managed VS Code workspace flow backed by Railway projects, services and persistent home volumes.'],
+                    ['WonderSpace', 'Controlled-beta Coder workspace path. Customer provisioning remains gated until identity, isolation and cost controls are verified.'],
                     ['AI', 'Site assistant, AI Playground, AI modules, OpenRouter-backed model routes, prompt/model tooling and usage accounting.'],
                     ['3D / WonderPlay', '3D Hub, 3D Factory, 360 viewing, game/movie tooling, assets, NPC AI surfaces and 3D generation routes.'],
-                    ['Commerce', 'Subscriptions, Stripe checkout/webhooks, AI token packs, render/3D credit packs, metered usage, limits and alerts.'],
+                    ['Commerce', 'Six memberships, Stripe checkout/webhooks, AI credit packs, 3D credit packs, metered usage, limits and alerts.'],
                   ].map(([title, body]) => (
                     <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
                       <h3 className="font-black text-slate-900">{title}</h3>
@@ -554,15 +554,15 @@ export default function DocsPage() {
               <div className="rounded-3xl border border-blue-200 bg-blue-50 p-7 sm:p-8">
                 <Code2 className="h-8 w-8 text-blue-700" />
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-blue-700">WonderSpace</p>
-                <h2 className="mt-2 text-3xl font-black">Coder-managed VS Code workspaces on Railway</h2>
+                <h2 className="mt-2 text-3xl font-black">WonderSpace cloud workspaces — controlled beta</h2>
                 <p className="mt-3 max-w-4xl leading-7 text-slate-600">
-                  The main IDE runtime no longer depends on Kubernetes/vCluster/Envbox. Coder remains the workspace control plane, while the Railway GraphQL template creates one Railway project, one workspace service, and one persistent <code>/home/coder</code> volume for each workspace. Stopping the workspace cancels the running deployment while preserving the project and home volume.
+                  The intended customer path uses Coder with Railway-backed workspace resources. Customer workspace creation is currently gated behind identity, isolation, provisioning and cost-control checks. Until those checks pass in production, WonderSpace is documented as controlled beta rather than guaranteed plan capacity.
                 </p>
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Persistent home</strong><p className="mt-1 text-sm leading-6 text-slate-600">Projects, editor state, npm/pnpm caches, Python user packages and user-installed tools under <code>/home/coder</code> survive workspace restarts.</p></div>
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Persistence target</strong><p className="mt-1 text-sm leading-6 text-slate-600">The workspace design uses a persistent <code>/home/coder</code> volume. Customer persistence must be verified in the production rollout before it is treated as a guarantee.</p></div>
                   <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Baked development image</strong><p className="mt-1 text-sm leading-6 text-slate-600">The AI WONDERLAND workspace image includes Node.js 22, npm, pnpm, TypeScript, Python/pip/venv, Git, compiler/build tools, SSH, jq, ripgrep, SQLite, tmux, vim/nano and common archive/network utilities.</p></div>
-                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Railway isolation</strong><p className="mt-1 text-sm leading-6 text-slate-600">Each Coder workspace receives a separate Railway project/service. Optional Railway CLI access uses a project-scoped token rather than exposing the master Railway token.</p></div>
-                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Operator-controlled image</strong><p className="mt-1 text-sm leading-6 text-slate-600">Users cannot submit arbitrary workspace image URLs. The published Coder template controls the image and exposes the supported Railway region choice.</p></div>
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Isolation target</strong><p className="mt-1 text-sm leading-6 text-slate-600">The design isolates customer workspaces and avoids exposing operator credentials. Two-account production isolation testing remains a release gate.</p></div>
+                  <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Controlled rollout</strong><p className="mt-1 text-sm leading-6 text-slate-600">Workspace templates and customer provisioning remain operator-controlled while the beta safety gates are active.</p></div>
                 </div>
                 <Link href="/wonderspace" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-bold text-white hover:bg-blue-600">Open WonderSpace <ExternalLink className="h-4 w-4" /></Link>
               </div>
@@ -615,14 +615,17 @@ export default function DocsPage() {
               <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-7 sm:p-8">
                 <CreditCard className="h-8 w-8 text-emerald-700" />
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-emerald-700">Usage, credits & billing</p>
-                <h2 className="mt-2 text-3xl font-black">Plans, metered usage, token packs and 3D/render credits</h2>
+                <h2 className="mt-2 text-3xl font-black">Six memberships, AI credits and 3D credits</h2>
                 <p className="mt-3 max-w-4xl leading-7 text-slate-600">
-                  Billing is tied to AI WONDERLAND products and usage. Stripe handles checkout/webhooks for subscriptions and credit purchases; the platform ledger tracks usage across the main site, AI Playground and NPC/3D services. AI token packs and render/3D credit packs are separate purchase types, and usage alerts can notify users when configured thresholds are reached.
+                  AI WONDERLAND uses one membership per customer: Nomad, Creator, Architect, Studio, Guild or Enterprise. AI usage is normalized into AI credits across supported model providers; 3D generation/rendering uses a separate 3D credit balance. Stripe handles verified membership and eligible one-time credit purchases while the central ledger tracks usage across the main site, AI Playground and NPC/3D services.
                 </p>
                 <div className="mt-6 grid gap-3 md:grid-cols-3">
                   <div className="rounded-xl border border-emerald-200 bg-white p-4"><Gauge className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Live usage</strong><p className="mt-1 text-sm leading-6 text-slate-600">Usage surfaces show plan consumption and purchased balances instead of treating Stripe itself as the product.</p></div>
-                  <div className="rounded-xl border border-emerald-200 bg-white p-4"><CreditCard className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Credit packs</strong><p className="mt-1 text-sm leading-6 text-slate-600">Users can purchase additional AI tokens and 3D/render credits using the billing purchase controls.</p></div>
+                  <div className="rounded-xl border border-emerald-200 bg-white p-4"><CreditCard className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Credit packs</strong><p className="mt-1 text-sm leading-6 text-slate-600">Users can purchase additional AI credits and 3D credits without changing memberships when the corresponding purchase packs are configured.</p></div>
                   <div className="rounded-xl border border-emerald-200 bg-white p-4"><MessageSquareText className="h-5 w-5 text-emerald-700" /><strong className="mt-2 block">Usage alerts</strong><p className="mt-1 text-sm leading-6 text-slate-600">Threshold alerts can cover AI and 3D usage and support configured notification channels such as email or text where enabled.</p></div>
+                </div>
+                <div className="mt-6 rounded-xl border border-emerald-300 bg-white p-4 text-sm leading-6 text-slate-700">
+                  <strong>Current membership catalog:</strong> Nomad ($0), Creator ($19/mo), Architect ($39/mo), Studio ($79/mo), Guild ($129/mo), and Enterprise (custom). Creator/Studio checkout remains disabled until their verified Stripe Product/Price configuration is present. AI Playground may show exact enabled models; Fast / Balanced / Advanced builder modes are planned and are not live selectors yet.
                 </div>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link href="/settings/billing" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-600">Open Billing <ExternalLink className="h-4 w-4" /></Link>
@@ -650,10 +653,10 @@ export default function DocsPage() {
                 <h2 className="mt-2 text-3xl font-black">How the major services fit together</h2>
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Supabase</strong><p className="mt-1 text-sm leading-6 text-slate-600">Authentication, owned project/application data, usage/billing records and realtime-backed product data.</p></div>
-                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Railway</strong><p className="mt-1 text-sm leading-6 text-slate-600">Application/service hosting and the current per-workspace compute target for Coder-managed WonderSpace IDEs.</p></div>
-                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Coder</strong><p className="mt-1 text-sm leading-6 text-slate-600">Workspace control plane and browser IDE/agent layer. The published template creates and controls the Railway workspace resources.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Railway</strong><p className="mt-1 text-sm leading-6 text-slate-600">Application/service hosting. Railway-backed WonderSpace customer compute remains part of the controlled-beta rollout rather than a generally available promise.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Coder</strong><p className="mt-1 text-sm leading-6 text-slate-600">Workspace control plane and browser IDE/agent layer. Customer provisioning remains gated until isolation and provisioning checks are verified.</p></div>
                   <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>GitHub & CI</strong><p className="mt-1 text-sm leading-6 text-slate-600">Repository source, pull-request review, Actions/CodeQL and GHCR images, including the baked AI WONDERLAND Coder workspace image.</p></div>
-                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Stripe</strong><p className="mt-1 text-sm leading-6 text-slate-600">Checkout and payment events for AI WONDERLAND subscriptions and eligible credit purchases.</p></div>
+                  <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Stripe</strong><p className="mt-1 text-sm leading-6 text-slate-600">Checkout and payment events for AI WONDERLAND memberships and eligible AI/3D credit purchases.</p></div>
                   <div className="rounded-xl border border-indigo-200 bg-white p-4"><strong>Cloudflare / domain</strong><p className="mt-1 text-sm leading-6 text-slate-600">Public DNS/proxy layer for dreammakerhub.website and product subdomains where configured.</p></div>
                 </div>
               </div>

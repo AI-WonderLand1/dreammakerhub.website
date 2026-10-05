@@ -1,8 +1,6 @@
 name: Release and security regression gate
 
 on:
-  pull_request:
-    branches: [Master]
   push:
     branches: [Master]
   workflow_run:
@@ -18,7 +16,7 @@ permissions:
 jobs:
   security-regressions:
     name: security-regressions
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

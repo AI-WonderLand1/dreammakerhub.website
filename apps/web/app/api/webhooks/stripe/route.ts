@@ -10,7 +10,7 @@ import { resolveTokenPack } from "@/lib/billing/token-packs.server";
 import { resolveRenderCreditPack } from "@/lib/billing/render-credit-packs.server";
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-type PaidPlanId = Extract<PlanId, "pro" | "team">;
+type PaidPlanId = Extract<PlanId, "creator" | "pro" | "studio" | "team">;
 type BillingInterval = "month" | "year";
 
 function stripeId(value: string | { id: string } | null): string | null {
@@ -27,7 +27,7 @@ function resolvedPaidPlan(subscription: Stripe.Subscription): {
   const price = subscription.items.data[0]?.price;
   if (!price?.id || price.currency !== "usd" || price.type !== "recurring" || !price.recurring) return null;
 
-  for (const id of ["pro", "team"] as const) {
+  for (const id of ["creator", "pro", "studio", "team"] as const) {
     const plan = PLANS[id];
     // Match the verified Stripe product AND the advertised recurring amount.
     // The same matcher is used by checkout, so a valid payment never grants
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
 
-        if (!userId || !subscriptionId || !["pro", "team"].includes(metadataPlan || "")) {
+        if (!userId || !subscriptionId || !["creator", "pro", "studio", "team"].includes(metadataPlan || "")) {
           throw new Error("Stripe checkout missing a valid user, paid plan, or subscription");
         }
         if (session.status !== "complete" || !["paid", "no_payment_required"].includes(session.payment_status)) {

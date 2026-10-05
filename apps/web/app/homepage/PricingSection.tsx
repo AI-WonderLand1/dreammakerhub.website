@@ -7,24 +7,18 @@ type CompareRow = {
 };
 
 const COMPARISON_ROWS: CompareRow[] = [
-  { label: "Price", values: { free: "$0 forever", pro: "$39/mo", team: "$129/mo", enterprise: "Custom" } },
-  { label: "Saved WonderSpace IDEs", values: { free: "5", pro: "100", team: "Unlimited", enterprise: "Unlimited" } },
-  { label: "Running IDEs at once", values: { free: "2", pro: "4", team: "8", enterprise: "Custom" } },
-  { label: "Monthly compute pool", values: { free: "150 core-hours", pro: "300 core-hours", team: "1,000 pooled", enterprise: "Custom" } },
-  { label: "AI tokens / month", values: { free: "500K", pro: "5M", team: "25M pooled", enterprise: "Custom" } },
-  { label: "Included storage", values: { free: "5 GB", pro: "100 GB", team: "500 GB pooled", enterprise: "Custom" } },
-  { label: "Idle hibernation", values: { free: "1 hour", pro: "1 hour", team: "1 hour", enterprise: "Custom" } },
-  { label: "WonderBuild", values: { free: "Included", pro: "Included", team: "Included", enterprise: "Included" } },
-  { label: "Custom domain", values: { free: "Subdomain", pro: "Included", team: "Included", enterprise: "Included" } },
-  { label: "Shared asset library", values: { free: "—", pro: "—", team: "Included", enterprise: "Included" } },
-  { label: "SSO + SCIM", values: { free: "—", pro: "—", team: "—", enterprise: "Included" } },
-  { label: "Private cloud / on-prem", values: { free: "—", pro: "—", team: "—", enterprise: "Available" } },
-  { label: "Dedicated account manager", values: { free: "—", pro: "—", team: "—", enterprise: "Included" } },
+  { label: "Price", values: { free: "$0", creator: "$19/mo", pro: "$39/mo", studio: "$79/mo", team: "$129/mo", enterprise: "Custom" } },
+  { label: "AI credits / month", values: { free: "500K", creator: "2M", pro: "5M", studio: "12M", team: "25M pooled", enterprise: "Custom" } },
+  { label: "3D credits / month", values: { free: "10", creator: "50", pro: "150", studio: "400", team: "1,000 pooled", enterprise: "Custom" } },
+  { label: "Projects", values: { free: "5", creator: "25", pro: "100", studio: "250", team: "Large pooled", enterprise: "Custom" } },
+  { label: "Included storage", values: { free: "5 GB", creator: "25 GB", pro: "100 GB", studio: "250 GB", team: "500 GB pooled", enterprise: "Custom" } },
+  { label: "AI / 3D top-ups", values: { free: "Available", creator: "Available", pro: "Available", studio: "Available", team: "Available", enterprise: "Contract" } },
+  { label: "WonderSpace cloud IDE", values: { free: "Controlled beta", creator: "Controlled beta", pro: "Controlled beta", studio: "Controlled beta", team: "Controlled beta", enterprise: "By agreement" } },
 ];
 
 function planTone(plan: Plan) {
   if (plan.highlight) return "border-violet-300/80 bg-gradient-to-b from-violet-50/88 to-white/82 shadow-xl shadow-violet-200/30";
-  if (plan.id === "team") return "border-blue-200/80 bg-gradient-to-b from-blue-50/86 to-white/80";
+  if (plan.id === "creator") return "border-fuchsia-200/80 bg-gradient-to-b from-fuchsia-50/86 to-white/80";\n  if (plan.id === "studio") return "border-indigo-200/80 bg-gradient-to-b from-indigo-50/86 to-white/80";\n  if (plan.id === "team") return "border-blue-200/80 bg-gradient-to-b from-blue-50/86 to-white/80";
   if (plan.id === "enterprise") return "border-cyan-200/80 bg-gradient-to-b from-cyan-50/86 to-white/80";
   return "border-white/80 bg-white/78";
 }
@@ -42,7 +36,7 @@ export default function PricingSection({ plans }: { plans: Plan[] }) {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => (
             <article key={plan.id} className={`relative flex flex-col rounded-2xl border p-6 backdrop-blur-md ${planTone(plan)}`}>
               {plan.highlight && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">Most popular</span>}
@@ -63,7 +57,7 @@ export default function PricingSection({ plans }: { plans: Plan[] }) {
         <div className="mt-14 overflow-hidden rounded-2xl border border-white/80 bg-white/78 shadow-xl shadow-slate-200/30 backdrop-blur-md">
           <div className="border-b border-slate-200/80 bg-white/55 px-5 py-5 sm:px-6">
             <h3 className="text-2xl font-black">Plan comparison</h3>
-            <p className="mt-1 text-sm text-slate-700">A feature-by-feature view, because four marketing cards somehow never answer the actual question.</p>
+            <p className="mt-1 text-sm text-slate-700">A customer-facing view of membership price and included usage. Beta features are labeled rather than promised.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-[860px] w-full border-collapse text-left text-sm">
