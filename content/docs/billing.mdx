@@ -1,61 +1,91 @@
 ---
 title: "Billing & Subscriptions"
-description: "Manage plans, handle payments, and manage subscriptions with Stripe integration."
+description: "Current AI WONDERLAND plans, AI credits, 3D credits, Checkout readiness, and subscription management."
 ---
 
 # Billing & Subscriptions
 
-Manage plans, handle payments, and manage subscriptions with Stripe integration.
+AI WONDERLAND uses **one membership** per customer. AI Playground, WonderBuild, NPC tools and 3D surfaces are product areas inside that membership, not separate subscriptions.
 
 ## Plans
 
-| Feature | Personal | Enterprise |
-|---------|----------|------------|
-| Playground | ✅ | ✅ Unlimited |
-| Wonder-Build | ✅ | ✅ Unlimited |
-| Publishing | 10/month | Unlimited |
-| Custom Domains | ❌ | ✅ |
-| SSO/SAML | ❌ | ✅ |
-| Priority Support | ❌ | ✅ |
-| SLA | ❌ | 99.9% |
+| Plan | Monthly | Annual | Included AI credits | Included 3D credits | Storage |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Nomad | $0 | $0 | 500K | 10 | 5 GB |
+| Creator | $19 | $190 | 2M | 50 | 25 GB |
+| Architect | $39 | $390 | 5M | 150 | 100 GB |
+| Studio | $79 | $790 | 12M | 400 | 250 GB |
+| Guild | $129 | $1,290 | 25M pooled | 1,000 pooled | 500 GB pooled |
+| Enterprise | Custom | Custom | Custom | Custom | Custom |
 
-## Subscription Management
+Creator, Architect, Studio and Guild use self-service Stripe Checkout **only when their verified Stripe Product/Price configuration is enabled**. Enterprise is quote/contract based.
 
-### Upgrade Plan
-```bash
-POST /api/billing/upgrade
-{
-  "planId": "enterprise"
-}
-```
+## AI credits
 
-### Cancel Subscription
-```bash
-POST /api/billing/cancel
-```
+AI credits are the customer-facing normalized usage unit for platform-funded AI.
 
-### Get Current Plan
-```bash
-GET /api/billing/plan
-```
+The internal database still uses the legacy feature key `ai_tokens` during the cross-repo metering migration, but customers should see **AI credits**, not raw provider token counts.
 
-## Webhooks
+AI cost classes:
 
-Configure Stripe webhooks for:
-- `invoice.payment_succeeded`
-- `invoice.payment_failed`
-- `customer.subscription.deleted`
-- `customer.subscription.updated`
+| Cost class | Relative AI-credit rate |
+| --- | ---: |
+| Standard | 1× |
+| Enhanced | 2× |
+| Premium | 4× |
+| Frontier | 8× |
+| BYOK | 0× platform model credits |
 
-Webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
+The exact enabled model list can change. **AI Playground may show the model/provider and its relative credit class.** Higher-cost models consume credits faster than standard models.
 
-## Invoices
+BYOK means the customer supplies the provider credential. BYOK does not consume platform model credits, but authentication, request limits, safety checks and other platform controls can still apply.
 
-Download invoices from the dashboard or via API:
-```bash
-GET /api/billing/invoices
-```
+## Builder AI modes
 
-## Refunds
+Fast, Balanced and Advanced are the planned customer-facing builder choices:
 
-Request refunds within 7 days via support. Enterprise contracts have custom terms.
+- **Fast** — standard-cost route
+- **Balanced** — enhanced route
+- **Advanced** — premium route
+
+These are **planned**, not currently available as a selector in every builder. Builders continue using their configured default AI route until the selector is implemented and tested.
+
+## 3D credits
+
+3D generation/rendering uses a separate credit pool because GPU-heavy work has a different cost profile from normal text/model calls.
+
+Plan-included 3D credits renew with the membership period. Purchased 3D credit packs are separate one-time purchases.
+
+## Extra usage
+
+Customers can buy extra usage without changing membership:
+
+- AI credit packs
+- 3D credit packs
+
+The main AI WONDERLAND site is the billing authority. AI-PLAYGROUND and NPC-AI-SIM should reserve usage against the central ledger instead of maintaining separate subscription truth.
+
+## WonderSpace
+
+WonderSpace customer cloud-IDE provisioning is currently a **controlled beta** behind safety, isolation and provisioning gates.
+
+A membership plan does **not** promise immediate workspace creation while those gates remain disabled. Pricing and docs should describe the IDE as beta/controlled access until production customer provisioning is verified.
+
+## Checkout safety
+
+A return URL from Stripe does not activate a membership by itself. Paid access is granted only after AI WONDERLAND verifies the Stripe subscription/payment event and stores the authoritative subscription state.
+
+If a plan card says **Checkout setup pending**, the advertised catalog entry exists in the application but the required live Stripe Product/Price configuration for that interval is not enabled yet.
+
+## Manage billing
+
+Use the in-product billing and usage surfaces to:
+
+- view current membership
+- view included and purchased usage
+- buy eligible AI/3D credit packs
+- update payment details through supported Stripe flows
+- review usage alerts
+- manage/cancel a subscription when the billing integration exposes the control
+
+Do not treat Stripe itself as the product; customer-facing copy should say **AI WONDERLAND membership**.

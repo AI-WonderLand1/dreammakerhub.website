@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     }
 
     // Check subscription status for premium features
-    const isPaid = Boolean(user?.app_metadata?.plan === "pro" || smokeUserId);
+    const isPaid = Boolean(["creator", "pro", "studio", "team", "enterprise"].includes(String(user?.app_metadata?.plan || "")) || smokeUserId);
     const { action, message, agent, runner, context, history } = result.data;
 
     // Gate premium features based on subscription
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { 
           error: 'Subscription required',
-          message: 'This feature requires a Pro subscription',
+          message: 'This feature requires a paid AI WONDERLAND membership',
           upgradeUrl: '/subscription'
         },
         { status: 402 } // Payment Required

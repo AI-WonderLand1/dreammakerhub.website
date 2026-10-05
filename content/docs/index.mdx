@@ -5,68 +5,81 @@ description: "Current platform documentation for projects, WonderBuild, WonderSp
 
 # AI WONDERLAND Documentation
 
-AI WONDERLAND combines the main account and project shell, WonderBuild visual creation, WonderSpace cloud coding, AI tools, WonderPlay/3D workflows, usage and credits, billing, marketplace surfaces, APIs, and support.
+AI WONDERLAND combines the main account and project shell, WonderBuild visual creation, AI Playground, NPC/3D workflows, usage and credits, billing, marketplace surfaces, APIs and support.
 
-DreamMakerHub.website remains the main web domain and repository name. **AI WONDERLAND** is the product brand shown to users.
+DreamMakerHub.website remains the main web domain and repository name. **AI WONDERLAND** is the customer-facing product brand.
 
 ## Start here
 
 - [Documentation overview](/docs) — current platform map and major workflows
-- [Sign up](/docs/getting-started/sign-up) — create an account
-- [Sign in](/docs/getting-started/sign-in) — authentication and sessions
-- [Start your project](/docs/getting-started/start-your-project) — choose the right creation path
-- [WonderBuild](/docs/wonderbuild/start) — website/app visual builder
-- [WonderBuild editor](/docs/wonderbuild/editor) — pages, components, assets, AI editing, responsive preview and publish
-- [WonderSpace](/wonderspace) — project files and Coder-managed VS Code workspaces
-- [3D Hub](/dashboard/3dhub) — WonderPlay and 3D tools
-- [AI Modules](/ai-modules) — platform AI modules
-- [API Reference](/api-reference) — developer API surface
-- [Billing](/settings/billing) — subscriptions, usage and credit purchases
-- [Metered Usage](/dashboard/usage/metered) — plan and purchased usage balances
-- [Marketplace](/marketplace) — AI WONDERLAND marketplace
-- [Support / Feedback](/dashboard/support) — customer support and internal feedback
-- [FAQ](/faq) — broader product questions
+- [Sign up](/docs/getting-started/sign-up)
+- [Sign in](/docs/getting-started/sign-in)
+- [Start your project](/docs/getting-started/start-your-project)
+- [WonderBuild](/docs/wonderbuild/start)
+- [WonderBuild editor](/docs/wonderbuild/editor)
+- [WonderSpace](/wonderspace) — controlled-beta cloud workspace surface
+- [3D Hub](/dashboard/3dhub)
+- [AI Modules](/ai-modules)
+- [API Reference](/api-reference)
+- [Billing](/settings/billing)
+- [Metered Usage](/dashboard/usage/metered)
+- [Marketplace](/marketplace)
+- [Support / Feedback](/dashboard/support)
+- [FAQ](/faq)
 
 ## Current service architecture
 
 | Service | Current role |
 | --- | --- |
 | Supabase | Authentication, owned project data, usage/billing records and realtime-backed product data |
-| Railway | Application/service hosting and the per-workspace compute target for WonderSpace Coder IDEs |
-| Coder | Workspace control plane and browser IDE/agent layer |
+| Railway | Application/service hosting; workspace compute is part of the controlled WonderSpace rollout |
+| Coder | Workspace control plane; customer provisioning remains gated until isolation/provisioning checks pass |
 | GitHub / GHCR | Source, pull requests, CI/CodeQL and AI WONDERLAND container images |
-| Stripe | Checkout and payment events for subscriptions and eligible credit purchases |
-| Cloudflare / domain | Public DNS/proxy layer for dreammakerhub.website and configured product subdomains |
+| Stripe | Checkout and payment events for memberships and eligible one-time credit purchases |
+| Cloudflare / domain | Public DNS/proxy layer for configured domains/subdomains |
 
-## WonderSpace runtime
+## WonderSpace readiness
 
-The main IDE path uses **Coder + Railway**, not the old Kubernetes/vCluster/Envbox runtime.
+WonderSpace is not advertised as generally available cloud compute.
 
-Each workspace is designed to receive:
+The intended Coder/Railway workspace path exists in the codebase, but customer provisioning remains behind safety, identity/isolation and cost-control gates. Until those checks pass in production, documentation and pricing must describe WonderSpace as **controlled beta / rolling access**, not guaranteed plan capacity.
 
-- a separate Railway project
-- a Railway workspace service
-- a persistent `/home/coder` volume
-- the AI WONDERLAND baked development image
-- code-server through the Coder agent
-- an optional project-scoped Railway token when workspace project management is enabled
+## Membership and usage
 
-The baked workspace image includes Node.js 22, npm, pnpm, TypeScript, Python/pip/venv, Git, build tools, SSH, jq, ripgrep, SQLite, tmux, vim/nano, rsync, curl/wget and archive utilities. User-level package state and project files under `/home/coder` persist across workspace restarts.
+AI WONDERLAND uses six customer-facing memberships:
 
-## Usage and credits
+1. Nomad
+2. Creator
+3. Architect
+4. Studio
+5. Guild
+6. Enterprise
 
-AI WONDERLAND tracks billable usage across product surfaces instead of treating provider services as the product itself.
+Billing is split into:
 
-Current billing work includes:
+- one membership
+- AI credits
+- 3D credits
 
-- subscription plans
-- live/metered usage
-- AI token usage and token packs
-- 3D/render credit usage and credit packs
-- Stripe checkout/webhooks
-- usage thresholds and alerts
-- shared usage accounting across the main site and connected AI/3D services
+AI-PLAYGROUND and NPC-AI-SIM are product services, not independent subscription authorities.
 
-## Readiness
+## AI credits
 
-AI WONDERLAND is under active development. A route, integration, or deployment file existing in the repository does not by itself prove that every production dependency is enabled for every user. Documentation should distinguish current architecture and implemented flows from items that still need provider credentials, deployment, account-level enablement, or final production verification.
+Customer-facing AI usage is expressed as **AI credits**, not raw tokens. The legacy internal database feature key `ai_tokens` remains during migration.
+
+AI Playground can expose the exact enabled model/provider and relative cost class. Planned builder modes are **Fast, Balanced and Advanced**, but they are not yet live selectors in every builder.
+
+## 3D credits
+
+GPU-heavy 3D generation/rendering uses its own monthly/purchased credit balance.
+
+## Readiness rule
+
+A route, integration or deployment file existing in the repository does not prove that the production dependency is enabled for every account. Docs and marketing must distinguish:
+
+- live
+- controlled beta
+- configured but not enabled
+- planned
+
+This rule applies especially to billing Checkout, WonderSpace customer provisioning, provider-backed AI and managed publishing.

@@ -135,7 +135,7 @@ async function requireUser(req: NextRequest) {
   }
 
   const ownerId = smokeUserId ?? user!.id
-  const isPaid = Boolean(user?.app_metadata?.plan === 'pro' || smokeUserId)
+  const isPaid = Boolean(['creator', 'pro', 'studio', 'team', 'enterprise'].includes(String(user?.app_metadata?.plan || '')) || smokeUserId)
   if (process.env.WONDER_BUILD_REQUIRE_PAID === 'true' && !isPaid) {
     return NextResponse.json({ error: 'PAYWALL' }, { status: 402 })
   }

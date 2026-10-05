@@ -4,7 +4,7 @@ Status: source fixes proposed in PR #514; **not a claim of a working deployed pa
 
 ## Expected customer flow
 
-1. Pick Free on `/subscription` to initialize a Free profile without payment, or pick Pro/Team monthly/yearly to reach `/checkout?plan=...&interval=...`.
+1. Pick Nomad on `/subscription` to initialize the free membership, or pick a self-service paid plan whose card says Checkout is configured. Creator, Architect, Studio, and Guild only proceed when the selected monthly/yearly Stripe Product/Price is verified.
 2. If signed out, the Checkout page sends the visitor through `/public-pages/auth` with the selected plan and interval preserved in `redirectTo`.
 3. After explicit confirmation, the browser posts to `/api/subscription/subscribe` with the signed-in Supabase bearer token; the server validates the user and plan, creates a Stripe subscription Checkout Session, then redirects the browser to its HTTPS `session.url`.
 4. Stripe returns to `/checkout/success?session_id=...` after checkout. `/api/subscription/checkout-status` checks the session against Stripe **and its signed-in owner**. The return URL alone cannot activate a subscription. Access should be provisioned by the signature-verified webhook and confirmed against the resulting database entitlement.
@@ -18,16 +18,16 @@ Configure the following in the deployment's supported secret store / runtime env
 | --- | --- |
 | `STRIPE_SECRET_KEY` | Server-only Stripe API key. Test-mode key in staging; live key only for approved production. |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret for the **specific** active webhook endpoint; CLI test secret and Dashboard live secret differ. |
-| `STRIPE_PRICE_PRO_ID` | Existing recurring **monthly Pro** Stripe Price ID. |
-| `STRIPE_PRICE_PRO_YEARLY_ID` | Existing recurring **yearly Pro** Stripe Price ID. |
-| `STRIPE_PRICE_TEAM_ID` | Existing recurring **monthly Team** Stripe Price ID. |
-| `STRIPE_PRICE_TEAM_YEARLY_ID` | Existing recurring **yearly Team** Stripe Price ID. |
+| `STRIPE_CATALOG_PRODUCT_CREATOR_ID` / `STRIPE_PRICE_CREATOR_ID` / `STRIPE_PRICE_CREATOR_YEARLY_ID` | Creator ($19/mo, $190/yr) catalog identity and recurring Prices. |
+| `STRIPE_CATALOG_PRODUCT_PRO_ID` / `STRIPE_PRICE_PRO_ID` / `STRIPE_PRICE_PRO_YEARLY_ID` | Architect ($39/mo, $390/yr) catalog identity and recurring Prices. |
+| `STRIPE_CATALOG_PRODUCT_STUDIO_ID` / `STRIPE_PRICE_STUDIO_ID` / `STRIPE_PRICE_STUDIO_YEARLY_ID` | Studio ($79/mo, $790/yr) catalog identity and recurring Prices. |
+| `STRIPE_CATALOG_PRODUCT_GUILD_ID` / `STRIPE_PRICE_TEAM_ID` / `STRIPE_PRICE_TEAM_YEARLY_ID` | Guild ($129/mo, $1,290/yr) catalog identity and recurring Prices. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Auth project URL; `SUPABASE_URL` is also accepted server-side. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public Supabase key. The documented legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` works as a fallback. Never use a service-role/secret key in the browser. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only credential used by the current Stripe webhook to synchronize plans. Its alternative `SUPABASE_SECRET_KEY` should be verified before switching. |
 | `NEXT_PUBLIC_URL` | The customer-facing HTTPS origin used in Stripe success/cancel redirects. Set it to the actual deployed public origin, not a retired VM address. |
 
-The application currently displays Pro at `$39/month` or `$390/year` and Team at `$129/month` or `$1,290/year` in `apps/web/lib/billing/plans.ts`. Compare the currency, recurring interval and amount of **each Stripe Price ID** with the intended product policy before enabling live payment. The billing feature descriptions/limits have known inconsistencies tracked in #496; code labels do not establish entitlements.
+The application displays Creator at `$19/month` or `$190/year`, Architect at `$39/month` or `$390/year`, Studio at `$79/month` or `$790/year`, and Guild at `$129/month` or `$1,290/year`. Compare product identity, currency, recurring interval, and exact amount before enabling each live Checkout path. A code label or success URL does not establish entitlement.
 
 ## Stripe Dashboard checks (read-only before test-mode checkout)
 

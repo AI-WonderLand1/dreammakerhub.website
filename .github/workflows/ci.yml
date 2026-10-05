@@ -23,6 +23,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: Enforce Railway-primary and AWS-EKS-IDE deployment policy
         run: node .github/scripts/check-primary-deployment-policy.mjs
+      - name: Audit CI secrets, billing, and protected routes
+        run: node .github/scripts/security-regression.mjs
       - name: Validate AWS fallback deployment shell syntax
         run: bash -n deploy/aws-fallback/deploy-web.sh
       - name: Validate AWS customer pod preflight shell syntax
