@@ -6,7 +6,7 @@ const root = process.cwd();
 const template = readFileSync(join(root, 'infra/coder/template/main.tf'), 'utf8');
 const provision = readFileSync(join(root, 'apps/web/app/api/user-workspace/provision/route.ts'), 'utf8');
 
-describe('real root Coder IDE routing on Railway', () => {
+describe('legacy Railway Coder template rollback coverage', () => {
   it('provisions one isolated Railway project, service, and persistent volume per workspace', () => {
     expect(template).toContain('resource "terraform_data" "project"');
     expect(template).toContain('resource "terraform_data" "service"');
@@ -28,7 +28,7 @@ describe('real root Coder IDE routing on Railway', () => {
     expect(template).not.toContain('provider "kubernetes"');
     expect(template).not.toContain('kubernetes_pod');
     expect(template).not.toContain('kubernetes_persistent_volume_claim');
-    expect(provision).toContain('This Railway Coder template does not accept image overrides.');
+    expect(provision).toContain('This Coder template does not accept image overrides.');
     expect(provision).toContain("{ name: 'repo_url', value: publicRepo.fullName }");
     expect(provision).toContain("{ name: 'repo_branch', value: requestedBranch }");
     expect(provision).toContain("richParameterValues.push({ name: 'region', value: region })");

@@ -1,114 +1,86 @@
-# AI WONDERLAND Coder IDE on Railway
+# AI WONDERLAND Coder IDE on Google Docker
 
-The repository uses one Coder workspace template source:
+The customer WonderSpace IDE now defaults to the verified Coder template:
 
-`infra/coder/template/`
+`ai-wonderland-google`
 
-The published Coder template should be named:
+The website may override that template with `CODER_IDE_TEMPLATE_NAME`, but when no override is set it must resolve `ai-wonderland-google`.
 
-`ai-wonderland-ide`
+## Verified runtime
 
-## Runtime
+The production path is:
 
-This template uses the Coder Registry Railway (via GraphQL) design.
-
-For each Coder workspace it creates:
-
-- one isolated Railway project
-- one Railway service named `workspace`
-- one persistent Railway volume mounted at `/home/coder`
-- the Coder agent environment variables
-- a pre-built workspace image
-- optionally, a project-scoped Railway token for the workspace user
-
-The master Railway account/team token is used only by the Coder provisioner and must never be exposed to the browser or workspace.
-
-## No Kubernetes requirement
-
-This workspace path does not use Kubernetes, vCluster, Envbox, Pods, PVCs, kubeconfig, or `kubectl`.
-
-Coder provisions workspaces directly through Railway's GraphQL API.
-
-## Required template variable
-
-Set the Railway account/team API token when publishing:
-
-```hcl
-railway_token = "<Railway account/team token>"
+```text
+coder.dreammakerhub.website
+        ↓
+external Coder provisioner tagged environment=google
+        ↓
+Google Compute Engine host
+        ↓
+Docker workspace container
+        ↓
+persistent /home/coder Docker volume
 ```
 
-Do not commit the real token.
+The external provisioner runs as a persistent system service on the Google host and must be able to access the Docker socket. The published template is restricted to the `environment=google` provisioner tag so Docker resources are created on that host rather than by the built-in provisioners.
 
-Optional operator variables include:
+The verified workspace includes:
 
-- `enable_project_management`
-- `workspace_image`
-- `image_registry_username`
-- `image_registry_password`
+- one Docker container per running Coder workspace
+- one persistent Docker volume mounted at `/home/coder`
+- the Coder agent
+- code-server
+- Git Config
+- File Browser
+- terminal access
 
-The default workspace image is built from `infra/coder/workspace-image/` and published by `.github/workflows/coder-workspace-image.yml`:
+The tested workspace survived stop/start with data under `/home/coder` intact.
+
+## Workspace image
+
+The Google template uses the AI WONDERLAND workspace image:
 
 `ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest`
 
-It bakes in Node.js 22, npm, pnpm, TypeScript, Python 3/pip/venv, Git, compilers/build tools, SSH, jq, ripgrep, SQLite, tmux, vim/nano, rsync, curl/wget, unzip/zip, and other common CLI tools. User/project package state under `/home/coder` remains on the Railway volume.
+Workspace images and infrastructure settings remain operator-controlled. The browser must not supply arbitrary image URLs.
 
-## End-user parameter
+## Customer launch safety
 
-The only end-user rich parameter exposed by this template is `region`.
+Moving the default template to Google does **not** bypass the customer launch gates.
 
-Current choices are:
+Customer provisioning remains disabled until the existing billing, identity, template-isolation, and hard-stop checks are explicitly verified and enabled. Keep those checks independent of Coder template availability.
 
-- US West
-- US East
-- Europe West
-- Asia Southeast
+## Repository launch
 
-CPU, memory, image credentials, Railway project creation, service creation, and volume creation are not accepted from the browser.
+The current Google Docker template does not advertise repository rich parameters. The website therefore reports repository launch as unavailable unless the published Coder template exposes validated `repo_url` and `repo_branch` parameters.
 
-## Lifecycle
+Do not send shared GitHub credentials into customer workspaces.
 
-Persistent across stop/start:
+## Legacy Railway template
 
-- Railway project
-- Railway service
-- Railway volume
-- optional project-scoped Railway token
+`infra/coder/template/` still contains the previous Railway/GraphQL template source for rollback and historical compatibility. It is **not** the website's default customer IDE template after this migration.
 
-Created only while the workspace is running:
+Do not delete or repurpose that directory until the Google Docker template source is checked into the repository and rollback is no longer required.
 
-- Coder agent environment variables
-- image deployment
+## Operations
 
-Stopping a Coder workspace cancels its running Railway deployment while preserving the project and volume.
-
-## Publish
-
-From an authenticated Coder CLI:
+Useful checks on the Google host:
 
 ```bash
-coder templates push ai-wonderland-ide \
-  --directory infra/coder/template \
-  --variable railway_token="$RAILWAY_TOKEN"
+coder provisioner list --org coder
+sudo systemctl status coder-google-provisioner --no-pager
+docker ps
 ```
 
-To let a workspace user manage only their own Railway project:
-
-```bash
-coder templates push ai-wonderland-ide \
-  --directory infra/coder/template \
-  --variable railway_token="$RAILWAY_TOKEN" \
-  --variable enable_project_management=true
-```
-
-The website can override the template name with `CODER_IDE_TEMPLATE_NAME`; otherwise it expects `ai-wonderland-ide`.
+The Google provisioner must appear with `environment=google`, and its service process must retain access to the host Docker group.
 
 ## Security
 
 Never commit:
 
-- Railway account/team tokens
-- project-scoped Railway tokens
-- private registry passwords
 - Coder session/API tokens
+- Coder provisioner keys
+- SSH private keys
+- registry passwords or PATs
 
-The Railway template creates project-scoped tokens only when explicitly enabled. The master Railway token is not passed into the workspace.
+Keep customer workspace ownership and resource-budget checks server-side. A successful Coder or Docker health check alone is not sufficient to enable customer provisioning.

@@ -91,8 +91,8 @@ export async function getCoderTemplateId(name: string): Promise<string> {
 
 export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   const configured = process.env.CODER_IDE_TEMPLATE_NAME;
-  // The website now targets the consolidated AI WONDERLAND Coder template.
-  const names = configured ? [configured] : ['ai-wonderland-ide'];
+  // The website defaults to the verified Google Docker Coder template.
+  const names = configured ? [configured] : ['ai-wonderland-google'];
   const template = await getPublishedCoderTemplate(names);
   const parameters = await coderGet<CoderParameter[]>(`/api/v2/templateversions/${encodeURIComponent(template.active_version_id!)}/rich-parameters`);
   if (!Array.isArray(parameters)) throw new Error('Coder returned an invalid parameter list.');

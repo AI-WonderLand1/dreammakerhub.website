@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Choose a supported Coder IDE template.' }, { status: 400 });
       }
       templateId = config.templateId;
-      // Railway service/image/credentials remain operator-controlled. The
+      // Workspace image and infrastructure settings remain operator-controlled. The
       // browser may choose only published rich parameters that we validate
       // server-side before they are sent to Coder.
       const region = typeof body.region === 'string' ? body.region : '';
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       }
 
       if (body.ideImage !== undefined) {
-        return NextResponse.json({ error: 'This Railway Coder template does not accept image overrides.' }, { status: 400 });
+        return NextResponse.json({ error: 'This Coder template does not accept image overrides.' }, { status: 400 });
       }
     } else {
       if (body.repository || body.branch || body.region || body.ideImage !== undefined ||
