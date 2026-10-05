@@ -16,7 +16,7 @@ export function getConfessionConfig(
   plan: string | null,
   enableMem0?: boolean
 ): ConfessionConfig {
-  const isPaid = plan === "pro" || plan === "team" || plan === "enterprise";
+  const isPaid = plan === "creator" || plan === "pro" || plan === "studio" || plan === "team" || plan === "enterprise";
 
   return {
     mode: isPaid ? "paid" : "free",
@@ -26,7 +26,7 @@ export function getConfessionConfig(
 }
 
 export function isPaidTier(plan: string | null): boolean {
-  return plan === "pro" || plan === "team" || plan === "enterprise";
+  return plan === "creator" || plan === "pro" || plan === "studio" || plan === "team" || plan === "enterprise";
 }
 
 export function shouldUseLLMExtraction(plan: string | null): boolean {

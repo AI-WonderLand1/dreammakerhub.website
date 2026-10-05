@@ -33,7 +33,7 @@ type Usage = {
 type Providers = { email: boolean; sms: boolean };
 
 const labels: Record<Metric,string> = {
-  ai_tokens: "AI tokens",
+  ai_tokens: "AI credits",
   api_requests: "API requests",
   storage: "Storage",
   three_d_generations: "3D generations",
@@ -109,7 +109,7 @@ export default function UsageAlertsPanel() {
 
   const plan=useMemo(()=>{
     const value=usage?.plan?.toLowerCase();
-    return value==="pro"||value==="team"||value==="enterprise"?value:"free";
+    return value==="creator"||value==="pro"||value==="studio"||value==="team"||value==="enterprise"?value:"free";
   },[usage?.plan]);
   const limits=PLAN_LIMITS[plan];
 
@@ -126,7 +126,7 @@ export default function UsageAlertsPanel() {
     if(alert.threshold_kind==="absolute")return current;
     const limit=alert.metric==="ai_tokens"?limits.aiTokensMonthly:
       alert.metric==="api_requests"?limits.apiCallsMonthly:
-      alert.metric==="storage"?limits.storageLimit:0;
+      alert.metric==="storage"?limits.storageLimit:limits.renderCreditsMonthly;
     return limit?current/limit*100:0;
   };
 
@@ -220,7 +220,7 @@ export default function UsageAlertsPanel() {
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm text-white/60">Usage type
           <select value={form.metric} onChange={e=>setForm(v=>({...v,metric:e.target.value as Metric,threshold_value:e.target.value==="three_d_generations"?10:80}))} className="mt-1 w-full rounded-lg border border-white/15 bg-[#07111d] px-3 py-2 text-white">
-            <option value="ai_tokens">AI tokens</option>
+            <option value="ai_tokens">AI credits</option>
             <option value="api_requests">API requests</option>
             <option value="storage">Storage</option>
             <option value="three_d_generations">3D generations</option>
