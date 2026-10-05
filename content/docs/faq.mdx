@@ -1,67 +1,100 @@
 ---
 title: "FAQ"
-description: "Frequently asked questions and troubleshooting guide."
+description: "Current AI WONDERLAND product, billing, AI, 3D, WonderSpace, security, and troubleshooting answers."
 ---
 
 # FAQ
 
 ## Product
 
-### How do I start a Playground session?
-Open `/playground`, pick a module (chat, code, agent, data, vision), and type your prompt. Advanced parameters stay tucked away until you toggle them on.
+### What is AI WONDERLAND?
 
-### Can I undo changes applied to a project?
-Yes. Each apply action captures a snapshot. Use the project actions drawer in Playground or the dashboard to restore.
+AI WONDERLAND combines WonderBuild, AI Playground, NPC/3D tools, projects, usage/billing and related creation surfaces under one account.
 
-### Which models are supported?
-Claude Sonnet 4 powers chat, code, agent, and vision-planning modules today. We add models behind feature flags before general release.
+### Which AI models are supported?
 
-### How does Wonder-Build work?
-Describe what you want in natural language. AI agents architect, build, review, and run the code. Output appears in the IDE—copy, download, or save to runners.
+There is no single permanent model list. AI Playground can expose enabled OpenRouter and direct-provider model routes configured by the platform. Availability can change as providers, pricing and safety controls change.
+
+Builders do not currently expose three selectable AI modes everywhere. **Fast, Balanced and Advanced are planned future builder choices.**
+
+### Does AI WONDERLAND own every foundation model it uses?
+
+No. AI WONDERLAND owns its product layer, orchestration, agents, billing/usage controls and custom workflows. Underlying model inference can come from providers such as OpenRouter-routed models, Google or other configured providers.
+
+### How does WonderBuild work?
+
+WonderBuild provides the visual website/app creation flow. AI-assisted generation and editing should only be described as available where the corresponding route is enabled and metered.
 
 ## Billing
 
-### How does billing work?
-**Personal** includes Playground, Wonder-Build, and publishing limits suitable for small teams. **Enterprise** unlocks unlimited modules, extensions, and domain controls.
+### What plans are available?
 
-### Can I cancel anytime?
-Yes. Cancel from the dashboard. Access continues until the period ends.
+The six customer-facing memberships are **Nomad, Creator, Architect, Studio, Guild and Enterprise**.
 
-### Do you offer refunds?
-Request within 7 days via `support@dreammakerhub.website`. Enterprise contracts have custom terms.
+### Is AI Playground a separate subscription?
 
-## Security
+No. It is a product area inside the AI WONDERLAND membership.
 
-### Do you store my prompts and outputs?
-We retain prompts and outputs only for session continuity and debugging. Request deletion via `support@dreammakerhub.website`; enterprise tenants can disable retention.
+### What are AI credits?
 
-### How do I report a security issue?
-Email `security@dreammakerhub.website` with details and reproduction steps. We respond within one business day.
+AI credits are normalized billing units across platform-funded AI. AI Playground can still show the selected model/provider. More expensive model classes use credits faster.
+
+### Are 3D credits separate?
+
+Yes. 3D generation/rendering has its own credit balance.
+
+### Can I buy more usage without upgrading?
+
+Yes, where purchase packs are configured. AI credits and 3D credits can be sold as one-time add-ons without changing the membership.
+
+### Does returning from Stripe mean my plan is active?
+
+No. The membership becomes authoritative only after the Stripe event is verified and the subscription state is stored successfully.
+
+## WonderSpace
+
+### Is the cloud IDE generally available?
+
+Not yet. Customer WonderSpace provisioning is a **controlled beta** and remains behind isolation, provisioning and cost-control gates. A plan does not guarantee immediate workspace creation while those gates are disabled.
+
+## Security and data
+
+### Do you store prompts or outputs?
+
+Retention depends on the product surface and enabled integrations. Do not assume every prompt or output has the same retention policy. Account-specific deletion or retention controls should be described only where they are implemented.
 
 ### Is my data encrypted?
-Yes. TLS 1.3 in transit, AES-256 at rest. Supabase handles auth and database encryption.
 
-## Deployment
+AI WONDERLAND relies on configured hosting/database providers and HTTPS/TLS for supported production traffic. Specific encryption-at-rest guarantees depend on the active provider/service configuration and should not be represented more broadly than those provider guarantees.
 
-### Where can I deploy?
-- **WonderSpace** - Native hosting with custom domains
-- **Vercel/Netlify** - One-click deploy from dashboard
-- **Docker** - Export container image
-- **Self-hosted** - Enterprise only
+### How do I report a security problem?
 
-### Custom domains?
-Personal: 1 domain. Enterprise: unlimited with SSL auto-provisioning.
+Use the support/security contact shown on the live AI WONDERLAND site. Do not include passwords, secret keys or other credentials in a report.
+
+## Deployment and publishing
+
+### Can I publish a WonderBuild project?
+
+Publishing should be described as available only for the routes and providers that are production-enabled. Export and preview capabilities are separate from managed publishing.
+
+### Are custom domains available on every paid plan?
+
+Do not assume so from an old pricing table. The current plan catalog should be treated as authoritative, and domain entitlements should only be advertised after the matching production path is verified.
 
 ## Troubleshooting
 
-### Build fails with "Module not found"
-Ensure all dependencies are in `package.json`. Run `npm install` in the runner.
+### Checkout says setup pending
 
-### PlayCanvas scene won't load
-Check WebGL support. Try Chrome/Edge. Verify scene ID is correct.
+That plan/interval does not yet have a verified live Stripe Product/Price configuration available to the application.
 
-### Auth redirects to wrong URL
-Set `NEXT_PUBLIC_SITE_URL` in `.env`. Match Supabase redirect URLs.
+### I hit an AI usage limit
 
-### Rate limited?
-Personal: 100 req/min. Enterprise: custom limits. Upgrade or batch requests.
+Open the usage/billing area to review included and purchased AI credits. A higher-cost model can consume credits faster than a standard model.
+
+### I hit a 3D limit
+
+3D uses a separate credit balance. Review included/purchased 3D credits rather than the AI-credit meter.
+
+### WonderSpace will not create a workspace
+
+Customer workspace creation may be paused by the controlled-beta safety gates. This is different from the Coder control plane itself being offline.

@@ -10,9 +10,9 @@ type TokenPackDefinition = {
 };
 
 const PACKS: readonly TokenPackDefinition[] = [
-  { id: "starter", label: "Starter Tokens", tokens: 500_000, envKey: "STRIPE_TOKEN_PACK_STARTER_PRICE_ID" },
-  { id: "builder", label: "Builder Tokens", tokens: 2_000_000, envKey: "STRIPE_TOKEN_PACK_BUILDER_PRICE_ID" },
-  { id: "power", label: "Power Tokens", tokens: 10_000_000, envKey: "STRIPE_TOKEN_PACK_POWER_PRICE_ID" },
+  { id: "starter", label: "Starter AI Credits", tokens: 500_000, envKey: "STRIPE_TOKEN_PACK_STARTER_PRICE_ID" },
+  { id: "builder", label: "Builder AI Credits", tokens: 2_000_000, envKey: "STRIPE_TOKEN_PACK_BUILDER_PRICE_ID" },
+  { id: "power", label: "Power AI Credits", tokens: 10_000_000, envKey: "STRIPE_TOKEN_PACK_POWER_PRICE_ID" },
 ] as const;
 
 export function tokenPackDefinitions() {

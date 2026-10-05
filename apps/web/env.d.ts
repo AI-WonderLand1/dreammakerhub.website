@@ -80,8 +80,16 @@ declare namespace NodeJS {
     // Stripe
     STRIPE_SECRET_KEY?: string;
     STRIPE_WEBHOOK_SECRET?: string;
+    STRIPE_CATALOG_PRODUCT_CREATOR_ID?: string;
+    STRIPE_PRICE_CREATOR_ID?: string;
+    STRIPE_PRICE_CREATOR_YEARLY_ID?: string;
+    STRIPE_CATALOG_PRODUCT_PRO_ID?: string;
     STRIPE_PRICE_PRO_ID?: string;
     STRIPE_PRICE_PRO_YEARLY_ID?: string;
+    STRIPE_CATALOG_PRODUCT_STUDIO_ID?: string;
+    STRIPE_PRICE_STUDIO_ID?: string;
+    STRIPE_PRICE_STUDIO_YEARLY_ID?: string;
+    STRIPE_CATALOG_PRODUCT_GUILD_ID?: string;
     STRIPE_PRICE_TEAM_ID?: string;
     STRIPE_PRICE_TEAM_YEARLY_ID?: string;
   }

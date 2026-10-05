@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       logger.error('Agent plan lookup failed', { error: planError.message });
       return NextResponse.json({ status: 'error', error: 'Unable to verify subscription.' }, { status: 503 });
     }
-    if (!['pro', 'team', 'enterprise'].includes(profile?.subscription_tier || 'free')) {
+    if (!['creator', 'pro', 'studio', 'team', 'enterprise'].includes(profile?.subscription_tier || 'free')) {
       return NextResponse.json({ status: 'error', error: 'Agents require a paid plan.', upgrade: true }, { status: 402 });
     }
 

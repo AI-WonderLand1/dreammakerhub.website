@@ -92,7 +92,7 @@ describe('sitewide assistant provider configuration', () => {
       ok: true, text: 'Here is how to start.', tier: 'free', confessionsStored: false,
       confessions: [{ title: 'Assistant response', projectId: 'sitewide' }],
     });
-    expect(reserveAiRequest).toHaveBeenCalledWith('test-user', expect.any(Number), 450);
+    expect(reserveAiRequest).toHaveBeenCalledWith('test-user', expect.any(Number), 450, 'standard');
     expect(reserveAiRequest.mock.invocationCallOrder[0]).toBeLessThan(runModel.mock.invocationCallOrder[0]);
     expect(runModel).toHaveBeenCalledWith(expect.objectContaining({
       maxTokens: 450,
