@@ -263,10 +263,10 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                 )}
                 <div><label htmlFor="workspace-name" className="mb-1 block text-sm font-medium">Workspace name</label><input id="workspace-name" required minLength={3} maxLength={32} pattern="[a-z0-9][a-z0-9\-]{1,30}[a-z0-9]" value={name} onChange={(event) => setName(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3" /></div>
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
-                  Railway manages workspace compute for this template. Choose the workspace region below.
+                  Google Cloud hosts workspace compute for this Coder Docker template. Choose a published workspace region when one is available.
                 </div>
                 {options && (options.regions.length ? <div><label htmlFor="workspace-region" className="mb-1 block text-sm">Region</label><select id="workspace-region" value={region} onChange={(event) => setRegion(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.regions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div> : <p className="text-xs text-slate-400">Location is determined by the existing Coder cluster.</p>)}
-                {!options && <p className="text-xs text-slate-300">Workspace region and availability come from your published Coder Railway template; no workspace is created while disconnected.</p>}
+                {!options && <p className="text-xs text-slate-300">Workspace location and availability come from the published Coder Google template; no workspace is created while disconnected.</p>}
                 <CoderAvailabilityIndicator>
                   <button type="submit" disabled={!launchReady} className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Create my private IDE</button>
                 </CoderAvailabilityIndicator>
