@@ -196,7 +196,7 @@ export class CoderAPIWrapper {
       owner_name: ownerName,
       owner_avatar_url: coderWorkspace.owner_avatar_url || '',
       template_id: coderWorkspace.template_id,
-      template_name: coderWorkspace.template_name || 'ai-wonderland-ide',
+      template_name: coderWorkspace.template_name || 'ai-wonderland-google',
       template_version_id: coderWorkspace.template_version_id || '',
       template_display_name: 'AI WONDERLAND IDE',
       template_icon: '',
@@ -534,7 +534,7 @@ export class CoderAPIWrapper {
   async createWorkspaceForApp(userId: string, options: ProvisionOptions): Promise<ProvisionResult> {
     const workspace = await this.createWorkspace(userId, {
       name: options.customName || `ai-wonder-space-${userId}-${Date.now().toString().slice(-6)}`,
-      template_id: options.templateId || 'ai-wonderland-ide',
+      template_id: options.templateId || 'ai-wonderland-google',
       rich_parameter_values: this.buildRichParameterValues(options),
       ttl_ms: 4 * 60 * 60 * 1000, // 4 hours
     });
