@@ -8,8 +8,8 @@ describe("billing center token packs and usage alarms", () => {
   it("keeps one canonical dashboard with live billable usage, token purchases and alarm controls", () => {
     const page = read("apps/web/components/billing/BillingLiveUsagePanel.tsx");
     expect(page).toContain("Live metered usage for the current billing period.");
-    expect(page).toContain("Buy AI tokens");
-    expect(page).toContain("Purchased token balance");
+    expect(page).toContain("Buy AI credits");
+    expect(page).toContain("Purchased AI credit balance");
     const alarms = read("apps/web/components/billing/UsageAlertsPanel.tsx");
     expect(alarms).toContain("Budgets & alerts");
     expect(alarms).toContain("New alarm");
