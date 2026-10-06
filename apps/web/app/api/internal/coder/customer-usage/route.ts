@@ -134,11 +134,22 @@ export async function POST(request: Request) {
     const beat = await db.from('coder_customer_controller').upsert({
       id: true, last_heartbeat_at: new Date().toISOString(),
     }, { onConflict: 'id' });
-    if (beat.error) throw new Error('Could not commit controller heartbeat');
+    if (beat.error) {
+      console.error('heartbeat upsert error:', {
+        code: beat.error.code,
+        message: beat.error.message,
+        details: beat.error.details,
+        hint: beat.error.hint,
+      });
+      throw new Error('Could not commit controller heartbeat');
+    }
     return NextResponse.json({ status: 'ok', checked: allocations.length, stop_requested: stopped }, {
       headers: { 'Cache-Control': 'no-store' },
     });
-  } catch {
+  } catch (error) {
+    console.error('customer-usage reconciliation failed:', {
+      message: error instanceof Error ? error.message : 'unknown_error',
+    });
     return NextResponse.json({ error: 'Usage reconciliation failed; customer creation will pause' }, { status: 503 });
   }
 }
