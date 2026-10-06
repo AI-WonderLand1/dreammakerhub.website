@@ -216,6 +216,7 @@ module "code-server" {
   install_version         = ""
   offline                 = false
   open_in                 = "slim-window"
+  subdomain               = true
   port                    = 13337
   use_cached              = false
   use_cached_extensions   = false
