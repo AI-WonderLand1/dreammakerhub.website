@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('Subscription pricing and checkout contract', () => {
   it('defines canonical monthly and annual USD prices in cents', () => {
-    const plans = read('apps/web/lib/billing/plans.ts');
+    const plans = read('apps/web/lib/billing/public-plan-catalog.ts');
     expect(plans).toMatch(/id: "pro",[\s\S]*?price: 3900,[\s\S]*?yearlyPrice: 39000,/);
     expect(plans).toMatch(/id: "team",[\s\S]*?price: 12900,[\s\S]*?yearlyPrice: 129000,/);
   });
