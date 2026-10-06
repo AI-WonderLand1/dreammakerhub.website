@@ -11,8 +11,7 @@
 #   - Coder agent
 #   - code-server
 #   - Git Config
-#   - File Browser
-#
+# #
 # IMPORTANT:
 # Do not override the workspace image ENTRYPOINT. The AI WONDERLAND image
 # starts as root only long enough to repair persistent-volume ownership, then
@@ -128,7 +127,6 @@ resource "coder_agent" "main" {
 
     mkdir -p \
       "$HOME/projects" \
-      "$HOME/.filebrowser" \
       "$HOME/.local/bin" \
       "$HOME/.local/lib" \
       "$HOME/.cache/pip" \
@@ -233,19 +231,6 @@ module "git-config" {
 
   allow_email_change    = false
   allow_username_change = true
-}
-
-module "filebrowser" {
-  count = data.coder_workspace.me.start_count
-
-  source  = "registry.coder.com/coder/filebrowser/coder"
-  version = "1.1.5"
-
-  agent_id      = coder_agent.main.id
-  agent_name    = null
-  database_path = "/home/coder/.filebrowser/filebrowser.db"
-  folder        = "/home/coder"
-  port          = 13339
 }
 
 # ============================================================================

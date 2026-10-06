@@ -15,12 +15,12 @@ describe('Google Docker Coder workspace template', () => {
     expect(template).toContain('resource "docker_volume" "home_volume"');
   });
 
-  it('keeps /home/coder persistent and includes the browser IDE tools', () => {
+  it('keeps /home/coder persistent with code-server and Git config only', () => {
     expect(template).toContain('container_path = "/home/coder"');
     expect(template).toContain('module "code-server"');
     expect(template).toContain('module "git-config"');
-    expect(template).toContain('module "filebrowser"');
-    expect(template).toContain('database_path = "/home/coder/.filebrowser/filebrowser.db"');
+    expect(template).not.toContain('module "filebrowser"');
+    expect(template).not.toContain('/home/coder/.filebrowser');
   });
 
   it('passes the Coder init script to the image entrypoint instead of bypassing it', () => {
