@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { authenticatedSupabaseUser } from "@/lib/supabase/authenticated-user.server";
 import { resolveStripeCustomer } from "@/lib/billing/stripe-customer.server";
+import { PLANS } from "@/lib/billing/plans";
 
 const money = (amount: number | null | undefined, currency: string | null | undefined) => ({
   amount: Number(amount ?? 0),
   currency: (currency || "usd").toLowerCase(),
 });
+
+function membershipNameForPrice(priceId: string | null | undefined) {
+  if (!priceId) return null;
+  const plan = Object.values(PLANS).find(
+    (candidate) => candidate.stripePriceId === priceId || candidate.stripePriceYearlyId === priceId,
+  );
+  return plan?.displayName ?? null;
+}
 
 function cleanText(value: unknown, max = 160) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -82,6 +91,7 @@ export async function GET(request: Request) {
         : null,
       items: sub.items.data.map((item) => ({
         priceId: item.price?.id || null,
+        membership: membershipNameForPrice(item.price?.id),
         amount: money(item.price?.unit_amount, item.price?.currency),
         interval: item.price?.recurring?.interval || null,
         product: typeof item.price?.product === "string" ? item.price.product : item.price?.product?.id || null,

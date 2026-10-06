@@ -32,6 +32,7 @@ type BillingAccount = {
     currentPeriodEnd: string | null;
     items: Array<{
       priceId: string | null;
+      membership: string | null;
       amount: Money;
       interval: string | null;
       product: string | null;
@@ -196,10 +197,15 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
                   <span className="text-xs text-white/45">{subscription.cancelAtPeriodEnd ? "Cancels at period end" : "Renews"}</span>
                 </div>
                 {item && (
-                  <div className="mt-3 text-xl">
-                    {formatMoney(item.amount)}
-                    <span className="text-sm text-white/45">{item.interval ? ` / ${item.interval}` : ""}</span>
-                  </div>
+                  <>
+                    <div className="mt-3 text-sm font-semibold text-cyan-200">
+                      {item.membership || "AI WONDERLAND membership"}
+                    </div>
+                    <div className="mt-1 text-xl">
+                      {formatMoney(item.amount)}
+                      <span className="text-sm text-white/45">{item.interval ? ` / ${item.interval}` : ""}</span>
+                    </div>
+                  </>
                 )}
               </div>
             );
