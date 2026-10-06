@@ -16,8 +16,9 @@ export function customerProvisioningGate(): void {
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
       process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED !== 'true' ||
-      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true') {
-    throw new CostGateError('Private customer IDE workspaces are paused until identity, isolation, compute limits, and hard-stop controls are verified.');
+      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true' ||
+      process.env.CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED !== 'true') {
+    throw new CostGateError('Private customer IDE workspaces are paused until identity, isolation, compute limits, hard-stop controls, and customer-only IDE access are verified.');
   }
   if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
