@@ -53,11 +53,11 @@ describe('customer workspace deletion authorization', () => {
 });
 
 describe('customer IDE lifecycle handoff', () => {
-  it('reverifies identity, template, usage and wildcard app routing before opening', () => {
+  it('reverifies identity, template and wildcard app routing before opening', () => {
     expect(handoff).toContain('customerProvisioningGate()');
     expect(handoff).toContain('verifiedCustomerTemplateId()');
     expect(handoff).toContain('verifiedCustomerCoderOwner(user)');
-    expect(handoff).toContain('assertFreshUsageController()');
+    expect(handoff).not.toContain('assertFreshUsageController');
     expect(handoff).toContain("job.data.status !== 'ready'");
     expect(handoff).toContain('workspace.owner_id !== coderUserId');
     expect(handoff).toContain('workspace.template_id !== templateId');
