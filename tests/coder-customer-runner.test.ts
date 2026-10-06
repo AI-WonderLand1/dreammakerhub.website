@@ -9,8 +9,12 @@ describe('customer-only Coder provisioning', () => {
     const identity = file('apps/web/lib/coder/customer-identity.server.ts');
     expect(identity).toContain("candidate.login_type === 'oidc'");
     expect(identity).toContain('user.email_confirmed_at');
+    expect(identity).toContain("coderApiRequest('/api/v2/users', 'POST'");
+    expect(identity).toContain("login_type: 'oidc'");
+    expect(identity).toContain("service_account: false");
     expect(identity).toContain('coderUser.id === operatorCoderId');
     expect(identity).toContain(".from('coder_customer_identities')");
+    expect(identity).not.toContain('Sign in to Coder with the same verified account before requesting an IDE.');
   });
 
   it('keeps customer provisioning fail-closed with operator switches and live verification', () => {
