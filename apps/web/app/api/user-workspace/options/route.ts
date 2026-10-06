@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true' &&
     process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED === 'true' &&
     process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED === 'true' &&
-    process.env.CODER_SUPABASE_OIDC_VERIFIED === 'true';
+    process.env.CODER_SUPABASE_OIDC_VERIFIED === 'true' &&
+    process.env.CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED === 'true';
 
   if (!customerLaunchEnabled) {
     return NextResponse.json({
