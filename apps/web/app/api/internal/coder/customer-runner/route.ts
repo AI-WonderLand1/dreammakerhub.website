@@ -75,9 +75,7 @@ export async function POST(request: Request) {
         const created = await coderApiRequest(`/api/v2/users/${encodeURIComponent(job.coder_user_id)}/workspaces`, 'POST', {
           name: slot.workspace_name, template_version_id: versionId,
           rich_parameter_values: [
-            { name: 'ide_image', value: 'linux' },
             { name: 'machine_profile', value: job.machine_profile },
-            { name: 'home_disk_size', value: String(job.disk_gib) },
           ],
           ttl_ms: 60 * 60 * 1000,
         });
