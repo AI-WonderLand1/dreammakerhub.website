@@ -1,3 +1,5 @@
+import { PUBLIC_PLAN_CATALOG, PUBLIC_PLAN_ORDER } from "@/lib/billing/public-plan-catalog";
+
 export type NavMenuItem = {
   title: string;
   items: { name: string; href: string; icon: string }[];
@@ -56,8 +58,6 @@ export type Plan = {
   highlight: boolean;
   icon: string;
 };
-
-import { PUBLIC_PLAN_CATALOG, PUBLIC_PLAN_ORDER } from "@/lib/billing/public-plan-catalog";
 
 export const PLANS: Plan[] = PUBLIC_PLAN_ORDER.map((id) => {
   const plan = PUBLIC_PLAN_CATALOG[id];
