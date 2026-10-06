@@ -1,0 +1,45 @@
+name: Regenerate security lockfiles
+
+on:
+  push:
+    branches:
+      - security/dependabot-oct6-remediation
+
+permissions:
+  contents: write
+
+jobs:
+  lockfiles:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            my-agent/package-lock.json
+
+      - name: Regenerate root lockfile
+        run: npm install --package-lock-only --ignore-scripts --legacy-peer-deps
+
+      - name: Regenerate my-agent lockfile
+        working-directory: my-agent
+        run: npm install --package-lock-only --ignore-scripts --legacy-peer-deps
+
+      - name: Commit lockfile updates
+        run: |
+          if git diff --quiet -- package-lock.json my-agent/package-lock.json; then
+            echo "No lockfile changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json my-agent/package-lock.json
+          git commit -m "chore(security): regenerate patched lockfiles [skip ci]"
+          git push
