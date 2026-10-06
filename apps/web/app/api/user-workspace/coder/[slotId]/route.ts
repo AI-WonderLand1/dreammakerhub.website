@@ -3,6 +3,7 @@ import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.ser
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import { coderApiConfig, coderApiRequest, coderServiceClient, getCoderSlot, markCoderSlotDeleting, releaseDeletedCoderSlot } from '@/lib/coder/workspace-slots.server';
+import { verifiedCustomerTemplate } from '@/lib/coder/customer-provisioning.server';
 
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ slotId: string }> };
@@ -21,10 +22,9 @@ type RemoteWorkspace = {
 async function customerDeletionOwner(userId: string, email: string | undefined,
   confirmed: string | undefined, slotId: string): Promise<{ ownerId: string; templateId: string }> {
   const operatorId = process.env.CODER_OPERATOR_USER_ID;
-  const approvedTemplateId = process.env.CODER_CUSTOMER_TEMPLATE_ID;
-  if (process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true' ||
-      !operatorId || !UUID.test(operatorId) || !approvedTemplateId || !UUID.test(approvedTemplateId) ||
-      !confirmed || !email) {
+  const approvedTemplate = await verifiedCustomerTemplate();
+  const approvedTemplateId = approvedTemplate.id;
+  if (!operatorId || !UUID.test(operatorId) || !confirmed || !email) {
     throw new CostGateError('Customer deletion requires verified independent Coder identities. Contact support.');
   }
   const expectedEmail = email.trim().toLowerCase();
