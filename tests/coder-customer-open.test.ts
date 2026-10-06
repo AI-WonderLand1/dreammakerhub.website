@@ -44,7 +44,8 @@ describe('customer Google Docker IDE opening', () => {
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).not.toContain('<CustomerWorkspaceLaunch');
     expect(create).toContain('<CustomerWorkspaceLaunch');
-    expect(create).toContain('CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED');
+    expect(create).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
+    expect(create).toContain('CODER_WILDCARD_ACCESS_URL');
     expect(launch).toContain('/api/user-workspace/customer/open/');
     expect(launch).toContain('Open private IDE');
     expect(launch).toContain('window.location.assign(result.url)');
