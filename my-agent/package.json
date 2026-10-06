@@ -24,7 +24,10 @@
     "hono": ">=4.6.0",
     "brace-expansion": ">=2.0.1",
     "@opentelemetry/core": ">=1.30.0",
-    "mysql2": "3.22.0",
-    "mariadb": "3.5.3"
+    "mysql2": "3.23.1",
+    "mariadb": "3.5.3",
+    "http-proxy-agent": {
+      "@tootallnate/once": "2.0.1"
+    }
   }
 }
