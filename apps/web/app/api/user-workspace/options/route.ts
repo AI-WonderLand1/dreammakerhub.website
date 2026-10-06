@@ -1,39 +1,98 @@
 import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
+import {
+  assertFreshUsageController,
+  customerProvisioningGate,
+  verifiedCustomerTemplate,
+} from '@/lib/coder/customer-provisioning.server';
+import { coderOidcEnabled } from '@/lib/coder/customer-identity.server';
 
 export const dynamic = 'force-dynamic';
+
+type Blocker = {
+  code: string;
+  message: string;
+  action?: string;
+  href?: string;
+};
 
 export async function GET(request: Request) {
   const user = await authenticatedSupabaseUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const customerLaunchEnabled =
-    process.env.BILLABLE_OPERATIONS_ENABLED === 'true' &&
-    process.env.CODER_WORKSPACE_CREATION_ENABLED === 'true' &&
-    process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true' &&
-    process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED === 'true' &&
-    process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED === 'true' &&
-    process.env.CODER_SUPABASE_OIDC_VERIFIED === 'true' &&
-    process.env.CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED === 'true' &&
-    Boolean(process.env.CODER_WILDCARD_ACCESS_URL);
+  const blockers: Blocker[] = [];
 
-  if (!customerLaunchEnabled) {
+  try {
+    customerProvisioningGate();
+  } catch (cause) {
+    blockers.push({
+      code: 'OPERATOR_SWITCH',
+      message: cause instanceof Error ? cause.message : 'Customer workspace creation is disabled.',
+      action: 'The AI WONDERLAND operator must enable customer workspace creation.',
+    });
+  }
+
+  let config;
+  try {
+    config = await getCoderLaunchConfig();
+    await verifiedCustomerTemplate();
+  } catch (cause) {
     return NextResponse.json({
-      error: 'Customer IDE access is paused until billing, identity, template isolation, and hard-stop safeguards are verified.',
-      code: 'CUSTOMER_IDE_PAUSED',
+      error: cause instanceof Error ? cause.message : 'Coder launch options unavailable.',
+      code: 'CODER_TEMPLATE_UNAVAILABLE',
+      ready: false,
+      blockers,
     }, { status: 503, headers: { 'Cache-Control': 'private, no-store' } });
+  }
+
+  const oidc = await coderOidcEnabled().catch(() => false);
+  if (!oidc) {
+    blockers.push({
+      code: 'CODER_OIDC_REQUIRED',
+      message: 'Coder customer single sign-on is not enabled yet.',
+      action: 'Enable the Supabase OIDC provider in Coder before customer rollout.',
+    });
   }
 
   try {
-    const config = await getCoderLaunchConfig();
-    return NextResponse.json({ ...config, projects: [] }, {
-      headers: { 'Cache-Control': 'private, no-store' },
+    await assertFreshUsageController();
+  } catch (cause) {
+    blockers.push({
+      code: 'COMPUTE_CONTROLLER_REQUIRED',
+      message: cause instanceof Error ? cause.message : 'The customer compute controller is not ready.',
+      action: 'Start the customer usage controller before allowing new workspaces.',
     });
-  } catch {
-    return NextResponse.json({
-      error: 'Coder is configured, but launch options could not be verified.',
-      code: 'CODER_OPTIONS_UNAVAILABLE',
-    }, { status: 503, headers: { 'Cache-Control': 'private, no-store' } });
   }
+
+  const requiredCompute = [
+    'CODER_FREE_COMPUTE_MINUTES',
+    'CODER_PRO_COMPUTE_MINUTES',
+    'CODER_TEAM_COMPUTE_MINUTES',
+  ].filter((key) => {
+    const value = Number(process.env[key]);
+    return !Number.isSafeInteger(value) || value < 1 || value > 1440;
+  });
+  if (requiredCompute.length) {
+    blockers.push({
+      code: 'COMPUTE_ALLOWANCE_REQUIRED',
+      message: 'Workspace compute allowances are not configured for every plan.',
+      action: `Configure: ${requiredCompute.join(', ')}.`,
+    });
+  }
+
+  if (!process.env.CODER_OPERATOR_USER_ID) {
+    blockers.push({
+      code: 'OPERATOR_ID_REQUIRED',
+      message: 'The Coder operator identity is not pinned.',
+      action: 'Configure CODER_OPERATOR_USER_ID before customer creation.',
+    });
+  }
+
+  return NextResponse.json({
+    ...config,
+    ready: blockers.length === 0,
+    oidcEnabled: oidc,
+    blockers,
+  }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
