@@ -21,10 +21,13 @@ type CoderUsers = { users: CoderUser[] };
  * token's Coder account as a customer owner. Both sides must authenticate via
  * the same verified Supabase OIDC issuer, configured and tested separately.
  */
+export async function coderOidcEnabled(): Promise<boolean> {
+  const response = await coderApiRequest('/api/v2/users/authmethods', 'GET');
+  if (!response.ok) return false;
+  return (await response.json().catch(() => null))?.oidc?.enabled === true;
+}
+
 export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
-  if (process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true') {
-    throw new CostGateError('Customer Coder single sign-on has not been verified.');
-  }
   if (!user.email || !user.email_confirmed_at || !UUID.test(user.id)) {
     throw new CostGateError('A confirmed DreamMakerHub account is required.', 402);
   }
@@ -32,8 +35,7 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
     throw new CostGateError('The operator account cannot be enrolled as a customer.');
   }
   const expectedEmail = user.email.trim().toLowerCase();
-  const authMethods = await coderApiRequest('/api/v2/users/authmethods', 'GET');
-  if (!authMethods.ok || (await authMethods.json().catch(() => null))?.oidc?.enabled !== true) {
+  if (!(await coderOidcEnabled())) {
     throw new CostGateError('Coder customer OIDC login is not enabled.');
   }
   const response = await coderApiRequest(`/api/v2/users?q=${encodeURIComponent(expectedEmail)}&limit=100`, 'GET');
