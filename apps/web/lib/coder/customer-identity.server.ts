@@ -81,7 +81,7 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
 
     // Re-query even after a successful create. This also handles a concurrent
     // request that won the unique-email race and caused a 409.
-    ({ exact, eligible } = await findCustomer());
+    ({ eligible } = await findCustomer());
     if (eligible.length !== 1) {
       throw new CostGateError('Coder customer enrollment could not be verified.');
     }
