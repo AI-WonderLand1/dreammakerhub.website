@@ -3,7 +3,7 @@ set -euo pipefail
 
 HOME_DIR=/home/coder
 
-# Railway volumes are root-owned on first mount. Fix ownership before
+# Fresh Docker volumes can be root-owned on first mount. Fix ownership before
 # switching to the unprivileged coder user.
 if [ "$(id -u)" = "0" ]; then
   chown coder:coder "$HOME_DIR" 2>/dev/null || true
@@ -17,6 +17,7 @@ fi
 
 mkdir -p \
   "$HOME_DIR/projects" \
+  "$HOME_DIR/.filebrowser" \
   "$HOME_DIR/.local/bin" \
   "$HOME_DIR/.local/lib" \
   "$HOME_DIR/.cache/pip" \
@@ -35,7 +36,7 @@ fi
 # issues. It starts the Coder agent and the apps/modules attached to it.
 if [ -z "${CODER_INIT_SCRIPT_B64:-}" ]; then
   echo "ERROR: CODER_INIT_SCRIPT_B64 is not set."
-  echo "This image is intended to run as a Coder workspace on Railway."
+  echo "This image is intended to run as an AI WONDERLAND Coder workspace."
   sleep infinity
 fi
 
