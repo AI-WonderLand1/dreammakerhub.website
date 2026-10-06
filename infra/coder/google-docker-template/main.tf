@@ -54,6 +54,42 @@ data "coder_provisioner" "me" {}
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
+# Customer-selectable compute profile. The website sends only one of these
+# reviewed IDs; raw CPU/RAM values never come from the browser.
+data "coder_parameter" "machine_profile" {
+  name         = "machine_profile"
+  display_name = "Machine profile"
+  description  = "Bounded CPU and memory profile for this workspace."
+  type         = "string"
+  default      = "micro"
+  mutable      = true
+
+  option {
+    name  = "Micro · 1 CPU / 2 GiB"
+    value = "micro"
+  }
+
+  option {
+    name  = "Standard · 2 CPU / 4 GiB"
+    value = "standard"
+  }
+}
+
+locals {
+  workspace_profiles = {
+    micro = {
+      cpu       = 1
+      memory_mb = 2048
+    }
+    standard = {
+      cpu       = 2
+      memory_mb = 4096
+    }
+  }
+
+  selected_profile = local.workspace_profiles[data.coder_parameter.machine_profile.value]
+}
+
 # ============================================================================
 # Workspace image
 # ============================================================================
@@ -257,6 +293,12 @@ resource "docker_container" "workspace" {
 
   image = docker_image.workspace.image_id
 
+  # Hard per-container resource ceilings on the shared Google Docker host.
+  memory      = local.selected_profile.memory_mb
+  memory_swap = local.selected_profile.memory_mb
+  cpu_period  = 100000
+  cpu_quota   = local.selected_profile.cpu * 100000
+
   name = format(
     "coder-%s-%s",
     data.coder_workspace_owner.me.name,
@@ -324,6 +366,11 @@ resource "docker_container" "workspace" {
   labels {
     label = "ai-wonderland.runtime"
     value = "google-docker"
+  }
+
+  labels {
+    label = "ai-wonderland.machine-profile"
+    value = data.coder_parameter.machine_profile.value
   }
 
   depends_on = [
