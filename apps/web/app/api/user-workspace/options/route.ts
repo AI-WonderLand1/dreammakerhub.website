@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
 import {
-  assertFreshUsageController,
   customerProvisioningGate,
   verifiedCustomerTemplate,
 } from '@/lib/coder/customer-provisioning.server';
@@ -52,16 +51,6 @@ export async function GET(request: Request) {
       code: 'CODER_OIDC_REQUIRED',
       message: 'Coder customer single sign-on is not enabled yet.',
       action: 'Enable the Supabase OIDC provider in Coder before customer rollout.',
-    });
-  }
-
-  try {
-    await assertFreshUsageController();
-  } catch (cause) {
-    blockers.push({
-      code: 'COMPUTE_CONTROLLER_REQUIRED',
-      message: cause instanceof Error ? cause.message : 'The customer compute controller is not ready.',
-      action: 'Start the customer usage controller before allowing new workspaces.',
     });
   }
 
