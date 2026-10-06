@@ -12,8 +12,8 @@ const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export function customerProvisioningGate(): void {
   // Keep a deliberate operator on/off switch, but do not require a pile of
-  // manually asserted "...VERIFIED" flags. The actual identity, template,
-  // compute controller and app-domain checks below remain fail-closed.
+  // manually asserted "...VERIFIED" flags. Identity, template and app-domain
+  // checks below remain fail-closed.
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
     throw new CostGateError('Customer workspace creation is disabled by the operator.');
@@ -62,15 +62,6 @@ export async function verifiedCustomerTemplateId(): Promise<string> {
   return (await verifiedCustomerTemplate()).id;
 }
 
-export async function assertFreshUsageController(): Promise<void> {
-  const { data, error } = await coderServiceClient().from('coder_customer_controller')
-    .select('last_heartbeat_at').eq('id', true).maybeSingle();
-  const lastSeen = data?.last_heartbeat_at ? Date.parse(data.last_heartbeat_at) : NaN;
-  if (error || !Number.isFinite(lastSeen) || Date.now() - lastSeen > 90_000 || lastSeen > Date.now() + 5_000) {
-    throw new CostGateError('The IDE time-limit controller is not running. New pods are paused.');
-  }
-}
-
 export async function queueCustomerWorkspace(user: User, input: unknown): Promise<string> {
   customerProvisioningGate();
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -91,16 +82,8 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     throw new CostGateError('Only an approved blank IDE is available in the current customer rollout.', 429);
   }
   const plan = await verifiedCostPlan(user.id);
-  // Reuse the existing subscription contract instead of maintaining a second
-  // hidden set of per-plan IDE minute environment variables. The controller
-  // meters weighted compute against this same monthly allowance.
-  const monthlyComputeCredits = PLAN_LIMITS[plan].computeCreditsMonthly;
-  if (!Number.isSafeInteger(monthlyComputeCredits) || monthlyComputeCredits < 1) {
-    throw new CostGateError('Your plan’s workspace compute allowance is not configured.');
-  }
   const coderUserId = await verifiedCustomerCoderOwner(user);
   const templateId = await verifiedCustomerTemplateId();
-  await assertFreshUsageController();
   const limit = PLAN_LIMITS[plan].workspacesLimit;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 999999) {
     throw new CostGateError('Customer saved-workspace allowance is not configured.');
@@ -121,9 +104,8 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     cpu: profile.cpu,
     memory_gib: profile.memoryGiB,
     disk_gib: 10,
-    // max_compute_ms is a weighted compute allowance. The controller charges
-    // elapsed wall time × compute_multiplier.
-    max_compute_ms: monthlyComputeCredits * 60_000,
+    // Legacy schema field retained for compatibility; time-based IDE limits are disabled.
+    max_compute_ms: 86_400_000,
   });
   if (jobError) {
     throw new CostGateError('Workspace reserved but the setup queue failed. Contact support; do not retry with another name.');
