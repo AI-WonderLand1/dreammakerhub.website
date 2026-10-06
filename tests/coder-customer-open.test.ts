@@ -10,7 +10,7 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).toContain('authenticatedSupabaseUser(request)');
     expect(route).toContain('verifiedCustomerCoderOwner');
     expect(route).toContain('verifiedCustomerTemplateId');
-    expect(route).toContain('assertFreshUsageController');
+    expect(route).not.toContain('assertFreshUsageController');
     expect(route).toContain("job.data.status !== 'ready'");
     expect(route).toContain('workspace.owner_id !== coderUserId');
     expect(route).toContain('workspace.template_id !== templateId');
@@ -24,14 +24,12 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).not.toContain('CODER_API_TOKEN');
   });
 
-  it('checks cumulative compute budget before restarting a stopped customer workspace', () => {
+  it('restarts a stopped customer workspace without a cumulative time budget', () => {
     const route = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
-    expect(route).toContain("from('coder_customer_compute_usage')");
-    expect(route).toContain("from('coder_customer_compute_monthly')");
-    expect(route).toContain('verifiedCostPlan(userId)');
-    expect(route).toContain('PLAN_LIMITS[plan].computeCreditsMonthly');
+    expect(route).not.toContain("from('coder_customer_compute_usage')");
+    expect(route).not.toContain("from('coder_customer_compute_monthly')");
+    expect(route).not.toContain('assertRestartBudget');
     expect(route).toContain("transition: 'start'");
-    expect(route).toContain('assertRestartBudget(user.id, slotId)');
   });
 
   it('exposes customer creation separately without changing the operator WonderSpace entry', () => {
