@@ -120,17 +120,25 @@ export default function AgentsPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <Breadcrumbs items={[{ href: "/dashboard", label: "Dashboard" }, { label: "AI & Agents" }]} />
-            <h2 className="mt-2 text-2xl font-bold">AI, Agents, Runners & Workers</h2>
+            <h2 className="mt-2 text-2xl font-bold">AI WONDERLAND Agents</h2>
             <p className="mt-1 max-w-2xl text-sm text-white/65">
-              Choose the execution layer you need: model orchestration, autonomous agents, server runners, or background workers.
+              Use AI WONDERLAND-provided agents and tools, or connect your own provider/model in Agent Settings.
             </p>
           </div>
-          <Link
-            href="/ai-modules"
-            className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 px-4 text-sm font-bold"
-          >
-            Open AI Modules
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/settings/agents"
+              className="inline-flex h-10 items-center rounded-lg border border-cyan-300/30 bg-cyan-400/10 px-4 text-sm font-bold text-cyan-100"
+            >
+              Agent Settings
+            </Link>
+            <Link
+              href="/ai-modules"
+              className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 px-4 text-sm font-bold"
+            >
+              Open AI Modules
+            </Link>
+          </div>
         </div>
       </div>
 
