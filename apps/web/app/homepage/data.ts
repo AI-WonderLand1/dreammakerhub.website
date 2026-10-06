@@ -57,44 +57,24 @@ export type Plan = {
   icon: string;
 };
 
-export const PLANS: Plan[] = [
-  {
-    id: "free", name: "The Nomad", tier: "Free", price: "$0", period: "/forever",
-    desc: "Start with the core AI WONDERLAND tools before choosing a paid plan.",
-    bullets: ["500K AI credits/month", "10 3D credits/month", "5 projects", "5 GB storage", "AI Playground + WonderBuild + NPC tools", "WonderSpace: controlled beta"],
-    cta: "Start Free", href: "/subscription", highlight: false, icon: "🌿",
-  },
-  {
-    id: "creator", name: "The Creator", tier: "Creator", price: "$19", period: "/mo",
-    desc: "For lighter creators who need more AI and 3D usage.",
-    bullets: ["2M AI credits/month", "50 3D credits/month", "25 projects", "25 GB storage", "Usage top-ups available", "WonderSpace: controlled beta"],
-    cta: "Choose Creator", href: "/subscription", highlight: false, icon: "🎨",
-  },
-  {
-    id: "pro", name: "The Architect", tier: "Architect", price: "$39", period: "/mo",
-    desc: "For serious solo builders with larger AI, 3D and storage needs.",
-    bullets: ["5M AI credits/month", "150 3D credits/month", "100 projects", "100 GB storage", "Higher platform limits", "WonderSpace: controlled beta"],
-    cta: "Choose Architect", href: "/subscription", highlight: true, icon: "⭐",
-  },
-  {
-    id: "studio", name: "The Studio", tier: "Studio", price: "$79", period: "/mo",
-    desc: "For power users and small studios with heavier AI and 3D workloads.",
-    bullets: ["12M AI credits/month", "400 3D credits/month", "250 projects", "250 GB storage", "Higher throughput limits", "WonderSpace: controlled beta"],
-    cta: "Choose Studio", href: "/subscription", highlight: false, icon: "🎬",
-  },
-  {
-    id: "team", name: "The Guild", tier: "Guild", price: "$129", period: "/mo",
-    desc: "For teams that need pooled AI, 3D and storage allowances.",
-    bullets: ["25M pooled AI credits/month", "1,000 pooled 3D credits/month", "500 GB pooled storage", "Large pooled project allowance", "Team-oriented usage", "WonderSpace: controlled beta"],
-    cta: "Choose Guild", href: "/subscription", highlight: false, icon: "🏢",
-  },
-  {
-    id: "enterprise", name: "The Architect of Worlds", tier: "Enterprise", price: "Custom", period: "",
-    desc: "Negotiated usage, infrastructure, isolation and support.",
-    bullets: ["Custom AI credits", "Custom 3D credits", "Custom storage/projects", "Private infrastructure options", "SSO/SCIM where contracted", "SLA/support by agreement"],
-    cta: "Talk to Us", href: "/contact", highlight: false, icon: "🌐",
-  },
-];
+import { PUBLIC_PLAN_CATALOG, PUBLIC_PLAN_ORDER } from "@/lib/billing/public-plan-catalog";
+
+export const PLANS: Plan[] = PUBLIC_PLAN_ORDER.map((id) => {
+  const plan = PUBLIC_PLAN_CATALOG[id];
+  return {
+    id: plan.id,
+    name: plan.displayName,
+    tier: plan.tier,
+    price: plan.homepagePrice,
+    period: plan.homepagePeriod,
+    desc: plan.description,
+    bullets: [...plan.features],
+    cta: plan.cta,
+    href: plan.href,
+    highlight: plan.highlight,
+    icon: plan.icon,
+  };
+});
 
 export type RegistryItem = {
   icon: string;
