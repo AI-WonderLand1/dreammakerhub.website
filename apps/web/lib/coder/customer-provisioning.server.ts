@@ -91,15 +91,12 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     throw new CostGateError('Only an approved blank IDE is available in the current customer rollout.', 429);
   }
   const plan = await verifiedCostPlan(user.id);
-  const computeEnv = plan === 'free'
-    ? 'CODER_FREE_COMPUTE_MINUTES'
-    : plan === 'team'
-      ? 'CODER_TEAM_COMPUTE_MINUTES'
-      : 'CODER_PRO_COMPUTE_MINUTES';
-  const configuredMinutes = process.env[computeEnv];
-  const minutes = Number(configuredMinutes);
-  if (!configuredMinutes || !Number.isSafeInteger(minutes) || minutes < 1 || minutes > 1440) {
-    throw new CostGateError('Your plan’s per-workspace safety allowance is not configured.');
+  // Reuse the existing subscription contract instead of maintaining a second
+  // hidden set of per-plan IDE minute environment variables. The controller
+  // meters weighted compute against this same monthly allowance.
+  const monthlyComputeCredits = PLAN_LIMITS[plan].computeCreditsMonthly;
+  if (!Number.isSafeInteger(monthlyComputeCredits) || monthlyComputeCredits < 1) {
+    throw new CostGateError('Your plan’s workspace compute allowance is not configured.');
   }
   const coderUserId = await verifiedCustomerCoderOwner(user);
   const templateId = await verifiedCustomerTemplateId();
@@ -126,7 +123,7 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     disk_gib: 10,
     // max_compute_ms is a weighted compute allowance. The controller charges
     // elapsed wall time × compute_multiplier.
-    max_compute_ms: minutes * 60_000,
+    max_compute_ms: monthlyComputeCredits * 60_000,
   });
   if (jobError) {
     throw new CostGateError('Workspace reserved but the setup queue failed. Contact support; do not retry with another name.');
