@@ -2,7 +2,7 @@ import 'server-only';
 import type { User } from '@supabase/supabase-js';
 import { CostGateError, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
 import { PLAN_LIMITS } from '@/lib/billing/limits';
-import { coderApiConfig, coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
+import { coderApiConfig, coderServiceClient } from '@/lib/coder/workspace-slots.server';
 import { verifiedCustomerCoderOwner } from '@/lib/coder/customer-identity.server';
 import { workspaceProfile } from '@/lib/coder/workspace-profiles';
 import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
