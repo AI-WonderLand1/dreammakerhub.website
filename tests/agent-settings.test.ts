@@ -29,11 +29,17 @@ describe('agent settings', () => {
     expect(agents).toContain('Agent Settings');
   });
 
-  it('keeps BYO keys encrypted and write-only through the existing provider config API', () => {
-    const route = read('apps/web/app/api/ai-providers/config/route.ts');
-    expect(route).toContain('encryptSecret');
-    expect(route).toContain('api_key_encrypted');
-    expect(route).toContain('hasApiKey');
-    expect(route).not.toContain('apiKey: row.api_key');
+  it('keeps BYO keys encrypted and exposes only write-only metadata to satellite apps', () => {
+    const configRoute = read('apps/web/app/api/ai-providers/config/route.ts');
+    const catalogRoute = read('apps/web/app/api/ai-providers/catalog/route.ts');
+
+    expect(configRoute).toContain('encryptSecret');
+    expect(configRoute).toContain('api_key_encrypted');
+    expect(configRoute).not.toContain('apiKey: row.api_key');
+
+    expect(catalogRoute).toContain('hasApiKey');
+    expect(catalogRoute).toContain('Boolean(row?.api_key_encrypted)');
+    expect(catalogRoute).not.toContain('api_key_iv');
+    expect(catalogRoute).not.toContain('api_key_tag');
   });
 });
