@@ -36,7 +36,8 @@ export async function POST(request: Request) {
   if (!isRunnerAuthorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     customerProvisioningGate();
-    const templateId = await verifiedCustomerTemplateId();
+    const template = await verifiedCustomerTemplate();
+  const templateId = template.id;
     await assertFreshUsageController();
     const versionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
     const operatorId = process.env.CODER_OPERATOR_USER_ID;
