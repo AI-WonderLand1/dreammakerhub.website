@@ -10,16 +10,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export function customerProvisioningGate(): void {
-  // Provisioning a private pod/PVC and exposing that IDE to a browser are
-  // separate security boundaries. Keep workspace creation gated on identity,
-  // template isolation and the independent hard-stop controls, while the
-  // customer open route remains fail-closed until the AI WONDERLAND-only
-  // browser gateway is independently verified.
+  // Provisioning a private Docker workspace and exposing that IDE to a browser
+  // are separate security boundaries. Keep workspace creation gated on identity,
+  // template isolation, cumulative compute controls and explicit operator flags.
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
       process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
       process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED !== 'true' ||
       process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true') {
-    throw new CostGateError('Private customer IDE pods are paused until identity, pod isolation, compute limits, and hard-stop controls are verified.');
+    throw new CostGateError('Private customer IDE workspaces are paused until identity, isolation, compute limits, and hard-stop controls are verified.');
   }
   if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
@@ -69,8 +67,13 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
   if (!WORKSPACE_NAME.test(name) || !profile) {
     throw new CostGateError('Choose a valid workspace name and machine profile.', 429);
   }
+  // The first Google Docker customer rollout is intentionally bounded to the
+  // two profiles enforced by the published customer template.
+  if (profile.cpu > 2 || profile.memoryGiB > 4 || !['micro', 'standard'].includes(profile.id)) {
+    throw new CostGateError('That machine profile is not enabled for the current customer rollout.', 429);
+  }
   if (body.repository || body.ideImage || body.sshPublicKey || body.diskGiB !== undefined) {
-    throw new CostGateError('Only an approved blank IDE and fixed 10 GiB disk are available in this pilot.', 429);
+    throw new CostGateError('Only an approved blank IDE is available in the current customer rollout.', 429);
   }
   const plan = await verifiedCostPlan(user.id);
   const computeEnv = plan === 'free'
