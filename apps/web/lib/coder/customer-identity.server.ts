@@ -38,18 +38,56 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
   if (!(await coderOidcEnabled())) {
     throw new CostGateError('Coder customer OIDC login is not enabled.');
   }
-  const response = await coderApiRequest(`/api/v2/users?q=${encodeURIComponent(expectedEmail)}&limit=100`, 'GET');
-  if (!response.ok) throw new CostGateError('Coder customer identity lookup is unavailable.');
-  const body = await response.json().catch(() => null) as CoderUsers | null;
-  if (!body || !Array.isArray(body.users)) throw new CostGateError('Coder returned an invalid user list.');
-  const matches = body.users.filter((candidate) =>
-    candidate.email?.trim().toLowerCase() === expectedEmail &&
-    candidate.login_type === 'oidc' && candidate.status === 'active' &&
-    candidate.is_service_account !== true && UUID.test(candidate.id));
-  if (matches.length !== 1) {
-    throw new CostGateError('Sign in to Coder with the same verified account before requesting an IDE.');
+  const findCustomer = async (): Promise<{ exact: CoderUser[]; eligible: CoderUser[] }> => {
+    const response = await coderApiRequest(`/api/v2/users?q=${encodeURIComponent(expectedEmail)}&limit=100`, 'GET');
+    if (!response.ok) throw new CostGateError('Coder customer identity lookup is unavailable.');
+    const body = await response.json().catch(() => null) as CoderUsers | null;
+    if (!body || !Array.isArray(body.users)) throw new CostGateError('Coder returned an invalid user list.');
+
+    const exact = body.users.filter((candidate) =>
+      candidate.email?.trim().toLowerCase() === expectedEmail);
+    const eligible = exact.filter((candidate) =>
+      candidate.login_type === 'oidc' && candidate.status === 'active' &&
+      candidate.is_service_account !== true && UUID.test(candidate.id));
+    return { exact, eligible };
+  };
+
+  let { exact, eligible } = await findCustomer();
+
+  if (eligible.length > 1) {
+    throw new CostGateError('Multiple Coder OIDC accounts use this email. Contact support; no workspace was created.');
   }
-  const coderUser = matches[0];
+
+  // A verified AI WONDERLAND account should not have to visit the Coder
+  // dashboard before requesting its first IDE. Pre-enroll a normal OIDC user
+  // through the operator API, then independently re-read and verify it below.
+  if (eligible.length === 0) {
+    if (exact.length > 0) {
+      throw new CostGateError('A conflicting Coder account already uses this email. Contact support; no workspace was created.');
+    }
+
+    const username = `aw-${user.id.replaceAll('-', '').slice(0, 16)}`;
+    const created = await coderApiRequest('/api/v2/users', 'POST', {
+      email: expectedEmail,
+      username,
+      login_type: 'oidc',
+      user_status: 'active',
+      service_account: false,
+    });
+
+    if (!created.ok && created.status !== 409) {
+      throw new CostGateError('Coder customer enrollment is unavailable.');
+    }
+
+    // Re-query even after a successful create. This also handles a concurrent
+    // request that won the unique-email race and caused a 409.
+    ({ exact, eligible } = await findCustomer());
+    if (eligible.length !== 1) {
+      throw new CostGateError('Coder customer enrollment could not be verified.');
+    }
+  }
+
+  const coderUser = eligible[0];
   const operatorCoderId = process.env.CODER_OPERATOR_USER_ID;
   if (!operatorCoderId || !UUID.test(operatorCoderId) || coderUser.id === operatorCoderId) {
     throw new CostGateError('Coder operator and customer identities are not safely separated.');
