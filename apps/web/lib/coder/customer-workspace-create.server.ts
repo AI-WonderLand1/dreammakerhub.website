@@ -10,7 +10,7 @@ import {
 import {
   assertFreshUsageController,
   customerProvisioningGate,
-  verifiedCustomerTemplateId,
+  verifiedCustomerTemplate,
 } from '@/lib/coder/customer-provisioning.server';
 
 const UUID = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -63,13 +63,14 @@ export async function provisionCustomerWorkspaceNow(
   slotId: string,
 ): Promise<'ready' | 'needs_reconciliation'> {
   customerProvisioningGate();
-  const templateId = await verifiedCustomerTemplateId();
+  const template = await verifiedCustomerTemplate();
+  const templateId = template.id;
   await assertFreshUsageController();
 
-  const versionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
+  const versionId = template.versionId;
   const operatorId = process.env.CODER_OPERATOR_USER_ID;
-  if (!versionId || !UUID.test(versionId) || !operatorId || !UUID.test(operatorId)) {
-    throw new CostGateError('Pinned customer template and operator identity are required.');
+  if (!operatorId || !UUID.test(operatorId)) {
+    throw new CostGateError('The operator Coder identity is not configured.');
   }
 
   const db = coderServiceClient();
