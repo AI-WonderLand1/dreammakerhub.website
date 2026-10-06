@@ -51,11 +51,12 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain('JSON.stringify({ workspaceName, machineProfile })');
     expect(provision).toContain('queueCustomerWorkspace(user, input)');
     expect(customerQueue).toContain('Only an approved blank IDE');
-    expect(form).not.toContain('/api/user-workspace/customer/open/');
+    expect(form).toContain('/api/user-workspace/customer/open/');
+    expect(form).toContain('Open private IDE');
     expect(form).not.toContain('coder.dreammakerhub.website');
   });
 
-  it('retains the legacy Coder form as internal code but does not render it to customers', () => {
+  it('renders the gated customer form on its dedicated route without changing the operator gate', () => {
     expect(form).toContain('const provisioningPaused = operatorPreview || !provisioningEnabled');
     expect(form).toContain("disabled={loading || provisioningPaused || source !== 'blank'}");
     expect(form).toContain('if (operatorPreview || !provisioningEnabled)');
@@ -63,6 +64,9 @@ describe('WonderSpace customer creation layout', () => {
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('CustomerWorkspaceLaunch');
     expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
+    const customerPage = read('apps/web/app/wonderspace/create/page.tsx');
+    expect(customerPage).toContain('<CustomerWorkspaceLaunch');
+    expect(customerPage).toContain('CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED');
   });
 
   it('preserves the operator IDE path without letting customers inherit it', () => {

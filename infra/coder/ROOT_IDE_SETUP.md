@@ -1,6 +1,6 @@
 # AI WONDERLAND Coder IDE on Google Docker
 
-The customer WonderSpace IDE now defaults to the verified Coder template:
+The customer WonderSpace IDE defaults to the verified Coder template:
 
 `ai-wonderland-google`
 
@@ -24,47 +24,51 @@ persistent /home/coder Docker volume
 
 The external provisioner runs as a persistent system service on the Google host and must be able to access the Docker socket. The published template is restricted to the `environment=google` provisioner tag so Docker resources are created on that host rather than by the built-in provisioners.
 
-The verified workspace includes:
+## Source of truth
 
-- one Docker container per running Coder workspace
+The checked-in Google Docker template is:
+
+`infra/coder/google-docker-template/main.tf`
+
+The workspace image is built from:
+
+`infra/coder/workspace-image/`
+
+and published as:
+
+`ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest`
+
+The Google Docker template intentionally does **not** override the image `ENTRYPOINT`. The image entrypoint starts as root only long enough to repair ownership on a newly-created persistent Docker volume, then launches the Coder init script as the unprivileged `coder` user.
+
+## Workspace contents
+
+Each running workspace includes:
+
+- one isolated Docker container
 - one persistent Docker volume mounted at `/home/coder`
-- the Coder agent
+- Coder agent
 - code-server
 - Git Config
 - File Browser
 - terminal access
+- Node.js 22
+- npm and pnpm
+- TypeScript
+- Python
+- Git and common build tools
 
-The tested workspace survived stop/start with data under `/home/coder` intact.
+Files under `/home/coder` are intended to survive workspace stop/start.
 
-## Workspace image
+## Publish
 
-The Google template uses the AI WONDERLAND workspace image:
+Publish the checked-in Google template from the directory containing `main.tf` and route it only to the Google external provisioner:
 
-`ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest`
+```bash
+cd infra/coder/google-docker-template
+coder templates push ai-wonderland-google --provisioner-tag environment=google
+```
 
-Workspace images and infrastructure settings remain operator-controlled. The browser must not supply arbitrary image URLs.
-
-## Customer launch safety
-
-Moving the default template to Google does **not** bypass the customer launch gates.
-
-Customer provisioning remains disabled until the existing billing, identity, template-isolation, and hard-stop checks are explicitly verified and enabled. Keep those checks independent of Coder template availability.
-
-## Repository launch
-
-The current Google Docker template does not advertise repository rich parameters. The website therefore reports repository launch as unavailable unless the published Coder template exposes validated `repo_url` and `repo_branch` parameters.
-
-Do not send shared GitHub credentials into customer workspaces.
-
-## Legacy Railway template
-
-`infra/coder/template/` still contains the previous Railway/GraphQL template source for rollback and historical compatibility. It is **not** the website's default customer IDE template after this migration.
-
-Do not delete or repurpose that directory until the Google Docker template source is checked into the repository and rollback is no longer required.
-
-## Operations
-
-Useful checks on the Google host:
+Before publishing, confirm the Google provisioner is healthy:
 
 ```bash
 coder provisioner list --org coder
@@ -72,7 +76,49 @@ sudo systemctl status coder-google-provisioner --no-pager
 docker ps
 ```
 
-The Google provisioner must appear with `environment=google`, and its service process must retain access to the host Docker group.
+## Runtime verification
+
+A correctly launched workspace should report:
+
+```bash
+whoami
+echo "$HOME"
+node --version
+npm --version
+pnpm --version
+python3 --version
+git --version
+```
+
+Expected identity:
+
+```text
+coder
+/home/coder
+```
+
+Do not accept `root` / `/root` for customer workspaces.
+
+For persistence testing:
+
+```bash
+echo "AI WONDERLAND persistence works" > /home/coder/persistence-test.txt
+cat /home/coder/persistence-test.txt
+```
+
+Stop and start the **same** workspace, then verify the file still exists.
+
+## Legacy Railway rollback source
+
+`infra/coder/template/` remains the previous Railway/GraphQL template for rollback and historical compatibility. It is not the default Google Docker template and should not be published as `ai-wonderland-google`.
+
+Do not mix files from the Railway template and Google Docker template in the same Coder template directory. Terraform loads every `.tf` file in a directory as one configuration, so duplicate module declarations will fail initialization.
+
+## Customer launch safety
+
+A working Docker template does **not** bypass customer launch gates.
+
+Keep billing, entitlement, ownership, workspace-count, cost, and customer-isolation checks server-side. A successful Coder or Docker health check alone is not sufficient to enable unrestricted customer provisioning.
 
 ## Security
 
@@ -83,4 +129,4 @@ Never commit:
 - SSH private keys
 - registry passwords or PATs
 
-Keep customer workspace ownership and resource-budget checks server-side. A successful Coder or Docker health check alone is not sufficient to enable customer provisioning.
+Never mount the host Docker socket inside customer workspace containers.

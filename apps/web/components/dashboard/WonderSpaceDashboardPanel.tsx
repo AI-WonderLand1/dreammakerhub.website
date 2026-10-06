@@ -180,6 +180,10 @@ export default function WonderSpaceDashboardPanel({
           ) : (
             <span className="text-xs text-slate-400">No project yet</span>
           )}
+          <Link href="/wonderspace/create"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-300/40 px-3 py-2.5 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/10">
+            <Code2 size={15} aria-hidden="true" /> New cloud IDE
+          </Link>
           <button type="button" onClick={onCreate}
             className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-400 px-3 py-2.5 text-sm font-semibold text-slate-950">
             <Plus size={15} aria-hidden="true" /> New project
