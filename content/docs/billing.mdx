@@ -16,9 +16,9 @@ AI WONDERLAND uses **one membership** per customer. AI Playground, WonderBuild, 
 | Architect | $39 | $390 | 5M | 150 | 100 GB |
 | Studio | $79 | $790 | 12M | 400 | 250 GB |
 | Guild | $129 | $1,290 | 25M pooled | 1,000 pooled | 500 GB pooled |
-| Enterprise | Custom | Custom | Custom | Custom | Custom |
+| Architect of Worlds (Enterprise) | Custom | Custom | Custom | Custom | Custom |
 
-Creator, Architect, Studio and Guild use self-service Stripe Checkout **only when their verified Stripe Product/Price configuration is enabled**. Enterprise is quote/contract based.
+Creator, Architect, Studio and Guild use self-service Stripe Checkout with the same catalog shown on the homepage and subscription page. **The Architect of Worlds** is the custom Enterprise membership and is quote/contract based.
 
 ## AI credits
 
@@ -63,7 +63,7 @@ Customers can buy extra usage without changing membership:
 - AI credit packs
 - 3D credit packs
 
-The main AI WONDERLAND site is the billing authority. AI-PLAYGROUND and NPC-AI-SIM should reserve usage against the central ledger instead of maintaining separate subscription truth.
+The main AI WONDERLAND site and dashboard are the billing authority. AI Playground and NPC-AI-SIM reserve usage against the same central ledger instead of maintaining separate subscriptions. Customers buy one AI WONDERLAND membership, not one plan per repository or product area.
 
 ## WonderSpace
 
@@ -88,4 +88,4 @@ Use the in-product billing and usage surfaces to:
 - review usage alerts
 - manage/cancel a subscription when the billing integration exposes the control
 
-Do not treat Stripe itself as the product; customer-facing copy should say **AI WONDERLAND membership**.
+Do not treat Stripe itself as the product; customer-facing copy should say **AI WONDERLAND membership**. Internal compatibility IDs such as `pro` and `team` map to the public names **The Architect** and **The Guild** and should not be shown to customers.

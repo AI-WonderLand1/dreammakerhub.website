@@ -7,7 +7,8 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const auth = read('apps/web/app/public-pages/auth/page.tsx');
 const callback = read('apps/web/app/api/auth/callback/route.ts');
 const subscription = read('apps/web/app/subscription/page.tsx');
-const pricing = read('apps/web/app/homepage/data.ts');
+const pricing = read('apps/web/lib/billing/public-plan-catalog.ts');
+const homepage = read('apps/web/app/homepage/data.ts');
 const checkoutStatus = read('apps/web/app/api/subscription/checkout-status/route.ts');
 
 describe('new account plan selection', () => {
@@ -40,6 +41,7 @@ describe('new account plan selection', () => {
     expect(pricing).toContain('id: "pro"');
     expect(pricing).toContain('id: "team"');
     expect(pricing).toContain('href: "/subscription"');
+    expect(homepage).toContain("PUBLIC_PLAN_CATALOG");
   });
 
   it('does not trust a success URL as proof of payment', () => {
