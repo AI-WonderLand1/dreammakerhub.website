@@ -52,11 +52,16 @@ describe('customer workspace deletion authorization', () => {
 });
 
 describe('customer IDE lifecycle handoff', () => {
-  it('fails closed until a DreamMakerHub-only gateway exists', () => {
-    expect(handoff).toContain('CUSTOMER_IDE_GATEWAY_REQUIRED');
-    expect(handoff).toContain('status: 503');
-    expect(handoff).not.toContain('coderApiRequest(');
-    expect(handoff).not.toContain('CODER_ACCESS_URL');
-    expect(handoff).not.toContain("{ transition: 'start' }");
+  it('reverifies identity, template, usage and wildcard app routing before opening', () => {
+    expect(handoff).toContain('customerProvisioningGate()');
+    expect(handoff).toContain('verifiedCustomerTemplateId()');
+    expect(handoff).toContain('verifiedCustomerCoderOwner(user)');
+    expect(handoff).toContain('assertFreshUsageController()');
+    expect(handoff).toContain("job.data.status !== 'ready'");
+    expect(handoff).toContain('workspace.owner_id !== coderUserId');
+    expect(handoff).toContain('workspace.template_id !== templateId');
+    expect(handoff).toContain('CODER_WILDCARD_ACCESS_URL');
+    expect(handoff).toContain("transition: 'start'");
+    expect(handoff).not.toContain('CODER_API_TOKEN');
   });
 });
