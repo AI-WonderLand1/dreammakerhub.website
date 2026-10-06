@@ -37,7 +37,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(route).toContain('new CoderAPIWrapper(');
     expect(route).toContain('coder.createWorkspace(');
     expect(route).toContain("getCoderTemplateId('playcanvas-3d')");
-    expect(launch).toContain("fetch('/api/user-workspace/provision'");
+    expect(launch).toContain("fetch('/api/user-workspace/customer/provision'");
     const page = read('apps/web/app/wonderspace/page.tsx');
     const operatorGate = read('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
     // The page separates the existing operator IDE from the customer launcher.
@@ -54,27 +54,27 @@ describe('Coder API remains the WonderSpace engine', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     const route = read('apps/web/app/api/user-workspace/provision/route.ts');
     expect(launch).toContain("aria-pressed={mode === 'repo'}");
-    expect(launch).toContain('mode === \'repo\' && !options.repositorySupported');
+    expect(launch).toContain("mode !== 'blank'");
     expect(launch).toContain('options.regions.length ?');
     expect(route).toContain('Repository launch is not enabled on the published Coder template.');
     expect(route).toContain('This Coder template does not accept image overrides.');
   });
-  it('keeps the form visible during an outage, allows retry without resetting input, and gates provisioning', () => {
+  it('keeps the form visible, retries outages, and shows concrete live readiness blockers', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
-    expect(launch).toContain('Customer IDE access is paused');
+    expect(launch).toContain('Coder connected · setup still required');
     expect(launch).toContain('Retry IDE availability check');
-    expect(launch).toContain("optionsErrorCode !== 'CUSTOMER_IDE_PAUSED'");
     expect(launch).toContain('setRetryCount((count) => count + 1)');
+    expect(launch).toContain('options.blockers.map');
     expect(launch).toContain('aria-pressed={mode === \'blank\'}');
     expect(launch).toContain('disabled={!launchReady}');
-    expect(launch).toContain('if (!options || optionsLoading || optionsError)');
+    expect(launch).toContain('options.ready');
     expect(launch).toContain('Google Cloud hosts workspace compute for this Coder Docker template.');
     const optionsRoute = read('apps/web/app/api/user-workspace/options/route.ts');
-    expect(optionsRoute).toContain("code: 'CUSTOMER_IDE_PAUSED'");
-    expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_PROVISIONING_ENABLED === 'true'");
-    expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED === 'true'");
-    expect(optionsRoute).toContain("process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED === 'true'");
-    expect(optionsRoute).toContain("process.env.CODER_SUPABASE_OIDC_VERIFIED === 'true'");
+    expect(optionsRoute).toContain("code: 'CODER_OIDC_REQUIRED'");
+    expect(optionsRoute).toContain("code: 'COMPUTE_CONTROLLER_REQUIRED'");
+    expect(optionsRoute).toContain('customerProvisioningGate()');
+    expect(optionsRoute).toContain('verifiedCustomerTemplate()');
+    expect(optionsRoute).not.toContain('CUSTOMER_IDE_PAUSED');
     expect(launch).not.toContain('window.location.reload()');
   });
   it('parses actual Coder template arrays and filters options to published capabilities', async () => {
@@ -96,6 +96,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('coder-template-id');
     expect(config.cpu).toEqual([{ label: '2 CPUs', value: '2' }]);
+    expect(config.machineProfiles).toEqual([]);
     expect(config.regions).toEqual([]);
     expect(config.repositorySupported).toBe(false);
     expect(await getCoderTemplateId('playcanvas-3d')).toBe('playcanvas-template-id');
@@ -114,6 +115,8 @@ describe('Coder API remains the WonderSpace engine', () => {
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('live-template-id');
     expect(config.templateName).toBe('ai-wonderland-google');
+    expect(config.templateVersionId).toBe('live-version');
+    expect(config.machineProfiles).toEqual([]);
     expect(config.cpu).toEqual([]);
     expect(config.memory).toEqual([]);
     expect(config.regions).toEqual([]);
