@@ -34,7 +34,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const { user, session, loading: authLoading } = useAuth();
   const [options, setOptions] = useState<LaunchOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
-  const [optionsErrorCode, setOptionsErrorCode] = useState('');
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState<'blank' | 'repo'>('blank');
@@ -61,7 +60,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     const controller = new AbortController();
     setOptions(null);
     setOptionsError('');
-    setOptionsErrorCode('');
     setOptionsLoading(true);
     fetch('/api/user-workspace/options', { signal: controller.signal, cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined })
       .then(async (response) => {
@@ -75,9 +73,12 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       })
       .then((data) => {
         if (controller.signal.aborted) return;
-        if (!Array.isArray(data.cpu) ||
+        if (!Array.isArray(data.machineProfiles) ||
+            !Array.isArray(data.cpu) ||
             !Array.isArray(data.memory) ||
-            !Array.isArray(data.regions) || !Array.isArray(data.images)) {
+            !Array.isArray(data.regions) ||
+            !Array.isArray(data.images) ||
+            !Array.isArray(data.blockers)) {
           throw new Error('Coder has not returned usable workspace options.');
         }
         setOptions(data);
@@ -85,13 +86,10 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
         setRegion(data.regions[0]?.value || '');
         setMachineProfile(data.machineProfiles.find((profile) => profile.value === 'micro')?.value || data.machineProfiles[0]?.value || 'micro');
         setOptionsError('');
-        setOptionsErrorCode(data.ready ? '' : 'CUSTOMER_IDE_NOT_READY');
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        const failure = cause as Error & { code?: string };
         setOptionsError(cause instanceof Error ? cause.message : 'Coder options unavailable.');
-        setOptionsErrorCode(failure?.code || '');
       })
       .finally(() => {
         if (!controller.signal.aborted) setOptionsLoading(false);
@@ -311,10 +309,10 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                   <p className="font-semibold">
                     {optionsLoading
                       ? 'Checking IDE availability…'
-                      : options
-                        ? 'Coder connected'
-                        : optionsErrorCode === 'CUSTOMER_IDE_PAUSED'
-                          ? 'Customer IDE access is paused'
+                      : options?.ready
+                        ? 'Coder connected · customer launch ready'
+                        : options
+                          ? 'Coder connected · setup still required'
                           : 'Coder launch options unavailable'}
                   </p>
                   {options && <p className="mt-1">Template: {options.templateName}</p>}
