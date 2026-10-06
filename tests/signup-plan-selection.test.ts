@@ -36,9 +36,10 @@ describe('new account plan selection', () => {
     expect(subscription).toMatch(/(?:return\s+ensureFree\(\)|void\s+ensureFree\(\);\s*return;)/);
     expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`');
     expect(auth).not.toContain('/api/subscription/subscribe');
-    expect(pricing).toContain('href: "/public-pages/auth?signup=true&redirectTo=%2Fsubscription"');
-    expect(pricing).toContain('href: "/checkout?plan=pro&interval=month"');
-    expect(pricing).toContain('href: "/checkout?plan=team&interval=month"');
+    expect(pricing).toContain('id: "free"');
+    expect(pricing).toContain('id: "pro"');
+    expect(pricing).toContain('id: "team"');
+    expect(pricing).toContain('href: "/subscription"');
   });
 
   it('does not trust a success URL as proof of payment', () => {

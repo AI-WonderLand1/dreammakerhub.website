@@ -41,9 +41,10 @@ RUN apt-get update \
     && npm cache clean --force \
     && rm -rf /var/lib/apt/lists/*
 
-# Persistent-home defaults. /home/coder is mounted from a Railway volume at runtime.
+# Persistent-home defaults. /home/coder is mounted from a Docker volume at runtime.
 RUN mkdir -p \
       /home/coder/projects \
+      /home/coder/.filebrowser \
       /home/coder/.local/bin \
       /home/coder/.local/lib \
       /home/coder/.cache/pip \
@@ -58,4 +59,6 @@ RUN mkdir -p \
 COPY entrypoint.sh /coder-entrypoint.sh
 RUN chmod 0755 /coder-entrypoint.sh
 
+# The entrypoint repairs persistent-volume ownership as root, then launches
+# the Coder init script as the unprivileged coder user.
 ENTRYPOINT ["/coder-entrypoint.sh"]

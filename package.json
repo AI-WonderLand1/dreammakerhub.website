@@ -116,7 +116,7 @@
     "pg": "^8.20.0",
     "playcanvas": "^2.19.7",
     "postcss": "^8.5.20",
-    "react": "19.3.0",
+    "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-use": "^17.6.1",
     "server-only": "^0.0.1",
