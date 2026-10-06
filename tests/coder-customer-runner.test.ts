@@ -13,12 +13,16 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain(".from('coder_customer_identities')");
   });
 
-  it('keeps the legacy queued customer path fail-closed until explicitly reverified', () => {
+  it('keeps customer provisioning fail-closed with operator switches and live verification', () => {
     const source = file('apps/web/lib/coder/customer-provisioning.server.ts');
+    const identity = file('apps/web/lib/coder/customer-identity.server.ts');
     expect(source).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
-    expect(source).toContain('CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED');
-    expect(source).toContain('CODER_CUSTOMER_HARD_STOP_VERIFIED');
-    expect(source).toContain('CODER_SUPABASE_OIDC_VERIFIED');
+    expect(source).toContain('CODER_WORKSPACE_CREATION_ENABLED');
+    expect(source).toContain('CODER_WILDCARD_ACCESS_URL');
+    expect(source).toContain('verifiedCustomerTemplate()');
+    expect(source).toContain('assertFreshUsageController()');
+    expect(identity).toContain("coderApiRequest('/api/v2/users/authmethods', 'GET')");
+    expect(identity).not.toContain('CODER_SUPABASE_OIDC_VERIFIED');
   });
 
   it('creates under the verified customer UUID and keeps uncertain slots allocated', () => {
