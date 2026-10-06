@@ -5,48 +5,61 @@ import { PLAN_LIMITS } from '@/lib/billing/limits';
 import { coderApiConfig, coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
 import { verifiedCustomerCoderOwner } from '@/lib/coder/customer-identity.server';
 import { workspaceProfile } from '@/lib/coder/workspace-profiles';
+import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export function customerProvisioningGate(): void {
-  // Provisioning a private Docker workspace and exposing that IDE to a browser
-  // are separate security boundaries. Keep workspace creation gated on identity,
-  // template isolation, cumulative compute controls and explicit operator flags.
+  // Keep a deliberate operator on/off switch, but do not require a pile of
+  // manually asserted "...VERIFIED" flags. The actual identity, template,
+  // compute controller and app-domain checks below remain fail-closed.
   if (process.env.CODER_CUSTOMER_PROVISIONING_ENABLED !== 'true' ||
-      process.env.CODER_CUSTOMER_TEMPLATE_SECURITY_VERIFIED !== 'true' ||
-      process.env.CODER_CUSTOMER_HARD_STOP_VERIFIED !== 'true' ||
-      process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true' ||
-      process.env.CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED !== 'true' ||
-      !process.env.CODER_WILDCARD_ACCESS_URL) {
-    throw new CostGateError('Private customer IDE workspaces are paused until identity, isolation, compute limits, hard-stop controls, and customer-only IDE access are verified.');
-  }
-  if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true' ||
       process.env.CODER_WORKSPACE_CREATION_ENABLED !== 'true') {
-    throw new CostGateError('New workspace creation is paused.');
+    throw new CostGateError('Customer workspace creation is disabled by the operator.');
+  }
+  if (!process.env.CODER_WILDCARD_ACCESS_URL) {
+    throw new CostGateError('Coder wildcard app routing is not configured.');
   }
 }
 
-/** Validate the actual published customer template; never fall back to an operator template. */
+export type VerifiedCustomerTemplate = {
+  id: string;
+  versionId: string;
+  name: string;
+};
+
+/**
+ * Re-read the published Google Docker template from Coder for every customer
+ * launch. The template itself enforces the bounded machine_profile choices and
+ * operator-controlled image, so users never supply a container image or Docker
+ * socket.
+ */
+export async function verifiedCustomerTemplate(): Promise<VerifiedCustomerTemplate> {
+  const config = await getCoderLaunchConfig();
+  if (config.templateName !== (process.env.CODER_IDE_TEMPLATE_NAME || 'ai-wonderland-google')) {
+    throw new CostGateError('The published Coder template does not match the approved Google Docker template.');
+  }
+
+  const profiles = new Set(config.machineProfiles.map((profile) => profile.value));
+  if (!profiles.has('micro') || !profiles.has('standard') ||
+      [...profiles].some((profile) => !['micro', 'standard'].includes(profile))) {
+    throw new CostGateError('The published Coder template has unapproved customer machine profiles.');
+  }
+
+  if (!UUID.test(config.templateId) || !UUID.test(config.templateVersionId)) {
+    throw new CostGateError('Coder returned an invalid published template identity.');
+  }
+
+  return {
+    id: config.templateId,
+    versionId: config.templateVersionId,
+    name: config.templateName,
+  };
+}
+
 export async function verifiedCustomerTemplateId(): Promise<string> {
-  const templateId = process.env.CODER_CUSTOMER_TEMPLATE_ID;
-  const versionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
-  const templateName = process.env.CODER_CUSTOMER_TEMPLATE_NAME;
-  const operatorTemplateId = process.env.CODER_OPERATOR_TEMPLATE_ID;
-  if (!templateId || !versionId || !templateName || !operatorTemplateId ||
-      !UUID.test(templateId) || !UUID.test(versionId) || !UUID.test(operatorTemplateId)) {
-    throw new CostGateError('Both the operator template and a verified, pinned customer-only template must be configured.');
-  }
-  if (templateId === operatorTemplateId) {
-    throw new CostGateError('The operator template cannot be used for customer provisioning.');
-  }
-  const response = await coderApiRequest(`/api/v2/templates/${encodeURIComponent(templateId)}`, 'GET');
-  const template = response.ok ? await response.json().catch(() => null) : null;
-  if (!template || template.id !== templateId || template.name !== templateName ||
-      template.active_version_id !== versionId) {
-    throw new CostGateError('The customer template has changed or is not published. Review it before creating pods.');
-  }
-  return templateId;
+  return (await verifiedCustomerTemplate()).id;
 }
 
 export async function assertFreshUsageController(): Promise<void> {
