@@ -12,7 +12,8 @@ describe('customer workspace deletion authorization', () => {
     expect(deletion).toContain('getCoderSlot(user.id, slotId)');
     expect(deletion).toContain('isConfiguredCoderOperator(user.id)');
     expect(deletion).toContain('customerDeletionOwner(user.id, user.email, user.email_confirmed_at, slot.id)');
-    expect(deletion).toContain("process.env.CODER_SUPABASE_OIDC_VERIFIED !== 'true'");
+    expect(deletion).toContain('verifiedCustomerTemplate()');
+    expect(deletion).not.toContain('CODER_SUPABASE_OIDC_VERIFIED');
     expect(deletion).toContain(".from('coder_customer_identities')");
     expect(deletion).toContain(".from('coder_customer_jobs')");
     expect(deletion).toContain(".eq('user_id', userId).eq('slot_id', slotId)");

@@ -25,6 +25,6 @@ describe('WonderSpace availability hint', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(dashboard).not.toContain('CoderAvailabilityIndicator');
     expect(launch).toContain('<CoderAvailabilityIndicator>');
-    expect(launch).toContain("fetch('/api/user-workspace/provision'");
+    expect(launch).toContain("fetch('/api/user-workspace/customer/provision'");
   });
 });

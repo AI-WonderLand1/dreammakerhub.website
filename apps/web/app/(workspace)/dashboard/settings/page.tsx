@@ -12,9 +12,9 @@ export default function SettingsHomePage() {
         <div className="mt-2 text-white/55">Live usage, plan limits, upgrades, and billing.</div>
       </Link>
 
-      <Link href="/dashboard/agents" className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-6 hover:bg-violet-500/10 transition">
-        <div className="text-xs font-black uppercase tracking-widest text-violet-300/80">AI Agents</div>
-        <div className="mt-2 text-white/55">Configure Builder, Designer, Debugger agents.</div>
+      <Link href="/dashboard/settings/agents" className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-6 hover:bg-violet-500/10 transition">
+        <div className="text-xs font-black uppercase tracking-widest text-violet-300/80">Agents & AI Providers</div>
+        <div className="mt-2 text-white/55">Use AI WONDERLAND agents or connect your own provider, model, key, or compatible agent endpoint.</div>
       </Link>
 
       <Link href="/dashboard/settings/webhooks" className="rounded-2xl border border-orange-400/20 bg-orange-500/5 p-6 hover:bg-orange-500/10 transition">

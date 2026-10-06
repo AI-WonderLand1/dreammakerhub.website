@@ -7,15 +7,22 @@ import CoderAvailabilityIndicator from './CoderAvailabilityIndicator';
 import { Cloud, Code2, GitBranch, Github, Rocket, Sparkles } from 'lucide-react';
 
 type Choice = { label: string; value: string };
+type LaunchBlocker = { code: string; message: string; action?: string; href?: string };
 type LaunchOptions = {
   templateId: string;
+  templateVersionId: string;
   templateName: string;
+  machineProfiles: Choice[];
   cpu: Choice[];
   memory: Choice[];
   images: Choice[];
   regions: Choice[];
   repositorySupported: boolean;
+  ready: boolean;
+  oidcEnabled: boolean;
+  blockers: LaunchBlocker[];
 };
+type Setup = { slotId?: string; status?: string; error?: string; url?: string };
 type PublicRepo = { fullName: string; defaultBranch: string; branches: string[] };
 type Stage = 'form' | 'provisioning' | 'ready' | 'error';
 
@@ -27,7 +34,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const { user, session, loading: authLoading } = useAuth();
   const [options, setOptions] = useState<LaunchOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
-  const [optionsErrorCode, setOptionsErrorCode] = useState('');
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState<'blank' | 'repo'>('blank');
@@ -39,10 +45,11 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [branch, setBranch] = useState('');
   const [ideImage, setIdeImage] = useState('');
   const [region, setRegion] = useState('');
+  const [machineProfile, setMachineProfile] = useState('micro');
+  const [slotId, setSlotId] = useState('');
   const [stage, setStage] = useState<Stage>('form');
   const [error, setError] = useState('');
-  const [ideUrl, setIdeUrl] = useState('');
-  const [sshCommand, setSshCommand] = useState('');
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     if (user) setName(uniqueWorkspaceName(user.id));
@@ -53,7 +60,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     const controller = new AbortController();
     setOptions(null);
     setOptionsError('');
-    setOptionsErrorCode('');
     setOptionsLoading(true);
     fetch('/api/user-workspace/options', { signal: controller.signal, cache: 'no-store', headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined })
       .then(async (response) => {
@@ -67,22 +73,23 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       })
       .then((data) => {
         if (controller.signal.aborted) return;
-        if (!Array.isArray(data.cpu) ||
+        if (!Array.isArray(data.machineProfiles) ||
+            !Array.isArray(data.cpu) ||
             !Array.isArray(data.memory) ||
-            !Array.isArray(data.regions) || !Array.isArray(data.images)) {
+            !Array.isArray(data.regions) ||
+            !Array.isArray(data.images) ||
+            !Array.isArray(data.blockers)) {
           throw new Error('Coder has not returned usable workspace options.');
         }
         setOptions(data);
         setIdeImage(data.images[0]?.value || '');
         setRegion(data.regions[0]?.value || '');
+        setMachineProfile(data.machineProfiles.find((profile) => profile.value === 'micro')?.value || data.machineProfiles[0]?.value || 'micro');
         setOptionsError('');
-        setOptionsErrorCode('');
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        const failure = cause as Error & { code?: string };
         setOptionsError(cause instanceof Error ? cause.message : 'Coder options unavailable.');
-        setOptionsErrorCode(failure?.code || '');
       })
       .finally(() => {
         if (!controller.signal.aborted) setOptionsLoading(false);
@@ -116,15 +123,47 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     }
   };
 
+  useEffect(() => {
+    if (!slotId || stage !== 'provisioning') return;
+    const controller = new AbortController();
+
+    const poll = async () => {
+      const response = await fetch(`/api/user-workspace/customer/status/${encodeURIComponent(slotId)}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+      });
+      const data = await response.json().catch(() => null) as Setup | null;
+      if (!response.ok) throw new Error(data?.error || 'Unable to check workspace setup.');
+      if (data?.status === 'ready') {
+        setStage('ready');
+        return;
+      }
+      if (data?.status === 'needs_reconciliation') {
+        setError('Coder may have created the workspace but confirmation was interrupted. Contact support before retrying.');
+        setStage('error');
+      }
+    };
+
+    void poll().catch((cause) => {
+      if (!controller.signal.aborted) {
+        setError(cause instanceof Error ? cause.message : 'Unable to check workspace setup.');
+        setStage('error');
+      }
+    });
+    const timer = window.setInterval(() => {
+      void poll().catch(() => undefined);
+    }, 3000);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, [slotId, stage, session?.access_token]);
+
   const provision = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!options || optionsLoading || optionsError) {
-      setError('Coder is not connected yet. Retry the connection before launching a workspace.');
-      setStage('error');
-      return;
-    }
-    if (options.images.length && !options.images.some((image) => image.value === ideImage)) {
-      setError('Choose an approved IDE environment.');
+    if (!options || optionsLoading || optionsError || !options.ready) {
+      setError('Customer IDE prerequisites are not ready yet. Review the readiness items above.');
       setStage('error');
       return;
     }
@@ -133,38 +172,67 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       setStage('error');
       return;
     }
-    if (mode === 'repo' && !options.repositorySupported) {
-      setRepoError('Repository launch requires a published Coder template that supports repositories.');
+    if (mode !== 'blank') {
+      setRepoError('Repository import is not enabled for the first customer rollout. Create a blank workspace, then clone from inside your IDE.');
       return;
     }
-    if (mode === 'repo' && (!verified || !branch)) {
-      setRepoError('Verify a public repository and choose its branch first.');
+    if (!options.machineProfiles.some((profile) => profile.value === machineProfile)) {
+      setError('Choose an approved customer machine profile.');
+      setStage('error');
       return;
     }
+
     setStage('provisioning');
     setError('');
     try {
-      const response = await fetch('/api/user-workspace/provision', {
+      const response = await fetch('/api/user-workspace/customer/provision', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({
-          podName: name,
-          podType: 'ide',
-          templateId: options.templateId,
-          ...(options.images.length ? { ideImage } : {}),
-          ...(region ? { region } : {}),
-          ...(mode === 'repo' && verified ? { repository: verified.fullName, branch } : {}),
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ workspaceName: name, machineProfile }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Workspace could not be created.');
-      if (!data.ideUrl) throw new Error('Coder did not return an IDE URL.');
-      setIdeUrl(data.ideUrl);
-      setSshCommand(data.sshCommand || '');
-      setStage('ready');
+      const data = await response.json().catch(() => null) as Setup | null;
+      if (!response.ok) throw new Error(data?.error || 'Workspace could not be created.');
+      if (!data?.slotId || !data.status) throw new Error('Workspace provisioning returned an invalid response.');
+      setSlotId(data.slotId);
+      if (data.status === 'ready') setStage('ready');
+      else if (data.status === 'needs_reconciliation') {
+        throw new Error('Coder may have created the workspace but confirmation was interrupted. Contact support before retrying.');
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Workspace could not be created.');
       setStage('error');
+    }
+  };
+
+  const openPrivateIde = async () => {
+    if (!slotId || opening) return;
+    setOpening(true);
+    setError('');
+    const endpoint = `/api/user-workspace/customer/open/${encodeURIComponent(slotId)}`;
+    const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
+
+    try {
+      let response = await fetch(endpoint, { method: 'POST', cache: 'no-store', headers });
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        const data = await response.json().catch(() => null) as Setup | null;
+        if (response.ok && data?.url) {
+          window.location.assign(data.url);
+          return;
+        }
+        if (response.status !== 202 && !(response.ok && data?.status === 'stopped')) {
+          throw new Error(data?.error || 'Your private IDE could not be opened.');
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        response = await fetch(endpoint, { method: 'GET', cache: 'no-store', headers });
+      }
+      throw new Error('Coder is still starting your IDE. Try again in a moment.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Your private IDE could not be opened.');
+    } finally {
+      setOpening(false);
     }
   };
 
@@ -176,9 +244,9 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     </div>
   );
 
-  const launchReady = Boolean(options && !optionsLoading && !optionsError && name &&
-    (!options.images.length || ideImage) &&
-    (mode === 'blank' || (options.repositorySupported && verified && branch)));
+  const launchReady = Boolean(options && options.ready && !optionsLoading && !optionsError && name &&
+    options.machineProfiles.some((profile) => profile.value === machineProfile) &&
+    mode === 'blank');
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
@@ -197,9 +265,12 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
             <Rocket className="mx-auto mb-4 text-cyan-300" size={42} />
             <h2 className="text-2xl font-bold">Your Coder workspace is ready</h2>
             <p className="my-4 text-slate-300">{name}</p>
-            <a href={ideUrl} className="block rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold">Open real IDE →</a>
-            {sshCommand && <button type="button" className="mt-4 text-sm text-slate-300 underline" onClick={() => navigator.clipboard.writeText(sshCommand)}>Copy Coder SSH command</button>}
-            <button type="button" onClick={() => { setName(uniqueWorkspaceName(user.id)); setStage('form'); }} className="mt-5 block w-full text-sm text-slate-400 hover:text-white">Create another workspace</button>
+            <button type="button" onClick={() => void openPrivateIde()} disabled={opening}
+              className="block w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:opacity-50">
+              {opening ? 'Opening private IDE…' : 'Open private IDE →'}
+            </button>
+            {error && <p role="alert" className="mt-3 text-sm text-amber-200">{error}</p>}
+            <button type="button" onClick={() => { setName(uniqueWorkspaceName(user.id)); setSlotId(''); setStage('form'); }} className="mt-5 block w-full text-sm text-slate-400 hover:text-white">Create another workspace</button>
           </section>
         ) : stage === 'provisioning' ? (
           <section aria-live="polite" className="mx-auto max-w-lg rounded-3xl border border-violet-400/30 bg-[#101931]/90 p-9 text-center">
@@ -238,20 +309,39 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                   <p className="font-semibold">
                     {optionsLoading
                       ? 'Checking IDE availability…'
-                      : options
-                        ? 'Coder connected'
-                        : optionsErrorCode === 'CUSTOMER_IDE_PAUSED'
-                          ? 'Customer IDE access is paused'
+                      : options?.ready
+                        ? 'Coder connected · customer launch ready'
+                        : options
+                          ? 'Coder connected · setup still required'
                           : 'Coder launch options unavailable'}
                   </p>
                   {options && <p className="mt-1">Template: {options.templateName}</p>}
+                  {options?.blockers?.length ? (
+                    <ul className="mt-3 space-y-2 text-left text-xs">
+                      {options.blockers.map((blocker) => (
+                        <li key={blocker.code} className="rounded-lg border border-amber-300/20 bg-black/20 p-2">
+                          <span className="font-semibold">{blocker.message}</span>
+                          {blocker.action ? <span className="mt-1 block text-slate-300">{blocker.action}</span> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                   {optionsError && <p role="alert" className="mt-2">{optionsError} Your choices remain saved. Launch stays disabled.</p>}
-                  {!options && !optionsLoading && optionsErrorCode !== 'CUSTOMER_IDE_PAUSED' && (
+                  {!options && !optionsLoading && (
                     <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-3 w-full rounded-xl bg-amber-300 px-5 py-3 font-bold text-slate-950">
                       Retry IDE availability check
                     </button>
                   )}
                 </div>
+                {options && options.machineProfiles.length > 0 && (
+                  <div>
+                    <label htmlFor="machine-profile" className="mb-1 block text-sm font-medium">Machine profile</label>
+                    <select id="machine-profile" value={machineProfile} onChange={(event) => setMachineProfile(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">
+                      {options.machineProfiles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                    </select>
+                    <p className="mt-1 text-xs text-slate-400">Only operator-approved CPU/RAM profiles are available.</p>
+                  </div>
+                )}
                 {options && options.images.length > 0 && (
                   <div>
                     <label htmlFor="ide-image" className="mb-1 block text-sm font-medium">IDE environment</label>
@@ -272,8 +362,8 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                 </CoderAvailabilityIndicator>
                 {!launchReady && (
                   <p className="text-xs text-slate-300">
-                    {optionsErrorCode === 'CUSTOMER_IDE_PAUSED'
-                      ? 'No customer workspace will be created until the required billing, identity, isolation, and hard-stop safeguards are enabled.'
+                    {options?.blockers?.length
+                      ? 'Finish the readiness items above. The website will not create a workspace until the live checks pass.'
                       : 'Launch requires verified Coder options, a workspace name and supported settings.'}
                   </p>
                 )}

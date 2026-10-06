@@ -66,7 +66,8 @@ describe('WonderSpace customer creation layout', () => {
     expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
     const customerPage = read('apps/web/app/wonderspace/create/page.tsx');
     expect(customerPage).toContain('<CustomerWorkspaceLaunch');
-    expect(customerPage).toContain('CODER_CUSTOMER_DIRECT_ACCESS_VERIFIED');
+    expect(customerPage).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
+    expect(customerPage).toContain('CODER_WILDCARD_ACCESS_URL');
   });
 
   it('preserves the operator IDE path without letting customers inherit it', () => {
