@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { attachCoderWorkspace, coderApiRequest, coderServiceClient, getCoderSlot } from '@/lib/coder/workspace-slots.server';
-import { customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
+import { customerProvisioningGate } from '@/lib/coder/customer-provisioning.server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
