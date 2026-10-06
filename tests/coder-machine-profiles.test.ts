@@ -25,14 +25,12 @@ describe('WonderSpace compute metering and Coder IDE safeguards', () => {
     expect(provision).toContain("richParameterValues.push({ name: 'region', value: region })");
   });
 
-  it('charges elapsed compute by multiplier and against one monthly user pool', () => {
+  it('keeps legacy metering schema but disables runtime time-based enforcement', () => {
     const migration = read('supabase/migrations/20260927120517_coder_customer_metering_core_20260927.sql');
     const controller = read('apps/web/app/api/internal/coder/customer-usage/route.ts');
-    expect(migration).toContain('v_elapsed * v_row.compute_multiplier');
-    expect(migration).toContain('coder_customer_compute_monthly');
     expect(migration).toContain('meter_coder_customer_compute_v2');
-    expect(controller).toContain("db.rpc('meter_coder_customer_compute_v2'");
-    expect(controller).toContain('p_monthly_limit_credits: monthlyLimit');
+    expect(controller).toContain('timeLimits: false');
+    expect(controller).not.toContain("db.rpc('meter_coder_customer_compute_v2'");
   });
 
   it('defines one compute credit as one CPU-minute in canonical plan limits', () => {
