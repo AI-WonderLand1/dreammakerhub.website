@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
 
-type Setup = { slotId: string; status: string; allocated?: boolean; error?: string };
+type Setup = { slotId: string; status: string; allocated?: boolean; error?: string; url?: string };
 type Source = 'blank' | 'site' | 'github' | 'local';
 type ExistingProject = { id: string; name: string; tool?: string | null; type?: string | null };
 // Use the same persisted project routes as Dashboard. The legacy /projects/[id]
@@ -21,6 +21,9 @@ function siteProjectHref(project: ExistingProject): string {
 }
 
 const names = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
+const CUSTOMER_PROFILES = WORKSPACE_PROFILES.filter(
+  (profile) => profile.id === 'micro' || profile.id === 'standard',
+);
 
 export default function CustomerWorkspaceLaunch({ operatorPreview = false, embedded = false, provisioningEnabled = true }: { operatorPreview?: boolean; embedded?: boolean; provisioningEnabled?: boolean }) {
   const { user, session, loading: authLoading } = useAuth();
@@ -28,6 +31,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
   const [machineProfile, setMachineProfile] = useState<WorkspaceProfileId>('micro');
   const [setup, setSetup] = useState<Setup | null>(null);
   const [loading, setLoading] = useState(false);
+  const [opening, setOpening] = useState(false);
   const [error, setError] = useState('');
   const [source, setSource] = useState<Source>('blank');
   const [siteProjects, setSiteProjects] = useState<ExistingProject[]>([]);
@@ -85,7 +89,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!names.test(workspaceName)) { setError('Use a 3–32 character lowercase workspace name.'); return; }
-    if (source !== 'blank') { setError('Import is not active for private customer pods. Select Blank Linux or wait for an approved import template.'); return; }
+    if (source !== 'blank') { setError('Import is not active for private customer workspaces. Select Blank Linux or wait for an approved import template.'); return; }
     if (operatorPreview || !provisioningEnabled) { setError('Customer workspace creation is paused.'); return; }
     if (loading || setup) return;
     setLoading(true);
@@ -97,12 +101,56 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
       });
       const result = await response.json() as Setup;
       if (!response.ok) throw new Error(result.error || 'Workspace creation is paused.');
-      if (!result.slotId || result.status !== 'queued') throw new Error('The job queue did not confirm this request.');
+      if (!result.slotId || !['queued', 'ready', 'needs_reconciliation'].includes(result.status)) {
+        throw new Error('Workspace provisioning did not return a verified state.');
+      }
       setSetup(result);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Workspace creation failed.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openWorkspace = async () => {
+    if (!setup?.slotId || setup.status !== 'ready' || opening) return;
+    setOpening(true);
+    setError('');
+    try {
+      const headers = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : undefined;
+      const endpoint = `/api/user-workspace/customer/open/${encodeURIComponent(setup.slotId)}`;
+
+      let response = await fetch(endpoint, {
+        method: 'POST',
+        cache: 'no-store',
+        headers,
+      });
+
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        const result = await response.json().catch(() => null) as Setup | null;
+        if (response.ok && typeof result?.url === 'string') {
+          window.location.assign(result.url);
+          return;
+        }
+        if (!(response.status === 202 || (response.ok && result?.status === 'stopped'))) {
+          throw new Error(result?.error || 'Your IDE could not be opened.');
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        response = await fetch(endpoint, {
+          method: 'GET',
+          cache: 'no-store',
+          headers,
+        });
+      }
+
+      throw new Error('Coder is still starting your workspace. Retry Open private IDE in a moment.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Your IDE could not be opened.');
+    } finally {
+      setOpening(false);
     }
   };
 
@@ -140,9 +188,15 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
         <p className="mt-3 text-slate-300">{setup.status === 'needs_reconciliation'
           ? 'Coder may have created your workspace, but confirmation was interrupted. Contact support. Do not request a replacement.'
           : setup.status === 'ready'
-            ? 'Your private workspace is allocated and preserved. Opening is temporarily paused while the AI WONDERLAND-only IDE gateway is secured; you will not be sent to the Coder dashboard.'
-            : 'The runner is preparing your workspace. Do not submit a duplicate request.'}</p>
-        <Link className="mt-4 inline-block text-sm font-semibold text-cyan-200 underline" href="/dashboard?workspaceTab=code#projects">Manage workspaces</Link>
+            ? 'Your private Google Docker workspace is ready. It opens directly in your code-server IDE under your verified Coder identity.'
+            : 'Coder is preparing your workspace. Do not submit a duplicate request.'}</p>
+        {setup.status === 'ready' && (
+          <button type="button" onClick={() => void openWorkspace()} disabled={opening}
+            className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-bold text-slate-950 disabled:opacity-50">
+            {opening ? 'Opening IDE…' : 'Open private IDE'}
+          </button>
+        )}
+        <Link className="ml-4 mt-4 inline-block text-sm font-semibold text-cyan-200 underline" href="/dashboard?workspaceTab=code#projects">Manage workspaces</Link>
         {error && <p role="alert" className="mt-3 text-amber-200">{error}</p>}
       </section>
     ) : (
@@ -160,7 +214,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                 { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
                 { id: 'site', label: 'My AI WONDERLAND projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
                 { id: 'github', label: 'My GitHub repositories', description: 'Only repositories authorized by your own connected GitHub account, not public repository search.', status: 'Secure connection pending' },
-                { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside an AWS pod.', status: 'Upload not available' },
+                { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside a Google Docker workspace.', status: 'Upload not available' },
               ] as const).map((option) => (
                 <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
                   <input type="radio" name="workspaceSource" checked={source === option.id}
@@ -184,13 +238,13 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               {siteError && <p role="alert" className="text-sm text-amber-200">{siteError}</p>}
               {selectedSiteProject && <Link href={siteProjectHref(selectedSiteProject)}
                 className="inline-block text-sm font-semibold text-cyan-200 underline">Open selected project in its editor</Link>}
-              <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder pods. Browsing them does not allocate a workspace.</p>
+              <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder workspaces. Browsing them does not allocate a workspace.</p>
             </div>}
             {source === 'github' && <div role="status" className="mt-4 rounded-xl border border-amber-300/20 bg-slate-950 p-4 text-sm text-slate-300">
               GitHub repository import requires a separate, account-authorized GitHub connection with access limited to repositories you select. Signing in with GitHub alone does not confirm repository access. Public repository search and anonymous URL imports are disabled. No repository names, contents or tokens are displayed or transferred here.
             </div>}
             {source === 'local' && <div className="mt-4 rounded-xl border border-white/15 bg-slate-950 p-4 text-sm text-slate-300">
-              Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated AWS customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
+              Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated Google Docker customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
             </div>}
             {source !== 'blank' && <p role="status" className="mt-4 text-sm text-amber-200">This source can be inspected, but is not yet eligible for customer workspace creation. Nothing will be imported or charged.</p>}
           </fieldset>
@@ -203,13 +257,13 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
               <select id="customer-machine-profile" name="machineProfile" value={machineProfile}
                 onChange={(event) => setMachineProfile(event.target.value as WorkspaceProfileId)}
                 className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400">
-                {WORKSPACE_PROFILES.map((profile) => (
+                {CUSTOMER_PROFILES.map((profile) => (
                   <option key={profile.id} value={profile.id}>
                     {profile.name} · {profile.cpu} CPU / {profile.memoryGiB} GB · {profile.computeMultiplier}× compute
                   </option>
                 ))}
               </select>
-              <p className="mt-2 text-xs text-slate-400">Compute: 1 credit per CPU-minute. Persistent home disk: 10 GiB. Infrastructure assigns the AWS region; customers do not need to choose it.</p>
+              <p className="mt-2 text-xs text-slate-400">Compute is metered by profile. Persistent home data stays on the workspace's Docker volume. The Google host is operator-controlled; customers cannot choose or override the container image.</p>
             </div>
           </div>
           <details className="px-5 py-4 md:px-7">
