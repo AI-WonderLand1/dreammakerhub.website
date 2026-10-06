@@ -42,9 +42,10 @@ describe('Existing Coder workspace resume', () => {
     expect(page).not.toContain('/api/user-workspace/customer/open/');
     expect(page).not.toContain('/api/user-workspace/coder/');
     expect(page).not.toContain("fetch('/api/user-workspace/provision'");
-    expect(customerRoute).toContain('CUSTOMER_IDE_GATEWAY_REQUIRED');
-    expect(customerRoute).toContain('status: 503');
-    expect(customerRoute).not.toContain('coderApiRequest(');
-    expect(customerRoute).not.toContain("transition: 'start'");
+    expect(customerRoute).toContain('customerProvisioningGate()');
+    expect(customerRoute).toContain('verifiedCustomerCoderOwner(user)');
+    expect(customerRoute).toContain('CODER_WILDCARD_ACCESS_URL');
+    expect(customerRoute).toContain("transition: 'start'");
+    expect(customerRoute).not.toContain('/api/v2/users/me');
   });
 });
