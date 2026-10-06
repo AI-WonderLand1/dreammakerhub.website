@@ -65,21 +65,6 @@ export async function GET(request: Request) {
     });
   }
 
-  const requiredCompute = [
-    'CODER_FREE_COMPUTE_MINUTES',
-    'CODER_PRO_COMPUTE_MINUTES',
-    'CODER_TEAM_COMPUTE_MINUTES',
-  ].filter((key) => {
-    const value = Number(process.env[key]);
-    return !Number.isSafeInteger(value) || value < 1 || value > 1440;
-  });
-  if (requiredCompute.length) {
-    blockers.push({
-      code: 'COMPUTE_ALLOWANCE_REQUIRED',
-      message: 'Workspace compute allowances are not configured for every plan.',
-      action: `Configure: ${requiredCompute.join(', ')}.`,
-    });
-  }
 
   if (!process.env.CODER_OPERATOR_USER_ID) {
     blockers.push({
