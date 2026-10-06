@@ -71,7 +71,7 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(launch).toContain('Google Cloud hosts workspace compute for this Coder Docker template.');
     const optionsRoute = read('apps/web/app/api/user-workspace/options/route.ts');
     expect(optionsRoute).toContain("code: 'CODER_OIDC_REQUIRED'");
-    expect(optionsRoute).toContain("code: 'COMPUTE_CONTROLLER_REQUIRED'");
+    expect(optionsRoute).not.toContain("code: 'COMPUTE_CONTROLLER_REQUIRED'");
     expect(optionsRoute).toContain('customerProvisioningGate()');
     expect(optionsRoute).toContain('verifiedCustomerTemplate()');
     expect(optionsRoute).not.toContain('CUSTOMER_IDE_PAUSED');
