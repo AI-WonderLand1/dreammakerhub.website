@@ -20,7 +20,7 @@ describe('customer-only Coder provisioning', () => {
     expect(source).toContain('CODER_WORKSPACE_CREATION_ENABLED');
     expect(source).toContain('CODER_WILDCARD_ACCESS_URL');
     expect(source).toContain('verifiedCustomerTemplate()');
-    expect(source).toContain('assertFreshUsageController()');
+    expect(source).not.toContain('assertFreshUsageController');
     expect(identity).toContain("coderApiRequest('/api/v2/users/authmethods', 'GET')");
     expect(identity).not.toContain('CODER_SUPABASE_OIDC_VERIFIED');
   });

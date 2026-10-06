@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
-import { CostGateError, costGateResponse, verifiedCostPlan } from '@/lib/billing/cost-guard.server';
-import { PLAN_LIMITS } from '@/lib/billing/limits';
+import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import {
   coderApiConfig,
   coderApiRequest,
@@ -9,7 +8,6 @@ import {
   getCoderSlot,
 } from '@/lib/coder/workspace-slots.server';
 import {
-  assertFreshUsageController,
   customerProvisioningGate,
   verifiedCustomerTemplateId,
 } from '@/lib/coder/customer-provisioning.server';
@@ -116,48 +114,6 @@ function workspaceState(workspace: CoderWorkspace): string {
   return build || 'unknown';
 }
 
-async function assertRestartBudget(userId: string, slotId: string): Promise<void> {
-  const db = coderServiceClient();
-  const usage = await db.from('coder_customer_compute_usage')
-    .select('used_ms,max_ms')
-    .eq('slot_id', slotId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (usage.error || !usage.data ||
-      !Number.isFinite(Number(usage.data.used_ms)) ||
-      !Number.isFinite(Number(usage.data.max_ms))) {
-    throw new CostGateError('Workspace compute allowance could not be verified.');
-  }
-  if (Number(usage.data.used_ms) >= Number(usage.data.max_ms)) {
-    throw new CostGateError('This workspace has reached its compute allowance.', 402);
-  }
-
-  const plan = await verifiedCostPlan(userId);
-  const monthlyLimit = PLAN_LIMITS[plan].computeCreditsMonthly;
-  if (!Number.isSafeInteger(monthlyLimit) || monthlyLimit < 1) {
-    throw new CostGateError('Monthly workspace compute allowance is not configured.');
-  }
-
-  const now = new Date();
-  const periodStart = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
-  const monthly = await db.from('coder_customer_compute_monthly')
-    .select('used_weighted_ms')
-    .eq('user_id', userId)
-    .eq('period_start', periodStart)
-    .maybeSingle();
-
-  if (monthly.error) {
-    throw new CostGateError('Monthly workspace usage could not be verified.');
-  }
-  const usedCredits = monthly.data
-    ? Math.ceil(Number(monthly.data.used_weighted_ms || 0) / 60_000)
-    : 0;
-  if (!Number.isFinite(usedCredits) || usedCredits >= monthlyLimit) {
-    throw new CostGateError('Your monthly workspace compute allowance has been reached.', 402);
-  }
-}
-
 async function verifiedCustomerWorkspace(
   request: Request,
   slotId: string,
@@ -167,8 +123,6 @@ async function verifiedCustomerWorkspace(
 
   customerProvisioningGate();
   const templateId = await verifiedCustomerTemplateId();
-  await assertFreshUsageController();
-
   const slot = await getCoderSlot(user.id, slotId);
   if (!slot || slot.state !== 'provisioned' || !slot.workspace_id || !UUID.test(slot.workspace_id)) {
     throw new CostGateError('Workspace is not ready yet.', 409);
@@ -275,8 +229,6 @@ async function handle(request: Request, { params }: Context, start: boolean) {
     if (!start) {
       return NextResponse.json({ status: 'stopped' }, { headers: noStore });
     }
-
-    await assertRestartBudget(user.id, slotId);
 
     const started = await coderApiRequest(
       `/api/v2/workspaces/${encodeURIComponent(workspace.id!)}/builds`,

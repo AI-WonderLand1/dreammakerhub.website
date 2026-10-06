@@ -8,7 +8,6 @@ import {
   getCoderSlot,
 } from '@/lib/coder/workspace-slots.server';
 import {
-  assertFreshUsageController,
   customerProvisioningGate,
   verifiedCustomerTemplate,
 } from '@/lib/coder/customer-provisioning.server';
@@ -65,8 +64,6 @@ export async function provisionCustomerWorkspaceNow(
   customerProvisioningGate();
   const template = await verifiedCustomerTemplate();
   const templateId = template.id;
-  await assertFreshUsageController();
-
   const versionId = template.versionId;
   const operatorId = process.env.CODER_OPERATOR_USER_ID;
   if (!operatorId || !UUID.test(operatorId)) {

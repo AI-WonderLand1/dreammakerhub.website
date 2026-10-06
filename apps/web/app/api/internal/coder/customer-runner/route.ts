@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { attachCoderWorkspace, coderApiRequest, coderServiceClient, getCoderSlot } from '@/lib/coder/workspace-slots.server';
-import { assertFreshUsageController, customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
+import { customerProvisioningGate } from '@/lib/coder/customer-provisioning.server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -38,7 +38,6 @@ export async function POST(request: Request) {
     customerProvisioningGate();
     const template = await verifiedCustomerTemplate();
   const templateId = template.id;
-    await assertFreshUsageController();
     const versionId = process.env.CODER_CUSTOMER_TEMPLATE_VERSION_ID;
     const operatorId = process.env.CODER_OPERATOR_USER_ID;
     if (!versionId || !UUID.test(versionId) || !operatorId || !UUID.test(operatorId)) {

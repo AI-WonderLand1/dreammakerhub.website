@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
-import { assertFreshUsageController, customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
+import { customerProvisioningGate, verifiedCustomerTemplateId } from '@/lib/coder/customer-provisioning.server';
 import { listCoderSlots } from '@/lib/coder/workspace-slots.server';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,6 @@ export async function GET(request: Request) {
       try {
         customerProvisioningGate();
         await verifiedCustomerTemplateId();
-        await assertFreshUsageController();
         canOpen = true;
       } catch {
         canOpen = false;

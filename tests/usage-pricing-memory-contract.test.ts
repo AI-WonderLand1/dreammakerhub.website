@@ -21,12 +21,11 @@ describe('usage-first pricing contract', () => {
     expect(reserveBlock).toContain('PLAN_LIMITS[plan].workspacesLimit');
   });
 
-  it('uses the Stripe-verified subscription plan for customer IDE compute metering', () => {
+  it('keeps subscription verification while disabling customer IDE time metering', () => {
     const usage = read('apps/web/app/api/internal/coder/customer-usage/route.ts');
     const source = read('apps/web/lib/billing/cost-guard.server.ts');
-    expect(usage).toContain('await verifiedCostPlan(usage.user_id)');
-    expect(usage).not.toContain(".from('user_profiles')");
-    expect(usage).toContain('meter_coder_customer_compute_v2');
+    expect(usage).toContain('timeLimits: false');
+    expect(usage).not.toContain('meter_coder_customer_compute_v2');
     expect(source).toContain(".from('subscriptions')");
     expect(source).toContain("stripe_subscription_id.startsWith('sub_')");
   });
