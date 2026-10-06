@@ -8,7 +8,9 @@ export const APPROVED_IDE_PROFILE_IDS = ['linux', 'node'] as const;
 export type ApprovedIdeProfile = (typeof APPROVED_IDE_PROFILE_IDS)[number];
 export type CoderLaunchConfig = {
   templateId: string;
+  templateVersionId: string;
   templateName: string;
+  machineProfiles: CoderLaunchOption[];
   cpu: CoderLaunchOption[];
   memory: CoderLaunchOption[];
   images: CoderLaunchOption[];
@@ -107,7 +109,11 @@ export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
   // unknown image or fall back to a user-provided registry URL.
   if (byName('ide_image') && !images.length) throw new Error('Coder has no approved IDE image profiles.');
   return {
-    templateId: template.id, templateName: template.name, cpu, memory, images,
+    templateId: template.id,
+    templateVersionId: template.active_version_id!,
+    templateName: template.name,
+    machineProfiles: choices('machine_profile'),
+    cpu, memory, images,
     regions: choices('region'),
     repositorySupported: Boolean(byName('repo_url') && byName('repo_branch')),
     sshSupported: Boolean(byName('ssh_public_key')),
