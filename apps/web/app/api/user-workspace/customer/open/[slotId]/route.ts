@@ -26,6 +26,12 @@ type CoderUser = {
   status?: string;
   is_service_account?: boolean;
 };
+type CoderApp = {
+  slug?: string;
+  subdomain?: boolean;
+  subdomain_name?: string;
+};
+
 type CoderWorkspace = {
   id?: string;
   name?: string;
@@ -33,7 +39,15 @@ type CoderWorkspace = {
   owner_name?: string;
   template_id?: string;
   status?: string;
-  latest_build?: { status?: string; transition?: string };
+  latest_build?: {
+    status?: string;
+    transition?: string;
+    resources?: Array<{
+      agents?: Array<{
+        apps?: CoderApp[];
+      }>;
+    }>;
+  };
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -42,20 +56,49 @@ const noStore = {
   'Referrer-Policy': 'no-referrer',
 };
 
-function publicCoderOrigin(): string {
-  const configured = process.env.CODER_ACCESS_URL;
-  if (!configured) throw new CostGateError('The public Coder address is not configured.');
-  let url: URL;
-  try {
-    url = new URL(configured);
-  } catch {
-    throw new CostGateError('The public Coder address is invalid.');
+function codeServerUrl(workspace: CoderWorkspace): string | null {
+  const app = workspace.latest_build?.resources
+    ?.flatMap((resource) => resource.agents || [])
+    .flatMap((agent) => agent.apps || [])
+    .find((candidate) =>
+      candidate.slug === 'code-server' &&
+      candidate.subdomain === true &&
+      typeof candidate.subdomain_name === 'string' &&
+      candidate.subdomain_name.length > 0,
+    );
+
+  if (!app?.subdomain_name) return null;
+
+  const configured = process.env.CODER_WILDCARD_ACCESS_URL?.trim();
+  if (!configured) {
+    throw new CostGateError('Coder wildcard app routing is not configured.');
   }
-  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash ||
-      (url.pathname !== '/' && url.pathname !== '')) {
-    throw new CostGateError('The public Coder address must be an HTTPS origin.');
+
+  const wildcardHost = configured
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/$/, '');
+
+  if ((wildcardHost.match(/\*/g) || []).length !== 1 ||
+      wildcardHost.includes('/') ||
+      wildcardHost.includes('@')) {
+    throw new CostGateError('Coder wildcard app routing is invalid.');
   }
-  return url.origin;
+
+  const reported = app.subdomain_name.trim().toLowerCase();
+  if (!reported || reported.includes('/') || reported.includes('@') || reported.includes(':')) {
+    throw new CostGateError('Coder returned an invalid IDE app hostname.');
+  }
+
+  const hostname = reported.includes('.')
+    ? reported
+    : wildcardHost.replace('*', reported);
+
+  const [before, after] = wildcardHost.toLowerCase().split('*');
+  if (!hostname.startsWith(before) || !hostname.endsWith(after)) {
+    throw new CostGateError('Coder returned an IDE app outside the configured wildcard domain.');
+  }
+
+  return `https://${hostname}`;
 }
 
 function workspaceState(workspace: CoderWorkspace): string {
@@ -118,7 +161,7 @@ async function assertRestartBudget(userId: string, slotId: string): Promise<void
 async function verifiedCustomerWorkspace(
   request: Request,
   slotId: string,
-): Promise<{ workspace: CoderWorkspace; owner: CoderUser }> {
+): Promise<CoderWorkspace> {
   const user = await authenticatedSupabaseUser(request);
   if (!user) throw new CostGateError('Unauthorized', 401);
 
@@ -167,8 +210,9 @@ async function verifiedCustomerWorkspace(
     throw new CostGateError('Coder customer identity could not be verified.');
   }
 
+  const related = encodeURIComponent('latest_build.resources.agents.*');
   const workspaceResponse = await coderApiRequest(
-    `/api/v2/workspaces/${encodeURIComponent(slot.workspace_id)}`,
+    `/api/v2/workspaces/${encodeURIComponent(slot.workspace_id)}?include_related=${related}`,
     'GET',
   );
   const workspace = workspaceResponse.ok
@@ -182,7 +226,7 @@ async function verifiedCustomerWorkspace(
     throw new CostGateError('Coder workspace ownership or template does not match this account.');
   }
 
-  return { workspace, owner };
+  return workspace;
 }
 
 async function handle(request: Request, { params }: Context, start: boolean) {
@@ -197,12 +241,17 @@ async function handle(request: Request, { params }: Context, start: boolean) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: noStore });
     }
 
-    const { workspace, owner } = await verifiedCustomerWorkspace(request, slotId);
+    const workspace = await verifiedCustomerWorkspace(request, slotId);
     const state = workspaceState(workspace);
 
     if (state === 'running') {
-      const url =
-        `${publicCoderOrigin()}/@${encodeURIComponent(owner.username!)}/${encodeURIComponent(workspace.name!)}/apps/code-server/`;
+      const url = codeServerUrl(workspace);
+      if (!url) {
+        return NextResponse.json(
+          { status: 'starting', message: 'The IDE app is still registering.' },
+          { status: 202, headers: noStore },
+        );
+      }
       return NextResponse.json(
         { status: 'running', url, workspaceId: workspace.id },
         { headers: noStore },
