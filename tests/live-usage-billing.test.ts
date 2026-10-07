@@ -11,10 +11,19 @@ describe("canonical live usage and billing dashboard", () => {
     expect(page).toContain('fetch("/api/keys"');
     expect(page).toContain('fetchAuthenticatedProject("/api/projects")');
     expect(page).toContain('"postgres_changes"');
-    expect(page).toContain('table:"usage_logs"');
-    expect(page).toContain('table:"user_token_balances"');
+    expect(page).toContain('table:"billing_usage_realtime"');
+    expect(page).toContain('table:"subscriptions"');
+    expect(page).toContain('table:"projects"');
     expect(page).not.toContain('.from("usage_quotas")');
     expect(page).not.toContain('.from("user_api_tokens")');
+  });
+
+  it("uses a user-safe billing realtime mirror instead of exposing authoritative counters", () => {
+    const migration = read("supabase/migrations/202610071245_realtime_coder_billing.sql");
+    expect(migration).toContain("CREATE TABLE IF NOT EXISTS public.billing_usage_realtime");
+    expect(migration).toContain("Users read own billing realtime usage");
+    expect(migration).toContain("AFTER INSERT OR UPDATE OR DELETE ON public.billable_usage_counters");
+    expect(migration).toContain("supabase_realtime ADD TABLE public.billing_usage_realtime");
   });
 
   it("does not present parked full-IDE compute counters as active customer billing usage", () => {
