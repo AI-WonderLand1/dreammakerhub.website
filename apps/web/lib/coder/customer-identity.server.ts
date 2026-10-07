@@ -67,22 +67,28 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
     }
 
     const username = `aw-${user.id.replaceAll('-', '').slice(0, 16)}`;
+    const organizationId = process.env.CODER_ORG_ID;
+    if (!organizationId || !UUID.test(organizationId)) {
+      throw new CostGateError('Coder customer organization is not configured.');
+    }
+
     const created = await coderApiRequest('/api/v2/users', 'POST', {
       email: expectedEmail,
       username,
       login_type: 'oidc',
       user_status: 'active',
       service_account: false,
+      organization_ids: [organizationId],
     });
 
     if (!created.ok && created.status !== 409) {
-      const responseBody = await created.text().catch(() => '');
-      console.error('[coder-customer-enrollment] Coder rejected user creation', {
+      const failure = await created.json().catch(() => null) as { message?: unknown; detail?: unknown } | null;
+      console.error('[coder-customer-enrollment] create user failed', {
         status: created.status,
-        statusText: created.statusText,
-        body: responseBody.slice(0, 1000),
+        message: typeof failure?.message === 'string' ? failure.message : undefined,
+        detail: typeof failure?.detail === 'string' ? failure.detail : undefined,
       });
-      throw new CostGateError(`Coder user creation failed (${created.status}).`);
+      throw new CostGateError('Coder customer enrollment is unavailable.');
     }
 
     // Re-query even after a successful create. This also handles a concurrent
