@@ -14,7 +14,7 @@
     "@gltf-transform/extensions": "^4.0.0",
     "@gltf-transform/functions": "^4.5.0",
     "draco3dgltf": "^1.5.7",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "meshoptimizer": "^1.2.0"
   }
 }
