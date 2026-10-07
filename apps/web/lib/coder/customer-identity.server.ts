@@ -73,6 +73,51 @@ async function liveCustomerOrganizationId(): Promise<string> {
  * token's Coder account as a customer owner. Both sides must authenticate via
  * the same verified Supabase OIDC issuer, configured and tested separately.
  */
+
+async function bindVerifiedCoderIdentity(
+  user: User,
+  coderUser: CoderUser,
+  expectedEmail: string,
+): Promise<void> {
+  const db = coderServiceClient();
+  const { data: existing, error: lookupError } = await db.from('coder_customer_identities')
+    .select('coder_user_id,verified_email').eq('user_id', user.id).maybeSingle();
+  if (lookupError) throw new CostGateError('Customer identity mapping is unavailable.');
+
+  if (existing) {
+    if (existing.coder_user_id !== coderUser.id || existing.verified_email !== expectedEmail) {
+      throw new CostGateError('Coder account mapping changed. Contact support; no workspace was created.');
+    }
+    return;
+  }
+
+  const { error: insertError } = await db.from('coder_customer_identities').insert({
+    user_id: user.id,
+    coder_user_id: coderUser.id,
+    verified_email: expectedEmail,
+  });
+  if (insertError) throw new CostGateError('Could not bind a unique Coder identity.');
+}
+
+async function verifiedOperatorCoderOwner(user: User, expectedEmail: string): Promise<string> {
+  const operatorCoderId = process.env.CODER_OPERATOR_USER_ID?.trim();
+  if (!operatorCoderId || !UUID.test(operatorCoderId)) {
+    throw new CostGateError('The Coder operator identity is not configured.');
+  }
+
+  const response = await coderApiRequest('/api/v2/users/me', 'GET');
+  const actual = response.ok ? await response.json().catch(() => null) as CoderUser | null : null;
+  if (!actual || actual.id !== operatorCoderId ||
+      actual.email?.trim().toLowerCase() !== expectedEmail ||
+      actual.status !== 'active' || actual.is_service_account === true ||
+      !UUID.test(actual.id)) {
+    throw new CostGateError('The signed-in AI WONDERLAND admin does not match the configured Coder operator.');
+  }
+
+  await bindVerifiedCoderIdentity(user, actual, expectedEmail);
+  return actual.id;
+}
+
 export async function coderOidcEnabled(): Promise<boolean> {
   const response = await coderApiRequest('/api/v2/users/authmethods', 'GET');
   if (!response.ok) return false;
@@ -83,10 +128,10 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
   if (!user.email || !user.email_confirmed_at || !UUID.test(user.id)) {
     throw new CostGateError('A confirmed DreamMakerHub account is required.', 402);
   }
-  if (isConfiguredCoderOperator(user.id)) {
-    throw new CostGateError('The operator account cannot be enrolled as a customer.');
-  }
   const expectedEmail = user.email.trim().toLowerCase();
+  if (isConfiguredCoderOperator(user.id)) {
+    return verifiedOperatorCoderOwner(user, expectedEmail);
+  }
   if (!(await coderOidcEnabled())) {
     throw new CostGateError('Coder customer OIDC login is not enabled.');
   }
@@ -167,21 +212,6 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
       actual.login_type !== 'oidc' || actual.status !== 'active' || actual.is_service_account === true) {
     throw new CostGateError('Coder identity could not be independently verified.');
   }
-  const db = coderServiceClient();
-  const { data: existing, error: lookupError } = await db.from('coder_customer_identities')
-    .select('coder_user_id,verified_email').eq('user_id', user.id).maybeSingle();
-  if (lookupError) throw new CostGateError('Customer identity mapping is unavailable.');
-  if (existing) {
-    if (existing.coder_user_id !== actual.id || existing.verified_email !== expectedEmail) {
-      throw new CostGateError('Coder account mapping changed. Contact support; no workspace was created.');
-    }
-  } else {
-    // Unique constraints on both IDs stop concurrent requests from claiming an
-    // existing Coder identity. Never reassign someone else's owner ID.
-    const { error: insertError } = await db.from('coder_customer_identities').insert({
-      user_id: user.id, coder_user_id: actual.id, verified_email: expectedEmail,
-    });
-    if (insertError) throw new CostGateError('Could not bind a unique Coder customer identity.');
-  }
+  await bindVerifiedCoderIdentity(user, actual, expectedEmail);
   return actual.id;
 }
