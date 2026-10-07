@@ -17,6 +17,9 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain('organization.is_default === true');
     expect(identity).toContain("process.env.CODER_ORG_ID?.trim()");
     expect(identity).toContain('organizations.some((organization) => organization.id === configured)');
+    expect(identity).toContain("process.env.CODER_CUSTOMER_ORG_NAME?.trim().toLowerCase()");
+    expect(identity).toContain("organization.display_name?.trim().toLowerCase() === configuredName");
+    expect(identity).toContain('if (matches.length === 1) return matches[0].id');
     expect(identity).toContain('if (defaults.length === 1) return defaults[0].id');
     expect(identity).toContain('if (organizations.length === 1) return organizations[0].id');
     expect(identity).toContain("[coder-customer-enrollment] create user failed");
