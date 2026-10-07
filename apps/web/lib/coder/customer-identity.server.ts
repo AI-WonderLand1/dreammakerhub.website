@@ -76,7 +76,13 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
     });
 
     if (!created.ok && created.status !== 409) {
-      throw new CostGateError('Coder customer enrollment is unavailable.');
+      const responseBody = await created.text().catch(() => '');
+      console.error('[coder-customer-enrollment] Coder rejected user creation', {
+        status: created.status,
+        statusText: created.statusText,
+        body: responseBody.slice(0, 1000),
+      });
+      throw new CostGateError(`Coder user creation failed (${created.status}).`);
     }
 
     // Re-query even after a successful create. This also handles a concurrent
