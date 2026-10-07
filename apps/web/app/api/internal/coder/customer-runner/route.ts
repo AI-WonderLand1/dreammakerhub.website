@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { attachCoderWorkspace, coderApiRequest, coderServiceClient, getCoderSlot } from '@/lib/coder/workspace-slots.server';
 import { customerProvisioningGate } from '@/lib/coder/customer-provisioning.server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -62,10 +63,18 @@ export async function POST(request: Request) {
       }
       const ownerResponse = await coderApiRequest(`/api/v2/users/${encodeURIComponent(job.coder_user_id)}`, 'GET');
       const owner = ownerResponse.ok ? await ownerResponse.json().catch(() => null) : null;
-      if (!owner || owner.id !== job.coder_user_id || owner.status !== 'active' ||
-          owner.login_type !== 'oidc' || owner.is_service_account === true ||
-          owner.email?.trim().toLowerCase() !== identity.data.verified_email ||
-          owner.id === operatorId) throw new Error('Coder owner could not be reverified');
+      const operatorWorkspace = isConfiguredCoderOperator(job.user_id);
+      const ownerMatchesAccount = Boolean(
+        owner &&
+        owner.id === job.coder_user_id &&
+        owner.status === 'active' &&
+        owner.is_service_account !== true &&
+        owner.email?.trim().toLowerCase() === identity.data.verified_email
+      );
+      const ownerRoleIsSafe = operatorWorkspace
+        ? owner?.id === operatorId
+        : owner?.login_type === 'oidc' && owner?.id !== operatorId;
+      if (!ownerMatchesAccount || !ownerRoleIsSafe) throw new Error('Coder owner could not be reverified');
       const path = `/api/v2/users/${encodeURIComponent(job.coder_user_id)}/workspace/${encodeURIComponent(slot.workspace_name)}`;
       const existing = await coderApiRequest(path, 'GET');
       let workspace: RemoteWorkspace;

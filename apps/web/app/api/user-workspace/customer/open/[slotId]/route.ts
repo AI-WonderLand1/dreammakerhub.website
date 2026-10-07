@@ -12,6 +12,7 @@ import {
   verifiedCustomerTemplateId,
 } from '@/lib/coder/customer-provisioning.server';
 import { verifiedCustomerCoderOwner } from '@/lib/coder/customer-identity.server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -163,8 +164,10 @@ async function verifiedCustomerWorkspace(
 
   const coderUserId = await verifiedCustomerCoderOwner(user);
   const operatorId = process.env.CODER_OPERATOR_USER_ID;
-  if (!operatorId || !UUID.test(operatorId) || coderUserId === operatorId) {
-    throw new CostGateError('Customer and operator Coder identities are not safely separated.');
+  const operator = isConfiguredCoderOperator(user.id);
+  if (!operatorId || !UUID.test(operatorId) ||
+      (operator ? coderUserId !== operatorId : coderUserId === operatorId)) {
+    throw new CostGateError('Coder identity does not match the signed-in AI WONDERLAND account role.');
   }
 
   const db = coderServiceClient();
@@ -188,7 +191,7 @@ async function verifiedCustomerWorkspace(
     : null;
   const expectedEmail = user.email?.trim().toLowerCase();
   if (!owner?.id || owner.id !== coderUserId || !owner.username ||
-      owner.login_type !== 'oidc' || owner.status !== 'active' ||
+      (!operator && owner.login_type !== 'oidc') || owner.status !== 'active' ||
       owner.is_service_account === true ||
       !expectedEmail || owner.email?.trim().toLowerCase() !== expectedEmail) {
     throw new CostGateError('Coder customer identity could not be verified.');
