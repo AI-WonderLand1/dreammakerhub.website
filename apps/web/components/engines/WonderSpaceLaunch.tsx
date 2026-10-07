@@ -304,7 +304,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
 
       if (response.status === 202) {
         setSavedWorkspaces((current) => current.map((item) => (
-          item.id === workspace.id ? { ...item, state: 'deleting' } : item
+          item.id === workspace.id ? { ...item, state: 'deleting' as const } : item
         )));
       }
 
