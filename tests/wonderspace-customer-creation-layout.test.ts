@@ -55,18 +55,17 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).not.toContain('coder.dreammakerhub.website');
   });
 
-  it('renders the gated customer form on its dedicated route without changing the operator gate', () => {
+  it('retires the duplicate creation page into the canonical project IDE flow', () => {
     expect(form).toContain('const provisioningPaused = operatorPreview || !provisioningEnabled');
-    expect(form).toContain("disabled={loading || provisioningPaused || (source === 'site' && !siteProjectId)}");
-    expect(form).toContain('if (operatorPreview || !provisioningEnabled)');
     expect(gate).toContain('function BrowserIdeEntry()');
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
     expect(gate).not.toContain('CustomerWorkspaceLaunch');
     expect(gate).toContain('href="/dashboard?workspaceTab=code#projects"');
     const customerPage = read('apps/web/app/wonderspace/create/page.tsx');
-    expect(customerPage).toContain('<CustomerWorkspaceLaunch');
-    expect(customerPage).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
-    expect(customerPage).toContain('CODER_WILDCARD_ACCESS_URL');
+    expect(customerPage).toContain('normalizeWonderSpaceProjectId');
+    expect(customerPage).toContain('wonderSpaceProjectIde');
+    expect(customerPage).toContain('WONDERSPACE_CODE_HOME');
+    expect(customerPage).not.toContain('<CustomerWorkspaceLaunch');
   });
 
   it('preserves the operator IDE path without letting customers inherit it', () => {
