@@ -21,6 +21,8 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).toContain('CODER_WILDCARD_ACCESS_URL');
     expect(route).toContain('CODER_ACCESS_URL');
     expect(route).toContain('/apps/code-server/');
+    expect(route).toContain("/api/v2/workspaces/");
+    expect(route).not.toContain("include_related=");
     expect(route).toContain('workspace.owner_name && workspace.name && agent.name');
     expect(route).toContain('export async function POST');
     expect(route).not.toContain('/api/v2/users/me');

@@ -194,9 +194,11 @@ async function verifiedCustomerWorkspace(
     throw new CostGateError('Coder customer identity could not be verified.');
   }
 
-  const related = encodeURIComponent('latest_build.resources.agents.*');
+  // Omit include_related so Coder returns the complete workspace record,
+  // including agent app metadata. Some Coder versions do not fully expand
+  // nested app fields through the filtered wildcard relation query.
   const workspaceResponse = await coderApiRequest(
-    `/api/v2/workspaces/${encodeURIComponent(slot.workspace_id)}?include_related=${related}`,
+    `/api/v2/workspaces/${encodeURIComponent(slot.workspace_id)}`,
     'GET',
   );
   const workspace = workspaceResponse.ok
