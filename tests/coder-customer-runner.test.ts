@@ -15,11 +15,12 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain("organization_ids: [organizationId]");
     expect(identity).toContain("process.env.CODER_ORG_ID");
     expect(identity).toContain("[coder-customer-enrollment] create user failed");
-    expect(identity).toContain('CoderOidcBootstrapRequired');
     expect(identity).toContain("created.status === 401 || created.status === 403");
-    expect(identity).toContain("url.pathname = '/login'");
     expect(identity).toContain('coderUser.id === operatorCoderId');
     expect(identity).toContain(".from('coder_customer_identities')");
+    expect(identity).not.toContain('CoderOidcBootstrapRequired');
+    expect(identity).not.toContain("url.pathname = '/login'");
+    expect(identity).not.toContain('Connect Coder account');
     expect(identity).not.toContain('Sign in to Coder with the same verified account before requesting an IDE.');
   });
 
