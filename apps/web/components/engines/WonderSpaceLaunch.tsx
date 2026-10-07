@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import CoderAvailabilityIndicator from './CoderAvailabilityIndicator';
-import { Cloud, Code2, GitBranch, Github, Rocket, Sparkles } from 'lucide-react';
+import { Cloud, Code2, FolderGit2, Rocket, Sparkles } from 'lucide-react';
 
 type Choice = { label: string; value: string };
 type LaunchBlocker = { code: string; message: string; action?: string; href?: string };
@@ -23,7 +23,6 @@ type LaunchOptions = {
   blockers: LaunchBlocker[];
 };
 type Setup = { slotId?: string; status?: string; error?: string; url?: string };
-type PublicRepo = { fullName: string; defaultBranch: string; branches: string[] };
 type Stage = 'form' | 'provisioning' | 'ready' | 'error';
 
 function uniqueWorkspaceName(userId: string): string {
@@ -36,13 +35,8 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [optionsError, setOptionsError] = useState('');
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
-  const [mode, setMode] = useState<'blank' | 'repo'>('blank');
+  const [mode, setMode] = useState<'blank' | 'site'>('site');
   const [name, setName] = useState('');
-  const [repository, setRepository] = useState('');
-  const [verified, setVerified] = useState<PublicRepo | null>(null);
-  const [repoLoading, setRepoLoading] = useState(false);
-  const [repoError, setRepoError] = useState('');
-  const [branch, setBranch] = useState('');
   const [ideImage, setIdeImage] = useState('');
   const [region, setRegion] = useState('');
   const [machineProfile, setMachineProfile] = useState('micro');
@@ -97,31 +91,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     return () => controller.abort();
   }, [user?.id, session?.access_token, retryCount]);
 
-  const changeRepo = (value: string) => {
-    setRepository(value);
-    setVerified(null);
-    setBranch('');
-    setRepoError('');
-  };
-
-  const checkRepository = async () => {
-    if (!repository.trim()) { setRepoError('Enter a public GitHub repository.'); return; }
-    setRepoLoading(true);
-    setRepoError('');
-    setVerified(null);
-    try {
-      const response = await fetch(`/api/user-workspace/repository?repo=${encodeURIComponent(repository.trim())}`, { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Repository unavailable.');
-      const repo = data as PublicRepo;
-      setVerified(repo);
-      setBranch(repo.defaultBranch);
-    } catch (cause) {
-      setRepoError(cause instanceof Error ? cause.message : 'Unable to load repository.');
-    } finally {
-      setRepoLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (!slotId || stage !== 'provisioning') return;
@@ -172,8 +141,9 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       setStage('error');
       return;
     }
-    if (mode !== 'blank') {
-      setRepoError('Repository import is not enabled for the first customer rollout. Create a blank workspace, then clone from inside your IDE.');
+    if (mode === 'site' && !projectId) {
+      setError('Choose one of your AI WONDERLAND projects before opening the IDE.');
+      setStage('error');
       return;
     }
     if (!options.machineProfiles.some((profile) => profile.value === machineProfile)) {
@@ -191,7 +161,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ workspaceName: name, machineProfile }),
+        body: JSON.stringify({ workspaceName: name, machineProfile, projectId: mode === 'site' ? projectId : null }),
       });
       const data = await response.json().catch(() => null) as Setup | null;
       if (!response.ok) throw new Error(data?.error || 'Workspace could not be created.');
@@ -246,7 +216,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
 
   const launchReady = Boolean(options && options.ready && !optionsLoading && !optionsError && name &&
     options.machineProfiles.some((profile) => profile.value === machineProfile) &&
-    mode === 'blank');
+    (mode === 'blank' || (mode === 'site' && projectId)));
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
@@ -257,7 +227,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-300/30 bg-violet-500/20"><Sparkles size={31} /></div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-cyan-200">AI WONDERLAND · Cloud IDE</p>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">WonderSpace launchpad</h1>
-          <p className="mx-auto mt-3 max-w-xl text-slate-300">Choose an IDE environment and project on the same page. Coder prepares your private workspace when access is enabled.</p>
+          <p className="mx-auto mt-3 max-w-xl text-slate-300">Open your AI WONDERLAND project in a private Coder workspace. External GitHub repositories are not part of this IDE flow.</p>
           <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}/files` : "/dashboard?workspaceTab=code#projects"} className="mt-3 inline-block text-sm text-cyan-200 underline">{projectId ? "Open project files" : "Choose a project"}</Link>
         </div>
         {stage === 'ready' ? (
@@ -283,22 +253,30 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
             <section className="rounded-3xl border border-violet-300/20 bg-[#11182e]/90 p-6">
               <h2 className="mb-5 text-xl font-semibold">1. Choose your project</h2>
               <div className="grid gap-3">
-                <button type="button" aria-pressed={mode === 'blank'} onClick={() => { setMode('blank'); setRepoError(''); }} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'blank' ? 'border-cyan-400 bg-cyan-400/15' : 'border-white/20 bg-white/5'}`}>
-                  <Code2 className="text-cyan-300" /><span className="flex-1"><strong className="block">Blank workspace</strong><span className="text-sm text-slate-300">Start with an empty project.</span></span>
+                <button type="button" aria-pressed={mode === 'site'} onClick={() => { setMode('site'); setError(''); }} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'site' ? 'border-violet-400 bg-violet-400/15' : 'border-white/20 bg-white/5'}`}>
+                  <FolderGit2 className="text-violet-300" />
+                  <span className="flex-1">
+                    <strong className="block">AI WONDERLAND project repository</strong>
+                    <span className="text-sm text-slate-300">
+                      {projectId ? 'Use this website project as the source for your private IDE.' : 'Choose one of your AI WONDERLAND projects first.'}
+                    </span>
+                  </span>
                 </button>
-                <button type="button" aria-pressed={mode === 'repo'} onClick={() => setMode('repo')} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'repo' ? 'border-violet-400 bg-violet-400/15' : 'border-white/20 bg-white/5'}`}>
-                  <Github className="text-violet-300" /><span className="flex-1"><strong className="block">Public GitHub repository</strong><span className="text-sm text-slate-300">Choose a repository and branch. WonderSpace clones it and opens it in the IDE automatically.</span></span>
+                <button type="button" aria-pressed={mode === 'blank'} onClick={() => { setMode('blank'); setError(''); }} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'blank' ? 'border-cyan-400 bg-cyan-400/15' : 'border-white/20 bg-white/5'}`}>
+                  <Code2 className="text-cyan-300" /><span className="flex-1"><strong className="block">Blank workspace</strong><span className="text-sm text-slate-300">Start with an empty private workspace.</span></span>
                 </button>
               </div>
-              {mode === 'repo' && (
-                <div className="mt-6 space-y-3">
-                  <label htmlFor="repository" className="block text-sm font-medium">Public repository</label>
-                  <input id="repository" value={repository} onChange={(event) => changeRepo(event.target.value)} placeholder="owner/repository" autoComplete="off" className="w-full rounded-xl border border-white/20 bg-slate-900 p-3" />
-                  <button type="button" disabled={repoLoading || !repository.trim()} onClick={checkRepository} className="w-full rounded-xl border border-cyan-400/60 px-4 py-3 text-sm font-semibold disabled:opacity-50">{repoLoading ? 'Checking GitHub…' : 'Load repository branches'}</button>
-                  {verified && <><p className="text-sm text-emerald-300">Public repository verified: {verified.fullName}</p><label htmlFor="branch" className="flex items-center gap-2 text-sm"><GitBranch size={15} /> Branch</label><select id="branch" value={branch} onChange={(event) => setBranch(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{verified.branches.map((value) => <option key={value} value={value}>{value}</option>)}</select></>}
-                  {repoError && <p role="alert" className="text-sm text-amber-200">{repoError}</p>}
-                  {options && !options.repositorySupported && <p role="status" className="text-sm text-amber-200">Repository launch requires a published Coder template with repository support.</p>}
-                  <p className="text-xs text-slate-400">The selected public repository is cloned into your persistent workspace and opened automatically. Private repositories need a user-authorized GitHub connection; no shared server credentials are sent to pods.</p>
+              {mode === 'site' && (
+                <div className="mt-6 rounded-xl border border-cyan-300/20 bg-slate-950/60 p-4">
+                  <p className="text-sm font-semibold text-cyan-200">Website repository only</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    WonderSpace uses the selected AI WONDERLAND project ID. GitHub repositories, GitHub tokens, and external repository URLs are not accepted by this IDE launcher.
+                  </p>
+                  {!projectId && (
+                    <Link href="/dashboard?workspaceTab=code#projects" className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">
+                      Choose a project
+                    </Link>
+                  )}
                 </div>
               )}
             </section>
