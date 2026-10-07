@@ -52,8 +52,8 @@ describe('Coder API remains the WonderSpace engine', () => {
   });
   it('uses first-party AI WONDERLAND projects instead of GitHub repositories in the customer IDE launcher', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
-    expect(launch).toContain("aria-pressed={mode === 'site'}");
-    expect(launch).toContain('AI WONDERLAND project repository');
+    expect(launch).toContain('id="workspace-source"');
+    expect(launch).toContain('Current AI WONDERLAND project');
     expect(launch).toContain("projectId: mode === 'site' ? projectId : null");
     expect(launch).not.toContain('Public GitHub repository');
     expect(launch).not.toContain('Checking GitHub');
@@ -62,13 +62,13 @@ describe('Coder API remains the WonderSpace engine', () => {
   it('keeps the form visible, retries outages, and shows concrete live readiness blockers', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(launch).toContain('Coder connected · setup still required');
-    expect(launch).toContain('Retry IDE availability check');
+    expect(launch).toContain('Retry');
     expect(launch).toContain('setRetryCount((count) => count + 1)');
     expect(launch).toContain('options.blockers.map');
-    expect(launch).toContain('aria-pressed={mode === \'blank\'}');
+    expect(launch).toContain('<option value="blank">Blank workspace</option>');
     expect(launch).toContain('disabled={!launchReady}');
     expect(launch).toContain('options.ready');
-    expect(launch).toContain('Google Cloud hosts workspace compute for this Coder Docker template.');
+    expect(launch).toContain('Existing Coder cluster');
     const optionsRoute = read('apps/web/app/api/user-workspace/options/route.ts');
     expect(optionsRoute).toContain("code: 'CODER_OIDC_REQUIRED'");
     expect(optionsRoute).not.toContain("code: 'COMPUTE_CONTROLLER_REQUIRED'");

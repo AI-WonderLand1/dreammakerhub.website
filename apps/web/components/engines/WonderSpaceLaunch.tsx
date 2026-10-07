@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import CoderAvailabilityIndicator from './CoderAvailabilityIndicator';
-import { Cloud, Code2, FolderGit2, Rocket, Sparkles } from 'lucide-react';
+import { Cloud, Rocket, Sparkles } from 'lucide-react';
 
 type Choice = { label: string; value: string };
 type LaunchBlocker = { code: string; message: string; action?: string; href?: string };
@@ -50,8 +50,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [retryCount, setRetryCount] = useState(0);
   const [mode, setMode] = useState<'blank' | 'site'>('site');
   const [name, setName] = useState('');
-  const [ideImage, setIdeImage] = useState('');
-  const [region, setRegion] = useState('');
   const [machineProfile, setMachineProfile] = useState('micro');
   const [slotId, setSlotId] = useState('');
   const [stage, setStage] = useState<Stage>('form');
@@ -93,8 +91,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
           throw new Error('Coder has not returned usable workspace options.');
         }
         setOptions(data);
-        setIdeImage(data.images[0]?.value || '');
-        setRegion(data.regions[0]?.value || '');
         setMachineProfile(data.machineProfiles.find((profile) => profile.value === 'micro')?.value || data.machineProfiles[0]?.value || 'micro');
         setOptionsError('');
       })
@@ -275,7 +271,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-300/30 bg-violet-500/20"><Sparkles size={31} /></div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-cyan-200">AI WONDERLAND · Cloud IDE</p>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">WonderSpace launchpad</h1>
-          <p className="mx-auto mt-3 max-w-xl text-slate-300">Open your AI WONDERLAND project in a private Coder workspace. External GitHub repositories are not part of this IDE flow.</p>
+          <p className="mx-auto mt-3 max-w-xl text-slate-300">Create or reopen a private WonderSpace IDE for this project.</p>
           <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}/files` : "/dashboard?workspaceTab=code#projects"} className="mt-3 inline-block text-sm text-cyan-200 underline">{projectId ? "Open project files" : "Choose a project"}</Link>
         </div>
         {stage === 'ready' ? (
@@ -352,51 +348,24 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
               )}
             </section>
 
-            <form onSubmit={provision} className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-            <section className="rounded-3xl border border-violet-300/20 bg-[#11182e]/90 p-6">
-              <h2 className="mb-5 text-xl font-semibold">1. Choose your project</h2>
-              <div className="grid gap-3">
-                <button type="button" aria-pressed={mode === 'site'} onClick={() => { setMode('site'); setError(''); }} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'site' ? 'border-violet-400 bg-violet-400/15' : 'border-white/20 bg-white/5'}`}>
-                  <FolderGit2 className="text-violet-300" />
-                  <span className="flex-1">
-                    <strong className="block">AI WONDERLAND project repository</strong>
-                    <span className="text-sm text-slate-300">
-                      {projectId ? 'Use this website project as the source for your private IDE.' : 'Choose one of your AI WONDERLAND projects first.'}
-                    </span>
-                  </span>
-                </button>
-                <button type="button" aria-pressed={mode === 'blank'} onClick={() => { setMode('blank'); setError(''); }} className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left ${mode === 'blank' ? 'border-cyan-400 bg-cyan-400/15' : 'border-white/20 bg-white/5'}`}>
-                  <Code2 className="text-cyan-300" /><span className="flex-1"><strong className="block">Blank workspace</strong><span className="text-sm text-slate-300">Start with an empty private workspace.</span></span>
-                </button>
+            <form onSubmit={provision} className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#11182e]/95 shadow-2xl">
+              <div className="border-b border-white/10 px-6 py-5">
+                <h2 className="text-xl font-semibold">Create a WonderSpace IDE</h2>
+                <p className="mt-1 text-sm text-slate-400">Choose your source and machine, then create the workspace.</p>
               </div>
-              {mode === 'site' && (
-                <div className="mt-6 rounded-xl border border-cyan-300/20 bg-slate-950/60 p-4">
-                  <p className="text-sm font-semibold text-cyan-200">Website repository only</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    WonderSpace uses the selected AI WONDERLAND project ID. GitHub repositories, GitHub tokens, and external repository URLs are not accepted by this IDE launcher.
-                  </p>
-                  {!projectId && (
-                    <Link href="/dashboard?workspaceTab=code#projects" className="mt-3 inline-block text-sm font-semibold text-cyan-200 underline">
-                      Choose a project
-                    </Link>
-                  )}
-                </div>
-              )}
-            </section>
-            <section className="rounded-3xl border border-cyan-300/20 bg-[#11182e]/90 p-6">
-              <h2 className="mb-5 text-xl font-semibold">2. Choose your IDE</h2>
-              <div className="space-y-5">
+
+              <div className="space-y-6 p-6">
                 <div aria-live="polite" className={`rounded-xl border p-4 text-sm ${options ? 'border-emerald-400/30 bg-emerald-950/20' : 'border-amber-400/40 bg-amber-950/30'}`}>
                   <p className="font-semibold">
                     {optionsLoading
                       ? 'Checking IDE availability…'
                       : options?.ready
-                        ? 'Coder connected · customer launch ready'
+                        ? 'Coder connected · ready to create'
                         : options
                           ? 'Coder connected · setup still required'
                           : 'Coder launch options unavailable'}
                   </p>
-                  {options && <p className="mt-1">Template: {options.templateName}</p>}
+                  {options && <p className="mt-1 text-slate-300">Configuration: {options.templateName}</p>}
                   {options?.blockers?.length ? (
                     <ul className="mt-3 space-y-2 text-left text-xs">
                       {options.blockers.map((blocker) => (
@@ -407,55 +376,98 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                       ))}
                     </ul>
                   ) : null}
-                  {optionsError && <p role="alert" className="mt-2">{optionsError} Your choices remain saved. Launch stays disabled.</p>}
+                  {optionsError && <p role="alert" className="mt-2">{optionsError} Launch stays disabled.</p>}
                   {!options && !optionsLoading && (
-                    <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-3 w-full rounded-xl bg-amber-300 px-5 py-3 font-bold text-slate-950">
-                      Retry IDE availability check
+                    <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-3 rounded-lg bg-amber-300 px-4 py-2 font-bold text-slate-950">
+                      Retry
                     </button>
                   )}
                 </div>
+
+                <div className="grid gap-2">
+                  <label htmlFor="workspace-source" className="text-sm font-semibold">Repository</label>
+                  <select
+                    id="workspace-source"
+                    value={mode}
+                    onChange={(event) => { setMode(event.target.value as 'site' | 'blank'); setError(''); }}
+                    className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3"
+                  >
+                    <option value="site" disabled={!projectId}>Current AI WONDERLAND project</option>
+                    <option value="blank">Blank workspace</option>
+                  </select>
+                  <p className="text-xs text-slate-400">
+                    {mode === 'site'
+                      ? projectId
+                        ? 'This project will be used as the workspace source.'
+                        : 'Open the IDE from a project page to use a project repository.'
+                      : 'Start with an empty private workspace.'}
+                  </p>
+                </div>
+
                 {options && options.machineProfiles.length > 0 && (
-                  <div>
-                    <label htmlFor="machine-profile" className="mb-1 block text-sm font-medium">Machine profile</label>
-                    <select id="machine-profile" value={machineProfile} onChange={(event) => setMachineProfile(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">
+                  <div className="grid gap-2">
+                    <label htmlFor="machine-profile" className="text-sm font-semibold">Machine type</label>
+                    <select
+                      id="machine-profile"
+                      value={machineProfile}
+                      onChange={(event) => setMachineProfile(event.target.value)}
+                      className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3"
+                    >
                       {options.machineProfiles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
-                    <p className="mt-1 text-xs text-slate-400">Only operator-approved CPU/RAM profiles are available.</p>
                   </div>
                 )}
-                {options && options.images.length > 0 && (
-                  <div>
-                    <label htmlFor="ide-image" className="mb-1 block text-sm font-medium">IDE environment</label>
-                    <select id="ide-image" value={ideImage} onChange={(event) => setIdeImage(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">
-                      {options.images.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                    </select>
-                    <p className="mt-1 text-xs text-slate-400">Only administrator-approved images. Windows desktops require a separate Windows host.</p>
-                  </div>
-                )}
-                <div><label htmlFor="workspace-name" className="mb-1 block text-sm font-medium">Workspace name</label><input id="workspace-name" required minLength={3} maxLength={32} pattern="[a-z0-9][a-z0-9\-]{1,30}[a-z0-9]" value={name} onChange={(event) => setName(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3" /></div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
-                  Google Cloud hosts workspace compute for this Coder Docker template. Choose a published workspace region when one is available.
+
+                <div className="grid gap-2">
+                  <label htmlFor="workspace-name" className="text-sm font-semibold">Workspace name</label>
+                  <input
+                    id="workspace-name"
+                    required
+                    minLength={3}
+                    maxLength={32}
+                    pattern="[a-z0-9][a-z0-9\-]{1,30}[a-z0-9]"
+                    value={name}
+                    onChange={(event) => setName(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                    className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3"
+                  />
                 </div>
-                {options && (options.regions.length ? <div><label htmlFor="workspace-region" className="mb-1 block text-sm">Region</label><select id="workspace-region" value={region} onChange={(event) => setRegion(event.target.value)} className="w-full rounded-xl border border-white/20 bg-slate-900 p-3">{options.regions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div> : <p className="text-xs text-slate-400">Location is determined by the existing Coder cluster.</p>)}
-                {!options && <p className="text-xs text-slate-300">Workspace location and availability come from the published Coder Google template; no workspace is created while disconnected.</p>}
+
+                <div className="grid gap-4 rounded-xl border border-white/10 bg-black/10 p-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Configuration</p>
+                    <p className="mt-1 text-sm font-medium">{options?.templateName || 'Loading…'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Location</p>
+                    <p className="mt-1 text-sm font-medium">Existing Coder cluster</p>
+                  </div>
+                </div>
+
                 <CoderAvailabilityIndicator>
-                  <button type="submit" disabled={!launchReady} className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"><Rocket className="mr-2 inline" size={18} /> Create my private IDE</button>
+                  <button
+                    type="submit"
+                    disabled={!launchReady}
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Rocket className="mr-2 inline" size={18} /> Create IDE
+                  </button>
                 </CoderAvailabilityIndicator>
+
                 {!launchReady && (
                   <p className="text-xs text-slate-300">
                     {options?.blockers?.length
-                      ? 'Finish the readiness items above. The website will not create a workspace until the live checks pass.'
-                      : 'Launch requires verified Coder options, a workspace name and supported settings.'}
+                      ? 'Finish the readiness items above before creating the IDE.'
+                      : 'Choose a valid source, machine type and workspace name.'}
+                  </p>
+                )}
+
+                {stage === 'error' && (
+                  <p role="alert" className="rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">
+                    {error}
                   </p>
                 )}
               </div>
-              {stage === 'error' && (
-                <p role="alert" className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">
-                  {error}
-                </p>
-              )}
-            </section>
-          </form>
+            </form>
           </>
         )}
       </div>
