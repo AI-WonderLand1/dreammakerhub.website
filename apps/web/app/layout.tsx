@@ -112,11 +112,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1795317998853003"
-          crossOrigin="anonymous"
-        />
         <Script src="/correctai-monitor.js" strategy="afterInteractive" />
       </head>
       <body className="bg-background text-foreground antialiased">
