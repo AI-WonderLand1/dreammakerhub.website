@@ -10,8 +10,9 @@ export const metadata = {
 export default async function AccountSettingsPage() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
+  const canonicalAdminId = process.env.ADMIN_USER_ID?.trim();
   const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  const isAdmin = !error && Boolean(user && adminIds.includes(user.id));
+  const isAdmin = !error && Boolean(user && (user.id === canonicalAdminId || adminIds.includes(user.id)));
 
   return (
     <section className="space-y-6">
