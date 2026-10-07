@@ -13,7 +13,12 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain("login_type: 'oidc'");
     expect(identity).toContain("service_account: false");
     expect(identity).toContain("organization_ids: [organizationId]");
-    expect(identity).toContain("process.env.CODER_ORG_ID");
+    expect(identity).toContain("coderApiRequest('/api/v2/organizations', 'GET')");
+    expect(identity).toContain('organization.is_default === true');
+    expect(identity).toContain("process.env.CODER_ORG_ID?.trim()");
+    expect(identity).toContain('organizations.some((organization) => organization.id === configured)');
+    expect(identity).toContain('if (defaults.length === 1) return defaults[0].id');
+    expect(identity).toContain('if (organizations.length === 1) return organizations[0].id');
     expect(identity).toContain("[coder-customer-enrollment] create user failed");
     expect(identity).toContain("created.status === 401 || created.status === 403");
     expect(identity).toContain('coderUser.id === operatorCoderId');
