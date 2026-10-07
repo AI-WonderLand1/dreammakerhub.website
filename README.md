@@ -76,6 +76,26 @@ The repository is an npm-workspace monorepo built primarily with:
 - PlayCanvas
 - Kubernetes/Coder integration
 
+## User documentation
+
+The customer-facing guide is maintained in [docs/USER_GUIDE.md](docs/USER_GUIDE.md) and the live /docs page.
+
+It covers:
+
+- how to navigate Build, Code, 3D, Projects, Docs, and Account
+- what the major project, WonderBuild, WonderSpace, AI, and 3D buttons do
+- which outside services can be connected and what each service is used for
+- which capabilities belong to this repository versus AI-PLAYGROUND and NPC-AI-SIM
+- live, gated, operator-managed, and configuration-only behavior
+
+Repository ownership summary:
+
+| Repository | Owns |
+| --- | --- |
+| dreammakerhub.website | Main account/dashboard, projects, WonderBuild, WonderSpace/Coder, main 3D hub, central billing/usage/provider settings |
+| AI-PLAYGROUND | Multi-model chat, model directory, agents, workflow canvas/templates, provider routing |
+| NPC-AI-SIM | NPC brain authoring, personality, memory, perception, voice, actions, training, export/runtime contracts |
+
 ## Local development
 
 ### Requirements

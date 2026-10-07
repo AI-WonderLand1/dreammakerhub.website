@@ -1,85 +1,53 @@
 ---
 title: "AI WONDERLAND Documentation"
-description: "Current platform documentation for projects, WonderBuild, WonderSpace, AI, 3D, usage, billing, marketplace, APIs, support, and publishing."
+description: "User guide for navigating AI WONDERLAND, understanding buttons, external connections, and repository capabilities."
 ---
 
 # AI WONDERLAND Documentation
 
-AI WONDERLAND combines the main account and project shell, WonderBuild visual creation, AI Playground, NPC/3D workflows, usage and credits, billing, marketplace surfaces, APIs and support.
+Use the live [Documentation overview](/docs) for the full click-by-click website guide.
 
-DreamMakerHub.website remains the main web domain and repository name. **AI WONDERLAND** is the customer-facing product brand.
+## Main product map
 
-## Start here
-
-- [Documentation overview](/docs) — current platform map and major workflows
-- [Sign up](/docs/getting-started/sign-up)
-- [Sign in](/docs/getting-started/sign-in)
-- [Start your project](/docs/getting-started/start-your-project)
-- [WonderBuild](/docs/wonderbuild/start)
-- [WonderBuild editor](/docs/wonderbuild/editor)
-- [WonderSpace](/wonderspace) — controlled-beta cloud workspace surface
-- [3D Hub](/dashboard/3dhub)
-- [AI Modules](/ai-modules)
-- [API Reference](/api-reference)
-- [Billing](/settings/billing)
-- [Metered Usage](/dashboard/usage/metered)
-- [Marketplace](/marketplace)
-- [Support / Feedback](/dashboard/support)
-- [FAQ](/faq)
-
-## Current service architecture
-
-| Service | Current role |
+| Area | Use it for |
 | --- | --- |
-| Supabase | Authentication, owned project data, usage/billing records and realtime-backed product data |
-| Railway | Application/service hosting; workspace compute is part of the controlled WonderSpace rollout |
-| Coder | Workspace control plane; customer provisioning remains gated until isolation/provisioning checks pass |
-| GitHub / GHCR | Source, pull requests, CI/CodeQL and AI WONDERLAND container images |
-| Stripe | Checkout and payment events for memberships and eligible one-time credit purchases |
-| Cloudflare / domain | Public DNS/proxy layer for configured domains/subdomains |
+| [Projects](/dashboard#projects) | Create or select projects and open the correct builder/editor. |
+| [WonderBuild](/wonder-build) | Website and web-app creation: Template -> Build -> Publish. |
+| [WonderSpace](/wonderspace) | Project files and optional private Coder IDE workspaces. |
+| [AI Playground](https://playground.dreammakerhub.website/) | Models, chat, agents, workflow canvas, templates, and provider-backed AI experimentation. |
+| [WonderPlay / 3D Hub](/dashboard/3dhub) | 3D scenes, worlds, assets, generation, and related tools. |
+| [NPC-AI-SIM](/wonder-play) | NPC brain/cognition configuration and testing. |
+| [Usage](/dashboard/usage) | AI/3D usage, credits, limits, and alerts. |
+| [Billing](/settings/billing) | AI WONDERLAND membership and configured credit purchases. |
 
-## WonderSpace readiness
+## WonderSpace buttons
 
-WonderSpace is not advertised as generally available cloud compute.
+- Create IDE creates an approved private Coder workspace for the current AI WONDERLAND project or a blank workspace.
+- Open IDE opens the saved code-server app when Coder reports it ready.
+- Edit resources changes the approved machine profile.
+- Delete deletes the exact owned workspace and only releases the saved allocation after Coder confirms deletion.
+- Current customer profiles are Micro (1 CPU / 2 GiB) and Standard (2 CPU / 4 GiB).
+- The current Google Docker template does not expose GPU/VRAM controls.
 
-The intended Coder/Railway workspace path exists in the codebase, but customer provisioning remains behind safety, identity/isolation and cost-control gates. Until those checks pass in production, documentation and pricing must describe WonderSpace as **controlled beta / rolling access**, not guaranteed plan capacity.
+## Connected services
 
-## Membership and usage
+| Service | Role |
+| --- | --- |
+| Supabase / Postgres | Auth, project data, realtime data, files/revisions, usage/billing records |
+| Stripe | Memberships and configured credit packs |
+| Coder | Private cloud IDE control plane |
+| Google Cloud | Current Coder workspace compute host/template |
+| OpenRouter + configured AI providers | Model routing and AI features |
+| PlayCanvas | 3D/editor integration |
+| Mem0 + MongoDB | Optional server-side semantic/durable memory |
+| n8n | Optional automation/webhook integration |
+| Resend / Twilio | Optional email/SMS usage alarms |
+| GitHub / GHCR | Source, PRs, CI/security checks, container images; not arbitrary customer IDE repository input |
 
-AI WONDERLAND uses six customer-facing memberships:
+## Repository ownership
 
-1. Nomad
-2. Creator
-3. Architect
-4. Studio
-5. Guild
-6. Enterprise
+- dreammakerhub.website: main website/account/project shell, WonderBuild, WonderSpace, main 3D hub, central billing/usage/provider settings.
+- AI-PLAYGROUND: multi-model chat, model directory, agents, workflow canvas/templates, provider routing.
+- NPC-AI-SIM: NPC cognition authoring: brain, personality, memory, perception, knowledge, voice, actions, training, export/runtime contracts.
 
-Billing is split into:
-
-- one membership
-- AI credits
-- 3D credits
-
-AI-PLAYGROUND and NPC-AI-SIM are product services, not independent subscription authorities.
-
-## AI credits
-
-Customer-facing AI usage is expressed as **AI credits**, not raw tokens. The legacy internal database feature key `ai_tokens` remains during migration.
-
-AI Playground can expose the exact enabled model/provider and relative cost class. Planned builder modes are **Fast, Balanced and Advanced**, but they are not yet live selectors in every builder.
-
-## 3D credits
-
-GPU-heavy 3D generation/rendering uses its own monthly/purchased credit balance.
-
-## Readiness rule
-
-A route, integration or deployment file existing in the repository does not prove that the production dependency is enabled for every account. Docs and marketing must distinguish:
-
-- live
-- controlled beta
-- configured but not enabled
-- planned
-
-This rule applies especially to billing Checkout, WonderSpace customer provisioning, provider-backed AI and managed publishing.
+For the full navigation and button-by-button guide, open [Docs](/docs) or read [docs/USER_GUIDE.md](https://github.com/AI-WonderLand1/dreammakerhub.website/blob/Master/docs/USER_GUIDE.md).

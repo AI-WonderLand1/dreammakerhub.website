@@ -53,6 +53,8 @@ type NavGroup = {
 const topTabs = [
   { label: 'Overview', href: '#overview' },
   { label: 'Platform', href: '#platform' },
+  { label: 'Navigation & Buttons', href: '#navigation-buttons' },
+  { label: 'Connections', href: '#connections' },
   { label: 'Projects', href: '#projects' },
   { label: 'WonderBuild', href: '#wonderbuild' },
   { label: 'WonderSpace', href: '#wonderspace' },
@@ -98,6 +100,8 @@ const navGroups: NavGroup[] = [
     label: 'More Tools',
     items: [
       { label: 'Platform Snapshot', href: '#platform' },
+      { label: 'Navigation & Buttons', href: '#navigation-buttons' },
+      { label: 'External Connections', href: '#connections' },
       { label: 'Projects & File Manager', href: '#projects' },
       { label: 'WonderSpace', href: '#wonderspace' },
       { label: 'AI & Playground', href: '#ai-platform' },
@@ -115,6 +119,8 @@ const navGroups: NavGroup[] = [
 const onThisPage = [
   { label: 'Overview', href: '#overview' },
   { label: 'Platform snapshot', href: '#platform' },
+  { label: 'Navigation & buttons', href: '#navigation-buttons' },
+  { label: 'External connections', href: '#connections' },
   { label: 'Projects', href: '#projects' },
   { label: 'WonderBuild', href: '#wonderbuild' },
   { label: 'WonderSpace', href: '#wonderspace' },
@@ -526,6 +532,72 @@ export default function DocsPage() {
               </div>
             </section>
 
+            <section id="navigation-buttons" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
+                <p className="text-sm font-black uppercase tracking-[0.16em] text-blue-700">Navigation & buttons</p>
+                <h2 className="mt-2 text-3xl font-black">What the main buttons do</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">Use this as the quick map for moving around the site. A selected project keeps its context while you move between first-party project tools.</p>
+                <div className="mt-6 overflow-x-auto">
+                  <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                    <thead><tr className="border-b border-slate-200"><th className="px-3 py-3">Button / tab</th><th className="px-3 py-3">What it does</th></tr></thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {[
+                        ['Build', 'Open WonderBuild for website and web-app projects.'],
+                        ['Code', 'Open WonderSpace for project files and the optional private Coder IDE.'],
+                        ['3D', 'Open WonderPlay / 3D Hub for scenes, assets, generation and NPC-related tools.'],
+                        ['Files & Code', 'Open the selected project file manager and code editor.'],
+                        ['IDE', 'Open the selected project’s single WonderSpace page with My IDEs and Create IDE.'],
+                        ['Issues', 'Open issues for the selected project.'],
+                        ['Agents', 'Open AI agent tools with project context when supported.'],
+                        ['Discussions', 'Open project discussions.'],
+                        ['History', 'Open saved source/version history from project files.'],
+                        ['Wiki', 'Open the project wiki.'],
+                        ['Security', 'Open the project security/AetherGuard area.'],
+                        ['Insights', 'Open usage and insight information.'],
+                        ['Settings', 'Open settings while preserving project context.'],
+                        ['Create IDE', 'Create an approved private Coder workspace.'],
+                        ['Open IDE', 'Open code-server for a saved ready workspace.'],
+                        ['Edit resources', 'Change the saved IDE machine profile and restart or rebuild when required.'],
+                        ['Delete', 'Delete the exact owned Coder workspace after confirmation.'],
+                        ['Preview', 'Preview the current WonderBuild site without publishing.'],
+                        ['Publish', 'Open WonderBuild publish/export choices for the saved project.'],
+                      ].map(([label, body]) => <tr key={label}><td className="px-3 py-3 font-bold text-slate-950">{label}</td><td className="px-3 py-3">{body}</td></tr>)}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <section id="connections" className="scroll-mt-36 pt-16">
+              <div className="rounded-3xl border border-indigo-200 bg-indigo-50 p-7 sm:p-8">
+                <Database className="h-8 w-8 text-indigo-700" />
+                <p className="mt-4 text-sm font-black uppercase tracking-[0.16em] text-indigo-700">External connections</p>
+                <h2 className="mt-2 text-3xl font-black">Services AI WONDERLAND can connect to</h2>
+                <p className="mt-3 max-w-4xl leading-7 text-slate-600">Some services are core dependencies; others are optional and only work when the operator or account has configured them.</p>
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  {[
+                    ['Supabase / Postgres', 'Authentication, project data, realtime data, files/revisions and usage/billing records.'],
+                    ['Stripe', 'AI WONDERLAND memberships and configured AI/3D credit purchases.'],
+                    ['Coder', 'Private browser IDE workspace control plane.'],
+                    ['Google Cloud', 'Current operator-managed compute host for the Google Docker Coder workspace template.'],
+                    ['OpenRouter + AI providers', 'Model routing and provider-backed AI features. Availability depends on configured provider access.'],
+                    ['PlayCanvas', '3D scene/editor integration for supported WonderPlay workflows.'],
+                    ['Mem0 + MongoDB', 'Optional server-side semantic and durable memory used by supported AI/NPC services.'],
+                    ['n8n', 'Optional automation and webhook workflows when configured.'],
+                    ['Amplitude', 'Operator-managed product and AI analytics when configured.'],
+                    ['Resend / Twilio', 'Optional email and SMS usage/billing alarms.'],
+                    ['GitHub / GHCR', 'Source, PRs, CI/security checks and container images. Customer IDE creation does not accept arbitrary GitHub URLs/tokens.'],
+                    ['AI Playground / NPC-AI-SIM', 'Separate product repositories connected through the AI WONDERLAND account, provider and billing contracts.'],
+                  ].map(([title, body]) => (
+                    <div key={title} className="rounded-2xl border border-indigo-200 bg-white p-5">
+                      <h3 className="font-black text-slate-950">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-5 text-sm leading-6 text-indigo-950">Server secrets should stay server-side. Only use a browser field for a provider key when that screen explicitly stores the key in a server-side encrypted vault.</p>
+              </div>
+            </section>
             <section id="wonderbuild" className="scroll-mt-36 pt-16">
               <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl shadow-slate-200/50">
                 <div className="grid lg:grid-cols-[0.8fr_1.2fr]">
@@ -556,7 +628,7 @@ export default function DocsPage() {
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-blue-700">WonderSpace</p>
                 <h2 className="mt-2 text-3xl font-black">WonderSpace cloud workspaces — controlled beta</h2>
                 <p className="mt-3 max-w-4xl leading-7 text-slate-600">
-                  The intended customer path uses Coder with Railway-backed workspace resources. Customer workspace creation is currently gated behind identity, isolation, provisioning and cost-control checks. Until those checks pass in production, WonderSpace is documented as controlled beta rather than guaranteed plan capacity.
+                  The intended customer path uses Coder with Google Cloud-hosted workspace compute. Customer workspace creation is currently gated behind identity, isolation, provisioning and cost-control checks. Until those checks pass in production, WonderSpace is documented as controlled beta rather than guaranteed plan capacity.
                 </p>
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-blue-200 bg-white p-4"><strong>Persistence target</strong><p className="mt-1 text-sm leading-6 text-slate-600">The workspace design uses a persistent <code>/home/coder</code> volume. Customer persistence must be verified in the production rollout before it is treated as a guarantee.</p></div>
