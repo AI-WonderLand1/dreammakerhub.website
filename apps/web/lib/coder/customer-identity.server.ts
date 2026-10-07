@@ -15,6 +15,40 @@ type CoderUser = {
 };
 
 type CoderUsers = { users: CoderUser[] };
+type CoderOrganization = {
+  id: string;
+  is_default?: boolean;
+};
+
+async function liveCustomerOrganizationId(): Promise<string> {
+  const response = await coderApiRequest('/api/v2/organizations', 'GET');
+  if (!response.ok) {
+    throw new CostGateError('Coder organization lookup is unavailable.');
+  }
+
+  const body = await response.json().catch(() => null) as CoderOrganization[] | null;
+  const organizations = Array.isArray(body)
+    ? body.filter((organization) => UUID.test(organization?.id))
+    : [];
+
+  if (organizations.length === 0) {
+    throw new CostGateError('Coder has no usable organization for customer workspaces.');
+  }
+
+  const configured = process.env.CODER_ORG_ID?.trim();
+  if (configured && UUID.test(configured) &&
+      organizations.some((organization) => organization.id === configured)) {
+    return configured;
+  }
+
+  const defaults = organizations.filter((organization) => organization.is_default === true);
+  if (defaults.length === 1) return defaults[0].id;
+  if (organizations.length === 1) return organizations[0].id;
+
+  throw new CostGateError(
+    'The configured Coder organization is stale and Coder did not return one unambiguous default organization.',
+  );
+}
 
 /**
  * Never treat a Supabase user ID as a Coder user ID, or use `me`/the admin
@@ -67,10 +101,7 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
     }
 
     const username = `aw-${user.id.replaceAll('-', '').slice(0, 16)}`;
-    const organizationId = process.env.CODER_ORG_ID;
-    if (!organizationId || !UUID.test(organizationId)) {
-      throw new CostGateError('Coder customer organization is not configured.');
-    }
+    const organizationId = await liveCustomerOrganizationId();
 
     const created = await coderApiRequest('/api/v2/users', 'POST', {
       email: expectedEmail,
