@@ -57,6 +57,18 @@ describe('customer-only Coder provisioning', () => {
     expect(manage).toContain("compute_multiplier: profile.computeMultiplier");
   });
 
+  it('uses a user-safe realtime workspace mirror', () => {
+    const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
+    const migration = file('supabase/migrations/202610071245_realtime_coder_billing.sql');
+    expect(launch).toContain("table: 'coder_workspace_realtime'");
+    expect(launch).toContain("filter: \`user_id=eq.\${user.id}\`");
+    expect(launch).toContain("workspaceLive ? 'Live' : 'Connected'");
+    expect(migration).toContain('CREATE TABLE IF NOT EXISTS public.coder_workspace_realtime');
+    expect(migration).toContain('Users read own Coder realtime state');
+    expect(migration).toContain('AFTER INSERT OR UPDATE OR DELETE ON public.coder_workspace_slots');
+    expect(migration).toContain('supabase_realtime ADD TABLE public.coder_workspace_realtime');
+  });
+
   it('keeps created IDEs visible on the WonderSpace IDE page', () => {
     const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(launch).toContain("fetch('/api/user-workspace/coder'");
