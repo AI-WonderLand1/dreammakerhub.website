@@ -63,6 +63,17 @@ describe('customer-only Coder provisioning', () => {
     expect(launch).toContain('openPrivateIde(workspace.id)');
   });
 
+
+  it('keeps polling deleting workspaces until Coder confirms removal', () => {
+    const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
+    expect(launch).toContain("workspace.state === 'deleting'");
+    expect(launch).toContain('deletionReconcileInFlight');
+    expect(launch).toContain("method: 'DELETE'");
+    expect(launch).toContain('await refreshSavedWorkspaces()');
+    expect(launch).toContain("workspace.state === 'reserved' || workspace.state === 'deleting'");
+    expect(launch).toContain("workspace.state === 'deleting' ? 'Deleting…' : 'Delete'");
+  });
+
   it('creates under the verified customer UUID and keeps uncertain slots allocated', () => {
     const worker = file('apps/web/app/api/internal/coder/customer-runner/route.ts');
     expect(worker).toContain('encodeURIComponent(job.coder_user_id)');

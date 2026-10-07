@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
 import CoderAvailabilityIndicator from './CoderAvailabilityIndicator';
@@ -64,6 +64,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [editingSlotId, setEditingSlotId] = useState('');
   const [editingProfile, setEditingProfile] = useState('micro');
   const [updatingSlotId, setUpdatingSlotId] = useState('');
+  const deletionReconcileInFlight = useRef(false);
 
   useEffect(() => {
     if (user) setName(uniqueWorkspaceName(user.id));
@@ -133,6 +134,66 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     void refreshSavedWorkspaces();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, session?.access_token]);
+
+
+  // A Coder delete request is asynchronous. Keep verifying every slot already
+  // marked deleting until Coder reports the exact workspace is gone and the
+  // server releases the saved allocation. This also repairs deletions that
+  // were started in an earlier browser session.
+  useEffect(() => {
+    const deleting = savedWorkspaces.filter((workspace) => workspace.state === 'deleting');
+    if (!user || deleting.length === 0 || deletionReconcileInFlight.current) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled || deletionReconcileInFlight.current) return;
+      deletionReconcileInFlight.current = true;
+
+      void (async () => {
+        let shouldRefresh = false;
+        let failure = '';
+        try {
+          for (const workspace of deleting) {
+            if (cancelled) return;
+            const response = await fetch(`/api/user-workspace/coder/${encodeURIComponent(workspace.id)}`, {
+              method: 'DELETE',
+              cache: 'no-store',
+              headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+            });
+            const data = await response.json().catch(() => null) as { deleted?: boolean; message?: string; error?: string } | null;
+
+            if (response.ok || response.status === 202) {
+              shouldRefresh = true;
+              continue;
+            }
+
+            failure = data?.error || `Could not finish deleting ${workspace.workspace_name}.`;
+            break;
+          }
+        } catch (cause) {
+          failure = cause instanceof Error ? cause.message : 'Could not finish workspace deletion.';
+        } finally {
+          deletionReconcileInFlight.current = false;
+        }
+
+        if (cancelled) return;
+        if (failure) {
+          setSavedWorkspacesError(failure);
+          return;
+        }
+        if (shouldRefresh) await refreshSavedWorkspaces();
+      })();
+    }, 1500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // refreshSavedWorkspaces intentionally stays out of dependencies; a fresh
+    // workspace list causes the next reconciliation pass when Coder still
+    // reports deletion in progress.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedWorkspaces, user?.id, session?.access_token]);
 
 
   useEffect(() => {
@@ -225,7 +286,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   };
 
   const deleteWorkspace = async (workspace: SavedWorkspace) => {
-    if (deletingSlotId) return;
+    if (deletingSlotId || workspace.state === 'deleting') return;
     if (!window.confirm(`Delete ${workspace.workspace_name}? This removes the Coder workspace and its saved IDE allocation.`)) return;
 
     setDeletingSlotId(workspace.id);
@@ -233,16 +294,21 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     try {
       const response = await fetch(`/api/user-workspace/coder/${encodeURIComponent(workspace.id)}`, {
         method: 'DELETE',
+        cache: 'no-store',
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
       });
       const data = await response.json().catch(() => null) as { deleted?: boolean; message?: string; error?: string } | null;
       if (!response.ok && response.status !== 202) {
         throw new Error(data?.error || 'Workspace could not be deleted.');
       }
-      await refreshSavedWorkspaces();
+
       if (response.status === 202) {
-        setSavedWorkspacesError(data?.message || 'Deletion is still in progress. Refresh in a moment.');
+        setSavedWorkspaces((current) => current.map((item) => (
+          item.id === workspace.id ? { ...item, state: 'deleting' as const } : item
+        )));
       }
+
+      await refreshSavedWorkspaces();
     } catch (cause) {
       setSavedWorkspacesError(cause instanceof Error ? cause.message : 'Workspace could not be deleted.');
     } finally {
@@ -413,10 +479,10 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                         <button
                           type="button"
                           onClick={() => void deleteWorkspace(workspace)}
-                          disabled={Boolean(deletingSlotId) || workspace.state === 'reserved'}
+                          disabled={Boolean(deletingSlotId) || workspace.state === 'reserved' || workspace.state === 'deleting'}
                           className="rounded-xl border border-rose-300/30 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/10 disabled:opacity-40"
                         >
-                          {deletingSlotId === workspace.id ? 'Deleting…' : 'Delete'}
+                          {deletingSlotId === workspace.id || workspace.state === 'deleting' ? 'Deleting…' : 'Delete'}
                         </button>
                       </div>
                       {editingSlotId === workspace.id && (
