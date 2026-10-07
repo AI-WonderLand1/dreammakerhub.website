@@ -16,37 +16,6 @@ type CoderUser = {
 
 type CoderUsers = { users: CoderUser[] };
 
-export class CoderOidcBootstrapRequired extends Error {
-  readonly code = 'CODER_OIDC_BOOTSTRAP_REQUIRED';
-
-  constructor(public readonly href: string) {
-    super('Connect your Coder account once to finish setting up your IDE.');
-    this.name = 'CoderOidcBootstrapRequired';
-  }
-}
-
-function coderLoginUrl(): string {
-  const configured = process.env.CODER_ACCESS_URL?.trim();
-  if (!configured) throw new CostGateError('The public Coder address is not configured.');
-
-  let url: URL;
-  try {
-    url = new URL(configured);
-  } catch {
-    throw new CostGateError('The public Coder address is invalid.');
-  }
-
-  if (url.protocol !== 'https:' || url.username || url.password) {
-    throw new CostGateError('The public Coder address must use HTTPS.');
-  }
-
-  url.pathname = '/login';
-  url.search = '';
-  url.hash = '';
-  url.searchParams.set('redirect', '/');
-  return url.toString();
-}
-
 /**
  * Never treat a Supabase user ID as a Coder user ID, or use `me`/the admin
  * token's Coder account as a customer owner. Both sides must authenticate via
@@ -120,12 +89,10 @@ export async function verifiedCustomerCoderOwner(user: User): Promise<string> {
         detail: typeof failure?.detail === 'string' ? failure.detail : undefined,
       });
 
-      // If the backend token cannot administer users, fall back to Coder's
-      // supported OIDC just-in-time user creation instead of dead-ending.
-      // The user signs in to Coder once with the same verified account; Coder
-      // then creates/looks up that OIDC user and this request can be retried.
       if (created.status === 401 || created.status === 403) {
-        throw new CoderOidcBootstrapRequired(coderLoginUrl());
+        throw new CostGateError(
+          'WonderSpace server is not authorized to create customer Coder accounts. Configure the server-side Coder admin credential.',
+        );
       }
 
       throw new CostGateError(`Coder user creation failed (${created.status}).`);
