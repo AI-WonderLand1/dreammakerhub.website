@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const file = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('customer-only Coder provisioning', () => {
-  it('resolves a verified OIDC customer ID, never an operator or browser-provided owner', () => {
+  it('resolves verified customer identities and explicitly reuses the configured operator for the admin account', () => {
     const identity = file('apps/web/lib/coder/customer-identity.server.ts');
     expect(identity).toContain("candidate.login_type === 'oidc'");
     expect(identity).toContain('user.email_confirmed_at');
@@ -24,12 +24,28 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain('if (organizations.length === 1) return organizations[0].id');
     expect(identity).toContain("[coder-customer-enrollment] create user failed");
     expect(identity).toContain("created.status === 401 || created.status === 403");
-    expect(identity).toContain('coderUser.id === operatorCoderId');
+    expect(identity).toContain("return verifiedOperatorCoderOwner(user, expectedEmail)");
+    expect(identity).toContain("coderApiRequest('/api/v2/users/me', 'GET')");
+    expect(identity).toContain("actual.id !== operatorCoderId");
+    expect(identity).toContain("coderUser.id === operatorCoderId");
     expect(identity).toContain(".from('coder_customer_identities')");
     expect(identity).not.toContain('CoderOidcBootstrapRequired');
     expect(identity).not.toContain("url.pathname = '/login'");
     expect(identity).not.toContain('Connect Coder account');
     expect(identity).not.toContain('Sign in to Coder with the same verified account before requesting an IDE.');
+  });
+
+  it('allows only the configured site operator to own operator workspaces', () => {
+    const create = file('apps/web/lib/coder/customer-workspace-create.server.ts');
+    const open = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
+    const runner = file('apps/web/app/api/internal/coder/customer-runner/route.ts');
+    expect(create).toContain('isConfiguredCoderOperator(userId)');
+    expect(create).toContain("operatorWorkspace ? owner?.id === operatorId");
+    expect(open).toContain('isConfiguredCoderOperator(user.id)');
+    expect(open).toContain('(operator ? coderUserId !== operatorId : coderUserId === operatorId)');
+    expect(open).toContain("(!operator && owner.login_type !== 'oidc')");
+    expect(runner).toContain('isConfiguredCoderOperator(job.user_id)');
+    expect(runner).toContain("operatorWorkspace ? owner?.id === operatorId");
   });
 
   it('keeps customer provisioning fail-closed with operator switches and live verification', () => {
