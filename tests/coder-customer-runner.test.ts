@@ -36,6 +36,15 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).not.toContain('CODER_SUPABASE_OIDC_VERIFIED');
   });
 
+  it('keeps created IDEs visible on the WonderSpace IDE page', () => {
+    const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
+    expect(launch).toContain("fetch('/api/user-workspace/coder'");
+    expect(launch).toContain('My IDEs');
+    expect(launch).toContain('Your created WonderSpace IDEs stay here so you can reopen them later.');
+    expect(launch).toContain("workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'");
+    expect(launch).toContain('openPrivateIde(workspace.id)');
+  });
+
   it('creates under the verified customer UUID and keeps uncertain slots allocated', () => {
     const worker = file('apps/web/app/api/internal/coder/customer-runner/route.ts');
     expect(worker).toContain('encodeURIComponent(job.coder_user_id)');
