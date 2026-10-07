@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/supabase/auth-context';
 import { WORKSPACE_PROFILES, type WorkspaceProfileId } from '@/lib/coder/workspace-profiles';
 
 type Setup = { slotId: string; status: string; allocated?: boolean; error?: string; url?: string };
-type Source = 'blank' | 'site' | 'github' | 'local';
+type Source = 'blank' | 'site';
 type ExistingProject = { id: string; name: string; tool?: string | null; type?: string | null };
 // Use the same persisted project routes as Dashboard. The legacy /projects/[id]
 // page reads a different Prisma collection and must not receive _projects IDs.
@@ -89,7 +89,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!names.test(workspaceName)) { setError('Use a 3–32 character lowercase workspace name.'); return; }
-    if (source !== 'blank') { setError('Import is not active for private customer workspaces. Select Blank Linux or wait for an approved import template.'); return; }
+    if (source === 'site' && !siteProjectId) { setError('Choose one of your AI WONDERLAND projects.'); return; }
     if (operatorPreview || !provisioningEnabled) { setError('Customer workspace creation is paused.'); return; }
     if (loading || setup) return;
     setLoading(true);
@@ -97,7 +97,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
     try {
       const response = await fetch('/api/user-workspace/customer/provision', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ workspaceName, machineProfile }),
+        body: JSON.stringify({ workspaceName, machineProfile, projectId: source === 'site' ? siteProjectId : null }),
       });
       const result = await response.json() as Setup;
       if (!response.ok) throw new Error(result.error || 'Workspace creation is paused.');
@@ -211,10 +211,8 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
             <p className="mt-1 text-sm text-slate-400">Blank Linux is ready when creation opens. Other sources stay view-only until their secure imports are implemented.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {([
-                { id: 'blank', label: 'New blank workspace', description: 'Empty Linux home directory; no repository is imported.', status: 'Blank template' },
-                { id: 'site', label: 'My AI WONDERLAND projects', description: 'Browse projects stored under this website account.', status: 'Browse only' },
-                { id: 'github', label: 'My GitHub repositories', description: 'Only repositories authorized by your own connected GitHub account, not public repository search.', status: 'Secure connection pending' },
-                { id: 'local', label: 'Files on my computer', description: 'Local folders are not automatically visible inside a Google Docker workspace.', status: 'Upload not available' },
+                { id: 'site', label: 'My AI WONDERLAND projects', description: 'Use a project repository stored under this website account.', status: 'Website repository' },
+                { id: 'blank', label: 'New blank workspace', description: 'Empty private Linux workspace with no external repository.', status: 'Blank workspace' },
               ] as const).map((option) => (
                 <label key={option.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${source === option.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/15 bg-slate-950/70'}`}>
                   <input type="radio" name="workspaceSource" checked={source === option.id}
@@ -240,13 +238,7 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
                 className="inline-block text-sm font-semibold text-cyan-200 underline">Open selected project in its editor</Link>}
               <p className="text-sm text-amber-200">Website projects do not currently transfer into customer Coder workspaces. Browsing them does not allocate a workspace.</p>
             </div>}
-            {source === 'github' && <div role="status" className="mt-4 rounded-xl border border-amber-300/20 bg-slate-950 p-4 text-sm text-slate-300">
-              GitHub repository import requires a separate, account-authorized GitHub connection with access limited to repositories you select. Signing in with GitHub alone does not confirm repository access. Public repository search and anonymous URL imports are disabled. No repository names, contents or tokens are displayed or transferred here.
-            </div>}
-            {source === 'local' && <div className="mt-4 rounded-xl border border-white/15 bg-slate-950 p-4 text-sm text-slate-300">
-              Your files remain on your computer. Local folder/ZIP upload has not been connected to the isolated Google Docker customer IDE. After workspace access is approved, a separate authenticated upload or Git push flow is required. Do not upload private code into an unverified workspace.
-            </div>}
-            {source !== 'blank' && <p role="status" className="mt-4 text-sm text-amber-200">This source can be inspected, but is not yet eligible for customer workspace creation. Nothing will be imported or charged.</p>}
+            {source === 'site' && <p role="status" className="mt-4 text-sm text-cyan-200">Only repositories owned by this AI WONDERLAND account are accepted by the customer IDE launcher. External GitHub URLs and tokens are not used here.</p>}
           </fieldset>
           <div className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:px-7">
             <div>
@@ -284,9 +276,9 @@ export default function CustomerWorkspaceLaunch({ operatorPreview = false, embed
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 bg-slate-950/50 px-5 py-5 md:px-7">
           <p className="max-w-lg text-sm text-slate-400">{provisioningPaused ? 'Existing private workspaces can be managed without creating another one.' : 'Only your verified account can request and manage your private workspace.'}</p>
-          <button type="submit" disabled={loading || provisioningPaused || source !== 'blank'}
+          <button type="submit" disabled={loading || provisioningPaused || (source === 'site' && !siteProjectId)}
             className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-bold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
-            {loading ? 'Reserving your workspace…' : provisioningPaused ? 'Creation paused' : source !== 'blank' ? 'Import not available yet' : 'Create workspace'}
+            {loading ? 'Reserving your workspace…' : provisioningPaused ? 'Creation paused' : 'Create workspace'}
           </button>
         </div>
         {error && <p role="alert" className="px-7 pb-5 text-sm text-amber-200">{error}</p>}
