@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/auth-context';
+import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import CoderAvailabilityIndicator from './CoderAvailabilityIndicator';
 import { Cloud, Rocket, Sparkles } from 'lucide-react';
 
@@ -60,6 +61,8 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [savedWorkspaces, setSavedWorkspaces] = useState<SavedWorkspace[]>([]);
   const [savedWorkspacesLoading, setSavedWorkspacesLoading] = useState(true);
   const [savedWorkspacesError, setSavedWorkspacesError] = useState('');
+  const [workspaceLive, setWorkspaceLive] = useState(false);
+  const workspaceRefreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [deletingSlotId, setDeletingSlotId] = useState('');
   const [editingSlotId, setEditingSlotId] = useState('');
   const [editingProfile, setEditingProfile] = useState('micro');
@@ -132,6 +135,49 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   useEffect(() => {
     if (!user) return;
     void refreshSavedWorkspaces();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, session?.access_token]);
+
+
+  useEffect(() => {
+    let channel: any = null;
+    let supabase: any = null;
+    let cancelled = false;
+
+    void (async () => {
+      const config = await ensureSupabaseConfig();
+      if (cancelled || !config || !user) return;
+      supabase = createClient();
+      if (!supabase) return;
+
+      const refresh = () => {
+        if (workspaceRefreshTimer.current) window.clearTimeout(workspaceRefreshTimer.current);
+        workspaceRefreshTimer.current = window.setTimeout(() => {
+          void refreshSavedWorkspaces();
+        }, 250);
+      };
+
+      channel = supabase
+        .channel(`coder-workspaces:${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'coder_workspace_realtime',
+            filter: `user_id=eq.${user.id}`,
+          },
+          refresh,
+        )
+        .subscribe((status: string) => setWorkspaceLive(status === 'SUBSCRIBED'));
+    })();
+
+    return () => {
+      cancelled = true;
+      setWorkspaceLive(false);
+      if (workspaceRefreshTimer.current) window.clearTimeout(workspaceRefreshTimer.current);
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, session?.access_token]);
 
@@ -419,7 +465,12 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
             <section className="mb-6 rounded-3xl border border-cyan-300/20 bg-[#11182e]/90 p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-semibold">My IDEs</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-semibold">My IDEs</h2>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${workspaceLive ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
+                      {workspaceLive ? 'Live' : 'Connected'}
+                    </span>
+                  </div>
                   <p className="mt-1 text-sm text-slate-400">Your created WonderSpace IDEs stay here so you can reopen them later.</p>
                 </div>
                 <button
