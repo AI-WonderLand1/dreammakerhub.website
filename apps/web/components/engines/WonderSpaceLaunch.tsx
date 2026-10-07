@@ -29,6 +29,7 @@ type SavedWorkspace = {
   workspace_name: string;
   state: 'reserved' | 'provisioned' | 'deleting' | 'released';
   created_at: string;
+  machine_profile?: string | null;
 };
 type WorkspaceList = {
   slots?: SavedWorkspace[];
@@ -59,6 +60,10 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [savedWorkspaces, setSavedWorkspaces] = useState<SavedWorkspace[]>([]);
   const [savedWorkspacesLoading, setSavedWorkspacesLoading] = useState(true);
   const [savedWorkspacesError, setSavedWorkspacesError] = useState('');
+  const [deletingSlotId, setDeletingSlotId] = useState('');
+  const [editingSlotId, setEditingSlotId] = useState('');
+  const [editingProfile, setEditingProfile] = useState('micro');
+  const [updatingSlotId, setUpdatingSlotId] = useState('');
 
   useEffect(() => {
     if (user) setName(uniqueWorkspaceName(user.id));
@@ -219,6 +224,58 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     }
   };
 
+  const deleteWorkspace = async (workspace: SavedWorkspace) => {
+    if (deletingSlotId) return;
+    if (!window.confirm(`Delete ${workspace.workspace_name}? This removes the Coder workspace and its saved IDE allocation.`)) return;
+
+    setDeletingSlotId(workspace.id);
+    setSavedWorkspacesError('');
+    try {
+      const response = await fetch(`/api/user-workspace/coder/${encodeURIComponent(workspace.id)}`, {
+        method: 'DELETE',
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+      });
+      const data = await response.json().catch(() => null) as { deleted?: boolean; message?: string; error?: string } | null;
+      if (!response.ok && response.status !== 202) {
+        throw new Error(data?.error || 'Workspace could not be deleted.');
+      }
+      await refreshSavedWorkspaces();
+      if (response.status === 202) {
+        setSavedWorkspacesError(data?.message || 'Deletion is still in progress. Refresh in a moment.');
+      }
+    } catch (cause) {
+      setSavedWorkspacesError(cause instanceof Error ? cause.message : 'Workspace could not be deleted.');
+    } finally {
+      setDeletingSlotId('');
+    }
+  };
+
+  const updateWorkspaceResources = async (workspace: SavedWorkspace) => {
+    if (updatingSlotId) return;
+    setUpdatingSlotId(workspace.id);
+    setSavedWorkspacesError('');
+    try {
+      const response = await fetch(`/api/user-workspace/coder/${encodeURIComponent(workspace.id)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ machineProfile: editingProfile }),
+      });
+      const data = await response.json().catch(() => null) as { message?: string; error?: string } | null;
+      if (!response.ok && response.status !== 202) {
+        throw new Error(data?.error || 'Workspace resources could not be updated.');
+      }
+      setEditingSlotId('');
+      await refreshSavedWorkspaces();
+    } catch (cause) {
+      setSavedWorkspacesError(cause instanceof Error ? cause.message : 'Workspace resources could not be updated.');
+    } finally {
+      setUpdatingSlotId('');
+    }
+  };
+
   const openPrivateIde = async (targetSlotId = slotId) => {
     if (!targetSlotId || opening) return;
     setOpening(true);
@@ -263,8 +320,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     (mode === 'blank' || (mode === 'site' && projectId)));
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,rgba(96,76,218,0.4),transparent_42%),radial-gradient(ellipse_at_85_75%,rgba(18,148,206,0.28),transparent_45%),radial-gradient(ellipse_at_60%_0%,rgba(224,83,197,0.17),transparent_35%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-transparent px-5 py-12 text-white">
       <div className="relative mx-auto max-w-5xl">
         <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}` : "/dashboard?workspaceTab=code#projects"} className="text-sm text-slate-300 hover:text-white">← Back to project</Link>
         <div className="mt-10 mb-9 text-center">
@@ -334,14 +390,67 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                           Created {new Date(workspace.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => void openPrivateIde(workspace.id)}
-                        disabled={opening || workspace.state !== 'provisioned'}
-                        className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {opening && openingSlotId === workspace.id ? 'Opening…' : workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void openPrivateIde(workspace.id)}
+                          disabled={opening || workspace.state !== 'provisioned'}
+                          className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {opening && openingSlotId === workspace.id ? 'Opening…' : workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingSlotId(editingSlotId === workspace.id ? '' : workspace.id);
+                            setEditingProfile(workspace.machine_profile || 'micro');
+                          }}
+                          disabled={workspace.state !== 'provisioned'}
+                          className="rounded-xl border border-cyan-300/30 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/10 disabled:opacity-40"
+                        >
+                          Edit resources
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteWorkspace(workspace)}
+                          disabled={Boolean(deletingSlotId) || workspace.state === 'reserved'}
+                          className="rounded-xl border border-rose-300/30 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/10 disabled:opacity-40"
+                        >
+                          {deletingSlotId === workspace.id ? 'Deleting…' : 'Delete'}
+                        </button>
+                      </div>
+                      {editingSlotId === workspace.id && (
+                        <div className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 p-4">
+                          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                            <div>
+                              <label htmlFor={`edit-profile-${workspace.id}`} className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                Machine type
+                              </label>
+                              <select
+                                id={`edit-profile-${workspace.id}`}
+                                value={editingProfile}
+                                onChange={(event) => setEditingProfile(event.target.value)}
+                                className="mt-2 w-full rounded-lg border border-white/20 bg-slate-950 px-3 py-2 text-sm"
+                              >
+                                {(options?.machineProfiles || []).map((item) => (
+                                  <option key={item.value} value={item.value}>{item.label}</option>
+                                ))}
+                              </select>
+                              <p className="mt-2 text-xs text-slate-500">
+                                CPU and RAM change with the machine profile. GPU/VRAM is not enabled on the current Google Docker template.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => void updateWorkspaceResources(workspace)}
+                              disabled={Boolean(updatingSlotId) || !options?.machineProfiles.some((item) => item.value === editingProfile)}
+                              className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-40"
+                            >
+                              {updatingSlotId === workspace.id ? 'Updating…' : 'Save changes'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

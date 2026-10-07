@@ -18,5 +18,6 @@ describe("WonderSpace IDE form navigation", () => {
     expect(ide).toContain('active="ide"');
     expect(ide).toContain("<WonderSpaceLaunch projectId={projectId} />");
     expect(ide).toContain("optional editor inside Edit / Design");
+    expect(ide).toContain("/images/wonderspace-galaxy.webp");
   });
 });

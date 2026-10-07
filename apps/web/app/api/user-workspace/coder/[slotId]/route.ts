@@ -4,6 +4,7 @@ import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server
 import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import { coderApiConfig, coderApiRequest, coderServiceClient, getCoderSlot, markCoderSlotDeleting, releaseDeletedCoderSlot } from '@/lib/coder/workspace-slots.server';
 import { verifiedCustomerTemplate } from '@/lib/coder/customer-provisioning.server';
+import { workspaceProfile } from '@/lib/coder/workspace-profiles';
 
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ slotId: string }> };
@@ -132,6 +133,135 @@ export async function DELETE(request: Request, { params }: Context) {
       throw new CostGateError('Coder ownership changed during deletion. Slot remains allocated.');
     }
     return NextResponse.json({ deleted: false, message: 'Deletion is in progress. Your slot stays reserved until Coder confirms deletion. Retry this action in a moment.' }, { status: 202, headers: noStore });
+  } catch (cause) {
+    return costGateResponse(cause);
+  }
+}
+
+
+export async function PATCH(request: Request, { params }: Context) {
+  const user = await authenticatedSupabaseUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: noStore });
+
+  const { slotId } = await params;
+  if (!UUID.test(slotId)) {
+    return NextResponse.json({ error: 'Invalid slot ID' }, { status: 400, headers: noStore });
+  }
+
+  try {
+    const body = await request.json().catch(() => null) as { machineProfile?: unknown } | null;
+    const profile = workspaceProfile(body?.machineProfile);
+    if (!profile || !['micro', 'standard'].includes(profile.id) ||
+        profile.cpu > 2 || profile.memoryGiB > 4) {
+      return NextResponse.json({ error: 'Choose an approved machine profile.' }, { status: 400, headers: noStore });
+    }
+
+    const slot = await getCoderSlot(user.id, slotId);
+    if (!slot || slot.state !== 'provisioned' || !slot.workspace_id || !UUID.test(slot.workspace_id)) {
+      return NextResponse.json({ error: 'Workspace is not ready for editing.' }, { status: 409, headers: noStore });
+    }
+    if (slot.coder_api_origin !== coderApiConfig().url) {
+      throw new CostGateError('This workspace belongs to a different Coder deployment.');
+    }
+
+    const operator = isConfiguredCoderOperator(user.id);
+    let expectedOwnerId: string;
+    let expectedTemplateId: string;
+
+    if (operator) {
+      const identityResponse = await coderApiRequest('/api/v2/users/me', 'GET');
+      const identity = identityResponse.ok
+        ? await identityResponse.json().catch(() => null) as CoderIdentity | null
+        : null;
+      const configuredId = process.env.CODER_OPERATOR_USER_ID;
+      if (!identity?.id || !UUID.test(identity.id) || (configuredId && identity.id !== configuredId)) {
+        throw new CostGateError('Coder operator identity could not be verified.');
+      }
+      expectedOwnerId = identity.id;
+      expectedTemplateId = (await verifiedCustomerTemplate()).id;
+    } else {
+      const customer = await customerDeletionOwner(
+        user.id,
+        user.email,
+        user.email_confirmed_at,
+        slot.id,
+      );
+      expectedOwnerId = customer.ownerId;
+      expectedTemplateId = customer.templateId;
+    }
+
+    const path = `/api/v2/workspaces/${encodeURIComponent(slot.workspace_id)}`;
+    const current = await coderApiRequest(path, 'GET');
+    if (!current.ok) {
+      throw new CostGateError('Cannot confirm Coder workspace state.');
+    }
+
+    const workspace = await current.json().catch(() => null) as RemoteWorkspace | null;
+    if (!workspace || workspace.id !== slot.workspace_id ||
+        workspace.name !== slot.workspace_name ||
+        workspace.owner_id !== expectedOwnerId ||
+        workspace.template_id !== expectedTemplateId) {
+      throw new CostGateError('Coder workspace ownership or template mismatch.');
+    }
+
+    const transition = workspace.latest_build?.transition;
+    const buildStatus = workspace.latest_build?.status;
+    if (buildStatus === 'running' || buildStatus === 'pending' ||
+        transition === 'stop' || transition === 'delete') {
+      return NextResponse.json(
+        { error: 'Wait for the current workspace operation to finish before editing resources.' },
+        { status: 409, headers: noStore },
+      );
+    }
+
+    const rich = [{ name: 'machine_profile', value: profile.id }];
+    const buildBody = buildStatus === 'succeeded' && transition === 'start'
+      ? {
+          transition: 'stop',
+          on_success: {
+            transition: 'start',
+            rich_parameter_values: rich,
+          },
+        }
+      : {
+          transition: 'start',
+          rich_parameter_values: rich,
+        };
+
+    const updatedBuild = await coderApiRequest(`${path}/builds`, 'POST', buildBody);
+    if (!updatedBuild.ok) {
+      throw new CostGateError('Coder did not accept the workspace resource update.');
+    }
+
+    const db = coderServiceClient();
+    const jobUpdate = await db.from('coder_customer_jobs').update({
+      machine_profile: profile.id,
+      compute_multiplier: profile.computeMultiplier,
+      cpu: profile.cpu,
+      memory_gib: profile.memoryGiB,
+      updated_at: new Date().toISOString(),
+    }).eq('slot_id', slot.id).eq('user_id', user.id).select('slot_id').maybeSingle();
+
+    if (!operator && (jobUpdate.error || !jobUpdate.data)) {
+      throw new CostGateError('Coder accepted the resource update, but the customer profile record could not be updated.');
+    }
+
+    const usageUpdate = await db.from('coder_customer_compute_usage').update({
+      compute_multiplier: profile.computeMultiplier,
+      last_checked_at: new Date().toISOString(),
+    }).eq('slot_id', slot.id).eq('user_id', user.id);
+
+    if (!operator && usageUpdate.error) {
+      throw new CostGateError('Coder accepted the resource update, but usage accounting could not be updated.');
+    }
+
+    return NextResponse.json({
+      updated: true,
+      machineProfile: profile.id,
+      cpu: profile.cpu,
+      memoryGiB: profile.memoryGiB,
+      message: 'Workspace resources are updating. Coder will restart the IDE if needed.',
+    }, { status: 202, headers: noStore });
   } catch (cause) {
     return costGateResponse(cause);
   }

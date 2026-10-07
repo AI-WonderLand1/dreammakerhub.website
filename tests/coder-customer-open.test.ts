@@ -37,21 +37,21 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).toContain("transition: 'start'");
   });
 
-  it('exposes customer creation separately without changing the operator WonderSpace entry', () => {
+  it('uses the project IDE as the one customer creation and reopen surface', () => {
     const page = file('apps/web/app/wonderspace/page.tsx');
     const create = file('apps/web/app/wonderspace/create/page.tsx');
     const gate = file('apps/web/components/engines/WonderSpaceOperatorGate.tsx');
-    const launch = file('apps/web/components/engines/CustomerWorkspaceLaunch.tsx');
+    const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
 
     expect(page).toContain('WonderSpaceOperatorGate');
     expect(gate).toContain("if (role === 'operator') return <OperatorIdePanel />");
     expect(gate).not.toContain('<CustomerWorkspaceLaunch');
-    expect(create).toContain('<CustomerWorkspaceLaunch');
-    expect(create).toContain('CODER_CUSTOMER_PROVISIONING_ENABLED');
-    expect(create).toContain('CODER_WILDCARD_ACCESS_URL');
+    expect(create).toContain('wonderSpaceProjectIde');
+    expect(create).toContain('WONDERSPACE_CODE_HOME');
+    expect(create).not.toContain('<CustomerWorkspaceLaunch');
     expect(launch).toContain('/api/user-workspace/customer/open/');
     expect(launch).toContain('Open private IDE');
-    expect(launch).toContain('window.location.assign(result.url)');
+    expect(launch).toContain('window.location.assign(data.url)');
   });
 
   it('retains hardened Coder deployment defaults for customer identities', () => {
