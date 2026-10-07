@@ -320,8 +320,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     (mode === 'blank' || (mode === 'site' && projectId)));
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#080d22] px-5 py-12 text-white">
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,rgba(96,76,218,0.4),transparent_42%),radial-gradient(ellipse_at_85_75%,rgba(18,148,206,0.28),transparent_45%),radial-gradient(ellipse_at_60%_0%,rgba(224,83,197,0.17),transparent_35%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-transparent px-5 py-12 text-white">
       <div className="relative mx-auto max-w-5xl">
         <Link href={projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}` : "/dashboard?workspaceTab=code#projects"} className="text-sm text-slate-300 hover:text-white">← Back to project</Link>
         <div className="mt-10 mb-9 text-center">
