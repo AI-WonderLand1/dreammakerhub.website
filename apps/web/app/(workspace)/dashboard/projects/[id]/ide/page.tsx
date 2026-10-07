@@ -10,7 +10,14 @@ export default function ProjectIdePage() {
   const projectId = String(params.id || "");
 
   return (
-    <div className="min-h-[calc(100vh-4.5rem)] bg-[#07101b] text-white">
+    <div
+      className="relative min-h-[calc(100vh-4.5rem)] overflow-hidden bg-[#07101b] bg-cover bg-center bg-fixed text-white"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(4, 8, 20, 0.72), rgba(4, 10, 24, 0.82)), url('/images/wonderspace-galaxy.webp')",
+      }}
+    >
+      <div className="relative z-10">
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-white/60">
         <Link href={`/dashboard/projects/${encodeURIComponent(projectId)}`} className="hover:text-white">
           Project
@@ -26,6 +33,7 @@ export default function ProjectIdePage() {
       </div>
 
       <WonderSpaceLaunch projectId={projectId} />
+      </div>
     </div>
   );
 }
