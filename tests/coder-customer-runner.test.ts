@@ -41,6 +41,19 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).not.toContain('CODER_SUPABASE_OIDC_VERIFIED');
   });
 
+  it('lets users delete and edit resources for saved IDEs', () => {
+    const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
+    const manage = file('apps/web/app/api/user-workspace/coder/[slotId]/route.ts');
+    expect(launch).toContain('Edit resources');
+    expect(launch).toContain('Delete');
+    expect(launch).toContain("method: 'DELETE'");
+    expect(launch).toContain("method: 'PATCH'");
+    expect(manage).toContain('export async function PATCH');
+    expect(manage).toContain("rich_parameter_values: rich");
+    expect(manage).toContain("machine_profile: profile.id");
+    expect(manage).toContain("compute_multiplier: profile.computeMultiplier");
+  });
+
   it('keeps created IDEs visible on the WonderSpace IDE page', () => {
     const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(launch).toContain("fetch('/api/user-workspace/coder'");
