@@ -50,3 +50,42 @@ The identity must be:
 coder
 /home/coder
 ```
+
+
+## Shared customer organization
+
+AI WONDERLAND customer IDEs use one shared Coder organization for the common customer policy. This is **not** a YAML organization layer inside the workspace image.
+
+The website resolves the live organization in this order:
+
+1. `CODER_ORG_ID` when it is a valid live organization ID.
+2. `CODER_CUSTOMER_ORG_NAME` when it matches exactly one live Coder organization by name/display name.
+3. Coder's one unambiguous default organization.
+4. The only live organization when exactly one exists.
+
+New verified customer OIDC users are created with:
+
+```text
+organization_ids: [resolved customer organization]
+```
+
+Recommended production setting for the current built-in organization:
+
+```bash
+CODER_CUSTOMER_ORG_NAME=Coder
+```
+
+### Where customer defaults actually live
+
+The organization controls shared membership and Coder policy. Workspace defaults live in the published `ai-wonderland-google` template so they are actually enforced when the workspace is created:
+
+- default machine profile: **Micro · 1 CPU / 2 GiB**
+- optional approved profile: **Standard · 2 CPU / 4 GiB**
+- operator-controlled workspace image
+- persistent `/home/coder`
+- default project folder `/home/coder/projects`
+- code-server exposed through Coder's authenticated workspace app path
+- resource ceilings applied by the Docker container template
+- website-requested inactivity TTL remains server-controlled
+
+Do not maintain a separate `defaults.yaml` / `customers.yaml` / `roles.yaml` bundle unless an application component actually reads and enforces it. Unused configuration files would not change Coder behavior.
