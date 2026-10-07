@@ -97,9 +97,9 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
       if(cancelled||!data.user)return;
       const refresh=()=>{if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>void load(),500);};
       channel=supabase.channel(`billing:${data.user.id}`)
-        .on("postgres_changes",{event:"*",schema:"public",table:"usage_logs",filter:`user_id=eq.${data.user.id}`},refresh)
-        .on("postgres_changes",{event:"*",schema:"public",table:"user_token_balances",filter:`user_id=eq.${data.user.id}`},refresh)
-        .on("postgres_changes",{event:"*",schema:"public",table:"cross_repo_usage_events",filter:`user_id=eq.${data.user.id}`},refresh)
+        .on("postgres_changes",{event:"*",schema:"public",table:"billing_usage_realtime",filter:`user_id=eq.${data.user.id}`},refresh)
+        .on("postgres_changes",{event:"*",schema:"public",table:"subscriptions",filter:`user_id=eq.${data.user.id}`},refresh)
+        .on("postgres_changes",{event:"*",schema:"public",table:"projects",filter:`owner_id=eq.${data.user.id}`},refresh)
         .subscribe((status:string)=>setLive(status==="SUBSCRIBED"));
     })();
     return()=>{cancelled=true;if(timer.current)clearTimeout(timer.current);if(channel&&supabase)void supabase.removeChannel(channel);};
