@@ -1,5 +1,6 @@
 import 'server-only';
 import { CostGateError } from '@/lib/billing/cost-guard.server';
+import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
 import {
   attachCoderWorkspace,
   CODER_TTL_MS,
@@ -66,6 +67,7 @@ export async function provisionCustomerWorkspaceNow(
   const templateId = template.id;
   const versionId = template.versionId;
   const operatorId = process.env.CODER_OPERATOR_USER_ID;
+  const operatorWorkspace = isConfiguredCoderOperator(userId);
   if (!operatorId || !UUID.test(operatorId)) {
     throw new CostGateError('The operator Coder identity is not configured.');
   }
@@ -119,10 +121,17 @@ export async function provisionCustomerWorkspaceNow(
       'GET',
     );
     const owner = ownerResponse.ok ? await ownerResponse.json().catch(() => null) : null;
-    if (!owner || owner.id !== job.coder_user_id || owner.status !== 'active' ||
-        owner.login_type !== 'oidc' || owner.is_service_account === true ||
-        owner.email?.trim().toLowerCase() !== identity.data.verified_email ||
-        owner.id === operatorId) {
+    const ownerMatchesAccount = Boolean(
+      owner &&
+      owner.id === job.coder_user_id &&
+      owner.status === 'active' &&
+      owner.is_service_account !== true &&
+      owner.email?.trim().toLowerCase() === identity.data.verified_email
+    );
+    const ownerRoleIsSafe = operatorWorkspace
+      ? owner?.id === operatorId
+      : owner?.login_type === 'oidc' && owner?.id !== operatorId;
+    if (!ownerMatchesAccount || !ownerRoleIsSafe) {
       throw new Error('Coder owner could not be reverified');
     }
 
