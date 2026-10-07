@@ -6,6 +6,8 @@ export type WorkspaceProfile = {
   cpu: number;
   memoryGiB: number;
   computeMultiplier: 1 | 2 | 4 | 8;
+  /** Allocation quota cost used by AI WONDERLAND billing. */
+  quotaCredits: 10 | 20 | 40 | 80;
   description: string;
 };
 
@@ -16,6 +18,7 @@ export const WORKSPACE_PROFILES: readonly WorkspaceProfile[] = [
     cpu: 1,
     memoryGiB: 2,
     computeMultiplier: 1,
+    quotaCredits: 10,
     description: 'Light coding, small sites, scripts and quick edits.',
   },
   {
@@ -24,6 +27,7 @@ export const WORKSPACE_PROFILES: readonly WorkspaceProfile[] = [
     cpu: 2,
     memoryGiB: 4,
     computeMultiplier: 2,
+    quotaCredits: 20,
     description: 'General web development, Node.js and normal builds.',
   },
   {
@@ -32,6 +36,7 @@ export const WORKSPACE_PROFILES: readonly WorkspaceProfile[] = [
     cpu: 4,
     memoryGiB: 8,
     computeMultiplier: 4,
+    quotaCredits: 40,
     description: 'Large builds, heavier compiles and AI tooling.',
   },
   {
@@ -40,6 +45,7 @@ export const WORKSPACE_PROFILES: readonly WorkspaceProfile[] = [
     cpu: 8,
     memoryGiB: 16,
     computeMultiplier: 8,
+    quotaCredits: 80,
     description: 'Short high-performance sessions and demanding builds.',
   },
 ] as const;
