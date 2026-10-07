@@ -25,6 +25,9 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain("[coder-customer-enrollment] create user failed");
     expect(identity).toContain("created.status === 401 || created.status === 403");
     expect(identity).toContain("return verifiedOperatorCoderOwner(user, expectedEmail)");
+    const operatorAccess = file('apps/web/lib/coder/operator-access.server.ts');
+    expect(operatorAccess).toContain("process.env.ADMIN_USER_ID?.trim()");
+    expect(operatorAccess).toContain("if (canonicalAdminId) return canonicalAdminId");
     expect(identity).toContain("coderApiRequest('/api/v2/users/me', 'GET')");
     expect(identity).toContain("actual.id !== operatorCoderId");
     expect(identity).toContain("coderUser.id === operatorCoderId");
