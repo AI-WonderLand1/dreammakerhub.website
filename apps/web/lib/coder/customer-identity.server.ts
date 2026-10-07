@@ -17,6 +17,8 @@ type CoderUser = {
 type CoderUsers = { users: CoderUser[] };
 type CoderOrganization = {
   id: string;
+  name?: string;
+  display_name?: string;
   is_default?: boolean;
 };
 
@@ -39,6 +41,22 @@ async function liveCustomerOrganizationId(): Promise<string> {
   if (configured && UUID.test(configured) &&
       organizations.some((organization) => organization.id === configured)) {
     return configured;
+  }
+
+  const configuredName = process.env.CODER_CUSTOMER_ORG_NAME?.trim().toLowerCase();
+  if (configuredName) {
+    const matches = organizations.filter((organization) =>
+      organization.name?.trim().toLowerCase() === configuredName ||
+      organization.display_name?.trim().toLowerCase() === configuredName);
+    if (matches.length === 1) return matches[0].id;
+    if (matches.length === 0) {
+      throw new CostGateError(
+        `Configured Coder customer organization "${process.env.CODER_CUSTOMER_ORG_NAME}" was not found.`,
+      );
+    }
+    throw new CostGateError(
+      `Configured Coder customer organization "${process.env.CODER_CUSTOMER_ORG_NAME}" is ambiguous.`,
+    );
   }
 
   const defaults = organizations.filter((organization) => organization.is_default === true);
