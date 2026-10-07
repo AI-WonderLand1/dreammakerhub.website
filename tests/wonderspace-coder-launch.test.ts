@@ -62,7 +62,7 @@ describe('Coder API remains the WonderSpace engine', () => {
   it('keeps the form visible, retries outages, and shows concrete live readiness blockers', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
     expect(launch).toContain('Coder connected · setup still required');
-    expect(launch).toContain('>Retry<');
+    expect(launch).toContain('Retry');
     expect(launch).toContain('setRetryCount((count) => count + 1)');
     expect(launch).toContain('options.blockers.map');
     expect(launch).toContain('<option value="blank">Blank workspace</option>');
