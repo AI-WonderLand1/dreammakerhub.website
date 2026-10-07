@@ -40,12 +40,14 @@ describe('customer-only Coder provisioning', () => {
     const open = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
     const runner = file('apps/web/app/api/internal/coder/customer-runner/route.ts');
     expect(create).toContain('isConfiguredCoderOperator(userId)');
-    expect(create).toContain("operatorWorkspace ? owner?.id === operatorId");
+    expect(create).toContain("const ownerRoleIsSafe = operatorWorkspace");
+    expect(create).toContain("? owner?.id === operatorId");
     expect(open).toContain('isConfiguredCoderOperator(user.id)');
     expect(open).toContain('(operator ? coderUserId !== operatorId : coderUserId === operatorId)');
     expect(open).toContain("(!operator && owner.login_type !== 'oidc')");
     expect(runner).toContain('isConfiguredCoderOperator(job.user_id)');
-    expect(runner).toContain("operatorWorkspace ? owner?.id === operatorId");
+    expect(runner).toContain("const ownerRoleIsSafe = operatorWorkspace");
+    expect(runner).toContain("? owner?.id === operatorId");
   });
 
   it('keeps customer provisioning fail-closed with operator switches and live verification', () => {
