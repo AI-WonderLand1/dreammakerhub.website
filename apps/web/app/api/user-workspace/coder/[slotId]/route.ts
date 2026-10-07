@@ -16,6 +16,43 @@ type RemoteWorkspace = {
   latest_build?: { status?: string; transition?: string };
 };
 
+/** Reconcile a slot that is already marked deleting.
+ * At this stage no new destructive action is authorized by this helper. It only
+ * verifies the persisted Supabase -> Coder ownership mapping so the route can
+ * check whether the previously recorded workspace is already absent in Coder.
+ */
+async function customerDeletionReconciliationOwner(
+  userId: string,
+  email: string | undefined,
+  confirmed: string | undefined,
+  slotId: string,
+): Promise<{ ownerId: string; templateId: string }> {
+  const operatorId = process.env.CODER_OPERATOR_USER_ID;
+  if (!operatorId || !UUID.test(operatorId) || !confirmed || !email) {
+    throw new CostGateError('Customer deletion reconciliation requires a verified account.');
+  }
+
+  const expectedEmail = email.trim().toLowerCase();
+  const db = coderServiceClient();
+  const [identityResult, jobResult] = await Promise.all([
+    db.from('coder_customer_identities').select('coder_user_id,verified_email')
+      .eq('user_id', userId).maybeSingle(),
+    db.from('coder_customer_jobs').select('coder_user_id,template_id,status')
+      .eq('user_id', userId).eq('slot_id', slotId).maybeSingle(),
+  ]);
+
+  const identity = identityResult.data;
+  const job = jobResult.data;
+  if (identityResult.error || jobResult.error || !identity || !job ||
+      !UUID.test(identity.coder_user_id) || identity.coder_user_id === operatorId ||
+      identity.verified_email !== expectedEmail || job.coder_user_id !== identity.coder_user_id ||
+      !UUID.test(job.template_id)) {
+    throw new CostGateError('Customer workspace ownership mapping cannot be reconciled.');
+  }
+
+  return { ownerId: identity.coder_user_id, templateId: job.template_id };
+}
+
 /** Verify the owner of a customer allocation before using the privileged Coder token.
  * An app slot by itself never authorizes deletion of a Coder resource.
  * This is also checked when Coder returns 404, before releasing a paid slot.
@@ -80,6 +117,19 @@ export async function DELETE(request: Request, { params }: Context) {
         throw new CostGateError('Coder operator identity could not be verified. No deletion was attempted.');
       }
       expectedOwnerId = identity.id;
+    } else if (slot.state === 'deleting') {
+      // Once deletion has already started, the live Coder user, current
+      // template version, or old job status may have changed. Reconcile using
+      // the immutable persisted ownership mapping, then require Coder to prove
+      // the exact workspace is absent before releasing the slot.
+      const customer = await customerDeletionReconciliationOwner(
+        user.id,
+        user.email,
+        user.email_confirmed_at,
+        slot.id,
+      );
+      expectedOwnerId = customer.ownerId;
+      expectedTemplateId = customer.templateId;
     } else {
       const customer = await customerDeletionOwner(user.id, user.email, user.email_confirmed_at, slot.id);
       expectedOwnerId = customer.ownerId;
@@ -114,9 +164,10 @@ export async function DELETE(request: Request, { params }: Context) {
     if (workspace.latest_build?.status === 'failed' && workspace.latest_build.transition === 'delete') {
       throw new CostGateError('Coder deletion failed. Slot remains allocated pending administrator cleanup.');
     }
-    if (slot.state !== 'deleting' && workspace.latest_build?.transition !== 'delete') {
-      // An accepted build request only queues deletion; it does not prove the
-      // workspace or its persistent volume has been removed.
+    if (workspace.latest_build?.transition !== 'delete') {
+      // If a prior browser session marked the slot deleting but Coder no longer
+      // shows a delete transition, submit it again. Ownership/template checks
+      // above still apply before any destructive request.
       const deletion = await coderApiRequest(`${path}/builds`, 'POST', { transition: 'delete' });
       if (!deletion.ok) throw new CostGateError('Coder did not accept workspace deletion. Slot remains allocated.');
     }

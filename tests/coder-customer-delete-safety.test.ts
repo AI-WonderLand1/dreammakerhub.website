@@ -24,6 +24,19 @@ describe('customer workspace deletion authorization', () => {
     expect(deletion).not.toContain('body.userId');
   });
 
+
+
+  it('releases already-deleting slots using persisted ownership after Coder confirms absence', () => {
+    expect(deletion).toContain('customerDeletionReconciliationOwner');
+    expect(deletion).toContain("slot.state === 'deleting'");
+    expect(deletion).toContain("!UUID.test(job.template_id)");
+    expect(deletion).toContain("if (current.status === 404)");
+    expect(deletion).toContain("if (byName.status !== 404)");
+    expect(deletion).toContain("await releaseDeletedCoderSlot(user.id, slot.id, slot.workspace_id)");
+    expect(deletion).not.toContain("slot.state !== 'deleting' && workspace.latest_build?.transition !== 'delete'");
+    expect(deletion).toContain("if (workspace.latest_build?.transition !== 'delete')");
+  });
+
   it('verifies the exact remote owner and template before sending any destructive build', () => {
     const owner = deletion.indexOf('expectedOwnerId = customer.ownerId;');
     const ownership = deletion.indexOf('workspace.owner_id !== expectedOwnerId');
