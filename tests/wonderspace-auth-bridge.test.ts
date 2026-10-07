@@ -5,12 +5,16 @@ import { join } from 'node:path';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('WonderSpace Supabase auth bridge', () => {
-  it('prefers the normal server cookie session and verifies a Bearer token as fallback', () => {
+  it('prefers a verified request Bearer token over a potentially stale server cookie', () => {
     const helper = read('apps/web/lib/supabase/authenticated-user.server.ts');
-    expect(helper).toContain('await supabase.auth.getUser()');
     expect(helper).toContain("request.headers.get('authorization')");
+    expect(helper).toContain("if (authorization)");
     expect(helper).toContain('/^Bearer\\s+(.+)$/i');
     expect(helper).toContain('await supabase.auth.getUser(token)');
+    expect(helper).toContain('await supabase.auth.getUser()');
+    expect(helper.indexOf('await supabase.auth.getUser(token)')).toBeLessThan(helper.indexOf('await supabase.auth.getUser()'));
+    expect(helper).toContain('if (!token) return null');
+    expect(helper).toContain('if (bearerResult.error || !bearerResult.data.user) return null');
     expect(helper).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
     expect(helper).not.toContain('jwtDecode');
     expect(helper).not.toContain('console.log');

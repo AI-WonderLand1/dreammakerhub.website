@@ -11,8 +11,9 @@ export default async function AdminIDEOperationsPage() {
   // UUID, or unverified getSession result must never grant admin access.
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) redirect('/auth/login');
+  const canonicalAdminId = process.env.ADMIN_USER_ID?.trim();
   const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-  if (!adminIds.includes(user.id)) notFound();
+  if (user.id !== canonicalAdminId && !adminIds.includes(user.id)) notFound();
 
   const urlConfigured = Boolean(process.env.CODER_API_URL);
   const tokenConfigured = Boolean(process.env.CODER_API_TOKEN);

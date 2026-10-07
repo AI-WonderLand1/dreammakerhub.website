@@ -21,8 +21,9 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ success: true, session: null, user: null }, { headers: noStore });
     }
 
+    const canonicalAdminId = process.env.ADMIN_USER_ID?.trim();
     const adminUserIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
-    const isAdmin = adminUserIds.includes(user.id);
+    const isAdmin = user.id === canonicalAdminId || adminUserIds.includes(user.id);
     return NextResponse.json({
       success: true,
       session: { access_token: session.access_token, user: { ...user, isAdmin } },

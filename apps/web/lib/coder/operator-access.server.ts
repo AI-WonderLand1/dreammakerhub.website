@@ -9,10 +9,14 @@ function configuredAdminIds(): string[] {
 
 /**
  * Selects exactly one Supabase account that may control the shared Coder owner.
- * A dedicated ID takes precedence.  The single-admin fallback preserves the
- * previous safe configuration without granting access when several admins exist.
+ * ADMIN_USER_ID is the canonical single-admin setting for this deployment.
+ * CODER_OPERATOR_SUPABASE_ID remains a compatibility fallback, followed by the
+ * older comma-separated ADMIN_USER_IDS setting when it contains exactly one ID.
  */
 function configuredOperatorId(): string | null {
+  const canonicalAdminId = process.env.ADMIN_USER_ID?.trim();
+  if (canonicalAdminId) return canonicalAdminId;
+
   const dedicatedOperatorId = process.env.CODER_OPERATOR_SUPABASE_ID?.trim();
   if (dedicatedOperatorId) return dedicatedOperatorId;
 
