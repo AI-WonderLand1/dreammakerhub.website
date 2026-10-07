@@ -50,14 +50,14 @@ describe('Coder API remains the WonderSpace engine', () => {
     expect(operatorGate).toContain('Open project files');
     expect(read('apps/web/components/engines/PodLauncher.tsx')).toContain('podType: PodType');
   });
-  it('keeps repository selection visible but prevents launch when the template does not support it', () => {
+  it('uses first-party AI WONDERLAND projects instead of GitHub repositories in the customer IDE launcher', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');
-    const route = read('apps/web/app/api/user-workspace/provision/route.ts');
-    expect(launch).toContain("aria-pressed={mode === 'repo'}");
-    expect(launch).toContain("mode !== 'blank'");
-    expect(launch).toContain('options.regions.length ?');
-    expect(route).toContain('Repository launch is not enabled on the published Coder template.');
-    expect(route).toContain('This Coder template does not accept image overrides.');
+    expect(launch).toContain("aria-pressed={mode === 'site'}");
+    expect(launch).toContain('AI WONDERLAND project repository');
+    expect(launch).toContain("projectId: mode === 'site' ? projectId : null");
+    expect(launch).not.toContain('Public GitHub repository');
+    expect(launch).not.toContain('Checking GitHub');
+    expect(launch).not.toContain('/api/user-workspace/repository');
   });
   it('keeps the form visible, retries outages, and shows concrete live readiness blockers', () => {
     const launch = read('apps/web/components/engines/WonderSpaceLaunch.tsx');

@@ -27,19 +27,17 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).not.toContain('GitHub Codespaces');
   });
 
-  it('restricts GitHub to a future user-authorized connection without public repository inspection', () => {
+  it('offers only AI WONDERLAND website projects or a blank workspace', () => {
     expect(form).toContain('My AI WONDERLAND projects');
-    expect(form).toContain('My GitHub repositories');
-    expect(form).toContain('separate, account-authorized GitHub connection');
-    expect(form).toContain('Files on my computer');
+    expect(form).toContain('Website repository');
     expect(form).toContain('siteProjectHref(selectedSiteProject)');
     expect(form).toContain('id="workspace-source"');
     expect(form).toContain('Manage workspaces');
-    expect(form).toContain("source !== 'blank'");
+    expect(form).not.toContain('My GitHub repositories');
+    expect(form).not.toContain('GitHub connection');
+    expect(form).not.toContain('Files on my computer');
     expect(form).not.toContain('Public GitHub repository');
     expect(form).not.toContain('https://github.com/');
-    expect(form).not.toContain('public-github-repo');
-    expect(form).not.toContain('inspectPublicRepo');
     expect(form).not.toContain('github.com');
     expect(form).not.toContain('Automatic region assignment');
     expect(form).not.toContain('>Region</span>');
@@ -48,9 +46,10 @@ describe('WonderSpace customer creation layout', () => {
 
   it('only submits the approved server-side customer form fields', () => {
     expect(form).toContain("fetch('/api/user-workspace/customer/provision'");
-    expect(form).toContain('JSON.stringify({ workspaceName, machineProfile })');
+    expect(form).toContain("projectId: source === 'site' ? siteProjectId : null");
     expect(provision).toContain('queueCustomerWorkspace(user, input)');
-    expect(customerQueue).toContain('Only an approved blank IDE');
+    expect(customerQueue).toContain('getProjectMetadata(projectId, user.id)');
+    expect(customerQueue).toContain('External repository and image overrides are not supported');
     expect(form).toContain('/api/user-workspace/customer/open/');
     expect(form).toContain('Open private IDE');
     expect(form).not.toContain('coder.dreammakerhub.website');
@@ -58,7 +57,7 @@ describe('WonderSpace customer creation layout', () => {
 
   it('renders the gated customer form on its dedicated route without changing the operator gate', () => {
     expect(form).toContain('const provisioningPaused = operatorPreview || !provisioningEnabled');
-    expect(form).toContain("disabled={loading || provisioningPaused || source !== 'blank'}");
+    expect(form).toContain("disabled={loading || provisioningPaused || (source === 'site' && !siteProjectId)}");
     expect(form).toContain('if (operatorPreview || !provisioningEnabled)');
     expect(gate).toContain('function BrowserIdeEntry()');
     expect(gate).not.toContain('CustomerSandboxIdeEntry');
