@@ -6,6 +6,7 @@ import { coderApiConfig, coderServiceClient } from '@/lib/coder/workspace-slots.
 import { verifiedCustomerCoderOwner } from '@/lib/coder/customer-identity.server';
 import { workspaceProfile } from '@/lib/coder/workspace-profiles';
 import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
+import { getProjectMetadata } from '@/lib/projects/storage';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const WORKSPACE_NAME = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
@@ -79,7 +80,19 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     throw new CostGateError('That machine profile is not enabled for the current customer rollout.', 429);
   }
   if (body.repository || body.ideImage || body.sshPublicKey || body.diskGiB !== undefined) {
-    throw new CostGateError('Only an approved blank IDE is available in the current customer rollout.', 429);
+    throw new CostGateError('External repository and image overrides are not supported by the customer IDE.', 429);
+  }
+
+  const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
+  if (projectId) {
+    if (!UUID.test(projectId)) {
+      throw new CostGateError('Choose a valid AI WONDERLAND project.', 429);
+    }
+    try {
+      await getProjectMetadata(projectId, user.id);
+    } catch {
+      throw new CostGateError('That AI WONDERLAND project is unavailable or does not belong to this account.', 402);
+    }
   }
   const plan = await verifiedCostPlan(user.id);
   const coderUserId = await verifiedCustomerCoderOwner(user);
