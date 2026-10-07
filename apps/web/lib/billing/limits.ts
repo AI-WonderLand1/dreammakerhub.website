@@ -6,6 +6,8 @@ export type UserLimits = {
   projectsLimit: number;
   workspacesLimit: number;
   ideSessionsLimit: number;
+  /** Concurrent/saved IDE budget. Micro costs 10 credits; Standard costs 20. */
+  workspaceQuotaCredits: number;
   computeCreditsMonthly: number;
   /**
    * Legacy internal name. These units are customer-facing AI credits, not raw
@@ -37,6 +39,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed
     projectsLimit: 5,
     workspacesLimit: 5,
     ideSessionsLimit: 2,
+    workspaceQuotaCredits: 20,
     computeCreditsMonthly: 9000,
     aiTokensMonthly: 500000,
     renderCreditsMonthly: 10,
@@ -49,6 +52,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed
     projectsLimit: 25,
     workspacesLimit: 25,
     ideSessionsLimit: 2,
+    workspaceQuotaCredits: 20,
     computeCreditsMonthly: 12000,
     aiTokensMonthly: 2000000,
     renderCreditsMonthly: 50,
@@ -61,6 +65,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed
     projectsLimit: 100,
     workspacesLimit: 100,
     ideSessionsLimit: 4,
+    workspaceQuotaCredits: 40,
     computeCreditsMonthly: 18000,
     aiTokensMonthly: 5000000,
     renderCreditsMonthly: 150,
@@ -73,6 +78,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed
     projectsLimit: 250,
     workspacesLimit: 250,
     ideSessionsLimit: 6,
+    workspaceQuotaCredits: 60,
     computeCreditsMonthly: 30000,
     aiTokensMonthly: 12000000,
     renderCreditsMonthly: 400,
@@ -85,6 +91,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed
     projectsLimit: 999999,
     workspacesLimit: 999999,
     ideSessionsLimit: 8,
+    workspaceQuotaCredits: 80,
     computeCreditsMonthly: 60000,
     aiTokensMonthly: 25000000,
     renderCreditsMonthly: 1000,
@@ -97,6 +104,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed
     projectsLimit: 999999,
     workspacesLimit: 999999,
     ideSessionsLimit: 999999,
+    workspaceQuotaCredits: 9999990,
     computeCreditsMonthly: 999999999,
     aiTokensMonthly: 999999999,
     renderCreditsMonthly: 999999999,
