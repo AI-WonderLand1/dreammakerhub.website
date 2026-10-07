@@ -22,7 +22,7 @@ type LaunchOptions = {
   oidcEnabled: boolean;
   blockers: LaunchBlocker[];
 };
-type Setup = { slotId?: string; status?: string; error?: string; url?: string };
+type Setup = { slotId?: string; status?: string; error?: string; url?: string; code?: string; href?: string };
 type Stage = 'form' | 'provisioning' | 'ready' | 'error';
 
 function uniqueWorkspaceName(userId: string): string {
@@ -44,6 +44,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [stage, setStage] = useState<Stage>('form');
   const [error, setError] = useState('');
   const [opening, setOpening] = useState(false);
+  const [coderLoginUrl, setCoderLoginUrl] = useState('');
 
   useEffect(() => {
     if (user) setName(uniqueWorkspaceName(user.id));
@@ -154,6 +155,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
 
     setStage('provisioning');
     setError('');
+    setCoderLoginUrl('');
     try {
       const response = await fetch('/api/user-workspace/customer/provision', {
         method: 'POST',
@@ -164,7 +166,12 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
         body: JSON.stringify({ workspaceName: name, machineProfile, projectId: mode === 'site' ? projectId : null }),
       });
       const data = await response.json().catch(() => null) as Setup | null;
-      if (!response.ok) throw new Error(data?.error || 'Workspace could not be created.');
+      if (!response.ok) {
+        if (response.status === 409 && data?.code === 'CODER_OIDC_BOOTSTRAP_REQUIRED' && data.href) {
+          setCoderLoginUrl(data.href);
+        }
+        throw new Error(data?.error || 'Workspace could not be created.');
+      }
       if (!data?.slotId || !data.status) throw new Error('Workspace provisioning returned an invalid response.');
       setSlotId(data.slotId);
       if (data.status === 'ready') setStage('ready');
@@ -346,7 +353,26 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                   </p>
                 )}
               </div>
-              {stage === 'error' && <p role="alert" className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">{error}</p>}
+              {stage === 'error' && (
+                <div className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">
+                  <p role="alert">{error}</p>
+                  {coderLoginUrl && (
+                    <div className="mt-3">
+                      <a
+                        href={coderLoginUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex rounded-lg bg-white px-4 py-2 font-semibold text-slate-950 hover:bg-slate-200"
+                      >
+                        Connect Coder account
+                      </a>
+                      <p className="mt-2 text-xs text-rose-100/80">
+                        Complete the one-time Coder sign-in, return here, then create the IDE again.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           </form>
         )}
