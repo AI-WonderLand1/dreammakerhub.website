@@ -49,7 +49,8 @@ describe('Coder customer isolation and operator settings', () => {
     const page = read('apps/web/app/settings/admin/ide/page.tsx');
     const account = read('apps/web/app/settings/account/page.tsx');
     expect(page).toContain('supabase.auth.getUser()');
-    expect(page).toContain('if (!adminIds.includes(user.id)) notFound()');
+    expect(page).toContain("process.env.ADMIN_USER_ID?.trim()");
+    expect(page).toContain("if (user.id !== canonicalAdminId && !adminIds.includes(user.id)) notFound()");
     expect(page).not.toContain('sessionStorage');
     expect(page).not.toContain('CODER_API_TOKEN}');
     expect(account).toContain('const isAdmin = !error &&');
