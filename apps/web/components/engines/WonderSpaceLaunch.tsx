@@ -22,7 +22,20 @@ type LaunchOptions = {
   oidcEnabled: boolean;
   blockers: LaunchBlocker[];
 };
-type Setup = { slotId?: string; status?: string; error?: string; url?: string; code?: string; href?: string };
+type Setup = { slotId?: string; status?: string; error?: string; url?: string };
+type SavedWorkspace = {
+  id: string;
+  workspace_id: string | null;
+  workspace_name: string;
+  state: 'reserved' | 'provisioned' | 'deleting' | 'released';
+  created_at: string;
+};
+type WorkspaceList = {
+  slots?: SavedWorkspace[];
+  canOpen?: boolean;
+  openMode?: 'operator' | 'customer' | 'disabled';
+  error?: string;
+};
 type Stage = 'form' | 'provisioning' | 'ready' | 'error';
 
 function uniqueWorkspaceName(userId: string): string {
@@ -44,7 +57,10 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [stage, setStage] = useState<Stage>('form');
   const [error, setError] = useState('');
   const [opening, setOpening] = useState(false);
-  const [coderLoginUrl, setCoderLoginUrl] = useState('');
+  const [openingSlotId, setOpeningSlotId] = useState('');
+  const [savedWorkspaces, setSavedWorkspaces] = useState<SavedWorkspace[]>([]);
+  const [savedWorkspacesLoading, setSavedWorkspacesLoading] = useState(true);
+  const [savedWorkspacesError, setSavedWorkspacesError] = useState('');
 
   useEffect(() => {
     if (user) setName(uniqueWorkspaceName(user.id));
@@ -92,6 +108,31 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     return () => controller.abort();
   }, [user?.id, session?.access_token, retryCount]);
 
+  const refreshSavedWorkspaces = async () => {
+    if (!user) return;
+    setSavedWorkspacesLoading(true);
+    setSavedWorkspacesError('');
+    try {
+      const response = await fetch('/api/user-workspace/coder', {
+        cache: 'no-store',
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+      });
+      const data = await response.json().catch(() => null) as WorkspaceList | null;
+      if (!response.ok) throw new Error(data?.error || 'Unable to load your IDEs.');
+      setSavedWorkspaces(Array.isArray(data?.slots) ? data!.slots! : []);
+    } catch (cause) {
+      setSavedWorkspacesError(cause instanceof Error ? cause.message : 'Unable to load your IDEs.');
+    } finally {
+      setSavedWorkspacesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    void refreshSavedWorkspaces();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, session?.access_token]);
+
 
   useEffect(() => {
     if (!slotId || stage !== 'provisioning') return;
@@ -107,6 +148,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       if (!response.ok) throw new Error(data?.error || 'Unable to check workspace setup.');
       if (data?.status === 'ready') {
         setStage('ready');
+        void refreshSavedWorkspaces();
         return;
       }
       if (data?.status === 'needs_reconciliation') {
@@ -155,7 +197,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
 
     setStage('provisioning');
     setError('');
-    setCoderLoginUrl('');
     try {
       const response = await fetch('/api/user-workspace/customer/provision', {
         method: 'POST',
@@ -166,15 +207,13 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
         body: JSON.stringify({ workspaceName: name, machineProfile, projectId: mode === 'site' ? projectId : null }),
       });
       const data = await response.json().catch(() => null) as Setup | null;
-      if (!response.ok) {
-        if (response.status === 409 && data?.code === 'CODER_OIDC_BOOTSTRAP_REQUIRED' && data.href) {
-          setCoderLoginUrl(data.href);
-        }
-        throw new Error(data?.error || 'Workspace could not be created.');
-      }
+      if (!response.ok) throw new Error(data?.error || 'Workspace could not be created.');
       if (!data?.slotId || !data.status) throw new Error('Workspace provisioning returned an invalid response.');
       setSlotId(data.slotId);
-      if (data.status === 'ready') setStage('ready');
+      if (data.status === 'ready') {
+        setStage('ready');
+        void refreshSavedWorkspaces();
+      }
       else if (data.status === 'needs_reconciliation') {
         throw new Error('Coder may have created the workspace but confirmation was interrupted. Contact support before retrying.');
       }
@@ -184,11 +223,12 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     }
   };
 
-  const openPrivateIde = async () => {
-    if (!slotId || opening) return;
+  const openPrivateIde = async (targetSlotId = slotId) => {
+    if (!targetSlotId || opening) return;
     setOpening(true);
+    setOpeningSlotId(targetSlotId);
     setError('');
-    const endpoint = `/api/user-workspace/customer/open/${encodeURIComponent(slotId)}`;
+    const endpoint = `/api/user-workspace/customer/open/${encodeURIComponent(targetSlotId)}`;
     const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
 
     try {
@@ -210,6 +250,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       setError(cause instanceof Error ? cause.message : 'Your private IDE could not be opened.');
     } finally {
       setOpening(false);
+      setOpeningSlotId('');
     }
   };
 
@@ -244,7 +285,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
             <p className="my-4 text-slate-300">{name}</p>
             <button type="button" onClick={() => void openPrivateIde()} disabled={opening}
               className="block w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:opacity-50">
-              {opening ? 'Opening private IDE…' : 'Open private IDE →'}
+              {opening && openingSlotId === slotId ? 'Opening private IDE…' : 'Open private IDE →'}
             </button>
             {error && <p role="alert" className="mt-3 text-sm text-amber-200">{error}</p>}
             <button type="button" onClick={() => { setName(uniqueWorkspaceName(user.id)); setSlotId(''); setStage('form'); }} className="mt-5 block w-full text-sm text-slate-400 hover:text-white">Create another workspace</button>
@@ -256,7 +297,62 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
             <p className="mt-3 text-slate-300">Waiting for the actual workspace to report ready. This may take a minute.</p>
           </section>
         ) : (
-          <form onSubmit={provision} className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+          <>
+            <section className="mb-6 rounded-3xl border border-cyan-300/20 bg-[#11182e]/90 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold">My IDEs</h2>
+                  <p className="mt-1 text-sm text-slate-400">Your created WonderSpace IDEs stay here so you can reopen them later.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void refreshSavedWorkspaces()}
+                  disabled={savedWorkspacesLoading}
+                  className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 disabled:opacity-50"
+                >
+                  {savedWorkspacesLoading ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
+
+              {savedWorkspacesError && (
+                <p role="alert" className="mt-4 rounded-xl border border-amber-300/30 bg-amber-950/30 p-3 text-sm text-amber-100">
+                  {savedWorkspacesError}
+                </p>
+              )}
+
+              {!savedWorkspacesLoading && !savedWorkspacesError && savedWorkspaces.length === 0 && (
+                <p className="mt-4 rounded-xl border border-white/10 bg-black/10 p-4 text-sm text-slate-400">
+                  No IDEs yet. Create one below and it will stay listed here.
+                </p>
+              )}
+
+              {savedWorkspaces.length > 0 && (
+                <div className="mt-4 grid gap-3">
+                  {savedWorkspaces.map((workspace) => (
+                    <div key={workspace.id} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-white">{workspace.workspace_name}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {workspace.state === 'provisioned' ? 'Ready' : workspace.state === 'reserved' ? 'Provisioning' : workspace.state}
+                          {' · '}
+                          Created {new Date(workspace.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void openPrivateIde(workspace.id)}
+                        disabled={opening || workspace.state !== 'provisioned'}
+                        className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {opening && openingSlotId === workspace.id ? 'Opening…' : workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <form onSubmit={provision} className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             <section className="rounded-3xl border border-violet-300/20 bg-[#11182e]/90 p-6">
               <h2 className="mb-5 text-xl font-semibold">1. Choose your project</h2>
               <div className="grid gap-3">
@@ -354,27 +450,13 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                 )}
               </div>
               {stage === 'error' && (
-                <div className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">
-                  <p role="alert">{error}</p>
-                  {coderLoginUrl && (
-                    <div className="mt-3">
-                      <a
-                        href={coderLoginUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex rounded-lg bg-white px-4 py-2 font-semibold text-slate-950 hover:bg-slate-200"
-                      >
-                        Connect Coder account
-                      </a>
-                      <p className="mt-2 text-xs text-rose-100/80">
-                        Complete the one-time Coder sign-in, return here, then create the IDE again.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <p role="alert" className="mt-4 rounded-xl border border-rose-300/30 bg-rose-950/40 p-4 text-sm text-rose-200">
+                  {error}
+                </p>
               )}
             </section>
           </form>
+          </>
         )}
       </div>
     </main>

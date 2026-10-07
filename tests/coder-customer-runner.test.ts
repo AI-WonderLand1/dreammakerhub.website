@@ -15,11 +15,12 @@ describe('customer-only Coder provisioning', () => {
     expect(identity).toContain("organization_ids: [organizationId]");
     expect(identity).toContain("process.env.CODER_ORG_ID");
     expect(identity).toContain("[coder-customer-enrollment] create user failed");
-    expect(identity).toContain('CoderOidcBootstrapRequired');
     expect(identity).toContain("created.status === 401 || created.status === 403");
-    expect(identity).toContain("url.pathname = '/login'");
     expect(identity).toContain('coderUser.id === operatorCoderId');
     expect(identity).toContain(".from('coder_customer_identities')");
+    expect(identity).not.toContain('CoderOidcBootstrapRequired');
+    expect(identity).not.toContain("url.pathname = '/login'");
+    expect(identity).not.toContain('Connect Coder account');
     expect(identity).not.toContain('Sign in to Coder with the same verified account before requesting an IDE.');
   });
 
@@ -33,6 +34,15 @@ describe('customer-only Coder provisioning', () => {
     expect(source).not.toContain('assertFreshUsageController');
     expect(identity).toContain("coderApiRequest('/api/v2/users/authmethods', 'GET')");
     expect(identity).not.toContain('CODER_SUPABASE_OIDC_VERIFIED');
+  });
+
+  it('keeps created IDEs visible on the WonderSpace IDE page', () => {
+    const launch = file('apps/web/components/engines/WonderSpaceLaunch.tsx');
+    expect(launch).toContain("fetch('/api/user-workspace/coder'");
+    expect(launch).toContain('My IDEs');
+    expect(launch).toContain('Your created WonderSpace IDEs stay here so you can reopen them later.');
+    expect(launch).toContain("workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'");
+    expect(launch).toContain('openPrivateIde(workspace.id)');
   });
 
   it('creates under the verified customer UUID and keeps uncertain slots allocated', () => {
