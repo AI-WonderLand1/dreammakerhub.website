@@ -114,7 +114,7 @@ function codeServerUrl(workspace: CoderWorkspace): string | null {
   // subdomain app hostname from the already-verified owner/workspace pair.
   // App-slug subdomains omit the agent segment:
   //   code-server--workspace--owner.<wildcard-domain>
-  if (agents.length > 0 && workspace.owner_name && workspace.name) {
+  if (workspace.owner_name && workspace.name) {
     const owner = workspace.owner_name.trim().toLowerCase();
     const workspaceName = workspace.name.trim().toLowerCase();
     const appLabel = `code-server--${workspaceName}--${owner}`;
@@ -214,6 +214,10 @@ async function verifiedCustomerWorkspace(
       workspace.template_id !== templateId) {
     throw new CostGateError('Coder workspace ownership or template does not match this account.');
   }
+
+  // Coder's workspace response may omit owner_name even though the owner was
+  // independently verified above. Use that verified username for app routing.
+  if (!workspace.owner_name) workspace.owner_name = owner.username;
 
   return workspace;
 }
