@@ -4,7 +4,8 @@ import { join } from 'node:path';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const deletion = read('apps/web/app/api/user-workspace/coder/[slotId]/route.ts');
-const handoff = read('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
+const handoff = read('apps/web/lib/coder/customer-workspace-access.server.ts');
+const open = read('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
 
 describe('customer workspace deletion authorization', () => {
   it('binds the authenticated site user, slot, Coder identity and ready job before deletion', () => {
@@ -75,7 +76,7 @@ describe('customer IDE lifecycle handoff', () => {
     expect(handoff).toContain('workspace.owner_id !== coderUserId');
     expect(handoff).toContain('workspace.template_id !== templateId');
     expect(handoff).toContain('CODER_WILDCARD_ACCESS_URL');
-    expect(handoff).toContain("transition: 'start'");
+    expect(open).toContain("transition: 'start'");
     expect(handoff).not.toContain('CODER_API_TOKEN');
   });
 });
