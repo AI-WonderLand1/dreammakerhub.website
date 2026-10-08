@@ -448,8 +448,8 @@ export default function Studio3DFactory() {
       <div className="flex-1 flex flex-col bg-slate-900 relative min-w-0 pb-12">
         <StudioViewport ref={viewportRef} onSelect={handleSelect} onEntityCreated={handleEntityCreated} className="flex-1" showGrid={showGrid} />
         <div className="wonderplay-viewport-tools" role="toolbar" aria-label="3D viewport controls">
-          <button type="button" aria-pressed={showGrid} title="Show grid" onClick={() => { setShowGrid((current) => { viewportRef.current?.setShowGrid(!current); return !current; }); }}><Grid3x3 size={15} /> Grid</button>
-          <button type="button" aria-pressed={wireframe} title="Wireframe rendering" onClick={() => { setWireframe((current) => { viewportRef.current?.setWireframe(!current); return !current; }); }}><Box size={15} /> Wireframe</button>
+          <button type="button" aria-pressed={showGrid} title="Show grid" onClick={() => { const next = !showGrid; setShowGrid(next); viewportRef.current?.setShowGrid(next); }}><Grid3x3 size={15} /> Grid</button>
+          <button type="button" aria-pressed={wireframe} title="Wireframe rendering" onClick={() => { const next = !wireframe; setWireframe(next); viewportRef.current?.setWireframe(next); }}><Box size={15} /> Wireframe</button>
           <button type="button" title="Focus selected object" disabled={!selected?.id} onClick={() => viewportRef.current?.focusOn(selected?.id ?? null)}><Focus size={15} /> Focus</button>
         </div>
 
