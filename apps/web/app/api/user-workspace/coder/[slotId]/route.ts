@@ -154,7 +154,15 @@ export async function DELETE(request: Request, { params }: Context) {
       await releaseDeletedCoderSlot(user.id, slot.id, slot.workspace_id);
       return NextResponse.json({ deleted: true, message: 'Coder confirmed workspace is absent; slot released.' }, { headers: noStore });
     }
-    if (!current.ok) throw new CostGateError('Cannot confirm Coder workspace state. Slot remains allocated.');
+    if (!current.ok) {
+      console.error('[coder-delete] workspace lookup failed', {
+        slotId: slot.id,
+        workspaceId: slot.workspace_id,
+        status: current.status,
+        requestId: current.headers.get('x-coder-request-id') || 'none',
+      });
+      throw new CostGateError('Cannot confirm Coder workspace state. Slot remains allocated.');
+    }
     const workspace = await current.json().catch(() => null) as RemoteWorkspace | null;
     if (!workspace || workspace.id !== slot.workspace_id || workspace.name !== slot.workspace_name ||
         workspace.owner_id !== expectedOwnerId ||
