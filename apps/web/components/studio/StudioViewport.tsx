@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallba
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { logger } from "@/lib/logger";
 
-export type StudioSelection = { name: string; id: string; entityId?: number };
+export type StudioSelection = { name: string; id: string; entityId?: number; objectId?: string };
 
 export type ViewportStats = { fps: number; entities: number; frames: number };
 
@@ -28,6 +28,8 @@ export type StudioViewportHandle = {
   setShadows: (enabled: boolean) => void;
   setAmbient: (color: [number, number, number], intensity?: number) => void;
   focusOn: (id: string | null) => void;
+  selectSceneObject: (objectId: string) => StudioSelection | null;
+  updateSceneObject: (objectId: string, transform: Partial<Pick<GeneratedSceneObject, "position" | "rotation" | "scale">>) => boolean;
   getStats: () => ViewportStats;
   setShowGrid: (enabled: boolean) => void;
 };
@@ -219,7 +221,7 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
     case "cylinder":
       return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
     case "plane":
-      return { type: "plane" };
+      return { type: "box", halfExtents: new pc.Vec3(0.5, 0.005, 0.5) };
     case "cone":
       // No native cone collision; approximate with a cylinder
       return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
@@ -320,7 +322,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           selectedEntityRef.current = entity;
           const name = entity.name || "untitled";
           const id = typeof entity.getGuid === "function" ? entity.getGuid() : `${name}-${entity.getIndex?.() ?? Date.now()}`;
-          const selection: StudioSelection = { name, id, entityId: entity.getIndex?.() };
+          const selection: StudioSelection = { name, id, entityId: entity.getIndex?.(), objectId: entity.__sourceObjectId };
           window.dispatchEvent(new CustomEvent("onCanvasAssetSelected", { detail: selection }));
           onSelectRef.current?.(selection);
 
@@ -430,7 +432,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!pc) return;
       const ground = new pc.Entity("Ground");
       ground.addComponent("render", { type: "plane" });
-      ground.setLocalScale(20, 20, 1);
+      ground.setLocalScale(20, 1, 20);
       ground.setPosition(0, -0.1, 0);
       const gm = new pc.StandardMaterial();
       gm.diffuse = new pc.Color(0.13, 0.13, 0.16);
@@ -439,7 +441,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       gm.update();
       ground.render.material = gm;
       ground.addComponent("rigidbody", { type: "static" });
-      ground.addComponent("collision", { type: "plane" });
+      // A plane is a valid render primitive, but not a PlayCanvas collision type.
+      ground.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.005, 0.5) });
       app.root.addChild(ground);
       groundRef.current = ground;
       return ground;
@@ -454,7 +457,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       }
       const grid = new pc.Entity("GridHelper");
       grid.addComponent("render", { type: "plane" });
-      grid.setLocalScale(20, 20, 1);
+      grid.setLocalScale(20, 1, 20);
       grid.setPosition(0, 0.005, 0);
       grid.render.castShadows = false;
       grid.render.receiveShadows = false;
@@ -689,6 +692,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       for (const obj of scene.objects ?? []) {
         const entity = new pc.Entity(obj.name || "object");
+        entity.__sourceObjectId = obj.id;
         const renderType = PRIMITIVE_TYPES[obj.type] ?? "box";
         entity.addComponent("render", { type: renderType });
 
@@ -1044,6 +1048,35 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       }
     }, []);
 
+    // Scene object IDs are the persisted scene schema's identifiers, not transient engine GUIDs.
+    const selectSceneObject = useCallback((objectId: string): StudioSelection | null => {
+      const root = appRef.current?.root.findByName("__sceneRoot");
+      const entity = root?.children.find((child: any) => child.__sourceObjectId === objectId);
+      if (!entity) return null;
+      selectedEntityRef.current = entity;
+      const selection: StudioSelection = {
+        id: entity.getGuid(),
+        name: entity.name,
+        entityId: entity.getIndex?.(),
+        objectId,
+      };
+      onSelectRef.current?.(selection);
+      return selection;
+    }, []);
+
+    const updateSceneObject = useCallback((
+      objectId: string,
+      transform: Partial<Pick<GeneratedSceneObject, "position" | "rotation" | "scale">>,
+    ): boolean => {
+      const root = appRef.current?.root.findByName("__sceneRoot");
+      const entity = root?.children.find((child: any) => child.__sourceObjectId === objectId);
+      if (!entity) return false;
+      if (transform.position) entity.setPosition(...transform.position);
+      if (transform.rotation) entity.setEulerAngles(...transform.rotation);
+      if (transform.scale) entity.setLocalScale(...transform.scale);
+      return true;
+    }, []);
+
     const getStats = useCallback((): ViewportStats => {
       return { fps: statsRef.current.fps, entities: statsRef.current.entities, frames: statsRef.current.frames };
     }, []);
@@ -1077,6 +1110,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       setShadows,
       setAmbient,
       focusOn,
+      selectSceneObject,
+      updateSceneObject,
       getStats,
       setShowGrid,
     }));
