@@ -26,7 +26,9 @@
     "@simple-git/argv-parser": "2.0.1",
     "xcode": {
       "uuid": "11.1.1"
-    }
+    },
+    "@modelcontextprotocol/sdk": "1.31.0",
+    "decode-uri-component": "0.5.0"
   },
   "scripts": {
     "dev": "npm run dev --workspace=ai-wonder-web",
@@ -40,7 +42,8 @@
     "lint": "eslint apps/ engine/ packages/ runners/ infra/",
     "lint:fix": "eslint apps/ engine/ packages/ runners/ infra/ --fix",
     "clean:ghosts": "npx ts-prune -p tsconfig.json && npm run lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "security:check": "node scripts/security/check-dependency-remediation.mjs"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
