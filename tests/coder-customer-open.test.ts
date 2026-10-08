@@ -31,6 +31,20 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).not.toContain('CODER_API_TOKEN');
   });
 
+  it('opens a verified workspace through a normal link and server redirect', () => {
+    const route = file('apps/web/app/api/user-workspace/customer/launch/[slotId]/route.ts');
+    const access = file('apps/web/lib/coder/customer-workspace-access.server.ts');
+
+    expect(route).toContain('verifiedCustomerWorkspace(request, slotId)');
+    expect(route).toContain('NextResponse.redirect(url, 307)');
+    expect(route).toContain("transition: 'start'");
+    expect(route).toContain("Refresh': '2'");
+    expect(access).toContain('workspace.owner_id !== coderUserId');
+    expect(access).toContain('workspace.template_id !== templateId');
+    expect(access).toContain('workspace.owner_name = owner.username');
+    expect(access).toContain('code-server--${workspaceName}--${owner}');
+  });
+
   it('restarts a stopped customer workspace without a cumulative time budget', () => {
     const route = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
     expect(route).not.toContain("from('coder_customer_compute_usage')");
@@ -51,9 +65,10 @@ describe('customer Google Docker IDE opening', () => {
     expect(create).toContain('wonderSpaceProjectIde');
     expect(create).toContain('WONDERSPACE_CODE_HOME');
     expect(create).not.toContain('<CustomerWorkspaceLaunch');
-    expect(launch).toContain('/api/user-workspace/customer/open/');
+    expect(launch).toContain('/api/user-workspace/customer/launch/');
     expect(launch).toContain('Open private IDE');
-    expect(launch).toContain('window.location.assign(data.url)');
+    expect(launch).not.toContain('openPrivateIde');
+    expect(launch).not.toContain('window.location.assign(data.url)');
   });
 
   it('retains hardened Coder deployment defaults for customer identities', () => {
