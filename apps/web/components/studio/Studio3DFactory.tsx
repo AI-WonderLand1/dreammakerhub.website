@@ -5,6 +5,10 @@ import {
   Box,
   Search,
   Upload,
+  Eye,
+  Grid3x3,
+  Focus,
+  ChevronRight,
   Play,
   Pause,
   RotateCcw,
@@ -69,6 +73,10 @@ export default function Studio3DFactory() {
   const [stageIndex, setStageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [selected, setSelected] = useState<StudioSelection | null>(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const [wireframe, setWireframe] = useState(false);
+  const [generatingAsset, setGeneratingAsset] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [scene, setScene] = useState<GeneratedScene | null>(null);
   const [status, setStatus] = useState("Idle");
   const [elapsed, setElapsed] = useState(0);
@@ -130,8 +138,13 @@ export default function Studio3DFactory() {
 
   const runGenerate = useCallback(async () => {
     if (generating) return;
+    if (aiMode !== "text") {
+      setGenerationError("Photo and video reconstruction are not connected to a verified inference endpoint yet.");
+      return;
+    }
+    setGenerationError(null);
     setGenerating(true);
-    setStatus("Processing...");
+    setStatus("Building procedural scene...");
     setProgress(0);
     setStageIndex(0);
     setSavedPath(null);
@@ -182,8 +195,44 @@ export default function Studio3DFactory() {
     }
   }, [generating, prompt, aiMode, meshQuality, polyCount, textureRes, sourceName, loadProjectFiles]);
 
+  // This existing provider-backed route produces a real GLB through the configured
+  // Hunyuan3D service and consumes one render credit. It is distinct from the
+  // lightweight procedural scene-layout generator above.
+  const generate3DAsset = useCallback(async () => {
+    if (generatingAsset || aiMode !== "text" || !prompt.trim()) return;
+    setGenerationError(null);
+    setGeneratingAsset(true);
+    setStatus("Requesting 3D model...");
+    try {
+      const response = await fetch("/api/v1/3d/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          format: "glb",
+          addTexture: true,
+          ...(projectId !== "default" ? { projectId } : {}),
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.ok || typeof body.asset?.url !== "string") {
+        throw new Error(body?.error?.message || `3D generation failed (${response.status})`);
+      }
+      viewportRef.current?.injectModel(body.asset.url, body.asset.id);
+      setStatus("GLB stored; loading into viewport");
+      // The API returns a time-limited URL; do not store it as a permanent asset reference.
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "3D asset generation failed";
+      setGenerationError(message);
+      setStatus("3D asset generation failed");
+    } finally {
+      setGeneratingAsset(false);
+    }
+  }, [generatingAsset, aiMode, prompt, projectId]);
+
   const saveSceneToProject = useCallback(async () => {
-    if (!scene) return;
+    if (!scene || projectId === "default") return;
     setSaving(true);
     setSavedPath(null);
     try {
@@ -254,6 +303,35 @@ export default function Studio3DFactory() {
     URL.revokeObjectURL(url);
   }, [scene]);
 
+  const selectedObject = scene?.objects.find((object) => object.id === selected?.objectId);
+
+  const selectObject = useCallback((object: GeneratedScene["objects"][number]) => {
+    const picked = viewportRef.current?.selectSceneObject(object.id);
+    setSelected(picked ?? { id: object.id, objectId: object.id, name: object.name });
+    if (picked) viewportRef.current?.focusOn(picked.id);
+  }, []);
+
+  const changeTransform = useCallback((
+    property: "position" | "rotation" | "scale",
+    axis: number,
+    value: number,
+  ) => {
+    if (!selectedObject || !Number.isFinite(value)) return;
+    if (property === "scale" && value <= 0) return;
+    const nextVector: [number, number, number] = [...selectedObject[property]];
+    nextVector[axis] = value;
+    const objectId = selectedObject.id;
+    setScene((previous) => previous ? {
+      ...previous,
+      objects: previous.objects.map((object) => object.id === objectId
+        ? { ...object, [property]: nextVector }
+        : object),
+    } : previous);
+    viewportRef.current?.updateSceneObject(objectId, { [property]: nextVector });
+    setSavedPath(null);
+    setStatus("Unsaved scene changes");
+  }, [selectedObject]);
+
   const scenes = projectFiles.filter((f) => f.kind === "scene" && f.path.toLowerCase().includes(filter.toLowerCase()));
   const mediaFiles = projectFiles.filter((f) => f.kind === "media");
   const glbFiles = projectFiles.filter((f) => f.kind === "glb");
@@ -314,6 +392,24 @@ export default function Studio3DFactory() {
                 )}
               </div>
 
+              <div className="wonderplay-hierarchy" aria-label="Scene hierarchy">
+                <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase block mb-2">Scene Hierarchy</span>
+                <div className="wonderplay-hierarchy-root"><ChevronRight size={13} /> World Root <span>{scene?.objects.length ?? 0}</span></div>
+                {scene?.objects.map((object) => (
+                  <button
+                    key={object.id}
+                    type="button"
+                    aria-pressed={selected?.objectId === object.id}
+                    onClick={() => selectObject(object)}
+                    title={object.name}
+                    className="wonderplay-hierarchy-object"
+                  >
+                    <Box size={13} /><span className="truncate">{object.name}</span>
+                  </button>
+                ))}
+                {!scene && <p className="text-[11px] text-slate-500 px-2 py-1">Open or generate a scene to inspect its objects.</p>}
+              </div>
+
               {glbFiles.length > 0 && (
                 <div>
                   <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-2">3D Models</span>
@@ -350,7 +446,12 @@ export default function Studio3DFactory() {
 
       {/* Main Studio Viewport */}
       <div className="flex-1 flex flex-col bg-slate-900 relative min-w-0 pb-12">
-        <StudioViewport ref={viewportRef} onSelect={handleSelect} onEntityCreated={handleEntityCreated} className="flex-1" />
+        <StudioViewport ref={viewportRef} onSelect={handleSelect} onEntityCreated={handleEntityCreated} className="flex-1" showGrid={showGrid} />
+        <div className="wonderplay-viewport-tools" role="toolbar" aria-label="3D viewport controls">
+          <button type="button" aria-pressed={showGrid} title="Show grid" onClick={() => { setShowGrid((current) => { viewportRef.current?.setShowGrid(!current); return !current; }); }}><Grid3x3 size={15} /> Grid</button>
+          <button type="button" aria-pressed={wireframe} title="Wireframe rendering" onClick={() => { setWireframe((current) => { viewportRef.current?.setWireframe(!current); return !current; }); }}><Box size={15} /> Wireframe</button>
+          <button type="button" title="Focus selected object" disabled={!selected?.id} onClick={() => viewportRef.current?.focusOn(selected?.id ?? null)}><Focus size={15} /> Focus</button>
+        </div>
 
         {/* Live media preview overlay */}
         {generating && (
@@ -384,8 +485,30 @@ export default function Studio3DFactory() {
         )}
       </div>
 
-      {/* Right AI Generator Control Board */}
+      {/* Inspector + the existing AI Generator; engine and pod APIs stay separate. */}
       <div className="w-72 border-l border-slate-800 bg-slate-950 p-4 flex flex-col space-y-4 shrink-0 overflow-y-auto">
+        <section className="wonderplay-inspector" aria-label="Selected object inspector">
+          <h3 className="wonderplay-panel-heading"><Eye size={13} /> Inspector</h3>
+          {selectedObject ? (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-200 truncate" title={selectedObject.name}>{selectedObject.name}</p>
+              <p className="text-[10px] text-slate-500">Primitive: {selectedObject.type}</p>
+              {(["position", "rotation", "scale"] as const).map((property) => (
+                <fieldset key={property} className="wonderplay-transform-group">
+                  <legend>{property}{property === "rotation" ? " (degrees)" : ""}</legend>
+                  <div className="wonderplay-transform-fields">
+                    {selectedObject[property].map((value, axis) => (
+                      <label key={`${property}-${axis}`}>
+                        <span>{["X", "Y", "Z"][axis]}</span>
+                        <input type="number" step={property === "scale" ? "0.1" : "0.25"} value={value} onChange={(event) => changeTransform(property, axis, event.target.valueAsNumber)} aria-label={`${property} ${["X", "Y", "Z"][axis]}`} />
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ))}
+            </div>
+          ) : <p className="text-[11px] text-slate-500">Select an object in the scene hierarchy to edit its position, rotation and scale.</p>}
+        </section>
         <div>
           <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-2.5 flex items-center gap-1">
             <Zap size={11} /> Engine Strategy
@@ -454,18 +577,30 @@ export default function Studio3DFactory() {
         </div>
 
         <div className="space-y-2">
+          {aiMode !== "text" && (
+            <p className="text-[11px] text-amber-300">Photo/video-to-3D needs a connected inference module. File selection alone does not reconstruct a mesh.</p>
+          )}
           <button
             onClick={runGenerate}
-            disabled={generating || (aiMode !== "text" && !sourceFile)}
+            disabled={generating || aiMode !== "text" || !prompt.trim()}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition shadow-lg shadow-blue-900/30"
           >
             <Wand2 size={14} />
-            {generating ? "Generating..." : `Generate ${aiMode === "text" ? "Scene" : "Mesh"}`}
+            {generating ? "Generating layout..." : "Generate scene layout"}
           </button>
+          <p className="text-[10px] text-slate-500">Scene layout creates procedural primitives, not an AI-generated model.</p>
+          <div className="wonderplay-provider-card">
+            <p className="wonderplay-panel-heading"><Box size={13} /> Custom 3D model service</p>
+            <p className="text-[11px] text-slate-400">Uses the configured Hunyuan3D inference service. A running compatible pod endpoint is required.</p>
+            <button type="button" onClick={() => void generate3DAsset()} disabled={generatingAsset || aiMode !== "text" || !prompt.trim()} className="wonderplay-model-generate">
+              <Wand2 size={14} /> {generatingAsset ? "Generating GLB..." : "Generate GLB asset · 1 render credit"}
+            </button>
+          </div>
+          {generationError && <p role="alert" className="text-xs text-red-400">{generationError}</p>}
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={saveSceneToProject}
-              disabled={!scene || saving}
+              disabled={!scene || saving || projectId === "default"}
               className="flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 px-2 py-2 rounded-lg text-[11px] font-semibold transition"
               title="Save to project"
             >
@@ -487,6 +622,7 @@ export default function Studio3DFactory() {
               <RotateCcw size={13} /> Clear
             </button>
           </div>
+          {projectId === "default" && scene && <p className="text-[10px] text-amber-300">Open a real project before saving a scene.</p>}
           {savedPath && (
             <p className="text-[10px] font-mono text-emerald-400 break-all">✓ saved {savedPath}</p>
           )}
