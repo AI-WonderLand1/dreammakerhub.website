@@ -10,6 +10,7 @@ describe('Existing Coder workspace resume', () => {
   const list = read('apps/web/app/api/user-workspace/coder/route.ts');
   const page = read('apps/web/app/wonderspace/workspaces/page.tsx');
   const customerRoute = read('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
+  const customerAccess = read('apps/web/lib/coder/customer-workspace-access.server.ts');
 
   it('uses the verified Supabase session and scopes the operator slot to that user', () => {
     expect(route).toContain('authenticatedSupabaseUser(request)');
@@ -42,10 +43,10 @@ describe('Existing Coder workspace resume', () => {
     expect(page).not.toContain('/api/user-workspace/customer/open/');
     expect(page).not.toContain('/api/user-workspace/coder/');
     expect(page).not.toContain("fetch('/api/user-workspace/provision'");
-    expect(customerRoute).toContain('customerProvisioningGate()');
-    expect(customerRoute).toContain('verifiedCustomerCoderOwner(user)');
-    expect(customerRoute).toContain('CODER_WILDCARD_ACCESS_URL');
+    expect(customerAccess).toContain('customerProvisioningGate()');
+    expect(customerAccess).toContain('verifiedCustomerCoderOwner(user)');
+    expect(customerAccess).toContain('CODER_WILDCARD_ACCESS_URL');
     expect(customerRoute).toContain("transition: 'start'");
-    expect(customerRoute).not.toContain('/api/v2/users/me');
+    expect(customerAccess).not.toContain('/api/v2/users/me');
   });
 });
