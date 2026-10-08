@@ -19,11 +19,12 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).toContain("candidate.slug === 'code-server'");
     expect(route).toContain("app.subdomain === true");
     expect(route).toContain('CODER_WILDCARD_ACCESS_URL');
-    expect(route).toContain('CODER_ACCESS_URL');
-    expect(route).toContain('/apps/code-server/');
+    expect(route).not.toContain('CODER_ACCESS_URL');
+    expect(route).toContain('code-server--${workspaceName}--${owner}');
+    expect(route).toContain("agents.length > 0 && workspace.owner_name && workspace.name");
     expect(route).toContain("/api/v2/workspaces/");
     expect(route).not.toContain("include_related=");
-    expect(route).toContain('workspace.owner_name && workspace.name && agent.name');
+    expect(route).not.toContain('/apps/code-server/');
     expect(route).toContain('export async function POST');
     expect(route).not.toContain('/api/v2/users/me');
     expect(route).not.toContain('CODER_API_TOKEN');
