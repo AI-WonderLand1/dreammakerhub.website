@@ -134,7 +134,31 @@ export default function MockupHomepage() {
 
       <HomepageNavbar scrolled={scrolled} />
 
-      <section className="relative z-10 mx-auto grid min-h-[490px] max-w-7xl items-center gap-8 px-5 pb-10 pt-24 text-white sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:px-10">
+      <section
+        aria-label="WonderSpace IDE availability"
+        className="relative z-20 border-y border-emerald-300/20 bg-emerald-950/70 text-emerald-50 shadow-[0_10px_32px_rgba(2,44,34,.18)] backdrop-blur-md"
+      >
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-5 py-2.5 text-center text-xs sm:px-8 sm:text-sm lg:px-10">
+          <span className="inline-flex items-center gap-2 font-black uppercase tracking-[.16em] text-emerald-200">
+            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300" />
+            </span>
+            Live
+          </span>
+          <span className="font-semibold text-white">
+            WonderSpace IDE is working now — private cloud workspaces with persistent files between sessions.
+          </span>
+          <Link
+            href="/wonderspace"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-3 py-1.5 font-black text-emerald-100 transition hover:bg-emerald-300/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+          >
+            Open WonderSpace <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto grid min-h-[490px] max-w-7xl items-center gap-8 px-5 pb-10 pt-20 text-white sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:px-10">
         <div className="max-w-2xl">
           <p className="text-[11px] font-black uppercase tracking-[.28em] text-cyan-200/80">Turn ideas into reality</p>
           <h1 className="mt-5 text-4xl font-black leading-[.98] tracking-[-.045em] sm:text-5xl lg:text-[58px]">
