@@ -56,8 +56,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [slotId, setSlotId] = useState('');
   const [stage, setStage] = useState<Stage>('form');
   const [error, setError] = useState('');
-  const [opening, setOpening] = useState(false);
-  const [openingSlotId, setOpeningSlotId] = useState('');
   const [savedWorkspaces, setSavedWorkspaces] = useState<SavedWorkspace[]>([]);
   const [savedWorkspacesLoading, setSavedWorkspacesLoading] = useState(true);
   const [savedWorkspacesError, setSavedWorkspacesError] = useState('');
@@ -388,37 +386,6 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
     }
   };
 
-  const openPrivateIde = async (targetSlotId = slotId) => {
-    if (!targetSlotId || opening) return;
-    setOpening(true);
-    setOpeningSlotId(targetSlotId);
-    setError('');
-    const endpoint = `/api/user-workspace/customer/open/${encodeURIComponent(targetSlotId)}`;
-    const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
-
-    try {
-      let response = await fetch(endpoint, { method: 'POST', cache: 'no-store', headers });
-      for (let attempt = 0; attempt < 30; attempt += 1) {
-        const data = await response.json().catch(() => null) as Setup | null;
-        if (response.ok && data?.url) {
-          window.location.assign(data.url);
-          return;
-        }
-        if (response.status !== 202 && !(response.ok && data?.status === 'stopped')) {
-          throw new Error(data?.error || 'Your private IDE could not be opened.');
-        }
-        await new Promise((resolve) => window.setTimeout(resolve, 2000));
-        response = await fetch(endpoint, { method: 'GET', cache: 'no-store', headers });
-      }
-      throw new Error('Coder is still starting your IDE. Try again in a moment.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Your private IDE could not be opened.');
-    } finally {
-      setOpening(false);
-      setOpeningSlotId('');
-    }
-  };
-
   if (authLoading) return <div className="min-h-screen bg-[#090d1d] p-16 text-center text-white">Checking your session…</div>;
   if (!user) return (
     <div className="min-h-screen bg-[#090d1d] p-16 text-center text-white">
@@ -447,10 +414,12 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
             <Rocket className="mx-auto mb-4 text-cyan-300" size={42} />
             <h2 className="text-2xl font-bold">Your Coder workspace is ready</h2>
             <p className="my-4 text-slate-300">{name}</p>
-            <button type="button" onClick={() => void openPrivateIde()} disabled={opening}
-              className="block w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold disabled:opacity-50">
-              {opening && openingSlotId === slotId ? 'Opening private IDE…' : 'Open private IDE →'}
-            </button>
+            <a
+              href={`/api/user-workspace/customer/launch/${encodeURIComponent(slotId)}`}
+              className="block w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold"
+            >
+              Open private IDE →
+            </a>
             {error && <p role="alert" className="mt-3 text-sm text-amber-200">{error}</p>}
             <button type="button" onClick={() => { setName(uniqueWorkspaceName(user.id)); setSlotId(''); setStage('form'); }} className="mt-5 block w-full text-sm text-slate-400 hover:text-white">Create another workspace</button>
           </section>
@@ -508,14 +477,22 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void openPrivateIde(workspace.id)}
-                          disabled={opening || workspace.state !== 'provisioned'}
-                          className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          {opening && openingSlotId === workspace.id ? 'Opening…' : workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'}
-                        </button>
+                        {workspace.state === 'provisioned' ? (
+                          <a
+                            href={`/api/user-workspace/customer/launch/${encodeURIComponent(workspace.id)}`}
+                            className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-semibold"
+                          >
+                            Open IDE
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-4 py-2 text-sm font-semibold opacity-40"
+                          >
+                            Not ready
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
