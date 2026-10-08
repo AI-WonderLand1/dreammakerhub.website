@@ -40,7 +40,7 @@ describe('customer-only Coder provisioning', () => {
 
   it('allows only the configured site operator to own operator workspaces', () => {
     const create = file('apps/web/lib/coder/customer-workspace-create.server.ts');
-    const open = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
+    const open = file('apps/web/lib/coder/customer-workspace-access.server.ts');
     const runner = file('apps/web/app/api/internal/coder/customer-runner/route.ts');
     expect(create).toContain('isConfiguredCoderOperator(userId)');
     expect(create).toContain("const ownerRoleIsSafe = operatorWorkspace");
@@ -95,8 +95,9 @@ describe('customer-only Coder provisioning', () => {
     expect(launch).toContain("fetch('/api/user-workspace/coder'");
     expect(launch).toContain('My IDEs');
     expect(launch).toContain('Your created WonderSpace IDEs stay here so you can reopen them later.');
-    expect(launch).toContain("workspace.state === 'provisioned' ? 'Open IDE' : 'Not ready'");
-    expect(launch).toContain('openPrivateIde(workspace.id)');
+    expect(launch).toContain('/api/user-workspace/customer/launch/');
+    expect(launch).toContain('Open IDE');
+    expect(launch).not.toContain('openPrivateIde(workspace.id)');
   });
 
 
