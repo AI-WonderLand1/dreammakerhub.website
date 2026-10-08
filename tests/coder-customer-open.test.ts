@@ -21,7 +21,8 @@ describe('customer Google Docker IDE opening', () => {
     expect(route).toContain('CODER_WILDCARD_ACCESS_URL');
     expect(route).not.toContain('CODER_ACCESS_URL');
     expect(route).toContain('code-server--${workspaceName}--${owner}');
-    expect(route).toContain("agents.length > 0 && workspace.owner_name && workspace.name");
+    expect(route).toContain("workspace.owner_name && workspace.name");
+    expect(route).toContain("workspace.owner_name = owner.username");
     expect(route).toContain("/api/v2/workspaces/");
     expect(route).not.toContain("include_related=");
     expect(route).not.toContain('/apps/code-server/');
