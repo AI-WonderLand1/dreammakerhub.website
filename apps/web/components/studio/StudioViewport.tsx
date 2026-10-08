@@ -672,7 +672,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         appRef.current = null;
         pcRef.current = null;
       };
-    }, [handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop, showGridProp]);
+    }, [handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop]);
 
     const renderScene = useCallback((scene: GeneratedScene) => {
       const app = appRef.current;
