@@ -46,6 +46,14 @@ describe('customer Google Docker IDE opening', () => {
     expect(access).toContain('code-server--${workspaceName}--${owner}');
   });
 
+  it('uses Coder WorkspaceStatus directly so running does not loop as starting', () => {
+    const access = file('apps/web/lib/coder/customer-workspace-access.server.ts');
+    expect(access).toContain('const build = workspace.latest_build?.status');
+    expect(access).toContain('if (build) return build');
+    expect(access).not.toContain("if (build === 'running' || build === 'pending')");
+    expect(access).not.toContain("if (build === 'succeeded' && transition === 'start')");
+  });
+
   it('restarts a stopped customer workspace without a cumulative time budget', () => {
     const route = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
     expect(route).not.toContain("from('coder_customer_compute_usage')");

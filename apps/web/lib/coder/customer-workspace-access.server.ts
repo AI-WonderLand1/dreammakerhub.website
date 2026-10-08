@@ -120,18 +120,14 @@ export function codeServerUrl(workspace: CoderWorkspace): string | null {
 }
 
 export function workspaceState(workspace: CoderWorkspace): string {
-  if (workspace.status) return workspace.status;
-  const transition = workspace.latest_build?.transition;
+  // Coder's Workspace object does not expose a top-level runtime status.
+  // latest_build.status is already the canonical WorkspaceStatus enum:
+  // pending, starting, running, stopping, stopped, failed, canceling,
+  // canceled, deleting, or deleted. Do not reinterpret "running" as
+  // "starting" based on the build transition.
   const build = workspace.latest_build?.status;
-  if (build === 'succeeded' && transition === 'start') return 'running';
-  if (build === 'succeeded' && transition === 'stop') return 'stopped';
-  if (build === 'succeeded' && transition === 'delete') return 'deleted';
-  if (build === 'running' || build === 'pending') {
-    if (transition === 'start') return 'starting';
-    if (transition === 'stop') return 'stopping';
-    if (transition === 'delete') return 'deleting';
-  }
-  return build || 'unknown';
+  if (build) return build;
+  return workspace.status || 'unknown';
 }
 
 export async function verifiedCustomerWorkspace(
