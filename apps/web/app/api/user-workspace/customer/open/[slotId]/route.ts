@@ -58,27 +58,30 @@ const noStore = {
   'Referrer-Policy': 'no-referrer',
 };
 
-function coderPublicOrigin(): string {
-  const configured = process.env.CODER_ACCESS_URL?.trim();
-  if (!configured) throw new CostGateError('The public Coder address is not configured.');
-
-  let url: URL;
-  try {
-    url = new URL(configured);
-  } catch {
-    throw new CostGateError('The public Coder address is invalid.');
+function coderWildcardHostPattern(): string {
+  const configured = process.env.CODER_WILDCARD_ACCESS_URL?.trim();
+  if (!configured) {
+    throw new CostGateError('Coder wildcard app routing is not configured.');
   }
 
-  if (url.protocol !== 'https:' || url.username || url.password) {
-    throw new CostGateError('The public Coder address must use HTTPS.');
+  const wildcardHost = configured
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/$/, '')
+    .toLowerCase();
+
+  if ((wildcardHost.match(/\*/g) || []).length !== 1 ||
+      wildcardHost.includes('/') ||
+      wildcardHost.includes('@')) {
+    throw new CostGateError('Coder wildcard app routing is invalid.');
   }
 
-  return url.origin;
+  return wildcardHost;
 }
 
 function codeServerUrl(workspace: CoderWorkspace): string | null {
   const agents = workspace.latest_build?.resources
     ?.flatMap((resource) => resource.agents || []) || [];
+  const wildcardHost = coderWildcardHostPattern();
 
   for (const agent of agents) {
     const app = agent.apps?.find((candidate) => candidate.slug === 'code-server');
@@ -87,21 +90,6 @@ function codeServerUrl(workspace: CoderWorkspace): string | null {
     if (app.subdomain === true &&
         typeof app.subdomain_name === 'string' &&
         app.subdomain_name.length > 0) {
-      const configured = process.env.CODER_WILDCARD_ACCESS_URL?.trim();
-      if (!configured) {
-        throw new CostGateError('Coder wildcard app routing is not configured.');
-      }
-
-      const wildcardHost = configured
-        .replace(/^https?:\/\//i, '')
-        .replace(/\/$/, '');
-
-      if ((wildcardHost.match(/\*/g) || []).length !== 1 ||
-          wildcardHost.includes('/') ||
-          wildcardHost.includes('@')) {
-        throw new CostGateError('Coder wildcard app routing is invalid.');
-      }
-
       const reported = app.subdomain_name.trim().toLowerCase();
       if (!reported || reported.includes('/') || reported.includes('@') || reported.includes(':')) {
         throw new CostGateError('Coder returned an invalid IDE app hostname.');
@@ -111,20 +99,32 @@ function codeServerUrl(workspace: CoderWorkspace): string | null {
         ? reported
         : wildcardHost.replace('*', reported);
 
-      const [before, after] = wildcardHost.toLowerCase().split('*');
+      const [before, after] = wildcardHost.split('*');
       if (!hostname.startsWith(before) || !hostname.endsWith(after)) {
         throw new CostGateError('Coder returned an IDE app outside the configured wildcard domain.');
       }
 
       return `https://${hostname}`;
     }
+  }
 
-    if (workspace.owner_name && workspace.name && agent.name) {
-      const owner = encodeURIComponent(workspace.owner_name);
-      const workspaceName = encodeURIComponent(workspace.name);
-      const agentName = encodeURIComponent(agent.name);
-      return `${coderPublicOrigin()}/@${owner}/${workspaceName}.${agentName}/apps/code-server/`;
+  // Coder v2.37 can return a healthy running workspace without expanding the
+  // nested coder_app metadata in this workspace response. Path apps are
+  // intentionally disabled in this deployment, so derive the documented
+  // subdomain app hostname from the already-verified owner/workspace pair.
+  // App-slug subdomains omit the agent segment:
+  //   code-server--workspace--owner.<wildcard-domain>
+  if (agents.length > 0 && workspace.owner_name && workspace.name) {
+    const owner = workspace.owner_name.trim().toLowerCase();
+    const workspaceName = workspace.name.trim().toLowerCase();
+    const appLabel = `code-server--${workspaceName}--${owner}`;
+
+    if (appLabel.length > 63 ||
+        !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(appLabel)) {
+      throw new CostGateError('Coder returned workspace identity that cannot form a safe IDE hostname.');
     }
+
+    return `https://${wildcardHost.replace('*', appLabel)}`;
   }
 
   return null;
