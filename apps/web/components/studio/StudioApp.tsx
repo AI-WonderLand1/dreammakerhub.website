@@ -26,6 +26,7 @@ import StudioContentBrowser from "@/components/studio/StudioContentBrowser";
 import "./StudioEditor.css";
 import "./StudioEditorMobile.css";
 import "./StudioNavigation.css";
+import "./StudioCustomControls.css";
 
 type Workspace = "create" | "capture";
 type CreateTool = "game" | "factory";
@@ -75,7 +76,7 @@ export default function StudioApp() {
             ))}
           </nav>
         </details>
-        <span className="wonderplay-project">Viewport · Outliner · Details · Content Browser</span>
+        <span className="wonderplay-project">Custom 3D · Viewport · Hierarchy · Inspector · Assets</span>
       </div>
       <div className="wonderplay-toolbar">
         <div className="flex min-w-0 items-center gap-3">
