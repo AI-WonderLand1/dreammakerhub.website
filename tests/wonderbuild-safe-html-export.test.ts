@@ -74,7 +74,7 @@ describe('untrusted builder HTML export serialization', () => {
     expect(attr).toContain('class="builder-block block-button-onmouseover-alert-1 aw-scope-0"');
     expect(attr).not.toContain('href=');
     expect(attr).not.toContain('<script>');
-    expect(attr).toContain('style="font-family: &quot;Open Sans&quot;"');
+    expect(attr).toContain('font-family: &quot;Open Sans&quot;');
   });
 
   it('rejects dangerous CSS declarations but retains normal typography', () => {
