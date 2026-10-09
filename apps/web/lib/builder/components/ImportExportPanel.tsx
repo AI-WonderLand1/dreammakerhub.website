@@ -49,7 +49,16 @@ export default function ImportExportPanel() {
     const indent = '  '.repeat(depth);
     return els.map((el, i) => {
       const path = [...parentPath, i];
-      const attrs = safeExportAttributes(el, path, 'files');
+      // Keep the previous button defaults without bypassing URL validation:
+      // empty destinations link to this page, but unsafe nonempty URLs are dropped.
+      const isButton = el.type === 'button';
+      const props = el.props || {};
+      const missingButtonUrl = isButton &&
+        !String(props.href || props.url || '').trim();
+      const safeEl = missingButtonUrl
+        ? { ...el, props: { ...props, url: '#' } }
+        : el;
+      const attrs = safeExportAttributes(safeEl, path, 'files');
       const children = el.children?.length
         ? '\n' + elementsToHtml(el.children, depth + 1, path) + '\n' + indent
         : '';
@@ -68,7 +77,9 @@ export default function ImportExportPanel() {
       if (tag === 'img' || tag === 'hr') return indent + '<' + tag + attrs + ' />';
       const text = el.type === 'custom-html'
         ? el.props?.html
-        : el.props?.content || el.props?.label || el.props?.title || '';
+        : isButton
+          ? el.props?.content || el.props?.label || el.props?.title || 'Button'
+          : el.props?.content || el.props?.label || el.props?.title || '';
       return indent + '<' + tag + attrs + '>' + escapeExportHtml(text) +
         children + '</' + tag + '>';
     }).join('\n');
