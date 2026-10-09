@@ -1,5 +1,6 @@
 import Link from "next/link";
 import F6SFollowBadge from "@/components/F6SFollowBadge";
+import ShatteredGlassVector from "@/components/ShatteredGlassVector";
 import TrustpilotReviewCollector from "@/components/TrustpilotReviewCollector";
 
 const PRODUCT_LINKS = [
@@ -18,31 +19,8 @@ const SUPPORT_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="relative isolate overflow-hidden border-t border-cyan-100/25 bg-[#071326]/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-xl">
-      {/* Translucent, irregular glass facets. Decorative layers never intercept links. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-70"
-        style={{
-          backgroundImage: [
-            "linear-gradient(125deg, transparent 24.86%, rgba(186,230,253,0.38) 25%, transparent 25.14%)",
-            "linear-gradient(43deg, transparent 57.87%, rgba(255,255,255,0.25) 58%, transparent 58.13%)",
-            "linear-gradient(155deg, transparent 71.86%, rgba(167,139,250,0.34) 72%, transparent 72.14%)",
-            "linear-gradient(18deg, transparent 37.87%, rgba(186,230,253,0.25) 38%, transparent 38.13%)",
-          ].join(", "),
-          backgroundSize: "660px 310px, 540px 280px, 800px 340px, 720px 320px",
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 w-[46%] bg-sky-100/[0.035]"
-        style={{ clipPath: "polygon(0 0, 74% 0, 100% 39%, 42% 100%, 0 78%)" }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-[38%] bg-violet-200/[0.055]"
-        style={{ clipPath: "polygon(25% 0, 100% 0, 100% 100%, 0 68%, 57% 37%)" }}
-      />
+    <footer className="relative isolate overflow-hidden border-t border-cyan-100/25 bg-[#071326]/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-xl">
+      <ShatteredGlassVector />
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-5 px-6 py-7 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <Link href="/" className="text-lg font-bold text-white">
