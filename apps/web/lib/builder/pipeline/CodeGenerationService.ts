@@ -3,6 +3,7 @@ import { EventNames } from './types';
 import { useBuilderStore } from '../store';
 import { normalizeHeadingLevel } from '../heading-level';
 import { imageBlockHtml } from '../image-block-html';
+import { escapeExportHtml, exportCssRule, safeExportAttributes } from '../safe-export-html';
 import { logger } from '@/lib/logger';
 
 export class CodeGenerationService {
@@ -70,7 +71,7 @@ export class CodeGenerationService {
 }
 
 function generateFullHtml(elements: any[]): string {
-  const serializedState = escapeHtml(JSON.stringify({ elements, version: 1 }));
+  const serializedState = escapeExportHtml(JSON.stringify({ elements, version: 1 }));
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -82,7 +83,7 @@ function generateFullHtml(elements: any[]): string {
 </head>
 <body>
   <div id="app">
-${elements.map((el) => renderEl(el, 1)).join('\n')}
+${elements.map((el, i) => renderEl(el, 1, [i])).join('\n')}
   </div>
   <textarea id="builder-state-data" hidden aria-hidden="true">${serializedState}</textarea>
   <script>
@@ -106,20 +107,22 @@ function getBuilderStateBootstrapJs(): string {
   })();`;
 }
 
-function renderEl(el: any, depth: number): string {
+function renderEl(el: any, depth: number, path: number[]): string {
   const indent = '  '.repeat(depth);
   const tag = elTagGen(el);
-  const attrs = elAttrsGen(el);
-  const children = el.children?.map((c: any) => renderEl(c, depth + 1)).join('\n') || '';
+  const attrs = safeExportAttributes(el, path, 'preview');
+  const children = el.children?.map((c: any, i: number) => renderEl(c, depth + 1, [...path, i])).join('\n') || '';
   const content = el.props?.content || el.props?.label || '';
   const html = el.props?.html || '';
 
   const imageContent = imageBlockHtml(el.type, el.props || {});
   if (imageContent !== null) return `${indent}<${tag}${attrs}>${imageContent}${children}</${tag}>`;
 
-  if (html) return `${indent}<${tag}${attrs}>${html}</${tag}>`;
+  // Untrusted custom HTML is displayed as text unless processed by a separate
+  // vetted rich-HTML sanitizer. Raw markup must not execute in previews.
+  if (html) return `${indent}<${tag}${attrs}>${escapeExportHtml(html)}</${tag}>`;
   if (children) return `${indent}<${tag}${attrs}>\n${children}\n${indent}</${tag}>`;
-  if (content && !['img', 'input', 'hr', 'br'].includes(tag)) return `${indent}<${tag}${attrs}>${escapeHtml(content)}</${tag}>`;
+  if (content && !['img', 'input', 'hr', 'br'].includes(tag)) return `${indent}<${tag}${attrs}>${escapeExportHtml(content)}</${tag}>`;
   return `${indent}<${tag}${attrs} />`;
 }
 
@@ -142,60 +145,24 @@ function elTagGen(el: any): string {
   return map[el.type] || 'div';
 }
 
-function elAttrsGen(el: any): string {
-  const parts: string[] = [`id="${el.id}"`, `class="builder-el type-${el.type}"`];
-  if (el.props?.alt) parts.push(`alt="${escapeHtml(el.props.alt)}"`);
-  if (el.props?.src) parts.push(`src="${escapeHtml(el.props.src)}"`);
-  if (el.props?.href || el.props?.url) parts.push(`href="${escapeHtml(el.props.href || el.props.url)}"`);
-  if (el.props?.placeholder) parts.push(`placeholder="${escapeHtml(el.props.placeholder)}"`);
-  if (el.props?.required) parts.push('required');
-  if (el.props?.disabled) parts.push('disabled');
-  if (el.props?.readonly) parts.push('readonly');
-  if (el.props?.['aria-label']) parts.push(`aria-label="${escapeHtml(el.props['aria-label'])}"`);
-  const style = inlineStyleGen(el.styles);
-  if (style) parts.push(`style="${style}"`);
-  return parts.length ? ' ' + parts.join(' ') : '';
-}
-
-function inlineStyleGen(s: Record<string, any>): string {
-  if (!s) return '';
-  return Object.entries(s).filter(([_, v]) => v != null && v !== '')
-    .map(([k, v]) => `${camelToKebab(k)}: ${v}`).join('; ');
-}
-
 function generateFullCss(elements: any[]): string {
   const lines: string[] = [];
   lines.push('/* AI Wonderland Builder — Auto-generated */');
   lines.push('*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }');
   lines.push('body { font-family: Inter, system-ui, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }');
   lines.push('#app { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }');
-  const seen = new Set<string>();
-  for (const el of elements) collectStylesCssGen(el, lines, seen);
+  for (const [i, el] of elements.entries()) collectStylesCssGen(el, lines, [i]);
   lines.push('');
   lines.push('@media (max-width: 768px) { #app { padding: 1rem; } }');
   return lines.join('\n');
 }
 
-function collectStylesCssGen(el: any, lines: string[], seen: Set<string>): void {
-  const s = el.styles;
-  if (s && Object.keys(s).length > 0) {
-    const key = `.type-${el.type}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      const rules = Object.entries(s).filter(([_, v]) => v != null && v !== '')
-        .map(([k, v]) => `  ${camelToKebab(k)}: ${v};`);
-      if (rules.length > 0) { lines.push(''); lines.push(`${key} {`); lines.push(...rules); lines.push('}'); }
-    }
+function collectStylesCssGen(el: any, lines: string[], path: number[]): void {
+  const rule = exportCssRule(el, path);
+  if (rule) lines.push(rule);
+  if (Array.isArray(el.children)) {
+    el.children.forEach((child: any, i: number) => collectStylesCssGen(child, lines, [...path, i]));
   }
-  if (el.children) for (const c of el.children) collectStylesCssGen(c, lines, seen);
-}
-
-function camelToKebab(s: string): string {
-  return s.replace(/([A-Z])/g, '-$1').toLowerCase();
-}
-
-function escapeHtml(s: string): string {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export const codeGenerationService = new CodeGenerationService();

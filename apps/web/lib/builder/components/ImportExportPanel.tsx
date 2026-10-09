@@ -4,6 +4,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import DOMPurify from 'dompurify';
 import { useBuilderStore } from '../store';
 import { parseHtmlToElements, isHtmlString } from '../html-parser';
+import { normalizeHeadingLevel } from '../heading-level';
+import { escapeExportHtml, safeExportAttributes } from '../safe-export-html';
 
 export default function ImportExportPanel() {
   const { elements, setElements } = useBuilderStore();
@@ -41,35 +43,45 @@ export default function ImportExportPanel() {
     setTimeout(() => setImportStatus(null), 2000);
   }, [elements, exportFormat]);
 
-  const elementsToHtml = (els: typeof elements, depth = 0): string => {
+  const elementsToHtml = (
+    els: typeof elements, depth = 0, parentPath: number[] = [],
+  ): string => {
     const indent = '  '.repeat(depth);
-    return els.map((el) => {
-      const styleStr = el.styles ? Object.entries(el.styles).filter(([, v]) => v).map(([k, v]) => `${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v}`).join('; ') : '';
-      const styleAttr = styleStr ? ` style="${styleStr}"` : '';
-      const classAttr = ` class="builder-el-${el.type}"`;
-      const inner = el.children ? '\n' + elementsToHtml(el.children, depth + 1) + '\n' + indent : '';
-
-      switch (el.type) {
-        case 'heading': {
-          const tag = el.props?.level || 'h2';
-          return `${indent}<${tag}${styleAttr}${classAttr}>${el.props?.content || ''}${inner}</${tag}>`;
-        }
-        case 'paragraph':
-          return `${indent}<p${styleAttr}${classAttr}>${el.props?.content || ''}${inner}</p>`;
-        case 'image':
-          return `${indent}<img src="${el.props?.src || ''}" alt="${el.props?.alt || ''}"${styleAttr}${classAttr} />${inner}`;
-        case 'button':
-          return `${indent}<a href="${el.props?.url || '#'}"${styleAttr}${classAttr}>${el.props?.label || 'Button'}${inner}</a>`;
-        case 'divider':
-        case 'separator':
-          return `${indent}<hr${styleAttr}${classAttr} />`;
-        case 'spacer':
-          return `${indent}<div${styleAttr}${classAttr}></div>`;
-        case 'custom-html':
-          return `${indent}${el.props?.html || ''}`;
-        default:
-          return `${indent}<div data-type="${el.type}" data-name="${el.name}"${styleAttr}${classAttr}>${el.props?.content || el.props?.title || ''}${inner}</div>`;
-      }
+    return els.map((el, i) => {
+      const path = [...parentPath, i];
+      // Keep the previous button defaults without bypassing URL validation:
+      // empty destinations link to this page, but unsafe nonempty URLs are dropped.
+      const isButton = el.type === 'button';
+      const props = el.props || {};
+      const missingButtonUrl = isButton &&
+        !String(props.href || props.url || '').trim();
+      const safeEl = missingButtonUrl
+        ? { ...el, props: { ...props, url: '#' } }
+        : el;
+      const attrs = safeExportAttributes(safeEl, path, 'files');
+      const children = el.children?.length
+        ? '\n' + elementsToHtml(el.children, depth + 1, path) + '\n' + indent
+        : '';
+      const tags: Record<string, string> = {
+        heading: normalizeHeadingLevel(el.props?.level),
+        paragraph: 'p',
+        image: 'img',
+        button: 'a',
+        divider: 'hr',
+        separator: 'hr',
+        spacer: 'div',
+        'custom-html': 'div',
+      };
+      const tag = Object.prototype.hasOwnProperty.call(tags, el.type)
+        ? tags[el.type] : 'div';
+      if (tag === 'img' || tag === 'hr') return indent + '<' + tag + attrs + ' />';
+      const text = el.type === 'custom-html'
+        ? el.props?.html
+        : isButton
+          ? el.props?.content || el.props?.label || el.props?.title || 'Button'
+          : el.props?.content || el.props?.label || el.props?.title || '';
+      return indent + '<' + tag + attrs + '>' + escapeExportHtml(text) +
+        children + '</' + tag + '>';
     }).join('\n');
   };
 
