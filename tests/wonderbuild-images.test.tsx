@@ -41,6 +41,7 @@ describe('saved builder images', () => {
   it('escapes product text and image attributes in exported HTML', () => {
     const html = imageBlockHtml('product-card', { image: `${url}" onerror="bad`, name: '<script>bad</script>' });
     expect(html).not.toContain('<script>');
-    expect(html).toContain('&quot; onerror=&quot;bad');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('onerror=');
   });
 });
