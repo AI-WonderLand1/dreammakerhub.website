@@ -1,6 +1,6 @@
 "use client";
 
-import { DirectPlayCanvasHost } from "@/components/DirectPlayCanvasHost";
+import NativePlayCanvasHost from "@/components/NativePlayCanvasHost";
 import { logger } from '@/lib/logger';
 
 export type PlayCanvasHostStatus = "bootstrapping" | "mounting" | "ready" | "failed";
@@ -16,6 +16,7 @@ export type PlayCanvasNpcPlacement = {
 export type PlayCanvasHostInstance = {
   placeNpc?: (npc: PlayCanvasNpcPlacement) => void;
   getScene?: () => Promise<unknown>;
+  loadScene?: (scene: unknown) => void;
 };
 
 export type PlayCanvasHostProps = {
@@ -28,5 +29,5 @@ export type PlayCanvasHostProps = {
 };
 
 export default function PlayCanvasEditorHost(props: PlayCanvasHostProps) {
-  return <DirectPlayCanvasHost {...props} />;
+  return <NativePlayCanvasHost {...props} />;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { saveSceneToSupabase } from './supabase-store';
+import { persistScene } from './persist-scene-client';
 import { logger } from '@/lib/logger';
 
 export interface UseAutoSaveOptions {
@@ -31,12 +31,15 @@ export function useAutoSave(
     const serialized = JSON.stringify(sceneData);
     if (serialized === lastSavedRef.current) return true;
 
-    const result = await saveSceneToSupabase(sceneId, sceneData, userId);
-    if (result.success) {
+    if (!userId) return false;
+    const saved = await persistScene(sceneId, sceneData);
+    if (saved) {
       lastSavedRef.current = serialized;
       logger.info('[AutoSave] Saved:', sceneId);
+    } else {
+      logger.warn('[AutoSave] Scene not persisted:', sceneId);
     }
-    return result.success;
+    return saved;
   }, [sceneId, sceneData, userId]);
 
   useEffect(() => {
@@ -79,9 +82,10 @@ export function cleanSceneData(sceneData: SceneData): SceneData {
   delete cleaned._draft;
   delete cleaned._cache;
 
-  if (cleaned.objects) {
+  // Primitive geometry has no meshUrl; do not silently delete it.
+  if (Array.isArray(cleaned.objects)) {
     cleaned.objects = cleaned.objects.filter((obj: { meshUrl?: string }) => {
-      return obj.meshUrl && !obj.meshUrl.includes('__temp');
+      return obj && (typeof obj.meshUrl !== 'string' || !obj.meshUrl.includes('__temp'));
     });
   }
 

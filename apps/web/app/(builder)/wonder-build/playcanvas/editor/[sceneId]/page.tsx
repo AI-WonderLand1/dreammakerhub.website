@@ -11,7 +11,7 @@ import SafeNpcPanel from "@/components/SafeNpcPanel";
 import PlayCanvasEditorHost, { type PlayCanvasHostInstance } from "@/components/PlayCanvasEditorHost";
 import { createNpcProviderFromEnv } from "@/lib/ai/convaiNpcProvider";
 import { useAutoSave, cleanSceneData } from "@/lib/scene/auto-save";
-import { saveSceneToSupabase } from "@/lib/scene/supabase-store";
+import { persistScene } from "@/lib/scene/persist-scene-client";
 import { searchExternalAssets, downloadAssetToStorage, type ExternalAsset } from "@/lib/ai/assetLibrary";
 import { useAuth } from "@/lib/supabase/auth-context";
 import { logger } from '@/lib/logger';
@@ -188,7 +188,9 @@ function PlayCanvasEditor() {
     setSaving(true);
     try {
       const newVersion = currentVersion + 1;
-      await saveSceneToSupabase(`${sceneId}_v${newVersion}`, { ...sceneData, name: `v${newVersion}` }, user.id);
+      const current = await editorRef.current?.getScene?.();
+      const saved = await persistScene(`${sceneId}_v${newVersion}`, { ...(current && typeof current === "object" ? current : sceneData), name: `v${newVersion}` });
+      if (!saved) throw new Error("Scene version was not persisted");
       setCurrentVersion(newVersion);
       setVersions(prev => [...prev, { id: `${sceneId}_v${newVersion}`, version: newVersion, created_at: new Date().toISOString() }]);
       pushToast(`Saved as version ${newVersion}`, "success");
@@ -206,6 +208,7 @@ function PlayCanvasEditor() {
       if (res.ok) {
         const data = await res.json();
         const cleaned = cleanSceneData(data);
+        editorRef.current?.loadScene?.(cleaned);
         setSceneData(cleaned);
         setCurrentVersion(version);
         setShowVersions(false);
@@ -218,8 +221,12 @@ function PlayCanvasEditor() {
   const handlePublish = useCallback(async () => {
     if (!sceneId) return;
     pushToast("Publishing...", "success");
-    await saveNow();
-    pushToast("Published!", "success");
+    const saved = await saveNow();
+    if (!saved) {
+      pushToast("Publish stopped: the scene could not be saved.", "error");
+      return;
+    }
+    pushToast("Scene saved. Opening preview.", "success");
     window.location.href = `/play/${sceneId}`;
   }, [sceneId, saveNow, pushToast]);
 
@@ -436,7 +443,10 @@ function PlayCanvasEditor() {
                 onReady={() => {
                   setBridgeLoading(false);
                   setBridgeFailed(false);
-                  pushToast("PlayCanvas editor connected.", "success");
+                  void editorRef.current?.getScene?.().then((scene) => {
+                    if (scene && typeof scene === "object") setSceneData(scene);
+                  }).catch((error) => logger.error("Could not read initial PlayCanvas scene", error));
+                  pushToast("PlayCanvas engine connected.", "success");
                 }}
                 onError={() => {
                   setBridgeLoading(false);
