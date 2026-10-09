@@ -22,7 +22,7 @@ export default function ProjectIdePage() {
           <WonderSpaceProjectNavigation projectId={projectId} active="ide" />
         </div>
 
-      <WonderSpaceLaunch projectId={projectId} />
+        <WonderSpaceLaunch projectId={projectId} />
       </div>
     </div>
   );
