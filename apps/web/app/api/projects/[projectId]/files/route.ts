@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFiles, readFile, listFiles, deletePath } from '@/lib/projects/storage';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { logger } from '@/lib/logger';
+import { ProjectFileValidationError, validateProjectFileEntries } from '@/lib/projects/file-validation';
 
 type Params = { params: Promise<{ projectId: string }> };
 
@@ -18,6 +19,9 @@ function validFilePath(value: string): boolean {
 
 function handleProjectError(error: unknown, action: string) {
   const message = error instanceof Error ? error.message : '';
+  if (error instanceof ProjectFileValidationError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
   if (message === 'Forbidden') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -51,6 +55,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   const auth = await requirePaidAIUser(req);
   if (!('userId' in auth)) return auth as NextResponse;
 
+  const contentLength = Number(req.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > 36 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Project save request too large' }, { status: 413 });
+  }
   const body: unknown = await req.json().catch(() => null);
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Valid JSON object required' }, { status: 400 });
@@ -71,6 +79,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   try {
+    validateProjectFileEntries(entries);
     const { projectId } = await params;
     await writeFiles(projectId, auth.userId, entries);
     return NextResponse.json({ success: true, projectId, savedAt: new Date().toISOString(), fileCount: entries.length });
