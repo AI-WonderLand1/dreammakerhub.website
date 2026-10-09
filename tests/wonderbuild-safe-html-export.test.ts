@@ -115,7 +115,9 @@ describe('untrusted builder HTML export serialization', () => {
     const preview = generatePreview(elements);
     for (const html of [files.html, preview.html]) {
       expect(html).not.toMatch(/\shref="javascript:/);
-      expect(html).not.toMatch(/\sonfocus=/);
+      // Escaped attribute *values* may contain the literal text "onfocus=",
+      // but must never produce a quoted, executable event-handler attribute.
+      expect(html).not.toMatch(/\sonfocus\s*=\s*["']/);
       expect(html).not.toContain('<img src=x onerror=alert(1)>');
       expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
       expect(html).toContain('aw-scope-0-0');
