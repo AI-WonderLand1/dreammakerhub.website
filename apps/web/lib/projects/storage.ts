@@ -3,6 +3,7 @@ import path from "path";
 import { headers } from "next/headers";
 import { createClient as createBearerClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { validateProjectFileEntries } from "@/lib/projects/file-validation";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { getClient as getSupabaseServiceClient } from "@/lib/supabase-service";
 
@@ -277,6 +278,7 @@ export async function writeFile(projectId: string, ownerId: string, filePath: st
 
 export async function writeFiles(projectId: string, ownerId: string, entries: FileEntry[]): Promise<void> {
   await assertOwner(projectId, ownerId);
+  validateProjectFileEntries(entries);
   if (!entries.length) return;
   const now = new Date().toISOString();
   const rows = entries.map((entry) => {
