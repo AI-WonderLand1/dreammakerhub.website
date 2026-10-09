@@ -5,17 +5,21 @@ import { join } from "node:path";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("WonderSpace navigation and translucent footer", () => {
-  it("places the project IDE tabs above the site menu without a floating overlay", () => {
+  it("places the IDE project tabs below the site menu in place of the old info banner", () => {
     const layout = read("apps/web/app/(workspace)/dashboard/layout.tsx");
     const idePage = read("apps/web/app/(workspace)/dashboard/projects/[id]/ide/page.tsx");
 
-    expect(layout).toContain("const isProjectIdeRoute = ");
-    expect(layout).toContain('aria-label="Project breadcrumb"');
-    expect(layout).toContain('<WonderSpaceProjectNavigation projectId={routeProjectId} active="ide" />');
-    expect(layout.indexOf('aria-label="Project breadcrumb"')).toBeLessThan(layout.indexOf("<header className="));
+    expect(layout).not.toContain('aria-label="Project breadcrumb"');
+    expect(layout).not.toContain('<WonderSpaceProjectNavigation projectId={routeProjectId} active="ide" />');
+    expect(layout).toContain('className="relative z-50 flex min-h-[72px]');
+    expect(idePage).toContain('<WonderSpaceProjectNavigation projectId={projectId} active="ide" />');
+    expect(idePage.indexOf('<WonderSpaceProjectNavigation')).toBeLessThan(
+      idePage.indexOf('<WonderSpaceLaunch'),
+    );
+    expect(idePage).not.toContain('WonderSpace is an optional editor inside Edit / Design');
+    expect(idePage).toContain('className="relative z-10 pt-4"');
     expect(layout).not.toContain('className="fixed inset-x-0 top-0 z-50');
     expect(layout).not.toContain('pt-[72px]');
-    expect(idePage).not.toContain("<WonderSpaceProjectNavigation");
     expect(idePage).toContain("<WonderSpaceLaunch projectId={projectId} />");
   });
 

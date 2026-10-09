@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import WonderSpaceLaunch from "@/components/engines/WonderSpaceLaunch";
 
 export default function ProjectIdePage() {
@@ -15,12 +16,13 @@ export default function ProjectIdePage() {
           "linear-gradient(rgba(4, 8, 20, 0.72), rgba(4, 10, 24, 0.82)), url('/images/wonderspace-galaxy.webp')",
       }}
     >
-      <div className="relative z-10">
-      <div className="mt-4 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-4 text-sm text-cyan-50">
-        WonderSpace is an optional editor inside Edit / Design. Choose a blank workspace or a repository below, then open code-server when the workspace is ready.
-      </div>
+      <div className="relative z-10 pt-4">
+        {/* Project tabs replace the old information banner, directly beneath the main site menu. */}
+        <div className="border-x border-white/10">
+          <WonderSpaceProjectNavigation projectId={projectId} active="ide" />
+        </div>
 
-      <WonderSpaceLaunch projectId={projectId} />
+        <WonderSpaceLaunch projectId={projectId} />
       </div>
     </div>
   );
