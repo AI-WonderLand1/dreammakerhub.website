@@ -3,6 +3,7 @@ import { EventNames } from './types';
 import { useBuilderStore } from '../store';
 import { normalizeHeadingLevel } from '../heading-level';
 import { imageBlockHtml } from '../image-block-html';
+import { escapeExportHtml, exportCssRule, safeClassToken, safeExportAttributes } from '../safe-export-html';
 import { logger } from '@/lib/logger';
 
 export class FileFolderManager {
@@ -92,14 +93,14 @@ export class FileFolderManager {
     if (origPath && this.cachedFiles.has(origPath)) {
       const content = this.cachedFiles.get(origPath)!;
       const newPath = `components/${this.sanitize(newElement.name || newElement.type)}.html`;
-      const updated = content.replace(new RegExp(`id="${originalId}"`, 'g'), `id="${newElement.id}"`);
+      const updated = content.replaceAll(`id="${escapeExportHtml(originalId)}"`, `id="${escapeExportHtml(newElement.id)}"`);
       this.bus.emit(EventNames.FILE_CREATED, { path: newPath, content: updated, projectId: this.projectId || 'local' });
       this.cachedFiles.set(newPath, updated);
     }
   }
 
   private findFilePathForElement(elementId: string): string | null {
-    const needle = `id="${elementId}"`;
+    const needle = `id="${escapeExportHtml(elementId)}"`;
     for (const [path, content] of this.cachedFiles) {
       if (content.includes(needle)) return path;
     }
@@ -117,23 +118,23 @@ export class FileFolderManager {
 </head>
 <body>
   <div id="app">
-    ${elements.map((el) => this.renderEl(el, 2)).join('\n    ')}
+    ${elements.map((el, i) => this.renderEl(el, 2, [i])).join('\n    ')}
   </div>
   <script>window.__BUILDER_STATE__ = ${JSON.stringify({ elements, version: 1 }, null, 2).replace(/</g, '\\u003c')};</script>
 </body>
 </html>`;
   }
 
-  private renderEl(el: any, depth: number): string {
+  private renderEl(el: any, depth: number, path: number[]): string {
     const indent = '  '.repeat(depth);
     const tag = elTag(el);
-    const attrs = elAttrs(el);
-    const children = el.children?.map((c: any) => this.renderEl(c, depth + 1)).join('\n') || '';
+    const attrs = safeExportAttributes(el, path, 'files');
+    const children = el.children?.map((c: any, i: number) => this.renderEl(c, depth + 1, [...path, i])).join('\n') || '';
     const content = el.props?.content || el.props?.label || el.props?.title || '';
     const imageContent = imageBlockHtml(el.type, el.props || {});
     if (imageContent !== null) return `${indent}<${tag}${attrs}>${imageContent}${children}</${tag}>`;
     if (children) return `${indent}<${tag}${attrs}>\n${children}\n${indent}</${tag}>`;
-    if (content && !['img', 'input', 'hr', 'br'].includes(tag)) return `${indent}<${tag}${attrs}>${escapeHtml(content)}</${tag}>`;
+    if (content && !['img', 'input', 'hr', 'br'].includes(tag)) return `${indent}<${tag}${attrs}>${escapeExportHtml(content)}</${tag}>`;
     return `${indent}<${tag}${attrs} />`;
   }
 
@@ -143,29 +144,22 @@ export class FileFolderManager {
     lines.push('*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }');
     lines.push('body { font-family: Inter, sans-serif; line-height: 1.6; color: #e2e8f0; background: #0a0a0a; }');
     lines.push('#app { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }');
-    const seen = new Set<string>();
-    for (const el of elements) this.collectCss(el, lines, seen);
+    for (const [i, el] of elements.entries()) this.collectCss(el, lines, [i]);
     return lines.join('\n');
   }
 
-  private collectCss(el: any, lines: string[], seen: Set<string>): void {
-    const s = el.styles;
-    if (s && Object.keys(s).length > 0) {
-      const key = `.type-${el.type}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        const rules = Object.entries(s).filter(([_, v]) => v != null && v !== '')
-          .map(([k, v]) => `  ${camelToKebab(k)}: ${v};`);
-        lines.push(`\n${key} {`, ...rules, '}');
-      }
+  private collectCss(el: any, lines: string[], path: number[]): void {
+    const rule = exportCssRule(el, path);
+    if (rule) lines.push(rule);
+    if (Array.isArray(el.children)) {
+      el.children.forEach((child: any, i: number) => this.collectCss(child, lines, [...path, i]));
     }
-    if (el.children) for (const c of el.children) this.collectCss(c, lines, seen);
   }
 
   private elementToCode(el: any): string {
-    return `<!-- ${el.name} (${el.type}) -->
-<div class="block-${el.type}" data-type="${el.type}" data-name="${escapeHtml(el.name || '')}">
-  ${escapeHtml(el.props?.content || el.props?.label || el.props?.title || '')}
+    return `<!-- Exported builder component -->
+<div class="block-${safeClassToken(el.type)}" data-type="${escapeExportHtml(el.type)}" data-name="${escapeExportHtml(el.name || '')}">
+  ${escapeExportHtml(el.props?.content || el.props?.label || el.props?.title || '')}
 </div>`;
   }
 
@@ -192,26 +186,6 @@ function elTag(el: any): string {
     section: 'section', container: 'div', grid: 'div', columns: 'div', row: 'div', group: 'div',
   };
   return m[el.type] || 'div';
-}
-
-function elAttrs(el: any): string {
-  const parts: string[] = [`id="${el.id}"`, `class="builder-block block-${el.type}"`, `data-type="${el.type}"`];
-  if (el.props?.alt) parts.push(`alt="${escapeHtml(el.props.alt)}"`);
-  if (el.props?.src) parts.push(`src="${escapeHtml(el.props.src)}"`);
-  if (el.props?.href || el.props?.url) parts.push(`href="${escapeHtml(el.props?.href || el.props?.url)}"`);
-  if (el.props?.['aria-label']) parts.push(`aria-label="${escapeHtml(el.props['aria-label'])}"`);
-  const s = el.styles || {};
-  const styleStr = Object.entries(s).filter(([_, v]) => v).map(([k, v]) => `${camelToKebab(k)}: ${v}`).join('; ');
-  if (styleStr) parts.push(`style="${styleStr}"`);
-  return parts.length ? ' ' + parts.join(' ') : '';
-}
-
-function camelToKebab(s: string): string {
-  return s.replace(/([A-Z])/g, '-$1').toLowerCase();
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export const fileFolderManager = new FileFolderManager();
