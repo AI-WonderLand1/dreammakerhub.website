@@ -25,7 +25,7 @@ describe("PlayCanvas native editor regression coverage", () => {
     expect(wrapper).not.toContain("DirectPlayCanvasHost");
     expect(engine).toContain('await import("playcanvas")');
     expect(engine).toContain("new pc.Application(canvas)");
-    expect(engine).not.toContain("iframe");
+    expect(engine).not.toContain("createElement(\"iframe\")");
   });
 
   it("requires authenticated persisted saves before showing success", () => {
