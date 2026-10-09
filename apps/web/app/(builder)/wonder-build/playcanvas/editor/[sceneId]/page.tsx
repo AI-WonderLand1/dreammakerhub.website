@@ -443,7 +443,10 @@ function PlayCanvasEditor() {
                 onReady={() => {
                   setBridgeLoading(false);
                   setBridgeFailed(false);
-                  pushToast("PlayCanvas editor connected.", "success");
+                  void editorRef.current?.getScene?.().then((scene) => {
+                    if (scene && typeof scene === "object") setSceneData(scene);
+                  }).catch((error) => logger.error("Could not read initial PlayCanvas scene", error));
+                  pushToast("PlayCanvas engine connected.", "success");
                 }}
                 onError={() => {
                   setBridgeLoading(false);
