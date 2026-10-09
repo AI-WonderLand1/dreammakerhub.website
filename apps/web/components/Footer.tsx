@@ -1,4 +1,6 @@
 import Link from "next/link";
+import F6SFollowBadge from "@/components/F6SFollowBadge";
+import TrustpilotReviewCollector from "@/components/TrustpilotReviewCollector";
 
 const PRODUCT_LINKS = [
   { label: "Build", href: "/wonder-build" },
@@ -42,8 +44,20 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/[0.07] px-6 py-4 text-center text-xs text-white/35">
-        © {new Date().getFullYear()} AI Wonderland. All rights reserved.
+      <div className="mx-auto max-w-7xl px-6 pb-6">
+        <div className="max-w-sm">
+          <p className="mb-2 text-xs text-white/50">Share your experience with DreamMakerHub</p>
+          <TrustpilotReviewCollector />
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center justify-center gap-3 border-t border-white/[0.07] px-6 py-4 text-center text-xs text-white/45 sm:flex-row">
+        <span>© {new Date().getFullYear()} AI Wonderland. All rights reserved.</span>
+        <span className="hidden text-white/20 sm:inline" aria-hidden="true">|</span>
+        <span className="flex items-center gap-2">
+          <span>Follow our founder</span>
+          <F6SFollowBadge />
+        </span>
       </div>
     </footer>
   );
