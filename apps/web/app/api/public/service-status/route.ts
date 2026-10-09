@@ -21,6 +21,11 @@ let pending: Promise<PublicStatus> | null = null;
 
 async function checkAI(): Promise<Service> {
   const base = { id: 'ai' as const, name: 'AI assistant' };
+  // A configured provider is not usable when the server's guarded request
+  // accounting is intentionally paused. Never advertise it as operational.
+  if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true') {
+    return { ...base, status: 'unavailable', message: 'AI requests are paused until usage-accounting safeguards are enabled.' };
+  }
   const key = process.env.OPENROUTER_API_KEY?.trim();
   if (!key) {
     // Match the free chat endpoint's supported providers. Configuration alone
