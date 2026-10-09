@@ -64,11 +64,15 @@ export function validateProjectFileEntries(
     }
   }
 
-  // Prevent ambiguous file-vs-directory names in a single write batch.
-  const sorted = [...paths].sort();
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].startsWith(sorted[i - 1] + "/")) {
-      throw new ProjectFileValidationError("A file conflicts with a directory path", 400);
+  // Detect file/directory conflicts even when other filenames sort between
+  // the parent and child. Checking every slash-delimited prefix is reliable.
+  for (const filePath of paths) {
+    let slash = filePath.indexOf("/");
+    while (slash !== -1) {
+      if (paths.has(filePath.slice(0, slash))) {
+        throw new ProjectFileValidationError("A file conflicts with a directory path", 400);
+      }
+      slash = filePath.indexOf("/", slash + 1);
     }
   }
 }
