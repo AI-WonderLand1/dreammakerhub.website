@@ -9,13 +9,15 @@ describe("WonderSpace IDE form navigation", () => {
     const nav = read("apps/web/components/dashboard/WonderSpaceProjectNavigation.tsx");
     const project = read("apps/web/app/(workspace)/dashboard/projects/[id]/page.tsx");
     const ide = read("apps/web/app/(workspace)/dashboard/projects/[id]/ide/page.tsx");
+    const layout = read("apps/web/app/(workspace)/dashboard/layout.tsx");
 
     expect(nav).toContain('label: "IDE"');
     expect(nav).toContain('${projectPath}/ide');
     expect(project).toContain("/ide");
     expect(project).toContain("Open IDE");
-    expect(ide).toContain("WonderSpaceProjectNavigation");
-    expect(ide).toContain('active="ide"');
+    expect(layout).toContain('<WonderSpaceProjectNavigation projectId={routeProjectId} active="ide" />');
+    expect(layout.indexOf('active="ide" />')).toBeLessThan(layout.indexOf('<header className='));
+    expect(ide).not.toContain("WonderSpaceProjectNavigation");
     expect(ide).toContain("<WonderSpaceLaunch projectId={projectId} />");
     expect(ide).toContain("optional editor inside Edit / Design");
     expect(ide).toContain("/images/wonderspace-galaxy.webp");

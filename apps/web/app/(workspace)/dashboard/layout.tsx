@@ -106,6 +106,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     "Account";
   const workspaceName = `${displayName}'s Workspace`;
   const isProjectRoute = pathname.startsWith("/dashboard/projects/");
+  const isProjectIdeRoute = /^\/dashboard\/projects\/[^/]+\/ide\/?$/.test(pathname);
 
   const withProject = (href: string) => {
     if (!currentProject) return href;
@@ -344,7 +345,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#06101c] text-white">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-[72px] items-center border-b border-white/10 bg-[#07111e]/95 px-4 backdrop-blur">
+      {isProjectIdeRoute && routeProjectId && (
+        <div className="border-b border-white/10 bg-[#070d17] px-4 pt-4 sm:px-5 lg:px-6">
+          <div className="mx-auto max-w-[1640px]">
+            <nav aria-label="Project breadcrumb" className="mb-2 flex items-center gap-2 text-sm text-white/60">
+              <Link href={`/dashboard/projects/${encodeURIComponent(routeProjectId)}`} className="hover:text-white">
+                Project
+              </Link>
+              <span className="text-white/25" aria-hidden="true">›</span>
+              <span className="font-semibold text-white">IDE</span>
+            </nav>
+            <WonderSpaceProjectNavigation projectId={routeProjectId} active="ide" />
+          </div>
+        </div>
+      )}
+      <header className={`relative z-50 flex min-h-[72px] items-center border-b border-white/10 bg-[#07111e]/90 px-4 backdrop-blur-xl ${isProjectIdeRoute ? "mt-2" : ""}`}>
         <button type="button" onClick={() => setMobileOpen(true)} className="mr-3 grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/10 hover:bg-white/5" aria-label="Open site navigation">
           <Menu size={20} />
         </button>
@@ -534,7 +549,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {mobileOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-[55] bg-black/65" />}
 
-      <main className="min-h-screen pt-[72px]">
+      <main className="min-h-[calc(100vh-72px)]">
         <div className="mx-auto max-w-[1640px] p-4 sm:p-5 lg:p-6">
           {currentProject && pathname !== "/dashboard" && !isProjectRoute && (
             <div className="mb-5">
