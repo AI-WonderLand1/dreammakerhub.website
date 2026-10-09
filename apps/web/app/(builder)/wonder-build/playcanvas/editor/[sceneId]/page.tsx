@@ -206,6 +206,7 @@ function PlayCanvasEditor() {
       if (res.ok) {
         const data = await res.json();
         const cleaned = cleanSceneData(data);
+        editorRef.current?.loadScene?.(cleaned);
         setSceneData(cleaned);
         setCurrentVersion(version);
         setShowVersions(false);
