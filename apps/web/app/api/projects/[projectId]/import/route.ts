@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { writeFiles } from '@/lib/projects/storage';
 import { logger } from '@/lib/logger';
+import { ProjectFileValidationError, validateProjectFileEntries } from '@/lib/projects/file-validation';
 
 const MAX_BODY_BYTES = 100 * 1024 * 1024;
 
@@ -55,20 +56,25 @@ export async function POST(
       return NextResponse.json({ ok: false, message: 'No importable files found' }, { status: 400 });
     }
 
-    await writeFiles(projectId, userId, Object.entries(files).map(([path, content]) => ({ path, content })));
+    const entries = Object.entries(files).map(([path, content]) => ({ path, content }));
+    validateProjectFileEntries(entries);
+    await writeFiles(projectId, userId, entries);
 
     return NextResponse.json({
       ok: true,
       message: `Imported ${Object.keys(files).length} file${Object.keys(files).length === 1 ? '' : 's'}`,
       fileCount: Object.keys(files).length,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    if (err instanceof ProjectFileValidationError) {
+      return NextResponse.json({ ok: false, message: err.message }, { status: err.status });
+    }
     if (err instanceof Error && (err.message === "Invalid project file path" || err.message === "Invalid path")) {
       return NextResponse.json({ ok: false, message: "Archive contains invalid or reserved internal project paths" }, { status: 400 });
     }
     logger.error('Import error:', err);
     return NextResponse.json(
-      { ok: false, message: err.message || 'Import failed' },
+      { ok: false, message: 'Import failed' },
       { status: 500 }
     );
   }
