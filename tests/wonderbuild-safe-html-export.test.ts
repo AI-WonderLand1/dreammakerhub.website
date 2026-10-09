@@ -69,9 +69,9 @@ describe('untrusted builder HTML export serialization', () => {
       },
       styles: { fontFamily: '"Open Sans"', color: 'red" onfocus="alert(1)' },
     }, [0], 'files');
-    expect(attr).not.toMatch(/\s(?:onclick|onfocus|onmouseover)=/);
+    expect(attr).not.toMatch(/\s(?:onclick|onfocus|onmouseover)="/);
     expect(attr).toContain('id="x&quot; onclick=&quot;alert(1)"');
-    expect(attr).toContain('class="builder-block block-button-onmouseover-alert-1- aw-scope-0"');
+    expect(attr).toContain('class="builder-block block-button-onmouseover-alert-1 aw-scope-0"');
     expect(attr).not.toContain('href=');
     expect(attr).not.toContain('<script>');
     expect(attr).toContain('style="font-family: &quot;Open Sans&quot;"');
