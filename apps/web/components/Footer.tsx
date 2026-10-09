@@ -1,5 +1,6 @@
 import Link from "next/link";
 import F6SFollowBadge from "@/components/F6SFollowBadge";
+import TrustpilotReviewCollector from "@/components/TrustpilotReviewCollector";
 
 const PRODUCT_LINKS = [
   { label: "Build", href: "/wonder-build" },
@@ -40,6 +41,13 @@ export default function Footer() {
               {item.label}
             </Link>
           ))}
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 pb-6">
+        <div className="max-w-sm">
+          <p className="mb-2 text-xs text-white/50">Share your experience with DreamMakerHub</p>
+          <TrustpilotReviewCollector />
         </div>
       </div>
 
