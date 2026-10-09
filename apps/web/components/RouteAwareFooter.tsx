@@ -22,5 +22,21 @@ export default function RouteAwareFooter() {
 
   if (isWonderBuildWebsiteSurface || isDocsSurface) return null;
 
+  // Match the IDE's fixed galaxy backdrop so translucent footer shards reveal
+  // the same visual environment instead of an unrelated opaque black block.
+  if (/^\/dashboard\/projects\/[^/]+\/ide\/?$/.test(pathname)) {
+    return (
+      <div
+        className="bg-cover bg-center"
+        style={{
+          backgroundImage: "linear-gradient(rgba(4, 8, 20, 0.72), rgba(4, 10, 24, 0.82)), url('/images/wonderspace-galaxy.webp')",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <Footer />
+      </div>
+    );
+  }
+
   return <Footer />;
 }
