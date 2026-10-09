@@ -1,8 +1,9 @@
 import { imageFromProps, imageSource } from './image-source';
+import { safeExportUrl } from './safe-export-html';
 
 const escape = (value: unknown) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const image = (src: unknown, alt: unknown = '') => {
-  const url = imageSource(src);
+  const url = safeExportUrl(imageSource(src), 'image');
   return url ? `<img src="${escape(url)}" alt="${escape(alt)}" style="display:block;width:100%;height:180px;object-fit:cover;border-radius:inherit" />` : '';
 };
 
