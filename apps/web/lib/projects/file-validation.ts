@@ -40,7 +40,7 @@ export function validateProjectFileEntries(
       !filePath ||
       filePath.length > PROJECT_FILE_LIMITS.maxPathLength ||
       filePath.startsWith("/") ||
-      /[\\\\\x00-\x1f\x7f]/.test(filePath) ||
+      /[\\\x00-\x1f\x7f]/.test(filePath) ||
       filePath.split("/").some((part) => !part || part === "." || part === "..") ||
       filePath === ".wonderspace" ||
       filePath.startsWith(".wonderspace/")
