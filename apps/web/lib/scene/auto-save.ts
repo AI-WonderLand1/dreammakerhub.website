@@ -79,9 +79,10 @@ export function cleanSceneData(sceneData: SceneData): SceneData {
   delete cleaned._draft;
   delete cleaned._cache;
 
-  if (cleaned.objects) {
+  // Primitive geometry has no meshUrl; do not silently delete it.
+  if (Array.isArray(cleaned.objects)) {
     cleaned.objects = cleaned.objects.filter((obj: { meshUrl?: string }) => {
-      return obj.meshUrl && !obj.meshUrl.includes('__temp');
+      return obj && (typeof obj.meshUrl !== 'string' || !obj.meshUrl.includes('__temp'));
     });
   }
 
