@@ -22,11 +22,17 @@ describe("WonderSpace navigation and translucent footer", () => {
   it("uses a translucent decorative footer without disabling its links", () => {
     const footer = read("apps/web/components/Footer.tsx");
     const routeFooter = read("apps/web/components/RouteAwareFooter.tsx");
+    const vector = read("apps/web/components/ShatteredGlassVector.tsx");
 
     expect(footer).toContain("backdrop-blur-xl");
-    expect(footer).toContain("bg-[#071326]/25");
-    expect(footer).toContain('className="pointer-events-none absolute');
-    expect(footer).toContain("clipPath:");
+    expect(footer).toContain("bg-[#071326]/15");
+    expect(footer).toContain("<ShatteredGlassVector />");
+    expect(vector).toContain('<svg');
+    expect(vector).toContain('aria-hidden="true"');
+    expect(vector).toContain("pointer-events-none");
+    expect(vector).toContain('fill="url(#glass-footer-facet)"');
+    expect(vector).toContain('stroke="url(#glass-footer-crack)"');
+    expect(vector).not.toContain("<image");
     expect(footer).toContain("TrustpilotReviewCollector");
     expect(footer).toContain("F6SFollowBadge");
     expect(routeFooter).toContain("wonderspace-galaxy.webp");
