@@ -46,7 +46,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Multi-section builder action payloads need more room than short chat answers.\n    // Reserve the larger output allowance before contacting the model.\n    const outputBudget = 2048;\n    await reserveAiRequest(userId, message.length, outputBudget);
+    // Multi-section builder action payloads need more room than short chat answers.
+    // Reserve the larger output allowance before contacting the model.
+    const outputBudget = 2048;
+    await reserveAiRequest(userId, message.length, outputBudget);
     // Metered calls must not silently retry other billable providers under the
     // same reservation. The shared model adapter chooses one configured route.
     const result = await runModel({
