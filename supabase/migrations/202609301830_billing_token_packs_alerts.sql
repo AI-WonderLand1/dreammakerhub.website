@@ -20,7 +20,7 @@ GRANT SELECT ON public.user_token_balances TO authenticated;
 GRANT ALL ON public.user_token_balances TO service_role;
 
 ALTER TABLE public.user_token_balances REPLICA IDENTITY FULL;
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables
@@ -30,7 +30,7 @@ BEGIN
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.user_token_balances;
   END IF;
-END $;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.token_purchase_events (
   stripe_checkout_session_id TEXT PRIMARY KEY,

@@ -38,6 +38,10 @@ describe("billing center token packs and usage alarms", () => {
     expect(webhook).toContain('session.payment_status !== "paid"');
     expect(webhook).toContain("stripe.checkout.sessions.listLineItems");
     expect(webhook).toContain('supabase.rpc("grant_purchased_ai_tokens"');
+    // Database migration must parse before enabling server-side AI spending guards.
+    expect(migration).toContain("DO $$");
+    expect(migration).toContain("END $$;");
+    expect(migration).not.toMatch(/\bDO \$(?!\$)/);
     expect(migration).toContain("stripe_checkout_session_id TEXT PRIMARY KEY");
     expect(migration).toContain("ON CONFLICT (stripe_checkout_session_id) DO NOTHING");
     expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.grant_purchased_ai_tokens");

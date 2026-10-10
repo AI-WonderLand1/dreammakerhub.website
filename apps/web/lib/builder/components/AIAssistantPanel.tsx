@@ -209,12 +209,13 @@ function inferImagePropPath(element: CanvasElement): string | null {
   return null;
 }
 
-function buildSystemPrompt(pageName: string, selected: CanvasElement | null, elements: CanvasElement[]) {
+function buildSystemPrompt(pageName: string, selected: CanvasElement | null, elements: CanvasElement[], compact = false) {
   const selectedContext = selected
-    ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2).slice(0, 1600)
+    ? JSON.stringify({ id: selected.id, type: selected.type, name: selected.name, props: selected.props, styles: selected.styles }, null, 2).slice(0, compact ? 500 : 1600)
     : 'No element is selected. Selection is optional; infer the target from the request and page context.';
-  const pageContext = JSON.stringify(summarizeElements(elements), null, 2).slice(0, 5000);
-  const roleCounts = JSON.stringify(summarizeRootRoles(elements));
+  const pageContext = JSON.stringify(summarizeElements(elements), null, 2).slice(0, compact ? 1100 : 5000);
+  const roleCounts = JSON.stringify(summarizeRootRoles(elements)).slice(0, compact ? 250 : 2000);
+  const blockCatalog = compact ? BLOCK_CATALOG.slice(0, 850) : BLOCK_CATALOG;
   const pageState = elements.length
     ? 'IMPORTANT: this page already contains content. Treat it as an existing application to modify, not an empty canvas to append another site beneath.'
     : 'This page is empty, so a broad build request may create the initial structure.';
@@ -245,7 +246,7 @@ Current root role counts:
 ${roleCounts}
 
 Available WonderBuild block types include:
-${BLOCK_CATALOG}
+${blockCatalog}
 
 Supported machine actions:
 1. Add a missing block:
@@ -523,7 +524,16 @@ export default function AIAssistantPanel() {
     let remoteError = '';
 
     try {
-      const message = `User request:\n${promptText.slice(0, 3500)}\n\n${buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements)}`;
+      const requestPrefix = `User request:\n${promptText.slice(0, 3500)}\n\n`;
+      let message = requestPrefix + buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements);
+      // Preserve the full action/safety instructions: compact the optional page context
+      // instead of blindly truncating the end of the prompt or relaxing server usage limits.
+      if (message.length > 12000) {
+        message = requestPrefix + buildSystemPrompt(livePage?.name || 'Home', liveSelected, liveStore.elements, true);
+      }
+      if (message.length > 12000) {
+        throw new Error('Builder context is too large; shorten the request or simplify the active page.');
+      }
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
