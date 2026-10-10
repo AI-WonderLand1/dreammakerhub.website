@@ -16,16 +16,10 @@ type BuilderAction =
   | { action: 'generate_image'; targetId?: string; targetRef?: string; propPath?: string; prompt: string; style?: string; size?: string; alt?: string; name?: string };
 
 const SUGGESTIONS = [
-  'Build me a complete coffee shop website with real images',
+  'Build a complete coffee shop homepage with editable sections',
   'Build a modern SaaS landing page in a cinematic style',
-  'Generate a watercolor image of a city at night',
+  'Add a detailed pricing section and contact form',
   'Redesign this page in a luxury editorial style',
-];
-
-const FALLBACK_BLOCKS: Array<[string, string]> = [
-  ['hero', 'hero'], ['feature', 'feature-grid'], ['pricing', 'pricing'], ['contact', 'contact-form'],
-  ['gallery', 'gallery'], ['button', 'button'], ['navigation', 'navbar'], ['navbar', 'navbar'],
-  ['video', 'video'], ['columns', 'columns'], ['footer', 'section'], ['image', 'image'],
 ];
 
 const FORBIDDEN_KEYS = new Set(['dangerouslySetInnerHTML', 'innerHTML', 'outerHTML', 'clickJs', 'customCSS', 'srcDoc', 'srcdoc', '__proto__', 'prototype', 'constructor']);
@@ -284,7 +278,7 @@ Rules:
 - Before EVERY add action, check whether the same type or semantic role already exists. If it does, edit it instead unless the user explicitly requested another one.
 - Broad requests like “build a coffee shop site” on a NONEMPTY page mean reconcile/upgrade the existing page into that site, not append a second complete page.
 - If changing from one block variant/type to another is necessary, remove the obsolete exact-ID block and add its replacement. Do not keep both variants accidentally.
-- For visual businesses/pages, include generate_image actions automatically, but target existing image-capable blocks before adding standalone image blocks.
+- Include generate_image actions only if the user explicitly requests generated images. Do not make page structure depend on image generation; never claim an image was generated or sourced unless the image tool succeeded.
 - If the user explicitly asks for an image, generate it. Do not substitute a placeholder URL.
 - Use only block types from the catalog. Prefer existing compatible blocks and their default props over inventing unknown types.
 - Make content specific to the user's request, never Lorem ipsum, Placeholder, Sample, or generic fake copy.
@@ -319,41 +313,6 @@ function stripActions(text: string) {
     .replace(/---BUILDER_ACTIONS\s*[\s\S]*?\s*---END/g, '')
     .replace(/---BUILDER_ACTION\s*[\s\S]*?\s*---END/g, '')
     .trim();
-}
-
-function applyQuickLocalEdit(prompt: string, selected: CanvasElement | null): boolean {
-  if (!selected) return false;
-  const lower = prompt.toLowerCase();
-  const styles: Record<string, unknown> = {};
-  const props: Record<string, unknown> = {};
-  if (/\b(center|centered)\b/.test(lower)) styles.textAlign = 'center';
-  if (/\b(bold|bolder)\b/.test(lower)) styles.fontWeight = '700';
-  if (/\b(rounded|rounder)\b/.test(lower)) styles.borderRadius = '16px';
-  if (/\b(full width|full-width)\b/.test(lower)) styles.width = '100%';
-  if (/\b(bigger|larger)\b/.test(lower)) styles.fontSize = '48px';
-  if (/\b(smaller)\b/.test(lower)) styles.fontSize = '18px';
-  const wantsBackground = lower.includes('background');
-  const colors: Array<[RegExp, string]> = [
-    [/\bpurple\b/, '#8b5cf6'], [/\bblue\b/, '#3b82f6'], [/\bcyan\b/, '#22d3ee'],
-    [/\bgreen\b/, '#22c55e'], [/\bwhite\b/, '#ffffff'], [/\bblack\b/, '#050816'],
-  ];
-  for (const [pattern, color] of colors) {
-    if (pattern.test(lower)) {
-      styles[wantsBackground ? 'backgroundColor' : 'color'] = color;
-      break;
-    }
-  }
-  const textMatch = prompt.match(/(?:change|set|make)\s+(?:the\s+)?(?:text|label|title)\s+(?:to\s+)?["“'](.+?)["”']/i);
-  if (textMatch) {
-    if ('content' in (selected.props || {})) props.content = textMatch[1];
-    else if ('label' in (selected.props || {})) props.label = textMatch[1];
-    else if ('title' in (selected.props || {})) props.title = textMatch[1];
-  }
-  if (!Object.keys(props).length && !Object.keys(styles).length) return false;
-  const store = useBuilderStore.getState();
-  if (Object.keys(props).length) store.updateElementProps(selected.id, props);
-  if (Object.keys(styles).length) store.updateElementStyles(selected.id, styles);
-  return true;
 }
 
 export default function AIAssistantPanel() {
@@ -483,33 +442,6 @@ export default function AIAssistantPanel() {
     return `Added ${element.name}`;
   }, []);
 
-  const addFallbackBlock = useCallback((prompt: string): string | null => {
-    const lower = prompt.toLowerCase();
-    const store = useBuilderStore.getState();
-    for (const [keyword, type] of FALLBACK_BLOCKS) {
-      if (!lower.includes(keyword)) continue;
-      const definition = findBlockDefinition(type);
-      if (!definition) continue;
-      const reusable = findReusableRoot(store.elements, definition.type);
-      if (reusable) {
-        store.selectElement(reusable.id);
-        return `Kept existing ${reusable.name}; no duplicate was added`;
-      }
-      const element: CanvasElement = {
-        id: `el-${Date.now()}-fallback`,
-        type: definition.type,
-        name: definition.name,
-        icon: definition.icon,
-        props: { ...definition.defaultProps },
-        styles: { ...definition.defaultStyles },
-      };
-      store.addElement(element);
-      store.selectElement(element.id);
-      return `Added ${definition.name}`;
-    }
-    return null;
-  }, []);
-
   const handleSend = useCallback(async (override?: string) => {
     const promptText = (override ?? input).trim();
     if (!promptText || loading) return;
@@ -522,6 +454,7 @@ export default function AIAssistantPanel() {
     const liveSelected = findElement(liveStore.elements, liveStore.selectedId);
     const livePage = liveStore.pages.find((page) => page.id === liveStore.activePageId);
     let remoteError = '';
+    let confirmedChanges = 0;
 
     try {
       const requestPrefix = `User request:\n${promptText.slice(0, 3500)}\n\n`;
@@ -552,7 +485,10 @@ export default function AIAssistantPanel() {
       for (const action of actions) {
         try {
           const result = await applyAction(action, refs);
-          if (result) applied.push(result);
+          if (result) {
+            applied.push(result);
+            confirmedChanges++;
+          }
         } catch (error) {
           actionErrors.push(error instanceof Error ? error.message : 'Action failed');
         }
@@ -572,21 +508,17 @@ export default function AIAssistantPanel() {
       setLoading(false);
     }
 
-    if (applyQuickLocalEdit(promptText, liveSelected)) {
-      setLastApplied(`Updated ${liveSelected?.name || 'selected element'}`);
-      setMessages((previous) => [...previous, { role: 'assistant', content: 'Applied that change directly to the selected element.' }]);
-      return;
-    }
-
-    const added = addFallbackBlock(promptText);
-    if (added) {
-      setLastApplied(added);
-      setMessages((previous) => [...previous, { role: 'assistant', content: `${added}. The AI service could not complete the richer version, so I used the safe local fallback.` }]);
-      return;
-    }
-
-    setMessages((previous) => [...previous, { role: 'assistant', content: `I could not apply that request. ${remoteError || 'No valid builder action was returned.'}` }]);
-  }, [addFallbackBlock, applyAction, input, loading]);
+    // A failed model request must not manufacture an unrelated block or falsely
+    // report a successful page build. Keep the prompt available for a retry.
+    setInput(promptText);
+    const outcome = confirmedChanges
+      ? `${confirmedChanges} change(s) were applied before the error; review the page before retrying.`
+      : 'No AI-generated changes were applied.';
+    setMessages((previous) => [...previous, {
+      role: 'assistant',
+      content: `AI builder unavailable: ${remoteError || 'No valid builder action was returned.'} ${outcome}`,
+    }]);
+  }, [applyAction, input, loading]);
 
   const runSuggestion = (suggestion: string) => {
     setInput(suggestion);
