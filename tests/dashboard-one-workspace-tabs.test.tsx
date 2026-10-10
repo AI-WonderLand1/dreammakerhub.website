@@ -63,7 +63,8 @@ async function chooseTab(label: string) {
   await act(async () => {
     workspaceButton(label).dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
-  await renderPanel();
+  // The Code tab leaves this page; don't fake rendering the dashboard at the new URL.
+  if (label !== "Code") await renderPanel();
 }
 
 beforeEach(() => {
