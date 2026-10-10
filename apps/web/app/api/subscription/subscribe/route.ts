@@ -134,6 +134,9 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      // Enable Stripe promotion-code entry for monthly subscriptions only.
+      // Campaign codes must remain inactive until the IDE cost guard passes verification.
+      allow_promotion_codes: !isYearly,
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: user.email || undefined,
       client_reference_id: user.id,
