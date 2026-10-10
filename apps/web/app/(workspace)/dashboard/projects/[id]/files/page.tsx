@@ -74,7 +74,7 @@ export default function ProjectCodeManagerPage() {
           event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const link = target.closest("a[href]");
+      const link = target.closest<HTMLAnchorElement>("a[href]");
       if (!link || link.hasAttribute("download") || link.target === "_blank") return;
       let next: URL;
       try { next = new URL(link.href, window.location.href); } catch { return; }
