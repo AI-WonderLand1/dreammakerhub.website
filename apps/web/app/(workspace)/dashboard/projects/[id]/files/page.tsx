@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
@@ -54,6 +54,71 @@ export default function ProjectCodeManagerPage() {
   const [files, setFiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [unsavedEdits, setUnsavedEdits] = useState(false);
+  const unsavedRef = useRef(false);
+  const reportUnsaved = useCallback((unsaved: boolean) => {
+    unsavedRef.current = unsaved;
+    setUnsavedEdits(unsaved);
+  }, []);
+
+  useEffect(() => {
+    // Protect reload/tab close and capture all in-app links (including the
+    // shared dashboard header/sidebar). Do not persist unsaved source content.
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (!unsavedRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const confirmNavigation = (event: MouseEvent) => {
+      if (!unsavedRef.current || event.defaultPrevented || event.button !== 0 ||
+          event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (!link || link.hasAttribute("download") || link.target === "_blank") return;
+      let next: URL;
+      try { next = new URL(link.href, window.location.href); } catch { return; }
+      const here = new URL(window.location.href);
+      if (next.origin === here.origin && next.pathname === here.pathname &&
+          next.search === here.search) return; // Hash-only moves are safe.
+      if (!window.confirm("You have unsaved changes. Leave this editor and discard them?")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      } else {
+        unsavedRef.current = false;
+      }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    document.addEventListener("click", confirmNavigation, true);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      document.removeEventListener("click", confirmNavigation, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!unsavedEdits) return;
+    // A same-URL history entry gives client-side Back a chance to confirm.
+    const currentUrl = window.location.href;
+    window.history.pushState({ ...window.history.state, __wonderSpaceDirtyEditor: true }, "", currentUrl);
+    let listening = true;
+    const onBack = () => {
+      if (!listening || !unsavedRef.current) return;
+      if (!window.confirm("You have unsaved changes. Leave this editor and discard them?")) {
+        window.history.pushState({ ...window.history.state, __wonderSpaceDirtyEditor: true }, "", currentUrl);
+        return;
+      }
+      listening = false;
+      unsavedRef.current = false;
+      window.removeEventListener("popstate", onBack, true);
+      window.history.back();
+    };
+    window.addEventListener("popstate", onBack, true);
+    return () => {
+      listening = false;
+      window.removeEventListener("popstate", onBack, true);
+    };
+  }, [unsavedEdits]);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +187,11 @@ export default function ProjectCodeManagerPage() {
 
   return (
     <div className="min-h-[calc(100vh-4.5rem)] text-white">
+      {unsavedEdits && (
+        <p role="status" className="mb-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100">
+          Unsaved changes in the editor. Save your file before leaving this page.
+        </p>
+      )}
       <header className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-[#0a1423]">
         <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-5">
           <div className="min-w-0">
@@ -169,6 +239,7 @@ export default function ProjectCodeManagerPage() {
             files={files}
             initialPath={initialPath}
             onFilesChange={setFiles}
+            onUnsavedChange={reportUnsaved}
           />
         </main>
 
