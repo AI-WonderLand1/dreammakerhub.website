@@ -18,7 +18,7 @@ export default function AgentsPage() {
             <p className="mt-1 text-sm text-white/60">Manage agent sessions and configuration across your workspace.</p>
           </div>
           <Link href="/dashboard/settings/agents" className="rounded-lg border border-cyan-300/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/20">
-            Configure agents
+            Agent Settings
           </Link>
         </div>
       </header>
