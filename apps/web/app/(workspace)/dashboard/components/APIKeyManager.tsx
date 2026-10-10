@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Copy, Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 import toast, { Toaster } from '@/components/ui/toast';
-import { logger } from '@/lib/logger';
 
 interface APIKey {
   id: string;
@@ -16,6 +15,7 @@ export default function APIKeyManager() {
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [newKeyName, setNewKeyName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [revealedToken, setRevealedToken] = useState<string | null>(null);
 
   useEffect(() => {
     fetchKeys();
@@ -31,6 +31,7 @@ export default function APIKeyManager() {
   async function createKey() {
     if (!newKeyName.trim()) return toast.error('Enter a name');
     setCreating(true);
+    setRevealedToken(null);
     const res = await fetch('/api/keys/api', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,8 +40,12 @@ export default function APIKeyManager() {
     const data = await res.json();
     setCreating(false);
     if (!res.ok) return toast.error(data.error || 'Failed to create key');
-    toast.success('API key created. Copy it now!');
-    alert(`Your new API key:\n\n${data.key}\n\nCopy it securely — it will not be shown again.`);
+    if (typeof data.token === 'string' && data.token.length > 0) {
+      setRevealedToken(data.token);
+      toast.success('API key created. Copy and store it securely now.');
+    } else {
+      toast.error('Key created, but the secret was not returned. Revoke it and create another.');
+    }
     setNewKeyName('');
     fetchKeys();
   }
@@ -58,9 +63,13 @@ export default function APIKeyManager() {
     setKeys((k) => k.filter((x) => x.id !== id));
   }
 
-  function copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text);
-    toast.success('Copied');
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied');
+    } catch {
+      toast.error('Clipboard unavailable. Select and copy the key manually.');
+    }
   }
 
   return (
@@ -93,6 +102,20 @@ export default function APIKeyManager() {
         </div>
       </div>
 
+      {revealedToken && (
+        <div role="status" className="rounded-lg border border-amber-600/50 bg-amber-950/30 p-4 space-y-3">
+          <p className="text-sm font-semibold text-amber-200">New secret key — shown only once</p>
+          <p className="text-xs text-gray-300">Copy it to a secure password manager. It cannot be recovered after you dismiss this panel.</p>
+          <code className="block break-all select-all text-sm text-gray-100">{revealedToken}</code>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void copyToClipboard(revealedToken)}
+              className="rounded-lg bg-purple-700 px-3 py-2 text-sm">Copy secret key</button>
+            <button type="button" onClick={() => setRevealedToken(null)}
+              className="rounded-lg border border-purple-700 px-3 py-2 text-sm">I've saved it — dismiss</button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         {keys.length === 0 && (
           <p className="text-sm text-gray-500 italic">No API keys yet.</p>
@@ -111,12 +134,7 @@ export default function APIKeyManager() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => copyToClipboard(key.id)}
-                className="p-1.5 hover:bg-purple-700/40 rounded-lg"
-              >
-                <Copy size={14} />
-              </button>
+              <span className="text-xs text-gray-500" title="Secret key is only shown when created">Secret hidden</span>
               <button
                 onClick={() => deleteKey(key.id)}
                 className="p-1.5 hover:bg-red-700/40 rounded-lg"
