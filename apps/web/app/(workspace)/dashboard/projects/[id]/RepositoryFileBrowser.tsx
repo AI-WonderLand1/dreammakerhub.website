@@ -12,6 +12,8 @@ import {
   FolderOpen,
   FolderPlus,
   Pencil,
+  Search,
+  X,
   Save,
   Trash2,
   Upload,
@@ -279,6 +281,7 @@ export default function RepositoryFileBrowser({
 }: RepositoryFileBrowserProps) {
   const [managedFiles, setManagedFiles] = useState<Record<string, string>>(files);
   const [currentPath, setCurrentPath] = useState("");
+  const [fileSearch, setFileSearch] = useState("");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState("");
   const [saving, setSaving] = useState(false);
@@ -314,6 +317,14 @@ export default function RepositoryFileBrowser({
   }, [initialPath, managedFiles]);
 
   const entries = useMemo(() => entriesAtPath(managedFiles, currentPath), [managedFiles, currentPath]);
+  const searchResults = useMemo(() => {
+    const query = fileSearch.trim().toLowerCase();
+    if (!query) return [];
+    return Object.keys(managedFiles)
+      .filter((path) => path.toLowerCase().includes(query))
+      .sort((a, b) => a.localeCompare(b));
+  }, [managedFiles, fileSearch]);
+  const isSearching = fileSearch.trim().length > 0;
   const readme = useMemo(() => readmeAtPath(managedFiles, currentPath), [managedFiles, currentPath]);
   const breadcrumbs = currentPath ? currentPath.split("/") : [];
   const totalFiles = Object.keys(managedFiles).length;
@@ -472,6 +483,7 @@ export default function RepositoryFileBrowser({
 
   const selectFile = (path: string) => {
     if (selectedPath === path || !allowDiscard()) return;
+    setCurrentPath(path.split("/").slice(0, -1).join("/"));
     setSelectedPath(path);
     setFileContent(managedFiles[path] || "");
   };
@@ -544,7 +556,7 @@ export default function RepositoryFileBrowser({
 
   return (
     <section id="files" className="overflow-hidden rounded-2xl border border-violet-400/15 bg-[#09111f] shadow-[0_22px_80px_rgba(2,6,23,.28)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[linear-gradient(90deg,rgba(124,58,237,.12),rgba(14,165,233,.06),transparent)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 border-b border-white/10 bg-[linear-gradient(90deg,rgba(124,58,237,.12),rgba(14,165,233,.06),transparent)] px-4 py-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1 text-sm">
             <button
@@ -570,7 +582,24 @@ export default function RepositoryFileBrowser({
           <p className="mt-1 text-[11px] text-white/35">{fileContextLabel(projectType)}</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <label className="relative flex min-w-[180px] flex-1 items-center sm:max-w-xl">
+          <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 text-white/45" />
+          <span className="sr-only">Search project repository files by name or path</span>
+          <input
+            type="search"
+            value={fileSearch}
+            onChange={(event) => setFileSearch(event.target.value)}
+            placeholder="Search repository files..."
+            autoComplete="off"
+            className="h-9 w-full rounded-lg border border-white/15 bg-[#070f1c] py-2 pl-9 pr-9 text-sm text-white outline-none placeholder:text-white/35 focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/30"
+          />
+          {fileSearch && (
+            <button type="button" aria-label="Clear file search" onClick={() => setFileSearch("")} className="absolute right-2 rounded p-1 text-white/55 hover:text-white">
+              <X size={14} />
+            </button>
+          )}
+        </label>
+        <div className="ml-auto flex items-center gap-2">
           <details className="relative">
             <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-white/15 bg-white/[.04] px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/[.07]">
               Files <ChevronDown size={13} />
@@ -603,12 +632,12 @@ export default function RepositoryFileBrowser({
               <FolderOpen size={15} className="text-cyan-400" /> Project Explorer
             </span>
             <span className="rounded-full border border-white/10 bg-white/[.025] px-2 py-0.5 text-[10px] text-white/35">
-              {entries.length}
+              {isSearching ? searchResults.length : entries.length}
             </span>
           </div>
 
           <div className="max-h-[650px] overflow-auto">
-            {currentPath && (
+            {currentPath && !isSearching && (
               <button
                 type="button"
                 onClick={() => { if (!allowDiscard()) return; setSelectedPath(null); setCurrentPath(currentPath.split("/").slice(0, -1).join("/")); }}
@@ -619,7 +648,22 @@ export default function RepositoryFileBrowser({
               </button>
             )}
 
-            {entries.length === 0 ? (
+            {isSearching ? (
+              searchResults.length === 0 ? (
+                <p className="px-4 py-10 text-center text-sm text-white/45">No repository files match your search.</p>
+              ) : searchResults.map((path) => (
+                <button
+                  key={path}
+                  type="button"
+                  onClick={() => selectFile(path)}
+                  className={`flex w-full items-start gap-2 border-b border-white/[.05] px-3 py-2.5 text-left text-xs hover:bg-white/10 ${selectedPath === path ? "bg-violet-500/15 text-violet-200" : "text-white/75"}`}
+                  title={path}
+                >
+                  <FileCode2 size={15} className="mt-0.5 shrink-0 text-cyan-300/70" />
+                  <span className="min-w-0 break-all">{path}</span>
+                </button>
+              ))
+            ) : entries.length === 0 ? (
               <div className="px-4 py-12 text-center text-sm text-white/35">
                 <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-xl border border-violet-400/20 bg-violet-500/10 text-violet-300">
                   <FolderPlus size={18}/>
