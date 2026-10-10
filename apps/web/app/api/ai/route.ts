@@ -46,14 +46,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    await reserveAiRequest(userId, message.length, 1024);
+    // Multi-section builder action payloads need more room than short chat answers.\n    // Reserve the larger output allowance before contacting the model.\n    const outputBudget = 2048;\n    await reserveAiRequest(userId, message.length, outputBudget);
     // Metered calls must not silently retry other billable providers under the
     // same reservation. The shared model adapter chooses one configured route.
     const result = await runModel({
       model: "openrouter/meta-llama/llama-3.3-70b-instruct:free",
       messages: [{ role: "user", content: message }],
       temperature: 0.35,
-      maxTokens: 1024,
+      maxTokens: outputBudget,
       singleProviderAttempt: true,
     });
     if (result.error || !result.text?.trim()) {
