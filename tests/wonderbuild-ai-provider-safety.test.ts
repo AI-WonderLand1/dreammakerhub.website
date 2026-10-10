@@ -6,6 +6,7 @@ vi.mock("next/server", () => ({
 vi.mock("@/lib/auth", () => ({ requireUserId: vi.fn() }));
 vi.mock("../apps/web/core/ai/runModel", () => ({ runModel: vi.fn() }));
 vi.mock("@/lib/usage/log", () => ({ logUsage: vi.fn() }));
+vi.mock("@/lib/supabase-service", () => ({ getClient: vi.fn() }));
 vi.mock("@/lib/billing/cost-guard.server", () => {
   class CostGateError extends Error {}
   return {
@@ -27,10 +28,17 @@ async function setup() {
   vi.resetModules();
   vi.clearAllMocks();
   for (const name of providerKeys) vi.stubEnv(name, "");
+  vi.stubEnv("FREE_BUILDER_AI_ENABLED", "");
+  vi.stubEnv("BILLABLE_OPERATIONS_ENABLED", "");
+  // No real credentials: exercise the server-side accounting preflight in CI.
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://unit-test.supabase.co");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-server-only-key");
+  vi.stubEnv("SUPABASE_SECRET_KEY", "");
   const { requireUserId } = await import("@/lib/auth");
   const { runModel } = await import("../apps/web/core/ai/runModel");
   const { reserveAiRequest } = await import("@/lib/billing/cost-guard.server");
   const { logUsage } = await import("@/lib/usage/log");
+  const { getClient } = await import("@/lib/supabase-service");
   vi.mocked(requireUserId).mockResolvedValue("test-user");
   vi.mocked(reserveAiRequest).mockResolvedValue({ plan: "free", estimatedTokens: 1400 } as any);
   const { POST } = await import("../apps/web/app/api/ai/route");
@@ -40,6 +48,7 @@ async function setup() {
     runModel: vi.mocked(runModel),
     reserveAiRequest: vi.mocked(reserveAiRequest),
     logUsage: vi.mocked(logUsage),
+    getClient: vi.mocked(getClient),
   };
 }
 
@@ -84,9 +93,10 @@ describe("WonderBuild AI provider safety", () => {
     expect(response.status).toBe(200);
     expect(runModel).toHaveBeenCalledWith(expect.objectContaining({
       singleProviderAttempt: true,
-      maxTokens: 1024,
+      maxTokens: 2048,
       messages: [{ role: "user", content: "Create a <button>Buy</button> using <MyComponent />" }],
     }));
+    expect(reserveAiRequest).toHaveBeenCalledWith("test-user", "Create a <button>Buy</button> using <MyComponent />".length, 2048);
     expect(reserveAiRequest.mock.invocationCallOrder[0]).toBeLessThan(runModel.mock.invocationCallOrder[0]);
     expect(logUsage).toHaveBeenCalledOnce();
   });
@@ -102,4 +112,93 @@ describe("WonderBuild AI provider safety", () => {
     expect(text).not.toContain("upstream failed");
     expect(logUsage).not.toHaveBeenCalled();
   });
+  it("serves the operator-enabled free builder through a strict no-fallback model and atomic request quota", async () => {
+    const { POST, runModel, reserveAiRequest, getClient, logUsage } = await setup();
+    vi.stubEnv("FREE_BUILDER_AI_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-free-key");
+    const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
+    getClient.mockReturnValue({ rpc } as any);
+    const providerFetch = vi.fn().mockResolvedValue(Response.json({
+      choices: [{ message: { content: '---BUILDER_ACTION\n{"action":"add","block":{"type":"hero"}}\n---END' } }],
+      usage: { total_tokens: 130 },
+    }));
+    vi.stubGlobal("fetch", providerFetch);
+
+    const response = await POST(request("Build a real landing page"));
+    expect(response.status).toBe(200);
+    expect((await response.json()).text).toContain("---BUILDER_ACTION");
+    expect(rpc).toHaveBeenCalledWith("reserve_billable_units", {
+      p_user_id: "test-user",
+      p_feature: "ai_requests",
+      p_units: 1,
+      p_limit: 20,
+    });
+    const [url, options] = providerFetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(body.model).toBe("meta-llama/llama-3.3-70b-instruct:free");
+    expect(body.max_tokens).toBe(2048);
+    expect(reserveAiRequest).not.toHaveBeenCalled();
+    expect(runModel).not.toHaveBeenCalled();
+    expect(logUsage).toHaveBeenCalledOnce();
+  });
+
+  it("fails closed when the free builder's atomic per-user quota is exhausted", async () => {
+    const { POST, getClient, runModel } = await setup();
+    vi.stubEnv("FREE_BUILDER_AI_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-free-key");
+    const rpc = vi.fn().mockResolvedValue({ data: false, error: null });
+    getClient.mockReturnValue({ rpc } as any);
+    const providerFetch = vi.fn();
+    vi.stubGlobal("fetch", providerFetch);
+
+    const response = await POST(request());
+    expect(response.status).toBe(429);
+    expect((await response.json()).code).toBe("COST_GUARD");
+    expect(providerFetch).not.toHaveBeenCalled();
+    expect(runModel).not.toHaveBeenCalled();
+  });
+
+  it("requires OpenRouter explicitly for the free beta and never falls back to other providers", async () => {
+    const { POST, getClient, runModel } = await setup();
+    vi.stubEnv("FREE_BUILDER_AI_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "");
+    vi.stubEnv("GROQ_API_KEY", "test-groq");
+    const providerFetch = vi.fn();
+    vi.stubGlobal("fetch", providerFetch);
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("AI_NOT_CONFIGURED");
+    expect(getClient).not.toHaveBeenCalled();
+    expect(providerFetch).not.toHaveBeenCalled();
+    expect(runModel).not.toHaveBeenCalled();
+  });
+
+  it("fails closed without server-side Supabase credentials", async () => {
+    const { POST, getClient } = await setup();
+    vi.stubEnv("FREE_BUILDER_AI_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-free-key");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+    const providerFetch = vi.fn();
+    vi.stubGlobal("fetch", providerFetch);
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("COST_GUARD");
+    expect(getClient).not.toHaveBeenCalled();
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+
+  it("fails closed on usage database errors before calling any provider", async () => {
+    const { POST, getClient } = await setup();
+    vi.stubEnv("FREE_BUILDER_AI_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-free-key");
+    getClient.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "no RPC" } }) } as any);
+    const providerFetch = vi.fn();
+    vi.stubGlobal("fetch", providerFetch);
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("COST_GUARD");
+    expect(providerFetch).not.toHaveBeenCalled();
+  });
+
 });
