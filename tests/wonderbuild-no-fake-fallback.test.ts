@@ -14,7 +14,7 @@ describe('WonderBuild failure transparency', () => {
     expect(source).not.toContain('applyQuickLocalEdit(');
     expect(source).not.toContain('so I used the safe local fallback');
     expect(source).toContain('No AI-generated changes were applied.');
-    expect(source).toContain('setInput(promptText);');
+    expect(source).toContain('setInput((current) => current || promptText);');
   });
 
   it('only reports live builder actions after the provider returned valid actions', () => {
