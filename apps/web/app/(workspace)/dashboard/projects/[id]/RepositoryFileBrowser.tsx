@@ -318,12 +318,22 @@ export default function RepositoryFileBrowser({
   const breadcrumbs = currentPath ? currentPath.split("/") : [];
   const totalFiles = Object.keys(managedFiles).length;
 
+  const allowDiscard = () => {
+    if (saving) {
+      setActionError("Please wait for your file to finish saving.");
+      return false;
+    }
+    if (!selectedPath || fileContent === (managedFiles[selectedPath] ?? "")) return true;
+    return window.confirm("You have unsaved changes to this file. Discard them?");
+  };
+
   const applyFiles = (nextFiles: Record<string, string>) => {
     setManagedFiles(nextFiles);
     onFilesChange?.(nextFiles);
   };
 
   const openBreadcrumb = (index: number) => {
+    if (!allowDiscard()) return;
     setSelectedPath(null);
     setCurrentPath(breadcrumbs.slice(0, index + 1).join("/"));
   };
@@ -335,6 +345,7 @@ export default function RepositoryFileBrowser({
   };
 
   const createFile = async () => {
+    if (!allowDiscard()) return;
     const rawName = window.prompt("File name:");
     if (!rawName) return;
     const name = cleanEntryName(rawName);
@@ -367,6 +378,7 @@ export default function RepositoryFileBrowser({
   };
 
   const createFolder = async () => {
+    if (!allowDiscard()) return;
     const rawName = window.prompt("Folder name:");
     if (!rawName) return;
     const name = cleanEntryName(rawName);
@@ -393,6 +405,7 @@ export default function RepositoryFileBrowser({
   };
 
   const renameEntry = async (entry: RepoEntry) => {
+    if (!allowDiscard()) return;
     const rawName = window.prompt(`Rename ${entry.name} to:`, entry.name);
     if (!rawName || rawName === entry.name) return;
     const name = cleanEntryName(rawName);
@@ -431,6 +444,7 @@ export default function RepositoryFileBrowser({
   };
 
   const deleteEntry = async (entry: RepoEntry) => {
+    if (!allowDiscard()) return;
     if (!window.confirm(`Delete ${entry.path}${entry.kind === "folder" ? " and everything inside it" : ""}?`)) return;
 
     try {
@@ -457,6 +471,7 @@ export default function RepositoryFileBrowser({
   };
 
   const selectFile = (path: string) => {
+    if (selectedPath === path || !allowDiscard()) return;
     setSelectedPath(path);
     setFileContent(managedFiles[path] || "");
   };
@@ -482,6 +497,7 @@ export default function RepositoryFileBrowser({
   };
 
   const importFiles = async (imported: Record<string, string>) => {
+    if (!allowDiscard()) return;
     try {
       setActionError(null);
       const response = await fetchAuthenticatedProject(`/api/projects/${projectId}/import`, {
@@ -533,7 +549,7 @@ export default function RepositoryFileBrowser({
           <div className="flex min-w-0 items-center gap-1 text-sm">
             <button
               type="button"
-              onClick={() => { setCurrentPath(""); setSelectedPath(null); }}
+              onClick={() => { if (!allowDiscard()) return; setCurrentPath(""); setSelectedPath(null); }}
               className="font-semibold text-white hover:text-cyan-300"
             >
               Files
@@ -595,7 +611,7 @@ export default function RepositoryFileBrowser({
             {currentPath && (
               <button
                 type="button"
-                onClick={() => { setSelectedPath(null); setCurrentPath(currentPath.split("/").slice(0, -1).join("/")); }}
+                onClick={() => { if (!allowDiscard()) return; setSelectedPath(null); setCurrentPath(currentPath.split("/").slice(0, -1).join("/")); }}
                 className="grid w-full grid-cols-[minmax(0,1fr)_68px] items-center gap-2 border-b border-white/[.05] px-3 py-2.5 text-left text-sm hover:bg-white/[.035]"
               >
                 <span className="flex min-w-0 items-center gap-2 text-white/65"><FolderOpen size={16} className="text-cyan-400" />..</span>
@@ -625,7 +641,7 @@ export default function RepositoryFileBrowser({
                   {entry.kind === "folder" ? (
                     <button
                       type="button"
-                      onClick={() => { setSelectedPath(null); setCurrentPath(entry.path); }}
+                      onClick={() => { if (!allowDiscard()) return; setSelectedPath(null); setCurrentPath(entry.path); }}
                       className="flex min-w-0 items-center gap-2 rounded px-1.5 py-1.5 text-left font-medium text-white/80"
                     >
                       <Folder size={16} className="shrink-0 fill-cyan-500/10 text-cyan-400" />
