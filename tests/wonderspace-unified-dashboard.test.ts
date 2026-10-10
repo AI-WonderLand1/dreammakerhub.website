@@ -163,11 +163,12 @@ describe("one dashboard/project/browser navigation", () => {
     expect(nav).toContain('href: id ? `/dashboard?projectId=${id}#projects`');
     expect(panel).toContain("<WonderSpaceProjectNavigation projectId={selected.id} advancedOnly />");
     const inline = read("apps/web/components/dashboard/WonderSpaceInlineCodeManager.tsx");
-    expect(panel).toContain("<WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />");
+    expect(panel).not.toContain("WonderSpaceInlineCodeManager");
+    expect(panel).toContain('/dashboard/projects/${encodeURIComponent(selected.id)}/files');
     expect(panel).toContain('aria-label="Project workspace views"');
     expect(panel).toContain('label: "History"');
     expect(panel).toContain('label: "More tools"');
-    expect(panel).toContain('hidden={activeTab !== "code"}');
+    expect(panel).not.toContain('id="workspace-code"');
     expect(panel).toContain('activeTab === "tools"');
     expect(inline).toContain("fetchAuthenticatedProject(");
     expect(inline).toContain("<RepositoryFileBrowser");
