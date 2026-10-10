@@ -510,7 +510,8 @@ export default function AIAssistantPanel() {
 
     // A failed model request must not manufacture an unrelated block or falsely
     // report a successful page build. Keep the prompt available for a retry.
-    setInput(promptText);
+    // Do not overwrite a newer draft typed while this request was pending.
+    setInput((current) => current || promptText);
     const outcome = confirmedChanges
       ? `${confirmedChanges} change(s) were applied before the error; review the page before retrying.`
       : 'No AI-generated changes were applied.';
