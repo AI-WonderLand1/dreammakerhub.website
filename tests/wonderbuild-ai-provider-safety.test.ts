@@ -84,9 +84,10 @@ describe("WonderBuild AI provider safety", () => {
     expect(response.status).toBe(200);
     expect(runModel).toHaveBeenCalledWith(expect.objectContaining({
       singleProviderAttempt: true,
-      maxTokens: 1024,
+      maxTokens: 2048,
       messages: [{ role: "user", content: "Create a <button>Buy</button> using <MyComponent />" }],
     }));
+    expect(reserveAiRequest).toHaveBeenCalledWith("test-user", "Create a <button>Buy</button> using <MyComponent />".length, 2048);
     expect(reserveAiRequest.mock.invocationCallOrder[0]).toBeLessThan(runModel.mock.invocationCallOrder[0]);
     expect(logUsage).toHaveBeenCalledOnce();
   });
