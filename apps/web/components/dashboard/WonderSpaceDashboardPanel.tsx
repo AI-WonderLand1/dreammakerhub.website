@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Code2, FolderOpen, Plus } from "lucide-react";
 import WonderSpaceProjectNavigation from "./WonderSpaceProjectNavigation";
-import WonderSpaceInlineCodeManager from "./WonderSpaceInlineCodeManager";
 import WonderSpaceSourceHistory from "./WonderSpaceSourceHistory";
 
 type DashboardProject = { id: string; name: string; tool?: string | null; type?: string | null };
@@ -28,39 +27,26 @@ function projectTool(project: DashboardProject): { label: string; href: string }
 }
 
 /**
- * Project-keyed tab body. Going from A to B (even back to A) creates a fresh
- * instance, so neither historical "visited" state nor unsaved file data is
- * silently reused for the wrong project.
+ * The dashboard offers project overview, history and tools only. The canonical
+ * editor lives at /dashboard/projects/[id]/files to avoid two independent
+ * editors writing to the same project.
  */
 function ProjectWorkspaceViews({
-  selected, activeTab, unsavedCurrent, reportDirty,
+  selected, activeTab,
 }: {
   selected: DashboardProject | null;
   activeTab: WorkspaceTab;
-  unsavedCurrent: boolean;
-  reportDirty: (projectId: string, dirty: boolean) => void;
 }) {
-  const [visitedCode, setVisitedCode] = useState(false);
   const [visitedHistory, setVisitedHistory] = useState(false);
 
   useEffect(() => {
-    if (activeTab === "code") setVisitedCode(true);
     if (activeTab === "history") setVisitedHistory(true);
   }, [activeTab]);
 
-  const codeMounted = Boolean(selected && (activeTab === "code" || visitedCode));
   const historyMounted = Boolean(selected && (activeTab === "history" || visitedHistory));
 
   return (
     <>
-      {codeMounted && selected && (
-        <div hidden={activeTab !== "code"} className="p-3 sm:p-4">
-          <section id="workspace-code" className="rounded-xl ring-1 ring-cyan-400/20">
-            <WonderSpaceInlineCodeManager project={selected} embedded onDirtyChange={reportDirty} />
-          </section>
-        </div>
-      )}
-
       {selected && activeTab === "tools" && (
         <div className="p-3 sm:p-4">
           <section
@@ -70,7 +56,7 @@ function ProjectWorkspaceViews({
             <div>
               <h3 className="text-sm font-semibold text-white">Project tools</h3>
               <p className="mt-1 text-xs text-white/45">
-                Open project-specific tools without loading the code editor.
+                Open project-specific tools without loading a second code editor.
               </p>
             </div>
             <WonderSpaceProjectNavigation projectId={selected.id} advancedOnly />
@@ -86,7 +72,7 @@ function ProjectWorkspaceViews({
 
       {historyMounted && selected && (
         <div hidden={activeTab !== "history"} className="p-3 sm:p-4">
-          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} hasUnsavedEdits={unsavedCurrent} />
+          <WonderSpaceSourceHistory key={selected.id} projectId={selected.id} />
         </div>
       )}
     </>
@@ -94,9 +80,8 @@ function ProjectWorkspaceViews({
 }
 
 /**
- * One project selector with separate dashboard subviews.
- * Code stays mounted after first use so unsaved local edits survive tab switches,
- * while More tools renders its own project-tools view instead of duplicating Code.
+ * The Code tab navigates directly to the single, full-page project file editor.
+ * Existing /dashboard?workspaceTab=code bookmarks are redirected there too.
  */
 export default function WonderSpaceDashboardPanel({
   projects,
@@ -110,15 +95,10 @@ export default function WonderSpaceDashboardPanel({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [dirtyProjectId, setDirtyProjectId] = useState<string | null>(null);
-  const reportDirty = useCallback((projectId: string, dirty: boolean) => {
-    setDirtyProjectId(current => dirty ? projectId : current === projectId ? null : current);
-  }, []);
   const selected = useMemo(
     () => projects.find(item => item.id === requestedProjectId) || projects[0] || null,
     [projects, requestedProjectId],
   );
-  const unsavedCurrent = Boolean(selected && dirtyProjectId === selected.id);
   const requestedTab = searchParams.get("workspaceTab");
   const activeTab: WorkspaceTab = selected && tabs.some(tab => tab.key === requestedTab)
     ? requestedTab as WorkspaceTab : "overview";
@@ -135,9 +115,7 @@ export default function WonderSpaceDashboardPanel({
   const selectProject = (projectId: string) => {
     if (!projects.some(project => project.id === projectId)) return;
     if (projectId === selected?.id) return;
-    if (unsavedCurrent && !window.confirm("This project has unsaved code edits. Switch anyway and discard them?")) return;
-    setDirtyProjectId(null);
-    // Project switching resets view to Overview, preventing stale editor focus.
+    // Dashboard project switching does not touch the full-page editor's files.
     const params = new URLSearchParams(searchParams.toString());
     params.set("projectId", projectId);
     params.delete("workspaceTab");
@@ -145,16 +123,27 @@ export default function WonderSpaceDashboardPanel({
   };
   const selectTab = (tab: WorkspaceTab) => {
     if (!selected && tab !== "overview") return;
+    if (tab === "code" && selected) {
+      router.push(`/dashboard/projects/${encodeURIComponent(selected.id)}/files`);
+      return;
+    }
     replaceUrl(selected?.id ?? null, tab);
   };
 
   useEffect(() => {
+    if (!selected) return;
+    // Legacy Code dashboard links now open the one canonical project file editor.
+    // This also preserves the selected project for old bookmarks.
+    if (requestedTab === "code") {
+      router.replace(`/dashboard/projects/${encodeURIComponent(selected.id)}/files`);
+      return;
+    }
     // Establish URL-level project context even for a normal /dashboard visit.
-    if (!selected || requestedProjectId === selected.id) return;
+    if (requestedProjectId === selected.id) return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("projectId", selected.id);
     router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
-  }, [pathname, requestedProjectId, router, searchParams, selected]);
+  }, [pathname, requestedProjectId, requestedTab, router, searchParams, selected]);
 
   const destination = selected ? projectTool(selected) : null;
 
@@ -164,7 +153,7 @@ export default function WonderSpaceDashboardPanel({
         <div>
           <h2 className="text-lg font-bold text-white">Project workspace</h2>
           <p className="mt-1 text-xs text-slate-400">
-            Pick a project once. Code, History and More tools each have their own view.
+            Select a project, open its full-page editor, or view history and project tools.
           </p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -183,7 +172,7 @@ export default function WonderSpaceDashboardPanel({
           <Link
             href={selected
               ? `/dashboard/projects/${encodeURIComponent(selected.id)}/ide`
-              : "/dashboard?workspaceTab=code#projects"}
+              : "/dashboard?create=project#projects"}
             className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-300/40 px-3 py-2.5 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/10"
           >
             <Code2 size={15} aria-hidden="true" /> New cloud IDE
@@ -211,12 +200,6 @@ export default function WonderSpaceDashboardPanel({
         ))}
       </nav>
 
-      {unsavedCurrent && (
-        <p role="alert" className="mx-4 mt-3 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-amber-100">
-          You have unsaved code edits. Go to Code and save your file before switching projects or saving a version.
-        </p>
-      )}
-
       {activeTab === "overview" && (
         <div className="px-4 py-5 sm:px-5">
           {selected ? (
@@ -230,7 +213,7 @@ export default function WonderSpaceDashboardPanel({
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => selectTab("code")}
                   className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950">
-                  <Code2 size={16} aria-hidden="true" /> Edit files here
+                  <Code2 size={16} aria-hidden="true" /> Open full-page editor
                 </button>
                 {destination && (
                   <Link href={destination.href}
@@ -247,8 +230,7 @@ export default function WonderSpaceDashboardPanel({
       )}
 
       <ProjectWorkspaceViews key={selected?.id ?? "no-project"}
-        selected={selected} activeTab={activeTab}
-        unsavedCurrent={unsavedCurrent} reportDirty={reportDirty} />
+        selected={selected} activeTab={activeTab} />
     </section>
   );
 }
