@@ -30,6 +30,10 @@ async function setup() {
   for (const name of providerKeys) vi.stubEnv(name, "");
   vi.stubEnv("FREE_BUILDER_AI_ENABLED", "");
   vi.stubEnv("BILLABLE_OPERATIONS_ENABLED", "");
+  // No real credentials: exercise the server-side accounting preflight in CI.
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://unit-test.supabase.co");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-server-only-key");
+  vi.stubEnv("SUPABASE_SECRET_KEY", "");
   const { requireUserId } = await import("@/lib/auth");
   const { runModel } = await import("../apps/web/core/ai/runModel");
   const { reserveAiRequest } = await import("@/lib/billing/cost-guard.server");
@@ -168,6 +172,20 @@ describe("WonderBuild AI provider safety", () => {
     expect(getClient).not.toHaveBeenCalled();
     expect(providerFetch).not.toHaveBeenCalled();
     expect(runModel).not.toHaveBeenCalled();
+  });
+
+  it("fails closed without server-side Supabase credentials", async () => {
+    const { POST, getClient } = await setup();
+    vi.stubEnv("FREE_BUILDER_AI_ENABLED", "true");
+    vi.stubEnv("OPENROUTER_API_KEY", "test-free-key");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+    const providerFetch = vi.fn();
+    vi.stubGlobal("fetch", providerFetch);
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("COST_GUARD");
+    expect(getClient).not.toHaveBeenCalled();
+    expect(providerFetch).not.toHaveBeenCalled();
   });
 
   it("fails closed on usage database errors before calling any provider", async () => {
