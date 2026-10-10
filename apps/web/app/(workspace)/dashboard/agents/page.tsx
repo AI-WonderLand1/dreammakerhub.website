@@ -5,15 +5,6 @@ import { useState } from "react";
 import { Breadcrumbs } from "@/app/components/navigation/Breadcrumbs";
 
 type View = "sessions" | "attention";
-const destinations = [
-  { name: "WonderBuild", href: "/wonder-build", section: "Build" },
-  { name: "AI Modules", href: "/ai-modules", section: "AI Modules" },
-  { name: "AI Playground", href: "https://playground.dreammakerhub.website/", section: "Playground" },
-  { name: "PlayCanvas Bridge", href: "/dashboard/editor-playcanvas", section: "3D" },
-  { name: "Collaboration", href: "/dashboard/collaboration", section: "Projects" },
-  { name: "Security Controls", href: "/dashboard/aetherguard", section: "Security" },
-];
-
 export default function AgentsPage() {
   const [view, setView] = useState<View>("sessions");
 
@@ -70,18 +61,6 @@ export default function AgentsPage() {
           )}
         </section>
       </div>
-      <details className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <summary className="cursor-pointer text-sm font-semibold text-white/85">Where did the previous tools go?</summary>
-        <p className="mt-3 text-sm text-white/60">Existing tools stay in their dedicated areas instead of appearing as agent sessions.</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {destinations.map((item) => (
-            <Link key={item.name} href={item.href} className="rounded-lg border border-white/10 bg-black/20 p-3 hover:bg-white/10">
-              <span className="block text-xs uppercase tracking-wide text-cyan-200/70">{item.section}</span>
-              <span className="mt-1 block text-sm font-semibold text-white">{item.name}</span>
-            </Link>
-          ))}
-        </div>
-      </details>
     </main>
   );
 }
