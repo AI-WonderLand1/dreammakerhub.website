@@ -7,25 +7,24 @@ const panel = readFileSync(
   "utf8",
 );
 
-describe("dashboard workspace tabs", () => {
-  it("renders Code and More tools as separate views", () => {
-    expect(panel).toContain('hidden={activeTab !== "code"}');
+describe("dashboard workspace navigation", () => {
+  it("routes Code to the full-page editor, not another workspace view", () => {
+    expect(panel).toContain('tab === "code" && selected');
+    expect(panel).toContain('/dashboard/projects/${encodeURIComponent(selected.id)}/files');
+    expect(panel).not.toContain('id="workspace-code"');
+    expect(panel).not.toContain("WonderSpaceInlineCodeManager");
+  });
+
+  it("preserves the separate More tools and History views", () => {
     expect(panel).toContain('activeTab === "tools"');
-    expect(panel).toContain('id="workspace-code"');
     expect(panel).toContain('id="workspace-tools"');
-    expect(panel).not.toContain('hidden={activeTab !== "code" && activeTab !== "tools"}');
+    expect(panel).toContain('activeTab === "history"');
+    expect(panel).toContain("WonderSpaceSourceHistory");
   });
 
-  it("keeps Code mounted after first use without making More tools share it", () => {
-    expect(panel).toContain("const [visitedCode, setVisitedCode]");
-    expect(panel).toContain('if (activeTab === "code") setVisitedCode(true)');
-    expect(panel).toContain("const codeMounted");
-    expect(panel).not.toContain("visitedWorkbench");
-    expect(panel).not.toContain("shared Code + More tools workbench");
-  });
-
-  it("explains the distinct views in the workspace UI", () => {
-    expect(panel).toContain("Code, History and More tools each have their own view.");
-    expect(panel).toContain("Open project-specific tools without loading the code editor.");
+  it("tells users to open the full-page editor", () => {
+    expect(panel).toContain("Select a project, open its full-page editor");
+    expect(panel).toContain("Open full-page editor");
+    expect(panel).toContain("Open project-specific tools without loading a second code editor.");
   });
 });
