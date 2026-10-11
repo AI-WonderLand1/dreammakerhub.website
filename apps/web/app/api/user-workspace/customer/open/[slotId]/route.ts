@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
 import { coderApiRequest } from '@/lib/coder/workspace-slots.server';
+import { assertCustomerIdeRestartBudget } from '@/lib/coder/customer-restart-budget.server';
 import {
   CUSTOMER_WORKSPACE_UUID,
   codeServerUrl,
@@ -64,6 +65,8 @@ async function handle(request: Request, { params }: Context, start: boolean) {
     if (!start) {
       return NextResponse.json({ status: 'stopped' }, { headers: noStore });
     }
+
+    await assertCustomerIdeRestartBudget(user.id, workspace.id!);
 
     const started = await coderApiRequest(
       `/api/v2/workspaces/${encodeURIComponent(workspace.id!)}/builds`,
