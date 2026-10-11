@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { authenticatedSupabaseUser } from '@/lib/supabase/authenticated-user.server';
 import { CostGateError, costGateResponse } from '@/lib/billing/cost-guard.server';
-import { coderApiRequest, coderServiceClient } from '@/lib/coder/workspace-slots.server';
+import { coderApiRequest } from '@/lib/coder/workspace-slots.server';
+import { assertCustomerIdeRestartBudget } from '@/lib/coder/customer-restart-budget.server';
 import {
   CUSTOMER_WORKSPACE_UUID,
   codeServerUrl,
@@ -65,41 +66,7 @@ async function handle(request: Request, { params }: Context, start: boolean) {
       return NextResponse.json({ status: 'stopped' }, { headers: noStore });
     }
 
-    // Never restart a customer workspace without a registered usage allowance.
-    // The legacy runtime controller is disabled: fail closed for restarts rather
-    // than interpreting missing metering data as unlimited free compute.
-    const accounting = coderServiceClient();
-    const { data: usage, error: usageError } = await accounting
-      .from('coder_customer_compute_usage')
-      .select('used_ms,max_ms')
-      .eq('user_id', user.id)
-      .eq('workspace_id', workspace.id!)
-      .maybeSingle();
-    if (usageError || !usage ||
-      typeof usage.used_ms !== 'number' || typeof usage.max_ms !== 'number' ||
-      usage.max_ms <= 0) {
-      throw new CostGateError('IDE runtime allowance cannot be verified. Workspace restart is paused.');
-    }
-    if (usage.used_ms >= usage.max_ms) {
-      throw new CostGateError('IDE runtime allowance exhausted. Workspace restart is paused.', 429);
-    }
-    const monthStart = new Date();
-    const periodStart = `${monthStart.getUTCFullYear()}-${String(monthStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
-    const { data: monthly, error: monthlyError } = await accounting
-      .from('coder_customer_compute_monthly')
-      .select('used_weighted_ms,limit_credits')
-      .eq('user_id', user.id)
-      .eq('period_start', periodStart)
-      .maybeSingle();
-    if (monthlyError || !monthly ||
-      typeof monthly.used_weighted_ms !== 'number' ||
-      typeof monthly.limit_credits !== 'number' ||
-      monthly.limit_credits <= 0) {
-      throw new CostGateError('Monthly IDE budget cannot be verified. Workspace restart is paused.');
-    }
-    if (monthly.used_weighted_ms >= monthly.limit_credits * 60_000) {
-      throw new CostGateError('Monthly IDE compute allowance exhausted. Workspace restart is paused.', 429);
-    }
+    await assertCustomerIdeRestartBudget(user.id, workspace.id!);
 
     const started = await coderApiRequest(
       `/api/v2/workspaces/${encodeURIComponent(workspace.id!)}/builds`,
