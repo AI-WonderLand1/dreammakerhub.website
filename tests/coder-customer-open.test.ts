@@ -54,11 +54,12 @@ describe('customer Google Docker IDE opening', () => {
     expect(access).not.toContain("if (build === 'succeeded' && transition === 'start')");
   });
 
-  it('restarts a stopped customer workspace without a cumulative time budget', () => {
+  it('rejects restarts without a verified IDE runtime allowance', () => {
     const route = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
-    expect(route).not.toContain("from('coder_customer_compute_usage')");
-    expect(route).not.toContain("from('coder_customer_compute_monthly')");
-    expect(route).not.toContain('assertRestartBudget');
+    expect(route).toContain("from('coder_customer_compute_usage')");
+    expect(route).toContain("from('coder_customer_compute_monthly')");
+    expect(route).toContain('usage.used_ms >= usage.max_ms');
+    expect(route).toContain('monthly.used_weighted_ms >= monthly.limit_credits * 60_000');
     expect(route).toContain("transition: 'start'");
   });
 
