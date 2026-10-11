@@ -56,11 +56,15 @@ describe('customer Google Docker IDE opening', () => {
 
   it('rejects restarts without a verified IDE runtime allowance', () => {
     const route = file('apps/web/app/api/user-workspace/customer/open/[slotId]/route.ts');
-    expect(route).toContain("from('coder_customer_compute_usage')");
-    expect(route).toContain("from('coder_customer_compute_monthly')");
-    expect(route).toContain('usage.used_ms >= usage.max_ms');
-    expect(route).toContain('monthly.used_weighted_ms >= monthly.limit_credits * 60_000');
+    const budget = file('apps/web/lib/coder/customer-restart-budget.server.ts');
+    expect(route).toContain('assertCustomerIdeRestartBudget(user.id, workspace.id!)');
+    expect(budget).toContain("from('coder_customer_compute_usage')");
+    expect(budget).toContain("from('coder_customer_compute_monthly')");
+    expect(budget).toContain('usage.used_ms >= usage.max_ms');
+    expect(budget).toContain('monthly.used_weighted_ms >= monthly.limit_credits * 60_000');
     expect(route).toContain("transition: 'start'");
+    const launch = file('apps/web/app/api/user-workspace/customer/launch/[slotId]/route.ts');
+    expect(launch).toContain('assertCustomerIdeRestartBudget(user.id, workspace.id!)');
   });
 
   it('uses the project IDE as the one customer creation and reopen surface', () => {
