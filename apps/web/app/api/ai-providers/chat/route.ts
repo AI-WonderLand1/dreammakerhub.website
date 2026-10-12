@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'This provider or model is not supported by account chat.' }, { status: 400 });
     }
     // Never fetch a user-controlled URL or send a saved key to another host.
-    if (config.base_url && config.base_url.replace(/\/$/, '') !== endpoint.replace(/\/$/, '')) {
+    if (config.base_url && ![endpoint.replace(/\/$/, ''), endpoint.replace(/\/(chat\/completions|messages|models)$/, '')].includes(config.base_url.replace(/\/$/, ''))) {
       return NextResponse.json({ error: 'Custom base URLs need a separate verified adapter.' }, { status: 400 });
     }
     const key = decryptSecret(config.api_key_encrypted, config.api_key_iv, config.api_key_tag);

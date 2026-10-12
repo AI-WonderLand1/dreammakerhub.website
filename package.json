@@ -43,7 +43,9 @@
     "lint:fix": "eslint apps/ engine/ packages/ runners/ infra/ --fix",
     "clean:ghosts": "npx ts-prune -p tsconfig.json && npm run lint",
     "postinstall": "prisma generate",
-    "security:check": "node scripts/security/check-dependency-remediation.mjs"
+    "security:check": "node scripts/security/check-dependency-remediation.mjs",
+    "typecheck": "tsc --noEmit -p apps/web/tsconfig.json",
+    "typecheck:regression": "node scripts/typecheck/check.mjs"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",

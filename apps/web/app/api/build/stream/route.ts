@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { requirePaidAIUser } from "@/app/api/ai/auth";
 import { reserveAiRequest } from "@/lib/billing/cost-guard.server";
-import { runModel } from "../../../core/ai/runModel";
+import { runModel } from "../../../../core/ai/runModel";
 import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";

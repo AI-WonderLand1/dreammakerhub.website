@@ -287,5 +287,5 @@ BEGIN
   RETURN result;
 END $$;
 
-REVOKE ALL ON FUNCTION public.get_usage_totals_for_alerts(UUID) FROM PUBLIC, authenticated;
+REVOKE ALL ON FUNCTION public.get_usage_totals_for_alerts(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_usage_totals_for_alerts(UUID) TO service_role;
