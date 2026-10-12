@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'AI WONDERLAND Documentation',
     description:
-      'Current guides for AI WONDERLAND projects, visual building, Railway-backed cloud IDE workspaces, AI, 3D, usage and billing, marketplace, APIs, support, and publishing.',
+      'Current guides for AI WONDERLAND projects, visual building, Google Cloud-hosted IDE workspaces, AI, 3D, usage and billing, marketplace, APIs, support, and publishing.',
     url: 'https://dreammakerhub.website/docs',
     type: 'website',
   },
