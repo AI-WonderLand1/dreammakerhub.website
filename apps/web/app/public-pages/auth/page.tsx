@@ -209,7 +209,7 @@ function AuthPageContent() {
           <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-blue-500 shadow-2xl shadow-violet-950/50">
             <Cloud size={34} />
           </div>
-          <h1 className="text-3xl font-black tracking-tight">Dream<span className="text-fuchsia-400">Maker</span><span className="text-blue-400">Hub</span></h1>
+          <h1 className="text-3xl font-black tracking-tight">AI <span className="text-fuchsia-400">WONDER</span><span className="text-blue-400">LAND</span></h1>
           <p className="mt-1 text-sm text-slate-400">Build Tomorrow, Together</p>
         </div>
 
