@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { manifestVisualBlock } from "@/core/ai/bridge";
-import { getAuthUser, AuthUser } from "@/lib/auth";
-import { runModel } from "@/core/ai/runModel";
+
+import { requirePaidAIUser } from "@/app/api/ai/auth";
+import { reserveAiRequest } from "@/lib/billing/cost-guard.server";
+import { runModel } from "../../../../core/ai/runModel";
 import { logger } from '@/lib/logger';
 
 export const runtime = "nodejs";
 
 const BuildRequestSchema = z.object({
-  prompt: z.string().min(1),
+  prompt: z.string().trim().min(1).max(4000),
   type: z.enum(["website", "game", "component", "playcanvas", "wonderspace", "3d-assets", "spatial"]).default("website"),
   save: z.boolean().default(false),
   fileName: z.string().optional(),
@@ -100,21 +101,17 @@ Rules:
 Format:
 {"version":1,"name":"World Name","assets":[...],"nodes":[...],"environment":{...},"settings":{...}}`;
 
-async function callAI(system: string, userPrompt: string, isPaid?: boolean): Promise<string> {
-   const result = await runModel({
-      model: isPaid ? "openrouter/meta-llama/llama-3.3-70b-instruct" : "openrouter/google/gemini-flash-1.5",
-     messages: [{ role: "user", content: userPrompt }],
-     system,
-     temperature: 0.8,
-     maxTokens: 8192,
-   });
-
-   if (result.error) {
-     throw new Error(result.text || "AI call failed");
-   }
-
-   return result.text;
- }
+const BUILD_OUTPUT_BUDGET = 2048;
+async function callAI(userId: string, system: string, userPrompt: string): Promise<string> {
+  await reserveAiRequest(userId, system.length + userPrompt.length, BUILD_OUTPUT_BUDGET);
+  const result = await runModel({
+    model: "meta-llama/llama-3.3-70b-instruct:free",
+    messages: [{ role: "user", content: userPrompt }], system,
+    temperature: 0.35, maxTokens: BUILD_OUTPUT_BUDGET, singleProviderAttempt: true,
+  });
+  if (result.error || !result.text.trim()) throw new Error("AI provider could not complete this build stage.");
+  return result.text;
+}
 
 function sse(event: string, data: object): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -193,16 +190,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  let user: AuthUser | null = null;
-  try {
-    user = await getAuthUser();
-  } catch {
-    // Anonymous user - will use free tier
-  }
-
-  const isPaid = user?.isPaid ?? false;
+  const auth = await requirePaidAIUser(req);
+  if (auth instanceof NextResponse) return auth;
+  if (process.env.BILLABLE_OPERATIONS_ENABLED !== 'true') return NextResponse.json({ error: 'AI billing safeguards are not active.', code: 'COST_GUARD' }, { status: 503 });
+  if (body.save) return NextResponse.json({ error: 'Save generated code through your authenticated project editor.' }, { status: 400 });
+  if (body.type === 'spatial') return NextResponse.json({ error: 'Spatial generation requires verified asset URLs and is not available yet.' }, { status: 503 });
+  if (![process.env.OPENROUTER_API_KEY, process.env.GROQ_API_KEY, process.env.GEMINI_API_KEY, process.env.GOOGLE_AI_API_KEY, process.env.CEREBRAS_API_KEY].some(key => key?.trim())) return NextResponse.json({ error: 'AI provider is not configured. No usage was reserved.' }, { status: 503 });
   const encoder = new TextEncoder();
-  const { prompt, type, save, fileName } = body;
+  const { prompt, type } = body;
   const typeLabel = getTypeLabel(type);
   let totalOutputSize = 0;
   const stream = new ReadableStream({
@@ -214,15 +209,16 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const tierLabel = isPaid ? "Premium" : "Free";
+        const tierLabel = "Metered";
 
         // --- STAGE 1: ARCHITECT ---
         send("agent", { stage: "architect", status: "running", label: "Architect Agent", message: `Planning your ${typeLabel}… (${tierLabel} Tier)` });
 
+        if (req.signal.aborted) return;
         const plan = await callAI(
+          auth.userId,
           "You are a senior product architect. In 2 vivid sentences, describe the design and key features of what you will build. Be specific and inspiring.",
-          `Plan a ${typeLabel} based on: "${prompt}"`,
-          isPaid
+          `Plan a ${typeLabel} based on: "${prompt}"`
         );
 
         send("agent", { stage: "architect", status: "done", label: "Architect Agent", message: plan.slice(0, 300) });
@@ -230,10 +226,11 @@ export async function POST(req: NextRequest) {
         // --- STAGE 2: BUILDER ---
         send("agent", { stage: "builder", status: "running", label: "Builder Agent", message: `Writing ${typeLabel} code… (${tierLabel} Tier)` });
 
+        if (req.signal.aborted) return;
         const rawCode = await callAI(
+          auth.userId,
           getSystemPrompt(type),
-          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`,
-          isPaid
+          `Build this ${typeLabel}: "${prompt}"\n\nDesign vision: ${plan}`
         );
         const code = stripCodeFences(rawCode);
 
@@ -242,26 +239,13 @@ export async function POST(req: NextRequest) {
         // --- STAGE 3: REVIEWER ---
         send("agent", { stage: "reviewer", status: "running", label: "Reviewer Agent", message: "Reviewing and polishing…" });
 
-        const reviewed = await callAI(getReviewerSystem(type), `Improve this code:\n\n${code}`);
+        if (req.signal.aborted) return;
+        const reviewed = await callAI(auth.userId, getReviewerSystem(type), `Improve this code:\n\n${code}`);
         const finalCode = stripCodeFences(reviewed);
 
         send("agent", { stage: "reviewer", status: "done", label: "Reviewer Agent", message: "Code reviewed and polished ✓" });
 
-        // --- STAGE 4: RUNNER (optional save) ---
-        let savedPath: string | undefined;
-        if (save) {
-          send("agent", { stage: "runner", status: "running", label: "Runner Agent", message: "Saving to blocks directory…" });
-          
-          const ext = type === "playcanvas" ? "js" : type === "wonderspace" ? "tsx" : type === "spatial" ? "json" : "html";
-          const safeName = (fileName ?? `${type}-${Date.now()}`).replace(/[^a-z0-9-_]/gi, "-");
-          const result = manifestVisualBlock(`${safeName}.${ext}`, finalCode, `AI-generated ${typeLabel} — prompt: "${prompt.slice(0, 80)}"`);
-          savedPath = result.path;
-          
-          send("agent", { stage: "runner", status: "done", label: "Runner Agent", message: `Saved to blocks/ ✓` });
-        }
-
-        // --- COMPLETE ---
-        send("complete", { type, code: finalCode, plan, savedPath, timestamp: Date.now(), tier: isPaid ? "pro" : "free" });
+        send("complete", { type, code: finalCode, plan, timestamp: Date.now(), tier: "metered" });
       } catch (err: any) {
         send("error", { message: err.message ?? "Build failed" });
       } finally {

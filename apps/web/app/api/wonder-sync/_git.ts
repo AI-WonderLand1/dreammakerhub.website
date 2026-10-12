@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import simpleGit, { SimpleGit } from "simple-git";
+import { simpleGit, type SimpleGit } from "simple-git";
 import { logger } from '@/lib/logger';
 
 function exists(p: string) {

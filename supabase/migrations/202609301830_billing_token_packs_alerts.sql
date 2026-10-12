@@ -121,6 +121,6 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.grant_purchased_ai_tokens(UUID, TEXT, TEXT, BIGINT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.grant_purchased_ai_tokens(UUID, TEXT, TEXT, BIGINT, TEXT) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.grant_purchased_ai_tokens(UUID, TEXT, TEXT, BIGINT, TEXT) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.grant_purchased_ai_tokens(UUID, TEXT, TEXT, BIGINT, TEXT) TO service_role;

@@ -189,8 +189,8 @@ const nextConfig = {
 
   transpilePackages: ['@react-three/fiber', '@react-three/drei', 'three', '@wonderspace/ide-engine'],
 
-  // Temporary compatibility gate: the dedicated TypeScript cleanup PR
-  // removes this once the pre-existing engine/infra/runners errors are fixed.
+  // Existing diagnostics are tracked by scripts/typecheck/known-diagnostics.json.
+  // CI rejects new/increased diagnostics; remove this gate once the backlog is zero.
   typescript: {
     ignoreBuildErrors: true,
   },
