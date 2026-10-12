@@ -36,11 +36,13 @@ function parseCookieHeader(header: string | null): RequestCookie[] {
  * cookie format the browser client writes.
  */
 export async function requireUserId(req: Request): Promise<string | null> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL)?.trim();
   const supabaseAnonKey = (
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY
   )?.trim();
 
   if (!supabaseUrl || !supabaseAnonKey) return null;
@@ -58,8 +60,12 @@ export async function requireUserId(req: Request): Promise<string | null> {
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: { user } } = await supabase.auth.getUser(token);
-    return user?.id ?? null;
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      return !error ? user?.id ?? null : null;
+    } catch {
+      return null;
+    }
   }
 
   const requestCookies = parseCookieHeader(req.headers.get('cookie'));

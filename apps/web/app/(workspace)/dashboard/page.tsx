@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { projectApiErrorMessage } from "@/lib/projects/api-error";
+import { createClient, ensureSupabaseConfig } from "@/lib/supabase/client";
 import ProjectDeleteButton from "./components/ProjectDeleteButton";
 import WonderSpaceDashboardPanel from "@/components/dashboard/WonderSpaceDashboardPanel";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
@@ -102,16 +103,17 @@ export default function DashboardPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) {
-      setProjectLoadError("Project storage is not configured. Files are unavailable; no project data has been changed.");
-      setLoading(false);
-      return;
-    }
-
+    let cancelled = false;
     async function load() {
       setProjectLoadError("");
+      await ensureSupabaseConfig();
+      if (cancelled) return;
+      const supabase = createClient();
+      if (!supabase) {
+        throw new Error("Project storage is not configured. Retry loading projects.");
+      }
       const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
       if (!user) {
         router.replace("/public-pages/auth?redirectTo=%2Fdashboard");
         return;
@@ -125,34 +127,41 @@ export default function DashboardPage() {
       setDisplayName(name);
 
       try {
-        const [projectsResponse, assetsResponse] = await Promise.all([
+        const [projectResult, assetResult] = await Promise.allSettled([
           fetchAuthenticatedProject("/api/projects"),
           fetch("/api/assets/user"),
         ]);
 
+        if (cancelled) return;
+        if (projectResult.status === "rejected") throw projectResult.reason;
+        const projectsResponse = projectResult.value;
         if (!projectsResponse.ok) {
           const failure = await projectsResponse.json().catch(() => ({}));
-          throw new Error(failure?.message || failure?.error || "Could not load your projects. Retry; your existing files have not been changed.");
+          throw new Error(projectApiErrorMessage(failure, "Could not load your projects. Retry; your existing files have not been changed."));
         }
         const data = await projectsResponse.json().catch(() => ({}));
         if (!Array.isArray(data.projects)) {
           throw new Error("The project service returned an invalid response. Retry rather than creating duplicate projects.");
         }
+        if (cancelled) return;
         setProjects(data.projects);
 
-        if (assetsResponse.ok) {
-          const assetData = await assetsResponse.json().catch(() => ({}));
+        if (assetResult.status === "fulfilled" && assetResult.value.ok) {
+          const assetData = await assetResult.value.json().catch(() => ({}));
+          if (cancelled) return;
           setAssetCount(Array.isArray(assetData.assets) ? assetData.assets.length : 0);
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     load().catch((cause) => {
+      if (cancelled) return;
       setProjectLoadError(cause instanceof Error ? cause.message : "Unable to load your projects. Retry.");
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [router, projectReloadKey]);
 
   const sortedProjects = useMemo(
@@ -204,8 +213,9 @@ export default function DashboardPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.project?.id) {
-        throw new Error(data?.message || "Failed to create project");
+        throw new Error(projectApiErrorMessage(data, "Failed to create project"));
       }
+      setProjects((current) => [data.project, ...current.filter((project) => project.id !== data.project.id)]);
       router.push(`/dashboard/projects/${encodeURIComponent(data.project.id)}`);
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : "Failed to create project");
@@ -215,7 +225,7 @@ export default function DashboardPage() {
   };
 
   const statCards = [
-    { icon: Folder, value: String(projects.length), label: "Projects", className: "text-blue-400" },
+    { icon: Folder, value: loading || projectLoadError ? "—" : String(projects.length), label: "Projects", className: "text-blue-400" },
     { icon: Box, value: assetCount === null ? "—" : String(assetCount), label: "3D Assets", className: "text-amber-400" },
     { icon: Clock3, value: lastActive, label: "Last active", className: "text-cyan-400" },
   ];
@@ -272,6 +282,8 @@ export default function DashboardPage() {
 
             {loading ? (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-80 animate-pulse rounded-xl bg-white/5" />)}</div>
+            ) : projectLoadError ? (
+              <p className="rounded-xl border border-white/10 p-6 text-sm text-white/60">Projects are unavailable. Use Retry loading projects above.</p>
             ) : projects.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.025] p-12 text-center">
                 <WandSparkles className="mx-auto mb-4 text-violet-400" size={36} />
