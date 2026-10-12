@@ -134,7 +134,7 @@ export function SovereignOSProvider({ children }: { children: ReactNode }) {
         signal: abortRef.current.signal,
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) { const failure = await res.json().catch(() => null); throw new Error(typeof failure?.error === 'string' ? failure.error : `Build request failed (HTTP ${res.status})`); }
       if (!res.body) throw new Error('No response body');
 
       const reader = res.body.getReader();

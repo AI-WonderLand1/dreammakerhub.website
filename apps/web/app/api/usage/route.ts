@@ -32,10 +32,9 @@ export async function GET(req: NextRequest) {
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
-        .from("projects")
-        .select("id,storage_used")
-        .eq("owner_id", user.id)
-        .neq("status", "deleted"),
+        .from("_projects")
+        .select("id")
+        .eq("owner_id", user.id),
       supabase
         .from("cross_repo_usage_events")
         .select("source,feature,units,purchased_units,created_at")
@@ -56,7 +55,7 @@ export async function GET(req: NextRequest) {
     }
 
     const projects = projectResult.data ?? [];
-    const storageUsed = projects.reduce((sum, project) => sum + Number(project.storage_used || 0), 0);
+    const storageUsed = Number(sourceSummaryResult.data?.storage_used ?? 0);
     const now = new Date();
     const periodReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
 
@@ -82,6 +81,7 @@ export async function GET(req: NextRequest) {
         purchased_tokens: Number(balanceResult.data?.purchased_tokens ?? 0),
         purchased_render_credits: Number(balanceResult.data?.purchased_render_credits ?? 0),
         storage_used: storageUsed,
+        storage_scope: "builder-file-content",
         projects_count: projects.length,
         by_source: sourceSummaryResult.data?.by_source ?? {},
         recent_activity: (recentResult.data ?? []).map((event) => ({

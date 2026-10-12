@@ -22,26 +22,30 @@ ALTER TABLE public.ai_provider_configs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "ai_provider_configs_select_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_select_own"
   ON public.ai_provider_configs
-  FOR SELECT
+  FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "ai_provider_configs_insert_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_insert_own"
   ON public.ai_provider_configs
-  FOR INSERT
+  FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "ai_provider_configs_update_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_update_own"
   ON public.ai_provider_configs
-  FOR UPDATE
-  USING (auth.uid() = user_id);
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "ai_provider_configs_delete_own" ON public.ai_provider_configs;
 CREATE POLICY "ai_provider_configs_delete_own"
   ON public.ai_provider_configs
-  FOR DELETE
+  FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
 CREATE INDEX IF NOT EXISTS ai_provider_configs_user_provider_idx ON public.ai_provider_configs(user_id, provider);
 CREATE INDEX IF NOT EXISTS ai_provider_configs_active_idx ON public.ai_provider_configs(user_id) WHERE is_active;
+REVOKE ALL ON public.ai_provider_configs FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ai_provider_configs TO authenticated;
+GRANT ALL ON public.ai_provider_configs TO service_role;

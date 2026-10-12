@@ -36,6 +36,7 @@ CREATE POLICY "Users can read their own cross repo usage"
   USING (auth.uid() = user_id);
 GRANT SELECT ON TABLE public.cross_repo_usage_events TO authenticated;
 GRANT SELECT, INSERT ON TABLE public.cross_repo_usage_events TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.cross_repo_usage_events_id_seq TO service_role;
 
 ALTER TABLE public.cross_repo_usage_events REPLICA IDENTITY FULL;
 DO $$
@@ -219,6 +220,8 @@ AS $$
     'ai_tokens_used', COALESCE(SUM(units) FILTER (WHERE feature='ai_tokens'),0),
     'api_requests_used', COALESCE(SUM(units) FILTER (WHERE feature='ai_requests'),0),
     'render_credits_used', COALESCE(SUM(units) FILTER (WHERE feature='render_credits'),0),
+    'storage_used', COALESCE((SELECT SUM(octet_length(f.content)) FROM public._project_files f JOIN public._projects p ON p.id=f.project_id WHERE p.owner_id=p_user_id::text),0),
+    'storage_scope', 'builder-file-content',
     'by_source', COALESCE((
       SELECT json_object_agg(source, payload)
       FROM (
@@ -277,8 +280,7 @@ BEGIN
       WHERE user_id=p_user_id AND period_start=v_period_start AND feature='render_credits'
     ),0),
     'storage', COALESCE((
-      SELECT SUM(storage_used) FROM public.projects
-      WHERE owner_id=p_user_id AND status <> 'deleted'
+      SELECT SUM(octet_length(f.content)) FROM public._project_files f JOIN public._projects p ON p.id=f.project_id WHERE p.owner_id=p_user_id::text
     ),0)
   ) INTO result;
 

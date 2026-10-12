@@ -31,7 +31,7 @@ function isPathProtected(pathname: string): boolean {
 function isUnmeteredBillablePath(pathname: string): boolean {
   // Only exact reviewed routes that reserve server-side usage may run.
   // Keep them paused while billing is disabled; all other unmetered routes stay closed.
-  if (pathname === '/api/chat' || pathname === '/api/ai/chat') {
+  if (pathname === '/api/chat' || pathname === '/api/ai/chat' || pathname === '/api/build/stream') {
     return process.env.BILLABLE_OPERATIONS_ENABLED !== 'true';
   }
   return UNMETERED_AI_PATHS.has(pathname) || pathname.startsWith('/api/ai/');
