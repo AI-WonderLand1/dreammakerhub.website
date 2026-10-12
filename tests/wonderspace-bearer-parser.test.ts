@@ -24,6 +24,36 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('Shared Supabase Bearer parser for verified project access', () => {
+  it.each(['SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_ANON_KEY'])(
+    'verifies browser tokens with runtime-only %s configuration', async (keyName) => {
+      for (const key of ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+        'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+        'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_ANON_KEY']) vi.stubEnv(key, '');
+      vi.stubEnv('SUPABASE_URL', 'https://runtime.supabase.co');
+      vi.stubEnv(keyName, 'runtime-public-key');
+      expect(await requireUserId(new Request('http://localhost/api/projects', {
+        headers: { Authorization: 'Bearer valid-browser-token' },
+      }))).toBe(owner);
+      expect(mocks.createClient).toHaveBeenCalledWith('https://runtime.supabase.co',
+        'runtime-public-key', expect.any(Object));
+    },
+  );
+
+  it('rejects a failed identity lookup without accepting a returned user', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: owner } }, error: { message: 'Invalid token' } });
+    expect(await requireUserId(new Request('http://localhost/api/projects', {
+      headers: { Authorization: 'Bearer invalid-token' },
+    }))).toBe(null);
+  });
+
+  it('fails closed when the Bearer verification service throws', async () => {
+    mocks.getUser.mockRejectedValue(new Error('Auth unavailable'));
+    expect(await requireUserId(new Request('http://localhost/api/projects', {
+      headers: { Authorization: 'Bearer valid-browser-token' },
+    }))).toBe(null);
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+  });
+
   it.each(['Bearer valid-browser-token', 'bearer valid-browser-token', 'Bearer\\tvalid-browser-token'])(
     'accepts valid Authorization scheme %s without consulting SSR cookies', async (authorization) => {
       const header = authorization.replace('\\t', '\t');
