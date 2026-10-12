@@ -1,6 +1,6 @@
-## DreamMakerHub.website
+## AI WONDERLAND INNOVATION
 
--  DreamMakerHub is the main AI Wonderland platform repository. It owns the account and project shell, WonderBuild website builder, project tooling, cloud-development integration, platform APIs, and the main 3D/world-authoring surface.
+-  AI WONDERLAND INNOVATION is the main AI Wonderland platform repository. It owns the account and project shell, WonderBuild website builder, project tooling, cloud-development integration, platform APIs, and the main 3D/world-authoring surface.
 
 ## Repository role
 
