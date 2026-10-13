@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Cloud, Github, LockKeyhole, Mail } from 'lucide-react';
+import { Cloud, GitBranch, LockKeyhole, Mail } from 'lucide-react';
 import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { AI_TRAINING_CONSENT_TEXT, AI_TRAINING_CONSENT_VERSION } from '@/lib/privacy/alice-training-consent';
@@ -332,7 +332,7 @@ function AuthPageContent() {
               disabled={loading || resendLoading}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/[.025] px-4 py-2.5 text-sm font-medium hover:bg-white/5 disabled:opacity-50"
             >
-              <Github size={16} /> Continue with GitHub
+              <GitBranch size={16} /> Continue with GitHub
             </button>
           </div>
         </section>

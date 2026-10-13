@@ -11,7 +11,8 @@ import {
   Code2,
   Cuboid,
   FileText,
-  Github,
+  GitBranch,
+  type LucideIcon,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -144,7 +145,13 @@ const DIRECT_LINKS = [
   { label: 'Blog', href: '/blog', icon: Newspaper },
 ] as const;
 
-const ABOUT_COLUMNS = [
+type AboutColumn = {
+  title: string;
+  subtitle: string;
+  items: Array<{ label: string; href: string; icon: LucideIcon; external?: boolean }>;
+};
+
+const ABOUT_COLUMNS: AboutColumn[] = [
   {
     title: 'About AI WONDERLAND',
     subtitle: 'Your platform. Your vision. Then make it.',
@@ -175,10 +182,10 @@ const ABOUT_COLUMNS = [
         href: '/dashboard/support',
         icon: MessageSquareText,
       },
-      { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: Github, external: true },
+      { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: GitBranch, external: true },
     ],
   },
-] as const;
+];
 
 export default function Navbar() {
   const pathname = usePathname();
