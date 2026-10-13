@@ -54,7 +54,7 @@ export function createTruthShieldServer(options = {}) {
         const input = await body(req);
         if (input.tenantId && input.tenantId !== key.tenantId) return send(res,403,{error:'Tenant mismatch'});
         input.tenantId = key.tenantId;
-        const allowedAgents = allowed[key.tenantId] || options.allowedAgents;
+        const allowedAgents = allowed?.[key.tenantId] || options.allowedAgents;
         const result = await inspect(input,{verifierSecret,auditSecret,allowedAgents});
         reports.set(result.reportHash,result);
         if (reports.size > 10000) reports.delete(reports.keys().next().value);
