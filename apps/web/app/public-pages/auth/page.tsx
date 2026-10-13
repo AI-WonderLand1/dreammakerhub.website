@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Cloud, GitBranch, LockKeyhole, Mail } from 'lucide-react';
 import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
+import { AI_TRAINING_CONSENT_TEXT, AI_TRAINING_CONSENT_VERSION } from '@/lib/privacy/alice-training-consent';
 
 const AUTH_CONFIG_ERROR = 'Authentication service is temporarily unavailable. Please refresh and try again.';
 
@@ -38,6 +39,7 @@ function AuthPageContent() {
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [aiTrainingOptIn, setAiTrainingOptIn] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -97,7 +99,13 @@ function AuthPageContent() {
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
-          options: { emailRedirectTo: confirmationCallbackUrl() },
+          options: {
+            emailRedirectTo: confirmationCallbackUrl(),
+            data: {
+              alice_training_opt_in: aiTrainingOptIn,
+              alice_training_consent_version: AI_TRAINING_CONSENT_VERSION,
+            },
+          },
         });
         if (error) {
           logger.error('[auth] Supabase sign-up failed:', error.message);
@@ -261,6 +269,27 @@ function AuthPageContent() {
                 required
               />
             </label>
+
+            {mode === 'signup' && (
+              <div className="space-y-3 rounded-lg border border-white/15 bg-white/[.035] p-3">
+                <p className="text-xs text-white/65">
+                  Review our <a href="/terms" className="underline">Terms of Use</a> and{' '}
+                  <a href="/privacy" className="underline">Privacy Policy</a>.
+                  AI training is an optional, separate choice; your account works without it.
+                </p>
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-white/75">
+                  <input
+                    type="checkbox"
+                    checked={aiTrainingOptIn}
+                    onChange={(event) => setAiTrainingOptIn(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-violet-500"
+                  />
+                  <span>
+                    {AI_TRAINING_CONSENT_TEXT}
+                  </span>
+                </label>
+              </div>
+            )}
 
             {message && <p aria-live="polite" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/65">{message}</p>}
 

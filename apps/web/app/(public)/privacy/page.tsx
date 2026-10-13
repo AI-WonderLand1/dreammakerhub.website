@@ -145,6 +145,11 @@ word-break: break-word !important;
             <li>AI development</li>
             <li>AI deployment</li>
           </ul>
+          <h3 className="mt-4 text-lg font-semibold">Optional AI training and improvement</h3>
+          <p>Using AI-powered features requires processing the prompts and files you submit to deliver your requested results. This is separate from using your content to improve or train AI systems.</p>
+          <p>Shared AI improvement and training is optional and disabled by default. If you affirmatively opt in at registration or in Settings → Privacy &amp; Data, we may use the prompts, project content, generated code and feedback you submit to create evaluated examples, improve quality, and train future AI systems. This permission does not itself make private projects public. We must separately respect project access permissions, applicable law, and third-party rights.</p>
+          <p>You can withdraw permission in <a href="/settings/privacy">Privacy &amp; Data settings</a> while signed in. Withdrawal ends authorization for future shared-training collection. It does not guarantee removal from models already trained, and removal of historical training material is handled through applicable deletion procedures and technical limitations. Contact <a href="mailto:contact@dreammakerhub.website">contact@dreammakerhub.website</a> to request review or deletion.</p>
+          <p>Approved storage and processing vendors may handle content for these purposes under applicable agreements. Specific external storage or training integrations will be disclosed before they are activated for customer material. Do not contribute credentials, third-party confidential material, or personal information that you lack permission to share.</p>
         </div>
 
         <div id="sociallogins">
