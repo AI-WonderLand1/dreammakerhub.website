@@ -16,6 +16,7 @@ const SETTINGS_NAV_ITEMS = [
   { href: "/settings/ai-providers", label: "AI Providers" },
   { href: "/dashboard/usage", label: "Billing, Usage & Licensing" },
   { href: "/settings/security", label: "Security" },
+  { href: "/settings/privacy", label: "Privacy & Data" },
   { href: "/settings/cloud-storage", label: "Cloud Storage (BYOC)" },
   { href: "/wonderspace", label: "WonderSpace IDE" },
 ] as const;
