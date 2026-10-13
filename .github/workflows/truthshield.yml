@@ -1,0 +1,42 @@
+name: TruthShield independent checks
+
+on:
+  pull_request:
+    paths:
+      - 'packages/truthshield/**'
+      - '.github/workflows/truthshield.yml'
+  push:
+    branches: [Master, main]
+    paths:
+      - 'packages/truthshield/**'
+      - '.github/workflows/truthshield.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  truthshield:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Syntax check without installing dependencies
+        run: |
+          node --check packages/truthshield/src/core.mjs
+          node --check packages/truthshield/src/server.mjs
+          node --check packages/truthshield/src/pipeline.mjs
+          node --check packages/truthshield/src/fixes.mjs
+          node --check packages/truthshield/bin/truthshield.mjs
+      - name: Unit and integration tests
+        run: node --test packages/truthshield/tests/*.node-test.mjs
+      - name: CLI checks must return human-review exit code
+        run: |
+          set +e
+          node packages/truthshield/bin/truthshield.mjs scan packages/truthshield/examples/invalid-claim.json > /tmp/truthshield.json
+          status=$?
+          set -e
+          test "$status" -eq 2
+          node -e "const r=require('/tmp/truthshield.json');if(r.decision!=='needs_human_review')process.exit(1)"
