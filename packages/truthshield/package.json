@@ -1,0 +1,14 @@
+{
+  "name": "@ai-wonderland/truthshield",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "truthshield": "./bin/truthshield.mjs" },
+  "scripts": {
+    "test": "node --test tests/*.node-test.mjs",
+    "smoke": "node bin/truthshield.mjs scan examples/invalid-claim.json"
+  },
+  "files": [ "src/", "bin/", "README.md" ],
+  "license": "UNLICENSED"
+}
