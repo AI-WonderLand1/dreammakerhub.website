@@ -116,7 +116,7 @@ export default function TermsPage() {
 
     <div id="contributions">
       <h2 className="text-xl font-bold">5. USER GENERATED CONTRIBUTIONS</h2>
-      <p>The Services does not offer users to submit or post content. We may provide you with the opportunity to create, submit, post, display, transmit, perform, publish, distribute, or broadcast content and materials to us or on the Services, including but not limited to text, writings, video, audio, photographs, graphics, comments, suggestions, or personal information or other material (collectively, "Contributions").</p>
+      <p>The Services allow users to create projects and submit prompts, files, designs, code, feedback, and other materials (collectively, "Contributions"). Private projects remain subject to their access permissions. Your Contributions are not automatically licensed for shared AI training merely because you use the Services; any optional AI-training permission is a separate choice described in our Privacy Policy and Privacy &amp; Data settings.</p>
     </div>
 
     <div id="license">
