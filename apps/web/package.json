@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@amplitude/ai": "^0.20.1",
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@amplitude/analytics-node": "^1.5.72",
     "@amplitude/unified": "^1",
     "@t3-oss/env-nextjs": "0.13.11"
