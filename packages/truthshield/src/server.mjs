@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { inspect, review } from './core.mjs';
+import { inspect, review, createReviewedReceipt } from './core.mjs';
 
 const digest = (s) => createHash('sha256').update(s).digest('hex');
 const isEqual = (a,b) => /^[a-f0-9]{64}$/i.test(a || '') && /^[a-f0-9]{64}$/i.test(b || '') &&
@@ -68,6 +68,10 @@ export function createTruthShieldServer(options = {}) {
         if (!report || report.tenantId !== key.tenantId) return send(res,404,{error:'Review case not found'});
         const response = review(report, { reviewer: key.id, action: request.action,
           reason: request.reason, correctionInput: request.correctionInput });
+        if (response.status === 'human_approved_unverified') {
+          if (!auditSecret || auditSecret.length < 32) return send(res,503,{error:'Audit signing is not configured; cannot authorize reviewed handoff'});
+          response.reviewedReceipt = createReviewedReceipt(report,response,auditSecret);
+        }
         return send(res,200,response);
       }
       return send(res,404,{error:'Not found'});
