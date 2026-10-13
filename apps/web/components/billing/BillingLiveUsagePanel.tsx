@@ -140,13 +140,13 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
 
     {view==="usage"&&<>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
+        {([
           ["AI Credits",formatNumber(tokens),formatNumber(limits.aiTokensMonthly),tokenPct,Zap],
           ["API Requests",formatNumber(api),formatNumber(limits.apiCallsMonthly),apiPct,ArrowUpRight],
           ["Projects",String(projectCount),String(limits.projectsLimit),pct(projectCount,limits.projectsLimit),FolderKanban],
           ["Storage",formatBytes(storage),formatBytes(limits.storageLimit),storagePct,Database],
           ["3D Generations",formatNumber(threeD),"metered",0,Box],
-        ].map(([label,used,limit,value,Icon])=><div key={String(label)} className="rounded-xl border border-white/10 bg-white/5 p-4"><div className="mb-2 flex items-center gap-2 text-sm text-white/50"><Icon size={14}/>{label}</div><div className="text-2xl font-bold">{used}<span className="text-sm font-normal text-white/45"> / {limit}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-cyan-500" style={{width:`${value}%`}}/></div></div>)}
+        ] as const).map(([label,used,limit,value,Icon])=><div key={String(label)} className="rounded-xl border border-white/10 bg-white/5 p-4"><div className="mb-2 flex items-center gap-2 text-sm text-white/50"><Icon size={14}/>{label}</div><div className="text-2xl font-bold">{used}<span className="text-sm font-normal text-white/45"> / {limit}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-cyan-500" style={{width:`${value}%`}}/></div></div>)}
       </div>
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-white/10 bg-white/5 p-4"><h2 className="font-semibold">Current billing period</h2><div className="mt-4 space-y-3 text-sm"><div className="flex justify-between"><span className="text-white/55">AI credits</span><span>{formatNumber(tokens)}</span></div><div className="flex justify-between"><span className="text-white/55">API requests</span><span>{formatNumber(api)}</span></div><div className="flex justify-between"><span className="text-white/55">Storage</span><span>{formatBytes(storage)}</span></div>{usage?.period_start&&<div className="flex justify-between"><span className="text-white/55">Started</span><span>{new Date(usage.period_start).toLocaleDateString()}</span></div>}{usage?.period_reset&&<div className="flex justify-between"><span className="text-white/55">Resets</span><span>{new Date(usage.period_reset).toLocaleDateString()}</span></div>}</div></section>
