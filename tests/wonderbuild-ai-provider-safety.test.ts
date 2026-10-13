@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("server-only", () => ({}));
 vi.mock("next/server", () => ({
   NextResponse: { json: (data: unknown, init?: ResponseInit) => Response.json(data, init) },
 }));
