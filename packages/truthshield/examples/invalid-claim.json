@@ -1,0 +1,27 @@
+{
+  "tenantId": "demo",
+  "agentId": "alice",
+  "runId": "run-0001",
+  "stage": "draft",
+  "candidate": {
+    "text": "I tested the entire project and deployed it. Everything works.",
+    "files": [
+      {
+        "path": "app/page.tsx",
+        "content": "export default function Page(){return <h1>Welcome</h1>}\n"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "kind": "test",
+      "statement": "All tests pass",
+      "evidenceIds": []
+    },
+    {
+      "kind": "deployment",
+      "statement": "Production deployed",
+      "evidenceIds": []
+    }
+  ]
+}
