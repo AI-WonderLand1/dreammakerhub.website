@@ -10,4 +10,4 @@ export const AI_TRAINING_CONSENT_TEXT =
   'I choose to allow AI WONDERLAND to use my submitted prompts, project content, ' +
   'generated code, and feedback to evaluate and improve Alice, create reusable ' +
   'examples, and train future AI models. This is optional, and I may withdraw ' +
-  'permission later in Privacy & Data settings.' as const;
+  'permission later in Privacy & Data settings.';
