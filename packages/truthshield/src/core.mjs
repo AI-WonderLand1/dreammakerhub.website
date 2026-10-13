@@ -46,6 +46,13 @@ export function createReceipt(report, auditSecret) {
     artifactHash: report.artifactHash, decision: report.decision, reportHash: report.reportHash };
   return { ...payload, signature: sign(payload, auditSecret) };
 }
+export function createReviewedReceipt(report, reviewerDecision, auditSecret) {
+  if (!report || report.decision !== 'needs_human_review' ||
+      reviewerDecision?.caseId !== report.reportHash ||
+      reviewerDecision?.status !== 'human_approved_unverified') throw Error('Only approved matching human review can continue a hold');
+  const reviewed = { ...report, decision:'human_approved_unverified' };
+  return createReceipt(reviewed, auditSecret);
+}
 export function verifyReceipt(receipt, auditSecret) {
   if (!receipt || !auditSecret || auditSecret.length < 32) return false;
   const { signature, ...payload } = receipt;
@@ -168,7 +175,7 @@ export async function inspect(input, options = {}) {
     findings.some(f => f.severity === 'review') ? 'needs_human_review' : 'approved';
   const result = {
     schemaVersion: '1', tenantId: input.tenantId, runId: input.runId, agentId: input.agentId,
-    stage: input.stage || 'draft', artifactHash: digest,
+    stage: input.stage || 'draft', artifactHash: digest, previousReportHash: input.previous?.reportHash || null,
     decision, label: decision === 'approved' ? 'CHECKS_PASSED_NOT_FACTUALLY_GUARANTEED' :
       decision === 'blocked' ? 'HARD_STOP' : 'HUMAN_REVIEW_REQUIRED',
     findings, checksExecuted: ['shape','path','secret-patterns','json','execution-patterns','evidence','handoff'],
