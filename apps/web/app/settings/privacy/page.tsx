@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AI_TRAINING_CONSENT_TEXT } from '@/lib/privacy/alice-training-consent';
 
 type Preference = { enabled: boolean; consentVersion: string; updatedAt: string | null };
 
@@ -108,9 +109,7 @@ export default function PrivacySettingsPage() {
           />
           <span>
             <span className="block font-semibold">I voluntarily allow AI improvement and training</span>
-            <span className="mt-1 block text-sm text-white/65">
-              I understand I can withdraw permission at any time in Privacy & Data settings.
-            </span>
+            <span className="mt-1 block text-sm text-white/65">{AI_TRAINING_CONSENT_TEXT}</span>
           </span>
         </label>
 
