@@ -39,6 +39,7 @@ async function setup() {
   const { runFreeBuilder } = await import('@/lib/builder/free-generation.server');
   const { logUsage } = await import('@/lib/usage/log');
   const { requireUserId } = await import('@/lib/auth');
+  vi.mocked(requireUserId).mockResolvedValue('test-user');
   vi.mocked(reserveAiRequest).mockResolvedValue({ plan: 'free' } as any);
   vi.mocked(logUsage).mockResolvedValue(undefined as any);
   return { POST, runModel: vi.mocked(runModel),
