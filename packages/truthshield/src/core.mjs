@@ -118,7 +118,7 @@ export async function inspect(input, options = {}) {
   const expected = { tenantId: input.tenantId, runId: input.runId, artifactHash: digest };
   const seenPaths = new Set();
   // Independent deterministic passes. They never execute candidate code or call an AI model.
-  const [structural, leakFindings, fileFindings, claimFindings, handoffFindings] = await Promise.all([
+  const [structural, leakFindings, fileFindings, claimFindings, handoffFindings, extensionFindings] = await Promise.all([
     Promise.resolve().then(() => {
       const f = [];
       for (const file of files) {
@@ -168,8 +168,26 @@ export async function inspect(input, options = {}) {
       }
       return [];
     }),
+    Promise.all((options.validators || []).map(async (validator) => {
+      if (!validator || typeof validator.id !== 'string' || typeof validator.check !== 'function')
+        return [finding('INVALID_VALIDATOR','block','Trusted validator is misconfigured')];
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), options.validatorTimeoutMs || 8000);
+      try {
+        const found = await Promise.race([
+          Promise.resolve().then(() => validator.check(input,{signal:controller.signal})),
+          new Promise((_,reject) => controller.signal.addEventListener('abort',()=>reject(Error('Timeout')),{once:true})),
+        ]);
+        if (!Array.isArray(found) || found.length > 100 || found.some(x => !x || !['block','review','warn'].includes(x.severity) ||
+          typeof x.rule !== 'string' || typeof x.message !== 'string' || x.message.length > 1000))
+          throw Error('Invalid validator response');
+        return found.map(x => ({...x, subject:x.subject || validator.id}));
+      } catch {
+        return [finding('VALIDATOR_FAILED','block','Required validator failed or timed out: '+validator.id)];
+      } finally { clearTimeout(timer); }
+    })),
   ]);
-  const findings = [...structural, ...leakFindings, ...fileFindings, ...claimFindings, ...handoffFindings]
+  const findings = [...structural, ...leakFindings, ...fileFindings, ...claimFindings, ...handoffFindings, ...extensionFindings.flat()]
     .map((f,i) => ({ id: 'f' + (i+1), ...f }));
   const decision = findings.some(f => f.severity === 'block') ? 'blocked' :
     findings.some(f => f.severity === 'review') ? 'needs_human_review' : 'approved';
@@ -178,7 +196,7 @@ export async function inspect(input, options = {}) {
     stage: input.stage || 'draft', artifactHash: digest, previousReportHash: input.previous?.reportHash || null,
     decision, label: decision === 'approved' ? 'CHECKS_PASSED_NOT_FACTUALLY_GUARANTEED' :
       decision === 'blocked' ? 'HARD_STOP' : 'HUMAN_REVIEW_REQUIRED',
-    findings, checksExecuted: ['shape','path','secret-patterns','json','execution-patterns','evidence','handoff'],
+    findings, checksExecuted: ['shape','path','secret-patterns','json','execution-patterns','evidence','handoff',...(options.validators || []).map(v => v.id)],
     verificationScope: 'Deterministic checks plus independently signed evidence only; no external factual verification or code execution',
   };
   result.reportHash = hash(JSON.stringify(result));
