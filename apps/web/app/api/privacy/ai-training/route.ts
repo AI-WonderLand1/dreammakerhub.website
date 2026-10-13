@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
+import { AI_TRAINING_CONSENT_VERSION } from '@/lib/privacy/alice-training-consent';
 
 export const dynamic = 'force-dynamic';
 
-const VERSION = '2026-10-13-v1';
+const VERSION = AI_TRAINING_CONSENT_VERSION;
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
 async function verifiedUser() {
