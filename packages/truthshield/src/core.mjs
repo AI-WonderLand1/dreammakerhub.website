@@ -203,10 +203,10 @@ export function proposeCorrections(input, report) {
   if (artifactHash(input.candidate) !== report.artifactHash) throw Error('Artifact changed since scan');
   const changes = [];
   for (const file of input.candidate.files || []) {
-    if (!/\\r\\n/.test(file.content)) continue;
+    if (!/\r\n/.test(file.content)) continue;
     // Whitespace-only proposal. The caller must review and re-scan; never writes files.
     changes.push({ path: file.path, operation: 'normalize-crlf', beforeHash: hash(file.content),
-      after: file.content.replace(/\\r\\n/g,'\n'), requiresHumanApproval: true });
+      after: file.content.replace(/\r\n/g,'\n'), requiresHumanApproval: true });
   }
   return { reportHash: report.reportHash, decision: report.decision,
     status: 'PROPOSED_NOT_APPLIED', changes,
