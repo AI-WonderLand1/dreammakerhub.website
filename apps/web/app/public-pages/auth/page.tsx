@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Cloud, Github, LockKeyhole, Mail } from 'lucide-react';
 import { createClient, ensureSupabaseConfig } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
+import { AI_TRAINING_CONSENT_TEXT, AI_TRAINING_CONSENT_VERSION } from '@/lib/privacy/alice-training-consent';
 
 const AUTH_CONFIG_ERROR = 'Authentication service is temporarily unavailable. Please refresh and try again.';
 
@@ -102,7 +103,7 @@ function AuthPageContent() {
             emailRedirectTo: confirmationCallbackUrl(),
             data: {
               alice_training_opt_in: aiTrainingOptIn,
-              alice_training_consent_version: '2026-10-13-v1',
+              alice_training_consent_version: AI_TRAINING_CONSENT_VERSION,
             },
           },
         });
@@ -284,10 +285,7 @@ function AuthPageContent() {
                     className="mt-0.5 h-4 w-4 accent-violet-500"
                   />
                   <span>
-                    I optionally allow AI WONDERLAND to use my prompts, projects,
-                    generated code and feedback to improve Alice, create reusable
-                    examples and train future AI models. I can withdraw this
-                    permission later in Settings → Privacy &amp; Data.
+                    {AI_TRAINING_CONSENT_TEXT}
                   </span>
                 </label>
               </div>
