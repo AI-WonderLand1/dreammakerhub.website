@@ -5,6 +5,7 @@ import { logUsage } from '@/lib/usage/log';
 
 // Single provider, quota-limited CPU-independent free beta generation.
 // Shared by builder actions and template generation. No fallback to paid models.
+const noStore = { "Cache-Control": "no-store" };
 const FREE_BUILDER_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 const FREE_BUILDER_MONTHLY_REQUESTS = 20;
 const BUILDER_OUTPUT_BUDGET = 2048;
