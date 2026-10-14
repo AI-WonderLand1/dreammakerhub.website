@@ -124,7 +124,7 @@ export default function WonderBuildTemplateStep() {
       const response = await fetch('/api/wonder-build/template-library/generate-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'AI Generated', batchPrompt: aiTemplatePrompt(request) }),
+        body: JSON.stringify({ category: 'AI Generated', templateCount: 1, batchPrompt: aiTemplatePrompt(request) }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.success || !Array.isArray(data.templates) || !data.templates[0]) {
