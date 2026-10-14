@@ -1,28 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
-import { getSmokeUserIdFromRequest } from '@/lib/smokeAuth';
+import { getSmokeUserIdFromRequest, isSmokeEnabled } from '@/lib/smokeAuth';
+
+type TemplateLibraryPrincipal =
+  | { userId: string; response: null }
+  | { userId: null; response: NextResponse };
 
 /**
  * Shared auth gate for the wonder-build template library API routes.
  * Mirrors the convention used by other wonder-build routes (cookie auth + smoke fallback).
  */
-export async function requireUser(req: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const smokeUserId = getSmokeUserIdFromRequest(req);
+export async function requireTemplateUser(req: NextRequest): Promise<TemplateLibraryPrincipal> {
+  // Use the principal from the same gate that authorizes the operation. A
+  // second cookie/bearer-only lookup would discard an accepted smoke identity.
+  const smokeUserId = isSmokeEnabled() ? getSmokeUserIdFromRequest(req) : undefined;
+  let user: { id: string; app_metadata?: Record<string, unknown> } | null = null;
+  try {
+    const supabase = await createClient();
+    const result = await supabase.auth.getUser();
+    user = result.error ? null : result.data.user;
+  } catch {
+    if (!smokeUserId) {
+      return { userId: null, response: NextResponse.json({ error: 'Authentication is temporarily unavailable.' }, { status: 503 }) };
+    }
+  }
 
   if (!user && !smokeUserId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return { userId: null, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
   const isPaid = Boolean(['creator', 'pro', 'studio', 'team', 'enterprise'].includes(String(user?.app_metadata?.plan || '')) || smokeUserId);
   if (process.env.WONDER_BUILD_REQUIRE_PAID === 'true' && !isPaid) {
-    return NextResponse.json({ error: 'PAYWALL' }, { status: 402 });
+    return { userId: null, response: NextResponse.json({ error: 'PAYWALL' }, { status: 402 }) };
   }
 
-  return null;
+  return { userId: user?.id || smokeUserId!, response: null };
+}
+
+// Retain the response-only gate for existing template-library callers.
+export async function requireUser(req: NextRequest) {
+  return (await requireTemplateUser(req)).response;
 }
 
 export function getGeminiApiKey(): string {

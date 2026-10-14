@@ -4,10 +4,9 @@ vi.mock('next/server', () => ({
   NextResponse: { json: (data: unknown, init?: ResponseInit) => Response.json(data, init) },
 }));
 vi.mock('../apps/web/app/api/wonder-build/template-library/shared', () => ({
-  requireUser: vi.fn(async () => null),
+  requireTemplateUser: vi.fn(async () => ({ userId: 'test-user', response: null })),
   extractJsonArray: (raw: string) => JSON.parse(raw),
 }));
-vi.mock('@/lib/auth', () => ({ requireUserId: vi.fn(async () => 'test-user') }));
 vi.mock('../apps/web/core/ai/runModel', () => ({ runModel: vi.fn() }));
 vi.mock('@/lib/builder/free-generation.server', () => ({ runFreeBuilder: vi.fn() }));
 vi.mock('@/lib/billing/cost-guard.server', () => {
@@ -38,18 +37,18 @@ async function setup() {
   const { reserveAiRequest } = await import('@/lib/billing/cost-guard.server');
   const { runFreeBuilder } = await import('@/lib/builder/free-generation.server');
   const { logUsage } = await import('@/lib/usage/log');
-  const { requireUserId } = await import('@/lib/auth');
-  vi.mocked(requireUserId).mockResolvedValue('test-user');
+  const { requireTemplateUser } = await import('../apps/web/app/api/wonder-build/template-library/shared');
+  vi.mocked(requireTemplateUser).mockResolvedValue({ userId: 'test-user', response: null });
   vi.mocked(reserveAiRequest).mockResolvedValue({ plan: 'free' } as any);
   vi.mocked(logUsage).mockResolvedValue(undefined as any);
   return { POST, runModel: vi.mocked(runModel),
     reserveAiRequest: vi.mocked(reserveAiRequest), runFreeBuilder: vi.mocked(runFreeBuilder),
-    logUsage: vi.mocked(logUsage), requireUserId: vi.mocked(requireUserId) };
+    logUsage: vi.mocked(logUsage), requireTemplateUser: vi.mocked(requireTemplateUser) };
 }
 
-function request(batchPrompt: string) {
+function request(batchPrompt: string, extra: Record<string, unknown> = {}) {
   return new Request('https://dreammakerhub.website/api/wonder-build/template-library/generate-batch', {
-    method: 'POST', body: JSON.stringify({ category: 'AI Generated', batchPrompt }),
+    method: 'POST', body: JSON.stringify({ category: 'AI Generated', batchPrompt, ...extra }),
   });
 }
 
@@ -118,9 +117,9 @@ describe('WonderBuild template generation with atomic metering', () => {
   });
 
   it('requires a validated user identity before reserving', async () => {
-    const { POST, requireUserId, reserveAiRequest } = await setup();
+    const { POST, requireTemplateUser, reserveAiRequest } = await setup();
     vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
-    requireUserId.mockResolvedValue(null);
+    requireTemplateUser.mockResolvedValue({ userId: null, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) as any });
     const response = await POST(request('Build a site') as any);
     expect(response.status).toBe(401);
     expect(reserveAiRequest).not.toHaveBeenCalled();
@@ -142,5 +141,72 @@ describe('WonderBuild template generation with atomic metering', () => {
     vi.stubEnv('OPENROUTER_API_KEY', 'test-private-key');
     runModel.mockResolvedValue({ text: '[{"name":"Empty","elements":[]}]', tokens: 100 });
     expect((await POST(request('Build a site') as any)).status).toBe(502);
+  });
+});
+
+describe('WonderBuild single and multi-template contract', () => {
+  it('keeps every requested batch variant and uses one bounded provider attempt', async () => {
+    const { POST, runModel, reserveAiRequest } = await setup();
+    vi.stubEnv('BILLABLE_OPERATIONS_ENABLED', 'true'); vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    const variants = ['Minimal', 'Bold', 'Editorial', 'Magazine', 'Product', 'Portfolio', 'Checkout', 'Launch'];
+    const generated = variants.map((variant, i) => ({ ...template, id: `variant-${i}`, name: variant }));
+    runModel.mockResolvedValue({ text: JSON.stringify(generated), tokens: 3000 });
+    const response = await POST(request('Generate 8 templates', { templateCount: 8, variants }) as any);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ count: 8, templates: generated });
+    expect(runModel).toHaveBeenCalledOnce(); expect(reserveAiRequest).toHaveBeenCalledOnce();
+    expect(runModel).toHaveBeenCalledWith(expect.objectContaining({ maxTokens: 4096, singleProviderAttempt: true,
+      messages: [expect.objectContaining({ content: expect.stringContaining('exactly 8 valid templates') })] }));
+  });
+
+  it('derives batch size from existing clients that send variants without a count', async () => {
+    const { POST, runFreeBuilder } = await setup();
+    vi.stubEnv('FREE_BUILDER_AI_ENABLED', 'true'); vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    const generated = [template, { ...template, id: 'other', name: 'Other' }];
+    runFreeBuilder.mockResolvedValue(Response.json({ text: JSON.stringify(generated) }) as any);
+    expect((await POST(request('Generate two', { variants: ['Minimal', 'Bold'] }) as any)).status).toBe(200);
+    expect(runFreeBuilder).toHaveBeenCalledWith('test-user', expect.stringContaining('exactly 2 valid templates'));
+  });
+
+  it('rejects a partial collection instead of reporting false success', async () => {
+    const { POST, runModel } = await setup(); vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    runModel.mockResolvedValue({ text: JSON.stringify([template]), tokens: 100 });
+    const response = await POST(request('Generate six', { templateCount: 6 }) as any);
+    expect(response.status).toBe(502); expect(await response.json()).toMatchObject({ code: 'AI_INCOMPLETE_BATCH' });
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it.each([
+    { templateCount: 0 }, { templateCount: 9 }, { templateCount: 1.5 }, { templateCount: '2' },
+    { variants: [] }, { variants: ['Same', 'Same'] }, { variants: ['ok', null] },
+    { templateCount: 1, variants: ['First', 'Second'] },
+  ])('rejects invalid counts or variants before charging usage: %j', async extra => {
+    const { POST, reserveAiRequest, runModel } = await setup(); vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    expect((await POST(request('Generate', extra) as any)).status).toBe(400);
+    expect(reserveAiRequest).not.toHaveBeenCalled(); expect(runModel).not.toHaveBeenCalled();
+  });
+
+  it('reserves under the exact smoke principal accepted by the auth gate', async () => {
+    const { POST, requireTemplateUser, reserveAiRequest, runModel } = await setup();
+    requireTemplateUser.mockResolvedValue({ userId: 'smoke-test-principal', response: null });
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-key'); runModel.mockResolvedValue({ text: JSON.stringify([template]), tokens: 100 });
+    expect((await POST(request('Generate one', { templateCount: 1 }) as any)).status).toBe(200);
+    expect(reserveAiRequest).toHaveBeenCalledWith('smoke-test-principal', expect.any(Number), 4096);
+    expect(requireTemplateUser).toHaveBeenCalledOnce();
+  });
+});
+
+describe('WonderBuild generated-result safety', () => {
+  it('rejects duplicate IDs instead of claiming a complete distinct batch', async () => {
+    const { POST, runModel } = await setup(); vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    runModel.mockResolvedValue({ text: JSON.stringify([template, template]), tokens: 100 });
+    expect((await POST(request('Generate two', { templateCount: 2 }) as any)).status).toBe(502);
+  });
+  it('keeps upstream exception details out of both responses and application logs', async () => {
+    const { POST, runModel } = await setup(); vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    runModel.mockRejectedValue(new Error('private-provider-key upstream account details'));
+    const response = await POST(request('Generate one') as any); expect(response.status).toBe(502);
+    expect(await response.text()).not.toContain('private-provider-key');
+    const { logger } = await import('@/lib/logger'); expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain('private-provider-key');
   });
 });

@@ -22,7 +22,8 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleRunBatchGemini = async () => {
+  const handleRunBatch = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     setGeneratedCount(null);
@@ -33,6 +34,7 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: batch.category,
+          templateCount: batch.count,
           variants: batch.variants,
           batchPrompt: batch.promptText,
         }),
@@ -44,15 +46,14 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
         throw new Error(data.error || 'Failed to generate templates from server.');
       }
 
-      if (Array.isArray(data.templates) && data.templates.length > 0) {
+      if (Array.isArray(data.templates) && data.templates.length === batch.count) {
         setGeneratedCount(data.templates.length);
         onGeneratedSuccess(data.templates);
       } else {
-        throw new Error('Server returned empty templates array.');
+        throw new Error(`Alice did not return all ${batch.count} requested templates. No templates were added.`);
       }
     } catch (err: any) {
-      console.error('Gemini batch generation error:', err);
-      setError(err.message || 'Error executing batch prompt with Gemini API.');
+      setError(err.message || 'Alice could not generate this batch. Your collection has not been changed.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,7 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-white">
-                Run Batch #{batch.batchNumber} with Gemini AI
+                Create Batch #{batch.batchNumber} with Alice
               </h3>
               <p className="text-xs text-slate-400">
                 Category: {batch.category} ({batch.count} Templates)
@@ -79,6 +80,8 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
 
           <button
             onClick={onClose}
+            disabled={loading}
+            aria-label="Close AI template generation"
             className="p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -126,7 +129,7 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
           )}
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            Clicking run will send Batch #{batch.batchNumber}'s prompt block to Gemini 3.6 Flash via server-side API. The generated JSON array will be validated and appended to your active suite.
+            Alice will request {batch.count} templates through the configured server AI provider and usage safeguards. The full batch is added only after generation succeeds. If AI is unavailable or the batch is incomplete, your collection stays unchanged.
           </p>
         </div>
 
@@ -134,20 +137,21 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
         <div className="p-5 border-t border-slate-800 bg-slate-950/80 flex items-center justify-end space-x-3">
           <button
             onClick={onClose}
+            disabled={loading}
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
           >
             Close
           </button>
 
           <button
-            onClick={handleRunBatchGemini}
+            onClick={handleRunBatch}
             disabled={loading}
             className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Generating with Gemini...</span>
+                <span>Alice is generating...</span>
               </>
             ) : (
               <>
