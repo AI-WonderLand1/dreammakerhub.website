@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Check, Info, Sparkles } from "lucide-react";
-import { useAuth } from "@/lib/supabase/auth-context";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { PLAN_LIMITS, formatBytes, formatNumber } from "@/lib/billing/limits";
 import { logger } from "@/lib/logger";
@@ -24,7 +23,7 @@ function sanitizeRedirectPath(raw: string | null): string {
   return trimmed;
 }
 
-const planOrder: PlanId[] = ["free", "creator", "pro", "studio", "team", "enterprise"];
+const planOrder: PlanId[] = ["creator", "pro", "studio", "team", "enterprise"];
 const planIcons: Record<PlanId, string> = {
   free: "🌿",
   creator: "🎨",
@@ -63,11 +62,8 @@ function SubscriptionContent() {
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirectTo"));
   const canceled = searchParams.get("canceled") === "true";
   const returned = searchParams.get("success") === "true";
-  const { session, loading: authLoading } = useAuth();
 
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
-  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
-  const [freeError, setFreeError] = useState("");
   const [pricing, setPricing] = useState<Record<string, PricingStatus>>({});
 
   useEffect(() => {
@@ -84,35 +80,9 @@ function SubscriptionContent() {
   const plans = useMemo(() => planOrder.map((id) => PLANS[id]), []);
   const isYearly = billingInterval === "year";
 
-  const ensureFree = async () => {
-    if (authLoading || loadingPlan) return;
-    const token = session?.access_token;
-    if (!token) {
-      const back = `/subscription?redirectTo=${encodeURIComponent(redirectTo)}`;
-      router.push(`/public-pages/auth?redirectTo=${encodeURIComponent(back)}`);
-      return;
-    }
-
-    setFreeError("");
-    setLoadingPlan("free");
-    try {
-      const response = await fetch("/api/subscription/ensure", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not enable the free plan");
-      router.push(redirectTo);
-    } catch (error) {
-      logger.error("Free subscription setup failed", error);
-      setFreeError(error instanceof Error ? error.message : "Could not enable the free plan");
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
   const checkoutReady = (id: PlanId) => {
-    if (id === "free" || id === "enterprise") return true;
+    if (id === "free") return false;
+    if (id === "enterprise") return true;
     const status = pricing[id];
     return isYearly ? Boolean(status?.yearlyConfigured) : Boolean(status?.monthlyConfigured);
   };
@@ -122,10 +92,8 @@ function SubscriptionContent() {
       router.push("/contact");
       return;
     }
-    if (id === "free") {
-      void ensureFree();
-      return;
-    }
+    // The legacy free entitlement must never be activated from pricing.
+    if (id === "free") return;
     if (!checkoutReady(id)) return;
     router.push(`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`);
   };
@@ -148,9 +116,12 @@ function SubscriptionContent() {
           <span className="rounded-full border border-violet-500/30 bg-violet-950/40 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-violet-300">
             AI WONDERLAND Memberships
           </span>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-5xl">Six plans. One platform.</h1>
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-5xl">Paid memberships. One platform.</h1>
           <p className="mt-4 text-sm leading-6 text-slate-400 md:text-base">
             Your membership includes monthly AI and 3D allowances. Buy extra AI or 3D credits when needed without changing plans.
+          </p>
+          <p className="mx-auto mt-4 max-w-2xl rounded-xl border border-violet-500/25 bg-violet-950/20 px-5 py-3 text-sm text-violet-100">
+            <strong>7-day trial — coming soon.</strong> The one-time capped trial is not available yet. A trial will not automatically turn into a paid subscription; purchasing a membership will be a separate choice.
           </p>
           <div className="mt-7 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
             <button onClick={() => setBillingInterval("month")} className={`rounded-lg px-4 py-2 text-sm font-semibold ${!isYearly ? "bg-white text-black" : "text-slate-400"}`}>Monthly</button>
@@ -170,9 +141,8 @@ function SubscriptionContent() {
         <section className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => {
             const ready = checkoutReady(plan.id);
-            const loading = loadingPlan === plan.id;
             const price = isYearly ? plan.yearlyPriceDisplay : plan.priceDisplay;
-            const paid = plan.id !== "free" && plan.id !== "enterprise";
+            const paid = plan.id !== "enterprise";
             return (
               <article key={plan.id} className={`relative flex flex-col rounded-2xl border p-6 ${plan.highlight ? "border-violet-500 bg-violet-950/20 shadow-xl shadow-violet-950/20" : "border-white/10 bg-white/[.03]"}`}>
                 {plan.highlight && (
@@ -194,10 +164,10 @@ function SubscriptionContent() {
                 <button
                   type="button"
                   onClick={() => onSelect(plan.id)}
-                  disabled={Boolean(loadingPlan) || (paid && !ready) || (plan.id === "free" && authLoading)}
+                  disabled={paid && !ready}
                   className={`mt-7 flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition ${plan.highlight ? "bg-violet-600 text-white hover:bg-violet-500" : "border border-white/15 bg-white/5 text-white hover:bg-white/10"} disabled:cursor-not-allowed disabled:opacity-45`}
                 >
-                  {loading ? "Processing…" : plan.id === "free" ? "Start free" : plan.id === "enterprise" ? "Contact sales" : ready ? `Choose ${plan.displayName}` : "Checkout setup pending"}
+                  {plan.id === "enterprise" ? "Contact sales" : ready ? `Choose ${plan.displayName}` : "Checkout setup pending"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 {paid && !ready && (
@@ -205,7 +175,6 @@ function SubscriptionContent() {
                     This price is part of the new catalog, but live Stripe Checkout is not enabled for this interval yet.
                   </p>
                 )}
-                {plan.id === "free" && freeError && <p className="mt-2 text-xs text-red-300">{freeError}</p>}
               </article>
             );
           })}
@@ -230,9 +199,9 @@ function SubscriptionContent() {
                   ["3D credits", ...planOrder.map((id) => id === "enterprise" ? "Custom" : formatNumber(PLAN_LIMITS[id].renderCreditsMonthly))],
                   ["Projects", ...planOrder.map((id) => id === "enterprise" ? "Custom" : PLAN_LIMITS[id].projectsLimit >= 999999 ? "Large pooled" : formatNumber(PLAN_LIMITS[id].projectsLimit))],
                   ["Storage", ...planOrder.map((id) => id === "enterprise" ? "Custom" : formatBytes(PLAN_LIMITS[id].storageLimit))],
-                  ["Extra AI credits", "Available", "Available", "Available", "Available", "Available", "Contract"],
-                  ["Extra 3D credits", "Available", "Available", "Available", "Available", "Available", "Contract"],
-                  ["WonderSpace cloud IDE", "Controlled beta", "Controlled beta", "Controlled beta", "Controlled beta", "Controlled beta", "By agreement"],
+                  ["Extra AI credits", ...planOrder.map((id) => id === "enterprise" ? "Contract" : "Available")],
+                  ["Extra 3D credits", ...planOrder.map((id) => id === "enterprise" ? "Contract" : "Available")],
+                  ["WonderSpace cloud IDE", ...planOrder.map((id) => id === "enterprise" ? "By agreement" : "Controlled beta")],
                 ].map((row) => (
                   <tr key={String(row[0])}>
                     <th className="px-4 py-4 text-left font-semibold text-slate-300">{row[0]}</th>
