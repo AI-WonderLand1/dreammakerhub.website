@@ -4,3 +4,14 @@ dreammakerhub.website, www.dreammakerhub.website {
   encode zstd gzip
   reverse_proxy web:5000
 }
+
+# The satellite routes are installed only after private health checks pass.
+playground.dreammakerhub.website {
+  encode zstd gzip
+  reverse_proxy playground:3001
+}
+
+npc-ai-sim.dreammakerhub.website {
+  encode zstd gzip
+  reverse_proxy npc:3000
+}

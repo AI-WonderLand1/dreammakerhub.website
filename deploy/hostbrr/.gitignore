@@ -4,3 +4,7 @@
 /*.pem
 /*.key
 /certs/
+/satellites.env
+/playground.runtime.env
+/npc.runtime.env
+/.satellites.env.*
