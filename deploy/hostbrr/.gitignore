@@ -1,0 +1,6 @@
+# Local-only runtime configuration; never commit credentials or key material.
+/runtime.env
+/deployment.env
+/*.pem
+/*.key
+/certs/
