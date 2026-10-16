@@ -19,8 +19,9 @@ export type PublicPlanCatalogEntry = {
   icon: string;
 };
 
+// Public paid memberships only. Keep the legacy "free" catalog entry for
+// existing customer records until the capped-trial backend migration is ready.
 export const PUBLIC_PLAN_ORDER: PublicPlanId[] = [
-  "free",
   "creator",
   "pro",
   "studio",
