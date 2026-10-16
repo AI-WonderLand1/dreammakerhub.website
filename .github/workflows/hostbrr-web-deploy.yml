@@ -1,0 +1,84 @@
+name: Deploy DreamMakerHub to HostBrr
+
+# Deliberately manual. A push to Master builds the image, but does not
+# automatically replace a customer-facing production deployment.
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: "Successful Build & Push Web Image run SHA (40 lowercase hex characters)"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: hostbrr-dreammakerhub-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: hostbrr-production
+    steps:
+      - name: Checkout approved deployment script
+        uses: actions/checkout@v4
+
+      - name: Verify successful Master image build
+        shell: bash
+        env:
+          IMAGE_SHA: ${{ inputs.image_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Expected a full lowercase 40-character commit SHA."
+            exit 1
+          }
+          # Only accept an image associated with a successful image workflow
+          # run on Master; a registry tag existing is not sufficient.
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/web-image.yml/runs?branch=Master&status=success&per_page=100" \
+            --jq '.workflow_runs[].head_sha' | grep -Fxq "$IMAGE_SHA" || {
+              echo "No successful recent Master web-image build matches this SHA."
+              exit 1
+            }
+
+      - name: Prepare pinned SSH connection
+        shell: bash
+        env:
+          DEPLOY_KEY: ${{ secrets.HOSTBRR_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTBRR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ -n "$DEPLOY_KEY" && -n "$KNOWN_HOSTS" ]] || {
+            echo "Configure HOSTBRR_DEPLOY_KEY and HOSTBRR_KNOWN_HOSTS secrets."
+            exit 1
+          }
+          umask 077
+          mkdir -p "$RUNNER_TEMP/hostbrr-ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/hostbrr-ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/hostbrr-ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/hostbrr-ssh/"*
+          ssh-keygen -y -f "$RUNNER_TEMP/hostbrr-ssh/id_ed25519" >/dev/null
+          ssh-keygen -F 89.106.73.109 -f "$RUNNER_TEMP/hostbrr-ssh/known_hosts" >/dev/null || {
+            echo "HostBrr SSH host key is not pinned in known_hosts."
+            exit 1
+          }
+
+      - name: Update website image on HostBrr (never change Caddy/DNS)
+        shell: bash
+        env:
+          IMAGE_SHA: ${{ inputs.image_sha }}
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/hostbrr-ssh/id_ed25519" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o "UserKnownHostsFile=$RUNNER_TEMP/hostbrr-ssh/known_hosts" \
+            -o ConnectTimeout=15 \
+            wonderland@89.106.73.109 \
+            "bash -s -- $IMAGE_SHA" < deploy/hostbrr/update-web.sh
