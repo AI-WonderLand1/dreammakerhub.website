@@ -25,7 +25,7 @@ describe("public AI WONDERLAND membership catalog", () => {
 
   it("hides legacy free compute plans from public pricing until trial accounting exists", () => {
     const catalog = read("apps/web/lib/billing/public-plan-catalog.ts");
-    const publicOrder = catalog.match(/export const PUBLIC_PLAN_ORDER:[\\s\\S]*?\\];/)?.[0];
+    const publicOrder = catalog.match(/export const PUBLIC_PLAN_ORDER:[\s\S]*?\];/)?.[0];
     expect(publicOrder).toBeTruthy();
     expect(publicOrder).not.toContain('"free"');
     for (const planId of ["creator", "pro", "studio", "team", "enterprise"]) {
