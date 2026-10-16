@@ -113,7 +113,7 @@ export default function WonderlandLandingPage() {
               onClick={handleGetStarted}
               className="rounded-full bg-[#F2A93B] px-6 py-3 text-sm font-semibold text-black transition hover:opacity-90"
             >
-              Start building free
+              Create an account
             </button>
             <Link
               href="#how-it-works"
@@ -200,7 +200,7 @@ export default function WonderlandLandingPage() {
             onClick={handleGetStarted}
             className="mt-8 rounded-full bg-[#F2A93B] px-6 py-3 text-sm font-semibold text-black transition hover:opacity-90"
           >
-            Start building free
+            Create an account
           </button>
         </div>
       </section>
