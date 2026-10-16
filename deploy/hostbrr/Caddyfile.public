@@ -1,0 +1,6 @@
+# Production-only HTTPS ingress. NEVER turn on until the site has been
+# validated privately and the DNS cutover is expressly approved.
+dreammakerhub.website, www.dreammakerhub.website {
+  encode zstd gzip
+  reverse_proxy web:5000
+}
