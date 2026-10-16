@@ -1,5 +1,12 @@
 # Deployment topology — single source of truth
 
+> **HostBrr migration candidate (NOT ACTIVE):** A staged, manual, **website-only**
+> migration for the purchased 8 GB HostBrr VPS is prepared at
+> [deploy/hostbrr/README.md](hostbrr/README.md). This is not yet the
+> production origin and does not move Coder, Supabase, GPU workers, DNS,
+> secrets or webhooks. Keep the existing production deployment unchanged
+> until the VPS is active, private smoke tests pass and a cutover is approved.
+>
 DreamMakerHub is split across three platforms. Each subdomain has exactly one
 origin. Cloudflare (orange-cloud proxy) sits in front of all of them.
 
