@@ -32,11 +32,17 @@ describe('new account plan selection', () => {
     expect(auth).toContain('window.location.href = redirectTo;');
   });
 
-  it('allows explicit free choice and separate paid checkout, never charging during registration', () => {
-    // Calling ensureFree and immediately returning is equivalent to returning its promise.
-    expect(subscription).toMatch(/(?:return\s+ensureFree\(\)|void\s+ensureFree\(\);\s*return;)/);
-    expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`');
+  it('offers separate paid checkout without activating permanent Free or charging at registration', () => {
+    // Sign-up is non-billable; paid checkout requires a separate user action.
     expect(auth).not.toContain('/api/subscription/subscribe');
+    expect(subscription).not.toContain('ensureFree');
+    expect(subscription).not.toContain('/api/subscription/ensure');
+    expect(subscription).toContain('if (id === "free") return;');
+    expect(subscription).toContain('7-day trial — coming soon');
+    expect(subscription).toContain('["creator", "pro", "studio", "team", "enterprise"]');
+    expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`');
+
+    // Keep compatibility for existing account records.
     expect(pricing).toContain('id: "free"');
     expect(pricing).toContain('id: "pro"');
     expect(pricing).toContain('id: "team"');

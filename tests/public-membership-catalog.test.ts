@@ -23,6 +23,27 @@ describe("public AI WONDERLAND membership catalog", () => {
     expect(catalog).toContain('homepagePrice: "$129"');
   });
 
+  it("hides legacy free compute plans from public pricing until trial accounting exists", () => {
+    const catalog = read("apps/web/lib/billing/public-plan-catalog.ts");
+    const publicOrder = catalog.match(/export const PUBLIC_PLAN_ORDER:[\s\S]*?\];/)?.[0];
+    expect(publicOrder).toBeTruthy();
+    expect(publicOrder).not.toContain('"free"');
+    for (const planId of ["creator", "pro", "studio", "team", "enterprise"]) {
+      expect(publicOrder).toContain(`"${planId}"`);
+    }
+    // Retain the legacy plan in catalog for existing records; do not mislabel
+    // those accounts as already having a real seven-day trial.
+    expect(catalog).toContain('free: {');
+
+    const subscription = read("apps/web/app/subscription/page.tsx");
+    expect(subscription).toContain('7-day trial — coming soon');
+    expect(subscription).not.toContain("ensureFree");
+    expect(subscription).not.toContain('"Start free"');
+    const homepage = read("apps/web/app/homepage/MockupHomepage.tsx");
+    expect(homepage).toContain('7-day trial — coming soon');
+    expect(homepage).not.toContain("Start Building Free");
+  });
+
   it("drives homepage and subscription definitions from the shared public catalog", () => {
     const homepage = read("apps/web/app/homepage/data.ts");
     const plans = read("apps/web/lib/billing/plans.ts");
