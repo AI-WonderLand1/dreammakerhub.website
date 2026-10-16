@@ -1,0 +1,84 @@
+name: Deploy HostBrr satellite
+
+# Both satellite repos build GHCR images with their own main-branch workflows.
+# This website repository is the ONE production deployment manager.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Which satellite application to update?"
+        type: choice
+        required: true
+        options: [playground, npc]
+      image_sha:
+        description: "Full 40-character commit SHA from the successful satellite image build"
+        type: string
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: hostbrr-satellite-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/Master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: hostbrr-production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify satellite source repository built this exact image
+        shell: bash
+        env:
+          SERVICE: ${{ inputs.service }}
+          IMAGE_SHA: ${{ inputs.image_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          case "$SERVICE" in
+            playground) target='AI-WonderLand1/AI-PLAYGROUND' ;;
+            npc) target='AI-WonderLand1/NPC-AI-SIM' ;;
+            *) echo 'Invalid satellite selection'; exit 1 ;;
+          esac
+          gh api "repos/$target/actions/workflows/hostbrr-image.yml/runs?branch=main&status=success&per_page=100" \
+            --jq '.workflow_runs[].head_sha' | grep -Fxq "$IMAGE_SHA" || {
+              echo "No successful recent main build from $target matches the SHA."
+              exit 1
+            }
+
+      - name: Connect to pinned HostBrr SSH endpoint
+        shell: bash
+        env:
+          DEPLOY_KEY: ${{ secrets.HOSTBRR_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTBRR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          umask 077
+          mkdir -p "$RUNNER_TEMP/hostbrr-ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/hostbrr-ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/hostbrr-ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/hostbrr-ssh/"*
+          ssh-keygen -y -f "$RUNNER_TEMP/hostbrr-ssh/id_ed25519" >/dev/null
+          ssh-keygen -F 89.106.73.109 -f "$RUNNER_TEMP/hostbrr-ssh/known_hosts" >/dev/null
+      - name: Update only the selected satellite container
+        shell: bash
+        env:
+          SERVICE: ${{ inputs.service }}
+          IMAGE_SHA: ${{ inputs.image_sha }}
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/hostbrr-ssh/id_ed25519" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o "UserKnownHostsFile=$RUNNER_TEMP/hostbrr-ssh/known_hosts" \
+            -o ConnectTimeout=15 \
+            wonderland@89.106.73.109 \
+            "bash -s -- $SERVICE $IMAGE_SHA" < deploy/hostbrr/update-satellite.sh
