@@ -16,7 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate manual deploy script syntax
-        run: bash -n deploy/hostbrr/deploy.sh
+        run: |
+          bash -n deploy/hostbrr/deploy.sh
+          bash -n deploy/hostbrr/update-web.sh
       - name: Validate private and optional public Docker Compose plans
         shell: bash
         run: |
