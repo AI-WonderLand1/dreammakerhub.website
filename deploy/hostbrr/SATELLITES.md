@@ -71,3 +71,5 @@ RAM quotas: Playground 900 MiB, NPC 1200 MiB, existing website cap 5 GiB,
 on an 8 GiB VPS. Monitor RAM and restarts before serving customers.
 No GPU, local database, separate billing webhook, or memory sidecar
 is installed. Existing customer projects are untouched.
+
+The release script safely creates missing `playground.runtime.env` and `npc.runtime.env` files as empty mode-600 regular files for UI-only startup. Existing configuration is never overwritten; symlinks and incorrectly permissioned files are rejected. This permits the login UI to start but does not provision server credentials or enable provider/billing features.
