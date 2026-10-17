@@ -27,7 +27,9 @@ cd /home/wonderland/hostbrr-web-staging/deploy/hostbrr
 for required in deployment.env satellites.env compose.yaml compose.public.yaml compose.satellites.yaml; do
   test -f "$required" || { echo "Missing $required" >&2; exit 1; }
 done
-runtime_env="$service.runtime.env"
+# Compose resolves env_file entries for both services, even when updating one.
+# Seed only missing empty files; this does not start or modify the other container.
+for runtime_env in playground.runtime.env npc.runtime.env; do
 if [[ ! -e "$runtime_env" && ! -L "$runtime_env" ]]; then
   # UI-only startup needs no provider secrets. Never truncate an existing file.
   (umask 077; set -o noclobber; : > "$runtime_env") || {
@@ -41,6 +43,8 @@ fi
 test "$(stat -c '%a' "$runtime_env")" = 600 || {
   echo "$runtime_env must be chmod 600" >&2; exit 1;
 }
+
+done
 
 old_image="$(sed -n "s/^$key=//p" satellites.env | head -n 1)"
 [[ "$old_image" =~ ^ghcr\.io/ai-wonderland1/(ai-playground|npc-ai-sim):[0-9a-f]{40}$ ]] || {

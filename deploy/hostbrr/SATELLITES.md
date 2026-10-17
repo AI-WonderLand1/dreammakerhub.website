@@ -72,4 +72,4 @@ on an 8 GiB VPS. Monitor RAM and restarts before serving customers.
 No GPU, local database, separate billing webhook, or memory sidecar
 is installed. Existing customer projects are untouched.
 
-The release script safely creates a missing selected-service `.runtime.env` as an empty mode-600 regular file for UI-only startup. Existing configuration is never overwritten; symlinks and incorrectly permissioned files are rejected. This permits the login UI to start but does not provision server credentials or enable provider/billing features.
+The release script safely creates missing `playground.runtime.env` and `npc.runtime.env` files as empty mode-600 regular files for UI-only startup. Existing configuration is never overwritten; symlinks and incorrectly permissioned files are rejected. This permits the login UI to start but does not provision server credentials or enable provider/billing features.
