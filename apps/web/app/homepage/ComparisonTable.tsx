@@ -1,15 +1,14 @@
 const rows = [
-  { feature: "AI credits / month", free: "500K", creator: "2M", pro: "5M", studio: "12M", team: "25M pooled", enterprise: "Custom" },
-  { feature: "3D credits / month", free: "10", creator: "50", pro: "150", studio: "400", team: "1,000 pooled", enterprise: "Custom" },
-  { feature: "Projects", free: "5", creator: "25", pro: "100", studio: "250", team: "Large pooled", enterprise: "Custom" },
-  { feature: "Included storage", free: "5 GB", creator: "25 GB", pro: "100 GB", studio: "250 GB", team: "500 GB pooled", enterprise: "Custom" },
-  { feature: "AI / 3D top-ups", free: "Available", creator: "Available", pro: "Available", studio: "Available", team: "Available", enterprise: "Contract" },
-  { feature: "WonderSpace cloud IDE", free: "Controlled beta", creator: "Controlled beta", pro: "Controlled beta", studio: "Controlled beta", team: "Controlled beta", enterprise: "By agreement" },
+  { feature: "AI credits / month", creator: "2M", pro: "5M", studio: "12M", team: "25M pooled", enterprise: "Custom" },
+  { feature: "3D credits / month", creator: "50", pro: "150", studio: "400", team: "1,000 pooled", enterprise: "Custom" },
+  { feature: "Projects", creator: "25", pro: "100", studio: "250", team: "Large pooled", enterprise: "Custom" },
+  { feature: "Included storage", creator: "25 GB", pro: "100 GB", studio: "250 GB", team: "500 GB pooled", enterprise: "Custom" },
+  { feature: "AI / 3D top-ups", creator: "Available", pro: "Available", studio: "Available", team: "Available", enterprise: "Contract" },
+  { feature: "WonderSpace cloud IDE", creator: "Controlled beta", pro: "Controlled beta", studio: "Controlled beta", team: "Controlled beta", enterprise: "By agreement" },
 ];
 
 export default function ComparisonTable() {
   const columns = [
-    ["Nomad", "free"],
     ["Creator", "creator"],
     ["Architect", "pro"],
     ["Studio", "studio"],

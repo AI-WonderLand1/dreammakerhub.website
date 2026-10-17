@@ -39,10 +39,10 @@ describe('Verified DreamMakerHub conversion events', () => {
     expect(webhook).toMatch(/session\.status !== ['"]complete['"]/);
     expect(webhook).toContain('checkout.session.async_payment_succeeded');
     expect(webhook).toContain('stripe.subscriptions.retrieve(subscriptionId)');
-    expect(webhook).toContain('await syncAuthPlan(supabase, userId, plan)');
+    expect(webhook).toContain('await syncUserTier(supabase, userId)');
     expect(webhook).toMatch(/trackFunnelEvent\(['"]Subscription Started['"], userId, subscriptionId\)/);
     const analyticsPosition = webhook.search(/trackFunnelEvent\(['"]Subscription Started['"]/);
-    expect(analyticsPosition).toBeGreaterThan(webhook.indexOf('await syncAuthPlan(supabase, userId, plan)'));
+    expect(analyticsPosition).toBeGreaterThan(webhook.indexOf('await syncUserTier(supabase, userId)'));
   });
 
   it('does not expose the analytics key to the client or fail user operations on ingestion outages', () => {

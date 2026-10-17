@@ -10,13 +10,15 @@ const { GET, POST } = await import('../apps/web/app/api/auth/session/route');
 
 const getUser = vi.fn();
 const getSession = vi.fn();
+const rpc = vi.fn();
 const request = () => new Request('https://dreammakerhub.website/api/auth/session') as any;
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(createSupabaseServerClient).mockResolvedValue({
-    auth: { getUser, getSession },
+    auth: { getUser, getSession }, rpc,
   } as any);
+  rpc.mockResolvedValue({data: [{plan: 'trial', membership_status: 'trial', trial_expires_at: '2026-11-01T00:00:00Z'}], error: null});
   vi.stubEnv('ADMIN_USER_IDS', 'operator-uuid');
 });
 
@@ -61,6 +63,22 @@ describe('verified site session status used by the confessions UI', () => {
     const response = await GET(request());
     expect(response.status).toBe(503);
     expect(await response.text()).not.toContain('Upstream auth service unavailable');
+  });
+
+  it('replaces stale free/paid metadata with the current trial or expired state', async () => {
+    getUser.mockResolvedValue({data: {user: {id: 'alice', app_metadata: {plan: 'pro', role: 'member'}}}, error: null});
+    getSession.mockResolvedValue({data: {session: {access_token: 'token', user: {id: 'alice'}}}, error: null});
+    rpc.mockResolvedValue({data: [{plan: 'free', membership_status: 'expired', trial_expires_at: '2026-10-01T00:00:00Z'}], error: null});
+    const result = await (await GET(request())).json();
+    expect(result.user.app_metadata).toMatchObject({plan: 'free', membership_status: 'expired', role: 'member'});
+    expect(rpc).toHaveBeenCalledWith('get_account_membership');
+  });
+
+  it('does not report stale paid metadata when membership verification fails', async () => {
+    getUser.mockResolvedValue({data: {user: {id: 'alice', app_metadata: {plan: 'pro'}}}, error: null});
+    getSession.mockResolvedValue({data: {session: {access_token: 'token', user: {id: 'alice'}}}, error: null});
+    rpc.mockResolvedValue({data: null, error: {message: 'unavailable'}});
+    expect((await GET(request())).status).toBe(503);
   });
 
   it('does not accept POST to fetch the session', async () => {

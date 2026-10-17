@@ -39,7 +39,12 @@ export async function verifiedCostPlan(userId: string): Promise<SubscriptionPlan
   for (const plan of precedence) {
     if (verified.some((subscription) => subscription.plan === plan)) return plan;
   }
-  return 'free';
+  const { data: trial, error: trialError } = await client.from('account_trials')
+    .select('started_at,expires_at').eq('user_id', userId).maybeSingle();
+  if (trialError) throw new CostGateError('Trial verification is unavailable.');
+  const now = Date.now();
+  if (trial && Date.parse(trial.started_at) <= now && Date.parse(trial.expires_at) > now) return 'trial';
+  throw new CostGateError('Start your one-time free trial or choose a paid membership to continue.', 402);
 }
 
 /** Charge the allowance before contacting providers. Reservations are never refunded automatically. */
@@ -107,7 +112,8 @@ export async function reserveAgentRequest(userId: string, inputCharacters: numbe
   }
   const limits = PLAN_LIMITS[plan];
   const requestLimits: Record<SubscriptionPlan, number> = {
-    free: 100,
+    free: 0,
+    trial: 100,
     creator: 500,
     pro: 2000,
     studio: 5000,

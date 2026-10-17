@@ -21,6 +21,8 @@ type UsageActivity = {
 type SourceUsage = { ai_tokens:number; api_requests:number; render_credits:number };
 type UsageSummary = {
   plan:string;
+  trial_expires_at?:string|null;
+  trial_status?:"not_started"|"active"|"expired";
   api_calls_used:number;
   tokens_used:number;
   storage_used:number;
@@ -37,7 +39,7 @@ type ApiKeyRow = { id:string; name:string; prefix:string; last_used_at:string|nu
 type TokenPack = { id:string; label:string; tokens:number; available:boolean; amount:number|null; currency:string|null };
 const normalizePlan=(value:unknown):PlanName=>{
   const plan=typeof value==="string"?value.toLowerCase():"free";
-  return plan==="creator"||plan==="pro"||plan==="studio"||plan==="team"||plan==="enterprise"?plan:"free";
+  return plan==="trial"||plan==="creator"||plan==="pro"||plan==="studio"||plan==="team"||plan==="enterprise"?plan:"free";
 };
 const pct=(used:number,limit:number)=>limit?Math.min(100,Math.round((used/limit)*100)):0;
 const pretty=(value:string)=>value.replace(/[_.-]+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
@@ -136,6 +138,8 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
       <div><div className="flex items-center gap-2"><h1 className="text-2xl font-bold">{title[0]}</h1><span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${live?"border-emerald-400/30 bg-emerald-500/10 text-emerald-300":"border-white/10 bg-white/5 text-white/40"}`}>{live?"Live":"Connected"}</span></div><p className="mt-1 text-sm text-white/50">{title[1]}</p></div>
       <button type="button" onClick={()=>void load()} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10 disabled:opacity-50"><RefreshCw size={14} className={refreshing?"animate-spin":""}/>Refresh</button>
     </div>
+    {plan==="trial"&&<p className="mb-6 rounded-xl border border-violet-500/30 bg-violet-950/30 p-4 text-sm">Your trial ends {usage?.trial_expires_at ? new Date(usage.trial_expires_at).toLocaleDateString() : "after 14 days"}. The allowances below cover your entire trial and do not renew. No automatic charge. <Link href="/subscription" className="underline">Choose a membership</Link></p>}
+    {usage?.trial_status==="expired"&&plan==="free"&&<p className="mb-6 rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-sm">Your free trial has ended. <Link href="/subscription" className="underline">Choose a paid membership to continue</Link>.</p>}
     {error&&<div className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
     {view==="usage"&&<>
