@@ -95,7 +95,7 @@ describe("Alice premium screenshot analysis", () => {
     });
     expect(reserveAiRequest).toHaveBeenCalledWith("test-user", expect.any(Number), 2048, "premium");
     expect(reserveAiRequest.mock.invocationCallOrder[0]).toBeLessThan(remote.mock.invocationCallOrder[0]);
-    const [endpoint, options] = remote.mock.calls[0] as [string, RequestInit];
+    const [endpoint, options] = remote.mock.calls[0] as unknown as [string, RequestInit];
     expect(endpoint).toContain("gemini-2.5-flash");
     expect((options.headers as Record<string, string>)["x-goog-api-key"]).toBe("fake-test-key");
     const body = JSON.parse(options.body as string);
