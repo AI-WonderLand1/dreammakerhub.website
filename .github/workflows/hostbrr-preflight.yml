@@ -5,6 +5,7 @@ on:
     paths:
       - "deploy/hostbrr/**"
       - ".github/workflows/hostbrr-preflight.yml"
+      - ".github/scripts/hostbrr-satellite-release.check.mjs"
   workflow_dispatch:
 
 permissions:
@@ -20,6 +21,8 @@ jobs:
           bash -n deploy/hostbrr/deploy.sh
           bash -n deploy/hostbrr/update-web.sh
           bash -n deploy/hostbrr/update-satellite.sh
+      - name: Exercise satellite first deployment and rollback
+        run: node --test .github/scripts/hostbrr-satellite-release.check.mjs
       - name: Validate private and optional public Docker Compose plans
         shell: bash
         run: |
