@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useFeatureGate } from '@/lib/useSubscription';
 import { logger } from '@/lib/logger';
+import { getPublicPlanDisplayName } from '@/lib/billing/public-plan-catalog';
 
 type DashboardAIProps = {
   className?: string;
@@ -26,7 +27,9 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { allowed: proFeaturesAllowed, isPaid, plan } = useFeatureGate('agents');
+  const { allowed: proFeaturesAllowed, isPaid, plan, isLoading: subscriptionLoading } = useFeatureGate('agents');
+
+  const membershipLabel = subscriptionLoading ? 'Checking membership…' : getPublicPlanDisplayName(plan || 'free');
 
   // Dashboard-specific actions
   const dashboardActions: DashboardAction[] = [
@@ -88,7 +91,7 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `🚀 This feature requires Pro plan. You're currently on ${plan || 'Free'} plan.`,
+        content: `🚀 This feature requires Pro plan. Current membership: ${membershipLabel}.`,
         timestamp: Date.now()
       }]);
       return;
@@ -270,7 +273,7 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                   <span className="text-xs text-white/60">
-                    {isPaid ? `${plan || 'Pro'} Plan` : 'Free Plan'}
+                    {membershipLabel}
                   </span>
                 </div>
                 
