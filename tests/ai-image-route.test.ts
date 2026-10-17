@@ -4,6 +4,10 @@ vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn() }));
 vi.mock('@/lib/auth', () => ({ requireUserId: vi.fn(async () => 'test-user') }));
 vi.mock('@/lib/usage/log', () => ({ logUsage: vi.fn(async () => {}) }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('@/lib/billing/cost-guard.server', () => ({
+  reserveImageGeneration: vi.fn(async () => ({ plan: 'trial', reservedCredits: 200 })),
+  costGateResponse: () => Response.json({ code: 'COST_GUARD' }, { status: 402 }),
+}));
 async function route() {
   vi.resetModules();
   for (const key of ['PIXAZO_API_KEY', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_AI_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY']) vi.stubEnv(key, '');

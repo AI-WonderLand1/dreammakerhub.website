@@ -1,6 +1,6 @@
 import 'server-only';
 import { getClient } from '@/lib/supabase-service';
-import { PLAN_LIMITS, type SubscriptionPlan } from '@/lib/billing/limits';
+import { PLAN_LIMITS, TI_COSTS, type SubscriptionPlan } from '@/lib/billing/limits';
 import { normalizeAiCredits, type AiCostClass } from '@/lib/billing/ai-credit-policy';
 
 type BillableFeature = 'ai_tokens' | 'ai_requests' | 'agent_requests' | 'workspace_launches' | 'render_credits';
@@ -39,7 +39,12 @@ export async function verifiedCostPlan(userId: string): Promise<SubscriptionPlan
   for (const plan of precedence) {
     if (verified.some((subscription) => subscription.plan === plan)) return plan;
   }
-  return 'free';
+  const { data: trial, error: trialError } = await client.from('account_trials')
+    .select('started_at,expires_at').eq('user_id', userId).maybeSingle();
+  if (trialError) throw new CostGateError('Trial verification is unavailable.');
+  const now = Date.now();
+  if (trial && Date.parse(trial.started_at) <= now && Date.parse(trial.expires_at) > now) return 'trial';
+  throw new CostGateError('Start your one-time free trial or choose a paid membership to continue.', 402);
 }
 
 /** Charge the allowance before contacting providers. Reservations are never refunded automatically. */
@@ -100,6 +105,18 @@ export async function reserveAiRequest(
   return { plan, estimatedTokens, estimatedCredits, costClass };
 }
 
+/** Reserve the existing fixed image-generation credit rate before any paid provider call.
+ *  The v2 database ledger enforces one-time trial limits and verified paid plans.
+ *  Model-specific provider costs still need a pricing audit before launch.
+ */
+export async function reserveImageGeneration(userId: string) {
+  const plan = await verifiedCostPlan(userId);
+  const limits = PLAN_LIMITS[plan];
+  await reserveBillableUnits(userId, 'ai_tokens', TI_COSTS.generate_image, limits.aiTokensMonthly);
+  await reserveBillableUnits(userId, 'ai_requests', 1, limits.apiCallsMonthly);
+  return { plan, reservedCredits: TI_COSTS.generate_image };
+}
+
 export async function reserveAgentRequest(userId: string, inputCharacters: number) {
   const plan = await verifiedCostPlan(userId);
   if (!Number.isSafeInteger(inputCharacters) || inputCharacters < 1 || inputCharacters > 5000) {
@@ -107,7 +124,8 @@ export async function reserveAgentRequest(userId: string, inputCharacters: numbe
   }
   const limits = PLAN_LIMITS[plan];
   const requestLimits: Record<SubscriptionPlan, number> = {
-    free: 100,
+    free: 0,
+    trial: 100,
     creator: 500,
     pro: 2000,
     studio: 5000,

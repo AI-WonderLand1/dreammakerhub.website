@@ -69,12 +69,12 @@ const showcases = [
 ] as const;
 
 const comparisonRows = [
-  ['AI credits / month', '500K', '2M', '5M', '12M', '25M pooled', 'Custom'],
-  ['3D credits / month', '10', '50', '150', '400', '1,000 pooled', 'Custom'],
-  ['Projects', '5', '25', '100', '250', 'Large pooled', 'Custom'],
-  ['Included storage', '5 GB', '25 GB', '100 GB', '250 GB', '500 GB pooled', 'Custom'],
-  ['AI / 3D top-ups', 'Available', 'Available', 'Available', 'Available', 'Available', 'Contract'],
-  ['WonderSpace cloud IDE', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'By agreement'],
+  ['AI credits / month', '2M', '5M', '12M', '25M pooled', 'Custom'],
+  ['3D credits / month', '50', '150', '400', '1,000 pooled', 'Custom'],
+  ['Projects', '25', '100', '250', 'Large pooled', 'Custom'],
+  ['Included storage', '25 GB', '100 GB', '250 GB', '500 GB pooled', 'Custom'],
+  ['AI / 3D top-ups', 'Available', 'Available', 'Available', 'Available', 'Contract'],
+  ['WonderSpace cloud IDE', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'Controlled beta', 'By agreement'],
 ] as const;
 
 function ProductCard({ product }: { product: (typeof products)[number] }) {
@@ -167,7 +167,7 @@ export default function MockupHomepage() {
           </h1>
           <p className="mt-5 max-w-xl text-[15px] leading-7 text-white/72">All the tools, AI, and community you need to go from idea to real, faster, easier, and together.</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link href={primaryHref} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 text-sm font-black text-white shadow-[0_12px_32px_rgba(79,70,229,.35)]">Start Building Free <ArrowRight className="h-4 w-4" /></Link>
+            <Link href={primaryHref} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 text-sm font-black text-white shadow-[0_12px_32px_rgba(79,70,229,.35)]">{user ? 'Open Projects' : 'Create Account'} <ArrowRight className="h-4 w-4" /></Link>
             <a href="#workflow" className="inline-flex min-h-11 items-center rounded-xl border border-white/25 bg-black/25 px-5 text-sm font-bold text-white backdrop-blur-md">Watch / Explore</a>
           </div>
           <a
@@ -213,7 +213,7 @@ export default function MockupHomepage() {
           <div className="relative mt-8 grid gap-6 md:grid-cols-3">
             <div className="absolute left-[17%] right-[17%] top-6 hidden h-px bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-500 md:block" />
             {[
-              ['1', 'Sign In', 'Create your free account and access all tools.'],
+              ['1', 'Sign In', 'Create an account to explore the platform.'],
               ['2', 'Create or Choose', 'Start from a template, prompt, or blank project.'],
               ['3', 'Build & Publish', 'Use AI, drag and drop, code, preview, and share.'],
             ].map(([n, title, copy], i) => (
@@ -284,7 +284,10 @@ export default function MockupHomepage() {
         </section>
 
         <section id="pricing" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
-          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Simple pricing for bigger ideas</p><h2 className="mt-2 text-3xl font-black">Choose the plan that fits your journey.</h2><p className="mt-1 text-sm text-slate-700">Start free. Upgrade when you are ready.</p></div>
+          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Simple pricing for bigger ideas</p><h2 className="mt-2 text-3xl font-black">Choose the plan that fits your journey.</h2><p className="mt-1 text-sm text-slate-700">Choose a paid membership when you are ready to unlock supported services.</p></div>
+          <div className="mx-auto mt-5 max-w-2xl rounded-xl border border-blue-200/70 bg-white/75 px-5 py-4 text-center text-sm text-blue-950 shadow-sm">
+            <strong>14-day free trial.</strong> No card required. Try the platform with one-time usage caps, then choose a paid membership to continue. No automatic charge at trial end.
+          </div>
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {PLANS.map((plan) => (
               <article key={plan.id} className={`relative flex flex-col rounded-2xl border p-5 shadow-lg backdrop-blur-md ${plan.highlight ? 'border-violet-400/60 bg-violet-950/78 text-white' : 'border-white/60 bg-slate-950/72 text-white'}`}>
@@ -308,7 +311,7 @@ export default function MockupHomepage() {
           <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Ideas build brighter worlds</p>
           <h2 className="mt-2 text-3xl font-black sm:text-4xl">Turn an idea into something real.</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-700">Start with a prompt, template, or blank project. The tools are ready.</p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3"><Link href={primaryHref} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 text-sm font-black text-white">Start Building Free <Rocket className="h-4 w-4" /></Link><Link href="/wonder-build" className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white/75 px-5 text-sm font-bold">Explore Templates</Link></div>
+          <div className="mt-5 flex flex-wrap justify-center gap-3"><Link href={primaryHref} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 text-sm font-black text-white">{user ? 'Open Projects' : 'Create Account'} <Rocket className="h-4 w-4" /></Link><Link href="/wonder-build" className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white/75 px-5 text-sm font-bold">Explore Templates</Link></div>
         </section>
       </div>
     </main>

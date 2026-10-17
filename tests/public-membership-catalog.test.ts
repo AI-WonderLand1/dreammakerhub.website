@@ -5,10 +5,10 @@ import { join } from "node:path";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("public AI WONDERLAND membership catalog", () => {
-  it("defines all six public memberships and the launch prices in one catalog", () => {
+  it("defines paid memberships and a separate trial and the launch prices in one catalog", () => {
     const catalog = read("apps/web/lib/billing/public-plan-catalog.ts");
     for (const name of [
-      "The Nomad",
+      "14-day free trial",
       "The Creator",
       "The Architect",
       "The Studio",
@@ -21,6 +21,26 @@ describe("public AI WONDERLAND membership catalog", () => {
     expect(catalog).toContain('homepagePrice: "$39"');
     expect(catalog).toContain('homepagePrice: "$79"');
     expect(catalog).toContain('homepagePrice: "$129"');
+  });
+
+  it("offers a trial while hiding inactive legacy accounts from public pricing", () => {
+    const catalog = read("apps/web/lib/billing/public-plan-catalog.ts");
+    const publicOrder = catalog.match(/export const PUBLIC_PLAN_ORDER:[\s\S]*?\];/)?.[0];
+    expect(publicOrder).toBeTruthy();
+    expect(publicOrder).not.toContain('"free"');
+    for (const planId of ["creator", "pro", "studio", "team", "enterprise"]) {
+      expect(publicOrder).toContain(`"${planId}"`);
+    }
+    // Retain legacy identifiers without granting permanent free allowances.
+    expect(catalog).toContain('free: {');
+
+    const subscription = read("apps/web/app/subscription/page.tsx");
+    expect(subscription).toContain('14-day free trial');
+    expect(subscription).not.toContain("ensureFree");
+    expect(subscription).not.toContain('"Start free"');
+    const homepage = read("apps/web/app/homepage/MockupHomepage.tsx");
+    expect(homepage).toContain('14-day free trial');
+    expect(homepage).not.toContain("Start Building Free");
   });
 
   it("drives homepage and subscription definitions from the shared public catalog", () => {

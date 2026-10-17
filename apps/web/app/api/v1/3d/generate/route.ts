@@ -10,7 +10,9 @@ import {
 import { saveGeneratedGlb } from "@/lib/3d/generated-asset-store";
 import { logUsage } from "@/lib/usage/log";
 import { logger } from "@/lib/logger";
-import { CostGateError, reserveBillableUnits } from "@/lib/billing/cost-guard.server";
+import { CostGateError, reserveBillableUnits, verifiedCostPlan } from "@/lib/billing/cost-guard.server";
+
+import { PLAN_LIMITS } from "@/lib/billing/limits";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -71,9 +73,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Provider-backed 3D generation consumes one purchased render credit.
+    // Use included trial/membership credits before purchased render credits.
     // Local editor/simulation operations do not use this balance.
-    await reserveBillableUnits(userId, "render_credits", 1, 0);
+    const plan = await verifiedCostPlan(userId);
+    await reserveBillableUnits(userId, "render_credits", 1, PLAN_LIMITS[plan].renderCreditsMonthly);
 
     const glb = await generateHunyuanGlb({
       prompt,

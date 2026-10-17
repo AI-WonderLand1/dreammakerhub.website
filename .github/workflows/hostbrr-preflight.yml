@@ -16,13 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate manual deploy script syntax
-        run: bash -n deploy/hostbrr/deploy.sh
+        run: |
+          bash -n deploy/hostbrr/deploy.sh
+          bash -n deploy/hostbrr/update-web.sh
+          bash -n deploy/hostbrr/update-satellite.sh
       - name: Validate private and optional public Docker Compose plans
         shell: bash
         run: |
           set -euo pipefail
           cd deploy/hostbrr
-          trap 'rm -f runtime.env deployment.env' EXIT
+          trap 'rm -f runtime.env deployment.env satellites.env playground.runtime.env npc.runtime.env' EXIT
           # CI-only fake values, never production secrets.
           printf '%s\n' \
             'NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co' \
@@ -33,6 +36,14 @@ jobs:
             'WEB_IMAGE=ghcr.io/ai-wonderland1/dreammakerhub-website:0123456789abcdef0123456789abcdef01234567' > deployment.env
           docker compose --env-file deployment.env -f compose.yaml config --quiet
           docker compose --env-file deployment.env -f compose.yaml -f compose.public.yaml config --quiet
+          printf '%s\n' \
+            'PLAYGROUND_IMAGE=ghcr.io/ai-wonderland1/ai-playground:0123456789abcdef0123456789abcdef01234567' \
+            'NPC_IMAGE=ghcr.io/ai-wonderland1/npc-ai-sim:0123456789abcdef0123456789abcdef01234567' > satellites.env
+          : > playground.runtime.env
+          : > npc.runtime.env
+          docker compose --env-file deployment.env --env-file satellites.env -f compose.yaml -f compose.public.yaml -f compose.satellites.yaml config --quiet
+          grep -Fq '"127.0.0.1:5002:3001"' compose.satellites.yaml
+          grep -Fq '"127.0.0.1:5003:3000"' compose.satellites.yaml
           grep -Fq '"127.0.0.1:5001:5000"' compose.yaml
           for flag in BILLABLE_OPERATIONS_ENABLED CODER_WORKSPACE_CREATION_ENABLED CODER_CUSTOMER_PROVISIONING_ENABLED FREE_BUILDER_AI_ENABLED; do
             grep -Eq "^[[:space:]]+$flag: \"false\"$" compose.yaml

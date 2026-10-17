@@ -1,0 +1,65 @@
+# Optional satellite services, sharing the existing website Compose network.
+# Requires exact commit SHA image tags in satellites.env.
+# Never run this overlay without compose.yaml and compose.public.yaml.
+services:
+  playground:
+    image: ${PLAYGROUND_IMAGE:?Pin PLAYGROUND_IMAGE in satellites.env to a successful main commit SHA}
+    init: true
+    restart: unless-stopped
+    env_file:
+      - ./playground.runtime.env
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      PLAYGROUND_LEGACY_STRIPE_WEBHOOK_ENABLED: "false"
+    ports:
+      - "127.0.0.1:5002:3001"
+    mem_limit: 900m
+    cpus: 0.75
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  npc:
+    image: ${NPC_IMAGE:?Pin NPC_IMAGE in satellites.env to a successful main commit SHA}
+    init: true
+    restart: unless-stopped
+    env_file:
+      - ./npc.runtime.env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      ALLOW_REQUEST_PROVIDER_KEYS: "false"
+    ports:
+      - "127.0.0.1:5003:3000"
+    mem_limit: 1200m
+    cpus: 0.75
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

@@ -8,7 +8,7 @@ function getBearerToken(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const token = getBearerToken(req);
-  if (!token) return NextResponse.json({ ok: false, error: "Sign in to select a plan" }, { status: 401 });
+  if (!token) return NextResponse.json({ ok: false, error: "Sign in to start your trial" }, { status: 401 });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -32,31 +32,28 @@ export async function POST(req: NextRequest) {
     const admin = createClient(url, serviceRole, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: profile, error: profileError } = await admin
-      .from("profiles")
-      .select("subscription_tier")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (profileError) throw profileError;
+    const { data: subscriptions, error: subscriptionError } = await admin
+      .from("subscriptions").select("plan,status,stripe_subscription_id")
+      .eq("user_id", user.id).in("status", ["active", "trialing"]);
+    if (subscriptionError) throw subscriptionError;
+    const paid = subscriptions?.find((row) =>
+      ["creator", "pro", "studio", "team", "enterprise"].includes(row.plan) &&
+      row.stripe_subscription_id?.startsWith("sub_"));
+    if (paid) return NextResponse.json({ ok: true, plan: paid.plan });
 
-    // Never downgrade an existing paid account by selecting the free-plan button.
-    const plan = profile?.subscription_tier || "free";
-    if (!profile) {
-      const { error: insertError } = await admin
-        .from("profiles")
-        .insert({ id: user.id, subscription_tier: "free" });
-      if (insertError) throw insertError;
+    // Database time and a unique user_id make concurrent/repeated starts idempotent.
+    const { data, error } = await admin.rpc("start_account_trial", { p_user_id: user.id });
+    if (error) throw error;
+    const trial = Array.isArray(data) ? data[0] : data;
+    if (!trial?.expires_at) throw new Error("Trial could not be started");
+    if (Date.parse(trial.expires_at) <= Date.now()) {
+      return NextResponse.json({ ok: false, error: "Your free trial has ended. Choose a paid membership to continue." }, { status: 402 });
     }
-    const currentMetadata = user.app_metadata ?? {};
-    if (currentMetadata.plan !== plan) {
-      const { error: metadataError } = await admin.auth.admin.updateUserById(user.id, {
-        app_metadata: { ...currentMetadata, plan },
-      });
-      if (metadataError) throw metadataError;
-    }
-    return NextResponse.json({ ok: true, plan }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, plan: "trial", expiresAt: trial.expires_at }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
-    logger.error("Free plan setup failed", error);
+    logger.error("Trial setup failed", error);
     return NextResponse.json({ ok: false, error: "Could not load your plan. Please try again." }, { status: 502 });
   }
 }

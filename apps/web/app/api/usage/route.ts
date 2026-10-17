@@ -59,21 +59,37 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const periodReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
 
-    const { data: subscription } = await supabase
+    const { data: subscription, error: subscriptionError } = await supabase
       .from("subscriptions")
-      .select("plan,status")
+      .select("plan,status,stripe_subscription_id")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
+    if (subscriptionError) return NextResponse.json({ error: "Subscription status unavailable" }, { status: 503 });
+
+    const { data: trial, error: trialError } = await supabase.from("account_trials")
+      .select("started_at,expires_at,usage").eq("user_id", user.id).maybeSingle();
+    if (trialError) return NextResponse.json({ error: "Trial status unavailable" }, { status: 503 });
+    const paid = subscription?.stripe_subscription_id?.startsWith("sub_") &&
+      ["creator", "pro", "studio", "team", "enterprise"].includes(subscription.plan);
+    const trialActive = trial && Date.parse(trial.started_at) <= Date.now() && Date.parse(trial.expires_at) > Date.now();
+    const plan = paid ? subscription!.plan : trialActive ? "trial" : "free";
+    // Trial totals are lifetime counters, not calendar-month counters.
+    if (plan === "trial") for (const [feature, units] of Object.entries(trial?.usage ?? {})) {
+      counters.set(feature, Number(units));
+    }
+
     return NextResponse.json({
       ok: true,
       usage: {
-        plan: subscription?.plan || "free",
-        period_start: new Date(monthStart + "T00:00:00.000Z").toISOString(),
-        period_reset: periodReset,
+        plan,
+        trial_expires_at: trial?.expires_at ?? null,
+        trial_status: !trial ? "not_started" : trialActive ? "active" : "expired",
+        period_start: plan === "trial" ? trial!.started_at : new Date(monthStart + "T00:00:00.000Z").toISOString(),
+        period_reset: plan === "trial" ? trial!.expires_at : periodReset,
         api_calls_used: counters.get("ai_requests") || 0,
         tokens_used: counters.get("ai_tokens") || 0,
         render_credits_used: counters.get("render_credits") || 0,

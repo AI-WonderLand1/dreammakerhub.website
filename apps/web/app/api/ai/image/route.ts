@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { requireUserId } from "@/lib/auth";
+import { reserveImageGeneration, costGateResponse } from "@/lib/billing/cost-guard.server";
 import { logUsage } from "@/lib/usage/log";
 import { logger } from "@/lib/logger";
 
@@ -199,6 +200,22 @@ export async function POST(req: Request) {
   const finalPrompt = style
     ? `${prompt}\n\nVisual style requested by the user: ${style}. Follow the requested style while preserving the subject, language-specific text, cultural context, composition, and intent.`
     : prompt;
+
+  // Do not debit credits when every image provider is missing.
+  if (!PIXAZO_API_KEY && !OPENAI_API_KEY && !GEMINI_API_KEY) {
+    return NextResponse.json(
+      { error: "Image generation is not configured.", code: "AI_NOT_CONFIGURED" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  // Premium Alice images must never bypass subscription/trial verification.
+  // Never call the provider if billing verification or the credit ledger fails.
+  try {
+    await reserveImageGeneration(userId);
+  } catch (error) {
+    return costGateResponse(error);
+  }
 
   const generation = await generateImage(finalPrompt, size);
   const generated = generation.image;

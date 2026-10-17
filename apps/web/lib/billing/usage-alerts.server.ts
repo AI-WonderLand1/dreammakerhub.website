@@ -49,7 +49,7 @@ export function usageAlertProviderStatus() {
 
 function normalizePlan(value: string) {
   const plan = value.toLowerCase();
-  return plan === "creator" || plan === "pro" || plan === "studio" || plan === "team" || plan === "enterprise" ? plan : "free";
+  return plan === "trial" || plan === "creator" || plan === "pro" || plan === "studio" || plan === "team" || plan === "enterprise" ? plan : "free";
 }
 
 function metricLabel(metric: AlertMetric) {

@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('usage-first pricing contract', () => {
   it('keeps saved IDE and concurrent-session limits aligned with the public plans', () => {
     const limits = read('apps/web/lib/billing/limits.ts');
-    expect(limits).toMatch(/plan: "free",[\s\S]*?workspacesLimit: 5,[\s\S]*?ideSessionsLimit: 2,[\s\S]*?aiTokensMonthly: 500000,[\s\S]*?runtimeHoursMonthly: 150,/);
+    expect(limits).toMatch(/plan: "trial",[\s\S]*?workspacesLimit: 5,[\s\S]*?ideSessionsLimit: 2,[\s\S]*?aiTokensMonthly: 500000,[\s\S]*?runtimeHoursMonthly: 150,/);
     expect(limits).toMatch(/plan: "pro",[\s\S]*?workspacesLimit: 100,[\s\S]*?ideSessionsLimit: 4,[\s\S]*?aiTokensMonthly: 5000000,[\s\S]*?runtimeHoursMonthly: 300,/);
     expect(limits).toMatch(/plan: "team",[\s\S]*?workspacesLimit: 999999,[\s\S]*?ideSessionsLimit: 8,[\s\S]*?aiTokensMonthly: 25000000,[\s\S]*?runtimeHoursMonthly: 1000,/);
     expect(limits).toContain('"cloud_ide"');
