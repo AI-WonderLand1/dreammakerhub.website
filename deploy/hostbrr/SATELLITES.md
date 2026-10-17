@@ -73,3 +73,5 @@ No GPU, local database, separate billing webhook, or memory sidecar
 is installed. Existing customer projects are untouched.
 
 The release script safely creates missing `playground.runtime.env` and `npc.runtime.env` files as empty mode-600 regular files for UI-only startup. Existing configuration is never overwritten; symlinks and incorrectly permissioned files are rejected. This permits the login UI to start but does not provision server credentials or enable provider/billing features.
+
+First deployment: a missing or malformed selected-service image pin may be initialized from the workflow-verified commit only when no selected-service container is running. Existing running services without a verified rollback pin are left untouched. Existing commit pins and repository-qualified `@sha256:` digest pins remain valid rollback references. Failed startup/health verification stops the new service and restores the exact previous `satellites.env`; it restarts an old image only when a verified local rollback image exists.

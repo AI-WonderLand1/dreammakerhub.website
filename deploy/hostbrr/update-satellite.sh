@@ -46,11 +46,24 @@ test "$(stat -c '%a' "$runtime_env")" = 600 || {
 
 done
 
-old_image="$(sed -n "s/^$key=//p" satellites.env | head -n 1)"
-[[ "$old_image" =~ ^ghcr\.io/ai-wonderland1/(ai-playground|npc-ai-sim):[0-9a-f]{40}$ ]] || {
-  echo "Existing $key is missing or is not an immutable image pin" >&2
-  exit 1
+[[ -f satellites.env && ! -L satellites.env ]] || {
+  echo 'satellites.env must be a regular file' >&2; exit 1;
 }
+container="ai-wonderland-hostbrr-$service-1"
+old_image="$(sed -n "s/^$key=//p" satellites.env | head -n 1)"
+valid_pin() {
+  [[ "$1" == "$image_repo:"* && "${1#"$image_repo:"}" =~ ^[0-9a-f]{40}$ ]] ||
+  [[ "$1" == "$image_repo@sha256:"* && "${1#"$image_repo@sha256:"}" =~ ^[0-9a-f]{64}$ ]]
+}
+if ! valid_pin "$old_image"; then
+  running="$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null || true)"
+  if [[ "$running" == true ]]; then
+    echo "Existing $key is invalid and a container is running; refusing to replace it without a verified rollback pin." >&2
+    exit 1
+  fi
+  old_image=''
+  echo "Initializing $key for the first deployment; no running $service container will be replaced."
+fi
 new_image="$image_repo:$2"
 
 compose() {
@@ -60,18 +73,33 @@ compose() {
 set_pin() {
   local tmp
   tmp="$(mktemp ./.satellites.env.XXXXXXXX)"
-  sed -E "s|^$key=.*$|$key=$1|" satellites.env > "$tmp"
+  awk -v key="$key" -v value="$1" '
+    index($0, key "=") == 1 { if (!found++) print key "=" value; next }
+    { print }
+    END { if (!found) print key "=" value }
+  ' satellites.env > "$tmp"
   chmod 600 "$tmp"
   mv -f "$tmp" satellites.env
 }
 
 echo "Pulling verified $service image ($2)..."
 docker pull "$new_image" >/dev/null
+prior_env="$(mktemp ./.satellites.env.rollback.XXXXXXXX)"
+cp -p satellites.env "$prior_env"
+trap 'rm -f -- "$prior_env"' EXIT
+rollback() {
+  # Stop using the still-valid new config before restoring an empty/malformed pin.
+  compose stop "$service" || true
+  mv -f "$prior_env" satellites.env
+  if [[ -n "$old_image" ]] && docker image inspect "$old_image" >/dev/null 2>&1; then
+    compose up -d --no-deps "$service" || true
+  fi
+}
 set_pin "$new_image"
 
 if ! (compose config --quiet && compose up -d --no-deps "$service"); then
-  set_pin "$old_image"
-  echo "Failed to start $service; restored prior pin." >&2
+  rollback
+  echo "Failed to start $service; restored previous configuration." >&2
   exit 1
 fi
 
@@ -83,15 +111,10 @@ for i in $(seq 1 45); do
   fi
   sleep 2
 done
-actual_image="$(docker inspect --format '{{.Config.Image}}' "ai-wonderland-hostbrr-$service-1" 2>/dev/null || true)"
+actual_image="$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null || true)"
 if [[ "$healthy" != 1 || "$actual_image" != "$new_image" ]]; then
   echo "New $service failed health or image verification; rolling back..." >&2
-  set_pin "$old_image"
-  if docker image inspect "$old_image" >/dev/null 2>&1; then
-    compose up -d --no-deps "$service" || true
-  else
-    compose stop "$service" || true
-  fi
+  rollback
   exit 1
 fi
 
