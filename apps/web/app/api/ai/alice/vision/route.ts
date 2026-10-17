@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   if (typeof imageDataUrl !== "string") {
     return NextResponse.json({ error: "A PNG, JPEG or WebP image is required.", code: "BAD_REQUEST" }, { status: 400, headers: noStore });
   }
-  const match = /^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(imageDataUrl);
+  const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(imageDataUrl);
   if (!match || match[2].length > Math.ceil(MAX_IMAGE_BYTES * 4 / 3) + 4) {
     return NextResponse.json({ error: "Unsupported or oversized image.", code: "BAD_REQUEST" }, { status: 400, headers: noStore });
   }
