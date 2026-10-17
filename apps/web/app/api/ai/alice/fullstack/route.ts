@@ -3,7 +3,7 @@ import { requireUserId } from "@/lib/auth";
 import { getProjectMetadata, listFiles, readFile } from "@/lib/projects/storage";
 import { validateProjectFileEntries } from "@/lib/projects/file-validation";
 import { costGateResponse, reserveAiRequest } from "@/lib/billing/cost-guard.server";
-import { runModel } from "@/core/ai/runModel";
+import { runModel } from "../../../../../core/ai/runModel";
 import { logUsage } from "@/lib/usage/log";
 
 export const runtime = "nodejs";
