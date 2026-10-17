@@ -45,6 +45,7 @@ const SavedComponentsPanel = dynamic(() => import('@/lib/builder/components/Save
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
 const InteractionPanel = dynamic(() => import('@/lib/builder/components/InteractionPanel'), { ssr: false });
 const AIAssistantPanel = dynamic(() => import('@/lib/builder/components/AIAssistantPanel'), { ssr: false });
+const AliceCodePanel = dynamic(() => import('@/lib/builder/components/AliceCodePanel'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
 
 const LEFT_TABS: Array<{ id: LeftPanelTab; label: string; short: string }> = [
@@ -87,6 +88,7 @@ function BuilderContent() {
     return requested === 'code' || requested === 'preview' ? requested : 'design';
   });
   const [toast, setToast] = useState<string | null>(null);
+  const [codeWorkbench, setCodeWorkbench] = useState<'alice' | 'legacy'>('alice');
   const [projectStatus, setProjectStatus] = useState<BuilderProjectStatus>('loading');
   const [dragOverlay, setDragOverlay] = useState<BlockDefinition | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
@@ -115,6 +117,7 @@ function BuilderContent() {
     const pendingCode = sessionStorage.getItem('pendingBuilderCode');
     if (!pendingCode) return;
     setEditorCode(pendingCode);
+    setCodeWorkbench('legacy');
     sessionStorage.removeItem('pendingBuilderCode');
     switchTab('code');
     showToast('AI-generated code loaded');
@@ -487,8 +490,20 @@ function BuilderContent() {
 
       <div className="h-full pt-[52px]">
         {tab === 'code' && (
-          <div className="h-full" role="tabpanel" aria-label="Code editor">
-            <CloudSandboxPanel />
+          <div className="flex h-full flex-col" role="tabpanel" aria-label="Code editor">
+            <nav className="flex shrink-0 gap-2 border-b border-white/10 bg-[#080c18] px-4 py-2" aria-label="Code workspace views">
+              <button type="button" onClick={() => setCodeWorkbench('alice')} aria-pressed={codeWorkbench === 'alice'}
+                className={codeWorkbench === 'alice' ? 'rounded-lg bg-violet-600/30 px-3 py-1 text-xs font-bold text-violet-100' : 'rounded-lg px-3 py-1 text-xs text-white/50'}>
+                Alice · Full-stack
+              </button>
+              <button type="button" onClick={() => setCodeWorkbench('legacy')} aria-pressed={codeWorkbench === 'legacy'}
+                className={codeWorkbench === 'legacy' ? 'rounded-lg bg-violet-600/30 px-3 py-1 text-xs font-bold text-violet-100' : 'rounded-lg px-3 py-1 text-xs text-white/50'}>
+                Existing code / Cloud
+              </button>
+            </nav>
+            <div className="min-h-0 flex-1">
+              {codeWorkbench === 'alice' ? <AliceCodePanel /> : <CloudSandboxPanel />}
+            </div>
           </div>
         )}
 
@@ -542,7 +557,7 @@ function BuilderContent() {
                     {([
                       ['content', 'Design'],
                       ['interactions', 'Interact'],
-                      ['ai', 'AI Assist'],
+                      ['ai', 'Alice'],
                       ['confessions', 'Confessions'],
                     ] as const).map(([tabName, label]) => (
                       <button

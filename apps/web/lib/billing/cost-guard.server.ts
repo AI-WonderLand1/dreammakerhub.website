@@ -1,6 +1,6 @@
 import 'server-only';
 import { getClient } from '@/lib/supabase-service';
-import { PLAN_LIMITS, type SubscriptionPlan } from '@/lib/billing/limits';
+import { PLAN_LIMITS, TI_COSTS, type SubscriptionPlan } from '@/lib/billing/limits';
 import { normalizeAiCredits, type AiCostClass } from '@/lib/billing/ai-credit-policy';
 
 type BillableFeature = 'ai_tokens' | 'ai_requests' | 'agent_requests' | 'workspace_launches' | 'render_credits';
@@ -103,6 +103,18 @@ export async function reserveAiRequest(
   }
   await reserveBillableUnits(userId, 'ai_requests', 1, limits.apiCallsMonthly);
   return { plan, estimatedTokens, estimatedCredits, costClass };
+}
+
+/** Reserve the existing fixed image-generation credit rate before any paid provider call.
+ *  The v2 database ledger enforces one-time trial limits and verified paid plans.
+ *  Model-specific provider costs still need a pricing audit before launch.
+ */
+export async function reserveImageGeneration(userId: string) {
+  const plan = await verifiedCostPlan(userId);
+  const limits = PLAN_LIMITS[plan];
+  await reserveBillableUnits(userId, 'ai_tokens', TI_COSTS.generate_image, limits.aiTokensMonthly);
+  await reserveBillableUnits(userId, 'ai_requests', 1, limits.apiCallsMonthly);
+  return { plan, reservedCredits: TI_COSTS.generate_image };
 }
 
 export async function reserveAgentRequest(userId: string, inputCharacters: number) {
