@@ -557,7 +557,7 @@ export default function AIAssistantPanel() {
 
   return <div className="flex h-full w-full flex-col overflow-hidden bg-[#080d1b] text-white">
     <div className="shrink-0 border-b border-white/8 bg-gradient-to-b from-violet-500/[.07] to-transparent px-3 py-3">
-      <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10"><WandSparkles className="h-4 w-4 text-violet-200" /></span><div><div className="text-[13px] font-extrabold text-white">AI Assist</div><div className="text-[10px] font-bold uppercase tracking-[.12em] text-violet-200/45">Reconcile-first live builder</div></div></div><span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[.07] px-2 py-1 text-[10px] font-extrabold text-emerald-200/80"><Check className="h-3 w-3" /> No duplicate stacking</span></div>
+      <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-300/20 bg-violet-500/10"><WandSparkles className="h-4 w-4 text-violet-200" /></span><div><div className="text-[13px] font-extrabold text-white">Alice</div><div className="text-[10px] font-bold uppercase tracking-[.12em] text-violet-200/45">Premium visual builder</div></div></div><span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[.07] px-2 py-1 text-[10px] font-extrabold text-emerald-200/80"><Check className="h-3 w-3" /> No duplicate stacking</span></div>
       <div className="mt-3 grid grid-cols-2 gap-2"><div className="rounded-lg border border-white/8 bg-black/20 px-2.5 py-2"><div className="text-[10px] font-extrabold uppercase text-white/35">Page</div><div className="mt-0.5 truncate text-[12px] font-bold text-white/75">{activePage?.name || 'Home'}</div></div><button type="button" onClick={() => selected && selectElement(selected.id)} className="rounded-lg border border-white/8 bg-black/20 px-2.5 py-2 text-left"><div className="flex items-center gap-1 text-[10px] font-extrabold uppercase text-white/35"><MousePointer2 className="h-3 w-3" /> Optional target</div><div className={`mt-0.5 truncate text-[12px] font-bold ${selected ? 'text-violet-100/85' : 'text-white/30'}`}>{selected?.name || 'No selection needed'}</div></button></div>
     </div>
 
@@ -566,6 +566,7 @@ export default function AIAssistantPanel() {
     {lastApplied && <div className="mx-3 mb-2 flex items-center gap-2 rounded-lg border border-emerald-300/15 bg-emerald-500/[.07] px-2.5 py-2 text-[11px] font-extrabold text-emerald-200/80"><Check className="h-3.5 w-3.5" /> {lastApplied}</div>}
 
     <div className="shrink-0 border-t border-white/8 p-3">
+      <p className="mb-2 text-[10px] font-semibold text-white/45">Reference images use premium AI credits, including the limited 14-day trial allowance.</p>
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <input
           ref={fileInputRef}
