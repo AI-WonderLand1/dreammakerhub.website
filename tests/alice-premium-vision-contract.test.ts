@@ -26,6 +26,15 @@ describe("Alice premium vision billing", () => {
     expect(billing).toContain("client.rpc('reserve_billable_units_v2'");
   });
 
+  it("lets Alice attach a screenshot to the existing live visual editor", () => {
+    const panel = read("apps/web/lib/builder/components/AIAssistantPanel.tsx");
+    expect(panel).toContain("Upload reference");
+    expect(panel).toContain("image/png,image/jpeg,image/webp");
+    expect(panel).toContain("fetch('/api/ai/alice/vision'");
+    expect(panel).toContain("buildSystemPrompt");
+    expect(panel).toContain("const actions = extractActions(reply)");
+  });
+
   it("requires authenticated, metered and validated images for Alice vision", () => {
     const src = read("apps/web/app/api/ai/alice/vision/route.ts");
     expect(src).toContain("await requireUserId(req)");
