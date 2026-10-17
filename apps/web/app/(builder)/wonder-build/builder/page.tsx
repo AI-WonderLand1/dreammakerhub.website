@@ -45,6 +45,7 @@ const SavedComponentsPanel = dynamic(() => import('@/lib/builder/components/Save
 const InspectorPanel = dynamic(() => import('@/lib/builder/components/InspectorPanel'), { ssr: false });
 const InteractionPanel = dynamic(() => import('@/lib/builder/components/InteractionPanel'), { ssr: false });
 const AIAssistantPanel = dynamic(() => import('@/lib/builder/components/AIAssistantPanel'), { ssr: false });
+const AliceCodePanel = dynamic(() => import('@/lib/builder/components/AliceCodePanel'), { ssr: false });
 const KeyboardShortcutsModal = dynamic(() => import('@/lib/builder/components/KeyboardShortcutsModal'), { ssr: false });
 
 const LEFT_TABS: Array<{ id: LeftPanelTab; label: string; short: string }> = [
@@ -133,7 +134,7 @@ function BuilderContent() {
   }, [leftPanelTab, setLeftPanelTab]);
 
   useEffect(() => {
-    if (!['content', 'interactions', 'ai', 'confessions'].includes(rightPanelTab)) setRightPanelTab('content');
+    if (!['content', 'interactions', 'ai', 'code', 'confessions'].includes(rightPanelTab)) setRightPanelTab('content');
   }, [rightPanelTab, setRightPanelTab]);
 
   useEffect(() => {
@@ -470,7 +471,7 @@ function BuilderContent() {
   }
 
   const normalizedRightTab =
-    rightPanelTab === 'interactions' || rightPanelTab === 'ai' || rightPanelTab === 'confessions'
+    rightPanelTab === 'interactions' || rightPanelTab === 'ai' || rightPanelTab === 'code' || rightPanelTab === 'confessions'
       ? rightPanelTab
       : 'content';
 
@@ -542,7 +543,8 @@ function BuilderContent() {
                     {([
                       ['content', 'Design'],
                       ['interactions', 'Interact'],
-                      ['ai', 'AI Assist'],
+                      ['ai', 'Alice'],
+                      ['code', 'Code'],
                       ['confessions', 'Confessions'],
                     ] as const).map(([tabName, label]) => (
                       <button
@@ -569,6 +571,7 @@ function BuilderContent() {
                         <AIAssistantPanel />
                       </div>
                     )}
+                    {normalizedRightTab === 'code' && <AliceCodePanel />}
                     {normalizedRightTab === 'confessions' && <ConfessionsDrawer confessions={confessions} open />}
                   </div>
                 </aside>
