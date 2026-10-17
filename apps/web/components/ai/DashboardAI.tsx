@@ -27,7 +27,7 @@ export default function DashboardAI({ className = '' }: DashboardAIProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { allowed: proFeaturesAllowed, isPaid, plan, isLoading: subscriptionLoading } = useFeatureGate('agents');
+  const { isPaid, plan, isLoading: subscriptionLoading } = useFeatureGate('agents');
 
   const membershipLabel = subscriptionLoading ? 'Checking membership…' : getPublicPlanDisplayName(plan || 'free');
 
