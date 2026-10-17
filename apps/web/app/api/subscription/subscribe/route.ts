@@ -5,6 +5,8 @@ import { logger } from "@/lib/logger";
 import { stripe } from "@/lib/stripe";
 import { selectCatalogCheckoutPriceId, stripePriceMatchesPlan } from "@/lib/billing/stripe-catalog-price";
 
+import { resolveStripeCustomer } from "@/lib/billing/stripe-customer.server";
+
 function getBearerToken(req: NextRequest) {
   const match = (req.headers.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   return match?.[1] || null;
@@ -132,13 +134,16 @@ export async function POST(request: NextRequest) {
     cancelUrl.searchParams.set("canceled", "true");
     cancelUrl.searchParams.set("redirectTo", redirectTo);
 
+    const { customerId } = await resolveStripeCustomer(user, { createIfMissing: true });
+    if (!customerId) throw new Error("Billing customer unavailable");
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       // Enable Stripe promotion-code entry for monthly subscriptions only.
       // Campaign codes must remain inactive until the IDE cost guard passes verification.
       allow_promotion_codes: !isYearly,
       line_items: [{ price: priceId, quantity: 1 }],
-      customer_email: user.email || undefined,
+      customer: customerId,
+      payment_method_collection: "always",
       client_reference_id: user.id,
       metadata: { userId: user.id, plan: planConfig.id, interval: isYearly ? "year" : "month" },
       subscription_data: { metadata: { userId: user.id, plan: planConfig.id } },

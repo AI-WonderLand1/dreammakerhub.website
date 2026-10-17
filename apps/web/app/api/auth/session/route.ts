@@ -21,13 +21,21 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ success: true, session: null, user: null }, { headers: noStore });
     }
 
+    const { data: memberships, error: membershipError } = await supabase.rpc('get_account_membership');
+    const membership = memberships?.[0];
+    if (membershipError || !membership) throw new Error('Membership verification unavailable');
+    const verifiedUser = { ...user, app_metadata: { ...user.app_metadata,
+      plan: membership.plan, membership_status: membership.membership_status,
+      trial_expires_at: membership.trial_expires_at,
+    } };
+
     const canonicalAdminId = process.env.ADMIN_USER_ID?.trim();
     const adminUserIds = (process.env.ADMIN_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean);
     const isAdmin = user.id === canonicalAdminId || adminUserIds.includes(user.id);
     return NextResponse.json({
       success: true,
-      session: { access_token: session.access_token, user: { ...user, isAdmin } },
-      user: { ...user, isAdmin },
+      session: { access_token: session.access_token, user: { ...verifiedUser, isAdmin } },
+      user: { ...verifiedUser, isAdmin },
     }, { headers: noStore });
   } catch {
     return NextResponse.json({ success: false, error: 'Unexpected error', session: null, user: null }, {

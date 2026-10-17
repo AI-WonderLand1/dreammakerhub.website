@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { logger } from '@/lib/logger';
 import { stripe } from "@/lib/stripe";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
@@ -41,49 +41,15 @@ function resolvedPaidPlan(subscription: Stripe.Subscription): {
   return null;
 }
 
-async function syncAuthPlan(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-  plan: PlanId,
-) {
-  const { data, error: getUserError } = await supabase.auth.admin.getUserById(userId);
-  if (getUserError) throw getUserError;
-
-  const appMetadata = data.user?.app_metadata ?? {};
-  const { error: updateUserError } = await supabase.auth.admin.updateUserById(userId, {
-    app_metadata: { ...appMetadata, plan },
-  });
-  if (updateUserError) throw updateUserError;
-}
-
-async function syncUserTier(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-  plan: PlanId,
-  customerId: string | null,
-) {
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .upsert(
-      {
-        id: userId,
-        subscription_tier: plan,
-        stripe_customer_id: customerId,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "id" },
-    );
-  if (profileError) throw profileError;
-
-  // The live DreamMakerHub database currently has profiles + subscriptions,
-  // but no user_profiles table. Paid access reads the Stripe-verified
-  // subscriptions table; an optional legacy profile mirror must not cause a
-  // successfully paid subscription to fail webhook processing.
-  await syncAuthPlan(supabase, userId, plan);
+async function syncUserTier(supabase: SupabaseClient, userId: string) {
+  // Database resolution preserves another paid subscription or an unexpired
+  // trial. A cancellation never grants or restarts a trial/free membership.
+  const { error } = await supabase.rpc("refresh_account_membership", { p_user_id: userId });
+  if (error) throw error;
 }
 
 async function persistSubscription(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   args: {
     userId: string;
     subscription: Stripe.Subscription;
@@ -265,7 +231,7 @@ export async function POST(request: NextRequest) {
           plan: resolved.plan,
           interval: resolved.interval,
         });
-        await syncUserTier(supabase, userId, resolved.plan, customerId);
+        await syncUserTier(supabase, userId);
 
         if (session.payment_status === "paid") {
           await trackFunnelEvent("Subscription Started", userId, subscriptionId);
@@ -281,8 +247,10 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
+        // Events can arrive out of order; reconcile Stripe's current state.
+        const subscription = await stripe.subscriptions.retrieve((event.data.object as Stripe.Subscription).id);
         const customerId = stripeId(subscription.customer);
         const { data: existing, error: lookupError } = await supabase
           .from("subscriptions")
@@ -319,9 +287,9 @@ export async function POST(request: NextRequest) {
             plan: resolved.plan,
             interval: resolved.interval,
           });
-          await syncUserTier(supabase, userId, resolved.plan, customerId);
-        } else if (["canceled", "unpaid", "incomplete_expired"].includes(subscription.status)) {
-          await syncUserTier(supabase, userId, "free", customerId);
+          await syncUserTier(supabase, userId);
+        } else {
+          await syncUserTier(supabase, userId);
         }
         break;
       }
@@ -344,7 +312,7 @@ export async function POST(request: NextRequest) {
 
         const userId = subscriptionRow?.user_id || subscription.metadata?.userId;
         if (userId) {
-          await syncUserTier(supabase, userId, "free", customerId);
+          await syncUserTier(supabase, userId);
         } else if (customerId) {
           logger.warn("Canceled Stripe subscription had no matching DreamMakerHub user", {
             subscriptionId: subscription.id,
@@ -356,14 +324,17 @@ export async function POST(request: NextRequest) {
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        const customerId = stripeId(invoice.customer);
-        if (customerId) {
-          const { error } = await supabase
-            .from("subscriptions")
-            .update({ status: "past_due", updated_at: new Date().toISOString() })
-            .eq("stripe_customer_id", customerId);
-          if (error) throw error;
-        }
+        const subscriptionId = stripeId(invoice.parent?.subscription_details?.subscription ?? null);
+        if (!subscriptionId) break;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const { data: owner, error: ownerError } = await supabase.from("subscriptions")
+          .select("user_id").eq("stripe_subscription_id", subscriptionId).maybeSingle();
+        if (ownerError) throw ownerError;
+        const { error } = await supabase.from("subscriptions").update({
+          status: subscription.status, updated_at: new Date().toISOString(),
+        }).eq("stripe_subscription_id", subscriptionId);
+        if (error) throw error;
+        if (owner?.user_id) await syncUserTier(supabase, owner.user_id);
         break;
       }
     }

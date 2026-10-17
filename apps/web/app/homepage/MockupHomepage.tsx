@@ -286,7 +286,7 @@ export default function MockupHomepage() {
         <section id="pricing" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
           <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-950">Simple pricing for bigger ideas</p><h2 className="mt-2 text-3xl font-black">Choose the plan that fits your journey.</h2><p className="mt-1 text-sm text-slate-700">Choose a paid membership when you are ready to unlock supported services.</p></div>
           <div className="mx-auto mt-5 max-w-2xl rounded-xl border border-blue-200/70 bg-white/75 px-5 py-4 text-center text-sm text-blue-950 shadow-sm">
-            <strong>7-day trial — coming soon.</strong> We are preparing a one-time, usage-capped trial. Trial AI, 3D, and cloud IDE access cannot be activated yet; there will be no automatic charge at trial end.
+            <strong>14-day free trial.</strong> No card required. Try the platform with one-time usage caps, then choose a paid membership to continue. No automatic charge at trial end.
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {PLANS.map((plan) => (

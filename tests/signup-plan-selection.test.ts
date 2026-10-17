@@ -36,9 +36,10 @@ describe('new account plan selection', () => {
     // Sign-up is non-billable; paid checkout requires a separate user action.
     expect(auth).not.toContain('/api/subscription/subscribe');
     expect(subscription).not.toContain('ensureFree');
-    expect(subscription).not.toContain('/api/subscription/ensure');
-    expect(subscription).toContain('if (id === "free") return;');
-    expect(subscription).toContain('7-day trial — coming soon');
+    expect(subscription).toContain('/api/subscription/ensure');
+    expect(subscription).toContain('/public-pages/auth?signup=true&redirectTo=');
+    expect(subscription).toContain('if (id === "free" || id === "trial") return;');
+    expect(subscription).toContain('14-day free trial');
     expect(subscription).toContain('["creator", "pro", "studio", "team", "enterprise"]');
     expect(subscription).toContain('`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`');
 

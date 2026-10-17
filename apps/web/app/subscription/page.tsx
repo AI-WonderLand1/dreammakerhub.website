@@ -26,6 +26,7 @@ function sanitizeRedirectPath(raw: string | null): string {
 const planOrder: PlanId[] = ["creator", "pro", "studio", "team", "enterprise"];
 const planIcons: Record<PlanId, string> = {
   free: "🌿",
+  trial: "✨",
   creator: "🎨",
   pro: "⭐",
   studio: "🎬",
@@ -63,6 +64,34 @@ function SubscriptionContent() {
   const canceled = searchParams.get("canceled") === "true";
   const returned = searchParams.get("success") === "true";
 
+  const [trialStarting, setTrialStarting] = useState(false);
+  const [trialError, setTrialError] = useState<string | null>(null);
+
+  const startTrial = async () => {
+    if (trialStarting) return;
+    setTrialStarting(true);
+    setTrialError(null);
+    try {
+      const { ensureSupabaseConfig, createClient } = await import("@/lib/supabase/client");
+      await ensureSupabaseConfig();
+      const client = createClient();
+      const session = client ? await client.auth.getSession() : null;
+      const token = session?.data.session?.access_token;
+      if (!token) {
+        router.push(`/public-pages/auth?signup=true&redirectTo=${encodeURIComponent("/subscription?redirectTo=" + encodeURIComponent(redirectTo))}`);
+        return;
+      }
+      const response = await fetch("/api/subscription/ensure", {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not start your trial.");
+      router.push(redirectTo);
+    } catch (error) {
+      setTrialError(error instanceof Error ? error.message : "Could not start your trial.");
+    } finally { setTrialStarting(false); }
+  };
+
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   const [pricing, setPricing] = useState<Record<string, PricingStatus>>({});
 
@@ -81,7 +110,7 @@ function SubscriptionContent() {
   const isYearly = billingInterval === "year";
 
   const checkoutReady = (id: PlanId) => {
-    if (id === "free") return false;
+    if (id === "free" || id === "trial") return false;
     if (id === "enterprise") return true;
     const status = pricing[id];
     return isYearly ? Boolean(status?.yearlyConfigured) : Boolean(status?.monthlyConfigured);
@@ -93,7 +122,7 @@ function SubscriptionContent() {
       return;
     }
     // The legacy free entitlement must never be activated from pricing.
-    if (id === "free") return;
+    if (id === "free" || id === "trial") return;
     if (!checkoutReady(id)) return;
     router.push(`/checkout?plan=${encodeURIComponent(id)}&interval=${billingInterval}&redirectTo=${encodeURIComponent(redirectTo)}`);
   };
@@ -121,8 +150,10 @@ function SubscriptionContent() {
             Your membership includes monthly AI and 3D allowances. Buy extra AI or 3D credits when needed without changing plans.
           </p>
           <p className="mx-auto mt-4 max-w-2xl rounded-xl border border-violet-500/25 bg-violet-950/20 px-5 py-3 text-sm text-violet-100">
-            <strong>7-day trial — coming soon.</strong> The one-time capped trial is not available yet. A trial will not automatically turn into a paid subscription; purchasing a membership will be a separate choice.
+            <strong>14-day free trial.</strong> No card required. Includes 500K AI credits and 10 3D credits total, 5 projects and 5 GB storage during the trial. Allowances do not renew. Choose a paid membership to continue when the trial ends; you will not be charged automatically.
           </p>
+          <button type="button" onClick={startTrial} disabled={trialStarting} className="mt-4 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white disabled:opacity-50">{trialStarting ? "Starting trial…" : "Start free trial"}</button>
+          {trialError && <p role="alert" className="mt-3 text-sm text-red-300">{trialError}</p>}
           <div className="mt-7 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
             <button onClick={() => setBillingInterval("month")} className={`rounded-lg px-4 py-2 text-sm font-semibold ${!isYearly ? "bg-white text-black" : "text-slate-400"}`}>Monthly</button>
             <button onClick={() => setBillingInterval("year")} className={`rounded-lg px-4 py-2 text-sm font-semibold ${isYearly ? "bg-white text-black" : "text-slate-400"}`}>Yearly · save about 17%</button>

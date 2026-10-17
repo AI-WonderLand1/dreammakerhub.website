@@ -41,8 +41,8 @@ describe("unified cross-repo billing and credit purchases",()=>{
     expect(renderRoute).toContain('price.type !== "one_time"');
     expect(webhook).toContain('session.metadata?.kind === "render_credit_pack"');
     expect(webhook).toContain('supabase.rpc("grant_purchased_render_credits"');
-    expect(hunyuan).toContain('reserveBillableUnits(userId, "render_credits", 1, 0)');
-    expect(hunyuan.indexOf('reserveBillableUnits(userId, "render_credits", 1, 0)')).toBeLessThan(hunyuan.indexOf("const glb = await generateHunyuanGlb"));
+    expect(hunyuan).toContain('reserveBillableUnits(userId, "render_credits", 1, PLAN_LIMITS[plan].renderCreditsMonthly)');
+    expect(hunyuan.indexOf('reserveBillableUnits(userId, "render_credits", 1, PLAN_LIMITS[plan].renderCreditsMonthly)')).toBeLessThan(hunyuan.indexOf("const glb = await generateHunyuanGlb"));
   });
 
   it("renders AI and 3D purchase sliders from configured Stripe pack prices",()=>{

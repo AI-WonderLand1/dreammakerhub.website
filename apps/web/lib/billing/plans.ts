@@ -39,33 +39,30 @@ function publicPlan(id: PlanId): PlanDefinition {
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
   free: publicPlan("free"),
+  trial: publicPlan("trial"),
   creator: {
     ...publicPlan("creator"),
     stripeProductId: process.env.STRIPE_CATALOG_PRODUCT_CREATOR_ID,
     stripePriceId: process.env.STRIPE_PRICE_CREATOR_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_CREATOR_YEARLY_ID,
-    trialDays: 7,
   },
   pro: {
     ...publicPlan("pro"),
     stripeProductId: process.env.STRIPE_CATALOG_PRODUCT_ARCHITECT_ID || process.env.STRIPE_CATALOG_PRODUCT_PRO_ID,
     stripePriceId: process.env.STRIPE_PRICE_ARCHITECT_ID || process.env.STRIPE_PRICE_PRO_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_ARCHITECT_YEARLY_ID || process.env.STRIPE_PRICE_PRO_YEARLY_ID,
-    trialDays: 7,
   },
   studio: {
     ...publicPlan("studio"),
     stripeProductId: process.env.STRIPE_CATALOG_PRODUCT_STUDIO_ID,
     stripePriceId: process.env.STRIPE_PRICE_STUDIO_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_STUDIO_YEARLY_ID,
-    trialDays: 7,
   },
   team: {
     ...publicPlan("team"),
     stripeProductId: process.env.STRIPE_CATALOG_PRODUCT_GUILD_ID,
     stripePriceId: process.env.STRIPE_PRICE_GUILD_ID || process.env.STRIPE_PRICE_TEAM_ID,
     stripePriceYearlyId: process.env.STRIPE_PRICE_GUILD_YEARLY_ID || process.env.STRIPE_PRICE_TEAM_YEARLY_ID,
-    trialDays: 7,
   },
   enterprise: publicPlan("enterprise"),
 };

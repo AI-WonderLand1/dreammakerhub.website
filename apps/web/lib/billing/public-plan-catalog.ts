@@ -1,4 +1,4 @@
-export type PublicPlanId = "free" | "creator" | "pro" | "studio" | "team" | "enterprise";
+export type PublicPlanId = "free" | "trial" | "creator" | "pro" | "studio" | "team" | "enterprise";
 
 export type PublicPlanCatalogEntry = {
   id: PublicPlanId;
@@ -19,8 +19,7 @@ export type PublicPlanCatalogEntry = {
   icon: string;
 };
 
-// Public paid memberships only. Keep the legacy "free" catalog entry for
-// existing customer records until the capped-trial backend migration is ready.
+// Public memberships are paid. Legacy free records carry no included allowance.
 export const PUBLIC_PLAN_ORDER: PublicPlanId[] = [
   "creator",
   "pro",
@@ -30,28 +29,28 @@ export const PUBLIC_PLAN_ORDER: PublicPlanId[] = [
 ];
 
 export const PUBLIC_PLAN_CATALOG: Record<PublicPlanId, PublicPlanCatalogEntry> = {
+  trial: {
+    id: "trial", slug: "trial", tier: "Trial", displayName: "14-day free trial",
+    price: 0, yearlyPrice: 0, priceDisplay: "$0 for 14 days", yearlyPriceDisplay: "$0 for 14 days",
+    homepagePrice: "$0", homepagePeriod: "for 14 days",
+    description: "Try the platform once for 14 days. No card required and no automatic charge.",
+    features: ["500K AI credits total", "10 3D credits total", "5 projects", "5 GB storage during trial"],
+    cta: "Start free trial", href: "/subscription", highlight: false, icon: "✨",
+  },
   free: {
     id: "free",
     slug: "nomad",
     tier: "Free",
-    displayName: "The Nomad",
+    displayName: "No active membership",
     price: 0,
     yearlyPrice: 0,
-    priceDisplay: "$0/forever",
+    priceDisplay: "No active membership",
     yearlyPriceDisplay: "$0/yr",
     homepagePrice: "$0",
-    homepagePeriod: "/forever",
-    description: "The free starter membership for exploring AI WONDERLAND and building lighter projects before upgrading.",
-    features: [
-      "500K AI credits/month",
-      "10 3D credits/month",
-      "5 projects",
-      "5 GB included storage",
-      "WonderBuild, AI Playground and NPC tools",
-      "Usage dashboard and alerts",
-      "WonderSpace cloud IDE is controlled beta",
-    ],
-    cta: "Start Free",
+    homepagePeriod: "",
+    description: "Choose a paid membership or start your one-time 14-day trial.",
+    features: [],
+    cta: "View memberships",
     href: "/subscription",
     highlight: false,
     icon: "🌿",

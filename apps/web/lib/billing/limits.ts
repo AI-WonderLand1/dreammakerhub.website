@@ -1,4 +1,4 @@
-export type SubscriptionPlan = "free" | "creator" | "pro" | "studio" | "team" | "enterprise";
+export type SubscriptionPlan = "free" | "trial" | "creator" | "pro" | "studio" | "team" | "enterprise";
 
 export type UserLimits = {
   plan: SubscriptionPlan;
@@ -35,6 +35,20 @@ export type ProjectLimits = {
 export const PLAN_LIMITS: Record<SubscriptionPlan, Omit<UserLimits, "storageUsed" | "computeUsed" | "aiTokensUsed" | "renderCreditsUsed" | "runtimeHoursUsed" | "apiCallsUsed">> = {
   free: {
     plan: "free",
+    storageLimit: 0,
+    projectsLimit: 0,
+    workspacesLimit: 0,
+    ideSessionsLimit: 0,
+    workspaceQuotaCredits: 0,
+    computeCreditsMonthly: 0,
+    aiTokensMonthly: 0,
+    renderCreditsMonthly: 0,
+    runtimeHoursMonthly: 0,
+    apiCallsMonthly: 0,
+  },
+  // One-time allowances for the entire trial; they do not renew monthly.
+  trial: {
+    plan: "trial",
     storageLimit: 5 * 1024 * 1024 * 1024,
     projectsLimit: 5,
     workspacesLimit: 5,
@@ -138,7 +152,8 @@ export function formatNumber(num: number): string {
 }
 
 export const PLAN_PERMISSIONS: Record<SubscriptionPlan, string[]> = {
-  free: ["view_projects", "basic_build", "wonderbuild_ui", "ai_builder", "cloud_ide"],
+  free: ["view_projects"],
+  trial: ["view_projects", "basic_build", "wonderbuild_ui", "ai_builder", "cloud_ide"],
   creator: ["view_projects", "basic_build", "wonderbuild_ui", "ai_builder", "export_code", "npc_ai_sim", "cloud_ide"],
   pro: ["view_projects", "basic_build", "wonderbuild_ui", "ai_builder", "export_code", "custom_domains", "npc_ai_sim", "cloud_ide", "deploy"],
   studio: ["view_projects", "basic_build", "wonderbuild_ui", "ai_builder", "export_code", "custom_domains", "npc_ai_sim", "cloud_ide", "deploy"],

@@ -109,7 +109,7 @@ export default function UsageAlertsPanel() {
 
   const plan=useMemo(()=>{
     const value=usage?.plan?.toLowerCase();
-    return value==="creator"||value==="pro"||value==="studio"||value==="team"||value==="enterprise"?value:"free";
+    return value==="trial"||value==="creator"||value==="pro"||value==="studio"||value==="team"||value==="enterprise"?value:"free";
   },[usage?.plan]);
   const limits=PLAN_LIMITS[plan];
 
