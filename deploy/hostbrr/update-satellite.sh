@@ -27,13 +27,24 @@ cd /home/wonderland/hostbrr-web-staging/deploy/hostbrr
 for required in deployment.env satellites.env compose.yaml compose.public.yaml compose.satellites.yaml; do
   test -f "$required" || { echo "Missing $required" >&2; exit 1; }
 done
-test -f "$service.runtime.env" || {
-  echo "Missing $service.runtime.env: create a chmod-600 empty file for UI-only staged testing." >&2
-  exit 1
+# Compose resolves env_file entries for both services, even when updating one.
+# Seed only missing empty files; this does not start or modify the other container.
+for runtime_env in playground.runtime.env npc.runtime.env; do
+if [[ ! -e "$runtime_env" && ! -L "$runtime_env" ]]; then
+  # UI-only startup needs no provider secrets. Never truncate an existing file.
+  (umask 077; set -o noclobber; : > "$runtime_env") || {
+    echo "Could not safely create $runtime_env" >&2; exit 1;
+  }
+  echo "Created private empty $runtime_env for UI-only startup; provider features still need configuration."
+fi
+[[ -f "$runtime_env" && ! -L "$runtime_env" ]] || {
+  echo "$runtime_env must be a regular file, not a symbolic link" >&2; exit 1;
 }
-test "$(stat -c '%a' "$service.runtime.env")" = 600 || {
-  echo "$service.runtime.env must be chmod 600" >&2; exit 1;
+test "$(stat -c '%a' "$runtime_env")" = 600 || {
+  echo "$runtime_env must be chmod 600" >&2; exit 1;
 }
+
+done
 
 old_image="$(sed -n "s/^$key=//p" satellites.env | head -n 1)"
 [[ "$old_image" =~ ^ghcr\.io/ai-wonderland1/(ai-playground|npc-ai-sim):[0-9a-f]{40}$ ]] || {
