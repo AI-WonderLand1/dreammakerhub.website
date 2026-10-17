@@ -27,12 +27,19 @@ cd /home/wonderland/hostbrr-web-staging/deploy/hostbrr
 for required in deployment.env satellites.env compose.yaml compose.public.yaml compose.satellites.yaml; do
   test -f "$required" || { echo "Missing $required" >&2; exit 1; }
 done
-test -f "$service.runtime.env" || {
-  echo "Missing $service.runtime.env: create a chmod-600 empty file for UI-only staged testing." >&2
-  exit 1
+runtime_env="$service.runtime.env"
+if [[ ! -e "$runtime_env" && ! -L "$runtime_env" ]]; then
+  # UI-only startup needs no provider secrets. Never truncate an existing file.
+  (umask 077; set -o noclobber; : > "$runtime_env") || {
+    echo "Could not safely create $runtime_env" >&2; exit 1;
+  }
+  echo "Created private empty $runtime_env for UI-only startup; provider features still need configuration."
+fi
+[[ -f "$runtime_env" && ! -L "$runtime_env" ]] || {
+  echo "$runtime_env must be a regular file, not a symbolic link" >&2; exit 1;
 }
-test "$(stat -c '%a' "$service.runtime.env")" = 600 || {
-  echo "$service.runtime.env must be chmod 600" >&2; exit 1;
+test "$(stat -c '%a' "$runtime_env")" = 600 || {
+  echo "$runtime_env must be chmod 600" >&2; exit 1;
 }
 
 old_image="$(sed -n "s/^$key=//p" satellites.env | head -n 1)"
