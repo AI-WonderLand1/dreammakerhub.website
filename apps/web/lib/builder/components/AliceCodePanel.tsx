@@ -64,7 +64,8 @@ export default function AliceCodePanel() {
         <div className="text-sm font-bold text-violet-100">Alice · Full-stack code</div>
         <p className="mt-1 text-[11px] leading-4 text-white/55">Generate frontend, backend, and database files for this project. Review before saving.</p>
       </header>
-      <div className="shrink-0 space-y-2 border-b border-white/10 p-3">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div className="shrink-0 space-y-2 border-b border-white/10 p-3 lg:w-[360px] lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <label className="block text-[11px] font-semibold text-white/70" htmlFor="alice-code-mode">Build type</label>
         <select id="alice-code-mode" value={mode} onChange={(event) => setMode(event.target.value as typeof mode)}
           className="w-full rounded-lg border border-white/15 bg-[#131b2b] p-2 text-xs text-white">
@@ -115,6 +116,7 @@ export default function AliceCodePanel() {
             className="mt-2 block text-center text-xs text-violet-200 underline">Open project files</a>
           <p className="mt-2 text-[10px] text-white/40">Saving does not compile, execute, enable payments, or publish the app.</p>
         </>}
+      </div>
       </div>
     </section>
   );
