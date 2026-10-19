@@ -61,7 +61,7 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: Readon
     ...actors.map((actor) => {
       const meta = ACTOR_META[actor.kind];
       const scale: [number, number, number] = actor.kind === "model" ? [1, 1, 1] : actor.kind === "player" ? [0.8, 1.8, 0.8] : actor.kind === "light" ? [0.45, 0.45, 0.45] : actor.kind === "prop" ? [1.2, 3, 1.2] : [2.4, 2, 1.4];
-      return { id: actor.id, name: actor.name, type: meta.primitive, meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "", position: actor.position, rotation: [0, actor.kind === "prop" ? 18 : 0, 0], scale, material: "mat-" + actor.kind };
+      return { id: actor.id, name: actor.name, type: meta.primitive, assetId: actor.assetId, meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "", position: actor.position, rotation: [0, actor.kind === "prop" ? 18 : 0, 0], scale, material: "mat-" + actor.kind };
     }),
   ];
 
