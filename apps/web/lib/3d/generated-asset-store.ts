@@ -119,7 +119,7 @@ export async function listGeneratedProjectGlbs(userId: string, projectId: string
   if (error) throw error;
 
   const files = (data ?? []).filter((entry) =>
-    /^3d_[a-zA-Z0-9_-]+\\.glb$/.test(entry.name)
+    /^3d_[a-zA-Z0-9_-]+[.]glb$/.test(entry.name)
   );
   const assets = await Promise.all(files.map(async (file) => {
     const path = `${prefix}/${file.name}`;
