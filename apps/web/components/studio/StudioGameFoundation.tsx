@@ -235,15 +235,14 @@ export default function StudioGameFoundation() {
     }
   }, []);
 
-  useEffect(() => {
-    const render = () => {
-      viewportRef.current?.renderScene(scene);
-      viewportRef.current?.setShowGrid(true);
-    };
-    render();
-    const retries = [250, 900].map((delay) => window.setTimeout(render, delay));
-    return () => retries.forEach(window.clearTimeout);
+  const renderWorld = useCallback(() => {
+    viewportRef.current?.renderScene(scene);
+    viewportRef.current?.setShowGrid(true);
   }, [scene]);
+
+  useEffect(() => {
+    renderWorld();
+  }, [renderWorld]);
 
   const selectPreset = useCallback((next: WorldPreset) => {
     setPreset(next);
@@ -374,7 +373,7 @@ export default function StudioGameFoundation() {
             </button>
           </div>
         </header>
-        <StudioViewport ref={viewportRef} onMeshStatus={onMeshStatus} className="min-h-0 flex-1" showGrid showStats />
+        <StudioViewport ref={viewportRef} onReady={renderWorld} onMeshStatus={onMeshStatus} className="min-h-0 flex-1" showGrid showStats />
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-slate-700 bg-slate-950/85 px-3 py-1.5 text-[11px] font-mono text-slate-300">
           {running ? "Orbiting scene preview — player controls are not implemented yet." : "PlayCanvas WebGL2 scene · create, render, save"}
         </div>
