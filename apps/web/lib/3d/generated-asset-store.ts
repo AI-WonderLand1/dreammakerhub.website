@@ -102,3 +102,37 @@ export async function saveGeneratedGlb(input: {
     expiresIn: 3600,
   };
 }
+
+/**
+ * List generated GLB files owned by a user and attached to a specific project.
+ * Only short-lived signed URLs leave the server; the bucket stays private.
+ */
+export async function listGeneratedProjectGlbs(userId: string, projectId: string) {
+  const supabase = getServiceClient();
+  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
+  const prefix = `${userId}/${projectId}`;
+  const { data, error } = await supabase.storage.from(bucket).list(prefix, {
+    limit: 100,
+    offset: 0,
+    sortBy: { column: "created_at", order: "desc" },
+  });
+  if (error) throw error;
+
+  const files = (data ?? []).filter((entry) =>
+    /^3d_[a-zA-Z0-9_-]+[.]glb$/.test(entry.name)
+  );
+  const assets = await Promise.all(files.map(async (file) => {
+    const path = `${prefix}/${file.name}`;
+    const { data: signed, error: signingError } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 60 * 60);
+    if (signingError || !signed?.signedUrl) throw signingError || new Error("Could not sign 3D asset");
+    return {
+      id: file.name.slice(0, -4),
+      name: file.name,
+      url: signed.signedUrl,
+      expiresIn: 3600,
+    };
+  }));
+  return assets;
+}

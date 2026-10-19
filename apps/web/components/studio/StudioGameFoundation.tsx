@@ -5,17 +5,23 @@ import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, 
 import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { logger } from "@/lib/logger";
 
 type WorldPreset = "training" | "outpost" | "forest";
-type ActorKind = "player" | "obstacle" | "prop" | "light";
+type ActorKind = "player" | "obstacle" | "prop" | "light" | "model";
 
 type WorldActor = {
   id: string;
   name: string;
   kind: ActorKind;
   position: [number, number, number];
+  /** Durable generated-asset reference; signed URLs are resolved on every open. */
+  assetId?: string;
 };
+
+type ProjectGlbAsset = { id: string; name: string; url: string };
+type SavedLevel = { path: string; content: string };
 
 const PRESETS: Record<WorldPreset, { label: string; detail: string; sky: [number, number, number]; ground: [number, number, number]; accent: [number, number, number] }> = {
   training: { label: "Training Ground", detail: "Open level with a player spawn and solid cover.", sky: [0.08, 0.12, 0.2], ground: [0.16, 0.18, 0.2], accent: [0.16, 0.65, 1] },
@@ -28,6 +34,7 @@ const ACTOR_META: Record<ActorKind, { label: string; icon: typeof UserRound; col
   obstacle: { label: "Solid Cover", icon: Cuboid, color: [0.48, 0.42, 0.32], primitive: "box" },
   prop: { label: "Scene Prop", icon: Box, color: [0.45, 0.34, 0.72], primitive: "cylinder" },
   light: { label: "Gameplay Light", icon: SunMedium, color: [1, 0.72, 0.24], primitive: "sphere" },
+  model: { label: "Generated 3D Model", icon: Box, color: [0.4, 0.8, 0.9], primitive: "box" },
 };
 
 function initialActors(preset: WorldPreset): WorldActor[] {
@@ -42,7 +49,7 @@ function initialActors(preset: WorldPreset): WorldActor[] {
   return base;
 }
 
-function buildWorld(preset: WorldPreset, actors: WorldActor[]): GeneratedScene {
+function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: ReadonlyMap<string, string>): GeneratedScene {
   const style = PRESETS[preset];
   const materials: GeneratedSceneMaterial[] = [
     { id: "mat-ground", color: style.ground, metalness: 0, roughness: 0.92 },
@@ -53,8 +60,8 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[]): GeneratedScene {
     { id: "ground", name: "Playable Ground", type: "plane", meshUrl: "", position: [0, 0, 0], rotation: [0, 0, 0], scale: [28, 28, 1], material: "mat-ground" },
     ...actors.map((actor) => {
       const meta = ACTOR_META[actor.kind];
-      const scale: [number, number, number] = actor.kind === "player" ? [0.8, 1.8, 0.8] : actor.kind === "light" ? [0.45, 0.45, 0.45] : actor.kind === "prop" ? [1.2, 3, 1.2] : [2.4, 2, 1.4];
-      return { id: actor.id, name: actor.name, type: meta.primitive, meshUrl: "", position: actor.position, rotation: [0, actor.kind === "prop" ? 18 : 0, 0], scale, material: "mat-" + actor.kind };
+      const scale: [number, number, number] = actor.kind === "model" ? [1, 1, 1] : actor.kind === "player" ? [0.8, 1.8, 0.8] : actor.kind === "light" ? [0.45, 0.45, 0.45] : actor.kind === "prop" ? [1.2, 3, 1.2] : [2.4, 2, 1.4];
+      return { id: actor.id, name: actor.name, type: meta.primitive, meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "", position: actor.position, rotation: [0, actor.kind === "prop" ? 18 : 0, 0], scale, material: "mat-" + actor.kind };
     }),
   ];
 
@@ -84,8 +91,97 @@ export default function StudioGameFoundation() {
   const [saving, setSaving] = useState(false);
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [projectAssets, setProjectAssets] = useState<ProjectGlbAsset[]>([]);
+  const [assetError, setAssetError] = useState<string | null>(null);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [savedLevels, setSavedLevels] = useState<SavedLevel[]>([]);
+  const [levelsError, setLevelsError] = useState<string | null>(null);
 
-  const scene = useMemo(() => buildWorld(preset, actors), [actors, preset]);
+  useEffect(() => {
+    setProjectAssets([]);
+    setSavedLevels([]);
+    setAssetError(null);
+    setLevelsError(null);
+    if (!projectId || projectId === "default") return;
+    const controller = new AbortController();
+    setAssetsLoading(true);
+    void fetch(`/api/v1/3d/assets?projectId=${encodeURIComponent(projectId)}`, {
+      credentials: "include",
+      signal: controller.signal,
+    }).then(async (response) => {
+      if (!response.ok) throw new Error("Unable to load generated models");
+      const payload = await response.json() as { assets?: ProjectGlbAsset[] };
+      if (!controller.signal.aborted) setProjectAssets(Array.isArray(payload.assets) ? payload.assets : []);
+    }).catch(() => {
+      if (!controller.signal.aborted) setAssetError("Generated models could not be loaded.");
+    }).finally(() => {
+      if (!controller.signal.aborted) setAssetsLoading(false);
+    });
+
+    void fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+      credentials: "include",
+      signal: controller.signal,
+    }).then(async (response) => {
+      if (!response.ok) throw new Error("Unable to load saved levels");
+      const payload = await response.json() as { files?: Record<string, string> };
+      if (!controller.signal.aborted) {
+        setSavedLevels(Object.entries(payload.files ?? {})
+          .filter(([path]) => path.startsWith("levels/") && path.endsWith(".json"))
+          .map(([path, content]) => ({ path, content })));
+      }
+    }).catch(() => {
+      if (!controller.signal.aborted) setLevelsError("Saved levels could not be loaded.");
+    });
+    return () => controller.abort();
+  }, [projectId]);
+
+  const modelUrls = useMemo(() => new Map(projectAssets.map((asset) => [asset.id, asset.url])), [projectAssets]);
+  const scene = useMemo(() => buildWorld(preset, actors, modelUrls), [actors, preset, modelUrls]);
+
+  const addGeneratedModel = useCallback((asset: ProjectGlbAsset) => {
+    const id = `imported-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    setActors((current) => [...current, {
+      id,
+      name: asset.name.replace(/[.]glb$/i, ""),
+      kind: "model",
+      assetId: asset.id,
+      position: [0, 1, -2],
+    }]);
+    setSelectedId(id);
+  }, []);
+
+  const openSavedLevel = useCallback((level: SavedLevel) => {
+    try {
+      const payload: unknown = JSON.parse(level.content);
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("Invalid level");
+      const record = payload as { preset?: unknown; actors?: unknown };
+      if (!Array.isArray(record.actors)) throw new Error("Invalid actors");
+      const restored: WorldActor[] = record.actors.filter((value): value is WorldActor => {
+        if (!value || typeof value !== "object") return false;
+        const actor = value as Partial<WorldActor>;
+        return typeof actor.id === "string" && typeof actor.name === "string" &&
+          typeof actor.kind === "string" && Object.prototype.hasOwnProperty.call(ACTOR_META, actor.kind) &&
+          Array.isArray(actor.position) && actor.position.length === 3 &&
+          actor.position.every((n) => typeof n === "number" && Number.isFinite(n)) &&
+          (actor.kind !== "model" || (typeof actor.assetId === "string" && /^3d_[a-zA-Z0-9_-]+$/.test(actor.assetId)));
+      }).map((actor) => ({
+        id: actor.id,
+        name: actor.name,
+        kind: actor.kind,
+        position: actor.position,
+        assetId: actor.assetId,
+      }));
+      if (!restored.length) throw new Error("Empty level");
+      const nextPreset = typeof record.preset === "string" && Object.prototype.hasOwnProperty.call(PRESETS, record.preset) ? record.preset as WorldPreset : "training";
+      setPreset(nextPreset);
+      setActors(restored);
+      setSelectedId(restored[0].id);
+      setSaveError(null);
+      setSavedPath(level.path);
+    } catch {
+      setSaveError("Could not open this level. Its saved data may be invalid.");
+    }
+  }, []);
 
   useEffect(() => {
     const render = () => {
@@ -141,13 +237,23 @@ export default function StudioGameFoundation() {
     try {
       const slug = preset + "_game_level";
       const path = "levels/" + slug + "_" + Date.now().toString(36) + ".json";
+      const durableScene = {
+        ...scene,
+        // Signed URLs expire. Restore GLB links by asset ID when reopening.
+        objects: scene.objects.map((object) => ({ ...object, meshUrl: "" })),
+      };
+      const content = JSON.stringify({
+        version: 2, type: "wonderplay-level", playerStartId: "player-start",
+        preset, scene: durableScene, actors,
+      }, null, 2);
       const response = await fetch("/api/projects/" + encodeURIComponent(projectId) + "/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ files: { [path]: JSON.stringify({ version: 1, type: "wonderplay-level", playerStartId: "player-start", scene, actors }, null, 2) } }),
+        body: JSON.stringify({ files: { [path]: content } }),
       });
       if (!response.ok) throw new Error("Could not save level");
       setSavedPath(path);
+      setSavedLevels((current) => [{ path, content }, ...current]);
     } catch (error) {
       logger.error("Save WonderPlay level error:", error);
       setSaveError("Level could not be saved. Check the selected project and try again.");
@@ -166,6 +272,34 @@ export default function StudioGameFoundation() {
             <button key={id} onClick={() => selectPreset(id)} className={"w-full rounded-lg border p-2 text-left " + (preset === id ? "border-cyan-500/60 bg-cyan-950/30 text-white" : "border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700")}>
               <span className="block text-xs font-bold">{PRESETS[id].label}</span><span className="mt-0.5 block text-[10px] leading-4 text-slate-500">{PRESETS[id].detail}</span>
             </button>
+          ))}
+        </div>
+        <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Generated 3D models</p>
+        <p className="mb-2 text-[10px] text-slate-500">Select a project and generate a GLB to place it in this world.</p>
+        <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/ai-generator?projectId=${encodeURIComponent(projectId)}`}
+          className="mb-2 block rounded border border-cyan-800 px-2 py-2 text-center text-xs font-semibold text-cyan-300 hover:bg-cyan-950/40">
+          {projectId === "default" ? "Choose a project" : "Generate GLB for this project"}
+        </Link>
+        {assetsLoading && <p className="text-xs text-slate-400">Loading models…</p>}
+        {assetError && <p role="alert" className="text-xs text-red-300">{assetError}</p>}
+        {!assetsLoading && !assetError && projectAssets.length === 0 &&
+          <p className="text-xs text-slate-500">No generated GLBs saved to this project yet.</p>}
+        <div className="max-h-40 space-y-1 overflow-y-auto">
+          {projectAssets.map((asset) => (
+            <button type="button" key={asset.id} onClick={() => addGeneratedModel(asset)}
+              className="flex w-full items-center gap-2 rounded border border-slate-800 bg-slate-900 p-2 text-left text-xs text-cyan-200 hover:border-cyan-600"
+              title="Place this model in the world">
+              <Box size={14} /> <span className="min-w-0 flex-1 truncate">{asset.name}</span><span>+ Add</span>
+            </button>
+          ))}
+        </div>
+        <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Saved levels</p>
+        {levelsError && <p role="alert" className="text-xs text-red-300">{levelsError}</p>}
+        <div className="max-h-28 space-y-1 overflow-y-auto">
+          {savedLevels.map((level) => (
+            <button type="button" key={level.path} onClick={() => openSavedLevel(level)}
+              className="w-full truncate rounded border border-slate-800 bg-slate-900 p-2 text-left text-xs text-slate-300 hover:border-cyan-600"
+              title={level.path}>Open {level.path.split("/").pop()}</button>
           ))}
         </div>
         <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">World outliner</p>
@@ -196,7 +330,9 @@ export default function StudioGameFoundation() {
 
       <aside className="w-72 shrink-0 border-l border-slate-800 bg-slate-950 p-4">
         <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> Game foundation</p>
-        <p className="mt-2 text-xs leading-5 text-slate-400">This creates a real, saved WonderPlay level with a player start, physical scene objects, lights, and a running preview. Blueprint-style nodes are intentionally the next layer.</p>
+        <p className="mt-2 text-xs leading-5 text-slate-400">Create a saved level with a player start, physical scene objects, lights and your generated GLB assets. Game controls and AI behaviors are a separate next step.</p>
+        {!assetsLoading && actors.some((actor) => actor.assetId && !modelUrls.has(actor.assetId)) &&
+          <p role="alert" className="mt-2 text-xs text-amber-300">Some imported models are unavailable in this project. Reopen or restore those assets before publishing.</p>}
         <div className="mt-5 grid grid-cols-2 gap-2">
           {(Object.keys(ACTOR_META) as ActorKind[]).map((kind) => {
             const Icon = ACTOR_META[kind].icon;
@@ -209,7 +345,7 @@ export default function StudioGameFoundation() {
           <p className="mt-1 text-[11px] font-mono text-slate-500">{selected ? "Position " + selected.position.join(", ") : ""}</p>
           <button disabled={!selected || selectedId === "player-start"} onClick={removeSelected} className="mt-3 text-xs text-red-300 disabled:opacity-40">Remove selected</button>
         </div>
-        <button onClick={saveLevel} disabled={saving} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
+        <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level
         </button>
         {savedPath && <p className="mt-2 break-all text-[10px] font-mono text-emerald-400">Saved {savedPath}</p>}
