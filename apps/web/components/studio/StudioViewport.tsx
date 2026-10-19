@@ -706,13 +706,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       for (const obj of scene.objects ?? []) {
         const entity = new pc.Entity(obj.name || "object");
         const renderType = PRIMITIVE_TYPES[obj.type] ?? "box";
-        entity.addComponent("render", { type: renderType });
+        // Never substitute a cube for a missing or still-loading AI GLB.
+        if (!obj.assetId) entity.addComponent("render", { type: renderType });
 
         if (obj.position) entity.setPosition(obj.position[0], obj.position[1], obj.position[2]);
         if (obj.rotation) entity.setEulerAngles(obj.rotation[0], obj.rotation[1], obj.rotation[2]);
         if (obj.scale) entity.setLocalScale(obj.scale[0], obj.scale[1], obj.scale[2]);
 
-        if (obj.material && materialCache.has(obj.material)) {
+        if (entity.render && obj.material && materialCache.has(obj.material)) {
           entity.render.material = materialCache.get(obj.material);
         }
 
@@ -741,7 +742,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
               // Container assets are scene hierarchies, not a Model asset ID.
               // instantiateRenderEntity keeps the GLB's meshes and materials.
               const imported = asset.resource.instantiateRenderEntity({ castShadows: true });
-              entity.removeComponent("render");
+              if (entity.render) entity.removeComponent("render");
               entity.addChild(imported);
               if (wireframeRef.current) {
                 forEachEntity(imported, (e) => {
@@ -758,6 +759,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
                 message: "The GLB could not be instantiated in PlayCanvas.",
               });
             }
+          });
+        } else if (obj.assetId) {
+          onMeshStatusRef.current?.({
+            objectId: obj.id,
+            state: "error",
+            message: "This generated GLB is not accessible in the selected project.",
           });
         }
       }
