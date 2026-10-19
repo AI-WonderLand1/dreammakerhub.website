@@ -56,6 +56,7 @@ export type PanoramaOpts = {
 
 export type StudioViewportProps = {
   onMeshStatus?: (detail: { objectId: string; state: "loaded" | "error"; message?: string }) => void;
+  onReady?: () => void;
   onSelect?: (selection: StudioSelection) => void;
   onEntityCreated?: (entity: { name: string; id: string }) => void;
   className?: string;
@@ -232,7 +233,7 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
 
 const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
   function StudioViewport(
-    { onSelect, onEntityCreated, onMeshStatus, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
+    { onSelect, onEntityCreated, onMeshStatus, onReady, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -267,6 +268,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const onSelectRef = useRef(onSelect);
     const onEntityCreatedRef = useRef(onEntityCreated);
     const onMeshStatusRef = useRef(onMeshStatus);
+    const onReadyRef = useRef(onReady);
     const showGridRef = useRef(showGridProp);
     const showStatsRef = useRef(showStats);
 
@@ -274,7 +276,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       onSelectRef.current = onSelect;
       onEntityCreatedRef.current = onEntityCreated;
       onMeshStatusRef.current = onMeshStatus;
-    }, [onSelect, onEntityCreated, onMeshStatus]);
+      onReadyRef.current = onReady;
+    }, [onSelect, onEntityCreated, onMeshStatus, onReady]);
 
     useEffect(() => {
       showGridRef.current = showGridProp;
@@ -661,6 +664,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           (app as any)._injectHandler = handleRemoteMeshInjection;
 
           setReady(true);
+          onReadyRef.current?.();
         } catch (err: any) {
           if (!disposed) setError(err instanceof Error ? err.message : "WebGL2 could not start");
           if (!app && device) device.destroy();
