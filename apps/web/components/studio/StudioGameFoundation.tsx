@@ -396,7 +396,7 @@ export default function StudioGameFoundation() {
           />
           <p className="mt-1 text-[10px] leading-4 text-slate-400">
             Uses the configured Hunyuan text-to-3D provider. Geometry only; textures are not requested.
-            The current billing route reserves 1 3D credit per generation attempt, including failed provider attempts.
+            The current billing route reserves 1 3D credit per attempt. Provider failures after reservation may still consume that credit.
           </p>
           <button type="button" className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-cyan-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => void generateModel()}
