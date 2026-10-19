@@ -51,6 +51,23 @@ export default function Footer() {
           <p className="mb-2 text-xs text-white/50">Share your experience with DreamMakerHub</p>
           <TrustpilotReviewCollector />
         </div>
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-end">
+          <a
+            href="https://startupbase.io/products/ai-wonderland-innovation?utm_source=startupbase&utm_medium=badge&utm_campaign=launch-badge-dark"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="AI Wonderland Innovation on StartupBase (opens in a new tab)"
+            className="inline-flex items-center rounded-lg transition hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300"
+          >
+            <img
+              src="https://statics.startupbase.io/site/badges/launched-on-sb-dark.svg"
+              alt="Launched on StartupBase"
+              height={55}
+              width={190}
+              style={{ height: 55, width: 'auto' }}
+              loading="lazy"
+            />
+          </a>
         <a
           href="https://circlesaasboard.com/startup/ai-wonderland-innovation-44761f"
           target="_blank"
@@ -66,6 +83,7 @@ export default function Footer() {
             loading="lazy"
           />
         </a>
+        </div>
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center gap-3 border-t border-white/[0.07] px-6 py-4 text-center text-xs text-white/45 sm:flex-row">
