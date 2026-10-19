@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AssetItem, Model3DType, ViewportLighting } from '../types';
 import { ThreeViewport } from './ThreeViewport';
 import { 
@@ -59,6 +60,8 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
   availableAssets,
   initialAsset,
 }) => {
+  const searchParams = useSearchParams();
+  const projectId = searchParams?.get('projectId')?.trim() || '';
   // Active selected asset / generation
   const [activeAsset, setActiveAsset] = useState<AssetItem>(
     initialAsset || availableAssets[0] || {
@@ -236,6 +239,8 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
           prompt: effectivePrompt,
           format: 'glb',
           addTexture: true,
+          // Generated GLBs can be reused in WonderPlay when a project is selected.
+          ...(projectId ? { projectId } : {}),
         }),
       });
 
