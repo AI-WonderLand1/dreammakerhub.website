@@ -55,6 +55,7 @@ export type PanoramaOpts = {
 };
 
 export type StudioViewportProps = {
+  onMeshStatus?: (detail: { objectId: string; state: "loaded" | "error"; message?: string }) => void;
   onSelect?: (selection: StudioSelection) => void;
   onEntityCreated?: (entity: { name: string; id: string }) => void;
   className?: string;
@@ -231,7 +232,7 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
 
 const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
   function StudioViewport(
-    { onSelect, onEntityCreated, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
+    { onSelect, onEntityCreated, onMeshStatus, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -265,13 +266,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const [stats, setStats] = useState<ViewportStats>({ fps: 0, entities: 0, frames: 0 });
     const onSelectRef = useRef(onSelect);
     const onEntityCreatedRef = useRef(onEntityCreated);
+    const onMeshStatusRef = useRef(onMeshStatus);
     const showGridRef = useRef(showGridProp);
     const showStatsRef = useRef(showStats);
 
     useEffect(() => {
       onSelectRef.current = onSelect;
       onEntityCreatedRef.current = onEntityCreated;
-    }, [onSelect, onEntityCreated]);
+      onMeshStatusRef.current = onMeshStatus;
+    }, [onSelect, onEntityCreated, onMeshStatus]);
 
     useEffect(() => {
       showGridRef.current = showGridProp;
@@ -596,6 +599,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     useEffect(() => {
       let disposed = false;
       let app: any = null;
+      let device: any = null;
 
       async function init() {
         try {
@@ -604,14 +608,19 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           const pc = playcanvas;
           pcRef.current = pc;
           const canvas = canvasRef.current;
-          const ctx = canvas.getContext("webgl2") || canvas.getContext("webgl");
-          if (!ctx) {
-            setError("WebGL is not available in this browser");
+          // Create a real PlayCanvas WebGL2 device; do not claim the canvas
+          // context before the engine can initialize it.
+          device = await pc.createGraphicsDevice(canvas, {
+            deviceTypes: [pc.DEVICETYPE_WEBGL2],
+            antialias: true,
+          });
+          if (disposed) {
+            device.destroy();
+            device = null;
             return;
           }
-
           app = new pc.Application(canvas, {
-            graphicsDeviceOptions: { context: ctx },
+            graphicsDevice: device,
             mouse: new pc.Mouse(canvas),
             touch: new pc.TouchDevice(canvas),
             elementInput: new pc.ElementInput(canvas),
@@ -653,7 +662,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
           setReady(true);
         } catch (err: any) {
-          setError(err instanceof Error ? err.message : "Failed to start 3D engine");
+          if (!disposed) setError(err instanceof Error ? err.message : "WebGL2 could not start");
+          if (!app && device) device.destroy();
         }
       }
 
@@ -665,6 +675,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           window.removeEventListener("resize", (app as any)._resizeHandler);
           window.removeEventListener("injectRemoteAiModel", (app as any)._injectHandler);
           app.destroy();
+        } else if (device) {
+          device.destroy();
         }
         appRef.current = null;
         pcRef.current = null;
@@ -709,20 +721,38 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         // Load remote GLB mesh if provided
         if (obj.meshUrl) {
           app.assets.loadFromUrl(obj.meshUrl, "container", (err: Error | null, asset: any) => {
-            if (err) {
-              logger.warn(`Failed to load mesh ${obj.meshUrl}:`, err);
+            // A different scene may have replaced this one while the GLB was
+            // loading. Never attach a late callback into an obsolete world.
+            if (entity.parent !== root) return;
+            if (err || !asset?.resource?.instantiateRenderEntity) {
+              logger.warn("Failed to load PlayCanvas GLB geometry", { objectId: obj.id, error: err });
+              onMeshStatusRef.current?.({
+                objectId: obj.id,
+                state: "error",
+                message: "The 3D model could not be displayed. Refresh its project asset and try again.",
+              });
               return;
             }
-            if (entity && entity.render) {
+            try {
+              // Container assets are scene hierarchies, not a Model asset ID.
+              // instantiateRenderEntity keeps the GLB's meshes and materials.
+              const imported = asset.resource.instantiateRenderEntity({ castShadows: true });
               entity.removeComponent("render");
-              entity.addComponent("model", { type: "asset", asset: asset.resource.model });
+              entity.addChild(imported);
               if (wireframeRef.current) {
-                forEachEntity(entity, (e) => {
-                  if (e.model?.meshInstances) {
-                    e.model.meshInstances.forEach((mi: any) => (mi.style = pc.RENDERSTYLE_WIREFRAME));
+                forEachEntity(imported, (e) => {
+                  for (const instance of e.render?.meshInstances ?? []) {
+                    instance.renderStyle = pc.RENDERSTYLE_WIREFRAME;
                   }
                 });
               }
+              onMeshStatusRef.current?.({ objectId: obj.id, state: "loaded" });
+            } catch (cause) {
+              logger.warn("PlayCanvas GLB instantiation failed", cause);
+              onMeshStatusRef.current?.({
+                objectId: obj.id, state: "error",
+                message: "The GLB could not be instantiated in PlayCanvas.",
+              });
             }
           });
         }
