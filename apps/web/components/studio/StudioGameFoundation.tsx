@@ -316,7 +316,7 @@ export default function StudioGameFoundation() {
   const selected = actors.find((actor) => actor.id === selectedId);
   return (
     <div className="flex h-full w-full overflow-hidden bg-slate-950">
-      <aside className="w-64 shrink-0 border-r border-slate-800 bg-slate-950 p-3">
+      <aside className="w-64 shrink-0 overflow-y-auto border-r border-slate-800 bg-slate-950 p-3">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">World presets</p>
         <div className="space-y-1">
           {(Object.keys(PRESETS) as WorldPreset[]).map((id) => (
@@ -379,7 +379,7 @@ export default function StudioGameFoundation() {
         </div>
       </section>
 
-      <aside className="w-72 shrink-0 border-l border-slate-800 bg-slate-950 p-4">
+      <aside className="w-72 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-950 p-4">
         <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> Game foundation</p>
         <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas WebGL2 renders the world and actual generated GLB meshes. Game logic and playable FPV controls are not enabled yet.</p>
         <section className="mt-4 rounded-lg border border-cyan-900/70 bg-cyan-950/20 p-3" aria-label="AI 3D model generation">
