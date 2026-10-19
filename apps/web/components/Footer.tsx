@@ -46,11 +46,26 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 pb-6">
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-sm">
           <p className="mb-2 text-xs text-white/50">Share your experience with DreamMakerHub</p>
           <TrustpilotReviewCollector />
         </div>
+        <a
+          href="https://circlesaasboard.com/startup/ai-wonderland-innovation-44761f"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="AI WONDERLAND INNOVATION on CircleSaaS"
+          className="inline-flex shrink-0 self-start sm:self-auto"
+        >
+          <img
+            src="https://circlesaasboard.com/badge.svg"
+            alt="Featured on CircleSaaS"
+            width={220}
+            height={84}
+            loading="lazy"
+          />
+        </a>
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center gap-3 border-t border-white/[0.07] px-6 py-4 text-center text-xs text-white/45 sm:flex-row">
