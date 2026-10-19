@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { SandboxStudio } from '@/lib/wonder3d/components/SandboxStudio';
 
 export const metadata = {
@@ -7,5 +7,5 @@ export const metadata = {
 };
 
 export default function AIGeneratorPage() {
-  return <SandboxStudio availableAssets={[]} />;
+  return <Suspense fallback={<p className="p-6 text-sm text-slate-500">Loading 3D generator…</p>}><SandboxStudio availableAssets={[]} /></Suspense>;
 }
