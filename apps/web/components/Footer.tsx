@@ -46,10 +46,43 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 pb-6">
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-sm">
           <p className="mb-2 text-xs text-white/50">Share your experience with DreamMakerHub</p>
           <TrustpilotReviewCollector />
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-end">
+          <a
+            href="https://startupbase.io/products/ai-wonderland-innovation?utm_source=startupbase&utm_medium=badge&utm_campaign=launch-badge-dark"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="AI Wonderland Innovation on StartupBase (opens in a new tab)"
+            className="inline-flex items-center rounded-lg transition hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300"
+          >
+            <img
+              src="https://statics.startupbase.io/site/badges/launched-on-sb-dark.svg"
+              alt="Launched on StartupBase"
+              height={55}
+              width={190}
+              style={{ height: 55, width: 'auto' }}
+              loading="lazy"
+            />
+          </a>
+        <a
+          href="https://circlesaasboard.com/startup/ai-wonderland-innovation-44761f"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="AI WONDERLAND INNOVATION on CircleSaaS"
+          className="inline-flex shrink-0 self-start sm:self-auto"
+        >
+          <img
+            src="https://circlesaasboard.com/badge.svg"
+            alt="Featured on CircleSaaS"
+            width={220}
+            height={84}
+            loading="lazy"
+          />
+        </a>
         </div>
       </div>
 
