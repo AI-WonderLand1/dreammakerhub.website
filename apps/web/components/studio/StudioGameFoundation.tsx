@@ -156,12 +156,11 @@ export default function StudioGameFoundation() {
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("Invalid level");
       const record = payload as { preset?: unknown; actors?: unknown };
       if (!Array.isArray(record.actors)) throw new Error("Invalid actors");
-      const kinds: ActorKind[] = ["player", "obstacle", "prop", "light", "model"];
       const restored: WorldActor[] = record.actors.filter((value): value is WorldActor => {
         if (!value || typeof value !== "object") return false;
         const actor = value as Partial<WorldActor>;
         return typeof actor.id === "string" && typeof actor.name === "string" &&
-          kinds.includes(actor.kind as ActorKind) &&
+          typeof actor.kind === "string" && Object.prototype.hasOwnProperty.call(ACTOR_META, actor.kind) &&
           Array.isArray(actor.position) && actor.position.length === 3 &&
           actor.position.every((n) => typeof n === "number" && Number.isFinite(n)) &&
           (actor.kind !== "model" || (typeof actor.assetId === "string" && /^3d_[a-zA-Z0-9_-]+$/.test(actor.assetId)));
@@ -173,7 +172,7 @@ export default function StudioGameFoundation() {
         assetId: actor.assetId,
       }));
       if (!restored.length) throw new Error("Empty level");
-      const nextPreset = Object.keys(PRESETS).includes(String(record.preset)) ? record.preset as WorldPreset : "training";
+      const nextPreset = typeof record.preset === "string" && Object.prototype.hasOwnProperty.call(PRESETS, record.preset) ? record.preset as WorldPreset : "training";
       setPreset(nextPreset);
       setActors(restored);
       setSelectedId(restored[0].id);
