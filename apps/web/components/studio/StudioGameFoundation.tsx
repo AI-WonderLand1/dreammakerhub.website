@@ -5,6 +5,7 @@ import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, 
 import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { logger } from "@/lib/logger";
 
 type WorldPreset = "training" | "outpost" | "forest";
@@ -276,6 +277,10 @@ export default function StudioGameFoundation() {
         </div>
         <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Generated 3D models</p>
         <p className="mb-2 text-[10px] text-slate-500">Select a project and generate a GLB to place it in this world.</p>
+        <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/ai-generator?projectId=${encodeURIComponent(projectId)}`}
+          className="mb-2 block rounded border border-cyan-800 px-2 py-2 text-center text-xs font-semibold text-cyan-300 hover:bg-cyan-950/40">
+          {projectId === "default" ? "Choose a project" : "Generate GLB for this project"}
+        </Link>
         {assetsLoading && <p className="text-xs text-slate-400">Loading models…</p>}
         {assetError && <p role="alert" className="text-xs text-red-300">{assetError}</p>}
         {!assetsLoading && !assetError && projectAssets.length === 0 &&
@@ -341,7 +346,7 @@ export default function StudioGameFoundation() {
           <p className="mt-1 text-[11px] font-mono text-slate-500">{selected ? "Position " + selected.position.join(", ") : ""}</p>
           <button disabled={!selected || selectedId === "player-start"} onClick={removeSelected} className="mt-3 text-xs text-red-300 disabled:opacity-40">Remove selected</button>
         </div>
-        <button onClick={saveLevel} disabled={saving} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
+        <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level
         </button>
         {savedPath && <p className="mt-2 break-all text-[10px] font-mono text-emerald-400">Saved {savedPath}</p>}
