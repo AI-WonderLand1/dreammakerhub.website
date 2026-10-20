@@ -25,6 +25,8 @@ import type { BlockDefinition, LeftPanelTab } from '@/lib/builder/types';
 import { findBlockDefinition } from '@/lib/builder/blocks/utils';
 import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
 import { storageService } from '@/lib/builder/pipeline/StorageService';
+import { getEventBus } from '@/lib/builder/pipeline/EventBus';
+import { EventNames } from '@/lib/builder/pipeline/types';
 import { checkBuilderProjectAccess } from '@/lib/builder/project-access';
 import type { BuilderProjectStatus } from '@/lib/builder/project-access';
 import { livePreviewService } from '@/lib/builder/pipeline/LivePreviewService';
@@ -90,6 +92,7 @@ function BuilderContent() {
   const [toast, setToast] = useState<string | null>(null);
   const [codeWorkbench, setCodeWorkbench] = useState<'alice' | 'legacy'>('alice');
   const [projectStatus, setProjectStatus] = useState<BuilderProjectStatus>('loading');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [dragOverlay, setDragOverlay] = useState<BlockDefinition | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
 
@@ -102,6 +105,39 @@ function BuilderContent() {
     setToast(message);
     window.setTimeout(() => setToast(null), 2400);
   }, []);
+
+  // Never report a saved project until the project-file API acknowledges the write.
+  const saveProject = useCallback(async () => {
+    if (!projectId) {
+      showToast('Local draft only — create a project to save online');
+      return;
+    }
+    setSaveStatus('saving');
+    const saved = await storageService.saveToProject();
+    if (!saved) {
+      setSaveStatus('error');
+      showToast('Project save failed. Changes are not confirmed online.');
+      return;
+    }
+    const revision = await storageService.saveRevision();
+    setSaveStatus('saved');
+    showToast(revision ? 'Project saved + revision' : 'Project saved (revision unavailable)');
+  }, [projectId, showToast]);
+
+  useEffect(() => {
+    setSaveStatus('idle');
+    const bus = getEventBus();
+    const markChanged = () => setSaveStatus('idle');
+    const changed = bus.on(EventNames.PROJECT_STATE_CHANGED, markChanged);
+    const metadata = bus.on(EventNames.PROJECT_METADATA_UPDATED, markChanged);
+    const saved = bus.on(EventNames.STORAGE_SAVED, (event) => {
+      if (event.payload.projectId === projectId && !event.payload.revision) setSaveStatus('saved');
+    });
+    const failed = bus.on(EventNames.STORAGE_ERROR, (event) => {
+      if (event.payload.projectId === projectId) setSaveStatus('error');
+    });
+    return () => { changed(); metadata(); saved(); failed(); };
+  }, [projectId]);
 
   const switchTab = useCallback((next: BuilderMode) => {
     setTab(next);
@@ -255,14 +291,7 @@ function BuilderContent() {
             return;
           case 's':
             event.preventDefault();
-            if (!projectId) {
-              showToast('Saved locally');
-              return;
-            }
-            void storageService.saveToProject();
-            void storageService.saveRevision().then((revision) => {
-              showToast(revision ? 'Saved + revision' : 'Saved');
-            });
+            void saveProject();
             return;
           case 'd':
             if (selectedId) {
@@ -306,6 +335,7 @@ function BuilderContent() {
     duplicateElement,
     projectId,
     projectStatus,
+    saveProject,
     redo,
     removeElement,
     selectElement,
@@ -486,7 +516,7 @@ function BuilderContent() {
         Skip to canvas
       </a>
 
-      <SovereignNavBar activeMode={tab} onModeChange={switchTab} />
+      <SovereignNavBar activeMode={tab} onModeChange={switchTab} onSave={() => { void saveProject(); }} saveStatus={saveStatus} />
 
       <div className="h-full pt-[52px]">
         {tab === 'code' && (
