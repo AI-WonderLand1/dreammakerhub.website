@@ -42,7 +42,25 @@ variable "docker_socket" {
 variable "workspace_image" {
   type        = string
   default     = "ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace:latest"
-  description = "Operator-controlled AI WONDERLAND workspace image."
+  description = "Operator-controlled Linux IDE base image; pin to digest for production."
+}
+
+variable "web_workspace_image" {
+  type        = string
+  default     = "ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace-web:latest"
+  description = "Approved full-stack web IDE image; pin to digest for production."
+}
+
+variable "python_workspace_image" {
+  type        = string
+  default     = "ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace-python:latest"
+  description = "Approved Python IDE image; pin to digest for production."
+}
+
+variable "webgl_workspace_image" {
+  type        = string
+  default     = "ghcr.io/ai-wonderland1/ai-wonderland-coder-workspace-webgl:latest"
+  description = "Approved PlayCanvas/WebGL IDE image; pin to digest for production."
 }
 
 provider "docker" {
@@ -74,7 +92,44 @@ data "coder_parameter" "machine_profile" {
   }
 }
 
+# Runtime selection is an enum; customers cannot choose registry URLs.
+# An immutable Coder parameter prevents an existing workspace from silently
+# replacing its OS/toolchain on a later start.
+data "coder_parameter" "ide_image" {
+  name         = "ide_image"
+  display_name = "Development environment"
+  description  = "Approved Linux Docker environment for this workspace."
+  type         = "string"
+  default      = "linux"
+  mutable      = false
+
+  option {
+    name  = "Linux / General"
+    value = "linux"
+  }
+  option {
+    name  = "Web / Full Stack"
+    value = "web"
+  }
+  option {
+    name  = "Python / AI Development"
+    value = "python"
+  }
+  option {
+    name  = "Game / PlayCanvas WebGL"
+    value = "webgl"
+  }
+}
+
 locals {
+  approved_images = {
+    linux  = var.workspace_image
+    web    = var.web_workspace_image
+    python = var.python_workspace_image
+    webgl  = var.webgl_workspace_image
+  }
+  selected_image = local.approved_images[data.coder_parameter.ide_image.value]
+
   workspace_profiles = {
     micro = {
       cpu       = 1
@@ -94,7 +149,7 @@ locals {
 # ============================================================================
 
 data "docker_registry_image" "workspace" {
-  name = var.workspace_image
+  name = local.selected_image
 }
 
 resource "docker_image" "workspace" {
@@ -357,6 +412,11 @@ resource "docker_container" "workspace" {
   labels {
     label = "ai-wonderland.machine-profile"
     value = data.coder_parameter.machine_profile.value
+  }
+
+  labels {
+    label = "ai-wonderland.ide-image"
+    value = data.coder_parameter.ide_image.value
   }
 
   depends_on = [
