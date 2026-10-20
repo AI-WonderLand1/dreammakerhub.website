@@ -251,6 +251,12 @@ export function SovereignNavBar({
           </span>
         )}
 
+        {!projectId && (
+          <Link href="/dashboard?create=project" className="inline-flex h-8 items-center rounded-lg border border-violet-400/30 px-2 text-[8px] font-bold text-violet-200 hover:bg-violet-500/10">
+            Create project
+          </Link>
+        )}
+
         <button
           type="button"
           disabled={!projectId || saveStatus === 'saving'}
