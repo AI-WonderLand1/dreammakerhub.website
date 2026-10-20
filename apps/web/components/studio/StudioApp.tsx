@@ -37,8 +37,8 @@ const WORKSPACES: { id: Workspace; label: string; icon: LucideIcon }[] = [
 ];
 
 const CREATE_TOOLS: { id: CreateTool; label: string; icon: LucideIcon }[] = [
-  { id: "game", label: "Game World", icon: Gamepad2 },
-  { id: "factory", label: "3D Scene", icon: Box },
+  { id: "game", label: "PlayCanvas · WebGL", icon: Gamepad2 },
+  { id: "factory", label: "Procedural Scene", icon: Box },
 ];
 
 const CAPTURE_TOOLS: { id: CaptureTool; label: string; icon: LucideIcon }[] = [
@@ -58,7 +58,7 @@ const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 /** One editor route: site navigation is tucked into the top bar, not a permanent sidebar. */
 export default function StudioApp() {
   const [workspace, setWorkspace] = useState<Workspace>("create");
-  const [createTool, setCreateTool] = useState<CreateTool>("factory");
+  const [createTool, setCreateTool] = useState<CreateTool>("game");
   const [captureTool, setCaptureTool] = useState<CaptureTool>("movie");
   const activeTool = workspace === "create" ? createTool : captureTool;
 

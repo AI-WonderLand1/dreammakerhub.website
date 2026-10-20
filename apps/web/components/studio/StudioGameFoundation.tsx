@@ -61,7 +61,7 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: Readon
     ...actors.map((actor) => {
       const meta = ACTOR_META[actor.kind];
       const scale: [number, number, number] = actor.kind === "model" ? [1, 1, 1] : actor.kind === "player" ? [0.8, 1.8, 0.8] : actor.kind === "light" ? [0.45, 0.45, 0.45] : actor.kind === "prop" ? [1.2, 3, 1.2] : [2.4, 2, 1.4];
-      return { id: actor.id, name: actor.name, type: meta.primitive, meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "", position: actor.position, rotation: [0, actor.kind === "prop" ? 18 : 0, 0], scale, material: "mat-" + actor.kind };
+      return { id: actor.id, name: actor.name, type: meta.primitive, assetId: actor.assetId, meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "", position: actor.position, rotation: [0, actor.kind === "prop" ? 18 : 0, 0] as [number, number, number], scale, material: "mat-" + actor.kind };
     }),
   ];
 
@@ -96,6 +96,11 @@ export default function StudioGameFoundation() {
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [savedLevels, setSavedLevels] = useState<SavedLevel[]>([]);
   const [levelsError, setLevelsError] = useState<string | null>(null);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generatingModel, setGeneratingModel] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationResult, setGenerationResult] = useState<string | null>(null);
+  const [meshError, setMeshError] = useState<string | null>(null);
 
   useEffect(() => {
     setProjectAssets([]);
@@ -150,6 +155,53 @@ export default function StudioGameFoundation() {
     setSelectedId(id);
   }, []);
 
+  const generateModel = useCallback(async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt || generatingModel || projectId === "default") return;
+    setGeneratingModel(true);
+    setGenerationError(null);
+    setGenerationResult(null);
+    setMeshError(null);
+    try {
+      // Use the existing server-side authenticated, credit-metered provider.
+      // PlayCanvas renders the resulting GLB; it does not run an AI model.
+      const response = await fetch("/api/v1/3d/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ projectId, prompt, format: "glb", addTexture: false }),
+      });
+      const data = await response.json().catch(() => null) as {
+        asset?: { id?: string; url?: string };
+        error?: { message?: string };
+      } | null;
+      if (!response.ok || !data?.asset?.url || !/^3d_[a-zA-Z0-9_-]+$/.test(data.asset.id ?? "")) {
+        throw new Error(data?.error?.message || `3D generation failed (HTTP ${response.status}).`);
+      }
+      const asset: ProjectGlbAsset = {
+        id: data.asset.id!,
+        name: prompt.slice(0, 70) + ".glb",
+        url: data.asset.url,
+      };
+      setProjectAssets((current) => [asset, ...current.filter((entry) => entry.id !== asset.id)]);
+      addGeneratedModel(asset);
+      setGenerationResult("GLB saved to this project. Loading its mesh into PlayCanvas…");
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : "Unable to generate a 3D model.");
+    } finally {
+      setGeneratingModel(false);
+    }
+  }, [addGeneratedModel, aiPrompt, generatingModel, projectId]);
+
+  const onMeshStatus = useCallback((detail: { objectId: string; state: "loaded" | "error"; message?: string }) => {
+    if (detail.state === "error") {
+      setMeshError(detail.message || "PlayCanvas could not load the 3D model.");
+    } else {
+      setMeshError(null);
+      setGenerationResult("3D model rendered in PlayCanvas WebGL2.");
+    }
+  }, []);
+
   const openSavedLevel = useCallback((level: SavedLevel) => {
     try {
       const payload: unknown = JSON.parse(level.content);
@@ -183,15 +235,14 @@ export default function StudioGameFoundation() {
     }
   }, []);
 
-  useEffect(() => {
-    const render = () => {
-      viewportRef.current?.renderScene(scene);
-      viewportRef.current?.setShowGrid(true);
-    };
-    render();
-    const retries = [250, 900].map((delay) => window.setTimeout(render, delay));
-    return () => retries.forEach(window.clearTimeout);
+  const renderWorld = useCallback(() => {
+    viewportRef.current?.renderScene(scene);
+    viewportRef.current?.setShowGrid(true);
   }, [scene]);
+
+  useEffect(() => {
+    renderWorld();
+  }, [renderWorld]);
 
   const selectPreset = useCallback((next: WorldPreset) => {
     setPreset(next);
@@ -265,7 +316,7 @@ export default function StudioGameFoundation() {
   const selected = actors.find((actor) => actor.id === selectedId);
   return (
     <div className="flex h-full w-full overflow-hidden bg-slate-950">
-      <aside className="w-64 shrink-0 border-r border-slate-800 bg-slate-950 p-3">
+      <aside className="w-64 shrink-0 overflow-y-auto border-r border-slate-800 bg-slate-950 p-3">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">World presets</p>
         <div className="space-y-1">
           {(Object.keys(PRESETS) as WorldPreset[]).map((id) => (
@@ -315,22 +366,49 @@ export default function StudioGameFoundation() {
 
       <section className="relative flex min-w-0 flex-1 flex-col bg-slate-900">
         <header className="flex h-11 shrink-0 items-center justify-between border-b border-slate-800 px-3">
-          <span className="flex items-center gap-2 text-xs font-mono text-slate-400"><MapPin size={14} className="text-cyan-400" /> {scene.name}</span>
+          <span className="flex items-center gap-2 text-xs font-mono text-slate-400"><MapPin size={14} className="text-cyan-400" /> PlayCanvas · WebGL2 · {scene.name}</span>
           <div className="flex items-center gap-2">
             <button onClick={togglePreview} className={"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold " + (running ? "bg-red-600/80 text-white" : "bg-emerald-600 text-white hover:bg-emerald-500")}>
               {running ? <Square size={12} /> : <Play size={12} />} {running ? "Stop Preview" : "Run World"}
             </button>
           </div>
         </header>
-        <StudioViewport ref={viewportRef} className="min-h-0 flex-1" showGrid showStats />
+        <StudioViewport ref={viewportRef} onReady={renderWorld} onMeshStatus={onMeshStatus} className="min-h-0 flex-1" showGrid showStats />
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-slate-700 bg-slate-950/85 px-3 py-1.5 text-[11px] font-mono text-slate-300">
-          {running ? "World preview running — game scene is live. FPV controller and nodes come next." : "Build world → save level → run preview"}
+          {running ? "Orbiting scene preview — player controls are not implemented yet." : "PlayCanvas WebGL2 scene · create, render, save"}
         </div>
       </section>
 
-      <aside className="w-72 shrink-0 border-l border-slate-800 bg-slate-950 p-4">
+      <aside className="w-72 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-950 p-4">
         <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> Game foundation</p>
-        <p className="mt-2 text-xs leading-5 text-slate-400">Create a saved level with a player start, physical scene objects, lights and your generated GLB assets. Game controls and AI behaviors are a separate next step.</p>
+        <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas WebGL2 renders the world and actual generated GLB meshes. Game logic and playable FPV controls are not enabled yet.</p>
+        <section className="mt-4 rounded-lg border border-cyan-900/70 bg-cyan-950/20 p-3" aria-label="AI 3D model generation">
+          <label htmlFor="wonderplay-ai-prompt" className="block text-xs font-semibold text-cyan-200">AI model rendering · Text to 3D</label>
+          <textarea
+            id="wonderplay-ai-prompt"
+            className="mt-2 w-full resize-y rounded-md border border-slate-700 bg-slate-950 p-2 text-xs text-white placeholder:text-slate-500"
+            rows={3}
+            maxLength={4000}
+            value={aiPrompt}
+            onChange={(event) => setAiPrompt(event.target.value)}
+            placeholder="Describe a prop, character or object…"
+            disabled={generatingModel}
+          />
+          <p className="mt-1 text-[10px] leading-4 text-slate-400">
+            Uses the configured Hunyuan text-to-3D provider. Geometry only; textures are not requested.
+            The current billing route reserves 1 3D credit per attempt. Provider failures after reservation may still consume that credit.
+          </p>
+          <button type="button" className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-cyan-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => void generateModel()}
+            disabled={generatingModel || !aiPrompt.trim() || projectId === "default"}>
+            {generatingModel ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            {generatingModel ? "Generating real GLB…" : "Generate and add to world · 1 credit"}
+          </button>
+          {projectId === "default" && <p className="mt-2 text-xs text-amber-300">Choose a real project before generating an asset.</p>}
+          {generationError && <p role="alert" className="mt-2 text-xs text-red-300">{generationError}</p>}
+          {meshError && <p role="alert" className="mt-2 text-xs text-red-300">{meshError}</p>}
+          {generationResult && !meshError && <p role="status" className="mt-2 text-xs text-emerald-300">{generationResult}</p>}
+        </section>
         {!assetsLoading && actors.some((actor) => actor.assetId && !modelUrls.has(actor.assetId)) &&
           <p role="alert" className="mt-2 text-xs text-amber-300">Some imported models are unavailable in this project. Reopen or restore those assets before publishing.</p>}
         <div className="mt-5 grid grid-cols-2 gap-2">

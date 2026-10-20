@@ -15,6 +15,8 @@ export type GeneratedSceneObject = {
   name: string;
   type: ScenePrimitive;
   meshUrl: string;
+  /** Durable reference for a project-owned generated GLB (never a signed URL). */
+  assetId?: string;
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];

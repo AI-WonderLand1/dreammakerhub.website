@@ -20,6 +20,11 @@ function getBaseUrl(): string {
   }
 }
 
+/** Validate provider configuration before reserving billable 3D credits. */
+export function assertHunyuanProviderConfigured(): void {
+  getBaseUrl();
+}
+
 function getHeaders(includeJson = false): Record<string, string> {
   const headers: Record<string, string> = {};
   if (includeJson) headers["content-type"] = "application/json";
