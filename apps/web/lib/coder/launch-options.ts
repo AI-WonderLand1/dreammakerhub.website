@@ -4,7 +4,7 @@ import { secureCoderApiOrigin } from './secure-origin';
 
 export type CoderLaunchOption = { label: string; value: string };
 // The customer's choice is a PROFILE ID, never a container image URL.
-export const APPROVED_IDE_PROFILE_IDS = ['linux', 'node'] as const;
+export const APPROVED_IDE_PROFILE_IDS = ['linux', 'web', 'python', 'webgl'] as const;
 export type ApprovedIdeProfile = (typeof APPROVED_IDE_PROFILE_IDS)[number];
 export type CoderLaunchConfig = {
   templateId: string;
@@ -14,6 +14,7 @@ export type CoderLaunchConfig = {
   cpu: CoderLaunchOption[];
   memory: CoderLaunchOption[];
   images: CoderLaunchOption[];
+  imageParameterSupported: boolean;
   regions: CoderLaunchOption[];
   repositorySupported: boolean;
   sshSupported: boolean;
@@ -103,17 +104,27 @@ export async function getCoderLaunchConfig(): Promise<CoderLaunchConfig> {
     .map((option) => ({ label: option.name || option.value, value: option.value }));
   const cpu = choices('cpu');
   const memory = choices('memory');
-  const images = choices('ide_image').filter((choice) =>
-    (APPROVED_IDE_PROFILE_IDS as readonly string[]).includes(choice.value));
-  // An image parameter without approved choices must not silently select an
-  // unknown image or fall back to a user-provided registry URL.
-  if (byName('ide_image') && !images.length) throw new Error('Coder has no approved IDE image profiles.');
+  const imageParameterSupported = Boolean(byName('ide_image'));
+  const publishedImages = choices('ide_image');
+  // Reject the entire published template if it exposes an unapproved runtime.
+  // Otherwise Coder's direct UI could bypass the website's allowlist.
+  if (publishedImages.some((choice) => !(APPROVED_IDE_PROFILE_IDS as readonly string[]).includes(choice.value))) {
+    throw new Error('Coder publishes an unapproved IDE runtime profile.');
+  }
+  if (imageParameterSupported && !publishedImages.some((choice) => choice.value === 'linux')) {
+    throw new Error('Coder does not publish the required Linux fallback.');
+  }
+  // Support existing published templates during the upgrade. They can still
+  // create only Linux workspaces until the new template version is published.
+  const images = imageParameterSupported
+    ? publishedImages
+    : [{ label: 'Linux / General', value: 'linux' }];
   return {
     templateId: template.id,
     templateVersionId: template.active_version_id!,
     templateName: template.name,
     machineProfiles: choices('machine_profile'),
-    cpu, memory, images,
+    cpu, memory, images, imageParameterSupported,
     regions: choices('region'),
     repositorySupported: Boolean(byName('repo_url') && byName('repo_branch')),
     sshSupported: Boolean(byName('ssh_public_key')),
