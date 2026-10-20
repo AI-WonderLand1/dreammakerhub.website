@@ -4,6 +4,7 @@ import { useBuilderStore } from '../store';
 import { normalizeSitePages, syncActivePageElements } from '../pages';
 import type { BuilderState, BuilderTheme, Breakpoint, SitePage } from '../types';
 import { logger } from '@/lib/logger';
+import { fetchAuthenticatedProject } from '@/lib/wonderspace/browser-project-fetch';
 
 const LOCAL_KEY = 'aiw-builder-state';
 const STATE_FILE = 'builder-state.json';
@@ -177,7 +178,7 @@ export class StorageService {
     const payload = JSON.stringify({ ...this.readState(), version: 2 }, null, 2);
 
     try {
-      const res = await fetch(`/api/projects/${this.projectId}/files`, {
+      const res = await fetchAuthenticatedProject(`/api/projects/${this.projectId}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -211,7 +212,7 @@ export class StorageService {
 
     const loadPromise = (async (): Promise<boolean> => {
       try {
-        const res = await fetch(`/api/projects/${projectId}/files`, {
+        const res = await fetchAuthenticatedProject(`/api/projects/${projectId}/files`, {
           method: 'GET',
         });
         if (!res.ok) return false;
@@ -259,7 +260,7 @@ export class StorageService {
     if (!this.projectId) return null;
     const snapshot = this.readState();
     try {
-      const res = await fetch(`/api/projects/${this.projectId}/revisions`, {
+      const res = await fetchAuthenticatedProject(`/api/projects/${this.projectId}/revisions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ snapshot, label }),
@@ -284,7 +285,7 @@ export class StorageService {
   async loadRevisions(): Promise<any[]> {
     if (!this.projectId) return [];
     try {
-      const res = await fetch(`/api/projects/${this.projectId}/revisions`, { method: 'GET' });
+      const res = await fetchAuthenticatedProject(`/api/projects/${this.projectId}/revisions`, { method: 'GET' });
       if (!res.ok) return [];
       const data = await res.json();
       return data.revisions ?? [];
@@ -294,7 +295,7 @@ export class StorageService {
   async restoreRevision(revisionId: string): Promise<boolean> {
     if (!this.projectId) return false;
     try {
-      const res = await fetch(`/api/projects/${this.projectId}/revisions?revisionId=${revisionId}`, {
+      const res = await fetchAuthenticatedProject(`/api/projects/${this.projectId}/revisions?revisionId=${revisionId}`, {
         method: 'PUT',
       });
       if (!res.ok) return false;
