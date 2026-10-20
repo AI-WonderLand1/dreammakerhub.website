@@ -10,7 +10,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); coderFetchMock.mockReset(); });
 
 describe('Approved IDE images: discovery and provisioning', () => {
-  it('shows only admin-approved profiles from the published Coder template', async () => {
+  it('exposes exactly the approved profile IDs published by Coder', async () => {
     vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
     vi.stubEnv('CODER_API_TOKEN', 'test-token');
     vi.stubEnv('CODER_IDE_TEMPLATE_NAME', 'dreammakerhub-customer-ide');
@@ -23,16 +23,20 @@ describe('Approved IDE images: discovery and provisioning', () => {
           { name: 'memory', options: [{ name: '2 GiB', value: '2' }] },
           { name: 'ide_image', options: [
             { name: 'Linux / VS Code', value: 'linux' },
-            { name: 'Node.js / VS Code', value: 'node' },
-            { name: 'User-controlled image', value: 'docker.io/attacker/ide:latest' },
+            { name: 'Web / Full Stack', value: 'web' },
+            { name: 'Python / AI Development', value: 'python' },
+            { name: 'Game / PlayCanvas WebGL', value: 'webgl' },
           ] },
         ],
     } as Response));
     const config = await getCoderLaunchConfig();
     expect(config.templateId).toBe('customer-template-id');
+    expect(config.imageParameterSupported).toBe(true);
     expect(config.images).toEqual([
       { label: 'Linux / VS Code', value: 'linux' },
-      { label: 'Node.js / VS Code', value: 'node' },
+      { label: 'Web / Full Stack', value: 'web' },
+      { label: 'Python / AI Development', value: 'python' },
+      { label: 'Game / PlayCanvas WebGL', value: 'webgl' },
     ]);
   });
 
@@ -50,7 +54,22 @@ describe('Approved IDE images: discovery and provisioning', () => {
           { name: 'ide_image', options: [{ value: 'some-user-image' }] },
         ],
     } as Response));
-    await expect(getCoderLaunchConfig()).rejects.toThrow('no approved IDE image profiles');
+    await expect(getCoderLaunchConfig()).rejects.toThrow('unapproved IDE runtime profile');
+  });
+
+  it('rejects templates advertising arbitrary registry images, rather than silently filtering unsafe options', async () => {
+    vi.stubEnv('CODER_API_URL', 'https://coder.example.test');
+    vi.stubEnv('CODER_API_TOKEN', 'test-token');
+    coderFetchMock.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () => url.endsWith('/api/v2/templates')
+        ? [{ id: 'id', name: 'ai-wonderland-google', active_version_id: 'v1' }]
+        : [{ name: 'ide_image', options: [
+            { value: 'linux' },
+            { value: 'docker.io/attacker/image:latest' },
+          ] }],
+    } as Response));
+    await expect(getCoderLaunchConfig()).rejects.toThrow('unapproved IDE runtime profile');
   });
 
   it('keeps workspace images operator-controlled', () => {
