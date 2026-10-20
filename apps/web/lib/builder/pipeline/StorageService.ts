@@ -172,8 +172,8 @@ export class StorageService {
     } catch { return false; }
   }
 
-  async saveToProject(): Promise<void> {
-    if (!this.projectId) return;
+  async saveToProject(): Promise<boolean> {
+    if (!this.projectId) return false;
     const payload = JSON.stringify({ ...this.readState(), version: 2 }, null, 2);
 
     try {
@@ -193,11 +193,13 @@ export class StorageService {
         timestamp: Date.now(),
       });
       logger.info(`[Storage] Saved ${this.projectId}`);
+      return true;
     } catch (err: any) {
       this.bus.emit(EventNames.STORAGE_ERROR, {
         projectId: this.projectId,
-        error: err.message,
+        error: err instanceof Error ? err.message : 'Project save failed',
       });
+      return false;
     }
   }
 
