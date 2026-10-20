@@ -18,6 +18,7 @@ import {
   PanelRight,
   Redo2,
   Rocket,
+  Save,
   Smartphone,
   Tablet,
   Undo2,
@@ -28,9 +29,13 @@ export type BuilderMode = 'design' | 'code' | 'preview';
 export function SovereignNavBar({
   activeMode,
   onModeChange,
+  onSave,
+  saveStatus = 'idle',
 }: {
   activeMode: BuilderMode;
   onModeChange: (mode: BuilderMode) => void;
+  onSave?: () => void;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
 }) {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId') || '';
@@ -77,13 +82,13 @@ export function SovereignNavBar({
   useEffect(() => {
     if (activeMode !== 'code' || typeof window === 'undefined') return;
     const target = projectId
-      ? `/dashboard/projects/${encodeURIComponent(projectId)}#files`
+      ? `/dashboard/projects/${encodeURIComponent(projectId)}/files`
       : '/dashboard/projects';
     window.location.replace(target);
   }, [activeMode, projectId]);
 
   const projectFilesHref = projectId
-    ? `/dashboard/projects/${encodeURIComponent(projectId)}#files`
+    ? `/dashboard/projects/${encodeURIComponent(projectId)}/files`
     : '/dashboard/projects';
 
   const deviceButtons = [
@@ -115,8 +120,13 @@ export function SovereignNavBar({
             <span className="max-w-[180px] truncate text-[10px] font-bold text-white/78">{projectName}</span>
             <span className="rounded bg-white/[.045] px-1 py-0.5 text-[7px] font-black text-white/30">BUILD</span>
           </div>
-          <div className="mt-0.5 flex items-center gap-1 text-[8px] font-semibold text-emerald-300/65">
-            <Check size={9} /> Autosave
+          <div role="status" className={`mt-0.5 flex items-center gap-1 text-[8px] font-semibold ${saveStatus === 'error' ? 'text-red-300' : saveStatus === 'saved' ? 'text-emerald-300' : 'text-white/50'}`}>
+            {projectId ? (
+              <>
+                {saveStatus === 'saved' && <Check size={9} />}
+                {saveStatus === 'saving' ? 'Saving project…' : saveStatus === 'saved' ? 'Last save confirmed' : saveStatus === 'error' ? 'Save failed — retry' : 'Project connected · save not confirmed'}
+              </>
+            ) : 'Local draft only · no cloud save'}
           </div>
         </div>
 
@@ -240,6 +250,16 @@ export function SovereignNavBar({
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-300" />AI
           </span>
         )}
+
+        <button
+          type="button"
+          disabled={!projectId || saveStatus === 'saving'}
+          onClick={onSave}
+          title={projectId ? 'Save project to cloud storage' : 'Create a project from Dashboard before saving'}
+          className="inline-flex h-8 items-center gap-1 rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-2.5 text-[8px] font-bold text-cyan-100 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Save size={12} /> {saveStatus === 'saving' ? 'Saving' : 'Save'}
+        </button>
 
         <button
           type="button"
