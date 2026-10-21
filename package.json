@@ -68,7 +68,7 @@
     "typescript-eslint": "^8.61.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.2",
-    "vite": "^8.2.1"
+    "vite": "^8.3.4"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.2",
