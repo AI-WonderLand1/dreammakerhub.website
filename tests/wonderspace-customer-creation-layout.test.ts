@@ -49,7 +49,9 @@ describe('WonderSpace customer creation layout', () => {
     expect(form).toContain("projectId: source === 'site' ? siteProjectId : null");
     expect(provision).toContain('queueCustomerWorkspace(user, input)');
     expect(customerQueue).toContain('getProjectMetadata(projectId, user.id)');
-    expect(customerQueue).toContain('External repository and image overrides are not supported');
+    expect(customerQueue).toContain('External repository, SSH, and disk overrides are not supported');
+    expect(customerQueue).toContain('Choose an available approved Docker environment.');
+    expect(customerQueue).toContain('template.imageProfiles.includes(requestedImage as ApprovedIdeProfile)');
     expect(form).toContain('/api/user-workspace/customer/open/');
     expect(form).toContain('Open private IDE');
     expect(form).not.toContain('coder.dreammakerhub.website');

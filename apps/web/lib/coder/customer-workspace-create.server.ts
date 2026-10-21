@@ -1,6 +1,7 @@
 import 'server-only';
 import { CostGateError } from '@/lib/billing/cost-guard.server';
 import { isConfiguredCoderOperator } from '@/lib/coder/operator-access.server';
+import { APPROVED_IDE_PROFILE_IDS, type ApprovedIdeProfile } from '@/lib/coder/launch-options';
 import {
   attachCoderWorkspace,
   CODER_TTL_MS,
@@ -21,6 +22,7 @@ type Job = {
   coder_user_id: string;
   template_id: string;
   machine_profile: 'micro' | 'standard';
+  ide_image: ApprovedIdeProfile;
   compute_multiplier: 1 | 2;
   cpu: 1 | 2;
   memory_gib: 2 | 4;
@@ -80,7 +82,7 @@ export async function provisionCustomerWorkspaceNow(
     .eq('slot_id', slotId)
     .eq('user_id', userId)
     .eq('status', 'queued')
-    .select('slot_id,user_id,coder_user_id,template_id,machine_profile,compute_multiplier,cpu,memory_gib,disk_gib,max_compute_ms,status')
+    .select('slot_id,user_id,coder_user_id,template_id,machine_profile,ide_image,compute_multiplier,cpu,memory_gib,disk_gib,max_compute_ms,status')
     .maybeSingle();
 
   if (claim.error || !claim.data) {
@@ -97,6 +99,8 @@ export async function provisionCustomerWorkspaceNow(
     if (job.template_id !== templateId ||
         !UUID.test(job.coder_user_id) ||
         !['micro', 'standard'].includes(job.machine_profile) ||
+        !(APPROVED_IDE_PROFILE_IDS as readonly string[]).includes(job.ide_image) ||
+        !template.imageProfiles.includes(job.ide_image) ||
         ![1, 2].includes(job.cpu) ||
         ![2, 4].includes(job.memory_gib)) {
       throw new Error('Unverified customer job');
@@ -151,6 +155,9 @@ export async function provisionCustomerWorkspaceNow(
           template_version_id: versionId,
           rich_parameter_values: [
             { name: 'machine_profile', value: job.machine_profile },
+            ...(template.imageParameterSupported
+              ? [{ name: 'ide_image', value: job.ide_image }]
+              : []),
           ],
           ttl_ms: CODER_TTL_MS,
         },

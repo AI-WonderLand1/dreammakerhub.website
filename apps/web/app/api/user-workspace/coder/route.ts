@@ -27,17 +27,18 @@ export async function GET(request: Request) {
     }
     const db = coderServiceClient();
     const jobs = await db.from('coder_customer_jobs')
-      .select('slot_id,machine_profile')
+      .select('slot_id,machine_profile,ide_image')
       .eq('user_id', user.id);
     const profiles = new Map(
       Array.isArray(jobs.data)
-        ? jobs.data.map((job) => [job.slot_id, job.machine_profile])
+        ? jobs.data.map((job) => [job.slot_id, { machine: job.machine_profile, image: job.ide_image }])
         : [],
     );
     return NextResponse.json({
       slots: slots.map((slot) => ({
         ...slot,
-        machine_profile: profiles.get(slot.id) || null,
+        machine_profile: profiles.get(slot.id)?.machine || null,
+        ide_image: profiles.get(slot.id)?.image || 'linux',
       })),
       canOpen,
       openMode: canOpen ? (operator ? 'operator' : 'customer') : 'disabled',

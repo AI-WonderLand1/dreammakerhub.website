@@ -5,7 +5,7 @@ import { PLAN_LIMITS } from '@/lib/billing/limits';
 import { coderApiConfig, coderServiceClient } from '@/lib/coder/workspace-slots.server';
 import { verifiedCustomerCoderOwner } from '@/lib/coder/customer-identity.server';
 import { workspaceProfile } from '@/lib/coder/workspace-profiles';
-import { getCoderLaunchConfig } from '@/lib/coder/launch-options';
+import { getCoderLaunchConfig, type ApprovedIdeProfile } from '@/lib/coder/launch-options';
 import { getProjectMetadata } from '@/lib/projects/storage';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -28,6 +28,8 @@ export type VerifiedCustomerTemplate = {
   id: string;
   versionId: string;
   name: string;
+  imageParameterSupported: boolean;
+  imageProfiles: ApprovedIdeProfile[];
 };
 
 /**
@@ -48,6 +50,12 @@ export async function verifiedCustomerTemplate(): Promise<VerifiedCustomerTempla
     throw new CostGateError('The published Coder template has unapproved customer machine profiles.');
   }
 
+  if (config.images.length < 1 ||
+      config.images.some((image) => !['linux', 'web', 'python', 'webgl'].includes(image.value)) ||
+      !config.images.some((image) => image.value === 'linux')) {
+    throw new CostGateError('The published Coder runtime list is not approved.');
+  }
+
   if (!UUID.test(config.templateId) || !UUID.test(config.templateVersionId)) {
     throw new CostGateError('Coder returned an invalid published template identity.');
   }
@@ -56,6 +64,8 @@ export async function verifiedCustomerTemplate(): Promise<VerifiedCustomerTempla
     id: config.templateId,
     versionId: config.templateVersionId,
     name: config.templateName,
+    imageParameterSupported: config.imageParameterSupported,
+    imageProfiles: config.images.map((image) => image.value as ApprovedIdeProfile),
   };
 }
 
@@ -79,8 +89,13 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
   if (profile.cpu > 2 || profile.memoryGiB > 4 || !['micro', 'standard'].includes(profile.id)) {
     throw new CostGateError('That machine profile is not enabled for the current customer rollout.', 429);
   }
-  if (body.repository || body.ideImage || body.sshPublicKey || body.diskGiB !== undefined) {
-    throw new CostGateError('External repository and image overrides are not supported by the customer IDE.', 429);
+  if (body.repository || body.sshPublicKey || body.diskGiB !== undefined) {
+    throw new CostGateError('External repository, SSH, and disk overrides are not supported by the customer IDE.', 429);
+  }
+  const requestedImage = body.ideImage === undefined ? 'linux' : body.ideImage;
+  const template = await verifiedCustomerTemplate();
+  if (typeof requestedImage !== 'string' || !template.imageProfiles.includes(requestedImage as ApprovedIdeProfile)) {
+    throw new CostGateError('Choose an available approved Docker environment.', 429);
   }
 
   const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
@@ -96,7 +111,7 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
   }
   const plan = await verifiedCostPlan(user.id);
   const coderUserId = await verifiedCustomerCoderOwner(user);
-  const templateId = await verifiedCustomerTemplateId();
+  const templateId = template.id;
   const limit = PLAN_LIMITS[plan].workspacesLimit;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 999999) {
     throw new CostGateError('Customer saved-workspace allowance is not configured.');
@@ -113,6 +128,7 @@ export async function queueCustomerWorkspace(user: User, input: unknown): Promis
     slot_id: slotId, user_id: user.id, coder_user_id: coderUserId,
     template_id: templateId,
     machine_profile: profile.id,
+    ide_image: requestedImage,
     compute_multiplier: profile.computeMultiplier,
     cpu: profile.cpu,
     memory_gib: profile.memoryGiB,

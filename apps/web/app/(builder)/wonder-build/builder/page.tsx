@@ -37,6 +37,11 @@ import {
   findElementInfo,
   isDescendantOf,
 } from '@/lib/builder/dnd-utils';
+import {
+  FREE_ORIGIN_POSITION_KEY,
+  FREE_ORIGIN_WIDTH_KEY,
+  FREE_POSITION_KEY,
+} from '@/lib/builder/puzzle-docking';
 
 const VisualBuilderCanvas = dynamic(() => import('@/lib/builder/components/VisualBuilderCanvas'), { ssr: false });
 const PagesPanel = dynamic(() => import('@/lib/builder/components/PagesPanel'), { ssr: false });
@@ -383,20 +388,56 @@ function BuilderContent() {
 
       if (activeData?.type === 'palette' && activeData.block) {
         const element = blockToCanvasElement(activeData.block);
-        if (overId === CANVAS_ROOT_ID) {
+        // Dropping onto the page should place the block where the pointer was
+        // released, not append it to normal document flow at the bottom.
+        // Container drops below still use the nested layout/docking behavior.
+        const addAtPointer = () => {
+          const stage = document.querySelector<HTMLElement>('.wb-canvas-stage');
+          const originalEvent = event.activatorEvent as (Event & { clientX?: number; clientY?: number }) | null;
+          const startX = originalEvent?.clientX;
+          const startY = originalEvent?.clientY;
+          if (stage && typeof startX === 'number' && typeof startY === 'number') {
+            const rect = stage.getBoundingClientRect();
+            const releaseX = startX + event.delta.x;
+            const releaseY = startY + event.delta.y;
+            if (releaseX >= rect.left && releaseX <= rect.right &&
+                releaseY >= rect.top && releaseY <= rect.bottom) {
+              const scale = Math.max(useBuilderStore.getState().zoom, 0.1);
+              const availableWidth = Math.max(100, rect.width / scale);
+              const x = Math.max(0, Math.min((releaseX - rect.left) / scale, availableWidth - 80));
+              const y = Math.max(0, (releaseY - rect.top) / scale);
+              const grid = useBuilderStore.getState().snapToGrid ? 8 : 1;
+              const snapped = (n: number) => Math.round(n / grid) * grid;
+              const originalWidth = element.styles?.width;
+              element.styles = {
+                ...element.styles,
+                position: 'absolute',
+                left: `${snapped(x)}px`,
+                top: `${snapped(y)}px`,
+                width: `${Math.round(Math.min(320, availableWidth - x))}px`,
+                [FREE_POSITION_KEY]: '1',
+                [FREE_ORIGIN_POSITION_KEY]: element.styles?.position || '',
+                [FREE_ORIGIN_WIDTH_KEY]: originalWidth || '',
+              };
+            }
+          }
           addElement(element);
+          useBuilderStore.getState().selectElement(element.id);
+        };
+        if (overId === CANVAS_ROOT_ID) {
+          addAtPointer();
           return;
         }
 
         const overInfo = findElementInfo(currentElements, overId);
         if (!overInfo) {
-          addElement(element);
+          addAtPointer();
           return;
         }
 
         if (acceptsChildren(overInfo.el.type)) {
           if (allowedIn(overInfo.el.type, element.type)) addElement(element, overInfo.el.id);
-          else addElement(element);
+          else addAtPointer();
           return;
         }
 
@@ -408,7 +449,7 @@ function BuilderContent() {
           }
         }
 
-        addElement(element);
+        addAtPointer();
         return;
       }
 

@@ -31,6 +31,7 @@ type SavedWorkspace = {
   state: 'reserved' | 'provisioned' | 'deleting' | 'released';
   created_at: string;
   machine_profile?: string | null;
+  ide_image?: string | null;
 };
 type WorkspaceList = {
   slots?: SavedWorkspace[];
@@ -53,6 +54,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
   const [mode, setMode] = useState<'blank' | 'site'>('site');
   const [name, setName] = useState('');
   const [machineProfile, setMachineProfile] = useState('micro');
+  const [ideImage, setIdeImage] = useState('linux');
   const [slotId, setSlotId] = useState('');
   const [stage, setStage] = useState<Stage>('form');
   const [error, setError] = useState('');
@@ -99,6 +101,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
         }
         setOptions(data);
         setMachineProfile(data.machineProfiles.find((profile) => profile.value === 'micro')?.value || data.machineProfiles[0]?.value || 'micro');
+        setIdeImage(data.images.find((profile) => profile.value === 'linux')?.value || data.images[0]?.value || 'linux');
         setOptionsError('');
       })
       .catch((cause: unknown) => {
@@ -295,8 +298,9 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
       setStage('error');
       return;
     }
-    if (!options.machineProfiles.some((profile) => profile.value === machineProfile)) {
-      setError('Choose an approved customer machine profile.');
+    if (!options.machineProfiles.some((profile) => profile.value === machineProfile) ||
+        !options.images.some((profile) => profile.value === ideImage)) {
+      setError('Choose an approved machine size and Docker environment.');
       setStage('error');
       return;
     }
@@ -310,7 +314,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ workspaceName: name, machineProfile, projectId: mode === 'site' ? projectId : null }),
+        body: JSON.stringify({ workspaceName: name, machineProfile, ideImage, projectId: mode === 'site' ? projectId : null }),
       });
       const data = await response.json().catch(() => null) as Setup | null;
       if (!response.ok) throw new Error(data?.error || 'Workspace could not be created.');
@@ -396,6 +400,7 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
 
   const launchReady = Boolean(options && options.ready && !optionsLoading && !optionsError && name &&
     options.machineProfiles.some((profile) => profile.value === machineProfile) &&
+    options.images.some((profile) => profile.value === ideImage) &&
     (mode === 'blank' || (mode === 'site' && projectId)));
 
   return (
@@ -474,6 +479,8 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                           {workspace.state === 'provisioned' ? 'Ready' : workspace.state === 'reserved' ? 'Provisioning' : workspace.state}
                           {' · '}
                           Created {new Date(workspace.created_at).toLocaleDateString()}
+                          {' · '}
+                          {({ linux: 'Linux', web: 'Full Stack', python: 'Python', webgl: 'WebGL' } as Record<string, string>)[workspace.ide_image || 'linux'] || 'Linux'}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -606,6 +613,21 @@ export default function WonderSpaceLaunch({ projectId }: { projectId?: string | 
                       : 'Start with an empty private workspace.'}
                   </p>
                 </div>
+
+                {options && options.images.length > 0 && (
+                  <div className="grid gap-2">
+                    <label htmlFor="ide-runtime" className="text-sm font-semibold">Docker development environment</label>
+                    <select
+                      id="ide-runtime"
+                      value={ideImage}
+                      onChange={(event) => setIdeImage(event.target.value)}
+                      className="w-full rounded-xl border border-white/20 bg-slate-950 px-4 py-3"
+                    >
+                      {options.images.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                    </select>
+                    <p className="text-xs text-slate-400">Isolated Linux container with persistent project files. Windows-native apps require a Windows worker.</p>
+                  </div>
+                )}
 
                 {options && options.machineProfiles.length > 0 && (
                   <div className="grid gap-2">
