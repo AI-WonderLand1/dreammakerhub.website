@@ -616,7 +616,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           // with the site so production physics needs no third-party CDN.
           if (!(globalThis as typeof globalThis & { Ammo?: unknown }).Ammo) {
             const ammoModule = await import("sync-ammo");
-            (globalThis as typeof globalThis & { Ammo?: unknown }).Ammo = ammoModule.default;
+            // The package's TypeScript declaration exposes a CommonJS module,
+            // while browser bundlers may wrap that module in an ESM default.
+            (globalThis as typeof globalThis & { Ammo?: unknown }).Ammo =
+              "default" in ammoModule && ammoModule.default ? ammoModule.default : ammoModule;
           }
           if (disposed) return;
           const canvas = canvasRef.current;
