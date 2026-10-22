@@ -25,10 +25,11 @@
     "brace-expansion": ">=2.0.1",
     "@opentelemetry/core": ">=1.30.0",
     "mysql2": "3.23.1",
-    "mariadb": "3.5.3",
+    "mariadb": "3.5.4",
     "http-proxy-agent": {
       "@tootallnate/once": "2.0.1"
     },
-    "@modelcontextprotocol/sdk": "1.31.0"
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "ip-address": "10.7.4"
   }
 }
