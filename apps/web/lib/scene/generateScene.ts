@@ -21,6 +21,13 @@ export type GeneratedSceneObject = {
   rotation: [number, number, number];
   scale: [number, number, number];
   material?: string;
+  /** Only explicitly simulated objects should be affected by gravity. */
+  physics?: {
+    type: "static" | "dynamic" | "kinematic";
+    mass?: number;
+    friction?: number;
+    restitution?: number;
+  };
 };
 
 export type GeneratedScene = {
@@ -171,7 +178,7 @@ export function generateScene(prompt: string, opts?: { meshQuality?: string; pol
     meshUrl: "",
     position: [0, 0, 0],
     rotation: [0, 0, 0],
-    scale: [20, 20, 1],
+    scale: [20, 1, 20],
     material: "mat-ground",
   });
 

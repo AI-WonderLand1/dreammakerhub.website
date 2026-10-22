@@ -132,6 +132,7 @@
     "shadcn": "^4.15.0",
     "simple-git": "^4.0.1",
     "stripe": "^22.6.2",
+    "sync-ammo": "0.1.2",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.2.2",
     "three": "^0.186.1",
