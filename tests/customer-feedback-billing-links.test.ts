@@ -7,7 +7,7 @@ const read=(path:string)=>readFileSync(join(process.cwd(),path),"utf8");
 describe("customer-facing feedback and billing links",()=>{
   it("keeps feedback inside DreamMakerHub instead of the broken external redirect",()=>{
     const navbar=read("apps/web/components/Navbar.tsx");
-    expect(navbar.match(/label: 'Give Feedback',\\s*href: '\\/contact'/g)).toHaveLength(2);
+    expect(navbar.match(/label: 'Give Feedback',\s*href: '\/contact'/g)).toHaveLength(2);
     expect(navbar).not.toContain("href: '/dashboard/support'");
     expect(navbar).not.toContain("feedback.link/aiwonderlandinnovati");
     expect(navbar).not.toContain("invite.trustpilot.com");
