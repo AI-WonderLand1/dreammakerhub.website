@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
+import { orbitFromCameraPosition, panOrbitTarget } from "@/lib/scene/orbit-controls";
 import { logger } from "@/lib/logger";
 
 export type StudioSelection = { name: string; id: string; entityId?: number };
@@ -403,7 +404,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           o.az -= dx * 0.4;
           o.el = Math.max(5, Math.min(85, o.el + dy * 0.4));
         } else if (panning) {
-          camera.translateLocal(-dx * 0.03, dy * 0.03, 0);
+          // The orbit loop recomputes the camera transform every frame.
+          // Pan its pivot, not its temporary camera transform.
+          panOrbitTarget(orbitTargetRef.current, camera.right, camera.up, dx, dy);
         }
         lastX = e.x;
         lastY = e.y;
@@ -541,8 +544,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
           if (isDir) {
             const d = light.direction ?? [0, -1, 0];
-            // Directional lights shine toward -Z; orient so the light points along `d`
-            entity.lookAt(-d[0] * 10, -d[1] * 10, -d[2] * 10);
+            const direction = new pc.Vec3(d[0], d[1], d[2]);
+            if (direction.lengthSq() > 1e-8) {
+              direction.normalize();
+              // PlayCanvas lights emit along local -Y, not camera-style -Z.
+              entity.setRotation(new pc.Quat().setFromDirections(pc.Vec3.DOWN, direction));
+            }
           } else {
             if (light.position) entity.setPosition(light.position[0], light.position[1], light.position[2]);
           }
@@ -797,12 +804,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       // Apply scene camera
       const cam = cameraRef.current;
       if (cam && scene.camera) {
+        cameraPathRef.current.enabled = false;
         cam.camera.fov = scene.camera.fov ?? 50;
         const p = scene.camera.position ?? [0, 5, 10];
+        const target = scene.camera.target ?? [0, 1, 0];
+        orbitTargetRef.current = { x: target[0], y: target[1], z: target[2] };
+        orbitRef.current = orbitFromCameraPosition(p, target);
         cam.setPosition(p[0], p[1], p[2]);
-        if (scene.camera.target) {
-          orbitTargetRef.current = { x: scene.camera.target[0], y: scene.camera.target[1], z: scene.camera.target[2] };
-          cam.lookAt(scene.camera.target[0], scene.camera.target[1], scene.camera.target[2]);
+        if (Math.hypot(p[0] - target[0], p[1] - target[1], p[2] - target[2]) > 1e-6) {
+          cam.lookAt(target[0], target[1], target[2]);
         }
       }
 
@@ -824,6 +834,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (cam) {
         cam.camera.fov = 50;
         cam.camera.clearColor = new pc.Color(0.07, 0.07, 0.12);
+        cameraPathRef.current.enabled = false;
         orbitRef.current = { dist: 9, az: 40, el: 30 };
         orbitTargetRef.current = { x: 0, y: 1, z: 0 };
       }
@@ -928,12 +939,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
         const cam = cameraRef.current;
         if (cam) {
+          cameraPathRef.current.enabled = false;
           cam.camera.fov = opts?.fov ?? 90;
           cam.camera.clearColor = new pc.Color(0.02, 0.02, 0.04);
           cam.setPosition(0, 1.6, 0.01);
           cam.lookAt(0, 1.6, 0);
         }
-        orbitRef.current = { dist: 0.01, az: 40, el: 5 };
+        orbitRef.current = orbitFromCameraPosition([0, 1.6, 0.01], [0, 1.6, 0]);
         orbitTargetRef.current = { x: 0, y: 1.6, z: 0 };
       },
       [],
