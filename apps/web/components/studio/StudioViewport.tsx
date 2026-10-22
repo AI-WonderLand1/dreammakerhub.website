@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
+import { orbitFromCameraPosition, panOrbitTarget } from "@/lib/scene/orbit-controls";
 import { logger } from "@/lib/logger";
 
 export type StudioSelection = { name: string; id: string; entityId?: number };
@@ -55,6 +56,8 @@ export type PanoramaOpts = {
 };
 
 export type StudioViewportProps = {
+  onMeshStatus?: (detail: { objectId: string; state: "loaded" | "error"; message?: string }) => void;
+  onReady?: () => void;
   onSelect?: (selection: StudioSelection) => void;
   onEntityCreated?: (entity: { name: string; id: string }) => void;
   className?: string;
@@ -208,7 +211,7 @@ const PRIMITIVE_TYPES: Record<string, string> = {
   torus: "torus",
 };
 
-// Shape-accurate collision from primitive type + scale
+// Physics primitives ignore entity scale; specify their full physical size.
 function collisionForType(pc: any, type: string, scale?: [number, number, number]) {
   const [sx, sy, sz] = scale ?? [1, 1, 1];
   switch (type) {
@@ -217,12 +220,13 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
     case "capsule":
       return { type: "capsule", radius: Math.max(sx, sz) / 2, height: sy };
     case "cylinder":
-      return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+      return { type: "cylinder", radius: Math.max(sx, sz) / 2, height: sy };
     case "plane":
-      return { type: "plane" };
+      // PlayCanvas can render a plane, but its physics engine has no "plane"
+      // collision implementation. Use a shallow box across the whole XZ floor.
+      return { type: "box", halfExtents: new pc.Vec3(sx / 2, 0.05, sz / 2) };
     case "cone":
-      // No native cone collision; approximate with a cylinder
-      return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+      return { type: "cone", radius: Math.max(sx, sz) / 2, height: sy };
     case "box":
     default:
       return { type: "box", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
@@ -231,7 +235,7 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
 
 const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
   function StudioViewport(
-    { onSelect, onEntityCreated, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
+    { onSelect, onEntityCreated, onMeshStatus, onReady, className = "", showGizmo = true, showGrid: showGridProp = false, showStats = false, showFps = false },
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -265,13 +269,17 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const [stats, setStats] = useState<ViewportStats>({ fps: 0, entities: 0, frames: 0 });
     const onSelectRef = useRef(onSelect);
     const onEntityCreatedRef = useRef(onEntityCreated);
+    const onMeshStatusRef = useRef(onMeshStatus);
+    const onReadyRef = useRef(onReady);
     const showGridRef = useRef(showGridProp);
     const showStatsRef = useRef(showStats);
 
     useEffect(() => {
       onSelectRef.current = onSelect;
       onEntityCreatedRef.current = onEntityCreated;
-    }, [onSelect, onEntityCreated]);
+      onMeshStatusRef.current = onMeshStatus;
+      onReadyRef.current = onReady;
+    }, [onSelect, onEntityCreated, onMeshStatus, onReady]);
 
     useEffect(() => {
       showGridRef.current = showGridProp;
@@ -300,11 +308,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         const far = cameraEntity.camera.screenToWorld(startX, startY, cameraEntity.camera.farClip);
         const from = new pc.Vec3(near.x, near.y, near.z);
         const to = new pc.Vec3(far.x, far.y, far.z);
-        const dir = to.clone().sub(from).normalize();
-
         let result: any = null;
-        if (app.systems.rigidbody) {
-          result = app.systems.rigidbody.raycastFirst(from, dir, 500);
+        // Rigid body components can exist before Ammo has been loaded. In
+        // that state no physics world is available for raycasting.
+        if (app.systems.rigidbody?.dynamicsWorld) {
+          result = app.systems.rigidbody.raycastFirst(from, to);
         }
         if (!result) {
           try {
@@ -396,7 +404,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           o.az -= dx * 0.4;
           o.el = Math.max(5, Math.min(85, o.el + dy * 0.4));
         } else if (panning) {
-          camera.translateLocal(-dx * 0.03, dy * 0.03, 0);
+          // The orbit loop recomputes the camera transform every frame.
+          // Pan its pivot, not its temporary camera transform.
+          panOrbitTarget(orbitTargetRef.current, camera.right, camera.up, dx, dy);
         }
         lastX = e.x;
         lastY = e.y;
@@ -430,7 +440,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!pc) return;
       const ground = new pc.Entity("Ground");
       ground.addComponent("render", { type: "plane" });
-      ground.setLocalScale(20, 20, 1);
+      ground.setLocalScale(20, 1, 20);
       ground.setPosition(0, -0.1, 0);
       const gm = new pc.StandardMaterial();
       gm.diffuse = new pc.Color(0.13, 0.13, 0.16);
@@ -438,8 +448,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       gm.metalness = 0;
       gm.update();
       ground.render.material = gm;
+      ground.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(10, 0.05, 10) });
       ground.addComponent("rigidbody", { type: "static" });
-      ground.addComponent("collision", { type: "plane" });
       app.root.addChild(ground);
       groundRef.current = ground;
       return ground;
@@ -454,7 +464,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       }
       const grid = new pc.Entity("GridHelper");
       grid.addComponent("render", { type: "plane" });
-      grid.setLocalScale(20, 20, 1);
+      grid.setLocalScale(20, 1, 20);
       grid.setPosition(0, 0.005, 0);
       grid.render.castShadows = false;
       grid.render.receiveShadows = false;
@@ -534,8 +544,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
           if (isDir) {
             const d = light.direction ?? [0, -1, 0];
-            // Directional lights shine toward -Z; orient so the light points along `d`
-            entity.lookAt(-d[0] * 10, -d[1] * 10, -d[2] * 10);
+            const direction = new pc.Vec3(d[0], d[1], d[2]);
+            if (direction.lengthSq() > 1e-8) {
+              direction.normalize();
+              // PlayCanvas lights emit along local -Y, not camera-style -Z.
+              entity.setRotation(new pc.Quat().setFromDirections(pc.Vec3.DOWN, direction));
+            }
           } else {
             if (light.position) entity.setPosition(light.position[0], light.position[1], light.position[2]);
           }
@@ -585,8 +599,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!pc) return;
         const targetEntity = new pc.Entity(`AI_Asset_${assetId ?? Date.now()}`);
         targetEntity.addComponent("model", { type: "asset", asset: asset.resource.model });
-        targetEntity.addComponent("rigidbody", { type: "static" });
         targetEntity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.5, 0.5) });
+        targetEntity.addComponent("rigidbody", { type: "static" });
         app.root.addChild(targetEntity);
         selectedEntityRef.current = targetEntity;
         onEntityCreatedRef.current?.({ name: targetEntity.name, id: `${assetId ?? Date.now()}` });
@@ -596,6 +610,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     useEffect(() => {
       let disposed = false;
       let app: any = null;
+      let device: any = null;
 
       async function init() {
         try {
@@ -603,21 +618,38 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           if (disposed || !containerRef.current || !canvasRef.current) return;
           const pc = playcanvas;
           pcRef.current = pc;
+          // Like PlayCanvas React's PhysicsProvider, install Ammo before the
+          // Application creates its rigidbody system. The dependency is bundled
+          // with the site so production physics needs no third-party CDN.
+          if (!(globalThis as typeof globalThis & { Ammo?: unknown }).Ammo) {
+            const ammoModule = await import("sync-ammo");
+            // The package's TypeScript declaration exposes a CommonJS module,
+            // while browser bundlers may wrap that module in an ESM default.
+            (globalThis as typeof globalThis & { Ammo?: unknown }).Ammo =
+              "default" in ammoModule && ammoModule.default ? ammoModule.default : ammoModule;
+          }
+          if (disposed) return;
           const canvas = canvasRef.current;
-          const ctx = canvas.getContext("webgl2") || canvas.getContext("webgl");
-          if (!ctx) {
-            setError("WebGL is not available in this browser");
+          // Create a real PlayCanvas WebGL2 device; do not claim the canvas
+          // context before the engine can initialize it.
+          device = await pc.createGraphicsDevice(canvas, {
+            deviceTypes: [pc.DEVICETYPE_WEBGL2],
+            antialias: true,
+          });
+          if (disposed) {
+            device.destroy();
+            device = null;
             return;
           }
-
           app = new pc.Application(canvas, {
-            graphicsDeviceOptions: { context: ctx },
+            graphicsDevice: device,
             mouse: new pc.Mouse(canvas),
             touch: new pc.TouchDevice(canvas),
             elementInput: new pc.ElementInput(canvas),
           });
           appRef.current = app;
           app.start();
+          app.systems.rigidbody.gravity = new pc.Vec3(0, -9.81, 0);
 
           const camera = new pc.Entity("Camera");
           camera.addComponent("camera", {
@@ -652,8 +684,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           (app as any)._injectHandler = handleRemoteMeshInjection;
 
           setReady(true);
+          onReadyRef.current?.();
         } catch (err: any) {
-          setError(err instanceof Error ? err.message : "Failed to start 3D engine");
+          if (!disposed) setError(err instanceof Error ? err.message : "WebGL2 could not start");
+          if (!app && device) device.destroy();
         }
       }
 
@@ -665,6 +699,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           window.removeEventListener("resize", (app as any)._resizeHandler);
           window.removeEventListener("injectRemoteAiModel", (app as any)._injectHandler);
           app.destroy();
+        } else if (device) {
+          device.destroy();
         }
         appRef.current = null;
         pcRef.current = null;
@@ -690,40 +726,74 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       for (const obj of scene.objects ?? []) {
         const entity = new pc.Entity(obj.name || "object");
         const renderType = PRIMITIVE_TYPES[obj.type] ?? "box";
-        entity.addComponent("render", { type: renderType });
+        // Never substitute a cube for a missing or still-loading AI GLB.
+        if (!obj.assetId) entity.addComponent("render", { type: renderType });
 
         if (obj.position) entity.setPosition(obj.position[0], obj.position[1], obj.position[2]);
         if (obj.rotation) entity.setEulerAngles(obj.rotation[0], obj.rotation[1], obj.rotation[2]);
         if (obj.scale) entity.setLocalScale(obj.scale[0], obj.scale[1], obj.scale[2]);
 
-        if (obj.material && materialCache.has(obj.material)) {
+        if (entity.render && obj.material && materialCache.has(obj.material)) {
           entity.render.material = materialCache.get(obj.material);
         }
 
-        entity.addComponent("rigidbody", { type: "static" });
         const coll = collisionForType(pc, obj.type, obj.scale);
         entity.addComponent("collision", coll);
+        if (obj.physics?.type) {
+          entity.addComponent("rigidbody", {
+            type: obj.physics.type,
+            mass: obj.physics.mass ?? (obj.physics.type === "dynamic" ? 1 : 0),
+            friction: obj.physics.friction ?? 0.6,
+            restitution: obj.physics.restitution ?? 0.1,
+          });
+        } else {
+          entity.addComponent("rigidbody", { type: "static" });
+        }
 
         root.addChild(entity);
 
         // Load remote GLB mesh if provided
         if (obj.meshUrl) {
           app.assets.loadFromUrl(obj.meshUrl, "container", (err: Error | null, asset: any) => {
-            if (err) {
-              logger.warn(`Failed to load mesh ${obj.meshUrl}:`, err);
+            // A different scene may have replaced this one while the GLB was
+            // loading. Never attach a late callback into an obsolete world.
+            if (entity.parent !== root) return;
+            if (err || !asset?.resource?.instantiateRenderEntity) {
+              logger.warn("Failed to load PlayCanvas GLB geometry", { objectId: obj.id, error: err });
+              onMeshStatusRef.current?.({
+                objectId: obj.id,
+                state: "error",
+                message: "The 3D model could not be displayed. Refresh its project asset and try again.",
+              });
               return;
             }
-            if (entity && entity.render) {
-              entity.removeComponent("render");
-              entity.addComponent("model", { type: "asset", asset: asset.resource.model });
+            try {
+              // Container assets are scene hierarchies, not a Model asset ID.
+              // instantiateRenderEntity keeps the GLB's meshes and materials.
+              const imported = asset.resource.instantiateRenderEntity({ castShadows: true });
+              if (entity.render) entity.removeComponent("render");
+              entity.addChild(imported);
               if (wireframeRef.current) {
-                forEachEntity(entity, (e) => {
-                  if (e.model?.meshInstances) {
-                    e.model.meshInstances.forEach((mi: any) => (mi.style = pc.RENDERSTYLE_WIREFRAME));
+                forEachEntity(imported, (e) => {
+                  for (const instance of e.render?.meshInstances ?? []) {
+                    instance.renderStyle = pc.RENDERSTYLE_WIREFRAME;
                   }
                 });
               }
+              onMeshStatusRef.current?.({ objectId: obj.id, state: "loaded" });
+            } catch (cause) {
+              logger.warn("PlayCanvas GLB instantiation failed", cause);
+              onMeshStatusRef.current?.({
+                objectId: obj.id, state: "error",
+                message: "The GLB could not be instantiated in PlayCanvas.",
+              });
             }
+          });
+        } else if (obj.assetId) {
+          onMeshStatusRef.current?.({
+            objectId: obj.id,
+            state: "error",
+            message: "This generated GLB is not accessible in the selected project.",
           });
         }
       }
@@ -734,12 +804,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       // Apply scene camera
       const cam = cameraRef.current;
       if (cam && scene.camera) {
+        cameraPathRef.current.enabled = false;
         cam.camera.fov = scene.camera.fov ?? 50;
         const p = scene.camera.position ?? [0, 5, 10];
+        const target = scene.camera.target ?? [0, 1, 0];
+        orbitTargetRef.current = { x: target[0], y: target[1], z: target[2] };
+        orbitRef.current = orbitFromCameraPosition(p, target);
         cam.setPosition(p[0], p[1], p[2]);
-        if (scene.camera.target) {
-          orbitTargetRef.current = { x: scene.camera.target[0], y: scene.camera.target[1], z: scene.camera.target[2] };
-          cam.lookAt(scene.camera.target[0], scene.camera.target[1], scene.camera.target[2]);
+        if (Math.hypot(p[0] - target[0], p[1] - target[1], p[2] - target[2]) > 1e-6) {
+          cam.lookAt(target[0], target[1], target[2]);
         }
       }
 
@@ -761,6 +834,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (cam) {
         cam.camera.fov = 50;
         cam.camera.clearColor = new pc.Color(0.07, 0.07, 0.12);
+        cameraPathRef.current.enabled = false;
         orbitRef.current = { dist: 9, az: 40, el: 30 };
         orbitTargetRef.current = { x: 0, y: 1, z: 0 };
       }
@@ -858,19 +932,20 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           mm.update();
           marker.render.material = mm;
           marker.render.castShadows = false;
-          marker.addComponent("rigidbody", { type: "static" });
           marker.addComponent("collision", { type: "sphere", radius: 0.3 });
+          marker.addComponent("rigidbody", { type: "static" });
           root.addChild(marker);
         }
 
         const cam = cameraRef.current;
         if (cam) {
+          cameraPathRef.current.enabled = false;
           cam.camera.fov = opts?.fov ?? 90;
           cam.camera.clearColor = new pc.Color(0.02, 0.02, 0.04);
           cam.setPosition(0, 1.6, 0.01);
           cam.lookAt(0, 1.6, 0);
         }
-        orbitRef.current = { dist: 0.01, az: 40, el: 5 };
+        orbitRef.current = orbitFromCameraPosition([0, 1.6, 0.01], [0, 1.6, 0]);
         orbitTargetRef.current = { x: 0, y: 1.6, z: 0 };
       },
       [],
@@ -952,8 +1027,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         mat.update();
         entity.render.material = mat;
 
-        entity.addComponent("rigidbody", { type: "static" });
         entity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.4, 0.4, 0.4) });
+        if (opts.type === "Physics_Item_Crate" || opts.type === "Dynamic_Enemy_AI") {
+          entity.addComponent("rigidbody", { type: "dynamic", mass: 1, friction: 0.6 });
+        } else if (opts.type !== "Trigger_Zone_Volume") {
+          entity.addComponent("rigidbody", { type: "static" });
+        }
         actorRootRef.current.addChild(entity);
         onEntityCreatedRef.current?.({ name: entity.name, id: `${opts.x}-${opts.y}` });
         return entity;

@@ -146,7 +146,7 @@ async function loadSceneImpl(app: pc.Application, sceneOrId: SceneFile | string)
       const entity = new pc.Entity(light.type === "directional" ? "Directional Light" : "Point Light");
       
       entity.addComponent("light", {
-        type: light.type || "directional",
+        type: light.type === "point" ? "omni" : light.type || "directional",
         color: new pc.Color(light.color[0], light.color[1], light.color[2]),
         intensity: light.intensity || 1
       });
@@ -154,12 +154,12 @@ async function loadSceneImpl(app: pc.Application, sceneOrId: SceneFile | string)
       if (light.position) {
         entity.setPosition(light.position[0], light.position[1], light.position[2]);
       }
-      if (light.direction) {
-        entity.setEulerAngles(
-          Math.atan2(light.direction[1], Math.sqrt(light.direction[0]**2 + light.direction[2]**2)) * 180 / Math.PI,
-          Math.atan2(light.direction[0], light.direction[2]) * 180 / Math.PI,
-          0
-        );
+      if (light.direction && (light.type === "directional" || light.type === "spot")) {
+        const direction = new pc.Vec3(light.direction[0], light.direction[1], light.direction[2]);
+        if (direction.lengthSq() > 1e-8) {
+          direction.normalize();
+          entity.setRotation(new pc.Quat().setFromDirections(pc.Vec3.DOWN, direction));
+        }
       }
       
       app.root.addChild(entity);

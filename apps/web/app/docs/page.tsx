@@ -738,12 +738,12 @@ export default function DocsPage() {
               <div className="rounded-3xl border border-rose-200 bg-rose-50 p-7 sm:p-8">
                 <MessageSquareText className="h-8 w-8 text-rose-700" />
                 <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-rose-700">Support & feedback</p>
-                <h2 className="mt-2 text-3xl font-black">Customer feedback stays inside AI WONDERLAND</h2>
+                <h2 className="mt-2 text-3xl font-black">Contact and feedback are available before sign-in</h2>
                 <p className="mt-3 max-w-4xl leading-7 text-slate-600">
-                  The site navigation sends Give Feedback to the internal support/feedback surface instead of a broken external invitation link. Product, account, billing and technical issues should use the platform support flow; broader documentation questions can use FAQ and tutorials.
+                  Use the public contact page for feedback, general questions, and pre-signup support. Signed-in members can also use dashboard support for account-specific issues.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Link href="/dashboard/support" className="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-5 py-3 text-sm font-bold text-white hover:bg-rose-600">Give Feedback / Get Support <ExternalLink className="h-4 w-4" /></Link>
+                  <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-5 py-3 text-sm font-bold text-white hover:bg-rose-600">Give Feedback / Contact Us <ArrowRight className="h-4 w-4" /></Link>
                   <Link href="/faq" className="inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-white px-5 py-3 text-sm font-bold text-rose-900">Open FAQ <ArrowRight className="h-4 w-4" /></Link>
                 </div>
               </div>

@@ -686,72 +686,79 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
     cameraRef.current.position.y = radius * Math.cos(clampedPhi);
     cameraRef.current.position.z = radius * Math.sin(clampedPhi) * Math.sin(theta);
     cameraRef.current.lookAt(0, 0, 0);
+  };
 
+  // Re-create a single lighting rig when the lighting mode changes.
+  // Lighting configuration must not run inside camera positioning.
+  const setupLighting = (scene: THREE.Scene, type: ViewportLighting): void => {
+    const previousRig = scene.getObjectByName('wonder3d-viewport-lighting');
+    if (previousRig) scene.remove(previousRig);
+    const rig = new THREE.Group();
+    rig.name = 'wonder3d-viewport-lighting';
     switch (type) {
       case 'cyberpunk': {
-        scene.add(new THREE.AmbientLight(0x0a0a20, 1.5));
+        rig.add(new THREE.AmbientLight(0x0a0a20, 1.5));
         const light1 = new THREE.DirectionalLight(0x00f0ff, 4.0);
         light1.position.set(3, 5, 2);
-        scene.add(light1);
+        rig.add(light1);
 
         const light2 = new THREE.DirectionalLight(0xff007f, 2.5);
         light2.position.set(-3, -1, -3);
-        scene.add(light2);
+        rig.add(light2);
 
         // Add rim light for separation
         const rimLight = new THREE.DirectionalLight(0x00ffff, 1.5);
         rimLight.position.set(0, 5, -5);
-        scene.add(rimLight);
+        rig.add(rimLight);
         break;
       }
       case 'sunset': {
-        scene.add(new THREE.AmbientLight(0x221111, 1.2));
+        rig.add(new THREE.AmbientLight(0x221111, 1.2));
         const keyLight = new THREE.DirectionalLight(0xff7700, 4.0);
         keyLight.position.set(5, 3, 2);
-        scene.add(keyLight);
+        rig.add(keyLight);
 
         const fillLight = new THREE.DirectionalLight(0x2266aa, 1.8);
         fillLight.position.set(-4, 1, -3);
-        scene.add(fillLight);
+        rig.add(fillLight);
 
         // Add rim light
         const rimLight = new THREE.DirectionalLight(0xff6b35, 1.2);
         rimLight.position.set(0, 4, -4);
-        scene.add(rimLight);
+        rig.add(rimLight);
         break;
       }
       case 'void': {
-        scene.add(new THREE.AmbientLight(0x050505, 0.8));
+        rig.add(new THREE.AmbientLight(0x050505, 0.8));
         const spotLight = new THREE.SpotLight(0xffffff, 6.0, 25, Math.PI / 3, 0.3);
         spotLight.position.set(0, 10, 0);
         spotLight.target.position.set(0, 0, 0);
-        scene.add(spotLight);
+        rig.add(spotLight);
         break;
       }
       case 'studio':
       default: {
         // Enhanced studio lighting for PBR
-        scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+        rig.add(new THREE.AmbientLight(0xffffff, 1.5));
         const keyLight = new THREE.DirectionalLight(0xffffff, 3.0);
         keyLight.position.set(3, 6, 2);
         keyLight.castShadow = true;
-        scene.add(keyLight);
+        rig.add(keyLight);
 
         const fillLight = new THREE.DirectionalLight(0xaabbcc, 1.5);
         fillLight.position.set(-3, 2, -2);
         fillLight.castShadow = true;
-        scene.add(fillLight);
+        rig.add(fillLight);
 
         // Add rim/hair light for separation
         const rimLight = new THREE.DirectionalLight(0xfff9c0, 1.2);
         rimLight.position.set(-2, 4, 2);
-        scene.add(rimLight);
+        rig.add(rimLight);
         break;
       }
     }
+    scene.add(rig);
   };
-
-  // Update Lighting Rig
 
   // Re-apply Render Mode Shaders/Materials
   useEffect(() => {

@@ -25,6 +25,8 @@ import type { BlockDefinition, LeftPanelTab } from '@/lib/builder/types';
 import { findBlockDefinition } from '@/lib/builder/blocks/utils';
 import { getPipeline } from '@/lib/builder/pipeline/PipelineManager';
 import { storageService } from '@/lib/builder/pipeline/StorageService';
+import { getEventBus } from '@/lib/builder/pipeline/EventBus';
+import { EventNames } from '@/lib/builder/pipeline/types';
 import { checkBuilderProjectAccess } from '@/lib/builder/project-access';
 import type { BuilderProjectStatus } from '@/lib/builder/project-access';
 import { livePreviewService } from '@/lib/builder/pipeline/LivePreviewService';
@@ -35,6 +37,11 @@ import {
   findElementInfo,
   isDescendantOf,
 } from '@/lib/builder/dnd-utils';
+import {
+  FREE_ORIGIN_POSITION_KEY,
+  FREE_ORIGIN_WIDTH_KEY,
+  FREE_POSITION_KEY,
+} from '@/lib/builder/puzzle-docking';
 
 const VisualBuilderCanvas = dynamic(() => import('@/lib/builder/components/VisualBuilderCanvas'), { ssr: false });
 const PagesPanel = dynamic(() => import('@/lib/builder/components/PagesPanel'), { ssr: false });
@@ -90,6 +97,7 @@ function BuilderContent() {
   const [toast, setToast] = useState<string | null>(null);
   const [codeWorkbench, setCodeWorkbench] = useState<'alice' | 'legacy'>('alice');
   const [projectStatus, setProjectStatus] = useState<BuilderProjectStatus>('loading');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [dragOverlay, setDragOverlay] = useState<BlockDefinition | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
 
@@ -102,6 +110,39 @@ function BuilderContent() {
     setToast(message);
     window.setTimeout(() => setToast(null), 2400);
   }, []);
+
+  // Never report a saved project until the project-file API acknowledges the write.
+  const saveProject = useCallback(async () => {
+    if (!projectId) {
+      showToast('Local draft only — create a project to save online');
+      return;
+    }
+    setSaveStatus('saving');
+    const saved = await storageService.saveToProject();
+    if (!saved) {
+      setSaveStatus('error');
+      showToast('Project save failed. Changes are not confirmed online.');
+      return;
+    }
+    const revision = await storageService.saveRevision();
+    setSaveStatus('saved');
+    showToast(revision ? 'Project saved + revision' : 'Project saved (revision unavailable)');
+  }, [projectId, showToast]);
+
+  useEffect(() => {
+    setSaveStatus('idle');
+    const bus = getEventBus();
+    const markChanged = () => setSaveStatus('idle');
+    const changed = bus.on(EventNames.PROJECT_STATE_CHANGED, markChanged);
+    const metadata = bus.on(EventNames.PROJECT_METADATA_UPDATED, markChanged);
+    const saved = bus.on(EventNames.STORAGE_SAVED, (event) => {
+      if (event.payload.projectId === projectId && !event.payload.revision) setSaveStatus('saved');
+    });
+    const failed = bus.on(EventNames.STORAGE_ERROR, (event) => {
+      if (event.payload.projectId === projectId) setSaveStatus('error');
+    });
+    return () => { changed(); metadata(); saved(); failed(); };
+  }, [projectId]);
 
   const switchTab = useCallback((next: BuilderMode) => {
     setTab(next);
@@ -255,14 +296,7 @@ function BuilderContent() {
             return;
           case 's':
             event.preventDefault();
-            if (!projectId) {
-              showToast('Saved locally');
-              return;
-            }
-            void storageService.saveToProject();
-            void storageService.saveRevision().then((revision) => {
-              showToast(revision ? 'Saved + revision' : 'Saved');
-            });
+            void saveProject();
             return;
           case 'd':
             if (selectedId) {
@@ -306,6 +340,7 @@ function BuilderContent() {
     duplicateElement,
     projectId,
     projectStatus,
+    saveProject,
     redo,
     removeElement,
     selectElement,
@@ -353,20 +388,56 @@ function BuilderContent() {
 
       if (activeData?.type === 'palette' && activeData.block) {
         const element = blockToCanvasElement(activeData.block);
-        if (overId === CANVAS_ROOT_ID) {
+        // Dropping onto the page should place the block where the pointer was
+        // released, not append it to normal document flow at the bottom.
+        // Container drops below still use the nested layout/docking behavior.
+        const addAtPointer = () => {
+          const stage = document.querySelector<HTMLElement>('.wb-canvas-stage');
+          const originalEvent = event.activatorEvent as (Event & { clientX?: number; clientY?: number }) | null;
+          const startX = originalEvent?.clientX;
+          const startY = originalEvent?.clientY;
+          if (stage && typeof startX === 'number' && typeof startY === 'number') {
+            const rect = stage.getBoundingClientRect();
+            const releaseX = startX + event.delta.x;
+            const releaseY = startY + event.delta.y;
+            if (releaseX >= rect.left && releaseX <= rect.right &&
+                releaseY >= rect.top && releaseY <= rect.bottom) {
+              const scale = Math.max(useBuilderStore.getState().zoom, 0.1);
+              const availableWidth = Math.max(100, rect.width / scale);
+              const x = Math.max(0, Math.min((releaseX - rect.left) / scale, availableWidth - 80));
+              const y = Math.max(0, (releaseY - rect.top) / scale);
+              const grid = useBuilderStore.getState().snapToGrid ? 8 : 1;
+              const snapped = (n: number) => Math.round(n / grid) * grid;
+              const originalWidth = element.styles?.width;
+              element.styles = {
+                ...element.styles,
+                position: 'absolute',
+                left: `${snapped(x)}px`,
+                top: `${snapped(y)}px`,
+                width: `${Math.round(Math.min(320, availableWidth - x))}px`,
+                [FREE_POSITION_KEY]: '1',
+                [FREE_ORIGIN_POSITION_KEY]: element.styles?.position || '',
+                [FREE_ORIGIN_WIDTH_KEY]: originalWidth || '',
+              };
+            }
+          }
           addElement(element);
+          useBuilderStore.getState().selectElement(element.id);
+        };
+        if (overId === CANVAS_ROOT_ID) {
+          addAtPointer();
           return;
         }
 
         const overInfo = findElementInfo(currentElements, overId);
         if (!overInfo) {
-          addElement(element);
+          addAtPointer();
           return;
         }
 
         if (acceptsChildren(overInfo.el.type)) {
           if (allowedIn(overInfo.el.type, element.type)) addElement(element, overInfo.el.id);
-          else addElement(element);
+          else addAtPointer();
           return;
         }
 
@@ -378,7 +449,7 @@ function BuilderContent() {
           }
         }
 
-        addElement(element);
+        addAtPointer();
         return;
       }
 
@@ -486,7 +557,7 @@ function BuilderContent() {
         Skip to canvas
       </a>
 
-      <SovereignNavBar activeMode={tab} onModeChange={switchTab} />
+      <SovereignNavBar activeMode={tab} onModeChange={switchTab} onSave={() => { void saveProject(); }} saveStatus={saveStatus} />
 
       <div className="h-full pt-[52px]">
         {tab === 'code' && (

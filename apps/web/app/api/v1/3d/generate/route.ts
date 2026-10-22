@@ -4,6 +4,7 @@ import { authenticateWonderApiKey } from "@/lib/api-keys/authenticate";
 import { requireUserId } from "@/lib/auth";
 import {
   generateHunyuanGlb,
+  assertHunyuanProviderConfigured,
   HunyuanConfigurationError,
   HunyuanGenerationError,
 } from "@/lib/3d/hunyuan-client";
@@ -72,6 +73,10 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    // Fail before reserving a credit if the provider has not been configured.
+    // Reachability/provider failures after reservation still need a separate refund workflow.
+    assertHunyuanProviderConfigured();
 
     // Use included trial/membership credits before purchased render credits.
     // Local editor/simulation operations do not use this balance.

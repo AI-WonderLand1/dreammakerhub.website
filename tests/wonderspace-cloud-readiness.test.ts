@@ -16,7 +16,8 @@ describe('WonderSpace customer cleanup', () => {
     expect(gate).not.toContain('CloudIdePaused');
     expect(gate).toContain("router.replace('/dashboard?workspaceTab=code#projects')");
     expect(backend).not.toContain('assertFreshUsageController');
-    expect(backend).toContain('await verifiedCustomerTemplateId()');
+    expect(backend).toContain('await verifiedCustomerTemplate()');
+    expect(backend).toContain('customerProvisioningGate()');
     expect(backend).toContain('await verifiedCustomerCoderOwner(user)');
   });
 
