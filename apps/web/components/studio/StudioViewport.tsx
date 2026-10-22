@@ -210,7 +210,7 @@ const PRIMITIVE_TYPES: Record<string, string> = {
   torus: "torus",
 };
 
-// Shape-accurate collision from primitive type + scale
+// Physics primitives ignore entity scale; specify their full physical size.
 function collisionForType(pc: any, type: string, scale?: [number, number, number]) {
   const [sx, sy, sz] = scale ?? [1, 1, 1];
   switch (type) {
@@ -219,15 +219,13 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
     case "capsule":
       return { type: "capsule", radius: Math.max(sx, sz) / 2, height: sy };
     case "cylinder":
-      return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+      return { type: "cylinder", radius: Math.max(sx, sz) / 2, height: sy };
     case "plane":
       // PlayCanvas can render a plane, but its physics engine has no "plane"
-      // collision implementation. Approximate the ground with a thin box.
-      // Half extents are local units; the entity's scale supplies its size.
-      return { type: "box", halfExtents: new pc.Vec3(0.5, 0.05, 0.5) };
+      // collision implementation. Use a shallow box across the whole XZ floor.
+      return { type: "box", halfExtents: new pc.Vec3(sx / 2, 0.05, sz / 2) };
     case "cone":
-      // No native cone collision; approximate with a cylinder
-      return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
+      return { type: "cone", radius: Math.max(sx, sz) / 2, height: sy };
     case "box":
     default:
       return { type: "box", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
@@ -447,8 +445,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       gm.metalness = 0;
       gm.update();
       ground.render.material = gm;
+      ground.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(10, 0.05, 10) });
       ground.addComponent("rigidbody", { type: "static" });
-      ground.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.05, 0.5) });
       app.root.addChild(ground);
       groundRef.current = ground;
       return ground;
@@ -594,8 +592,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!pc) return;
         const targetEntity = new pc.Entity(`AI_Asset_${assetId ?? Date.now()}`);
         targetEntity.addComponent("model", { type: "asset", asset: asset.resource.model });
-        targetEntity.addComponent("rigidbody", { type: "static" });
         targetEntity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.5, 0.5) });
+        targetEntity.addComponent("rigidbody", { type: "static" });
         app.root.addChild(targetEntity);
         selectedEntityRef.current = targetEntity;
         onEntityCreatedRef.current?.({ name: targetEntity.name, id: `${assetId ?? Date.now()}` });
@@ -613,6 +611,17 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           if (disposed || !containerRef.current || !canvasRef.current) return;
           const pc = playcanvas;
           pcRef.current = pc;
+          // Like PlayCanvas React's PhysicsProvider, install Ammo before the
+          // Application creates its rigidbody system. The dependency is bundled
+          // with the site so production physics needs no third-party CDN.
+          if (!(globalThis as typeof globalThis & { Ammo?: unknown }).Ammo) {
+            const ammoModule = await import("sync-ammo");
+            // The package's TypeScript declaration exposes a CommonJS module,
+            // while browser bundlers may wrap that module in an ESM default.
+            (globalThis as typeof globalThis & { Ammo?: unknown }).Ammo =
+              "default" in ammoModule && ammoModule.default ? ammoModule.default : ammoModule;
+          }
+          if (disposed) return;
           const canvas = canvasRef.current;
           // Create a real PlayCanvas WebGL2 device; do not claim the canvas
           // context before the engine can initialize it.
@@ -633,6 +642,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           });
           appRef.current = app;
           app.start();
+          app.systems.rigidbody.gravity = new pc.Vec3(0, -9.81, 0);
 
           const camera = new pc.Entity("Camera");
           camera.addComponent("camera", {
@@ -720,9 +730,18 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           entity.render.material = materialCache.get(obj.material);
         }
 
-        entity.addComponent("rigidbody", { type: "static" });
         const coll = collisionForType(pc, obj.type, obj.scale);
         entity.addComponent("collision", coll);
+        if (obj.physics?.type) {
+          entity.addComponent("rigidbody", {
+            type: obj.physics.type,
+            mass: obj.physics.mass ?? (obj.physics.type === "dynamic" ? 1 : 0),
+            friction: obj.physics.friction ?? 0.6,
+            restitution: obj.physics.restitution ?? 0.1,
+          });
+        } else {
+          entity.addComponent("rigidbody", { type: "static" });
+        }
 
         root.addChild(entity);
 
@@ -902,8 +921,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           mm.update();
           marker.render.material = mm;
           marker.render.castShadows = false;
-          marker.addComponent("rigidbody", { type: "static" });
           marker.addComponent("collision", { type: "sphere", radius: 0.3 });
+          marker.addComponent("rigidbody", { type: "static" });
           root.addChild(marker);
         }
 
@@ -996,8 +1015,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         mat.update();
         entity.render.material = mat;
 
-        entity.addComponent("rigidbody", { type: "static" });
         entity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.4, 0.4, 0.4) });
+        if (opts.type === "Physics_Item_Crate" || opts.type === "Dynamic_Enemy_AI") {
+          entity.addComponent("rigidbody", { type: "dynamic", mass: 1, friction: 0.6 });
+        } else if (opts.type !== "Trigger_Zone_Volume") {
+          entity.addComponent("rigidbody", { type: "static" });
+        }
         actorRootRef.current.addChild(entity);
         onEntityCreatedRef.current?.({ name: entity.name, id: `${opts.x}-${opts.y}` });
         return entity;
