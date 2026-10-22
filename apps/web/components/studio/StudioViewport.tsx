@@ -221,7 +221,10 @@ function collisionForType(pc: any, type: string, scale?: [number, number, number
     case "cylinder":
       return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
     case "plane":
-      return { type: "plane" };
+      // PlayCanvas can render a plane, but its physics engine has no "plane"
+      // collision implementation. Approximate the ground with a thin box.
+      // Half extents are local units; the entity's scale supplies its size.
+      return { type: "box", halfExtents: new pc.Vec3(0.5, 0.05, 0.5) };
     case "cone":
       // No native cone collision; approximate with a cylinder
       return { type: "cylinder", halfExtents: new pc.Vec3(sx / 2, sy / 2, sz / 2) };
@@ -306,11 +309,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         const far = cameraEntity.camera.screenToWorld(startX, startY, cameraEntity.camera.farClip);
         const from = new pc.Vec3(near.x, near.y, near.z);
         const to = new pc.Vec3(far.x, far.y, far.z);
-        const dir = to.clone().sub(from).normalize();
-
         let result: any = null;
-        if (app.systems.rigidbody) {
-          result = app.systems.rigidbody.raycastFirst(from, dir, 500);
+        // Rigid body components can exist before Ammo has been loaded. In
+        // that state no physics world is available for raycasting.
+        if (app.systems.rigidbody?.dynamicsWorld) {
+          result = app.systems.rigidbody.raycastFirst(from, to);
         }
         if (!result) {
           try {
@@ -436,7 +439,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!pc) return;
       const ground = new pc.Entity("Ground");
       ground.addComponent("render", { type: "plane" });
-      ground.setLocalScale(20, 20, 1);
+      ground.setLocalScale(20, 1, 20);
       ground.setPosition(0, -0.1, 0);
       const gm = new pc.StandardMaterial();
       gm.diffuse = new pc.Color(0.13, 0.13, 0.16);
@@ -445,7 +448,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       gm.update();
       ground.render.material = gm;
       ground.addComponent("rigidbody", { type: "static" });
-      ground.addComponent("collision", { type: "plane" });
+      ground.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.05, 0.5) });
       app.root.addChild(ground);
       groundRef.current = ground;
       return ground;
@@ -460,7 +463,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       }
       const grid = new pc.Entity("GridHelper");
       grid.addComponent("render", { type: "plane" });
-      grid.setLocalScale(20, 20, 1);
+      grid.setLocalScale(20, 1, 20);
       grid.setPosition(0, 0.005, 0);
       grid.render.castShadows = false;
       grid.render.receiveShadows = false;

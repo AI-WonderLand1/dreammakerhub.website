@@ -57,7 +57,7 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: Readon
   ];
 
   const objects: GeneratedSceneObject[] = [
-    { id: "ground", name: "Playable Ground", type: "plane", meshUrl: "", position: [0, 0, 0], rotation: [0, 0, 0], scale: [28, 28, 1], material: "mat-ground" },
+    { id: "ground", name: "Playable Ground", type: "plane", meshUrl: "", position: [0, 0, 0], rotation: [0, 0, 0], scale: [28, 1, 28], material: "mat-ground" },
     ...actors.map((actor) => {
       const meta = ACTOR_META[actor.kind];
       const scale: [number, number, number] = actor.kind === "model" ? [1, 1, 1] : actor.kind === "player" ? [0.8, 1.8, 0.8] : actor.kind === "light" ? [0.45, 0.45, 0.45] : actor.kind === "prop" ? [1.2, 3, 1.2] : [2.4, 2, 1.4];
