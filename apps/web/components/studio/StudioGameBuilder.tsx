@@ -98,6 +98,9 @@ export default function StudioGameBuilder() {
         rotation: [0, 0, 0],
         scale: [0.8, 0.8, 0.8],
         material: `mat-${a.id}`,
+        physics: a.type === "Physics_Item_Crate" || a.type === "Dynamic_Enemy_AI"
+          ? { type: "dynamic" as const, mass: 1, friction: 0.6 }
+          : { type: "static" as const },
       };
     });
 
