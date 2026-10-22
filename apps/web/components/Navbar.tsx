@@ -139,7 +139,7 @@ const DIRECT_LINKS = [
   { label: 'Community', href: '/community', icon: Users },
   {
     label: 'Give Feedback',
-    href: '/dashboard/support',
+    href: '/contact',
     icon: MessageSquareText,
   },
   { label: 'Blog', href: '/blog', icon: Newspaper },
@@ -179,7 +179,7 @@ const ABOUT_COLUMNS: AboutColumn[] = [
       { label: 'Community', href: '/community', icon: Users },
       {
         label: 'Give Feedback',
-        href: '/dashboard/support',
+        href: '/contact',
         icon: MessageSquareText,
       },
       { label: 'GitHub', href: 'https://github.com/AI-WonderLand1', icon: GitBranch, external: true },
