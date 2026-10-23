@@ -12,9 +12,13 @@ describe('WonderPlay unified editor layout', () => {
       expect(studio).toContain(`<${component} />`);
     }
     expect(studio).toContain('aria-label="WonderPlay workspaces"');
-    expect(studio).toContain('label: "Create"');
-    expect(studio).toContain('label: "Capture"');
-    expect(studio).toContain('aria-label={workspace === "create" ? "Create tools" : "Capture tools"}');
+    for (const tab of ["3D & Image Assets", "World & Game", "Video & Capture", "Templates & Library"]) {
+      expect(studio).toContain(`label: "${tab}"`);
+    }
+    expect(studio).toContain('aria-label="Workspace tools"');
+    expect(studio).toContain('<SandboxStudio availableAssets={[]} embedded />');
+    expect(studio).toContain('<ImageStudioWorkspace />');
+    expect(studio).toContain('<StudioTemplatesPanel />');
     expect(studio).toContain('<StudioContentBrowser />');
     expect(studio).not.toContain('GPU ENGINE READY');
   });
