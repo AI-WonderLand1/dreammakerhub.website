@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LayoutTemplate, RefreshCw } from "lucide-react";
-import Real3DPreview from "@/components/engines/Real3DPreview";
 
 type SceneTemplate = {
   id: string;
@@ -76,8 +75,7 @@ export default function StudioTemplatesPanel() {
             {templates.map((item) => (
               <Link key={item.id} href={`/wonder-build/playcanvas/editor/${encodeURIComponent(item.id)}`}
                 className="overflow-hidden rounded-xl border border-slate-700 bg-slate-900 transition hover:border-blue-500">
-                <Real3DPreview seed={item.id} preset={item.category} glbUrl={item.glbUrl}
-                  sceneData={{ nodes: item.nodes, environment: item.environment }} className="aspect-video w-full" />
+                <div className="flex aspect-video items-center justify-center bg-slate-950 text-slate-500"><LayoutTemplate size={35} aria-hidden="true" /></div>
                 <div className="p-3">
                   <h3 className="text-sm font-semibold">{item.name}</h3>
                   <p className="mt-1 line-clamp-2 text-xs text-slate-400">{item.description || "Saved PlayCanvas scene template"}</p>
