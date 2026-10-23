@@ -30,13 +30,18 @@ function configuration() {
     throw new SimpleRickError("SimpleRick GPU URL is invalid", 503);
   }
   const local = ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
-  if (parsed.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && parsed.protocol === "http:" && local)) {
+  if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && local)) {
     throw new SimpleRickError("SimpleRick GPU requires HTTPS", 503);
   }
   if (parsed.username || parsed.password || parsed.search || parsed.hash) {
     throw new SimpleRickError("SimpleRick GPU URL must not contain credentials or query parameters", 503);
   }
   return { url: parsed.origin + parsed.pathname.replace(/\/$/, ""), token };
+}
+
+/** Verify the configured GPU is reachable before taking a customer's render credit. */
+export async function assertSimpleRickGpuReady(): Promise<void> {
+  await requestGpu("/health", {}, 8_000);
 }
 
 async function requestGpu(path: string, init: RequestInit = {}, timeout = 20_000): Promise<Response> {
