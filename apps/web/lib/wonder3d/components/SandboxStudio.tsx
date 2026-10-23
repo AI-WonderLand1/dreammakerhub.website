@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AssetItem, Model3DType, ViewportLighting } from '../types';
 import { ThreeViewport } from './ThreeViewport';
@@ -66,13 +66,13 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
   const [activeAsset, setActiveAsset] = useState<AssetItem>(
     initialAsset || availableAssets[0] || {
       id: 'gen-001',
-      title: 'Aether Cyber Mech',
-      description: 'AI Generated high-fidelity hard-surface cybernetic unit.',
+      title: 'No model selected',
+      description: 'Generate a model or select one from your library.',
       category: 'models',
-      tags: ['Cyberpunk', 'Mech', 'HardSurface'],
+      tags: [],
       creator: {
         id: 'c-1',
-        name: 'OmniAI Engine',
+        name: 'AI WONDERLAND',
         avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80',
         badge: 'AI Core',
         rating: 5.0,
@@ -85,8 +85,8 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       downloadCount: 312,
       likesCount: 189,
       viewsCount: 1240,
-      dateAdded: '2026-08-08',
-      formats: ['.GLTF', '.FBX', '.USDZ'],
+      dateAdded: new Date().toISOString().slice(0,10),
+      formats: ['.GLB'],
       modelType: 'mech',
       thumbnailImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
       isAiGenerated: true,
@@ -94,15 +94,15 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       previewBgGradient: 'from-cyan-950 via-slate-900 to-black',
       primaryColor: '#00F0FF',
       specs: {
-        polyCount: 48500,
-        vertexCount: 52100,
+        polyCount: 0,
+        vertexCount: 0,
         meshCount: 1,
         textureResolution: '4K PBR',
-        rigged: true,
-        animated: true,
+        rigged: false,
+        animated: false,
         pbrReady: true,
         uvUnwrapped: true,
-        fileSizeMB: 28.4,
+        fileSizeMB: 0,
         engineCompatibility: ['Unreal 5', 'Unity', 'Three.js'],
       },
       reviews: [],
@@ -121,70 +121,44 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  useEffect(() => {
+    if (!imageFile) { setImagePreview(null); return; }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   // Viewport Settings
   const [lighting, setLighting] = useState<ViewportLighting>('cyberpunk');
   const [primaryColor, setPrimaryColor] = useState<string>(activeAsset.primaryColor || '#00F0FF');
-  const [activePostAction, setActivePostAction] = useState<string | null>(null);
 
   // Right Collapsible Drawer State
   const [historyOpen, setHistoryOpen] = useState<boolean>(true);
 
   // Generation History State
-  const [history, setHistory] = useState<HistoryItem[]>([
-    {
-      id: 'hist-1',
-      title: 'Quantum Core Reactor',
-      prompt: 'Floating plasma reactor with dark matter ring stabilizer',
-      mode: 'text_to_3d',
-      polyCount: 32400,
-      format: 'GLB',
-      fileSize: '18.2 MB',
-      timestamp: '2 mins ago',
-      modelType: 'quantum_core',
-      primaryColor: '#A855F7',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'hist-2',
-      title: 'Crystal Matrix Shard',
-      prompt: 'Refractive emerald gemstone with glowing interior facets',
-      mode: 'image_to_3d',
-      polyCount: 18900,
-      format: 'FBX',
-      fileSize: '9.4 MB',
-      timestamp: '15 mins ago',
-      modelType: 'crystal',
-      primaryColor: '#10B981',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'hist-3',
-      title: 'Portal VFX Ring',
-      prompt: 'Hyperspace jump portal with particle swirl field',
-      mode: 'ai_texture',
-      polyCount: 54100,
-      format: 'USDZ',
-      fileSize: '31.0 MB',
-      timestamp: '1 hour ago',
-      modelType: 'portal_vfx',
-      primaryColor: '#EC4899',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'hist-4',
-      title: 'Hover Drone Sentinel',
-      prompt: 'Tactical stealth drone with camera optics array',
-      mode: 'animate',
-      polyCount: 62000,
-      format: 'GLTF',
-      fileSize: '38.5 MB',
-      timestamp: '3 hours ago',
-      modelType: 'hover_car',
-      primaryColor: '#F59E0B',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=300&auto=format&fit=crop&q=80',
-    },
-  ]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
+    void fetch(`/api/v1/3d/assets${query}`, { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (cancelled || !Array.isArray(data?.assets)) return;
+        setHistory((existing) => {
+          const saved: HistoryItem[] = data.assets.map((asset: { id: string; name: string; url: string }) => ({
+            id: asset.id, title: asset.name.replace(/\\.glb$/i, '').replace(/^3d_/, 'Asset '),
+            prompt: 'Saved 3D asset', mode: 'image_to_3d', polyCount: 0,
+            format: 'GLB', fileSize: 'GLB', timestamp: 'Saved',
+            modelType: 'mech', primaryColor: '#00F0FF', thumbnailUrl: '', glbUrl: asset.url,
+          }));
+          return [...existing.filter((item) => !saved.some((asset) => asset.id === item.id)), ...saved];
+        });
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [projectId]);
 
   // Mode switcher definitions
   const modes = [
@@ -209,58 +183,76 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
     sounds.playClick();
     setGenerationError(null);
 
-    if (activeMode !== 'text_to_3d') {
-      setGenerationError('Text to 3D is live first. Image, texture, and animation modes are not wired to Hunyuan yet.');
+    if (activeMode !== 'text_to_3d' && activeMode !== 'image_to_3d') {
+      setGenerationError('Texture editing and animation are not connected to a GPU provider yet.');
       return;
     }
-
     const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt) {
-      setGenerationError('Enter a prompt before generating.');
+    if (activeMode === 'text_to_3d' && !trimmedPrompt) {
+      setGenerationError('Enter a text prompt before generating.');
       return;
     }
-
+    if (activeMode === 'image_to_3d' && !imageFile) {
+      setGenerationError('Choose a PNG, JPEG or WebP reference image first.');
+      return;
+    }
     setIsGenerating(true);
-    setGenerationProgress(12);
-
-    const progressTimer = window.setInterval(() => {
+    setGenerationProgress(5);
+    const progressTimer = activeMode === 'text_to_3d' ? window.setInterval(() => {
       setGenerationProgress((current) => Math.min(92, current + Math.max(1, Math.round((96 - current) * 0.08))));
-    }, 1200);
-
+    }, 1200) : null;
     try {
-      const style = artStyles.find((item) => item.id === artStyle)?.name;
-      const effectivePrompt = style ? `${trimmedPrompt}. Visual style: ${style}.` : trimmedPrompt;
-
-      const response = await fetch('/api/v1/3d/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          prompt: effectivePrompt,
-          format: 'glb',
-          addTexture: true,
-          // Generated GLBs can be reused in WonderPlay when a project is selected.
-          ...(projectId ? { projectId } : {}),
-        }),
-      });
-
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload?.ok || !payload?.asset?.url) {
-        throw new Error(payload?.error?.message || `3D generation failed (${response.status})`);
+      let payload: any;
+      if (activeMode === 'image_to_3d') {
+        const form = new FormData();
+        form.append('image', imageFile as File);
+        form.append('label', trimmedPrompt || (imageFile as File).name);
+        if (projectId) form.append('projectId', projectId);
+        const submit = await fetch('/api/v1/3d/image', { method: 'POST', credentials: 'include', body: form });
+        const submitted = await submit.json().catch(() => null);
+        if (!submit.ok || !submitted?.ok || !submitted?.ticket) {
+          throw new Error(submitted?.error?.message || `Could not start SimpleRick (${submit.status})`);
+        }
+        for (let attempt = 0; attempt < 240; attempt++) {
+          await new Promise((resolve) => window.setTimeout(resolve, 3000));
+          const poll = await fetch(`/api/v1/3d/image?ticket=${encodeURIComponent(submitted.ticket)}`, { credentials: 'include' });
+          const polled = await poll.json().catch(() => null);
+          if (!poll.ok || !polled?.ok) {
+            throw new Error(polled?.error?.message || `SimpleRick status failed (${poll.status})`);
+          }
+          setGenerationProgress(Number(polled.progress || 0));
+          if (polled.status === 'complete' && polled.asset?.url) {
+            payload = polled;
+            break;
+          }
+        }
+        if (!payload) throw new Error('Generation is taking longer than 12 minutes. The GPU job may still be running.');
+      } else {
+        const style = artStyles.find((item) => item.id === artStyle)?.name;
+        const effectivePrompt = style ? `${trimmedPrompt}. Visual style: ${style}.` : trimmedPrompt;
+        const response = await fetch('/api/v1/3d/generate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ prompt: effectivePrompt, format: 'glb', addTexture: true,
+            ...(projectId ? { projectId } : {}),
+          }),
+        });
+        payload = await response.json().catch(() => null);
+        if (!response.ok || !payload?.ok || !payload?.asset?.url) {
+          throw new Error(payload?.error?.message || `3D generation failed (${response.status})`);
+        }
       }
 
       const bytes = Number(payload.asset.bytes || 0);
       const fileSizeMB = bytes > 0 ? Number((bytes / 1024 / 1024).toFixed(1)) : 0;
-      const generatedTitle = trimmedPrompt.length > 38
-        ? trimmedPrompt.substring(0, 38) + '...'
-        : trimmedPrompt;
+      const label = activeMode === 'image_to_3d' ? (trimmedPrompt || imageFile?.name || 'SimpleRick asset') : trimmedPrompt;
+      const generatedTitle = label.length > 38 ? label.substring(0, 38) + '...' : label;
 
       const newAsset: AssetItem = {
         id: payload.asset.id,
         title: generatedTitle,
-        description: trimmedPrompt,
+        description: label,
         category: 'models',
-        tags: ['AI Generated', 'Hunyuan3D', artStyle],
+        tags: ['AI Generated', activeMode === 'image_to_3d' ? 'SimpleRick TRELLIS' : 'Hunyuan3D'],
         creator: {
           id: 'wonderland-3d',
           name: 'Wonderland 3D Agent',
@@ -277,9 +269,9 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
         likesCount: 0,
         viewsCount: 0,
         dateAdded: new Date().toISOString().split('T')[0],
-        formats: ['.GLTF'],
+        formats: ['.GLB'],
         modelType: 'mech',
-        thumbnailImage: '',
+        thumbnailImage: activeMode === 'image_to_3d' ? imagePreview || '' : '',
         glbUrl: payload.asset.url,
         isAiGenerated: true,
         licenseType: 'Standard',
@@ -308,7 +300,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       const newHistItem: HistoryItem = {
         id: newAsset.id,
         title: generatedTitle,
-        prompt: trimmedPrompt,
+        prompt: label,
         mode: activeMode,
         polyCount: 0,
         format: 'GLB',
@@ -325,18 +317,9 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       setGenerationError(message);
       setGenerationProgress(0);
     } finally {
-      window.clearInterval(progressTimer);
+      if (progressTimer !== null) window.clearInterval(progressTimer);
       setIsGenerating(false);
     }
-  };
-
-  // Quick Post-Processing Action
-  const handlePostAction = (actionName: string) => {
-    sounds.playClick();
-    setActivePostAction(actionName);
-    setTimeout(() => {
-      setActivePostAction(null);
-    }, 2000);
   };
 
   return (
@@ -380,6 +363,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                     onClick={() => {
                       sounds.playModeChange();
                       setActiveMode(mode.id as GenerationMode);
+                      if (mode.id === 'image_to_3d') setPrompt('');
                     }}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all ${
                       isActive
@@ -408,7 +392,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                   <label className="text-[11px] font-mono font-bold text-slate-300 flex items-center gap-1.5">
                     <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
                     {activeMode === 'text_to_3d' && 'Text Prompt Description'}
-                    {activeMode === 'image_to_3d' && 'Image Reference & Prompt'}
+                    {activeMode === 'image_to_3d' && 'Image Reference (Optional Label)'}
                     {activeMode === 'ai_texture' && 'Surface Material Prompt'}
                     {activeMode === 'animate' && 'Kinematic Motion Type'}
                   </label>
@@ -437,6 +421,22 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                   className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/80 placeholder:text-slate-600 resize-none transition-all"
                 />
               </div>
+
+              {activeMode === 'image_to_3d' && (
+                <div className="space-y-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3">
+                  <label htmlFor="simplerick-image" className="text-xs font-semibold text-cyan-200">SimpleRick reference image</label>
+                  <input id="simplerick-image" type="file" accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      if (file && file.size > 8 * 1024 * 1024) {
+                        setGenerationError('Maximum reference image size is 8 MB.'); setImageFile(null);
+                      } else { setImageFile(file); setGenerationError(null); }
+                    }}
+                    className="block w-full text-xs text-slate-300 file:mr-2 file:rounded-md file:border-0 file:bg-cyan-500 file:px-3 file:py-1.5 file:font-semibold file:text-black" />
+                  {imagePreview && <img src={imagePreview} alt="Selected 3D reference" className="max-h-40 w-full rounded-lg object-contain bg-slate-900" />}
+                  <p className="text-[10px] text-slate-400">PNG/JPEG/WebP, 8 MB max. SimpleRick turns this image into a textured GLB on your Vultr GPU. One render credit per job.</p>
+                </div>
+              )}
 
               {/* Art Style Picker */}
               <div className="space-y-1.5">
@@ -545,7 +545,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
             {isGenerating && (
               <div className="space-y-1">
                 <div className="flex justify-between text-[10px] font-mono text-cyan-400">
-                  <span>Synthesizing Mesh Geometry...</span>
+                  <span>{activeMode === 'image_to_3d' ? 'SimpleRick GPU rendering...' : 'Synthesizing Mesh Geometry...'}</span>
                   <span>{generationProgress}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
@@ -574,7 +574,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
               ) : (
                 <>
                   <Zap className="w-4 h-4 fill-current" />
-                  <span>Generate 3D Model</span>
+                  <span>{activeMode === 'image_to_3d' ? 'Generate with SimpleRick' : 'Generate 3D Model'}</span>
                 </>
               )}
             </button>
@@ -609,11 +609,12 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                 { id: 'animate', label: 'Animate', icon: Flame },
               ].map((act) => {
                 const Icon = act.icon;
-                const isSelected = activePostAction === act.id;
+                const isSelected = false;
                 return (
                   <button
                     key={act.id}
-                    onClick={() => handlePostAction(act.id)}
+                    disabled
+                     title={`${act.label} is not available yet`
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                       isSelected
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
@@ -669,7 +670,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                 <div className="flex items-center gap-2 text-slate-300">
                   <span className="text-slate-500">Polys:</span>
                   <strong className="text-purple-400 font-bold">
-                    {(activeAsset.specs?.polyCount || 48500).toLocaleString()}
+                    {activeAsset.specs?.polyCount ? activeAsset.specs.polyCount.toLocaleString() : 'Unknown'}
                   </strong>
                 </div>
                 <div className="flex items-center gap-2 text-slate-300">
@@ -681,19 +682,12 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                 <div className="flex items-center gap-2 text-slate-300">
                   <span className="text-slate-500">Size:</span>
                   <strong className="text-emerald-400 font-bold">
-                    {activeAsset.specs?.fileSizeMB || 28.4} MB
+                    {activeAsset.specs?.fileSizeMB ? `${activeAsset.specs.fileSizeMB} MB` : 'Unknown'}
                   </strong>
                 </div>
               </div>
             </div>
 
-            {/* Notification Toast for Post Action */}
-            {activePostAction && (
-              <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-xl bg-slate-900/95 border border-emerald-500/50 text-emerald-300 font-mono text-xs flex items-center gap-2 shadow-2xl animate-bounce">
-                <Sparkles className="w-4 h-4 text-emerald-400 animate-spin" />
-                <span>Running AI Post-Processing Pipeline: <strong>{activePostAction.toUpperCase()}</strong></span>
-              </div>
-            )}
 
           </div>
 
@@ -759,12 +753,12 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                           },
                           price: 0,
                           rating: 5.0,
-                          reviewsCount: 1,
-                          downloadCount: 1,
-                          likesCount: 1,
-                          viewsCount: 12,
+                          reviewsCount: 0,
+                          downloadCount: 0,
+                          likesCount: 0,
+                          viewsCount: 0,
                           dateAdded: '2026-08-08',
-                          formats: ['.GLTF', '.FBX', '.USDZ'],
+                          formats: ['.GLB'],
                           modelType: item.modelType,
                           thumbnailImage: item.thumbnailUrl,
                           glbUrl: item.glbUrl,
@@ -774,14 +768,14 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                           primaryColor: item.primaryColor,
                           specs: {
                             polyCount: item.polyCount,
-                            vertexCount: item.polyCount + 2000,
+                            vertexCount: 0,
                             meshCount: 1,
                             textureResolution: '4K PBR',
-                            rigged: true,
-                            animated: true,
+                            rigged: false,
+                            animated: false,
                             pbrReady: true,
                             uvUnwrapped: true,
-                            fileSizeMB: parseFloat(item.fileSize),
+                            fileSizeMB: Number.parseFloat(item.fileSize) || 0,
                             engineCompatibility: ['Unreal 5', 'Unity', 'Three.js'],
                           },
                           reviews: [],
@@ -796,11 +790,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                       {/* Thumbnail & Title */}
                       <div className="flex gap-2.5 items-center">
                         <div className="w-12 h-12 rounded-lg bg-slate-950 overflow-hidden shrink-0 border border-slate-800 relative">
-                          <img
-                            src={item.thumbnailUrl}
-                            alt={item.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
+                          {item.thumbnailUrl ? <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <Box className="m-auto mt-3 h-5 w-5 text-cyan-400" />}
                           <span
                             className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-tl-md"
                             style={{ backgroundColor: item.primaryColor }}
