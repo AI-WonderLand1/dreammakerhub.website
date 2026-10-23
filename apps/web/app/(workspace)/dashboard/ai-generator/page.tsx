@@ -12,7 +12,7 @@ export default async function AIGeneratorPage({
 }) {
   const query = await searchParams;
   const projectId = typeof query.projectId === "string" ? query.projectId.trim() : "";
-  const destination = new URLSearchParams({ tab: "assets", tool: "3d" });
+  const destination = new URLSearchParams({ step: "pick", pickTool: "3d" });
   if (projectId) destination.set("projectId", projectId);
   redirect("/dashboard/3dhub?" + destination.toString());
 }
