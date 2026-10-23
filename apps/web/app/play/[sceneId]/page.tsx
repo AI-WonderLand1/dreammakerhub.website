@@ -151,7 +151,8 @@ export default function PlayPage({ params }: { params: { sceneId: string } }) {
       scene.objects.forEach((obj: any) => {
         const entity = new pc.Entity(obj.name || "object")
         
-        let primitiveType: string = "box"
+        // PlayCanvas 2.23.x requires the render component\'s supported primitive literal type.
+        let primitiveType: "box" | "sphere" | "cylinder" | "plane" | "capsule" | "cone" | "torus" = "box"
         switch (obj.type) {
           case "box": primitiveType = "box"; break
           case "sphere": primitiveType = "sphere"; break
