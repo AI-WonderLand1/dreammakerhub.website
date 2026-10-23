@@ -15,8 +15,10 @@ export type GeneratedSceneObject = {
   name: string;
   type: ScenePrimitive;
   meshUrl: string;
-  /** Durable reference for a project-owned generated GLB (never a signed URL). */
+  /** Durable reference for a project-owned GLB or shared-library model. */
   assetId?: string;
+  /** Frame the imported model's actual mesh bounds after it finishes loading. */
+  frameOnLoad?: boolean;
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
