@@ -83,5 +83,16 @@ body:has(.wonderplay-app) aside.fixed {
   .wonderplay-site-menu summary { min-height: 27px; padding: 0 7px; }
 }
 
-/* Project files fill the dedicated Templates & Library workspace without a second dock. */
-.wonderplay-library .wonderplay-browser { height: 100%; border-top: 0; }
+/* Generator and library share the Pick step; no competing full-page library route. */
+.wonderplay-library-dock,.wonderplay-edit-dock{display:flex;min-height:0;min-width:0;flex-direction:column;background:#22262d}
+.wonderplay-library-switch{display:flex;flex-shrink:0;min-height:36px;align-items:center;gap:9px;border-top:1px solid #475366;border-bottom:1px solid #475366;padding:4px 10px;font-size:11px;color:#cbd5e1}
+.wonderplay-library-switch button{display:inline-flex;align-items:center;gap:5px;min-height:27px;padding:3px 8px;border-radius:4px;color:#b8c4d3}
+.wonderplay-library-switch button:hover{background:#334155;color:#fff}
+.wonderplay-library-switch button[aria-pressed=true]{background:#164e63;color:#ecfeff}
+.wonderplay-library-switch .wonderplay-next-step{margin-left:auto;border:1px solid #155e75;background:#0e7490;color:white;font-weight:650}
+.wonderplay-library-content{flex:1;min-height:0;min-width:0;overflow:hidden}
+.wonderplay-library-content>.wonderplay-browser{height:100%;border-top:0}
+.wonderplay-publish-action{display:inline-flex;align-items:center;justify-content:center;border:1px solid #0e7490;border-radius:5px;background:#0e7490;padding:8px 11px;color:white;font-size:12px;font-weight:650}
+.wonderplay-publish-action:hover{background:#0891b2}
+@media(max-width:650px){.wonderplay-library-switch{gap:4px;padding-inline:5px}.wonderplay-library-switch button{padding-inline:5px}.wonderplay-project{display:none}}
+
