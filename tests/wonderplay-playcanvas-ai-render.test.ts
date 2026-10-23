@@ -5,11 +5,12 @@ import { join } from "node:path";
 const source = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("WonderPlay PlayCanvas WebGL AI rendering integration", () => {
-  it("opens the actual PlayCanvas world instead of the procedural scene by default", () => {
+  it("opens Pick first with the PlayCanvas editor in the Edit step", () => {
     const app = source("apps/web/components/studio/StudioApp.tsx");
-    expect(app).toContain('useState<CreateTool>("game")');
-    expect(app).toContain("PlayCanvas · WebGL");
-    expect(app).toContain("Procedural Scene");
+    expect(app).toContain('? "pick"');
+    expect(app).toContain('"game"');
+    expect(app).toContain("PlayCanvas Game & World");
+    expect(app).toContain("Scene Editor");
   });
 
   it("initializes a WebGL2 graphics device and renders real GLB hierarchies", () => {
@@ -26,7 +27,9 @@ describe("WonderPlay PlayCanvas WebGL AI rendering integration", () => {
     const world = source("apps/web/components/studio/StudioGameFoundation.tsx");
     expect(world).not.toContain("/api/v1/3d/generate");
     expect(world).toContain("fetchAuthenticated3D(`/api/v1/3d/assets?projectId=");
-    expect(world).toContain("/dashboard/ai-generator?projectId=");
+    expect(world).toContain("/dashboard/3dhub?step=pick&pickTool=3d&projectId=");
+    expect(world).toContain('label: "Blank Canvas"');
+    expect(world).toContain('aria-label={axis + " position"}');
     expect(world).toContain('projectId === "default"');
     expect(world).toContain("addGeneratedModel(asset)");
     expect(world).toContain("onReady={renderWorld}");
