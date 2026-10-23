@@ -118,6 +118,7 @@ async def lifespan(app: FastAPI):
         try:
             await worker
         except asyncio.CancelledError:
+            # Expected during shutdown after worker.cancel(); suppress gracefully.
             pass
 
 
