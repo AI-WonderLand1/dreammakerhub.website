@@ -239,7 +239,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       } else {
         const style = artStyles.find((item) => item.id === artStyle)?.name;
         const effectivePrompt = style ? `${trimmedPrompt}. Visual style: ${style}.` : trimmedPrompt;
-        const response = await fetchAuthenticated3D('/api/v1/3d/generate', {
+        const response = await fetch('/api/v1/3d/generate', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
           body: JSON.stringify({ prompt: effectivePrompt, format: 'glb', addTexture: true,
             ...(projectId ? { projectId } : {}),
