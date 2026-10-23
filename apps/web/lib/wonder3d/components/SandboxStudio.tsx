@@ -38,6 +38,7 @@ import { sounds } from '../utils/soundEffects';
 interface SandboxStudioProps {
   availableAssets: AssetItem[];
   initialAsset?: AssetItem | null;
+  embedded?: boolean;
 }
 
 type GenerationMode = 'text_to_3d' | 'image_to_3d' | 'ai_texture' | 'animate';
@@ -60,6 +61,7 @@ interface HistoryItem {
 export const SandboxStudio: React.FC<SandboxStudioProps> = ({
   availableAssets,
   initialAsset,
+  embedded = false,
 }) => {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get('projectId')?.trim() || '';
@@ -332,7 +334,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
   };
 
   return (
-    <div className="w-full h-[calc(100vh-4rem)] flex flex-col bg-[#07080c] overflow-hidden">
+    <div className={`w-full min-h-0 flex flex-col bg-[#07080c] overflow-hidden ${embedded ? "h-full" : "h-[calc(100vh-4rem)]"}`}>
       
       {/* Three-Zone Workspace Main Container */}
       <div className="flex-1 flex w-full h-full relative overflow-hidden">
