@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import StudioApp from "@/components/studio/StudioApp";
 
 export const metadata = {
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function ThreeDHubPage() {
-  return <StudioApp />;
+  return <Suspense fallback={<p className="p-6 text-sm text-slate-400">Loading WonderPlay…</p>}><StudioApp /></Suspense>;
 }

@@ -10,7 +10,7 @@ import { fetchAuthenticated3D } from "@/lib/3d/browser-3d-fetch";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import { logger } from "@/lib/logger";
 
-type WorldPreset = "training" | "outpost" | "forest";
+type WorldPreset = "blank" | "training" | "outpost" | "forest";
 type ActorKind = "player" | "obstacle" | "prop" | "light" | "model";
 
 type WorldActor = {
@@ -26,6 +26,7 @@ type ProjectGlbAsset = { id: string; name: string; url: string };
 type SavedLevel = { path: string; content: string };
 
 const PRESETS: Record<WorldPreset, { label: string; detail: string; sky: [number, number, number]; ground: [number, number, number]; accent: [number, number, number] }> = {
+  blank: { label: "Blank Canvas", detail: "Start with an empty ground plane and a player start.", sky: [0.11, 0.13, 0.18], ground: [0.18, 0.2, 0.23], accent: [0.2, 0.7, 1] },
   training: { label: "Training Ground", detail: "Open level with a player spawn and solid cover.", sky: [0.08, 0.12, 0.2], ground: [0.16, 0.18, 0.2], accent: [0.16, 0.65, 1] },
   outpost: { label: "Frontier Outpost", detail: "Small playable sci-fi outpost with structures and lights.", sky: [0.04, 0.07, 0.16], ground: [0.1, 0.12, 0.17], accent: [0.2, 0.85, 0.75] },
   forest: { label: "Forest Trail", detail: "Nature starter world with route markers and tree cover.", sky: [0.23, 0.42, 0.5], ground: [0.1, 0.24, 0.12], accent: [0.3, 0.85, 0.42] },
@@ -40,6 +41,7 @@ const ACTOR_META: Record<ActorKind, { label: string; icon: typeof UserRound; col
 };
 
 function initialActors(preset: WorldPreset): WorldActor[] {
+  if (preset === "blank") return [{ id: "player-start", name: "Player Start", kind: "player", position: [0, 1, 6] }];
   const base: WorldActor[] = [
     { id: "player-start", name: "Player Start", kind: "player", position: [0, 1, 6] },
     { id: "cover-a", name: "Cover A", kind: "obstacle", position: [-3, 1, 0] },
@@ -96,8 +98,8 @@ export default function StudioGameFoundation() {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get("projectId")?.trim() || "default";
   const viewportRef = useRef<StudioViewportHandle>(null);
-  const [preset, setPreset] = useState<WorldPreset>("training");
-  const [actors, setActors] = useState<WorldActor[]>(() => initialActors("training"));
+  const [preset, setPreset] = useState<WorldPreset>("blank");
+  const [actors, setActors] = useState<WorldActor[]>(() => initialActors("blank"));
   const [selectedId, setSelectedId] = useState("player-start");
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -193,7 +195,7 @@ export default function StudioGameFoundation() {
         assetId: actor.assetId,
       }));
       if (!restored.length) throw new Error("Empty level");
-      const nextPreset = typeof record.preset === "string" && Object.prototype.hasOwnProperty.call(PRESETS, record.preset) ? record.preset as WorldPreset : "training";
+      const nextPreset = typeof record.preset === "string" && Object.prototype.hasOwnProperty.call(PRESETS, record.preset) ? record.preset as WorldPreset : "blank";
       setPreset(nextPreset);
       setActors(restored);
       setSelectedId(restored[0].id);
@@ -240,6 +242,18 @@ export default function StudioGameFoundation() {
     if (selectedId === "player-start") return;
     setActors((current) => current.filter((actor) => actor.id !== selectedId));
     setSelectedId("player-start");
+  }, [selectedId]);
+
+  const updateSelectedPosition = useCallback((axis: number, raw: string) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return;
+    setActors((current) => current.map((actor) => {
+      if (actor.id !== selectedId) return actor;
+      const position: [number, number, number] = [...actor.position];
+      position[axis] = value;
+      return { ...actor, position };
+    }));
+    setSavedPath(null);
   }, [selectedId]);
 
   const togglePreview = useCallback(() => {
@@ -296,7 +310,7 @@ export default function StudioGameFoundation() {
         </div>
         <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Generated 3D models</p>
         <p className="mb-2 text-[10px] text-slate-500">Select a project and generate a GLB to place it in this world.</p>
-        <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/ai-generator?projectId=${encodeURIComponent(projectId)}`}
+        <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/3dhub?step=pick&pickTool=3d&projectId=${encodeURIComponent(projectId)}`}
           className="mb-2 block rounded border border-cyan-800 px-2 py-2 text-center text-xs font-semibold text-cyan-300 hover:bg-cyan-950/40">
           {projectId === "default" ? "Choose a project" : "Generate GLB for this project"}
         </Link>
@@ -349,7 +363,7 @@ export default function StudioGameFoundation() {
       </section>
 
       <aside className="w-72 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-950 p-4">
-        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> Game foundation</p>
+        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> World &amp; scene inspector</p>
         <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas WebGL2 renders the world and actual generated GLB meshes. Game logic and playable FPV controls are not enabled yet.</p>
         <section className="mt-4 rounded-lg border border-cyan-900/70 bg-cyan-950/20 p-3" aria-label="3D asset library">
           <p className="text-xs font-semibold text-cyan-200">Use your 3D Studio assets</p>
@@ -357,7 +371,7 @@ export default function StudioGameFoundation() {
             Generate a real GLB in 3D Studio, save it to this project, and add it to your PlayCanvas world using the library on the left.
             Procedural world objects are editor previews, not AI-generated models.
           </p>
-          <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/ai-generator?projectId=${encodeURIComponent(projectId)}`}
+          <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/3dhub?step=pick&pickTool=3d&projectId=${encodeURIComponent(projectId)}`}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-cyan-700 px-3 py-2 text-xs font-bold text-white hover:bg-cyan-600">
             <Sparkles size={14} /> {projectId === "default" ? "Choose a project" : "Open 3D Studio to generate"}
           </Link>
@@ -366,7 +380,7 @@ export default function StudioGameFoundation() {
         {!assetsLoading && actors.some((actor) => actor.assetId && !modelUrls.has(actor.assetId)) &&
           <p role="alert" className="mt-2 text-xs text-amber-300">Some imported models are unavailable in this project. Reopen or restore those assets before publishing.</p>}
         <div className="mt-5 grid grid-cols-2 gap-2">
-          {(Object.keys(ACTOR_META) as ActorKind[]).map((kind) => {
+          {(Object.keys(ACTOR_META) as ActorKind[]).filter((kind) => kind !== "model").map((kind) => {
             const Icon = ACTOR_META[kind].icon;
             return <button key={kind} onClick={() => addActor(kind)} className="rounded-lg border border-slate-800 bg-slate-900 p-2 text-left text-xs text-slate-300 hover:border-cyan-700"><Icon size={14} className="mb-1 text-cyan-400" />{ACTOR_META[kind].label}</button>;
           })}
@@ -374,7 +388,22 @@ export default function StudioGameFoundation() {
         <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900/50 p-3">
           <p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-500">Selected actor</p>
           <p className="mt-1 text-sm font-semibold text-white">{selected?.name || "None"}</p>
-          <p className="mt-1 text-[11px] font-mono text-slate-500">{selected ? "Position " + selected.position.join(", ") : ""}</p>
+          {selected && (
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Transform · Position</p>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {(["X", "Y", "Z"] as const).map((axis, index) => (
+                  <label key={axis} className="text-[10px] text-slate-400">
+                    {axis}
+                    <input aria-label={axis + " position"} type="number" step="0.25"
+                      value={selected.position[index]}
+                      onChange={(event) => updateSelectedPosition(index, event.target.value)}
+                      className="mt-1 block w-full min-w-0 rounded border border-slate-700 bg-slate-950 p-1.5 text-xs text-white"/>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <button disabled={!selected || selectedId === "player-start"} onClick={removeSelected} className="mt-3 text-xs text-red-300 disabled:opacity-40">Remove selected</button>
         </div>
         <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import { Box, Download, FileCode2, FileJson2, Folder, Image as ImageIcon, Loader2, RefreshCw, Search, Video } from "lucide-react";
 
 type ProjectAsset = { path: string; content: string };
@@ -36,7 +37,7 @@ export default function StudioContentBrowser() {
     const controller = new AbortController();
     setLoading(true);
     setError(null);
-    void fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, { signal: controller.signal })
+    void fetchAuthenticatedProject(`/api/projects/${encodeURIComponent(projectId)}/files`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Project assets unavailable (${response.status}).`);
         const data = await response.json() as { files?: Record<string, string> };

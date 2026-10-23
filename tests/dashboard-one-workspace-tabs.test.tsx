@@ -167,7 +167,8 @@ describe("dashboard simplification contracts", () => {
     expect(layout).toContain('label: "Code"');
     expect(layout).toContain('label: "3D"');
     expect(layout).toContain("const menuGroups: SiteMenuGroup[] = [");
-    expect(layout).toContain('label: "3D AI Generator"');
+    expect(layout).toContain('label: "WonderPlay Creator Studio"');
+    expect(layout).not.toContain('label: "3D AI Generator"');
     expect(layout).toContain('aria-label="AI WONDERLAND site navigation"');
   });
 });

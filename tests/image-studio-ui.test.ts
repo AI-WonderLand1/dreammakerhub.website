@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("AI WONDERLAND Image Studio", () => {
   it("renders the full studio layout and keeps the user asset library below the generator", () => {
-    const page = read("apps/web/app/(workspace)/dashboard/images/page.tsx");
+    const page = read("apps/web/components/studio/ImageStudioWorkspace.tsx");
 
     for (const label of [
       "Image Studio",

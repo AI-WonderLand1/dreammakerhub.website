@@ -1,11 +1,18 @@
-import React, { Suspense } from 'react';
-import { SandboxStudio } from '@/lib/wonder3d/components/SandboxStudio';
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: '3D AI Generator | AI WONDERLAND',
-  description: 'Generate real GLB models with the Wonderland 3D agent.',
+  title: "3D Assets | AI WONDERLAND",
+  description: "Generate and preview GLB assets inside WonderPlay.",
 };
 
-export default function AIGeneratorPage() {
-  return <Suspense fallback={<p className="p-6 text-sm text-slate-500">Loading 3D generator…</p>}><SandboxStudio availableAssets={[]} /></Suspense>;
+export default async function AIGeneratorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ projectId?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const projectId = typeof query.projectId === "string" ? query.projectId.trim() : "";
+  const destination = new URLSearchParams({ step: "pick", pickTool: "3d" });
+  if (projectId) destination.set("projectId", projectId);
+  redirect("/dashboard/3dhub?" + destination.toString());
 }
