@@ -263,6 +263,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const actorRootRef = useRef<any>(null);
     const wireframeRef = useRef(false);
     const shadowsRef = useRef(true);
+    const framedRadiusRef = useRef<number | null>(null);
     const statsRef = useRef({ fps: 0, entities: 0, frames: 0, lastTime: 0 });
     const [error, setError] = useState<string | null>(null);
     const [ready, setReady] = useState(false);
@@ -431,6 +432,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           camera.lookAt(path.lookAt[0], path.lookAt[1], path.lookAt[2]);
         } else {
           applyCamera();
+          // Frame distance changes over orders of magnitude when navigating a
+          // city. Keep the near plane close while zooming in; preserve enough
+          // far distance to see the entire imported environment on zoom-out.
+          if (camera.camera) {
+            const distance = orbitRef.current.dist;
+            camera.camera.nearClip = Math.max(0.01, Math.min(0.5, distance / 10000));
+            camera.camera.farClip = Math.max(10000, distance + (framedRadiusRef.current ?? 0) * 5);
+          }
         }
       });
 
@@ -716,6 +725,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      framedRadiusRef.current = null;
+      if (cameraRef.current?.camera) {
+        cameraRef.current.camera.nearClip = 0.1;
+        cameraRef.current.camera.farClip = 10000;
+      }
       if (groundRef.current) groundRef.current.enabled = !(scene.objects ?? []).some((object) => object.frameOnLoad);
       const root = new pc.Entity("__sceneRoot");
       app.root.addChild(root);
@@ -773,9 +787,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
             try {
               // Container assets are scene hierarchies, not a Model asset ID.
               // instantiateRenderEntity keeps the GLB's meshes and materials.
-              const imported = asset.resource.instantiateRenderEntity({ castShadows: true });
+              const imported = asset.resource.instantiateRenderEntity({ castShadows: shadowsRef.current });
               if (entity.render) entity.removeComponent("render");
               entity.addChild(imported);
+              forEachEntity(imported, (part) => {
+                if (part.render) part.render.castShadows = shadowsRef.current;
+              });
               if (obj.frameOnLoad) {
                 // Frame the actual mesh AABB, not a 1-unit placeholder cube.
                 // Real user GLBs may contain city-scale geometry or tiny props.
@@ -798,6 +815,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
                 if (Number.isFinite(min.x) && Number.isFinite(max.x)) {
                   const center = new pc.Vec3((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
                   const radius = Math.max(0.25, Math.hypot(max.x - min.x, max.y - min.y, max.z - min.z) / 2);
+                  framedRadiusRef.current = radius;
                   const camera = cameraRef.current;
                   const fovRadians = ((camera?.camera?.fov ?? 60) * Math.PI) / 180;
                   const distance = Math.max(1, radius * 1.35 / Math.sin(fovRadians / 2));
@@ -864,6 +882,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!app || !pc) return;
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      framedRadiusRef.current = null;
       if (groundRef.current) groundRef.current.enabled = true;
       sceneRootRef.current = null;
       for (const light of baseLightsRef.current) light.enabled = true;

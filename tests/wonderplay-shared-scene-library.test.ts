@@ -36,6 +36,10 @@ describe("WonderPlay shared GLB scenes and actual renderer controls", () => {
     expect(viewport).toContain("const bounds = mesh.aabb");
     expect(viewport).toContain("orbitTargetRef.current = { x: center.x, y: center.y, z: center.z }");
     expect(viewport).toContain("mi.renderStyle = style");
+    expect(viewport).toContain("framedRadiusRef.current = null");
+    expect(viewport).toContain("camera.camera.nearClip = Math.max(0.01, Math.min(0.5, distance / 10000))");
+    expect(viewport).toContain("instantiateRenderEntity({ castShadows: shadowsRef.current })");
+    expect(editor).toContain('showGrid={false}');
     expect(editor).toContain('(["position", "rotation", "scale"] as const)');
     expect(editor).toContain("setToneMapping(toneMapping)");
     expect(editor).toContain("setExposure(exposure)");

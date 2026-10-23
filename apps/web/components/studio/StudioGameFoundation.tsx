@@ -492,7 +492,7 @@ export default function StudioGameFoundation() {
             const actor = actors.find((item) => item.name === selection.name);
             if (actor) setSelectedId(actor.id);
           }}
-          className="min-h-0 flex-1" showGrid={showGrid} showStats />
+          className="min-h-0 flex-1" showGrid={false} showStats />
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-slate-700 bg-slate-950/85 px-3 py-1.5 text-[11px] font-mono text-slate-300">
           {running ? "Orbiting scene preview — player controls are not implemented yet." : "PlayCanvas real-time viewport · orbit / zoom / pan"}
         </div>
