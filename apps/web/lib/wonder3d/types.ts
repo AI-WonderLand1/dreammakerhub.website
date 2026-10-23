@@ -14,7 +14,7 @@ export type NavigationTab =
 
 export type AssetCategory = 'models' | 'materials' | 'environments' | 'vfx' | 'audio' | 'building_kits' | 'characters' | 'vehicles' | 'weapons' | 'props' | 'nature' | 'architecture';
 
-export type AssetFormat = '.GLTF' | '.FBX' | '.OBJ' | '.BLEND' | '.UNREAL' | '.UNITY' | '.4K_PBR' | '.USDZ' | '.STL';
+export type AssetFormat = '.GLB' | '.GLTF' | '.FBX' | '.OBJ' | '.BLEND' | '.UNREAL' | '.UNITY' | '.4K_PBR' | '.USDZ' | '.STL';
 
 export type Model3DType = 
   | 'mech'
