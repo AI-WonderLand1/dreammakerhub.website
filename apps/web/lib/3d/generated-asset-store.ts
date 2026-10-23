@@ -22,8 +22,7 @@ function getServiceClient() {
 }
 
 async function ensureBucket() {
-  const supabase = getServiceClient();
-  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
+  const { supabase, bucket } = await ensureBucket();
 
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
   if (listError) throw listError;
@@ -109,8 +108,7 @@ export async function saveGeneratedGlb(input: {
  * Only short-lived signed URLs leave the server; the bucket stays private.
  */
 export async function listGeneratedProjectGlbs(userId: string, projectId: string) {
-  const supabase = getServiceClient();
-  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
+  const { supabase, bucket } = await ensureBucket();
   const prefix = `${userId}/${projectId}`;
   const { data, error } = await supabase.storage.from(bucket).list(prefix, {
     limit: 100,
@@ -144,8 +142,7 @@ export async function getSavedGeneratedGlb(input: {
   projectId?: string | null;
   id: string;
 }) {
-  const supabase = getServiceClient();
-  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
+  const { supabase, bucket } = await ensureBucket();
   const safeProject = (input.projectId || "unassigned").replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 120);
   const prefix = `${input.userId}/${safeProject}`;
   const { data: entries, error } = await supabase.storage.from(bucket).list(prefix, {
@@ -162,8 +159,7 @@ export async function getSavedGeneratedGlb(input: {
 
 /** List private generated models from every project under the signed-in user. */
 export async function listGeneratedUserGlbs(userId: string) {
-  const supabase = getServiceClient();
-  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
+  const { supabase, bucket } = await ensureBucket();
   const { data: folders, error } = await supabase.storage.from(bucket).list(userId, { limit: 100 });
   if (error) throw error;
   const projects = (folders || []).filter((item) => !item.id).map((item) => item.name);
