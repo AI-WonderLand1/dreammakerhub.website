@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
 import { listGeneratedProjectGlbs, listGeneratedUserGlbs, saveProjectSplat } from "@/lib/3d/generated-asset-store";
+import { isGaussianPlyHeader } from "@/lib/3d/gaussian-ply-header";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     const header = contents.subarray(0, Math.min(contents.length, 32768)).toString("latin1");
     const valid = format === "sog"
       ? contents.length >= 4 && contents.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
-      : header.startsWith("ply\n") && header.includes("end_header") && header.includes("property float scale_0") && header.includes("property float f_dc_0");
+      : isGaussianPlyHeader(header);
     if (!valid) {
       return NextResponse.json({ error: "This is not a supported Gaussian splat file" }, { status: 400 });
     }

@@ -790,7 +790,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                           likesCount: 0,
                           viewsCount: 0,
                           dateAdded: new Date().toISOString().slice(0, 10),
-                          formats: [`.${item.format}`],
+                          formats: [item.format === 'SOG' ? '.SOG' : item.format === 'PLY' ? '.PLY' : '.GLB'],
                           modelType: item.modelType,
                           thumbnailImage: item.thumbnailUrl,
                           glbUrl: item.glbUrl,
