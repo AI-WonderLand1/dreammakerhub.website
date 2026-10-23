@@ -192,7 +192,7 @@ export default function ImageStudioPage() {
             ["History", "#history"],
             ["My Assets", "#my-assets"],
             ["Project Assets", projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}/files` : "/dashboard#projects"],
-            ["Send to 3D", projectId ? `/dashboard/3dhub?tab=assets&tool=3d&projectId=${encodeURIComponent(projectId)}` : "/dashboard/3dhub?tab=assets&tool=3d"],
+            ["Send to 3D", projectId ? `/dashboard/3dhub?step=pick&pickTool=3d&projectId=${encodeURIComponent(projectId)}` : "/dashboard/3dhub?step=pick&pickTool=3d"],
             ["API Docs", "/api-reference"],
           ].map(([label, href], index) => (
             <Link
@@ -306,8 +306,8 @@ export default function ImageStudioPage() {
             <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               <Link href={projectId ? `/wonder-build/builder?projectId=${encodeURIComponent(projectId)}` : "/wonder-build"} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Use in Builder</Link>
               <button type="button" onClick={() => setSaveTo("project")} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-xs font-semibold hover:bg-white/[.06]">Save to Project</button>
-              <Link href="/dashboard/ai-generator" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Send to 3D AI</Link>
-              <Link href="/dashboard/3dhub" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Send to PlayCanvas</Link>
+              <Link href="/dashboard/3dhub?step=pick&pickTool=3d" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Send to 3D AI</Link>
+              <Link href="/dashboard/3dhub?step=edit&editTool=game" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Open PlayCanvas</Link>
             </div>
           </section>
 
@@ -443,7 +443,7 @@ export default function ImageStudioPage() {
                     <p className="mt-1 truncate text-[9px] uppercase tracking-wide text-white/30">{asset.source || "asset"}</p>
                     <div className="mt-3 flex gap-2">
                       <a href={asset.downloadUrl} target="_blank" rel="noopener noreferrer" className="flex-1 rounded-lg border border-white/10 px-2 py-1.5 text-center text-[10px] text-white/60 hover:bg-white/[.05]">Open</a>
-                      <Link href="/dashboard/3dhub" className="rounded-lg border border-white/10 px-2 py-1.5 text-[10px] text-white/60 hover:bg-white/[.05]">3D</Link>
+                      <Link href="/dashboard/3dhub?step=pick&pickTool=3d" className="rounded-lg border border-white/10 px-2 py-1.5 text-[10px] text-white/60 hover:bg-white/[.05]">3D</Link>
                     </div>
                   </div>
                 </article>
