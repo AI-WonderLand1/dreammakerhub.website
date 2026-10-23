@@ -84,7 +84,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     icon: "🎮",
     href: "/dashboard/3dhub",
     items: [
-      { label: "WonderPlay Creator Studio", href: "/dashboard/3dhub", description: "Generate 3D and image assets, build worlds, capture video, and use the shared library in one workspace." },
+      { label: "WonderPlay Creator Studio", href: "/dashboard/3dhub", description: "Pick from your library and generate assets, edit worlds and movies, then save or export in one studio." },
       { label: "NPC-AI-SIM", href: "/wonder-play", description: "Create, configure, test, and export intelligent characters." },
     ],
   },
@@ -115,7 +115,7 @@ const PROJECT_TYPE_TO_DESTINATION: Record<string, string> = {
   game: "/dashboard/3dhub",
   "3d": "/dashboard/3dhub",
   "3d_scene": "/dashboard/3dhub",
-  playcanvas: "/dashboard/3dhub?tab=world&tool=game",
+  playcanvas: "/dashboard/3dhub?step=edit&editTool=game",
   npc: "/wonder-play",
 };
 
