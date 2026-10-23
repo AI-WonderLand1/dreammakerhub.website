@@ -281,7 +281,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
           polyCount: 0,
           vertexCount: 0,
           meshCount: 1,
-          textureResolution: textureRes,
+          textureResolution: activeMode === 'image_to_3d' ? '512px' : textureRes,
           rigged: false,
           animated: false,
           pbrReady: true,
@@ -438,6 +438,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                 </div>
               )}
 
+              {activeMode === 'text_to_3d' && (<>
               {/* Art Style Picker */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono font-bold text-slate-300 flex items-center gap-1.5">
@@ -531,6 +532,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                   </button>
                 </div>
               </div>
+              </>)}
 
             </div>
           </div>
