@@ -614,7 +614,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                   <button
                     key={act.id}
                     disabled
-                     title={`${act.label} is not available yet`
+                     title={`${act.label} is not available yet`}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                       isSelected
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
