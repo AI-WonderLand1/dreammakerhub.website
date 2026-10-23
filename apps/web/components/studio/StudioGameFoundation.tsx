@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Cuboid, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound } from "lucide-react";
+import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound } from "lucide-react";
 import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
@@ -167,7 +167,7 @@ export default function StudioGameFoundation() {
       setMeshError(detail.message || "PlayCanvas could not load the 3D model.");
     } else {
       setMeshError(null);
-      setGenerationResult("3D model rendered in PlayCanvas WebGL2.");
+
     }
   }, []);
 
