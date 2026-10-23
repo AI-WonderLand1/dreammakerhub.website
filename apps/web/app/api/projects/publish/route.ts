@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/infra/lib/supabase/server-client';
+import { getProjectStorageClient } from '@/lib/projects/storage';
 import { requirePaidAIUser } from '@/app/api/ai/auth';
 import { sanitizeUntrustedHtml } from '@/lib/security/sanitize-html.server';
 import { logger } from '@/lib/logger';
@@ -96,12 +96,12 @@ export async function POST(req: NextRequest) {
         ? body.theme as BuilderTheme
         : undefined;
 
-      const supabase = await createClient();
+      const supabase = await getProjectStorageClient();
       const { data: project, error: projectError } = await supabase
-        .from('projects')
-        .select('id,user_id')
+        .from('_projects')
+        .select('id,owner_id')
         .eq('id', projectId)
-        .eq('user_id', userId)
+        .eq('owner_id', userId)
         .maybeSingle();
 
       if (projectError) throw projectError;
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
 
     if (target === 'site') {
       const { code, elements, title } = body;
-      const supabase = await createClient();
+      const supabase = await getProjectStorageClient();
       const pageTitle = typeof title === 'string' && title.trim() ? title.trim().slice(0, 200) : 'Untitled Page';
       let slug = slugify(pageTitle);
 
