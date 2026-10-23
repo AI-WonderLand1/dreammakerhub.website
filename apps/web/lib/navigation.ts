@@ -84,9 +84,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     icon: "🎮",
     href: "/dashboard/3dhub",
     items: [
-      { label: "WonderPlay", href: "/dashboard/3dhub", description: "Start and manage realtime 3D projects." },
-      { label: "3D AI Generator", href: "/dashboard/ai-generator", description: "Generate GLB assets with the Wonderland 3D agent." },
-      { label: "3D Asset Library", href: "/3d-library", description: "Browse and reuse saved 3D assets." },
+      { label: "WonderPlay Creator Studio", href: "/dashboard/3dhub", description: "Generate 3D and image assets, build worlds, capture video, and use the shared library in one workspace." },
       { label: "NPC-AI-SIM", href: "/wonder-play", description: "Create, configure, test, and export intelligent characters." },
     ],
   },
@@ -117,7 +115,7 @@ const PROJECT_TYPE_TO_DESTINATION: Record<string, string> = {
   game: "/dashboard/3dhub",
   "3d": "/dashboard/3dhub",
   "3d_scene": "/dashboard/3dhub",
-  playcanvas: "/wonder-build/playcanvas/editor/blank_canvas",
+  playcanvas: "/dashboard/3dhub?tab=world&tool=game",
   npc: "/wonder-play",
 };
 
