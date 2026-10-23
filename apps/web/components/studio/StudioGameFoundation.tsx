@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound, RefreshCw } from "lucide-react";
-import StudioViewport, { type StudioViewportHandle, type ToneMappingMode } from "@/components/studio/StudioViewport";
+import StudioViewport, { type StudioViewportHandle, type ToneMappingMode, type RenderQuality } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -121,6 +121,8 @@ export default function StudioGameFoundation() {
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryRevision, setLibraryRevision] = useState(0);
   const [toneMapping, setToneMapping] = useState<ToneMappingMode>("ACES");
+  const [renderQuality, setRenderQuality] = useState<RenderQuality>("high");
+  const [cameraFov, setCameraFov] = useState(60);
   const [exposure, setExposure] = useState(1);
   const [shadows, setShadows] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
@@ -242,7 +244,7 @@ export default function StudioGameFoundation() {
     try {
       const payload: unknown = JSON.parse(level.content);
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("Invalid level");
-      const record = payload as { preset?: unknown; actors?: unknown };
+      const record = payload as { preset?: unknown; actors?: unknown; rendering?: unknown };
       if (!Array.isArray(record.actors)) throw new Error("Invalid actors");
       const restored: WorldActor[] = record.actors.filter((value): value is WorldActor => {
         if (!value || typeof value !== "object") return false;
@@ -278,6 +280,14 @@ export default function StudioGameFoundation() {
       const nextPreset = typeof record.preset === "string" && Object.prototype.hasOwnProperty.call(PRESETS, record.preset) ? record.preset as WorldPreset : "blank";
       setPreset(nextPreset);
       setActors(restored);
+      if (record.rendering && typeof record.rendering === "object" && !Array.isArray(record.rendering)) {
+        const rendering = record.rendering as Record<string, unknown>;
+        if (["performance", "high", "cinematic"].includes(String(rendering.quality))) setRenderQuality(rendering.quality as RenderQuality);
+        if (["ACES", "Neutral", "Filmic", "HEJL", "Linear"].includes(String(rendering.toneMapping))) setToneMapping(rendering.toneMapping as ToneMappingMode);
+        if (typeof rendering.exposure === "number" && Number.isFinite(rendering.exposure) && rendering.exposure >= 0.3 && rendering.exposure <= 2.5) setExposure(rendering.exposure);
+        if (typeof rendering.cameraFov === "number" && Number.isFinite(rendering.cameraFov) && rendering.cameraFov >= 35 && rendering.cameraFov <= 100) setCameraFov(rendering.cameraFov);
+        if (typeof rendering.shadows === "boolean") setShadows(rendering.shadows);
+      }
       setSelectedId(restored[0].id);
       setSaveError(null);
       setSavedPath(level.path);
@@ -291,12 +301,14 @@ export default function StudioGameFoundation() {
   }, [scene]);
 
   const applyViewportSettings = useCallback(() => {
+    viewportRef.current?.setRenderQuality(renderQuality);
     viewportRef.current?.setShowGrid(showGrid && !actors.some((actor) => actor.environment));
     viewportRef.current?.setToneMapping(toneMapping);
     viewportRef.current?.setExposure(exposure);
+    viewportRef.current?.setFov(cameraFov);
     viewportRef.current?.setShadows(shadows);
     viewportRef.current?.setWireframe(wireframe);
-  }, [showGrid, actors, toneMapping, exposure, shadows, wireframe]);
+  }, [showGrid, actors, renderQuality, toneMapping, exposure, cameraFov, shadows, wireframe]);
 
   useEffect(() => {
     renderWorld();
@@ -386,8 +398,9 @@ export default function StudioGameFoundation() {
         objects: scene.objects.map((object) => ({ ...object, meshUrl: "" })),
       };
       const content = JSON.stringify({
-        version: 2, type: "wonderplay-level", playerStartId: "player-start",
+        version: 3, type: "wonderplay-level", playerStartId: "player-start",
         preset, scene: durableScene, actors,
+        rendering: { quality: renderQuality, toneMapping, exposure, cameraFov, shadows },
       }, null, 2);
       const response = await fetchAuthenticatedProject("/api/projects/" + encodeURIComponent(projectId) + "/files", {
         method: "POST",
@@ -403,7 +416,7 @@ export default function StudioGameFoundation() {
     } finally {
       setSaving(false);
     }
-  }, [actors, preset, projectId, scene]);
+  }, [actors, preset, projectId, scene, renderQuality, toneMapping, exposure, cameraFov, shadows]);
 
   const selected = actors.find((actor) => actor.id === selectedId);
   return (
@@ -570,6 +583,13 @@ export default function StudioGameFoundation() {
         </div>
         <fieldset className="mt-4 space-y-3 rounded-xl border border-slate-800 bg-slate-900/50 p-3">
           <legend className="px-1 text-[10px] font-bold uppercase tracking-widest text-cyan-200">Real-time graphics</legend>
+          <label className="block text-[11px] text-slate-300">Rendering quality
+            <select aria-label="Rendering quality" value={renderQuality} onChange={(event) => setRenderQuality(event.target.value as RenderQuality)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white">
+              <option value="performance">Performance · 1x resolution</option>
+              <option value="high">High · HDR, SSAO, better shadows</option>
+              <option value="cinematic">Cinematic · TAA, fine detail</option>
+            </select>
+          </label>
           <label className="block text-[11px] text-slate-300">Tone mapping
             <select aria-label="Tone mapping" value={toneMapping} onChange={(event) => setToneMapping(event.target.value as ToneMappingMode)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white">
               {(["ACES", "Neutral", "Filmic", "HEJL", "Linear"] as const).map((mode) => <option key={mode} value={mode}>{mode}</option>)}
@@ -578,10 +598,13 @@ export default function StudioGameFoundation() {
           <label className="block text-[11px] text-slate-300">Exposure · {exposure.toFixed(2)}
             <input aria-label="Scene exposure" className="block w-full accent-cyan-500" type="range" min="0.3" max="2.5" step="0.05" value={exposure} onChange={(event) => setExposure(Number(event.target.value))}/>
           </label>
+          <label className="block text-[11px] text-slate-300">Camera field of view · {cameraFov}°
+            <input aria-label="Camera field of view" className="block w-full accent-cyan-500" type="range" min="35" max="100" step="1" value={cameraFov} onChange={(event) => setCameraFov(Number(event.target.value))}/>
+          </label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={shadows} onChange={(event) => setShadows(event.target.checked)}/> Cast shadows</label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={showGrid} onChange={(event) => setShowGrid(event.target.checked)}/> Editor grid</label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)}/> Wireframe view</label>
-          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer. Higher quality effects depend on scene materials and your device.</p>
+          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer without replacing your meshes or textures. High and Cinematic use more GPU memory; visual detail still depends on the imported asset.</p>
         </fieldset>
         <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level
