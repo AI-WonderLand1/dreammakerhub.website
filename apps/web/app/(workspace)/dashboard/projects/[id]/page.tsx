@@ -110,6 +110,7 @@ export default function ProjectHubPage() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [duplicating, setDuplicating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadProjectData = useCallback(async (showLoader = false) => {
@@ -209,8 +210,39 @@ export default function ProjectHubPage() {
     }
   }
 
-  function downloadZip() {
-    window.location.href = `/api/projects/${projectId}/export?format=zip`;
+  async function downloadZip() {
+    if (exporting) return;
+    setExporting(true);
+    setError(null);
+    try {
+      // Send the same current Supabase access token used for project Save/Publish.
+      const response = await fetchAuthenticatedProject(
+        `/api/projects/${encodeURIComponent(projectId)}/export?format=zip`,
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(
+          typeof data?.message === "string" ? data.message
+            : response.status === 401 ? "Sign in again to export this project."
+            : `Project ZIP export failed (${response.status})`,
+        );
+      }
+
+      const zip = await response.blob();
+      if (zip.size === 0) throw new Error("The project ZIP was empty.");
+      const url = URL.createObjectURL(zip);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `project-${projectId}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to export project ZIP.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   if (loading) {
@@ -398,10 +430,11 @@ export default function ProjectHubPage() {
               </button>
               <button
                 type="button"
-                onClick={downloadZip}
-                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5"
+                onClick={() => void downloadZip()}
+                disabled={exporting}
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5 disabled:opacity-50"
               >
-                <Download size={15}/> Export project
+                <Download size={15}/> {exporting ? "Exporting..." : "Export project"}
               </button>
               <Link href={`/dashboard/collaboration?${projectQuery}`} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
                 <Users size={15}/> Invite collaborator
