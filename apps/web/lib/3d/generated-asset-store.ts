@@ -22,7 +22,8 @@ function getServiceClient() {
 }
 
 async function ensureBucket() {
-  const { supabase, bucket } = await ensureBucket();
+  const supabase = getServiceClient();
+  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
 
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
   if (listError) throw listError;
