@@ -4,7 +4,7 @@ import { CostGateError, reserveBillableUnits, verifiedCostPlan } from "@/lib/bil
 import { PLAN_LIMITS } from "@/lib/billing/limits";
 import { getSavedGeneratedGlb, saveGeneratedGlb } from "@/lib/3d/generated-asset-store";
 import {
-  downloadSimpleRickGlb, signSimpleRickJob, simpleRickJobStatus,
+  assertSimpleRickGpuReady, downloadSimpleRickGlb, signSimpleRickJob, simpleRickJobStatus,
   SimpleRickError, submitSimpleRickImage, verifySimpleRickJob,
 } from "@/lib/3d/simplerick-client";
 import { logUsage } from "@/lib/usage/log";
@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: { message: "Invalid project ID" } }, { status: 400 });
     }
 
+    // Do not reserve credits if the GPU is visibly offline or misconfigured.
+    await assertSimpleRickGpuReady();
     const plan = await verifiedCostPlan(auth.userId);
     await reserveBillableUnits(auth.userId, "render_credits", 1, PLAN_LIMITS[plan].renderCreditsMonthly);
     const jobId = await submitSimpleRickImage(image);
