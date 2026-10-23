@@ -11,14 +11,19 @@ describe('WonderPlay unified editor layout', () => {
     for (const component of ['Studio3DFactory', 'Studio360View', 'StudioGameFoundation', 'StudioMovieMaker']) {
       expect(studio).toContain(`<${component} />`);
     }
-    expect(studio).toContain('aria-label="WonderPlay workspaces"');
-    for (const tab of ["3D & Image Assets", "World & Game", "Video & Capture", "Templates & Library"]) {
+    expect(studio).toContain('aria-label="WonderPlay three-step workflow"');
+    for (const tab of ["1. Pick", "2. Edit", "3. Publish"]) {
       expect(studio).toContain(`label: "${tab}"`);
     }
-    expect(studio).toContain('aria-label="Workspace tools"');
+    expect(studio).toContain('aria-label="Creative editing tools"');
     expect(studio).toContain('<SandboxStudio availableAssets={[]} embedded />');
+    expect(studio).toContain('<StudioGameFoundation />');
     expect(studio).toContain('<ImageStudioWorkspace />');
     expect(studio).toContain('<StudioTemplatesPanel />');
+    expect(studio).toContain('aria-label="Pick assets, generate models and browse your library"');
+    expect(studio).toContain('aria-label="Publish and export options"');
+    expect(studio).toContain('<div className="wonderplay-library-content"><StudioContentBrowser /></div>');
+    expect(studio).toContain('Public game hosting, playable build deployment');
     expect(studio).toContain('<StudioContentBrowser />');
     expect(studio).not.toContain('GPU ENGINE READY');
   });
