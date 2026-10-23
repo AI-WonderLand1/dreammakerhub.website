@@ -82,3 +82,6 @@ body:has(.wonderplay-app) aside.fixed {
   .wonderplay-product-name { display: none; }
   .wonderplay-site-menu summary { min-height: 27px; padding: 0 7px; }
 }
+
+/* Project files fill the dedicated Templates & Library workspace without a second dock. */
+.wonderplay-library .wonderplay-browser { height: 100%; border-top: 0; }
