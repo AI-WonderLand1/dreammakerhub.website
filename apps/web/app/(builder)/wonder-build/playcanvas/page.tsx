@@ -14,12 +14,12 @@ function LegacyPlayCanvasGalleryRedirect() {
       router.replace("/wonder-build/playcanvas/editor/" + encodeURIComponent(sceneId));
     } else {
       const projectId = params.get("projectId")?.trim();
-      const destination = new URLSearchParams({ tab: "library", tool: "templates" });
+      const destination = new URLSearchParams({ step: "pick", view: "templates" });
       if (projectId) destination.set("projectId", projectId);
       router.replace("/dashboard/3dhub?" + destination.toString());
     }
   }, [params, router]);
-  return <p role="status" className="p-8 text-sm text-slate-400">Opening WonderPlay Templates & Library…</p>;
+  return <p role="status" className="p-8 text-sm text-slate-400">Opening WonderPlay Pick…</p>;
 }
 
 export default function PlayCanvasGalleryPage() {
