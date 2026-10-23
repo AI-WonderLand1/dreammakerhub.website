@@ -33,10 +33,12 @@ export type StudioViewportHandle = {
   getStats: () => ViewportStats;
   setShowGrid: (enabled: boolean) => void;
   setRenderQuality: (quality: RenderQuality) => void;
+  setEnvironmentLighting: (mode: EnvironmentLightingMode) => void;
 };
 
 export type ToneMappingMode = "ACES" | "Filmic" | "HEJL" | "Linear" | "Neutral";
 export type RenderQuality = "performance" | "high" | "cinematic";
+export type EnvironmentLightingMode = "studio" | "outdoor" | "off";
 
 export type CameraPathOpts = {
   enabled: boolean;
@@ -77,6 +79,89 @@ const TONE_MAPPING_CONSTANTS: Record<ToneMappingMode, string> = {
   Linear: "TONEMAP_LINEAR",
   Neutral: "TONEMAP_NEUTRAL",
 };
+
+// Small, generated light probes are included with the viewer, not with users'
+// GLBs. The prefiltered atlas lets authored PBR metals and rough surfaces pick
+// up directional reflections instead of relying on flat ambient illumination.
+function createEnvironmentProbe(mode: Exclude<EnvironmentLightingMode, "off">): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("A 2D canvas is required for environment lighting");
+
+  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+  if (mode === "studio") {
+    gradient.addColorStop(0, "#b3c8df");
+    gradient.addColorStop(0.45, "#e2e2de");
+    gradient.addColorStop(0.51, "#c6b9ae");
+    gradient.addColorStop(1, "#77777d");
+  } else {
+    gradient.addColorStop(0, "#79add9");
+    gradient.addColorStop(0.45, "#d4dfd9");
+    gradient.addColorStop(0.51, "#e3bd8a");
+    gradient.addColorStop(1, "#726250");
+  }
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  // A broad photographic softbox / sun reflection helps curved shiny meshes.
+  const x = mode === "studio" ? 135 : 375;
+  const y = mode === "studio" ? 83 : 101;
+  const radius = mode === "studio" ? 88 : 55;
+  const glow = context.createRadialGradient(x, y, 2, x, y, radius);
+  glow.addColorStop(0, mode === "studio" ? "rgba(255,255,255,0.95)" : "rgba(255,246,207,0.98)");
+  glow.addColorStop(0.3, "rgba(255,249,226,0.6)");
+  glow.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = glow;
+  context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  return canvas;
+}
+
+function updateEnvironmentLighting(
+  app: any,
+  pc: any,
+  mode: EnvironmentLightingMode,
+  quality: RenderQuality,
+  cache: Map<Exclude<EnvironmentLightingMode, "off">, any>,
+) {
+  // Avoid costly probe generation on the low-GPU performance preset.
+  if (mode === "off" || quality === "performance") {
+    app.scene.envAtlas = null;
+    return;
+  }
+  let atlas = cache.get(mode);
+  if (!atlas) {
+    let source: any = null;
+    let lightingSource: any = null;
+    try {
+      source = new pc.Texture(app.graphicsDevice, {
+        name: `wonderplay-${mode}-probe`,
+        width: 512,
+        height: 256,
+        format: pc.PIXELFORMAT_RGBA8,
+        projection: pc.TEXTUREPROJECTION_EQUIRECT,
+        // Prefilter the source once so the GPU cubemap conversion can sample
+        // mip levels instead of doing 1024 samples for every source pixel.
+        mipmaps: true,
+        addressU: pc.ADDRESS_CLAMP_TO_EDGE,
+        addressV: pc.ADDRESS_CLAMP_TO_EDGE,
+      });
+      source.setSource(createEnvironmentProbe(mode));
+      lightingSource = pc.EnvLighting.generateLightingSource(source, { size: 64 });
+      atlas = pc.EnvLighting.generateAtlas(lightingSource, {
+        size: 256,
+        numReflectionSamples: 128,
+        numAmbientSamples: 256,
+      });
+      cache.set(mode, atlas);
+    } finally {
+      lightingSource?.destroy();
+      source?.destroy();
+    }
+  }
+  app.scene.envAtlas = atlas;
+}
 
 // Deterministic PRNG so hotspot placement is stable across renders
 function seededRandom(seed: number) {
@@ -248,6 +333,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const cameraRef = useRef<any>(null);
     const cameraFrameRef = useRef<any>(null);
     const qualityRef = useRef<RenderQuality>("high");
+    const environmentRef = useRef<EnvironmentLightingMode>("studio");
+    const environmentCacheRef = useRef<Map<Exclude<EnvironmentLightingMode, "off">, any>>(new Map());
     const toneMappingRef = useRef<ToneMappingMode>("ACES");
     const selectedEntityRef = useRef<any>(null);
     const highlightIdRef = useRef<string | null>(null);
@@ -266,6 +353,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const groundRef = useRef<any>(null);
     const gridRef = useRef<any>(null);
     const sceneRootRef = useRef<any>(null);
+    const sceneSplatAssetsRef = useRef<any[]>([]);
     const actorRootRef = useRef<any>(null);
     const wireframeRef = useRef(false);
     const shadowsRef = useRef(true);
@@ -370,7 +458,27 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       }
       camera.gammaCorrection = pc.GAMMA_SRGB;
       camera.toneMapping = pc[TONE_MAPPING_CONSTANTS[toneMappingRef.current]];
+      try {
+        updateEnvironmentLighting(app, pc, environmentRef.current, quality, environmentCacheRef.current);
+      } catch (cause) {
+        // Older GPUs must still be able to preview meshes in basic lighting.
+        app.scene.envAtlas = null;
+        logger.warn("PlayCanvas environment lighting unavailable; using ambient lighting", cause);
+      }
     }, [forEachEntity]);
+
+    const setEnvironmentLighting = useCallback((mode: EnvironmentLightingMode) => {
+      environmentRef.current = mode;
+      const app = appRef.current;
+      const pc = pcRef.current;
+      if (!app || !pc) return;
+      try {
+        updateEnvironmentLighting(app, pc, mode, qualityRef.current, environmentCacheRef.current);
+      } catch (cause) {
+        app.scene.envAtlas = null;
+        logger.warn("PlayCanvas environment lighting unavailable; using ambient lighting", cause);
+      }
+    }, []);
 
     const setupRaycastSelection = useCallback((app: any, cameraEntity: any) => {
       if (!app.mouse) return;
@@ -685,16 +793,25 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           return;
         }
         const pc = pcRef.current;
-      if (!pc) return;
+        if (!pc || !asset?.resource?.instantiateRenderEntity) {
+          logger.warn("PlayCanvas injection did not return a GLB container", { assetId });
+          return;
+        }
         const targetEntity = new pc.Entity(`AI_Asset_${assetId ?? Date.now()}`);
-        targetEntity.addComponent("model", { type: "asset", asset: asset.resource.model });
+        // GLB loaders return a container resource, not a legacy Model asset.
+        // Keep the authored mesh hierarchy, normals and PBR texture maps.
+        const imported = asset.resource.instantiateRenderEntity({ castShadows: shadowsRef.current });
+        targetEntity.addChild(imported);
+        forEachEntity(imported, (part) => {
+          if (part.render) part.render.castShadows = shadowsRef.current;
+        });
         targetEntity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.5, 0.5) });
         targetEntity.addComponent("rigidbody", { type: "static" });
         app.root.addChild(targetEntity);
         selectedEntityRef.current = targetEntity;
         onEntityCreatedRef.current?.({ name: targetEntity.name, id: `${assetId ?? Date.now()}` });
       });
-    }, []);
+    }, [forEachEntity]);
 
     useEffect(() => {
       let disposed = false;
@@ -792,6 +909,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           window.removeEventListener("injectRemoteAiModel", (app as any)._injectHandler);
           cameraFrameRef.current?.destroy();
           cameraFrameRef.current = null;
+          app.scene.envAtlas = null;
+          for (const atlas of environmentCacheRef.current.values()) atlas.destroy();
+          environmentCacheRef.current.clear();
+          sceneSplatAssetsRef.current = [];
           app.destroy();
         } else if (device) {
           device.destroy();
@@ -808,6 +929,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      for (const asset of sceneSplatAssetsRef.current) {
+        app.assets.remove(asset);
+        asset.unload();
+      }
+      sceneSplatAssetsRef.current = [];
       framedRadiusRef.current = null;
       if (cameraRef.current?.camera) {
         cameraRef.current.camera.nearClip = 0.1;
@@ -837,23 +963,69 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           entity.render.material = materialCache.get(obj.material);
         }
 
-        const coll = collisionForType(pc, obj.type, obj.scale);
-        entity.addComponent("collision", coll);
-        if (obj.physics?.type) {
-          entity.addComponent("rigidbody", {
-            type: obj.physics.type,
-            mass: obj.physics.mass ?? (obj.physics.type === "dynamic" ? 1 : 0),
-            friction: obj.physics.friction ?? 0.6,
-            restitution: obj.physics.restitution ?? 0.1,
-          });
-        } else {
-          entity.addComponent("rigidbody", { type: "static" });
+        // Gaussian splats are appearance, not triangle meshes. A box physics
+        // body would invent invisible collision geometry around the image.
+        if (!obj.splatUrl) {
+          const coll = collisionForType(pc, obj.type, obj.scale);
+          entity.addComponent("collision", coll);
+          if (obj.physics?.type) {
+            entity.addComponent("rigidbody", {
+              type: obj.physics.type,
+              mass: obj.physics.mass ?? (obj.physics.type === "dynamic" ? 1 : 0),
+              friction: obj.physics.friction ?? 0.6,
+              restitution: obj.physics.restitution ?? 0.1,
+            });
+          } else {
+            entity.addComponent("rigidbody", { type: "static" });
+          }
         }
 
         root.addChild(entity);
 
-        // Load remote GLB mesh if provided
-        if (obj.meshUrl) {
+        // SOG/PLY splats use PlayCanvas's native Gaussian renderer, not a
+        // container/GLB loader or a remote iframe.
+        if (obj.splatUrl) {
+          const asset = new pc.Asset(obj.name || "Gaussian splat", "gsplat", { url: obj.splatUrl });
+          sceneSplatAssetsRef.current.push(asset);
+          app.assets.add(asset);
+          asset.once("error", (cause: unknown) => {
+            if (entity.parent !== root) return;
+            logger.warn("PlayCanvas Gaussian splat loading failed", { objectId: obj.id, error: cause });
+            onMeshStatusRef.current?.({ objectId: obj.id, state: "error", message: "The Gaussian splat could not be loaded. Check its format or refresh the signed asset URL." });
+          });
+          asset.ready(() => {
+            if (entity.parent !== root) return;
+            try {
+              entity.addComponent("gsplat", { asset });
+              if (obj.frameOnLoad) {
+                const bounds = asset.resource?.aabb;
+                if (bounds?.center && bounds?.halfExtents) {
+                  const c = bounds.center;
+                  const h = bounds.halfExtents;
+                  const scale = obj.scale ?? [1, 1, 1];
+                  const center = entity.getWorldTransform().transformPoint(c.clone());
+                  const radius = Math.max(0.25, Math.hypot(h.x * scale[0], h.y * scale[1], h.z * scale[2]));
+                  const camera = cameraRef.current;
+                  const aspect = Math.max(0.1, (containerRef.current?.clientWidth || 1) / (containerRef.current?.clientHeight || 1));
+                  const distance = fitOrbitDistance(radius, camera?.camera?.fov ?? 60, aspect);
+                  framedRadiusRef.current = radius;
+                  orbitTargetRef.current = { x: center.x, y: center.y, z: center.z };
+                  orbitRef.current = { az: 40, el: 65, dist: distance };
+                  if (camera?.camera) {
+                    const clip = orbitClipPlanes(distance, radius);
+                    camera.camera.nearClip = clip.near;
+                    camera.camera.farClip = clip.far;
+                  }
+                }
+              }
+              onMeshStatusRef.current?.({ objectId: obj.id, state: "loaded" });
+            } catch (cause) {
+              logger.warn("PlayCanvas Gaussian splat instantiation failed", cause);
+              onMeshStatusRef.current?.({ objectId: obj.id, state: "error", message: "PlayCanvas could not render this Gaussian splat." });
+            }
+          });
+          app.assets.load(asset);
+        } else if (obj.meshUrl) {
           app.assets.loadFromUrl(obj.meshUrl, "container", (err: Error | null, asset: any) => {
             // A different scene may have replaced this one while the GLB was
             // loading. Never attach a late callback into an obsolete world.
@@ -947,7 +1119,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           onMeshStatusRef.current?.({
             objectId: obj.id,
             state: "error",
-            message: "This generated GLB is not accessible in the selected project.",
+            message: "This saved 3D asset is not accessible in the selected project.",
           });
         }
       }
@@ -982,6 +1154,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!app || !pc) return;
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      for (const asset of sceneSplatAssetsRef.current) {
+        app.assets.remove(asset);
+        asset.unload();
+      }
+      sceneSplatAssetsRef.current = [];
       framedRadiusRef.current = null;
       if (groundRef.current) groundRef.current.enabled = true;
       sceneRootRef.current = null;
@@ -1008,6 +1185,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
         const existing = app.root.findByName("__sceneRoot");
         if (existing) existing.destroy();
+        for (const asset of sceneSplatAssetsRef.current) {
+          app.assets.remove(asset);
+          asset.unload();
+        }
+        sceneSplatAssetsRef.current = [];
         const root = new pc.Entity("__sceneRoot");
         app.root.addChild(root);
         sceneRootRef.current = root;
@@ -1324,6 +1506,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       getStats,
       setShowGrid,
       setRenderQuality: applyRenderQuality,
+      setEnvironmentLighting,
     }));
 
     const showStatsUi = showStats || showFps;

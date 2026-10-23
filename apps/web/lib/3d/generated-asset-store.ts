@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const DEFAULT_BUCKET = "3d-generated-assets";
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
+export type Generated3DFormat = "glb" | "sog" | "ply";
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
@@ -50,6 +51,14 @@ export async function saveGeneratedGlb(input: {
 }) {
   if (!input.glb.byteLength || input.glb.byteLength > MAX_FILE_BYTES) {
     throw new Error("Generated GLB is empty or exceeds the storage limit");
+  }
+  // A successful GPU HTTP response does not prove it returned a GLB; providers
+  // sometimes return an error page or a mesh in another format. Refuse to save
+  // such data as a model users cannot open in PlayCanvas.
+  if (input.glb.length < 20 || input.glb.toString("ascii", 0, 4) !== "glTF" ||
+      input.glb.readUInt32LE(4) !== 2 || input.glb.readUInt32LE(8) !== input.glb.length ||
+      input.glb.toString("ascii", 16, 20) !== "JSON") {
+    throw new Error("The 3D provider did not return a valid GLB v2 file");
   }
 
   const { supabase, bucket } = await ensureBucket();
@@ -105,7 +114,7 @@ export async function saveGeneratedGlb(input: {
 }
 
 /**
- * List generated GLB files owned by a user and attached to a specific project.
+ * List saved 3D files owned by a user and attached to a specific project.
  * Only short-lived signed URLs leave the server; the bucket stays private.
  */
 export async function listGeneratedProjectGlbs(userId: string, projectId: string) {
@@ -119,7 +128,7 @@ export async function listGeneratedProjectGlbs(userId: string, projectId: string
   if (error) throw error;
 
   const files = (data ?? []).filter((entry) =>
-    /^3d_[a-zA-Z0-9_-]+[.]glb$/.test(entry.name)
+    /^3d_[a-zA-Z0-9_-]+[.](glb|sog|ply)$/.test(entry.name)
   );
   const assets = await Promise.all(files.map(async (file) => {
     const path = `${prefix}/${file.name}`;
@@ -128,13 +137,41 @@ export async function listGeneratedProjectGlbs(userId: string, projectId: string
       .createSignedUrl(path, 60 * 60);
     if (signingError || !signed?.signedUrl) throw signingError || new Error("Could not sign 3D asset");
     return {
-      id: file.name.slice(0, -4),
+      id: file.name.replace(/\.(glb|sog|ply)$/, ""),
       name: file.name,
       url: signed.signedUrl,
+      format: file.name.split(".").pop() as Generated3DFormat,
       expiresIn: 3600,
     };
   }));
   return assets;
+}
+
+/** Save a customer-provided splat in the same private, user-scoped asset store. */
+export async function saveProjectSplat(input: {
+  userId: string;
+  projectId: string;
+  name: string;
+  format: "sog" | "ply";
+  contents: Buffer;
+}) {
+  if (!input.contents.length || input.contents.length > MAX_FILE_BYTES) {
+    throw new Error("Splat is empty or exceeds 100 MB");
+  }
+  const { supabase, bucket } = await ensureBucket();
+  const id = `3d_${crypto.randomUUID().replace(/-/g, "")}`;
+  const path = `${input.userId}/${input.projectId}/${id}.${input.format}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, input.contents, {
+    contentType: "application/octet-stream",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data: signed, error: signError } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+  if (signError || !signed?.signedUrl) throw signError || new Error("Could not sign splat");
+  return {
+    id, name: input.name.slice(0, 120), format: input.format,
+    url: signed.signedUrl, path, expiresIn: 3600,
+  };
 }
 
 /** Find an already persisted job result (idempotent completion polling). */

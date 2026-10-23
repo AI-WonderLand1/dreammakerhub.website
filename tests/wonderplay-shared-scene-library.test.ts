@@ -13,7 +13,7 @@ describe("WonderPlay shared GLB scenes and actual renderer controls", () => {
     expect(route).toContain('"environments", "props", "characters"');
     expect(route).not.toContain('"temp-upload"');
     expect(route).toContain("bucket.data?.public !== true");
-    expect(route).toContain('/\\.glb$/i.test(file.name)');
+    expect(route).toContain('/\\.(glb|ply|sog)$/i.test(file.name)');
     expect(route).toContain('id: `storage:${path}`');
     expect(route).toContain('"Cache-Control": "private, no-store"');
   });

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound, RefreshCw } from "lucide-react";
-import StudioViewport, { type StudioViewportHandle, type ToneMappingMode, type RenderQuality } from "@/components/studio/StudioViewport";
+import StudioViewport, { type StudioViewportHandle, type ToneMappingMode, type RenderQuality, type EnvironmentLightingMode } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -27,7 +27,7 @@ type WorldActor = {
   assetId?: string;
 };
 
-type ProjectGlbAsset = { id: string; name: string; url: string };
+type ProjectGlbAsset = { id: string; name: string; url: string; format?: "glb" | "sog" | "ply" };
 type SharedGlbAsset = ProjectGlbAsset & { category: string; path: string; thumbnail: string | null };
 type SavedLevel = { path: string; content: string };
 
@@ -59,7 +59,7 @@ function initialActors(preset: WorldPreset): WorldActor[] {
   return base;
 }
 
-function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: ReadonlyMap<string, string>): GeneratedScene {
+function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: ReadonlyMap<string, string>, formats: ReadonlyMap<string, string>): GeneratedScene {
   const style = PRESETS[preset];
   const hasFullEnvironment = actors.some((actor) => actor.kind === "model" && actor.environment);
   const materials: GeneratedSceneMaterial[] = [
@@ -76,7 +76,8 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: Readon
         id: actor.id, name: actor.name, type: meta.primitive,
         assetId: actor.assetId,
         frameOnLoad: actor.environment,
-        meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "",
+        meshUrl: actor.assetId && !["sog", "ply"].includes(formats.get(actor.assetId) || "glb") ? (modelUrls.get(actor.assetId) ?? "") : "",
+        splatUrl: actor.assetId && ["sog", "ply"].includes(formats.get(actor.assetId) || "") ? (modelUrls.get(actor.assetId) ?? "") : "",
         position: actor.position,
         rotation: actor.rotation ?? [0, actor.kind === "prop" ? 18 : 0, 0] as [number, number, number],
         scale: actor.scale ?? scale, material: "mat-" + actor.kind,
@@ -106,8 +107,10 @@ export default function StudioGameFoundation() {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get("projectId")?.trim() || "default";
   const requestedLibraryAsset = searchParams?.get("libraryAsset")?.trim() || "";
+  const requestedGeneratedAsset = searchParams?.get("generatedAsset")?.trim() || "";
   const viewportRef = useRef<StudioViewportHandle>(null);
   const openedLibraryRef = useRef<string | null>(null);
+  const openedGeneratedRef = useRef<string | null>(null);
   const [preset, setPreset] = useState<WorldPreset>("blank");
   const [actors, setActors] = useState<WorldActor[]>(() => initialActors("blank"));
   const [selectedId, setSelectedId] = useState("player-start");
@@ -122,6 +125,7 @@ export default function StudioGameFoundation() {
   const [libraryRevision, setLibraryRevision] = useState(0);
   const [toneMapping, setToneMapping] = useState<ToneMappingMode>("ACES");
   const [renderQuality, setRenderQuality] = useState<RenderQuality>("high");
+  const [environmentLighting, setEnvironmentLighting] = useState<EnvironmentLightingMode>("studio");
   const [cameraFov, setCameraFov] = useState(60);
   const [exposure, setExposure] = useState(1);
   const [shadows, setShadows] = useState(true);
@@ -129,6 +133,7 @@ export default function StudioGameFoundation() {
   const [wireframe, setWireframe] = useState(false);
   const [assetError, setAssetError] = useState<string | null>(null);
   const [assetsLoading, setAssetsLoading] = useState(false);
+  const [importingSplat, setImportingSplat] = useState(false);
   const [savedLevels, setSavedLevels] = useState<SavedLevel[]>([]);
   const [levelsError, setLevelsError] = useState<string | null>(null);
   const [meshError, setMeshError] = useState<string | null>(null);
@@ -190,19 +195,65 @@ export default function StudioGameFoundation() {
     ...projectAssets.map((asset): [string, string] => [asset.id, asset.url]),
     ...sharedAssets.map((asset): [string, string] => [asset.id, asset.url]),
   ]), [projectAssets, sharedAssets]);
-  const scene = useMemo(() => buildWorld(preset, actors, modelUrls), [actors, preset, modelUrls]);
+  const assetFormats = useMemo(() => new Map([
+    ...projectAssets.map((asset): [string, string] => [asset.id, asset.format || "glb"]),
+    ...sharedAssets.map((asset): [string, string] => [asset.id, asset.format || "glb"]),
+  ]), [projectAssets, sharedAssets]);
+  const scene = useMemo(() => buildWorld(preset, actors, modelUrls, assetFormats), [actors, preset, modelUrls, assetFormats]);
 
-  const addGeneratedModel = useCallback((asset: ProjectGlbAsset) => {
+  const addGeneratedModel = useCallback((asset: ProjectGlbAsset, openAsEnvironment = false) => {
     const id = `imported-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    setActors((current) => [...current, {
+    const actor: WorldActor = {
       id,
-      name: asset.name.replace(/[.]glb$/i, ""),
+      name: asset.name.replace(/\.(glb|sog|ply)$/i, ""),
       kind: "model",
       assetId: asset.id,
-      position: [0, 1, -2],
-    }]);
+      environment: openAsEnvironment,
+      position: openAsEnvironment ? [0, 0, 0] : [0, 1, -2],
+    };
+    if (openAsEnvironment) {
+      setPreset("blank");
+      setActors([actor]);
+      setRunning(false);
+    } else {
+      setActors((current) => [...current, actor]);
+    }
     setSelectedId(id);
+    setSavedPath(null);
+    setMeshError(null);
   }, []);
+
+  useEffect(() => {
+    if (!requestedGeneratedAsset || openedGeneratedRef.current === `${projectId}:${requestedGeneratedAsset}`) return;
+    const asset = projectAssets.find((item) => item.id === requestedGeneratedAsset);
+    if (!asset) return;
+    openedGeneratedRef.current = `${projectId}:${requestedGeneratedAsset}`;
+    addGeneratedModel(asset, true);
+  }, [requestedGeneratedAsset, projectAssets, projectId, addGeneratedModel]);
+
+  const importSplat = useCallback(async (file: File) => {
+    if (projectId === "default") {
+      setAssetError("Choose a project before importing a Gaussian splat.");
+      return;
+    }
+    setImportingSplat(true);
+    setAssetError(null);
+    try {
+      const form = new FormData();
+      form.append("projectId", projectId);
+      form.append("file", file);
+      const response = await fetchAuthenticated3D("/api/v1/3d/assets", { method: "POST", body: form });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.asset) throw new Error(data?.error || "Splat import failed");
+      const asset = data.asset as ProjectGlbAsset;
+      setProjectAssets((current) => [asset, ...current]);
+      addGeneratedModel(asset, true);
+    } catch (error) {
+      setAssetError(error instanceof Error ? error.message : "Splat import failed");
+    } finally {
+      setImportingSplat(false);
+    }
+  }, [projectId, addGeneratedModel]);
 
   const addSharedModel = useCallback((asset: SharedGlbAsset, openAsEnvironment: boolean) => {
     const id = `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -283,6 +334,7 @@ export default function StudioGameFoundation() {
       if (record.rendering && typeof record.rendering === "object" && !Array.isArray(record.rendering)) {
         const rendering = record.rendering as Record<string, unknown>;
         if (["performance", "high", "cinematic"].includes(String(rendering.quality))) setRenderQuality(rendering.quality as RenderQuality);
+        if (["studio", "outdoor", "off"].includes(String(rendering.environmentLighting))) setEnvironmentLighting(rendering.environmentLighting as EnvironmentLightingMode);
         if (["ACES", "Neutral", "Filmic", "HEJL", "Linear"].includes(String(rendering.toneMapping))) setToneMapping(rendering.toneMapping as ToneMappingMode);
         if (typeof rendering.exposure === "number" && Number.isFinite(rendering.exposure) && rendering.exposure >= 0.3 && rendering.exposure <= 2.5) setExposure(rendering.exposure);
         if (typeof rendering.cameraFov === "number" && Number.isFinite(rendering.cameraFov) && rendering.cameraFov >= 35 && rendering.cameraFov <= 100) setCameraFov(rendering.cameraFov);
@@ -302,13 +354,14 @@ export default function StudioGameFoundation() {
 
   const applyViewportSettings = useCallback(() => {
     viewportRef.current?.setRenderQuality(renderQuality);
+    viewportRef.current?.setEnvironmentLighting(environmentLighting);
     viewportRef.current?.setShowGrid(showGrid && !actors.some((actor) => actor.environment));
     viewportRef.current?.setToneMapping(toneMapping);
     viewportRef.current?.setExposure(exposure);
     viewportRef.current?.setFov(cameraFov);
     viewportRef.current?.setShadows(shadows);
     viewportRef.current?.setWireframe(wireframe);
-  }, [showGrid, actors, renderQuality, toneMapping, exposure, cameraFov, shadows, wireframe]);
+  }, [showGrid, actors, renderQuality, environmentLighting, toneMapping, exposure, cameraFov, shadows, wireframe]);
 
   useEffect(() => {
     renderWorld();
@@ -395,12 +448,12 @@ export default function StudioGameFoundation() {
       const durableScene = {
         ...scene,
         // Signed URLs expire. Restore GLB links by asset ID when reopening.
-        objects: scene.objects.map((object) => ({ ...object, meshUrl: "" })),
+        objects: scene.objects.map((object) => ({ ...object, meshUrl: "", splatUrl: "" })),
       };
       const content = JSON.stringify({
         version: 3, type: "wonderplay-level", playerStartId: "player-start",
         preset, scene: durableScene, actors,
-        rendering: { quality: renderQuality, toneMapping, exposure, cameraFov, shadows },
+        rendering: { quality: renderQuality, environmentLighting, toneMapping, exposure, cameraFov, shadows },
       }, null, 2);
       const response = await fetchAuthenticatedProject("/api/projects/" + encodeURIComponent(projectId) + "/files", {
         method: "POST",
@@ -416,7 +469,7 @@ export default function StudioGameFoundation() {
     } finally {
       setSaving(false);
     }
-  }, [actors, preset, projectId, scene, renderQuality, toneMapping, exposure, cameraFov, shadows]);
+  }, [actors, preset, projectId, scene, renderQuality, environmentLighting, toneMapping, exposure, cameraFov, shadows]);
 
   const selected = actors.find((actor) => actor.id === selectedId);
   return (
@@ -427,15 +480,15 @@ export default function StudioGameFoundation() {
             <p className="text-[10px] font-bold uppercase tracking-[.16em] text-cyan-200">Saved 3D library</p>
             <button type="button" onClick={() => setLibraryRevision((n) => n + 1)} title="Refresh shared library" aria-label="Refresh shared 3D library"><RefreshCw size={13} className={libraryLoading ? "animate-spin" : ""}/></button>
           </div>
-          <p className="mt-1 text-[10px] leading-4 text-slate-400">Open a real GLB environment, or add a GLB as a prop. Its original mesh materials are retained.</p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-400">Open GLB environments and native Gaussian splats (.sog/.ply), or add them as props. GLB materials are preserved.</p>
           {libraryError && <p role="alert" className="mt-2 text-[10px] text-amber-300">{libraryError}</p>}
           {libraryLoading && <p role="status" className="mt-2 text-[10px] text-slate-300">Loading saved models…</p>}
-          {!libraryLoading && !libraryError && sharedAssets.length === 0 && <p className="mt-2 text-[10px] text-slate-400">No shared GLB models are available.</p>}
+          {!libraryLoading && !libraryError && sharedAssets.length === 0 && <p className="mt-2 text-[10px] text-slate-400">No shared 3D assets are available.</p>}
           <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">
             {sharedAssets.map((asset) => (
               <div key={asset.id} className="rounded border border-slate-700/70 bg-slate-900/70 p-2">
                 <span className="block truncate text-xs text-white" title={asset.path}>{asset.name}</span>
-                <span className="block truncate text-[9px] text-slate-500">{asset.category}</span>
+                <span className="block truncate text-[9px] text-slate-500">{asset.category} · {(asset.format || "glb").toUpperCase()}</span>
                 <div className="mt-1 flex gap-1">
                   <button type="button" onClick={() => addSharedModel(asset, true)} className="flex-1 rounded bg-cyan-800 px-1.5 py-1 text-[10px] font-semibold text-white hover:bg-cyan-700">Open scene</button>
                   <button type="button" onClick={() => addSharedModel(asset, false)} className="flex-1 rounded border border-slate-600 px-1.5 py-1 text-[10px] text-slate-200 hover:bg-slate-700">Add prop</button>
@@ -452,23 +505,34 @@ export default function StudioGameFoundation() {
             </button>
           ))}
         </div>
-        <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Generated 3D models</p>
-        <p className="mb-2 text-[10px] text-slate-500">Select a project and generate a GLB to place it in this world.</p>
+        <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Project 3D assets</p>
+        <p className="mb-2 text-[10px] text-slate-500">Generate a GLB with AI, or import a Gaussian splat (.sog/.ply) to render it in this PlayCanvas world.</p>
         <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/3dhub?step=pick&pickTool=3d&projectId=${encodeURIComponent(projectId)}`}
           className="mb-2 block rounded border border-cyan-800 px-2 py-2 text-center text-xs font-semibold text-cyan-300 hover:bg-cyan-950/40">
           {projectId === "default" ? "Choose a project" : "Generate GLB for this project"}
         </Link>
+        <label className={`mb-2 block cursor-pointer rounded border border-emerald-800 px-2 py-2 text-center text-xs font-semibold text-emerald-300 hover:bg-emerald-950/40 ${projectId === "default" || importingSplat ? "pointer-events-none opacity-50" : ""}`}>
+          {importingSplat ? "Importing splat…" : "Import Gaussian splat (.sog / .ply)"}
+          <input type="file" className="sr-only" accept=".sog,.ply" disabled={projectId === "default" || importingSplat}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (file) void importSplat(file);
+            }}/>
+        </label>
         {assetsLoading && <p className="text-xs text-slate-400">Loading models…</p>}
         {assetError && <p role="alert" className="text-xs text-red-300">{assetError}</p>}
         {!assetsLoading && !assetError && projectAssets.length === 0 &&
-          <p className="text-xs text-slate-500">No generated GLBs saved to this project yet.</p>}
+          <p className="text-xs text-slate-500">No generated or imported 3D assets saved to this project yet.</p>}
         <div className="max-h-40 space-y-1 overflow-y-auto">
           {projectAssets.map((asset) => (
-            <button type="button" key={asset.id} onClick={() => addGeneratedModel(asset)}
-              className="flex w-full items-center gap-2 rounded border border-slate-800 bg-slate-900 p-2 text-left text-xs text-cyan-200 hover:border-cyan-600"
-              title="Place this model in the world">
-              <Box size={14} /> <span className="min-w-0 flex-1 truncate">{asset.name}</span><span>+ Add</span>
-            </button>
+            <div key={asset.id} className="rounded border border-slate-800 bg-slate-900 p-2 text-xs text-cyan-200">
+              <span className="block truncate" title={asset.name}><Box size={12} className="mr-1 inline" />{asset.name}</span>
+              <div className="mt-1 flex gap-1">
+                <button type="button" onClick={() => addGeneratedModel(asset, true)} className="flex-1 rounded bg-cyan-800 px-2 py-1 text-[10px] text-white">Open scene</button>
+                <button type="button" onClick={() => addGeneratedModel(asset)} className="flex-1 rounded border border-slate-600 px-2 py-1 text-[10px]">+ Prop</button>
+              </div>
+            </div>
           ))}
         </div>
         <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Saved levels</p>
@@ -513,7 +577,7 @@ export default function StudioGameFoundation() {
 
       <aside className="w-72 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-950 p-4">
         <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> World &amp; scene inspector</p>
-        <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas renders actual GLB meshes with their embedded materials. Game logic and playable FPV controls are not enabled yet.</p>
+        <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas renders GLB meshes with embedded materials and native PLY/SOG Gaussian splats. Splats are visual assets, not collision meshes. Playable FPV controls are not enabled yet.</p>
         <section className="mt-4 rounded-lg border border-cyan-900/70 bg-cyan-950/20 p-3" aria-label="3D asset library">
           <p className="text-xs font-semibold text-cyan-200">Use your existing 3D assets</p>
           <p className="mt-2 text-xs leading-5 text-slate-400">
@@ -595,6 +659,13 @@ export default function StudioGameFoundation() {
               {(["ACES", "Neutral", "Filmic", "HEJL", "Linear"] as const).map((mode) => <option key={mode} value={mode}>{mode}</option>)}
             </select>
           </label>
+          <label className="block text-[11px] text-slate-300">PBR environment reflections
+            <select aria-label="Environment lighting" value={environmentLighting} onChange={(event) => setEnvironmentLighting(event.target.value as EnvironmentLightingMode)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white">
+              <option value="studio">Studio · softbox reflections</option>
+              <option value="outdoor">Outdoor · sky and warm sunlight</option>
+              <option value="off">Off · flat ambient only</option>
+            </select>
+          </label>
           <label className="block text-[11px] text-slate-300">Exposure · {exposure.toFixed(2)}
             <input aria-label="Scene exposure" className="block w-full accent-cyan-500" type="range" min="0.3" max="2.5" step="0.05" value={exposure} onChange={(event) => setExposure(Number(event.target.value))}/>
           </label>
@@ -604,7 +675,7 @@ export default function StudioGameFoundation() {
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={shadows} onChange={(event) => setShadows(event.target.checked)}/> Cast shadows</label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={showGrid} onChange={(event) => setShowGrid(event.target.checked)}/> Editor grid</label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)}/> Wireframe view</label>
-          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer without replacing your meshes or textures. High and Cinematic use more GPU memory; visual detail still depends on the imported asset.</p>
+          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer without replacing your meshes or textures. Environment reflections are disabled in Performance mode. High and Cinematic use more GPU memory; visual detail still depends on the imported asset.</p>
         </fieldset>
         <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level

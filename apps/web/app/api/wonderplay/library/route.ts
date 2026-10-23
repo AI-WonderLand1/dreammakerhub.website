@@ -17,6 +17,7 @@ export type WonderPlayLibraryModel = {
   category: string;
   url: string;
   thumbnail: string | null;
+  format: "glb" | "ply" | "sog";
 };
 
 export async function GET(request: Request) {
@@ -53,14 +54,15 @@ export async function GET(request: Request) {
       }
       const files = data ?? [];
       const names = new Set(files.map((file) => file.name));
-      return files.filter((file) => file.id && /\.glb$/i.test(file.name)).map((file): WonderPlayLibraryModel => {
+      return files.filter((file) => file.id && /\.(glb|ply|sog)$/i.test(file.name)).map((file): WonderPlayLibraryModel => {
         const path = `${folder}/${file.name}`;
-        const imageName = file.name.replace(/\.glb$/i, ".png");
+        const imageName = file.name.replace(/\.(glb|ply|sog)$/i, ".png");
         return {
           id: `storage:${path}`,
-          name: file.name.replace(/\.glb$/i, "").replace(/[_-]+/g, " "),
+          name: file.name.replace(/\.(glb|ply|sog)$/i, "").replace(/[_-]+/g, " "),
           path,
           category: folder,
+          format: file.name.split(".").pop()!.toLowerCase() as WonderPlayLibraryModel["format"],
           url: storage.from(BUCKET).getPublicUrl(path).data.publicUrl,
           thumbnail: names.has(imageName)
             ? storage.from(BUCKET).getPublicUrl(`${folder}/${imageName}`).data.publicUrl
