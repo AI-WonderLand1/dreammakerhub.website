@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { orbitFromCameraPosition, panOrbitTarget } from "@/lib/scene/orbit-controls";
+import { fitOrbitDistance, orbitClipPlanes } from "@/lib/scene/camera-framing";
 import { logger } from "@/lib/logger";
 
 export type StudioSelection = { name: string; id: string; entityId?: number };
@@ -31,9 +32,11 @@ export type StudioViewportHandle = {
   focusOn: (id: string | null) => void;
   getStats: () => ViewportStats;
   setShowGrid: (enabled: boolean) => void;
+  setRenderQuality: (quality: RenderQuality) => void;
 };
 
 export type ToneMappingMode = "ACES" | "Filmic" | "HEJL" | "Linear" | "Neutral";
+export type RenderQuality = "performance" | "high" | "cinematic";
 
 export type CameraPathOpts = {
   enabled: boolean;
@@ -243,6 +246,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const appRef = useRef<any>(null);
     const pcRef = useRef<any>(null);
     const cameraRef = useRef<any>(null);
+    const cameraFrameRef = useRef<any>(null);
+    const qualityRef = useRef<RenderQuality>("high");
+    const toneMappingRef = useRef<ToneMappingMode>("ACES");
     const selectedEntityRef = useRef<any>(null);
     const highlightIdRef = useRef<string | null>(null);
     const orbitRef = useRef({ dist: 9, az: 40, el: 30 });
@@ -293,6 +299,78 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       };
       walk(root);
     }, []);
+
+    const applyRenderQuality = useCallback((quality: RenderQuality) => {
+      qualityRef.current = quality;
+      const app = appRef.current;
+      const pc = pcRef.current;
+      const camera = cameraRef.current?.camera;
+      if (!app || !pc || !camera) return;
+
+      // The engine's default 1x canvas resolution looks soft on HiDPI screens.
+      // Let owners trade fidelity against GPU cost without changing delivery.
+      const ratio = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
+      app.graphicsDevice.maxPixelRatio = Math.min(ratio, quality === "performance" ? 1 : 2);
+      if (containerRef.current) {
+        const bounds = containerRef.current.getBoundingClientRect();
+        app.resizeCanvas(Math.max(1, Math.round(bounds.width)), Math.max(1, Math.round(bounds.height)));
+      }
+
+      const shadowResolution = quality === "performance" ? 1024 : 2048;
+      const cascades = quality === "cinematic" ? 4 : quality === "high" ? 3 : 1;
+      forEachEntity(app.root, (entity) => {
+        if (entity.light?.type === "directional") {
+          entity.light.shadowResolution = shadowResolution;
+          entity.light.numCascades = cascades;
+          entity.light.normalOffsetBias = 0.05;
+        }
+        for (const instance of entity.render?.meshInstances ?? []) {
+          const material = instance.material;
+          for (const mapName of ["diffuseMap", "normalMap", "metalnessMap", "glossMap", "aoMap", "emissiveMap", "opacityMap", "heightMap"]) {
+            const texture = material?.[mapName];
+            if (texture && typeof texture.anisotropy === "number") {
+              texture.anisotropy = Math.min(app.graphicsDevice.maxAnisotropy || 1, quality === "performance" ? 4 : 16);
+            }
+          }
+        }
+      });
+
+      // CameraFrame is optional: WebGL2 is the baseline, and users can always
+      // switch to the native forward-rendered performance preset.
+      let frame = cameraFrameRef.current;
+      if (quality !== "performance") {
+        try {
+          if (!frame) {
+            frame = new pc.CameraFrame(app, camera);
+            cameraFrameRef.current = frame;
+          }
+          frame.enabled = true;
+          frame.rendering.samples = quality === "high" ? 4 : 1;
+          frame.rendering.toneMapping = pc[TONE_MAPPING_CONSTANTS[toneMappingRef.current]];
+          frame.ssao.type = pc.SSAOTYPE_COMBINE;
+          frame.ssao.intensity = 0.3;
+          frame.ssao.samples = quality === "cinematic" ? 24 : 12;
+          frame.ssao.radius = 1.25;
+          frame.taa.enabled = quality === "cinematic";
+          frame.taa.jitter = 0.65;
+          frame.rendering.sharpness = quality === "cinematic" ? 0.35 : 0.15;
+          frame.bloom.intensity = quality === "cinematic" ? 0.012 : 0.005;
+          frame.bloom.threshold = 1.5;
+          frame.update();
+        } catch (cause) {
+          logger.warn("Advanced PlayCanvas camera effects are unavailable; using basic rendering", cause);
+          if (frame) {
+            try { frame.destroy(); } catch { /* failed graphics context */ }
+            cameraFrameRef.current = null;
+          }
+          camera.toneMapping = pc[TONE_MAPPING_CONSTANTS[toneMappingRef.current]];
+        }
+      } else if (frame) {
+        frame.enabled = false;
+      }
+      camera.gammaCorrection = pc.GAMMA_SRGB;
+      camera.toneMapping = pc[TONE_MAPPING_CONSTANTS[toneMappingRef.current]];
+    }, [forEachEntity]);
 
     const setupRaycastSelection = useCallback((app: any, cameraEntity: any) => {
       if (!app.mouse) return;
@@ -436,9 +514,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           // city. Keep the near plane close while zooming in; preserve enough
           // far distance to see the entire imported environment on zoom-out.
           if (camera.camera) {
-            const distance = orbitRef.current.dist;
-            camera.camera.nearClip = Math.max(0.01, Math.min(0.5, distance / 10000));
-            camera.camera.farClip = Math.max(10000, distance + (framedRadiusRef.current ?? 0) * 5);
+            const clip = orbitClipPlanes(orbitRef.current.dist, framedRadiusRef.current ?? 0);
+            camera.camera.nearClip = clip.near;
+            camera.camera.farClip = clip.far;
           }
         }
       });
@@ -675,6 +753,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           setupLights(app);
           setupGround(app);
           setupGrid(app, showGridProp);
+          applyRenderQuality(qualityRef.current);
           setupOrbitControls(app, camera);
           setupRaycastSelection(app, camera);
           setupStatsLoop(app);
@@ -682,14 +761,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           const resize = () => {
             if (containerRef.current && canvasRef.current) {
               const rect = containerRef.current.getBoundingClientRect();
-              canvasRef.current.width = rect.width;
-              canvasRef.current.height = rect.height;
-              app.resizeCanvas(rect.width, rect.height);
+              app.resizeCanvas(Math.max(1, Math.round(rect.width)), Math.max(1, Math.round(rect.height)));
             }
           };
           resize();
           window.addEventListener("resize", resize);
           (app as any)._resizeHandler = resize;
+          const resizeObserver = new ResizeObserver(resize);
+          resizeObserver.observe(containerRef.current);
+          (app as any)._resizeObserver = resizeObserver;
 
           window.addEventListener("injectRemoteAiModel", handleRemoteMeshInjection);
           (app as any)._injectHandler = handleRemoteMeshInjection;
@@ -708,7 +788,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         disposed = true;
         if (app) {
           window.removeEventListener("resize", (app as any)._resizeHandler);
+          (app as any)._resizeObserver?.disconnect();
           window.removeEventListener("injectRemoteAiModel", (app as any)._injectHandler);
+          cameraFrameRef.current?.destroy();
+          cameraFrameRef.current = null;
           app.destroy();
         } else if (device) {
           device.destroy();
@@ -716,7 +799,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         appRef.current = null;
         pcRef.current = null;
       };
-    }, [handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop, showGridProp]);
+    }, [applyRenderQuality, handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop, showGridProp]);
 
     const renderScene = useCallback((scene: GeneratedScene) => {
       const app = appRef.current;
@@ -792,6 +875,17 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
               entity.addChild(imported);
               forEachEntity(imported, (part) => {
                 if (part.render) part.render.castShadows = shadowsRef.current;
+                for (const instance of part.render?.meshInstances ?? []) {
+                  // Preserve authored glTF PBR maps and normals. Increase
+                  // oblique texture clarity without replacing any materials.
+                  const material = instance.material;
+                  for (const mapName of ["diffuseMap", "normalMap", "metalnessMap", "glossMap", "aoMap", "emissiveMap", "opacityMap", "heightMap"]) {
+                    const texture = material?.[mapName];
+                    if (texture && typeof texture.anisotropy === "number") {
+                      texture.anisotropy = Math.min(app.graphicsDevice.maxAnisotropy || 1, qualityRef.current === "performance" ? 4 : 16);
+                    }
+                  }
+                }
               });
               if (obj.frameOnLoad) {
                 // Frame the actual mesh AABB, not a 1-unit placeholder cube.
@@ -817,14 +911,20 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
                   const radius = Math.max(0.25, Math.hypot(max.x - min.x, max.y - min.y, max.z - min.z) / 2);
                   framedRadiusRef.current = radius;
                   const camera = cameraRef.current;
-                  const fovRadians = ((camera?.camera?.fov ?? 60) * Math.PI) / 180;
-                  const distance = Math.max(1, radius * 1.35 / Math.sin(fovRadians / 2));
+                  const aspect = Math.max(0.1, (containerRef.current?.clientWidth || 1) / (containerRef.current?.clientHeight || 1));
+                  const distance = fitOrbitDistance(radius, camera?.camera?.fov ?? 60, aspect);
                   orbitTargetRef.current = { x: center.x, y: center.y, z: center.z };
                   orbitRef.current = { az: 40, el: 65, dist: distance };
                   if (camera?.camera) {
-                    camera.camera.nearClip = Math.max(0.01, distance / 10000);
-                    camera.camera.farClip = Math.max(1000, distance + radius * 5);
+                    const clip = orbitClipPlanes(distance, radius);
+                    camera.camera.nearClip = clip.near;
+                    camera.camera.farClip = clip.far;
                   }
+                  forEachEntity(app.root, (part) => {
+                    if (part.light?.type === "directional") {
+                      part.light.shadowDistance = Math.max(100, Math.min(3000, radius * 2));
+                    }
+                  });
                 }
               }
               if (wireframeRef.current) {
@@ -1018,8 +1118,17 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       const constName = TONE_MAPPING_CONSTANTS[mode];
       const value = (pc as any)[constName];
       if (value !== undefined) {
-        app.scene.toneMapping = value;
-        app.scene.gammaCorrection = mode === "Linear" ? pc.GAMMA_NONE : pc.GAMMA_SRGB;
+        toneMappingRef.current = mode;
+        // Modern PlayCanvas applies display transforms per camera. Linear
+        // tonemapping still needs sRGB output on ordinary displays.
+        if (cameraRef.current?.camera) {
+          cameraRef.current.camera.toneMapping = value;
+          cameraRef.current.camera.gammaCorrection = pc.GAMMA_SRGB;
+        }
+        if (cameraFrameRef.current?.enabled) {
+          cameraFrameRef.current.rendering.toneMapping = value;
+          cameraFrameRef.current.update();
+        }
       }
     }, []);
 
@@ -1214,6 +1323,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       focusOn,
       getStats,
       setShowGrid,
+      setRenderQuality: applyRenderQuality,
     }));
 
     const showStatsUi = showStats || showFps;
