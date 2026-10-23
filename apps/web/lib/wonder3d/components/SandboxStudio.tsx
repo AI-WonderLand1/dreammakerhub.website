@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AssetItem, Model3DType, ViewportLighting } from '../types';
 import { ThreeViewport } from './ThreeViewport';
+import { fetchAuthenticated3D } from '@/lib/3d/browser-3d-fetch';
 import { 
   Wand2, 
   Image as ImageIcon, 
@@ -80,28 +81,28 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
         verified: true,
       },
       price: 0,
-      rating: 4.9,
-      reviewsCount: 48,
-      downloadCount: 312,
-      likesCount: 189,
-      viewsCount: 1240,
+      rating: 0,
+      reviewsCount: 0,
+      downloadCount: 0,
+      likesCount: 0,
+      viewsCount: 0,
       dateAdded: new Date().toISOString().slice(0,10),
       formats: ['.GLB'],
       modelType: 'mech',
       thumbnailImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-      isAiGenerated: true,
+      isAiGenerated: false,
       licenseType: 'Standard',
       previewBgGradient: 'from-cyan-950 via-slate-900 to-black',
       primaryColor: '#00F0FF',
       specs: {
         polyCount: 0,
         vertexCount: 0,
-        meshCount: 1,
-        textureResolution: '4K PBR',
+        meshCount: 0,
+        textureResolution: 'Not generated',
         rigged: false,
         animated: false,
-        pbrReady: true,
-        uvUnwrapped: true,
+        pbrReady: false,
+        uvUnwrapped: false,
         fileSizeMB: 0,
         engineCompatibility: ['Unreal 5', 'Unity', 'Three.js'],
       },
@@ -139,11 +140,17 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
 
   // Generation History State
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [assetLibraryError, setAssetLibraryError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
+    setAssetLibraryError(null);
     const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
-    void fetch(`/api/v1/3d/assets${query}`, { credentials: 'include' })
-      .then((response) => response.ok ? response.json() : null)
+    void fetchAuthenticated3D(`/api/v1/3d/assets${query}`)
+      .then((response) => {
+        if (response.status === 401) throw new Error('Sign in to view saved 3D assets.');
+        if (!response.ok) throw new Error(`Saved model library unavailable (HTTP ${response.status}).`);
+        return response.json();
+      })
       .then((data) => {
         if (cancelled || !Array.isArray(data?.assets)) return;
         setHistory((existing) => {
@@ -156,7 +163,9 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
           return [...existing.filter((item) => !saved.some((asset) => asset.id === item.id)), ...saved];
         });
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        if (!cancelled) setAssetLibraryError(error instanceof Error ? error.message : 'Could not load saved 3D assets.');
+      });
     return () => { cancelled = true; };
   }, [projectId]);
 
@@ -208,14 +217,14 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
         form.append('image', imageFile as File);
         form.append('label', trimmedPrompt || (imageFile as File).name);
         if (projectId) form.append('projectId', projectId);
-        const submit = await fetch('/api/v1/3d/image', { method: 'POST', credentials: 'include', body: form });
+        const submit = await fetchAuthenticated3D('/api/v1/3d/image', { method: 'POST', body: form });
         const submitted = await submit.json().catch(() => null);
         if (!submit.ok || !submitted?.ok || !submitted?.ticket) {
           throw new Error(submitted?.error?.message || `Could not start SimpleRick (${submit.status})`);
         }
         for (let attempt = 0; attempt < 240; attempt++) {
           await new Promise((resolve) => window.setTimeout(resolve, 3000));
-          const poll = await fetch(`/api/v1/3d/image?ticket=${encodeURIComponent(submitted.ticket)}`, { credentials: 'include' });
+          const poll = await fetchAuthenticated3D(`/api/v1/3d/image?ticket=${encodeURIComponent(submitted.ticket)}`);
           const polled = await poll.json().catch(() => null);
           if (!poll.ok || !polled?.ok) {
             throw new Error(polled?.error?.message || `SimpleRick status failed (${poll.status})`);
@@ -657,14 +666,29 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
           <div className="flex-1 w-full h-full relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#07090e] to-black">
             
             {/* Live 3D Viewport Component */}
-            <ThreeViewport
-              modelType={activeAsset.modelType}
-              glbUrl={activeAsset.glbUrl}
-              primaryColor={primaryColor}
-              showControlsBar={true}
-              autoRotateDefault={true}
-              className="w-full h-full border-none rounded-none"
-            />
+            {activeAsset.glbUrl ? (
+              <ThreeViewport
+                modelType={activeAsset.modelType}
+                glbUrl={activeAsset.glbUrl}
+                primaryColor={primaryColor}
+                showControlsBar={true}
+                autoRotateDefault={true}
+                className="w-full h-full border-none rounded-none"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-8 text-center" role="status">
+                <Box className="h-12 w-12 text-cyan-700" />
+                <h3 className="text-lg font-semibold text-slate-100">No generated GLB selected</h3>
+                <p className="max-w-md text-sm leading-6 text-slate-400">
+                  Choose Image to 3D and upload a reference, or select an existing saved model.
+                  The old blocky procedural showcase was not a generated AI model.
+                </p>
+                <button type="button" onClick={() => setActiveMode('image_to_3d')}
+                  className="rounded-lg border border-cyan-500/50 bg-cyan-950/50 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-900/60">
+                  Create an image-to-3D asset
+                </button>
+              </div>
+            )}
 
             {/* Overlaid Corner Badge: Polycount & Stats */}
             <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1.5 pointer-events-none">
@@ -678,7 +702,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                 <div className="flex items-center gap-2 text-slate-300">
                   <span className="text-slate-500">Format:</span>
                   <strong className="text-cyan-400 font-bold">
-                    {activeAsset.formats ? activeAsset.formats.join(' • ') : 'GLTF / GLB'}
+                    {activeAsset.glbUrl ? activeAsset.formats?.join(' • ') || 'GLB' : 'Not generated'}
                   </strong>
                 </div>
                 <div className="flex items-center gap-2 text-slate-300">
@@ -728,6 +752,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                 <span className="text-[10px] font-mono text-slate-500">{history.length} assets saved</span>
               </div>
 
+              {assetLibraryError && <p role="alert" className="mx-3 mt-3 text-xs text-red-300">{assetLibraryError}</p>}
               {/* Scrollable History Cards */}
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800">
                 {history.map((item) => {

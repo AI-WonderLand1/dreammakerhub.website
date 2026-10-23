@@ -22,14 +22,22 @@ describe("WonderPlay PlayCanvas WebGL AI rendering integration", () => {
     expect(viewport).toContain("onReadyRef.current?.()");
   });
 
-  it("sends only user-triggered, project-bound text-to-3D requests through the billed API", () => {
+  it("imports real 3D Studio GLBs into WonderPlay without duplicating billed generation", () => {
     const world = source("apps/web/components/studio/StudioGameFoundation.tsx");
-    expect(world).toContain('fetch("/api/v1/3d/generate"');
-    expect(world).toContain('JSON.stringify({ projectId, prompt, format: "glb", addTexture: false })');
+    expect(world).not.toContain("/api/v1/3d/generate");
+    expect(world).toContain("fetchAuthenticated3D(`/api/v1/3d/assets?projectId=");
+    expect(world).toContain("/dashboard/ai-generator?projectId=");
     expect(world).toContain('projectId === "default"');
-    expect(world).toContain("generateModel()");
     expect(world).toContain("addGeneratedModel(asset)");
     expect(world).toContain("onReady={renderWorld}");
+  });
+
+  it("preserves cookie auth for text-to-3D and bearer auth for SimpleRick image-to-3D", () => {
+    const studio = source("apps/web/lib/wonder3d/components/SandboxStudio.tsx");
+    expect(studio).toContain("fetch('/api/v1/3d/generate', {");
+    expect(studio).toContain("credentials: 'include'");
+    expect(studio).not.toContain("fetchAuthenticated3D('/api/v1/3d/generate'");
+    expect(studio).toContain("fetchAuthenticated3D('/api/v1/3d/image'");
   });
 
   it("rejects unconfigured provider before reserving credits", () => {

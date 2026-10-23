@@ -597,10 +597,8 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
         } catch (error) {
           console.error("Failed to load GLTF model:", error);
           setCustomModelError(error instanceof Error ? error.message : 'Failed to load GLB model');
-          // Fallback to procedural model
-          const modelGroup = createProceduralModel(modelType, primaryColor);
-          mainGroupRef.current = modelGroup;
-          scene.add(modelGroup);
+          // Do not substitute a procedural demo when an actual GLB fails to load.
+          // The user must see the failure, not a fake generated asset.
         } finally {
           setIsLoadingCustomModel(false);
         }
@@ -896,6 +894,11 @@ export const ThreeViewport: React.FC<ThreeViewportProps> = ({
         className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
       />
 
+      {customModelError && (
+        <div role="alert" className="absolute left-1/2 top-1/2 z-20 w-[min(90%,28rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-red-500/50 bg-slate-950/95 p-5 text-center text-sm text-red-200 shadow-xl">
+          Unable to load this GLB. The model link may have expired. Reload it from your saved library.
+        </div>
+      )}
       {/* Top Left Viewport Badge */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-900/80 backdrop-blur-md text-cyan-400 border border-cyan-500/30">
