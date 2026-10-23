@@ -63,7 +63,7 @@ export async function listInternalProjectFilesByPrefix(
     throw new Error("Invalid internal project prefix");
   }
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase.from("_project_files")
     .select("file_path,content").eq("project_id", projectId)
     .like("file_path", `${prefix}%`)
@@ -81,7 +81,7 @@ export async function updateProjectFileAtomically(
   await assertOwner(projectId, ownerId);
   const normalized = normalizeFilePath(filePath);
   if (!isReservedWonderSpacePath(normalized)) throw new Error("Invalid internal project path");
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   for (let attempt = 0; attempt < 5; attempt++) {
     const { data: current, error: readError } = await supabase.from("_project_files")
       .select("content,updated_at").eq("project_id", projectId)
@@ -119,7 +119,8 @@ function mapProjectRow(row: ProjectRow): ProjectMetadata {
   };
 }
 
-async function getClient() {
+// Publishing must use the same request identity as project storage and RLS.
+export async function getProjectStorageClient() {
   // The browser editor sends its verified Supabase session as a Bearer token.
   // When a reverse proxy omits SSR cookies, keep project queries bound to that
   // SAME user's JWT so Supabase RLS (auth.uid()) still applies.
@@ -149,7 +150,7 @@ async function getClient() {
 }
 
 async function readMetadata(projectId: string): Promise<ProjectMetadata> {
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_projects")
     .select("id,owner_id,name,tool,publish_enabled,custom_domain,last_publish_id,created_at,updated_at")
@@ -162,7 +163,7 @@ async function readMetadata(projectId: string): Promise<ProjectMetadata> {
 }
 
 async function writeMetadata(meta: ProjectMetadata): Promise<void> {
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { error } = await supabase
     .from("_projects")
     .upsert({
@@ -181,7 +182,7 @@ async function writeMetadata(meta: ProjectMetadata): Promise<void> {
 }
 
 export async function listProjects(ownerId: string): Promise<ProjectMetadata[]> {
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_projects")
     .select("id,owner_id,name,tool,publish_enabled,custom_domain,last_publish_id,created_at,updated_at")
@@ -236,7 +237,7 @@ export async function updateProjectMetadata(projectId: string, ownerId: string, 
 
 export async function listFiles(projectId: string, ownerId: string): Promise<string[]> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_project_files")
     .select("file_path")
@@ -250,7 +251,7 @@ export async function listFiles(projectId: string, ownerId: string): Promise<str
 export async function readFile(projectId: string, ownerId: string, filePath: string): Promise<string | null> {
   await assertOwner(projectId, ownerId);
   const normalized = normalizeFilePath(filePath);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_project_files")
     .select("content")
@@ -266,7 +267,7 @@ export async function writeFile(projectId: string, ownerId: string, filePath: st
   const meta = await assertOwner(projectId, ownerId);
   const normalized = normalizeFilePath(filePath);
   const now = new Date().toISOString();
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { error } = await supabase
     .from("_project_files")
     .upsert({ project_id: projectId, file_path: normalized, content, updated_at: now }, { onConflict: "project_id,file_path" });
@@ -289,7 +290,7 @@ export async function writeFiles(projectId: string, ownerId: string, entries: Fi
       content: entry.content ?? "", updated_at: now,
     };
   });
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { error } = await supabase.from("_project_files").upsert(rows, { onConflict: "project_id,file_path" });
   if (error) throw new Error(error.message);
   await updateProjectMetadata(projectId, ownerId, { updatedAt: now });
@@ -298,7 +299,7 @@ export async function writeFiles(projectId: string, ownerId: string, entries: Fi
 export async function deleteFile(projectId: string, ownerId: string, filePath: string): Promise<void> {
   await assertOwner(projectId, ownerId);
   const normalized = normalizeFilePath(filePath);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { error } = await supabase
     .from("_project_files")
     .delete()
@@ -311,7 +312,7 @@ export async function deletePath(projectId: string, ownerId: string, targetPath:
   await assertOwner(projectId, ownerId);
   const normalized = normalizeFilePath(targetPath);
   if (isReservedWonderSpacePath(normalized)) throw new Error("Invalid project file path");
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_project_files")
     .select("file_path")
@@ -343,7 +344,7 @@ export async function renamePath(projectId: string, ownerId: string, oldPath: st
   if (isReservedWonderSpacePath(oldNormalized) || isReservedWonderSpacePath(newNormalized)) {
     throw new Error("Invalid project file path");
   }
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase.rpc("rename_builder_project_path", {
     p_project_id: projectId,
     p_old_path: oldNormalized,
@@ -382,7 +383,7 @@ export async function moveFile(projectId: string, ownerId: string, oldPath: stri
 export async function deleteProject(projectId: string, ownerId: string, confirmationName: string): Promise<void> {
   const project = await assertOwner(projectId, ownerId);
   if (confirmationName !== project.name) throw new Error("Project name changed during deletion.");
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   // Name check in the query prevents a concurrent rename from bypassing confirmation.
   const { data, error } = await supabase.from("_projects")
     .delete()
@@ -401,7 +402,7 @@ export async function createRevision(
   opts: { label?: string; limit?: number } = {},
 ): Promise<Revision> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data: latest, error: latestError } = await supabase
     .from("_project_revisions")
     .select("version_number")
@@ -438,7 +439,7 @@ export async function createRevision(
 
 export async function listRevisions(projectId: string, ownerId: string): Promise<Revision[]> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_project_revisions")
     .select("id,version_number,snapshot,created_at")
@@ -456,7 +457,7 @@ export async function listRevisions(projectId: string, ownerId: string): Promise
 
 export async function restoreRevision(projectId: string, ownerId: string, revisionId: string): Promise<Revision> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase
     .from("_project_revisions")
     .select("id,version_number,snapshot,created_at")
@@ -508,7 +509,7 @@ function validSourceSnapshotPath(filePath: string): boolean {
 
 export async function listSourceVersions(projectId: string, ownerId: string): Promise<SourceVersionSummary[]> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase.from("_project_source_versions")
     .select("id,title,version_number,created_at")
     .eq("project_id", projectId).eq("owner_id", ownerId)
@@ -565,7 +566,7 @@ export async function loadSourceVersion(
   projectId: string, ownerId: string, versionId: string,
 ): Promise<SourceVersion> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase.from("_project_source_versions")
     .select("id,title,version_number,created_at,snapshot")
     .eq("project_id", projectId).eq("owner_id", ownerId)
@@ -595,7 +596,7 @@ export async function readCurrentProjectSourceFiles(
   projectId: string, ownerId: string,
 ): Promise<Record<string, string>> {
   await assertOwner(projectId, ownerId);
-  const supabase = await getClient();
+  const supabase = await getProjectStorageClient();
   const { data, error } = await supabase.from("_project_files")
     .select("file_path,content").eq("project_id", projectId)
     .neq("file_path", ".wonderspace")

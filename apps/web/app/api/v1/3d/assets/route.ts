@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePaidAIUser } from "@/app/api/ai/auth";
-import { listGeneratedProjectGlbs } from "@/lib/3d/generated-asset-store";
+import { listGeneratedProjectGlbs, listGeneratedUserGlbs } from "@/lib/3d/generated-asset-store";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +16,14 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const projectId = req.nextUrl.searchParams.get("projectId")?.trim() || "";
-  if (!/^[a-zA-Z0-9_-]{1,120}$/.test(projectId)) {
+  if (projectId && !/^[a-zA-Z0-9_-]{1,120}$/.test(projectId)) {
     return NextResponse.json({ error: "Select a valid project first" }, { status: 400 });
   }
 
   try {
-    const assets = await listGeneratedProjectGlbs(auth.userId, projectId);
+    const assets = projectId
+      ? await listGeneratedProjectGlbs(auth.userId, projectId)
+      : await listGeneratedUserGlbs(auth.userId);
     return NextResponse.json({ assets, projectId }, {
       headers: { "Cache-Control": "private, no-store" },
     });

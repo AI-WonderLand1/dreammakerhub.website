@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { fetchAuthenticatedProject } from '@/lib/wonderspace/browser-project-fetch';
 import { useBuilderStore } from '@/lib/builder/store';
 import { useSovereignOS } from '../context/SovereignOSContext';
 
@@ -62,7 +63,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
         return;
       }
 
-      const res = await fetch('/api/projects/publish', {
+      const res = await fetchAuthenticatedProject('/api/projects/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

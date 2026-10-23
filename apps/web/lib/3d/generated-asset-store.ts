@@ -46,6 +46,7 @@ export async function saveGeneratedGlb(input: {
   projectId?: string | null;
   prompt: string;
   glb: Buffer;
+  provider?: string;
 }) {
   if (!input.glb.byteLength || input.glb.byteLength > MAX_FILE_BYTES) {
     throw new Error("Generated GLB is empty or exceeds the storage limit");
@@ -81,7 +82,7 @@ export async function saveGeneratedGlb(input: {
       name: input.prompt.slice(0, 120),
       description: input.prompt,
       category: "ai-generated-3d",
-      tags: ["3d", "hunyuan", "glb"],
+      tags: ["3d", input.provider || "hunyuan", "glb"],
       user_id: input.userId,
       data: {
         project_id: input.projectId ?? null,
@@ -108,8 +109,7 @@ export async function saveGeneratedGlb(input: {
  * Only short-lived signed URLs leave the server; the bucket stays private.
  */
 export async function listGeneratedProjectGlbs(userId: string, projectId: string) {
-  const supabase = getServiceClient();
-  const bucket = process.env.WONDER_3D_ASSET_BUCKET?.trim() || DEFAULT_BUCKET;
+  const { supabase, bucket } = await ensureBucket();
   const prefix = `${userId}/${projectId}`;
   const { data, error } = await supabase.storage.from(bucket).list(prefix, {
     limit: 100,
@@ -135,4 +135,38 @@ export async function listGeneratedProjectGlbs(userId: string, projectId: string
     };
   }));
   return assets;
+}
+
+/** Find an already persisted job result (idempotent completion polling). */
+export async function getSavedGeneratedGlb(input: {
+  userId: string;
+  projectId?: string | null;
+  id: string;
+}) {
+  const { supabase, bucket } = await ensureBucket();
+  const safeProject = (input.projectId || "unassigned").replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 120);
+  const prefix = `${input.userId}/${safeProject}`;
+  const { data: entries, error } = await supabase.storage.from(bucket).list(prefix, {
+    search: `${input.id}.glb`, limit: 20,
+  });
+  if (error && /not found/i.test(error.message || "")) return null;
+  if (error) throw error;
+  if (!entries?.some((file) => file.name === `${input.id}.glb`)) return null;
+  const path = `${prefix}/${input.id}.glb`;
+  const { data: signed, error: signError } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+  if (signError || !signed?.signedUrl) throw signError || new Error("Could not sign GLB");
+  return { path, signedUrl: signed.signedUrl, expiresIn: 3600 };
+}
+
+/** List private generated models from every project under the signed-in user. */
+export async function listGeneratedUserGlbs(userId: string) {
+  const { supabase, bucket } = await ensureBucket();
+  const { data: folders, error } = await supabase.storage.from(bucket).list(userId, { limit: 100 });
+  if (error) throw error;
+  const projects = (folders || []).filter((item) => !item.id).map((item) => item.name);
+  const results = await Promise.all(projects.map(async (projectId) => {
+    const assets = await listGeneratedProjectGlbs(userId, projectId);
+    return assets.map((asset) => ({ ...asset, projectId }));
+  }));
+  return results.flat();
 }

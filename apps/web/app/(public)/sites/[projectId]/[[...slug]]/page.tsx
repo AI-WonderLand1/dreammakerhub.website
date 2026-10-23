@@ -47,9 +47,9 @@ async function getPublishedPage(projectId: string, pageSlug: string) {
     const { rows } = await query(
       `SELECT pg.title, pg.content
        FROM pages pg
-       INNER JOIN projects pr
+       INNER JOIN _projects pr
          ON pr.id::text = pg.content->'wonderBuild'->>'projectId'
-        AND pr.user_id = pg.user_id
+        AND pr.owner_id = pg.user_id::text
        WHERE pg.published = true
          AND pg.content->>'kind' = 'wonderbuild-site-page'
          AND pg.content->'wonderBuild'->>'projectId' = $1
