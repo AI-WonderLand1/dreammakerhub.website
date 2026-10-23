@@ -19,7 +19,6 @@ import {
   Home,
   LayoutTemplate,
   Library,
-  Image as ImageIcon,
   LogOut,
   Menu,
   Pencil,
