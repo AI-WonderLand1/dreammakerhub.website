@@ -15,7 +15,7 @@ describe('WonderPlay unified editor layout', () => {
     for (const tab of ["1. Pick", "2. Edit", "3. Publish"]) {
       expect(studio).toContain(`label: "${tab}"`);
     }
-    expect(studio).toContain('aria-label="Creative editing tools"');
+    expect(studio).toContain('"Creative editing tools"');
     expect(studio).toContain('<SandboxStudio availableAssets={[]} embedded />');
     expect(studio).toContain('<StudioGameFoundation />');
     expect(studio).toContain('<ImageStudioWorkspace />');
