@@ -7,6 +7,7 @@ Next.js server is the only intended client; browsers never call this service.
 import asyncio
 import hmac
 import io
+import logging
 import os
 import time
 import uuid
@@ -16,6 +17,8 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
+
+logger = logging.getLogger("simplerick.gpu")
 
 os.environ.setdefault("ATTN_BACKEND", "xformers")
 os.environ.setdefault("SPCONV_ALGO", "native")
@@ -94,6 +97,7 @@ async def work_loop() -> None:
             job["progress"] = 100
         except Exception:
             # Never return internal tracebacks, file paths, or tokens to clients.
+            logger.exception("SimpleRick job failed: %s", job_id)
             jobs[job_id]["state"] = "failed"
             jobs[job_id]["error"] = "GPU generation failed; check worker logs"
         finally:
