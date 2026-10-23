@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound } from "lucide-react";
-import StudioViewport, { type StudioViewportHandle } from "@/components/studio/StudioViewport";
+import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound, RefreshCw } from "lucide-react";
+import StudioViewport, { type StudioViewportHandle, type ToneMappingMode } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -18,11 +18,17 @@ type WorldActor = {
   name: string;
   kind: ActorKind;
   position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  /** A full GLB environment should not have a placeholder floor drawn over it. */
+  environment?: boolean;
+  physics?: GeneratedSceneObject["physics"];
   /** Durable generated-asset reference; signed URLs are resolved on every open. */
   assetId?: string;
 };
 
 type ProjectGlbAsset = { id: string; name: string; url: string };
+type SharedGlbAsset = ProjectGlbAsset & { category: string; path: string; thumbnail: string | null };
 type SavedLevel = { path: string; content: string };
 
 const PRESETS: Record<WorldPreset, { label: string; detail: string; sky: [number, number, number]; ground: [number, number, number]; accent: [number, number, number] }> = {
@@ -55,26 +61,28 @@ function initialActors(preset: WorldPreset): WorldActor[] {
 
 function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: ReadonlyMap<string, string>): GeneratedScene {
   const style = PRESETS[preset];
+  const hasFullEnvironment = actors.some((actor) => actor.kind === "model" && actor.environment);
   const materials: GeneratedSceneMaterial[] = [
     { id: "mat-ground", color: style.ground, metalness: 0, roughness: 0.92 },
     ...Object.entries(ACTOR_META).map(([kind, meta]) => ({ id: "mat-" + kind, color: meta.color, metalness: kind === "light" ? 0.1 : 0.25, roughness: 0.58, emissive: kind === "light" ? meta.color : undefined })),
   ];
 
   const objects: GeneratedSceneObject[] = [
-    { id: "ground", name: "Playable Ground", type: "plane", meshUrl: "", position: [0, 0, 0], rotation: [0, 0, 0], scale: [28, 1, 28], material: "mat-ground" },
+    ...(!hasFullEnvironment ? [{ id: "ground", name: "Playable Ground", type: "plane" as const, meshUrl: "", position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: [28, 1, 28] as [number, number, number], material: "mat-ground" }] : []),
     ...actors.map((actor) => {
       const meta = ACTOR_META[actor.kind];
       const scale: [number, number, number] = actor.kind === "model" ? [1, 1, 1] : actor.kind === "player" ? [0.8, 1.8, 0.8] : actor.kind === "light" ? [0.45, 0.45, 0.45] : actor.kind === "prop" ? [1.2, 3, 1.2] : [2.4, 2, 1.4];
       return {
         id: actor.id, name: actor.name, type: meta.primitive,
         assetId: actor.assetId,
+        frameOnLoad: actor.environment,
         meshUrl: actor.assetId ? (modelUrls.get(actor.assetId) ?? "") : "",
         position: actor.position,
-        rotation: [0, actor.kind === "prop" ? 18 : 0, 0] as [number, number, number],
-        scale, material: "mat-" + actor.kind,
-        physics: actor.kind === "prop"
+        rotation: actor.rotation ?? [0, actor.kind === "prop" ? 18 : 0, 0] as [number, number, number],
+        scale: actor.scale ?? scale, material: "mat-" + actor.kind,
+        physics: actor.physics ?? (actor.kind === "model" ? { type: "static" as const } : actor.kind === "prop"
           ? { type: "dynamic" as const, mass: 2, friction: 0.7, restitution: 0.1 }
-          : { type: "static" as const },
+          : { type: "static" as const }),
       };
     }),
   ];
@@ -97,7 +105,9 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: Readon
 export default function StudioGameFoundation() {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get("projectId")?.trim() || "default";
+  const requestedLibraryAsset = searchParams?.get("libraryAsset")?.trim() || "";
   const viewportRef = useRef<StudioViewportHandle>(null);
+  const openedLibraryRef = useRef<string | null>(null);
   const [preset, setPreset] = useState<WorldPreset>("blank");
   const [actors, setActors] = useState<WorldActor[]>(() => initialActors("blank"));
   const [selectedId, setSelectedId] = useState("player-start");
@@ -106,11 +116,36 @@ export default function StudioGameFoundation() {
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [projectAssets, setProjectAssets] = useState<ProjectGlbAsset[]>([]);
+  const [sharedAssets, setSharedAssets] = useState<SharedGlbAsset[]>([]);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryRevision, setLibraryRevision] = useState(0);
+  const [toneMapping, setToneMapping] = useState<ToneMappingMode>("ACES");
+  const [exposure, setExposure] = useState(1);
+  const [shadows, setShadows] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
+  const [wireframe, setWireframe] = useState(false);
   const [assetError, setAssetError] = useState<string | null>(null);
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [savedLevels, setSavedLevels] = useState<SavedLevel[]>([]);
   const [levelsError, setLevelsError] = useState<string | null>(null);
   const [meshError, setMeshError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLibraryLoading(true);
+    setLibraryError(null);
+    void fetch("/api/wonderplay/library", { credentials: "same-origin", cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        if (response.status === 401) throw new Error("Sign in to use your shared 3D asset library.");
+        if (!response.ok) throw new Error(`Shared 3D library unavailable (HTTP ${response.status}).`);
+        const payload = await response.json() as { assets?: SharedGlbAsset[] };
+        if (!controller.signal.aborted) setSharedAssets(Array.isArray(payload.assets) ? payload.assets : []);
+      }).catch((error) => {
+        if (!controller.signal.aborted) setLibraryError(error instanceof Error ? error.message : "Shared models could not be loaded.");
+      }).finally(() => { if (!controller.signal.aborted) setLibraryLoading(false); });
+    return () => controller.abort();
+  }, [libraryRevision]);
 
   useEffect(() => {
     setProjectAssets([]);
@@ -149,7 +184,10 @@ export default function StudioGameFoundation() {
     return () => controller.abort();
   }, [projectId]);
 
-  const modelUrls = useMemo(() => new Map(projectAssets.map((asset) => [asset.id, asset.url])), [projectAssets]);
+  const modelUrls = useMemo(() => new Map([
+    ...projectAssets.map((asset): [string, string] => [asset.id, asset.url]),
+    ...sharedAssets.map((asset): [string, string] => [asset.id, asset.url]),
+  ]), [projectAssets, sharedAssets]);
   const scene = useMemo(() => buildWorld(preset, actors, modelUrls), [actors, preset, modelUrls]);
 
   const addGeneratedModel = useCallback((asset: ProjectGlbAsset) => {
@@ -163,6 +201,33 @@ export default function StudioGameFoundation() {
     }]);
     setSelectedId(id);
   }, []);
+
+  const addSharedModel = useCallback((asset: SharedGlbAsset, openAsEnvironment: boolean) => {
+    const id = `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const actor: WorldActor = {
+      id, name: asset.name, kind: "model", assetId: asset.id,
+      environment: openAsEnvironment,
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+    };
+    if (openAsEnvironment) {
+      setPreset("blank");
+      setActors([actor]);
+      setRunning(false);
+    } else {
+      setActors((current) => [...current, actor]);
+    }
+    setSelectedId(id);
+    setSavedPath(null);
+    setMeshError(null);
+  }, []);
+
+  useEffect(() => {
+    if (!requestedLibraryAsset || openedLibraryRef.current === requestedLibraryAsset) return;
+    const savedModel = sharedAssets.find((asset) => asset.id === requestedLibraryAsset);
+    if (!savedModel) return;
+    openedLibraryRef.current = requestedLibraryAsset;
+    addSharedModel(savedModel, true);
+  }, [requestedLibraryAsset, sharedAssets, addSharedModel]);
 
   const onMeshStatus = useCallback((detail: { objectId: string; state: "loaded" | "error"; message?: string }) => {
     if (detail.state === "error") {
@@ -186,13 +251,28 @@ export default function StudioGameFoundation() {
           typeof actor.kind === "string" && Object.prototype.hasOwnProperty.call(ACTOR_META, actor.kind) &&
           Array.isArray(actor.position) && actor.position.length === 3 &&
           actor.position.every((n) => typeof n === "number" && Number.isFinite(n)) &&
-          (actor.kind !== "model" || (typeof actor.assetId === "string" && /^3d_[a-zA-Z0-9_-]+$/.test(actor.assetId)));
+          (actor.kind !== "model" || (typeof actor.assetId === "string" &&
+            (/^3d_[a-zA-Z0-9_-]+$/.test(actor.assetId) ||
+              (actor.assetId.startsWith("storage:") && actor.assetId.length <= 300))));
       }).map((actor) => ({
         id: actor.id,
         name: actor.name,
         kind: actor.kind,
         position: actor.position,
         assetId: actor.assetId,
+        rotation: Array.isArray(actor.rotation) && actor.rotation.length === 3 && actor.rotation.every(Number.isFinite)
+          ? actor.rotation : undefined,
+        scale: Array.isArray(actor.scale) && actor.scale.length === 3 && actor.scale.every((n) => Number.isFinite(n) && n > 0)
+          ? actor.scale : undefined,
+        environment: actor.environment === true,
+        physics: actor.physics && ["static", "dynamic", "kinematic"].includes(actor.physics.type)
+          ? {
+              type: actor.physics.type,
+              mass: typeof actor.physics.mass === "number" && Number.isFinite(actor.physics.mass) && actor.physics.mass > 0 ? actor.physics.mass : undefined,
+              friction: typeof actor.physics.friction === "number" && Number.isFinite(actor.physics.friction) && actor.physics.friction >= 0 ? actor.physics.friction : undefined,
+              restitution: typeof actor.physics.restitution === "number" && Number.isFinite(actor.physics.restitution) && actor.physics.restitution >= 0 ? actor.physics.restitution : undefined,
+            }
+          : undefined,
       }));
       if (!restored.length) throw new Error("Empty level");
       const nextPreset = typeof record.preset === "string" && Object.prototype.hasOwnProperty.call(PRESETS, record.preset) ? record.preset as WorldPreset : "blank";
@@ -208,12 +288,23 @@ export default function StudioGameFoundation() {
 
   const renderWorld = useCallback(() => {
     viewportRef.current?.renderScene(scene);
-    viewportRef.current?.setShowGrid(true);
   }, [scene]);
+
+  const applyViewportSettings = useCallback(() => {
+    viewportRef.current?.setShowGrid(showGrid && !actors.some((actor) => actor.environment));
+    viewportRef.current?.setToneMapping(toneMapping);
+    viewportRef.current?.setExposure(exposure);
+    viewportRef.current?.setShadows(shadows);
+    viewportRef.current?.setWireframe(wireframe);
+  }, [showGrid, actors, toneMapping, exposure, shadows, wireframe]);
 
   useEffect(() => {
     renderWorld();
   }, [renderWorld]);
+
+  useEffect(() => {
+    applyViewportSettings();
+  }, [applyViewportSettings, scene]);
 
   const selectPreset = useCallback((next: WorldPreset) => {
     setPreset(next);
@@ -244,14 +335,32 @@ export default function StudioGameFoundation() {
     setSelectedId("player-start");
   }, [selectedId]);
 
-  const updateSelectedPosition = useCallback((axis: number, raw: string) => {
+  const updateSelectedTransform = useCallback((field: "position" | "rotation" | "scale", axis: number, raw: string) => {
     const value = Number(raw);
-    if (!Number.isFinite(value)) return;
+    if (!Number.isFinite(value) || (field === "scale" && value <= 0)) return;
     setActors((current) => current.map((actor) => {
       if (actor.id !== selectedId) return actor;
-      const position: [number, number, number] = [...actor.position];
-      position[axis] = value;
-      return { ...actor, position };
+      const vector: [number, number, number] = [...(actor[field] ?? (field === "scale" ? [1, 1, 1] : [0, 0, 0]))];
+      vector[axis] = value;
+      return { ...actor, [field]: vector };
+    }));
+    setSavedPath(null);
+  }, [selectedId]);
+
+  const updateSelectedPhysics = useCallback((field: "type" | "mass" | "friction" | "restitution", value: string) => {
+    setActors((current) => current.map((actor) => {
+      if (actor.id !== selectedId) return actor;
+      const defaults: NonNullable<WorldActor["physics"]> = actor.kind === "prop"
+        ? { type: "dynamic", mass: 2, friction: 0.7, restitution: 0.1 }
+        : { type: "static", mass: 1, friction: 0.6, restitution: 0.1 };
+      const physics = { ...defaults, ...actor.physics };
+      if (field === "type") {
+        if (!["static", "dynamic", "kinematic"].includes(value)) return actor;
+        return { ...actor, physics: { ...physics, type: value as "static" | "dynamic" | "kinematic" } };
+      }
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0 || (field === "mass" && number === 0)) return actor;
+      return { ...actor, physics: { ...physics, [field]: number } };
     }));
     setSavedPath(null);
   }, [selectedId]);
@@ -300,6 +409,28 @@ export default function StudioGameFoundation() {
   return (
     <div className="flex h-full w-full overflow-hidden bg-slate-950">
       <aside className="w-64 shrink-0 overflow-y-auto border-r border-slate-800 bg-slate-950 p-3">
+        <div className="mb-4 rounded-lg border border-cyan-800/60 bg-cyan-950/20 p-2" aria-label="Your saved 3D models">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-cyan-200">Saved 3D library</p>
+            <button type="button" onClick={() => setLibraryRevision((n) => n + 1)} title="Refresh shared library" aria-label="Refresh shared 3D library"><RefreshCw size={13} className={libraryLoading ? "animate-spin" : ""}/></button>
+          </div>
+          <p className="mt-1 text-[10px] leading-4 text-slate-400">Open a real GLB environment, or add a GLB as a prop. Its original mesh materials are retained.</p>
+          {libraryError && <p role="alert" className="mt-2 text-[10px] text-amber-300">{libraryError}</p>}
+          {libraryLoading && <p role="status" className="mt-2 text-[10px] text-slate-300">Loading saved models…</p>}
+          {!libraryLoading && !libraryError && sharedAssets.length === 0 && <p className="mt-2 text-[10px] text-slate-400">No shared GLB models are available.</p>}
+          <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">
+            {sharedAssets.map((asset) => (
+              <div key={asset.id} className="rounded border border-slate-700/70 bg-slate-900/70 p-2">
+                <span className="block truncate text-xs text-white" title={asset.path}>{asset.name}</span>
+                <span className="block truncate text-[9px] text-slate-500">{asset.category}</span>
+                <div className="mt-1 flex gap-1">
+                  <button type="button" onClick={() => addSharedModel(asset, true)} className="flex-1 rounded bg-cyan-800 px-1.5 py-1 text-[10px] font-semibold text-white hover:bg-cyan-700">Open scene</button>
+                  <button type="button" onClick={() => addSharedModel(asset, false)} className="flex-1 rounded border border-slate-600 px-1.5 py-1 text-[10px] text-slate-200 hover:bg-slate-700">Add prop</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <p className="mb-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">World presets</p>
         <div className="space-y-1">
           {(Object.keys(PRESETS) as WorldPreset[]).map((id) => (
@@ -356,20 +487,24 @@ export default function StudioGameFoundation() {
             </button>
           </div>
         </header>
-        <StudioViewport ref={viewportRef} onReady={renderWorld} onMeshStatus={onMeshStatus} className="min-h-0 flex-1" showGrid showStats />
+        <StudioViewport ref={viewportRef} onReady={() => { renderWorld(); applyViewportSettings(); }} onMeshStatus={onMeshStatus}
+          onSelect={(selection) => {
+            const actor = actors.find((item) => item.name === selection.name);
+            if (actor) setSelectedId(actor.id);
+          }}
+          className="min-h-0 flex-1" showGrid={false} showStats />
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-slate-700 bg-slate-950/85 px-3 py-1.5 text-[11px] font-mono text-slate-300">
-          {running ? "Orbiting scene preview — player controls are not implemented yet." : "PlayCanvas WebGL2 scene · create, render, save"}
+          {running ? "Orbiting scene preview — player controls are not implemented yet." : "PlayCanvas real-time viewport · orbit / zoom / pan"}
         </div>
       </section>
 
       <aside className="w-72 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-950 p-4">
         <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"><Sparkles size={12} /> World &amp; scene inspector</p>
-        <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas WebGL2 renders the world and actual generated GLB meshes. Game logic and playable FPV controls are not enabled yet.</p>
+        <p className="mt-2 text-xs leading-5 text-slate-400">PlayCanvas renders actual GLB meshes with their embedded materials. Game logic and playable FPV controls are not enabled yet.</p>
         <section className="mt-4 rounded-lg border border-cyan-900/70 bg-cyan-950/20 p-3" aria-label="3D asset library">
-          <p className="text-xs font-semibold text-cyan-200">Use your 3D Studio assets</p>
+          <p className="text-xs font-semibold text-cyan-200">Use your existing 3D assets</p>
           <p className="mt-2 text-xs leading-5 text-slate-400">
-            Generate a real GLB in 3D Studio, save it to this project, and add it to your PlayCanvas world using the library on the left.
-            Procedural world objects are editor previews, not AI-generated models.
+            Open a saved public GLB from the shared library, or generate a new GLB in 3D Studio. Imported GLBs retain their authored materials; primitive world presets are only starter geometry.
           </p>
           <Link href={projectId === "default" ? "/dashboard/projects" : `/dashboard/3dhub?step=pick&pickTool=3d&projectId=${encodeURIComponent(projectId)}`}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-cyan-700 px-3 py-2 text-xs font-bold text-white hover:bg-cyan-600">
@@ -377,7 +512,7 @@ export default function StudioGameFoundation() {
           </Link>
           {meshError && <p role="alert" className="mt-2 text-xs text-red-300">{meshError}</p>}
         </section>
-        {!assetsLoading && actors.some((actor) => actor.assetId && !modelUrls.has(actor.assetId)) &&
+        {!assetsLoading && !libraryLoading && actors.some((actor) => actor.assetId && !modelUrls.has(actor.assetId)) &&
           <p role="alert" className="mt-2 text-xs text-amber-300">Some imported models are unavailable in this project. Reopen or restore those assets before publishing.</p>}
         <div className="mt-5 grid grid-cols-2 gap-2">
           {(Object.keys(ACTOR_META) as ActorKind[]).filter((kind) => kind !== "model").map((kind) => {
@@ -390,22 +525,64 @@ export default function StudioGameFoundation() {
           <p className="mt-1 text-sm font-semibold text-white">{selected?.name || "None"}</p>
           {selected && (
             <div className="mt-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Transform · Position</p>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {(["X", "Y", "Z"] as const).map((axis, index) => (
-                  <label key={axis} className="text-[10px] text-slate-400">
-                    {axis}
-                    <input aria-label={axis + " position"} type="number" step="0.25"
-                      value={selected.position[index]}
-                      onChange={(event) => updateSelectedPosition(index, event.target.value)}
-                      className="mt-1 block w-full min-w-0 rounded border border-slate-700 bg-slate-950 p-1.5 text-xs text-white"/>
-                  </label>
-                ))}
+              {(["position", "rotation", "scale"] as const).map((field) => (
+                <div key={field} className="mt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Transform · {field}</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {(["X", "Y", "Z"] as const).map((axis, index) => (
+                      <label key={axis} className="text-[10px] text-slate-400">
+                        {axis}
+                        <input aria-label={`${axis} ${field}`} type="number" step={field === "rotation" ? "5" : "0.1"}
+                          value={(selected[field] ?? (field === "scale" ? [1, 1, 1] : [0, 0, 0]))[index]}
+                          onChange={(event) => updateSelectedTransform(field, index, event.target.value)}
+                          className="mt-1 block w-full min-w-0 rounded border border-slate-700 bg-slate-950 p-1.5 text-xs text-white"/>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div className="mt-4 border-t border-slate-800 pt-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Physics · rigid body</p>
+                <label className="mt-2 block text-[10px] text-slate-400">Body type
+                  <select aria-label="Rigid body type" value={selected.physics?.type ?? (selected.kind === "prop" ? "dynamic" : "static")}
+                    onChange={(event) => updateSelectedPhysics("type", event.target.value)}
+                    className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-xs text-white">
+                    <option value="static">Static (fixed)</option>
+                    <option value="dynamic">Dynamic (gravity)</option>
+                    <option value="kinematic">Kinematic (scripted)</option>
+                  </select>
+                </label>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {(["mass", "friction", "restitution"] as const).map((field) => (
+                    <label key={field} className="text-[10px] text-slate-400">{field === "restitution" ? "Bounce" : field === "friction" ? "Friction" : "Mass"}
+                      <input aria-label={`Physics ${field}`} type="number" min={field === "mass" ? "0.01" : "0"} step="0.1"
+                        value={selected.physics?.[field] ?? (field === "mass" ? (selected.kind === "prop" ? 2 : 1) : field === "friction" ? 0.6 : 0.1)}
+                        onChange={(event) => updateSelectedPhysics(field, event.target.value)}
+                        className="mt-1 block w-full min-w-0 rounded border border-slate-700 bg-slate-950 p-1.5 text-xs text-white"/>
+                    </label>
+                  ))}
+                </div>
+                {selected.kind === "model" && <p className="mt-2 text-[10px] leading-4 text-amber-300">Imported GLBs currently use an approximate box collider. Detailed mesh colliders and joints are not enabled.</p>}
               </div>
             </div>
           )}
           <button disabled={!selected || selectedId === "player-start"} onClick={removeSelected} className="mt-3 text-xs text-red-300 disabled:opacity-40">Remove selected</button>
         </div>
+        <fieldset className="mt-4 space-y-3 rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+          <legend className="px-1 text-[10px] font-bold uppercase tracking-widest text-cyan-200">Real-time graphics</legend>
+          <label className="block text-[11px] text-slate-300">Tone mapping
+            <select aria-label="Tone mapping" value={toneMapping} onChange={(event) => setToneMapping(event.target.value as ToneMappingMode)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white">
+              {(["ACES", "Neutral", "Filmic", "HEJL", "Linear"] as const).map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+            </select>
+          </label>
+          <label className="block text-[11px] text-slate-300">Exposure · {exposure.toFixed(2)}
+            <input aria-label="Scene exposure" className="block w-full accent-cyan-500" type="range" min="0.3" max="2.5" step="0.05" value={exposure} onChange={(event) => setExposure(Number(event.target.value))}/>
+          </label>
+          <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={shadows} onChange={(event) => setShadows(event.target.checked)}/> Cast shadows</label>
+          <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={showGrid} onChange={(event) => setShowGrid(event.target.checked)}/> Editor grid</label>
+          <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)}/> Wireframe view</label>
+          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer. Higher quality effects depend on scene materials and your device.</p>
+        </fieldset>
         <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level
         </button>

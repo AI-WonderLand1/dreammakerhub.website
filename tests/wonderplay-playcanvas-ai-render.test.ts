@@ -29,10 +29,11 @@ describe("WonderPlay PlayCanvas WebGL AI rendering integration", () => {
     expect(world).toContain("fetchAuthenticated3D(`/api/v1/3d/assets?projectId=");
     expect(world).toContain("/dashboard/3dhub?step=pick&pickTool=3d&projectId=");
     expect(world).toContain('label: "Blank Canvas"');
-    expect(world).toContain('aria-label={axis + " position"}');
+    expect(world).toContain('aria-label={`${axis} ${field}`}');
+    expect(world).toContain('updateSelectedTransform(field, index, event.target.value)');
     expect(world).toContain('projectId === "default"');
     expect(world).toContain("addGeneratedModel(asset)");
-    expect(world).toContain("onReady={renderWorld}");
+    expect(world).toContain("onReady={() => { renderWorld(); applyViewportSettings(); }}");
   });
 
   it("preserves cookie auth for text-to-3D and bearer auth for SimpleRick image-to-3D", () => {

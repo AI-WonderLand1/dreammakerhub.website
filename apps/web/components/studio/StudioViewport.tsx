@@ -263,6 +263,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const actorRootRef = useRef<any>(null);
     const wireframeRef = useRef(false);
     const shadowsRef = useRef(true);
+    const framedRadiusRef = useRef<number | null>(null);
     const statsRef = useRef({ fps: 0, entities: 0, frames: 0, lastTime: 0 });
     const [error, setError] = useState<string | null>(null);
     const [ready, setReady] = useState(false);
@@ -414,7 +415,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       app.mouse.on(pc.EVENT_MOUSEWHEEL, (e: any) => {
         const o = orbitRef.current;
-        o.dist = Math.max(2, Math.min(40, o.dist + e.wheel * 0.3));
+        // Model scenes range from small props to entire cities. An absolute
+        // 40-unit zoom limit traps the camera inside large imported worlds.
+        o.dist = Math.max(0.05, Math.min(100000, o.dist * Math.max(0.2, 1 + e.wheel * 0.06)));
       });
 
       // Apply orbit on every frame unless a camera path is active
@@ -429,6 +432,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           camera.lookAt(path.lookAt[0], path.lookAt[1], path.lookAt[2]);
         } else {
           applyCamera();
+          // Frame distance changes over orders of magnitude when navigating a
+          // city. Keep the near plane close while zooming in; preserve enough
+          // far distance to see the entire imported environment on zoom-out.
+          if (camera.camera) {
+            const distance = orbitRef.current.dist;
+            camera.camera.nearClip = Math.max(0.01, Math.min(0.5, distance / 10000));
+            camera.camera.farClip = Math.max(10000, distance + (framedRadiusRef.current ?? 0) * 5);
+          }
         }
       });
 
@@ -656,7 +667,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
             clearColor: new pc.Color(0.07, 0.07, 0.12),
             fov: 50,
             nearClip: 0.1,
-            farClip: 1000,
+            farClip: 10000,
           });
           app.root.addChild(camera);
           cameraRef.current = camera;
@@ -714,6 +725,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      framedRadiusRef.current = null;
+      if (cameraRef.current?.camera) {
+        cameraRef.current.camera.nearClip = 0.1;
+        cameraRef.current.camera.farClip = 10000;
+      }
+      if (groundRef.current) groundRef.current.enabled = !(scene.objects ?? []).some((object) => object.frameOnLoad);
       const root = new pc.Entity("__sceneRoot");
       app.root.addChild(root);
       sceneRootRef.current = root;
@@ -770,9 +787,46 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
             try {
               // Container assets are scene hierarchies, not a Model asset ID.
               // instantiateRenderEntity keeps the GLB's meshes and materials.
-              const imported = asset.resource.instantiateRenderEntity({ castShadows: true });
+              const imported = asset.resource.instantiateRenderEntity({ castShadows: shadowsRef.current });
               if (entity.render) entity.removeComponent("render");
               entity.addChild(imported);
+              forEachEntity(imported, (part) => {
+                if (part.render) part.render.castShadows = shadowsRef.current;
+              });
+              if (obj.frameOnLoad) {
+                // Frame the actual mesh AABB, not a 1-unit placeholder cube.
+                // Real user GLBs may contain city-scale geometry or tiny props.
+                const min = new pc.Vec3(Infinity, Infinity, Infinity);
+                const max = new pc.Vec3(-Infinity, -Infinity, -Infinity);
+                forEachEntity(imported, (part) => {
+                  for (const mesh of part.render?.meshInstances ?? []) {
+                    const bounds = mesh.aabb;
+                    if (!bounds) continue;
+                    const c = bounds.center;
+                    const h = bounds.halfExtents;
+                    min.x = Math.min(min.x, c.x - h.x);
+                    min.y = Math.min(min.y, c.y - h.y);
+                    min.z = Math.min(min.z, c.z - h.z);
+                    max.x = Math.max(max.x, c.x + h.x);
+                    max.y = Math.max(max.y, c.y + h.y);
+                    max.z = Math.max(max.z, c.z + h.z);
+                  }
+                });
+                if (Number.isFinite(min.x) && Number.isFinite(max.x)) {
+                  const center = new pc.Vec3((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
+                  const radius = Math.max(0.25, Math.hypot(max.x - min.x, max.y - min.y, max.z - min.z) / 2);
+                  framedRadiusRef.current = radius;
+                  const camera = cameraRef.current;
+                  const fovRadians = ((camera?.camera?.fov ?? 60) * Math.PI) / 180;
+                  const distance = Math.max(1, radius * 1.35 / Math.sin(fovRadians / 2));
+                  orbitTargetRef.current = { x: center.x, y: center.y, z: center.z };
+                  orbitRef.current = { az: 40, el: 65, dist: distance };
+                  if (camera?.camera) {
+                    camera.camera.nearClip = Math.max(0.01, distance / 10000);
+                    camera.camera.farClip = Math.max(1000, distance + radius * 5);
+                  }
+                }
+              }
               if (wireframeRef.current) {
                 forEachEntity(imported, (e) => {
                   for (const instance of e.render?.meshInstances ?? []) {
@@ -828,6 +882,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!app || !pc) return;
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      framedRadiusRef.current = null;
+      if (groundRef.current) groundRef.current.enabled = true;
       sceneRootRef.current = null;
       for (const light of baseLightsRef.current) light.enabled = true;
       const cam = cameraRef.current;
@@ -1082,7 +1138,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           forEachEntity(root, (e) => {
             const comp = e.render || e.model;
             if (comp?.meshInstances) {
-              comp.meshInstances.forEach((mi: any) => (mi.style = style));
+              comp.meshInstances.forEach((mi: any) => (mi.renderStyle = style));
             }
           });
         }
