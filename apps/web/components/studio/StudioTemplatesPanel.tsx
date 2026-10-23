@@ -50,14 +50,14 @@ export default function StudioTemplatesPanel() {
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-bold"><LayoutTemplate size={19} /> Scene Templates</h2>
-            <p className="mt-1 text-xs text-slate-400">Choose an existing template or start a new world in the World & Game tab.</p>
+            <p className="mt-1 text-xs text-slate-400">Choose an existing template or start a new world in the Edit step.</p>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setRevision((n) => n + 1)} disabled={loading}
               className="rounded border border-slate-700 px-3 py-2 text-xs hover:bg-slate-800 disabled:opacity-50">
               <RefreshCw size={13} className={loading ? "inline animate-spin" : "inline"} /> Refresh
             </button>
-            <Link href="/dashboard/3dhub?tab=world&tool=game" className="rounded bg-blue-600 px-3 py-2 text-xs font-bold hover:bg-blue-500">Start new world</Link>
+            <Link href="/dashboard/3dhub?step=edit&editTool=game" className="rounded bg-blue-600 px-3 py-2 text-xs font-bold hover:bg-blue-500">Start new world</Link>
           </div>
         </div>
         {loading ? (
@@ -67,8 +67,8 @@ export default function StudioTemplatesPanel() {
         ) : templates.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-700 p-9 text-center">
             <p className="font-semibold">No saved scene templates available yet.</p>
-            <p className="mt-2 text-sm text-slate-400">The World & Game tab includes starter world presets. Nothing has been fabricated here.</p>
-            <Link href="/dashboard/3dhub?tab=world&tool=game" className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold">Open World Builder</Link>
+            <p className="mt-2 text-sm text-slate-400">The Edit step includes starter world presets. Nothing has been fabricated here.</p>
+            <Link href="/dashboard/3dhub?step=edit&editTool=game" className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold">Open World Builder</Link>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
