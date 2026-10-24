@@ -111,7 +111,7 @@ export class ThreeRenderer {
     }
 
     if (node.assetRef) {
-      const url = this.assets.resolveUrl(node.assetRef)
+      this.assets.resolveUrl(node.assetRef)
       // Splats are rendered by SplatRenderer; here we only represent meshes.
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(1, 1, 1),
