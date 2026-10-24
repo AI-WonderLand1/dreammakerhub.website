@@ -428,14 +428,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       hdrAssetRef.current = null;
       hdrPendingRef.current = null;
       if (app?.scene) app.scene.envAtlas = null;
-      for (const entry of [previous, pending]) {
-        if (!entry) continue;
-        try {
-          if ("atlas" in entry) entry.atlas?.destroy();
-          entry.asset?.unload();
-          app?.assets?.remove(entry.asset);
-        } catch { /* The graphics context may already be disposed. */ }
-      }
+      try {
+        previous?.atlas?.destroy();
+        previous?.asset?.unload();
+        if (previous?.asset) app?.assets?.remove(previous.asset);
+        pending?.asset?.unload();
+        if (pending?.asset) app?.assets?.remove(pending.asset);
+      } catch { /* The graphics context may already be disposed. */ }
     }, []);
 
     const loadHdrEnvironment = useCallback((rawUrl: string) => {
