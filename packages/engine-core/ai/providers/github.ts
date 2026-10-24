@@ -1,6 +1,5 @@
 import "server-only";
 import type { AIProvider, AIProviderOptions, AIResponse } from "../types";
-import { env } from "@wonderland/shared";
 import { logger } from "@wonderland/shared";
 
 /**
