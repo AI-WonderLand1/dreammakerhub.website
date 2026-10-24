@@ -6,6 +6,7 @@ import { orbitFromCameraPosition, panOrbitTarget } from "@/lib/scene/orbit-contr
 import { fitOrbitDistance, orbitClipPlanes } from "@/lib/scene/camera-framing";
 import { normalizeHdrEnvironmentUrl } from "@/lib/scene/hdr-environment";
 import { RENDER_QUALITY_PRESETS } from "@/lib/scene/render-quality";
+import { createStarterSurfaceMaps, type StarterSurface } from "@/lib/scene/procedural-surfaces";
 import { logger } from "@/lib/logger";
 
 export type StudioSelection = { name: string; id: string; entityId?: number };
@@ -23,6 +24,7 @@ export type StudioViewportHandle = {
   setToneMapping: (mode: ToneMappingMode) => void;
   setExposure: (value: number) => void;
   setFov: (fov: number) => void;
+  setCameraView: (view: CameraView) => void;
   placeActor: (opts: { name: string; type: string; x: number; y: number }) => void;
   clearActors: () => void;
   animateCameraPath: (opts: CameraPathOpts) => void;
@@ -41,6 +43,7 @@ export type StudioViewportHandle = {
 export type ToneMappingMode = "ACES" | "Filmic" | "HEJL" | "Linear" | "Neutral";
 export type RenderQuality = "performance" | "high" | "cinematic";
 export type EnvironmentLightingMode = "studio" | "outdoor" | "hdri" | "off";
+export type CameraView = "perspective" | "front" | "right" | "top";
 type EnvironmentPreset = "studio" | "outdoor";
 
 export type CameraPathOpts = {
@@ -282,13 +285,52 @@ function buildGridTexture(size = 512, divisions = 16, tint = [56, 189, 248]) {
   return canvas;
 }
 
-function materialFromSpec(pc: any, mat: GeneratedSceneMaterial): any {
+type SurfaceTextures = { diffuse: any; normal: any };
+
+function materialFromSpec(pc: any, device: any, mat: GeneratedSceneMaterial, cache: Map<StarterSurface, SurfaceTextures>): any {
   const m = new pc.StandardMaterial();
   if (mat.color) m.diffuse = new pc.Color(mat.color[0], mat.color[1], mat.color[2]);
   m.metalness = mat.metalness ?? 0;
   m.useMetalness = true;
   m.roughness = mat.roughness ?? 0.5;
   if (mat.emissive) m.emissive = new pc.Color(mat.emissive[0], mat.emissive[1], mat.emissive[2]);
+  if (mat.starterSurface) {
+    let textures = cache.get(mat.starterSurface);
+    if (!textures) {
+      const maps = createStarterSurfaceMaps(mat.starterSurface);
+      const createTexture = (name: string, pixels: Uint8ClampedArray, isColor: boolean) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 128;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Canvas textures are unavailable");
+        const image = context.createImageData(128, 128);
+        image.data.set(pixels);
+        context.putImageData(image, 0, 0);
+        const texture = new pc.Texture(device, {
+          name, width: 128, height: 128,
+          format: isColor ? (pc.PIXELFORMAT_SRGBA8 || pc.PIXELFORMAT_R8_G8_B8_A8) : pc.PIXELFORMAT_R8_G8_B8_A8,
+          mipmaps: true,
+        });
+        texture.setSource(canvas);
+        texture.addressU = pc.ADDRESS_REPEAT;
+        texture.addressV = pc.ADDRESS_REPEAT;
+        texture.minFilter = pc.FILTER_LINEAR_MIPMAP_LINEAR;
+        texture.magFilter = pc.FILTER_LINEAR;
+        return texture;
+      };
+      textures = {
+        diffuse: createTexture(`${mat.starterSurface}-albedo`, maps.color, true),
+        normal: createTexture(`${mat.starterSurface}-normal`, maps.normal, false),
+      };
+      cache.set(mat.starterSurface, textures);
+    }
+    const tiling = Math.min(32, Math.max(1, mat.surfaceTiling || 1));
+    m.diffuseMap = textures.diffuse;
+    m.normalMap = textures.normal;
+    m.bumpiness = 0.45;
+    m.diffuseMapTiling = new pc.Vec2(tiling, tiling);
+    m.normalMapTiling = new pc.Vec2(tiling, tiling);
+  }
   m.update();
   return m;
 }
@@ -384,6 +426,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const gridRef = useRef<any>(null);
     const sceneRootRef = useRef<any>(null);
     const sceneSplatAssetsRef = useRef<any[]>([]);
+    const starterTexturesRef = useRef<Map<StarterSurface, SurfaceTextures>>(new Map());
+    const sceneMaterialsRef = useRef<any[]>([]);
     const actorRootRef = useRef<any>(null);
     const wireframeRef = useRef(false);
     const shadowsRef = useRef(true);
@@ -418,6 +462,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         for (const c of ent.children ?? []) walk(c);
       };
       walk(root);
+    }, []);
+
+    const disposeSceneMaterials = useCallback(() => {
+      for (const material of sceneMaterialsRef.current) material.destroy();
+      sceneMaterialsRef.current = [];
     }, []);
 
     const disposeHdrEnvironment = useCallback((app: any) => {
@@ -1066,10 +1115,16 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
           window.removeEventListener("injectRemoteAiModel", (app as any)._injectHandler);
           cameraFrameRef.current?.destroy();
           cameraFrameRef.current = null;
+          disposeSceneMaterials();
           disposeHdrEnvironment(app);
           app.scene.envAtlas = null;
           for (const atlas of environmentCacheRef.current.values()) atlas.destroy();
           environmentCacheRef.current.clear();
+          for (const pair of starterTexturesRef.current.values()) {
+            pair.diffuse.destroy();
+            pair.normal.destroy();
+          }
+          starterTexturesRef.current.clear();
           sceneSplatAssetsRef.current = [];
           app.destroy();
         } else if (device) {
@@ -1078,7 +1133,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         appRef.current = null;
         pcRef.current = null;
       };
-    }, [applyRenderQuality, disposeHdrEnvironment, handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop, showGridProp]);
+    }, [applyRenderQuality, disposeHdrEnvironment, disposeSceneMaterials, handleRemoteMeshInjection, setupGround, setupGrid, setupLights, setupOrbitControls, setupRaycastSelection, setupStatsLoop, showGridProp]);
 
     const renderScene = useCallback((scene: GeneratedScene) => {
       const app = appRef.current;
@@ -1087,6 +1142,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      disposeSceneMaterials();
       for (const asset of sceneSplatAssetsRef.current) {
         app.assets.remove(asset);
         asset.unload();
@@ -1104,7 +1160,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
       const materialCache = new Map<string, any>();
       for (const mat of scene.materials ?? []) {
-        materialCache.set(mat.id, materialFromSpec(pc, mat));
+        const material = materialFromSpec(pc, app.graphicsDevice, mat, starterTexturesRef.current);
+        sceneMaterialsRef.current.push(material);
+        materialCache.set(mat.id, material);
       }
 
       for (const obj of scene.objects ?? []) {
@@ -1304,7 +1362,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (scene.sky?.color) {
         cam.camera.clearColor = new pc.Color(scene.sky.color[0], scene.sky.color[1], scene.sky.color[2]);
       }
-    }, [applySceneLights, forEachEntity]);
+    }, [applySceneLights, disposeSceneMaterials, forEachEntity]);
 
     const clearScene = useCallback(() => {
       const app = appRef.current;
@@ -1312,6 +1370,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!app || !pc) return;
       const existing = app.root.findByName("__sceneRoot");
       if (existing) existing.destroy();
+      disposeSceneMaterials();
       for (const asset of sceneSplatAssetsRef.current) {
         app.assets.remove(asset);
         asset.unload();
@@ -1329,7 +1388,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         orbitRef.current = { dist: 9, az: 40, el: 30 };
         orbitTargetRef.current = { x: 0, y: 1, z: 0 };
       }
-    }, []);
+    }, [disposeSceneMaterials]);
 
     const injectModel = useCallback((gltfUrl: string, assetId?: string) => {
       window.dispatchEvent(new CustomEvent("injectRemoteAiModel", { detail: { gltfUrl, assetId } }));
@@ -1343,6 +1402,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
         const existing = app.root.findByName("__sceneRoot");
         if (existing) existing.destroy();
+        disposeSceneMaterials();
         for (const asset of sceneSplatAssetsRef.current) {
           app.assets.remove(asset);
           asset.unload();
@@ -1444,7 +1504,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         orbitRef.current = orbitFromCameraPosition([0, 1.6, 0.01], [0, 1.6, 0]);
         orbitTargetRef.current = { x: 0, y: 1.6, z: 0 };
       },
-      [],
+      [disposeSceneMaterials],
     );
 
     const clearPanorama = useCallback(() => {
@@ -1489,6 +1549,19 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
     const setFov = useCallback((fov: number) => {
       const cam = cameraRef.current;
       if (cam) cam.camera.fov = fov;
+    }, []);
+
+    const setCameraView = useCallback((view: CameraView) => {
+      // Point the editor camera at the existing orbit pivot, preserving the
+      // distance fitted to the current real GLB or Gaussian environment.
+      const views: Record<CameraView, { az: number; el: number }> = {
+        perspective: { az: 40, el: 60 },
+        front: { az: 0, el: 75 },
+        right: { az: 90, el: 75 },
+        top: { az: 0, el: 5 },
+      };
+      cameraPathRef.current.enabled = false;
+      orbitRef.current = { ...orbitRef.current, ...views[view] };
     }, []);
 
     const placeActor = useCallback(
@@ -1657,6 +1730,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       setToneMapping,
       setExposure,
       setFov,
+      setCameraView,
       placeActor,
       clearActors,
       animateCameraPath,
