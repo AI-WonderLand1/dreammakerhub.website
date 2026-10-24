@@ -21,12 +21,10 @@ const chatModule: PlaygroundModule = {
   async run(input, ctx) {
     const startedAt = new Date();
 
-    const result = await runModel(
-      getModel(ctx),
-      {
-        prompt: input.prompt,
-      }
-    );
+    const result = await runModel({
+      ...getModel(ctx),
+      prompt: input.prompt,
+    });
 
     const finishedAt = new Date();
 
@@ -56,12 +54,10 @@ Include:
 - Best practices
 - Example usage`;
 
-    const result = await runModel(
-      getModel(ctx),
-      {
-        prompt: enhancedPrompt,
-      }
-    );
+    const result = await runModel({
+      ...getModel(ctx),
+      prompt: enhancedPrompt,
+    });
 
     const finishedAt = new Date();
 
@@ -96,12 +92,10 @@ Think step-by-step:
 
 Show your reasoning process.`;
 
-    const result = await runModel(
-      getModel(ctx),
-      {
-        prompt: agentPrompt,
-      }
-    );
+    const result = await runModel({
+      ...getModel(ctx),
+      prompt: agentPrompt,
+    });
 
     const finishedAt = new Date();
 
