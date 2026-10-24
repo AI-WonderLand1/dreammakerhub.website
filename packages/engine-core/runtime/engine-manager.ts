@@ -1,4 +1,4 @@
-import { EngineConfig, ActiveEngine, EngineName } from './types';
+import { EngineConfig, ActiveEngine } from './types';
 import type { EngineAdapter } from '../adapters/types';
 import { logger } from '@wonderland/shared';
 import { createClient } from '@supabase/supabase-js';
