@@ -1,6 +1,6 @@
 import 'server-only';
-import { logger } from '@/lib/logger';
-import { startDaemon, stopDaemon, getStats, isDaemonRunning } from '@core/aetherguard/daemon';
+import { logger } from '@wonderland/shared/logger';
+import { startDaemon, stopDaemon, getStats, isDaemonRunning } from '@wonderland/engine-core/aetherguard/daemon';
 
 let started = false;
 

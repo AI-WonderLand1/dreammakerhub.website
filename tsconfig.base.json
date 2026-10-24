@@ -14,8 +14,11 @@
     "isolatedModules": true,
     "paths": {
       "@wonderspace/ide-engine": ["packages/ide-engine/src"],
+      "@wonderland/shared": ["packages/shared/src"],
+      "@wonderland/engine-core": ["packages/engine-core"],
+      "@wonderland/engine-core/*": ["packages/engine-core/*"],
       "@engine/*": [
-        "engine/*"
+        "packages/engine-core/*"
       ],
       "@infra/*": [
         "infra/*"
@@ -33,7 +36,10 @@
         "config/*"
       ],
       "@core/*": [
-        "engine/core/*"
+        "packages/engine-core/*"
+      ],
+      "@/core/*": [
+        "packages/engine-core/*"
       ],
       "@/lib/*": [
         "apps/web/lib/*"

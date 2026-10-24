@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "strict": true,
+    "allowJs": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "paths": {
+      "@core/*": ["./*"],
+      "@wonderland/shared": ["../shared/src"],
+      "@wonderland/engine-core": ["."],
+      "@wonderland/engine-core/*": ["./*"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
+}

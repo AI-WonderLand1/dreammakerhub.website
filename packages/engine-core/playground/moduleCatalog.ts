@@ -1,0 +1,47 @@
+// engine/core/playground/moduleCatalog.ts
+
+export type PlaygroundModule = {
+  id: string;
+  label: string;
+  description: string;
+  kind: "chat" | "apply" | "tool";
+};
+
+export const playgroundModuleCatalog: PlaygroundModule[] = [
+  {
+    id: "chat",
+    label: "Chat",
+    description: "General assistant chat module.",
+    kind: "chat",
+  },
+  {
+    id: "ui",
+    label: "UI Critic",
+    description: "UX + accessibility review.",
+    kind: "tool",
+  },
+  {
+    id: "code",
+    label: "Code Fixer",
+    description: "Find bugs and propose fixes.",
+    kind: "tool",
+  },
+  {
+    id: "agent",
+    label: "AI Agent",
+    description: "Break down tasks and return a structured response.",
+    kind: "tool",
+  },
+  {
+    id: "apply",
+    label: "Apply Changes",
+    description: "Generate changes and apply to a selected project.",
+    kind: "apply",
+  },
+  {
+    id: "confessions",
+    label: "Confessions AI",
+    description: "Truthful AI with reasoning logs, anti-hallucination, and AI constitution.",
+    kind: "chat",
+  },
+];
