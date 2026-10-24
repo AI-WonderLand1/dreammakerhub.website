@@ -24,7 +24,7 @@ describe("WonderPlay generated 3D asset reuse", () => {
     const world = read("apps/web/components/studio/StudioGameFoundation.tsx");
     expect(world).toContain("assetId?: string");
     expect(world).toContain("modelUrls.get(actor.assetId)");
-    expect(world).toContain('objects: scene.objects.map((object) => ({ ...object, meshUrl: "" }))');
+    expect(world).toContain('objects: scene.objects.map((object) => ({ ...object, meshUrl: "", splatUrl: "" }))');
     expect(world).toContain("openSavedLevel");
   });
 });

@@ -1,8 +1,9 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { AssetItem, Model3DType, ViewportLighting } from '../types';
-import { ThreeViewport } from './ThreeViewport';
+import PlayCanvasAssetPreview from '@/components/studio/PlayCanvasAssetPreview';
 import { fetchAuthenticated3D } from '@/lib/3d/browser-3d-fetch';
 import { 
   Wand2, 
@@ -156,10 +157,10 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       .then((data) => {
         if (cancelled || !Array.isArray(data?.assets)) return;
         setHistory((existing) => {
-          const saved: HistoryItem[] = data.assets.map((asset: { id: string; name: string; url: string }) => ({
-            id: asset.id, title: asset.name.replace(/\\.glb$/i, '').replace(/^3d_/, 'Asset '),
+          const saved: HistoryItem[] = data.assets.map((asset: { id: string; name: string; url: string; format?: string }) => ({
+            id: asset.id, title: asset.name.replace(/\.(glb|sog|ply)$/i, '').replace(/^3d_/, 'Asset '),
             prompt: 'Saved 3D asset', mode: 'image_to_3d', polyCount: 0,
-            format: 'GLB', fileSize: 'GLB', timestamp: 'Saved',
+            format: ['sog', 'ply'].includes(asset.format || '') ? asset.format!.toUpperCase() : 'GLB', fileSize: 'Unknown', timestamp: 'Saved',
             modelType: 'mech', primaryColor: '#00F0FF', thumbnailUrl: '', glbUrl: asset.url,
           }));
           return [...existing.filter((item) => !saved.some((asset) => asset.id === item.id)), ...saved];
@@ -209,9 +210,6 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
     }
     setIsGenerating(true);
     setGenerationProgress(5);
-    const progressTimer = activeMode === 'text_to_3d' ? window.setInterval(() => {
-      setGenerationProgress((current) => Math.min(92, current + Math.max(1, Math.round((96 - current) * 0.08))));
-    }, 1200) : null;
     try {
       let payload: any;
       if (activeMode === 'image_to_3d') {
@@ -240,7 +238,11 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
         if (!payload) throw new Error('Generation is taking longer than 12 minutes. The GPU job may still be running.');
       } else {
         const style = artStyles.find((item) => item.id === artStyle)?.name;
-        const effectivePrompt = style ? `${trimmedPrompt}. Visual style: ${style}.` : trimmedPrompt;
+        // The current Gradio text API has prompt + add_texture inputs, not
+        // independent polygon-count, UV, symmetry or resolution controls.
+        // Express these as preferences only; never claim exact output specs.
+        const detailHint = detailLevel === 'ultra' ? 'highly detailed geometry' : detailLevel === 'mobile' ? 'optimized simpler geometry' : 'balanced high-detail geometry';
+        const effectivePrompt = `${trimmedPrompt.slice(0, 3400)}. ${style ? `Visual style: ${style}.` : ''} Prefer ${detailHint}, ${textureRes} texture detail if supported${enableSymmetry ? ', and symmetric shapes when appropriate' : ''}.`;
         const response = await fetch('/api/v1/3d/generate', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
           body: JSON.stringify({ prompt: effectivePrompt, format: 'glb', addTexture: true,
@@ -292,11 +294,11 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
           polyCount: 0,
           vertexCount: 0,
           meshCount: 1,
-          textureResolution: activeMode === 'image_to_3d' ? '512px' : textureRes,
+          textureResolution: 'Unverified',
           rigged: false,
           animated: false,
-          pbrReady: true,
-          uvUnwrapped: true,
+          pbrReady: false,
+          uvUnwrapped: false,
           fileSizeMB,
           engineCompatibility: ['PlayCanvas', 'Three.js', 'Godot', 'Unity', 'Unreal'],
         },
@@ -328,7 +330,6 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
       setGenerationError(message);
       setGenerationProgress(0);
     } finally {
-      if (progressTimer !== null) window.clearInterval(progressTimer);
       setIsGenerating(false);
     }
   };
@@ -476,14 +477,14 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
               <div className="space-y-2">
                 <label className="text-[11px] font-mono font-bold text-slate-300 flex items-center gap-1.5">
                   <Sliders className="w-3.5 h-3.5 text-emerald-400" />
-                  Mesh Density & Detail:
+                  Desired mesh detail (AI prompt hint):
                 </label>
 
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
-                    { id: 'mobile', label: 'Mobile 18K' },
-                    { id: 'high', label: 'High 42K' },
-                    { id: 'ultra', label: 'Ultra 84K' },
+                    { id: 'mobile', label: 'Mobile' },
+                    { id: 'high', label: 'High' },
+                    { id: 'ultra', label: 'Ultra' },
                   ].map((level) => (
                     <button
                       key={level.id}
@@ -507,7 +508,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <div>
                   <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">
-                    Texture Resolution:
+                    Requested texture detail:
                   </label>
                   <div className="flex gap-1">
                     {(['1K', '2K', '4K'] as const).map((res) => (
@@ -543,6 +544,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                   </button>
                 </div>
               </div>
+              <p className="text-[10px] leading-4 text-amber-300">Detail, texture size and symmetry are prompt preferences. The connected GPU controls actual mesh density and texture resolution; these settings do not guarantee 4K textures or a specific triangle count.</p>
               </>)}
 
             </div>
@@ -558,13 +560,13 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
             {isGenerating && (
               <div className="space-y-1">
                 <div className="flex justify-between text-[10px] font-mono text-cyan-400">
-                  <span>{activeMode === 'image_to_3d' ? 'SimpleRick GPU rendering...' : 'Synthesizing Mesh Geometry...'}</span>
-                  <span>{generationProgress}%</span>
+                  <span>{activeMode === 'image_to_3d' ? 'SimpleRick GPU rendering...' : 'Waiting for the 3D AI to finish...'}</span>
+                  <span>{activeMode === 'image_to_3d' ? `${generationProgress}%` : 'GPU'}</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
                   <div
                     className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-200"
-                    style={{ width: `${generationProgress}%` }}
+                    style={{ width: activeMode === 'image_to_3d' ? `${generationProgress}%` : '100%' }}
                   />
                 </div>
               </div>
@@ -615,6 +617,12 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
 
             {/* Post-Generation Action Buttons */}
             <div className="flex items-center gap-1 sm:gap-2">
+              {activeAsset.glbUrl && projectId && /^3d_[a-zA-Z0-9_-]+$/.test(activeAsset.id) && (
+                <Link href={`/dashboard/3dhub?step=edit&editTool=game&projectId=${encodeURIComponent(projectId)}&generatedAsset=${encodeURIComponent(activeAsset.id)}`}
+                  className="flex items-center gap-1.5 rounded-lg border border-emerald-500/60 bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600">
+                  <Box className="h-3.5 w-3.5" /> Open in PlayCanvas
+                </Link>
+              )}
               {[
                 { id: 'retexture', label: 'Retexture', icon: Palette },
                 { id: 'retopologize', label: 'Retopologize', icon: Scissors },
@@ -642,24 +650,25 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
 
               <div className="h-4 w-[1px] bg-slate-800 mx-1" />
 
-              {/* Export GLB Action */}
+              {/* Export the original asset format; splats are not GLB meshes. */}
               <button
                 onClick={() => {
                   sounds.playClick();
                   if (!activeAsset.glbUrl) {
-                    setGenerationError('Generate a real GLB before exporting.');
+                    setGenerationError('Generate or select a real 3D asset before exporting.');
                     return;
                   }
                   const link = document.createElement('a');
                   link.href = activeAsset.glbUrl;
-                  link.download = `${activeAsset.title.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 60) || 'wonderland-3d'}.glb`;
+                  const fileType = activeAsset.formats?.[0]?.replace(/^\./, '').toLowerCase();
+                  link.download = `${activeAsset.title.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 60) || 'wonderland-3d'}.${fileType === 'sog' || fileType === 'ply' ? fileType : 'glb'}`;
                   link.rel = 'noopener';
                   link.click();
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 text-black text-xs font-bold hover:bg-cyan-400 transition-all shadow-md shadow-cyan-500/20"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Export GLB</span>
+                <span className="hidden sm:inline">Download {activeAsset.formats?.[0]?.replace(/^\./, '').toUpperCase() || 'GLB'}</span>
               </button>
             </div>
           </header>
@@ -669,18 +678,12 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
             
             {/* Live 3D Viewport Component */}
             {activeAsset.glbUrl ? (
-              <ThreeViewport
-                modelType={activeAsset.modelType}
-                glbUrl={activeAsset.glbUrl}
-                primaryColor={primaryColor}
-                showControlsBar={true}
-                autoRotateDefault={true}
-                className="w-full h-full border-none rounded-none"
-              />
+              <PlayCanvasAssetPreview url={activeAsset.glbUrl} name={activeAsset.title}
+                format={activeAsset.formats?.[0]?.toLowerCase() === '.sog' ? 'sog' : activeAsset.formats?.[0]?.toLowerCase() === '.ply' ? 'ply' : 'glb'} />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-8 text-center" role="status">
                 <Box className="h-12 w-12 text-cyan-700" />
-                <h3 className="text-lg font-semibold text-slate-100">No generated GLB selected</h3>
+                <h3 className="text-lg font-semibold text-slate-100">No 3D asset selected</h3>
                 <p className="max-w-md text-sm leading-6 text-slate-400">
                   Choose Image to 3D and upload a reference, or select an existing saved model.
                   The old blocky procedural showcase was not a generated AI model.
@@ -787,7 +790,7 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                           likesCount: 0,
                           viewsCount: 0,
                           dateAdded: new Date().toISOString().slice(0, 10),
-                          formats: ['.GLB'],
+                          formats: [item.format === 'SOG' ? '.SOG' : item.format === 'PLY' ? '.PLY' : '.GLB'],
                           modelType: item.modelType,
                           thumbnailImage: item.thumbnailUrl,
                           glbUrl: item.glbUrl,
@@ -802,8 +805,8 @@ export const SandboxStudio: React.FC<SandboxStudioProps> = ({
                             textureResolution: 'Unknown',
                             rigged: false,
                             animated: false,
-                            pbrReady: true,
-                            uvUnwrapped: true,
+                            pbrReady: false,
+                            uvUnwrapped: false,
                             fileSizeMB: Number.parseFloat(item.fileSize) || 0,
                             engineCompatibility: ['Unreal 5', 'Unity', 'Three.js'],
                           },

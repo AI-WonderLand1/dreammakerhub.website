@@ -25,6 +25,29 @@ export function assertHunyuanProviderConfigured(): void {
   getBaseUrl();
 }
 
+/** Verify that the configured Gradio space really exposes text-to-3D. */
+export async function assertHunyuanTextEndpointReady(): Promise<void> {
+  const baseUrl = getBaseUrl();
+  const endpoint = `/${(process.env.HUNYUAN3D_API_NAME?.trim() || "/generate_3d_text").replace(/^\/+/, "")}`;
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/gradio_api/info`, {
+      headers: getHeaders(false),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new HunyuanConfigurationError("The configured Hunyuan3D GPU provider is unreachable. No rendering credit was used.");
+  }
+  if (!response.ok) {
+    throw new HunyuanConfigurationError(`Hunyuan3D GPU provider is unavailable (HTTP ${response.status}). No rendering credit was used.`);
+  }
+  const info = await response.json().catch(() => null) as { named_endpoints?: Record<string, unknown> } | null;
+  if (!info?.named_endpoints || !Object.prototype.hasOwnProperty.call(info.named_endpoints, endpoint)) {
+    throw new HunyuanConfigurationError(`Hunyuan3D does not expose ${endpoint}; text-to-3D may be disabled. No rendering credit was used.`);
+  }
+}
+
 function getHeaders(includeJson = false): Record<string, string> {
   const headers: Record<string, string> = {};
   if (includeJson) headers["content-type"] = "application/json";

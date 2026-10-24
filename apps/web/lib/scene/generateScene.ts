@@ -15,7 +15,9 @@ export type GeneratedSceneObject = {
   name: string;
   type: ScenePrimitive;
   meshUrl: string;
-  /** Durable reference for a project-owned GLB or shared-library model. */
+  /** Native PlayCanvas Gaussian splat (PLY/SOG); never load this as a glTF container. */
+  splatUrl?: string;
+  /** Durable reference for a project-owned asset or shared-library model. */
   assetId?: string;
   /** Frame the imported model's actual mesh bounds after it finishes loading. */
   frameOnLoad?: boolean;
