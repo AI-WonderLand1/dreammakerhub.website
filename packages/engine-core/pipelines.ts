@@ -271,15 +271,6 @@ async function evaluateExpression(expression: string, context: any): Promise<any
 }
 
 /**
- * Encrypt pipeline configuration for storage
- * @param config - Node configuration
- * @returns Encrypted configuration
- */
-async function encodePipelineConfig(config: any): Promise<string> {
-  return Buffer.from(JSON.stringify(config)).toString('base64');
-}
-
-/**
  * Convert pipeline to execution graph
  * @param pipeline - AI-PLAYGROUND pipeline
  * @param inputs - Pipeline inputs
