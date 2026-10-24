@@ -1,0 +1,1 @@
+export { ThreeJSAdapter } from './adapter';

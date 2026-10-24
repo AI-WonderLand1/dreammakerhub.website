@@ -1,8 +1,8 @@
 import "server-only";
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { requireEnv } from "../lib/env";
-import { logger } from "../lib/logger";
+import { requireEnv } from "@wonderland/shared/env";
+import { logger } from "@wonderland/shared/logger";
 
 function safeRequireEnv(key: string): string {
   if (typeof requireEnv !== "function") {

@@ -1,0 +1,53 @@
+{
+  "name": "@wonderland/engine-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DreamMakerHub 3D Engine Core",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*",
+    "./aetherguard/*": "./aetherguard/*",
+    "./ai/*": "./ai/*",
+    "./adapters/*": "./adapters/*",
+    "./projects/*": "./projects/*",
+    "./execution/*": "./execution/*",
+    "./plugins/*": "./plugins/*",
+    "./runtime/*": "./runtime/*",
+    "./simulation/*": "./simulation/*",
+    "./terminal/*": "./terminal/*",
+    "./playground/*": "./playground/*",
+    "./extensions/*": "./extensions/*",
+    "./assets/*": "./assets/*"
+  },
+  "scripts": {
+    "build": "echo \"TypeScript package - no build needed\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wonderland/shared": "*",
+    "@supabase/supabase-js": "^2.108.2",
+    "playcanvas": "^2.23.3",
+    "three": "^0.186.1",
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@gltf-transform/functions": "^4.5.1",
+    "@mkkellogg/gaussian-splats-3d": "^0.4.7",
+    "ai": "^7.0.142",
+    "@ai-sdk/openai": "^4.0.2",
+    "@google/generative-ai": "^0.24.1",
+    "groq-sdk": "^1.1.2",
+    "zod": "^4.6.6",
+    "uuid": "^14.0.2",
+    "ws": "^8.21.0",
+    "colyseus.js": "^0.16.22",
+    "sync-ammo": "0.1.2"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "@types/three": "^0.186.0",
+    "@types/ws": "^8.18.1",
+    "@types/uuid": "^11.0.0"
+  }
+}

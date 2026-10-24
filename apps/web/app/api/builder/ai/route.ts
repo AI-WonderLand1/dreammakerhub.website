@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { appendAIConfession } from "@/core/projects/aiConfessions";
-import { logger } from '@/lib/logger';
+import { appendAIConfession } from "@wonderland/engine-core/projects/aiConfessions";
+import { logger } from '@wonderland/shared/logger';
 import { sanitizeUntrustedHtml } from '@/lib/security/sanitize-html.server';
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

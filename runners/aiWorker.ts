@@ -1,5 +1,5 @@
 import "server-only";
-import { runModel } from "@core/ai/runModel";
+import { runModel } from "@wonderland/engine-core/ai/runModel";
 
 export interface AIWorkerTask {
   id: string;

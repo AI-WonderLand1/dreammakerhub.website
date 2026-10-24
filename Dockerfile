@@ -7,15 +7,18 @@ COPY packages/ide-engine/package*.json ./packages/ide-engine/
 COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/engine-core/package*.json ./packages/engine-core/
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
 COPY packages/ide-engine/src ./packages/ide-engine/src/
+COPY packages/shared/src ./packages/shared/src/
+COPY packages/engine-core ./packages/engine-core/
 
 RUN rm -f package-lock.json && DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm install --legacy-peer-deps
 
-COPY engine ./engine
 COPY infra ./infra
 COPY runners ./runners
 COPY types ./types
@@ -60,10 +63,12 @@ COPY packages/ide-engine/package*.json ./packages/ide-engine/
 COPY packages/optimizer/package*.json ./packages/optimizer/
 COPY packages/perf-assets/package*.json ./packages/perf-assets/
 COPY packages/wonder-runtime/package*.json ./packages/wonder-runtime/
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/engine-core/package*.json ./packages/engine-core/
 
 RUN rm -f package-lock.json \
  && DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy \
-    npm install --omit=dev --ignore-scripts --legacy-peer-deps
+     npm install --omit=dev --ignore-scripts --legacy-peer-deps
 
 FROM node:22-alpine
 WORKDIR /app
@@ -79,7 +84,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/packages ./packages
 COPY --from=runtime-assets /app/apps ./apps
 
-COPY --from=builder /app/engine ./engine
 COPY --from=builder /app/infra ./infra
 COPY --from=builder /app/runners ./runners
 COPY --from=builder /app/types ./types
