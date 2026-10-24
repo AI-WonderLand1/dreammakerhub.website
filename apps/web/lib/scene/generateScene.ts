@@ -1,4 +1,5 @@
 import type { SceneCamera, SceneLight, SceneSkybox } from "./schema";
+import type { StarterSurface } from "./procedural-surfaces";
 
 export type ScenePrimitive = "box" | "sphere" | "cylinder" | "plane" | "capsule" | "cone";
 
@@ -8,6 +9,9 @@ export type GeneratedSceneMaterial = {
   metalness: number;
   roughness: number;
   emissive?: [number, number, number];
+  /** Optional procedural PBR detail for editor primitives; imported GLBs keep their own maps. */
+  starterSurface?: StarterSurface;
+  surfaceTiling?: number;
 };
 
 export type GeneratedSceneObject = {

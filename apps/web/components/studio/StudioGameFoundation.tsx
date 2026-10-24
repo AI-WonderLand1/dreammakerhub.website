@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Cuboid, Loader2, MapPin, Play, Save, Sparkles, Square, SunMedium, UserRound, RefreshCw } from "lucide-react";
-import StudioViewport, { type StudioViewportHandle, type ToneMappingMode, type RenderQuality, type EnvironmentLightingMode } from "@/components/studio/StudioViewport";
+import StudioViewport, { type StudioViewportHandle, type ToneMappingMode, type RenderQuality, type EnvironmentLightingMode, type CameraView } from "@/components/studio/StudioViewport";
 import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -64,8 +64,15 @@ function buildWorld(preset: WorldPreset, actors: WorldActor[], modelUrls: Readon
   const style = PRESETS[preset];
   const hasFullEnvironment = actors.some((actor) => actor.kind === "model" && actor.environment);
   const materials: GeneratedSceneMaterial[] = [
-    { id: "mat-ground", color: style.ground, metalness: 0, roughness: 0.92 },
-    ...Object.entries(ACTOR_META).map(([kind, meta]) => ({ id: "mat-" + kind, color: meta.color, metalness: kind === "light" ? 0.1 : 0.25, roughness: 0.58, emissive: kind === "light" ? meta.color : undefined })),
+    { id: "mat-ground", color: style.ground, metalness: 0, roughness: 0.92, starterSurface: "terrain", surfaceTiling: 8 },
+    ...Object.entries(ACTOR_META).map(([kind, meta]): GeneratedSceneMaterial => ({
+      id: "mat-" + kind, color: meta.color,
+      metalness: kind === "light" ? 0.1 : kind === "prop" ? 0.7 : 0.2,
+      roughness: kind === "prop" ? 0.35 : 0.62,
+      emissive: kind === "light" ? meta.color : undefined,
+      starterSurface: kind === "obstacle" ? "concrete" : kind === "prop" ? "coated-metal" : kind === "player" ? "fabric" : undefined,
+      surfaceTiling: kind === "obstacle" ? 2 : 1,
+    })),
   ];
 
   const objects: GeneratedSceneObject[] = [
@@ -131,6 +138,7 @@ export default function StudioGameFoundation() {
   const [hdrDraftUrl, setHdrDraftUrl] = useState("");
   const [hdrStatus, setHdrStatus] = useState<string | null>(null);
   const [cameraFov, setCameraFov] = useState(60);
+  const [cameraView, setCameraView] = useState<CameraView>("perspective");
   const [exposure, setExposure] = useState(1);
   const [shadows, setShadows] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
@@ -389,6 +397,7 @@ export default function StudioGameFoundation() {
     setPreset(next);
     setActors(initialActors(next));
     setSelectedId("player-start");
+    setCameraView("perspective");
     viewportRef.current?.animateCameraPath({ enabled: false });
     setRunning(false);
     setSavedPath(null);
@@ -573,6 +582,16 @@ export default function StudioGameFoundation() {
         <header className="flex h-11 shrink-0 items-center justify-between border-b border-slate-800 px-3">
           <span className="flex items-center gap-2 text-xs font-mono text-slate-400"><MapPin size={14} className="text-cyan-400" /> PlayCanvas · WebGL2 · {scene.name}</span>
           <div className="flex items-center gap-2">
+            <select aria-label="Camera angle" value={cameraView} onChange={(event) => {
+              const view = event.target.value as CameraView;
+              setCameraView(view);
+              viewportRef.current?.setCameraView(view);
+            }} className="max-w-28 rounded border border-slate-700 bg-slate-950 px-1.5 py-1.5 text-[11px] text-slate-200">
+              <option value="perspective">Perspective</option>
+              <option value="front">Front</option>
+              <option value="right">Right</option>
+              <option value="top">Top</option>
+            </select>
             <button onClick={togglePreview} className={"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold " + (running ? "bg-red-600/80 text-white" : "bg-emerald-600 text-white hover:bg-emerald-500")}>
               {running ? <Square size={12} /> : <Play size={12} />} {running ? "Stop Preview" : "Run World"}
             </button>
