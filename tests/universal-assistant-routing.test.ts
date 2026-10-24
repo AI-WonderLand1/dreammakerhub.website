@@ -20,6 +20,21 @@ describe('Universal AI assistant request routing', () => {
     expect(request.body).toMatchObject({ modelId: 'simplerick' });
   });
 
+  it('keeps new chat messages within the server character budget as history grows', () => {
+    const history = [
+      { role: 'user' as const, content: 'a'.repeat(4800) },
+      { role: 'assistant' as const, content: 'b'.repeat(4800) },
+      { role: 'user' as const, content: 'c'.repeat(4800) },
+      { role: 'assistant' as const, content: 'd'.repeat(1300) },
+    ];
+    const request = buildAssistantRequest({ ...base, message: 'x'.repeat(10_000), history });
+    expect(request.url).toBe('/api/chat');
+    if (!('history' in request.body)) throw new Error('Missing model chat history');
+    expect(request.body.history).toEqual(history.slice(-1));
+    const characters = request.body.message.length + request.body.history.reduce((sum, turn) => sum + turn.content.length, 0);
+    expect(characters).toBeLessThanOrEqual(12_000);
+  });
+
   it('uses scripted help only when explicitly selected', () => {
     const request = buildAssistantRequest({ ...base, agent: 'guided-support', message: 'x'.repeat(1300) });
     expect(request.url).toBe('/api/support/help');

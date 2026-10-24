@@ -12,10 +12,20 @@ export function buildAssistantRequest(input: {
     return { url: '/api/support/help', body: { message: input.message.slice(0, 1200) } };
   }
   if (input.agent === 'spirit-guide') {
+    // /api/chat caps message + history at 12,000 characters. Retain the
+    // newest contiguous turns that fit so long conversations can keep going.
+    let remainingCharacters = Math.max(0, 12_000 - input.message.length);
+    const recentHistory: ConversationMessage[] = [];
+    for (let index = input.history.length - 1; index >= 0; index -= 1) {
+      const entry = input.history[index];
+      if (entry.content.length > remainingCharacters) break;
+      recentHistory.unshift(entry);
+      remainingCharacters -= entry.content.length;
+    }
     return {
       url: '/api/chat',
       body: { modelId: input.modelId, message: input.message,
-        history: input.history, context: { page: input.page } },
+        history: recentHistory, context: { page: input.page } },
     };
   }
   return {
