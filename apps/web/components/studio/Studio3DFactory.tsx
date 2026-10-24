@@ -22,7 +22,7 @@ import {
   FileJson,
   Loader2,
 } from "lucide-react";
-import StudioViewport, { type StudioViewportHandle, type StudioSelection } from "@/components/studio/StudioViewport";
+import StudioViewport, { type RenderQuality, type StudioViewportHandle, type StudioSelection } from "@/components/studio/StudioViewport";
 import type { GeneratedScene } from "@/lib/scene/generateScene";
 import { useSearchParams } from "next/navigation";
 import { logger } from "@/lib/logger";
@@ -65,6 +65,7 @@ export default function Studio3DFactory() {
   const [meshQuality, setMeshQuality] = useState("High");
   const [polyCount, setPolyCount] = useState("Mid");
   const [textureRes, setTextureRes] = useState("2K");
+  const [renderQuality, setRenderQuality] = useState<RenderQuality>("high");
   const [generating, setGenerating] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -118,6 +119,10 @@ export default function Studio3DFactory() {
   useEffect(() => {
     void loadProjectFiles();
   }, [loadProjectFiles]);
+
+  useEffect(() => {
+    viewportRef.current?.setRenderQuality(renderQuality);
+  }, [renderQuality]);
 
   const handleSelect = useCallback((selection: StudioSelection) => {
     setSelected(selection);
@@ -350,7 +355,8 @@ export default function Studio3DFactory() {
 
       {/* Main Studio Viewport */}
       <div className="flex-1 flex flex-col bg-slate-900 relative min-w-0 pb-12">
-        <StudioViewport ref={viewportRef} onSelect={handleSelect} onEntityCreated={handleEntityCreated} className="flex-1" />
+        <StudioViewport ref={viewportRef} onSelect={handleSelect} onEntityCreated={handleEntityCreated}
+          onReady={() => viewportRef.current?.setRenderQuality(renderQuality)} className="flex-1" />
 
         {/* Live media preview overlay */}
         {generating && (
@@ -442,6 +448,21 @@ export default function Studio3DFactory() {
         </div>
 
         {/* Generation config */}
+        <div>
+          <label htmlFor="factory-render-quality" className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-2.5">
+            PlayCanvas Graphics
+          </label>
+          <select id="factory-render-quality" value={renderQuality}
+            onChange={(event) => setRenderQuality(event.target.value as RenderQuality)}
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-cyan-200">
+            <option value="performance">Performance · lower GPU cost</option>
+            <option value="high">High · PBR, shadows, SSAO</option>
+            <option value="cinematic">Cinematic · TAA, bloom, grading</option>
+          </select>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500">
+            Changes the live camera and lighting, not the saved mesh or texture resolution.
+          </p>
+        </div>
         <div>
           <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-2.5 flex items-center gap-1">
             <Sliders size={11} /> Generation Config
