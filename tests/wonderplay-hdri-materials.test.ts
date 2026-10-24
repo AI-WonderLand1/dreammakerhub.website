@@ -31,6 +31,12 @@ describe("WonderPlay advanced HDR and PBR visuals", () => {
     expect(viewport).not.toContain("material.emissiveMap = null");
   });
 
+  it("cancels an old HDR download when a saved level has an invalid URL", () => {
+    const viewport = source("apps/web/components/studio/StudioViewport.tsx");
+    const invalidUrlBranch = viewport.slice(viewport.indexOf("if (!url) {"), viewport.indexOf("if (qualityRef.current === \"performance\")"));
+    expect(invalidUrlBranch).toContain("disposeHdrEnvironment(app)");
+  });
+
   it("persists the public HDR source with rendering settings, not in customer GLBs", () => {
     const editor = source("apps/web/components/studio/StudioGameFoundation.tsx");
     expect(editor).toContain("setEnvironmentLighting(environmentLighting, hdrEnvironmentUrl)");

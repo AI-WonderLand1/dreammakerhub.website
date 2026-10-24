@@ -443,6 +443,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       if (!app || !pc) return;
       const url = normalizeHdrEnvironmentUrl(rawUrl);
       if (!url) {
+        // A saved level can select HDRI without a valid URL. Invalidate any
+        // previous level's pending download before returning to studio light.
+        disposeHdrEnvironment(app);
         onEnvironmentStatusRef.current?.({ state: "error", message: "Use a public Supabase Storage .hdr URL or a same-site .hdr path." });
         updateEnvironmentLighting(app, pc, "studio", qualityRef.current, environmentCacheRef.current);
         return;
