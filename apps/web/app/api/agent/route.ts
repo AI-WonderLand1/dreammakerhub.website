@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { runModel } from "../../../../../engine/core/ai/runModel";
+import { runModel } from "../../../../../packages/engine-core/ai/runModel";
 import { requireUserId } from "@/lib/auth";
 import { createClient } from "@/app/utils/supabase/server";
 import { CostGateError, costGateResponse, reserveAgentRequest } from "@/lib/billing/cost-guard.server";

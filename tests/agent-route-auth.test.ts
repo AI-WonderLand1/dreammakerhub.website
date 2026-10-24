@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('next/server', () => ({ NextResponse: { json: (body: unknown, init?: ResponseInit) => Response.json(body, init) } }));
 vi.mock('@/lib/auth', () => ({ requireUserId: vi.fn() }));
 vi.mock('@/app/utils/supabase/server', () => ({ createClient: vi.fn() }));
-vi.mock('../engine/core/ai/runModel', () => ({ runModel: vi.fn() }));
+vi.mock('../packages/engine-core/ai/runModel', () => ({ runModel: vi.fn() }));
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }));
 vi.mock('@/lib/billing/cost-guard.server', () => ({
   CostGateError: class CostGateError extends Error {},
@@ -15,7 +15,7 @@ async function setup(userId: string | null, plan: string) {
   vi.resetModules();
   const { requireUserId } = await import('@/lib/auth');
   const { createClient } = await import('@/app/utils/supabase/server');
-  const { runModel } = await import('../engine/core/ai/runModel');
+  const { runModel } = await import('../packages/engine-core/ai/runModel');
   const { reserveAgentRequest } = await import('@/lib/billing/cost-guard.server');
   vi.mocked(requireUserId).mockResolvedValue(userId);
   vi.mocked(createClient).mockResolvedValue({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { subscription_tier: plan }, error: null }) }) }) }) } as any);
