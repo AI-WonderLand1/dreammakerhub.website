@@ -13,7 +13,7 @@ export class GraphExecutor {
   }
 
   public async execute(graph: ExecutionGraph, context: ExecutionContext): Promise<ExecutionResult> {
-    const nodes = graph.getAllNodes();
+    const nodes = Object.values(graph.nodes);
     const completedNodes = new Set<string>();
     const outputs: Record<string, unknown> = {};
 

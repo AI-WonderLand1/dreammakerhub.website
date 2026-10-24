@@ -10,6 +10,7 @@ export class ThreeJSAdapter implements EngineAdapter {
     const THREE = await import('three');
 
     const canvas = config.canvas;
+    if (!canvas) throw new Error('[ThreeJSAdapter] A canvas element is required');
     const width = config.width || canvas.clientWidth || 800;
     const height = config.height || canvas.clientHeight || 600;
 

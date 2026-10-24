@@ -1,3 +1,3 @@
 export * from './types';
-export * from './node';
+export { ExecutionNode as ExecutionNodeRuntime } from './node';
 export * from './executor';

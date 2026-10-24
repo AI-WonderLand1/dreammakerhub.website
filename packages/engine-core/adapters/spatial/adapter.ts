@@ -18,6 +18,8 @@ export class SpatialAdapter implements EngineAdapter {
 
   public async create(config: EngineConfig): Promise<EngineInstance> {
     logger.info('[SpatialAdapter] Creating DreamMakerHub Spatial Engine instance...')
+    const canvas = config.canvas
+    if (!canvas) throw new Error('[SpatialAdapter] A canvas element is required')
 
     const worldSource =
       (config.world as SpatialWorld | string | Record<string, unknown> | undefined) ?? EMPTY_WORLD
@@ -32,7 +34,7 @@ export class SpatialAdapter implements EngineAdapter {
 
     if (rendererMode === 'splat') {
       try {
-        const splat = new SplatRenderer({ canvas: config.canvas, assets, world, onFrame })
+        const splat = new SplatRenderer({ canvas, assets, world, onFrame })
         const res = await splat.init()
         context = res.context
         destroy = () => splat.destroy()
@@ -42,13 +44,13 @@ export class SpatialAdapter implements EngineAdapter {
           '[SpatialAdapter] Splat renderer unavailable, falling back to Three.js:',
           (err as Error).message
         )
-        const three = new ThreeRenderer({ canvas: config.canvas, assets, world, onFrame })
+        const three = new ThreeRenderer({ canvas, assets, world, onFrame })
         const res = await three.init()
         context = res.context
         destroy = () => three.destroy()
       }
     } else {
-      const three = new ThreeRenderer({ canvas: config.canvas, assets, world, onFrame })
+      const three = new ThreeRenderer({ canvas, assets, world, onFrame })
       const res = await three.init()
       context = res.context
       destroy = () => three.destroy()
@@ -61,7 +63,7 @@ export class SpatialAdapter implements EngineAdapter {
 
     return {
       name: this.name,
-      canvas: config.canvas,
+      canvas,
       context,
       device: null,
       destroy,

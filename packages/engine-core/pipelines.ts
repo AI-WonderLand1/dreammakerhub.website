@@ -193,9 +193,10 @@ async function registerPipelineRunners(executor: GraphExecutor, pipeline: any): 
   // Register AI agent runner
   executor.registerRunner('ai.generate', {
     async run(node: ExecutionNode, context: any): Promise<Record<string, unknown>> {
-      const { model, systemPrompt, temperature } = node.metadata?.config || {};
+      const { model, systemPrompt, temperature } = decodeNodeConfig(node);
       
-      const response = await getAIResponse(node.inputs.prompt, model, systemPrompt, temperature);
+      const prompt = typeof node.inputs.prompt === 'string' ? node.inputs.prompt : '';
+      const response = await getAIResponse(prompt, model, systemPrompt, temperature);
       
       return {
         content: response,
@@ -208,7 +209,7 @@ async function registerPipelineRunners(executor: GraphExecutor, pipeline: any): 
   // Register HTTP request runner
   executor.registerRunner('asset.stream', {
     async run(node: ExecutionNode, context: any): Promise<Record<string, unknown>> {
-      const { httpMethod, httpUrl, httpHeaders, httpBody } = node.metadata?.config || {};
+      const { httpMethod, httpUrl, httpHeaders, httpBody } = decodeNodeConfig(node);
       
       const options: RequestInit = {
         method: httpMethod,
@@ -230,7 +231,7 @@ async function registerPipelineRunners(executor: GraphExecutor, pipeline: any): 
   // Register expression evaluation runner
   executor.registerRunner('custom', {
     async run(node: ExecutionNode, context: any): Promise<Record<string, unknown>> {
-      const { code } = node.metadata?.config || {};
+      const { code } = decodeNodeConfig(node);
       
       try {
         const result = await evaluateExpression(code, context);
@@ -244,6 +245,17 @@ async function registerPipelineRunners(executor: GraphExecutor, pipeline: any): 
       }
     }
   });
+}
+
+function decodeNodeConfig(node: ExecutionNode): Record<string, any> {
+  const encoded = node.metadata?.config;
+  if (!encoded) return {};
+  try {
+    const config: unknown = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
+    return config && typeof config === 'object' && !Array.isArray(config) ? config as Record<string, any> : {};
+  } catch {
+    throw new Error(`Invalid configuration for pipeline node ${node.id}`);
+  }
 }
 
 /**

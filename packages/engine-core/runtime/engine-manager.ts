@@ -1,13 +1,36 @@
 import { EngineConfig, ActiveEngine } from './types';
 import type { EngineAdapter } from '../adapters/types';
 import { logger } from '@wonderland/shared';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+// Types for the fields this manager accesses. The deployed database schema
+// must still be checked before enabling pipeline event integration.
+type EngineEventTable = {
+  Row: Record<string, unknown>;
+  Insert: Record<string, unknown>;
+  Update: Record<string, unknown>;
+  Relationships: [];
+};
+
+type EnginePipelineDatabase = {
+  public: {
+    Tables: {
+      pipeline_templates: EngineEventTable & {
+        Row: { engine_type?: string | null; [key: string]: unknown };
+      };
+      pipeline_executions: EngineEventTable;
+      engine_events: EngineEventTable;
+    };
+    Views: {};
+    Functions: {};
+  };
+};
 
 export class EngineManager {
   private active: ActiveEngine | null = null;
   private initializing: string | null = null;
   private adapters = new Map<string, EngineAdapter>();
-  private supabase: ReturnType<typeof createClient> | null = null;
+  private supabase: SupabaseClient<EnginePipelineDatabase> | null = null;
   private pipelineSubscriptions: Record<string, any> = {};
 
   /**
@@ -23,7 +46,7 @@ export class EngineManager {
   public async loadEngine(name: string, config: EngineConfig): Promise<void> {
     // Initialize Supabase and pipeline listener on first call
     if (!this.supabase) {
-      this.supabase = createClient(
+      this.supabase = createClient<EnginePipelineDatabase>(
         process.env.NEXT_PUBLIC_SUPABASE_URL as string,
         process.env.SUPABASE_SERVICE_ROLE_KEY as string
       );

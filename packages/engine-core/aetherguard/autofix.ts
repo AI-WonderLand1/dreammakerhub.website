@@ -71,6 +71,7 @@ export function applyFixesForFindings(
       const applied_ok = applyVulnerabilityFix(
         {
           id: finding.id,
+          file: finding.filePath,
           line: finding.line ?? 1,
           level: finding.severity === 'critical' ? 'critical' : 'warning',
           vulnerabilityType: finding.check,

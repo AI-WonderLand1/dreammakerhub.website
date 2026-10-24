@@ -27,7 +27,7 @@ export async function analyzeCode(
     maxTokens: 4096,
   });
 
-  const text = (response as Record<string, string>)?.text ?? "";
+  const text = response.text;
   if (!text) throw new Error("Empty response from AI model");
 
   let result: unknown;
@@ -76,5 +76,5 @@ Explain how the new code fixes the issue.`;
     maxTokens: 1024,
   });
 
-  return (response as Record<string, string>)?.text ?? "No explanation generated.";
+  return response.text || "No explanation generated.";
 }

@@ -22,12 +22,11 @@ export const githubProvider: AIProvider = {
       // No GitHub key – fall back to GROQ
       const fallback = await import('./groq').then(m => m.groqProvider.generate(prompt, options));
       return {
-        text: fallback.text || "Falling back to GROQ model",
         ...fallback,
-        provider: "github",
         confessions: {
-          ...fallback.confessions,
-          reasoning: ["Fallback to GROQ due to missing GitHub Models key"]
+          confidence: fallback.confessions?.confidence ?? 0,
+          reasoning: [...(fallback.confessions?.reasoning ?? []), "Used another provider because the GitHub Models key is missing"],
+          limitations: fallback.confessions?.limitations ?? [],
         }
       };
     }

@@ -26,7 +26,7 @@ export async function setupFileWatcher(
 
   if (fullDirs.length === 0) return;
 
-  watcher = chokidar.watch(fullDirs, {
+  const activeWatcher = chokidar.watch(fullDirs, {
     ignored: [
       /(^|[\\/])(node_modules|.git|dist|build|.next|coverage|__pycache__)/,
       /\.(log|lock)$/,
@@ -36,7 +36,8 @@ export async function setupFileWatcher(
     awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
   });
 
-  watcher.on('all', (_event: string, filePath: string) => {
+  watcher = activeWatcher;
+  activeWatcher.on('all', (_event: string, filePath: string) => {
     pendingChanges.add(filePath);
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {

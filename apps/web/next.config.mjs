@@ -9,6 +9,8 @@ const pathAliases = {
   '@wonderland/shared': join(__dirname, '../../packages/shared/src'),
   '@wonderland/engine-core': join(__dirname, '../../packages/engine-core'),
   '@wonderland/engine-core/*': join(__dirname, '../../packages/engine-core/*'),
+  '@engine/core': join(__dirname, '../../packages/engine-core'),
+  '@engine/core/*': join(__dirname, '../../packages/engine-core/*'),
   '@engine': join(__dirname, '../../packages/engine-core'),
   '@engine/*': join(__dirname, '../../packages/engine-core/*'),
   '@core': join(__dirname, '../../packages/engine-core'),

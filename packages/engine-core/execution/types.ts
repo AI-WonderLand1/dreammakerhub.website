@@ -21,6 +21,11 @@ export interface ExecutionNode {
     backoffMs: number;
   };
   error?: string;
+  metadata?: {
+    category?: string;
+    config?: string;
+    pipelineNodeId?: string;
+  };
 }
 
 export interface ExecutionGraph {

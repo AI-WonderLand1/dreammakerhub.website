@@ -17,6 +17,7 @@ export class PlayCanvasAdapter implements EngineAdapter {
     }
 
     const canvas = config.canvas;
+    if (!canvas) throw new Error('[PlayCanvasAdapter] A canvas element is required');
     const app = new pc.Application(canvas, {
       mouse: new pc.Mouse(canvas),
       touch: new pc.TouchDevice(canvas),

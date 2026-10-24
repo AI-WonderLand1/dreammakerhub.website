@@ -27,6 +27,12 @@ export const playgroundModuleCatalog: PlaygroundModule[] = [
     kind: "tool",
   },
   {
+    id: "agent",
+    label: "AI Agent",
+    description: "Break down tasks and return a structured response.",
+    kind: "tool",
+  },
+  {
     id: "apply",
     label: "Apply Changes",
     description: "Generate changes and apply to a selected project.",

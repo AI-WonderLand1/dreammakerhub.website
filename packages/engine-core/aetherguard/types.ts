@@ -10,6 +10,7 @@ export interface VirtualFile {
 
 export interface VulnerabilityRisk {
   id: string;
+  file?: string;
   line: number;
   level: 'critical' | 'warning' | 'info';
   vulnerabilityType: string;

@@ -8,11 +8,11 @@ export class NpcSimNode {
   public async run(node: NodeType, context: ExecutionContext): Promise<Record<string, unknown>> {
     const { npcId, npcs } = context;
     
-    if (!npcId || !npcs) {
+    if (typeof npcId !== 'string' || !Array.isArray(npcs)) {
       throw new Error('NPC simulation node requires npcId and npcs list in context');
     }
 
-    const npcIndex = npcs.findIndex((n: any) => n.id === npcId);
+    const npcIndex = npcs.findIndex((n: any) => n && typeof n === 'object' && n.id === npcId);
     if (npcIndex === -1) {
       throw new Error(`NPC with id ${npcId} not found`);
     }

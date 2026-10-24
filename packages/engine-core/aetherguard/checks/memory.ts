@@ -1,4 +1,5 @@
 import { CheckResult, SystemFinding } from '../types';
+import { join } from 'path';
 
 interface MemWarning {
   id: string;
@@ -11,10 +12,9 @@ interface MemWarning {
 
 async function checkForMemoryPatterns(workspaceRoot: string): Promise<MemWarning[]> {
   const warnings: MemWarning[] = [];
-  const { join } = await import('path');
 
   const filesToCheck = [
-    join(workspaceRoot, 'engine/core'),
+    join(workspaceRoot, 'packages/engine-core'),
     join(workspaceRoot, 'runners'),
   ];
 

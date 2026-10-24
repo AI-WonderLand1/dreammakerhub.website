@@ -2,29 +2,31 @@ import {
   PlaygroundModule,
   PlaygroundModuleId,
 } from "@/types/playground";
-import { playgroundModuleCatalog, PlaygroundModuleSummary } from "./moduleCatalog";
+import { playgroundModuleCatalog } from "./moduleCatalog";
 import { runModel } from "../ai/runModel";
 
-const moduleMeta: Record<PlaygroundModuleId, PlaygroundModuleSummary> = Object.fromEntries(
-  playgroundModuleCatalog.map((meta) => [meta.id, meta])
-) as Record<PlaygroundModuleId, PlaygroundModuleSummary>;
+function getModuleMeta(id: PlaygroundModuleId) {
+  const meta = playgroundModuleCatalog.find((entry) => entry.id === id);
+  if (!meta) throw new Error(`Missing playground module metadata: ${id}`);
+  return { id, label: meta.label, description: meta.description };
+}
 
-// Helper: pick a default model if none is passed in context
-const getModel = (ctx: Record<string, unknown>) => ({
-  id: ctx?.modelId || "gpt-4o-mini",
-  provider: "google" as const,
-});
+function generateResponse(prompt: string, modelId?: string, systemPrompt?: string) {
+  return runModel({
+    model: modelId || "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+    messages: [{ role: "user", content: prompt }],
+    system: systemPrompt,
+  });
+}
 
 // Chat module
 const chatModule: PlaygroundModule = {
-  ...moduleMeta.chat,
+  ...getModuleMeta("chat"),
+  kind: "chat",
   async run(input, ctx) {
     const startedAt = new Date();
 
-    const result = await runModel({
-      ...getModel(ctx),
-      prompt: input.prompt,
-    });
+    const result = await generateResponse(input.prompt, input.modelId, input.systemPrompt);
 
     const finishedAt = new Date();
 
@@ -42,7 +44,8 @@ const chatModule: PlaygroundModule = {
 
 // Code generation module
 const codeModule: PlaygroundModule = {
-  ...moduleMeta.code,
+  ...getModuleMeta("code"),
+  kind: "code",
   async run(input, ctx) {
     const startedAt = new Date();
 
@@ -54,10 +57,7 @@ Include:
 - Best practices
 - Example usage`;
 
-    const result = await runModel({
-      ...getModel(ctx),
-      prompt: enhancedPrompt,
-    });
+    const result = await generateResponse(enhancedPrompt, input.modelId, input.systemPrompt);
 
     const finishedAt = new Date();
 
@@ -75,7 +75,8 @@ Include:
 
 // Agent module
 const agentModule: PlaygroundModule = {
-  ...moduleMeta.agent,
+  ...getModuleMeta("agent"),
+  kind: "agent",
   async run(input, ctx) {
     const startedAt = new Date();
 
@@ -90,12 +91,9 @@ Think step-by-step:
 4. Verify results
 5. Provide final answer
 
-Show your reasoning process.`;
+Summarize the actions taken and any limitations; never claim to execute external actions without tools.`;
 
-    const result = await runModel({
-      ...getModel(ctx),
-      prompt: agentPrompt,
-    });
+    const result = await generateResponse(agentPrompt, input.modelId, input.systemPrompt);
 
     const finishedAt = new Date();
 
@@ -112,8 +110,10 @@ Show your reasoning process.`;
 };
 
 // export your modules however you were before
-export const playgroundModules = {
+export const playgroundModules: Partial<Record<PlaygroundModuleId, PlaygroundModule>> = {
   chat: chatModule,
   code: codeModule,
   agent: agentModule,
 };
+
+export const playgroundModulesById = playgroundModules;

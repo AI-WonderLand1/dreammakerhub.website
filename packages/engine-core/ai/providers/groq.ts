@@ -46,12 +46,11 @@ export const groqProvider: AIProvider = {
         };
       }
       return {
-        text: fallback.text || "Falling back to OpenRouter",
         ...fallback,
-        provider: "groq",
         confessions: {
-          ...fallback.confessions,
-          reasoning: ["Fallback to OpenRouter due to missing API key"]
+          confidence: fallback.confessions?.confidence ?? 0,
+          reasoning: [...(fallback.confessions?.reasoning ?? []), "Used OpenRouter because the GROQ key is missing"],
+          limitations: fallback.confessions?.limitations ?? [],
         }
       };
     }

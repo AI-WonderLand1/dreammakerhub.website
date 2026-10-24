@@ -18,12 +18,11 @@ export const openaiProvider: AIProvider = {
       // No OpenAI key – fall back to OpenRouter
       const fallback = await import('./openrouter').then(m => m.openrouterProvider.generate(prompt, options));
       return {
-        text: fallback.text || "Falling back to OpenRouter model",
         ...fallback,
-        provider: "openai",
         confessions: {
-          ...fallback.confessions,
-          reasoning: ["Fallback to OpenRouter due to missing OpenAI key"]
+          confidence: fallback.confessions?.confidence ?? 0,
+          reasoning: [...(fallback.confessions?.reasoning ?? []), "Used OpenRouter because the OpenAI key is missing"],
+          limitations: fallback.confessions?.limitations ?? [],
         }
       };
     }

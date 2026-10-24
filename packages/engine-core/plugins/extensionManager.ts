@@ -29,7 +29,11 @@ export class ExtensionManager {
     }
 
     // 2. Run in isolated Node.js vm context
-    const sandbox = this.createSandbox(manifest.permissions as string[]);
+    if (typeof manifest.id !== 'string' || typeof manifest.name !== 'string' ||
+        !Array.isArray(manifest.permissions) || !manifest.permissions.every((value) => typeof value === 'string')) {
+      throw new Error('Extension manifest requires an id, name, and string permissions');
+    }
+    const sandbox = this.createSandbox(manifest.permissions);
     const context = vm.createContext(sandbox);
     const script = new vm.Script(code, { filename: 'extension.js' });
     const extension = script.runInContext(context, { timeout: 5000 });
@@ -44,7 +48,9 @@ export class ExtensionManager {
 
     // 4. Store extension metadata locally (Supabase stores encrypted copy)
     this.extensions.set(manifest.id, {
-      ...manifest,
+      id: manifest.id,
+      name: manifest.name,
+      permissions: manifest.permissions,
       code,
       hooks: extension.hooks
     })

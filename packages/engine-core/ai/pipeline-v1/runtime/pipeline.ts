@@ -36,13 +36,13 @@ function parseConfessionsFromText(
 ): LocalizedConfession[] {
   const confessions: LocalizedConfession[] = [];
   
-  const confessionRegex = /(?:TRUTH|WHAT|WHY|HOW|CONFESSION)[:-]\s*([^\n]+)/gi;
+  const confessionRegex = /\b(TRUTH|WHAT|WHY|HOW)\s*:\s*([^\n]+)/gi;
   let match;
   const foundFields: Record<string, string> = {};
 
   while ((match = confessionRegex.exec(text)) !== null) {
-    const key = match[1].split(":")[0].trim().toUpperCase();
-    const value = match[1].split(":").slice(1).join(":").trim();
+    const key = match[1].toUpperCase();
+    const value = match[2].trim();
     if (["TRUTH", "WHAT", "WHY", "HOW"].includes(key)) {
       foundFields[key] = value;
     }
@@ -50,6 +50,7 @@ function parseConfessionsFromText(
 
   if (Object.keys(foundFields).length > 0) {
     confessions.push({
+      agentName: 'Alice',
       type: "LIMITATION",
       title: "Transparency Confession",
       detail: "Agent provided structured transparency breakdown",
@@ -108,26 +109,35 @@ Respond as JSON only:
       baseUrl,
     });
 
-    const responseText = ((result as Record<string, string>)?.text) ?? "";
+    const responseText = result.text;
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.map((p: Record<string, string>) => ({
-      type: p.type as ConfessionType,
-      title: p.title || "AI Confession",
-      detail: p.detail || "",
-      truth: p.truth || "",
-      what: p.what || "",
-      why: p.why || "",
-      how: p.how || "",
-      impactLevel: p.impactLevel || "LOW",
-      relatedStepCode: "LLM_EXTRACTION",
-      machineTags: ["ai-confessions", "llm-extracted"],
-      language,
-    }));
+    const acceptedTypes: ConfessionType[] = ['UNCERTAINTY', 'LIMITATION', 'RISK_FLAG', 'TRUTH_VERIFIED'];
+    return parsed.flatMap((entry: unknown): LocalizedConfession[] => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
+      const item = entry as Record<string, unknown>;
+      const type = acceptedTypes.find((candidate) => candidate === item.type);
+      if (!type) return [];
+      const field = (key: string): string => typeof item[key] === 'string' ? item[key] as string : '';
+      return [{
+        agentName: 'Alice',
+        type,
+        title: field('title') || 'AI Confession',
+        detail: field('detail'),
+        truth: field('truth'),
+        what: field('what'),
+        why: field('why'),
+        how: field('how'),
+        impactLevel: 'LOW',
+        relatedStepCode: 'LLM_EXTRACTION',
+        machineTags: ['ai-confessions', 'llm-extracted'],
+        language,
+      }];
+    });
   } catch {
     return [];
   }
@@ -166,10 +176,7 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       baseUrl,
     });
 
-    const text =
-      ((modelResponse as Record<string, string>)?.text) ??
-      ((modelResponse as Record<string, string>)?.output) ??
-      (typeof modelResponse === "string" ? modelResponse : "");
+    const text = modelResponse.text;
 
     emitProcessStep({
       operationId,
@@ -183,6 +190,7 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
 
     if (!text || text.trim().length < 5) {
       const confession = createUncertaintyConfession({
+        agentName: 'Alice',
         title: "I am not confident in this answer",
         detail: "The model returned a very short or empty response.",
         truth: "Model returned empty or very short response",
@@ -213,6 +221,7 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
     if (violations.length > 0) {
       for (const violation of violations) {
         const confession = createRiskFlagConfession({
+          agentName: 'Alice',
           title: `I may have violated a rule: ${violation.ruleId}`,
           detail: violation.description,
           truth: `Detected potential violation of ${violation.ruleId}`,
@@ -308,6 +317,7 @@ export async function runAIPipeline(options: PipelineOptions): Promise<PipelineR
       : "An unknown error occurred while running the AI pipeline.";
 
     const confession = createRiskFlagConfession({
+      agentName: 'Alice',
       title: "An internal error occurred",
       detail: errDetail,
       truth: "Pipeline failed with error",

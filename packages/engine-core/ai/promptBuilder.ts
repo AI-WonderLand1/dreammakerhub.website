@@ -1,5 +1,12 @@
 import { AIRunInput } from './types';
 
+export interface BuildCodeGenPromptArgs {
+  mode?: 'create' | 'update';
+  focusFiles?: string[];
+  currentFileTree?: Record<string, unknown>;
+  targetPlatforms?: string[];
+}
+
 /**
  * Rick's Note: I'm adding a classifier because apparently, Morty-level intelligence 
  * can't distinguish between a mobile app and a game without a computer's help. *burp*
@@ -21,7 +28,8 @@ export function buildClassificationPrompt(userInput: string): string {
 }
 
 export function buildCodeGenPrompt(input: AIRunInput): string {
-  const safePrompt = input.prompt.replace(/[<>&"']/g, '');
+  const promptText = typeof input.prompt === 'string' ? input.prompt : JSON.stringify(input.prompt);
+  const safePrompt = promptText.replace(/[<>&"']/g, '');
   return `System: You are an expert engineer. Generate code for a ${input.context?.platform || 'web'} project based on: ${safePrompt}`;
 }
 

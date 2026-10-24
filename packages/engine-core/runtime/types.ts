@@ -12,7 +12,7 @@ export interface EngineInstance {
   name: string
   canvas: HTMLCanvasElement
   context: WebGLRenderingContext | WebGL2RenderingContext | null
-  device: GPUDevice | null
+  device: { destroy: () => void } | null
   destroy: () => Promise<void> | void
 }
 
@@ -20,7 +20,7 @@ export interface ActiveEngine {
   name: string
   canvas: HTMLCanvasElement
   context: WebGLRenderingContext | WebGL2RenderingContext | null
-  device: GPUDevice | null
+  device: { destroy: () => void } | null
   rafId: number | null
   destroy: () => Promise<void> | void
   onFrame?: (time: number) => void
