@@ -5,6 +5,7 @@ import type { GeneratedScene, GeneratedSceneMaterial, GeneratedSceneObject } fro
 import { orbitFromCameraPosition, panOrbitTarget } from "@/lib/scene/orbit-controls";
 import { fitOrbitDistance, orbitClipPlanes } from "@/lib/scene/camera-framing";
 import { normalizeHdrEnvironmentUrl } from "@/lib/scene/hdr-environment";
+import { RENDER_QUALITY_PRESETS } from "@/lib/scene/render-quality";
 import { logger } from "@/lib/logger";
 
 export type StudioSelection = { name: string; id: string; entityId?: number };
@@ -509,6 +510,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
 
     const applyRenderQuality = useCallback((quality: RenderQuality) => {
       qualityRef.current = quality;
+      const preset = RENDER_QUALITY_PRESETS[quality];
       const app = appRef.current;
       const pc = pcRef.current;
       const camera = cameraRef.current?.camera;
@@ -517,33 +519,31 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       // The engine's default 1x canvas resolution looks soft on HiDPI screens.
       // Let owners trade fidelity against GPU cost without changing delivery.
       const ratio = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
-      app.graphicsDevice.maxPixelRatio = Math.min(ratio, quality === "performance" ? 1 : 2);
+      app.graphicsDevice.maxPixelRatio = Math.min(ratio, preset.maxPixelRatio);
       if (containerRef.current) {
         const bounds = containerRef.current.getBoundingClientRect();
         app.resizeCanvas(Math.max(1, Math.round(bounds.width)), Math.max(1, Math.round(bounds.height)));
       }
 
-      const shadowResolution = quality === "performance" ? 1024 : 2048;
-      const cascades = quality === "cinematic" ? 4 : quality === "high" ? 3 : 1;
       let localShadowLights = 0;
       forEachEntity(app.root, (entity) => {
         if (entity.light?.type === "directional") {
-          entity.light.shadowResolution = shadowResolution;
-          entity.light.numCascades = cascades;
+          entity.light.shadowResolution = preset.shadowResolution;
+          entity.light.numCascades = preset.cascades;
           entity.light.normalOffsetBias = 0.05;
         } else if (entity.light && ["omni", "spot"].includes(entity.light.type)) {
           // Clustered lighting handles local lights, but shadow-casting is
           // deliberately capped to avoid exhausting mobile GPU memory.
-          entity.light.castShadows = shadowsRef.current && quality !== "performance" &&
-            localShadowLights++ < (quality === "cinematic" ? 4 : 2);
-          entity.light.shadowResolution = quality === "cinematic" ? 2048 : 1024;
+          entity.light.castShadows = shadowsRef.current &&
+            localShadowLights++ < preset.localShadowLights;
+          entity.light.shadowResolution = preset.shadowResolution;
         }
         for (const instance of entity.render?.meshInstances ?? []) {
           const material = instance.material;
           for (const mapName of ["diffuseMap", "normalMap", "metalnessMap", "glossMap", "aoMap", "emissiveMap", "opacityMap", "heightMap"]) {
             const texture = material?.[mapName];
             if (texture && typeof texture.anisotropy === "number") {
-              texture.anisotropy = Math.min(app.graphicsDevice.maxAnisotropy || 1, quality === "performance" ? 4 : 16);
+              texture.anisotropy = Math.min(app.graphicsDevice.maxAnisotropy || 1, preset.textureAnisotropy);
             }
           }
         }
@@ -559,17 +559,25 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
             cameraFrameRef.current = frame;
           }
           frame.enabled = true;
-          frame.rendering.samples = quality === "high" ? 4 : 1;
+          frame.rendering.samples = preset.msaaSamples;
           frame.rendering.toneMapping = pc[TONE_MAPPING_CONSTANTS[toneMappingRef.current]];
           frame.ssao.type = pc.SSAOTYPE_COMBINE;
-          frame.ssao.intensity = 0.3;
-          frame.ssao.samples = quality === "cinematic" ? 24 : 12;
+          frame.ssao.intensity = preset.ssaoIntensity;
+          frame.ssao.samples = preset.ssaoSamples;
           frame.ssao.radius = 1.25;
-          frame.taa.enabled = quality === "cinematic";
+          frame.taa.enabled = preset.taaEnabled;
           frame.taa.jitter = 0.65;
-          frame.rendering.sharpness = quality === "cinematic" ? 0.35 : 0.15;
-          frame.bloom.intensity = quality === "cinematic" ? 0.012 : 0.005;
+          frame.rendering.sharpness = preset.sharpness;
+          frame.bloom.intensity = preset.bloomIntensity;
           frame.bloom.threshold = 1.5;
+          // Color grading and lens falloff are real camera post-processes,
+          // not modifications to or fabricated texture maps on user assets.
+          frame.grading.enabled = preset.cinematicGrade;
+          frame.grading.contrast = preset.cinematicGrade ? 1.07 : 1;
+          frame.grading.saturation = preset.cinematicGrade ? 1.05 : 1;
+          frame.vignette.intensity = preset.cinematicGrade ? 0.13 : 0;
+          frame.vignette.inner = 0.45;
+          frame.vignette.outer = 1.25;
           frame.update();
         } catch (cause) {
           logger.warn("Advanced PlayCanvas camera effects are unavailable; using basic rendering", cause);
@@ -924,11 +932,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
       app.assets.loadFromUrl(gltfUrl, "container", (err: Error | null, asset: any) => {
         if (err) {
           logger.error("PlayCanvas GLTF Loading Error:", err);
+          onMeshStatusRef.current?.({ objectId: String(assetId ?? "remote-model"), state: "error", message: "GLB model failed to load." });
           return;
         }
         const pc = pcRef.current;
         if (!pc || !asset?.resource?.instantiateRenderEntity) {
           logger.warn("PlayCanvas injection did not return a GLB container", { assetId });
+          onMeshStatusRef.current?.({ objectId: String(assetId ?? "remote-model"), state: "error", message: "GLB did not contain a renderable model." });
           return;
         }
         const targetEntity = new pc.Entity(`AI_Asset_${assetId ?? Date.now()}`);
@@ -938,12 +948,25 @@ const StudioViewport = forwardRef<StudioViewportHandle, StudioViewportProps>(
         targetEntity.addChild(imported);
         forEachEntity(imported, (part) => {
           if (part.render) part.render.castShadows = shadowsRef.current;
+          for (const instance of part.render?.meshInstances ?? []) {
+            // A model injected after initial setup should get the same oblique
+            // texture clarity as models loaded by the normal editor path.
+            const material = instance.material;
+            for (const mapName of ["diffuseMap", "normalMap", "metalnessMap", "glossMap", "aoMap", "emissiveMap"]) {
+              const texture = material?.[mapName];
+              if (texture && typeof texture.anisotropy === "number") {
+                texture.anisotropy = Math.min(app.graphicsDevice.maxAnisotropy || 1,
+                  RENDER_QUALITY_PRESETS[qualityRef.current].textureAnisotropy);
+              }
+            }
+          }
         });
         targetEntity.addComponent("collision", { type: "box", halfExtents: new pc.Vec3(0.5, 0.5, 0.5) });
         targetEntity.addComponent("rigidbody", { type: "static" });
         app.root.addChild(targetEntity);
         selectedEntityRef.current = targetEntity;
         onEntityCreatedRef.current?.({ name: targetEntity.name, id: `${assetId ?? Date.now()}` });
+        onMeshStatusRef.current?.({ objectId: String(assetId ?? "remote-model"), state: "loaded", message: describeImportedPbr(imported) });
       });
     }, [forEachEntity]);
 
