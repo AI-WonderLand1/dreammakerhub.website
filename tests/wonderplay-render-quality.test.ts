@@ -42,7 +42,7 @@ describe("WonderPlay graphics without changing project delivery", () => {
     expect(viewport).toContain('quality === "performance"');
     expect(viewport).toContain("environmentCacheRef.current.clear()");
     expect(editor).toContain('aria-label="Environment lighting"');
-    expect(editor).toContain("setEnvironmentLighting(environmentLighting)");
+    expect(editor).toContain("setEnvironmentLighting(environmentLighting, hdrEnvironmentUrl)");
     expect(editor).toContain("rendering: { quality: renderQuality, environmentLighting,");
   });
 

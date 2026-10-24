@@ -9,6 +9,7 @@ import Link from "next/link";
 import { fetchAuthenticated3D } from "@/lib/3d/browser-3d-fetch";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import { logger } from "@/lib/logger";
+import { normalizeHdrEnvironmentUrl } from "@/lib/scene/hdr-environment";
 
 type WorldPreset = "blank" | "training" | "outpost" | "forest";
 type ActorKind = "player" | "obstacle" | "prop" | "light" | "model";
@@ -126,6 +127,9 @@ export default function StudioGameFoundation() {
   const [toneMapping, setToneMapping] = useState<ToneMappingMode>("ACES");
   const [renderQuality, setRenderQuality] = useState<RenderQuality>("high");
   const [environmentLighting, setEnvironmentLighting] = useState<EnvironmentLightingMode>("studio");
+  const [hdrEnvironmentUrl, setHdrEnvironmentUrl] = useState("");
+  const [hdrDraftUrl, setHdrDraftUrl] = useState("");
+  const [hdrStatus, setHdrStatus] = useState<string | null>(null);
   const [cameraFov, setCameraFov] = useState(60);
   const [exposure, setExposure] = useState(1);
   const [shadows, setShadows] = useState(true);
@@ -137,6 +141,7 @@ export default function StudioGameFoundation() {
   const [savedLevels, setSavedLevels] = useState<SavedLevel[]>([]);
   const [levelsError, setLevelsError] = useState<string | null>(null);
   const [meshError, setMeshError] = useState<string | null>(null);
+  const [pbrReports, setPbrReports] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const controller = new AbortController();
@@ -285,9 +290,14 @@ export default function StudioGameFoundation() {
   const onMeshStatus = useCallback((detail: { objectId: string; state: "loaded" | "error"; message?: string }) => {
     if (detail.state === "error") {
       setMeshError(detail.message || "PlayCanvas could not load the 3D model.");
+      setPbrReports((current) => {
+        const next = { ...current };
+        delete next[detail.objectId];
+        return next;
+      });
     } else {
       setMeshError(null);
-
+      if (detail.message) setPbrReports((current) => ({ ...current, [detail.objectId]: detail.message! }));
     }
   }, []);
 
@@ -334,7 +344,11 @@ export default function StudioGameFoundation() {
       if (record.rendering && typeof record.rendering === "object" && !Array.isArray(record.rendering)) {
         const rendering = record.rendering as Record<string, unknown>;
         if (["performance", "high", "cinematic"].includes(String(rendering.quality))) setRenderQuality(rendering.quality as RenderQuality);
-        if (["studio", "outdoor", "off"].includes(String(rendering.environmentLighting))) setEnvironmentLighting(rendering.environmentLighting as EnvironmentLightingMode);
+        if (["studio", "outdoor", "hdri", "off"].includes(String(rendering.environmentLighting))) setEnvironmentLighting(rendering.environmentLighting as EnvironmentLightingMode);
+        const restoredHdr = typeof rendering.hdrEnvironmentUrl === "string" ? normalizeHdrEnvironmentUrl(rendering.hdrEnvironmentUrl) : null;
+        setHdrEnvironmentUrl(restoredHdr || "");
+        setHdrDraftUrl(restoredHdr || "");
+        setHdrStatus(null);
         if (["ACES", "Neutral", "Filmic", "HEJL", "Linear"].includes(String(rendering.toneMapping))) setToneMapping(rendering.toneMapping as ToneMappingMode);
         if (typeof rendering.exposure === "number" && Number.isFinite(rendering.exposure) && rendering.exposure >= 0.3 && rendering.exposure <= 2.5) setExposure(rendering.exposure);
         if (typeof rendering.cameraFov === "number" && Number.isFinite(rendering.cameraFov) && rendering.cameraFov >= 35 && rendering.cameraFov <= 100) setCameraFov(rendering.cameraFov);
@@ -354,14 +368,14 @@ export default function StudioGameFoundation() {
 
   const applyViewportSettings = useCallback(() => {
     viewportRef.current?.setRenderQuality(renderQuality);
-    viewportRef.current?.setEnvironmentLighting(environmentLighting);
+    viewportRef.current?.setEnvironmentLighting(environmentLighting, hdrEnvironmentUrl);
     viewportRef.current?.setShowGrid(showGrid && !actors.some((actor) => actor.environment));
     viewportRef.current?.setToneMapping(toneMapping);
     viewportRef.current?.setExposure(exposure);
     viewportRef.current?.setFov(cameraFov);
     viewportRef.current?.setShadows(shadows);
     viewportRef.current?.setWireframe(wireframe);
-  }, [showGrid, actors, renderQuality, environmentLighting, toneMapping, exposure, cameraFov, shadows, wireframe]);
+  }, [showGrid, actors, renderQuality, environmentLighting, hdrEnvironmentUrl, toneMapping, exposure, cameraFov, shadows, wireframe]);
 
   useEffect(() => {
     renderWorld();
@@ -453,7 +467,7 @@ export default function StudioGameFoundation() {
       const content = JSON.stringify({
         version: 3, type: "wonderplay-level", playerStartId: "player-start",
         preset, scene: durableScene, actors,
-        rendering: { quality: renderQuality, environmentLighting, toneMapping, exposure, cameraFov, shadows },
+        rendering: { quality: renderQuality, environmentLighting, hdrEnvironmentUrl, toneMapping, exposure, cameraFov, shadows },
       }, null, 2);
       const response = await fetchAuthenticatedProject("/api/projects/" + encodeURIComponent(projectId) + "/files", {
         method: "POST",
@@ -469,7 +483,7 @@ export default function StudioGameFoundation() {
     } finally {
       setSaving(false);
     }
-  }, [actors, preset, projectId, scene, renderQuality, environmentLighting, toneMapping, exposure, cameraFov, shadows]);
+  }, [actors, preset, projectId, scene, renderQuality, environmentLighting, hdrEnvironmentUrl, toneMapping, exposure, cameraFov, shadows]);
 
   const selected = actors.find((actor) => actor.id === selectedId);
   return (
@@ -565,6 +579,7 @@ export default function StudioGameFoundation() {
           </div>
         </header>
         <StudioViewport ref={viewportRef} onReady={() => { renderWorld(); applyViewportSettings(); }} onMeshStatus={onMeshStatus}
+          onEnvironmentStatus={(detail) => setHdrStatus(detail.message || (detail.state === "loaded" ? "HDR lighting active" : "HDR lighting unavailable"))}
           onSelect={(selection) => {
             const actor = actors.find((item) => item.name === selection.name);
             if (actor) setSelectedId(actor.id);
@@ -640,6 +655,9 @@ export default function StudioGameFoundation() {
                   ))}
                 </div>
                 {selected.kind === "model" && <p className="mt-2 text-[10px] leading-4 text-amber-300">Imported GLBs currently use an approximate box collider. Detailed mesh colliders and joints are not enabled.</p>}
+                {selected.kind === "model" && pbrReports[selected.id] && (
+                  <p className="mt-2 rounded border border-cyan-900/60 bg-cyan-950/20 p-2 text-[10px] leading-4 text-cyan-200" aria-label="Imported PBR texture report">{pbrReports[selected.id]}</p>
+                )}
               </div>
             </div>
           )}
@@ -663,9 +681,27 @@ export default function StudioGameFoundation() {
             <select aria-label="Environment lighting" value={environmentLighting} onChange={(event) => setEnvironmentLighting(event.target.value as EnvironmentLightingMode)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white">
               <option value="studio">Studio · softbox reflections</option>
               <option value="outdoor">Outdoor · sky and warm sunlight</option>
+              <option value="hdri">Custom HDRI · real reflections</option>
               <option value="off">Off · flat ambient only</option>
             </select>
           </label>
+          {environmentLighting === "hdri" && (
+            <div className="space-y-2 rounded border border-cyan-900/70 bg-cyan-950/20 p-2">
+              <label className="block text-[11px] text-slate-300">Public HDR panorama (.hdr)
+                <input aria-label="HDR environment URL" type="url" value={hdrDraftUrl} onChange={(event) => setHdrDraftUrl(event.target.value)}
+                  placeholder="https://your-project.supabase.co/storage/v1/object/public/.../studio.hdr" className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-xs text-white" />
+              </label>
+              <button type="button" disabled={!normalizeHdrEnvironmentUrl(hdrDraftUrl)} onClick={() => {
+                const url = normalizeHdrEnvironmentUrl(hdrDraftUrl);
+                if (!url) return;
+                setHdrStatus("Loading HDR and prefiltering reflections…");
+                setHdrEnvironmentUrl(url);
+                viewportRef.current?.setEnvironmentLighting("hdri", url);
+              }} className="rounded bg-cyan-700 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-cyan-600 disabled:opacity-50">Apply HDR lighting</button>
+              {hdrStatus && <p role="status" className="text-[10px] leading-4 text-cyan-200">{hdrStatus}</p>}
+              <p className="text-[10px] leading-4 text-slate-400">Use a public Supabase Storage .hdr URL or same-site .hdr file. The URL is saved with the level; do not paste private or expiring signed URLs. Performance mode disables HDR reflections.</p>
+            </div>
+          )}
           <label className="block text-[11px] text-slate-300">Exposure · {exposure.toFixed(2)}
             <input aria-label="Scene exposure" className="block w-full accent-cyan-500" type="range" min="0.3" max="2.5" step="0.05" value={exposure} onChange={(event) => setExposure(Number(event.target.value))}/>
           </label>
@@ -675,7 +711,7 @@ export default function StudioGameFoundation() {
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={shadows} onChange={(event) => setShadows(event.target.checked)}/> Cast shadows</label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={showGrid} onChange={(event) => setShowGrid(event.target.checked)}/> Editor grid</label>
           <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)}/> Wireframe view</label>
-          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer without replacing your meshes or textures. Environment reflections are disabled in Performance mode. High and Cinematic use more GPU memory; visual detail still depends on the imported asset.</p>
+          <p className="text-[10px] leading-4 text-slate-500">These controls change the live renderer without replacing your meshes or textures. Clustered local lights are supported, with a limited real-time shadow budget. Environment reflections are disabled in Performance mode. High and Cinematic use more GPU memory; visual detail still depends on the imported asset. Static lightmaps are not automatically baked because imported meshes may lack UV2.</p>
         </fieldset>
         <button onClick={saveLevel} disabled={saving || projectId === "default"} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-50">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save game level
