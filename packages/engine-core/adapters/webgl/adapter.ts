@@ -38,7 +38,7 @@ export class WebGLAdapter implements EngineAdapter {
       `
     };
 
-    const { program, uniforms } = this.createShaderProgram(gl, defaultShader);
+    const { program } = this.createShaderProgram(gl, defaultShader);
     gl.useProgram(program);
 
     // Setup vertex buffer for fullscreen triangle
