@@ -6,7 +6,7 @@ import { decayNeeds } from './needs';
 
 export class NpcSimNode {
   public async run(node: NodeType, context: ExecutionContext): Promise<Record<string, unknown>> {
-    const { npcId, worldState, npcs } = context;
+    const { npcId, npcs } = context;
     
     if (!npcId || !npcs) {
       throw new Error('NPC simulation node requires npcId and npcs list in context');
