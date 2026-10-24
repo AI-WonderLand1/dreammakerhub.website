@@ -29,6 +29,17 @@ describe('agent settings', () => {
     expect(agents).toContain('Agent Settings');
   });
 
+  it('makes dashboard Agents the home for real workspace agents without inventing Playground records', () => {
+    const agents = read('apps/web/app/(workspace)/dashboard/agents/page.tsx');
+    expect(agents).toContain('useState<View>("library")');
+    expect(agents).toContain('.from("swarm_agents")');
+    expect(agents).toContain('.eq("owner_id", auth.user.id)');
+    expect(agents).toContain('Manage models and credentials');
+    expect(agents).toContain('/node-builder');
+    expect(agents).toContain('not yet synced into this workspace list');
+    expect(agents).not.toContain('fakeAgentData');
+  });
+
   it('keeps BYO keys encrypted and exposes only write-only metadata to satellite apps', () => {
     const configRoute = read('apps/web/app/api/ai-providers/config/route.ts');
     const catalogRoute = read('apps/web/app/api/ai-providers/catalog/route.ts');
