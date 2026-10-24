@@ -181,7 +181,7 @@ export async function saveCompiledEngine(pipelineId: string, engineConfig: any, 
     const engineId = crypto.randomUUID();
     
     // Store compiled engine in Supabase for real-time sharing and collaboration
-    const { data, error } = await supabase.from('compiled_engines').insert({
+    const { error } = await supabase.from('compiled_engines').insert({
       id: engineId,
       pipeline_id: pipelineId,
       engine_config: engineConfig,
