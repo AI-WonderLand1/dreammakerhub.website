@@ -21,7 +21,6 @@ export const n8nProvider: AIProvider = {
       };
     }
     const apiKey = process.env.N8N_API_KEY || "";
-    const { system, temperature = 0.7 } = options ?? {};
 
     try {
       const choice = Array.isArray(prompt) ? JSON.stringify(prompt) : String(prompt);
