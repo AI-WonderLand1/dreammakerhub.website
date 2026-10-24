@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { CLIENT_PERSONAS } from '@/lib/ai/personas';
+import { buildAssistantRequest } from '@/lib/ai/assistant-request';
 import { useFeatureGate } from '@/lib/useSubscription';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
@@ -97,7 +98,8 @@ export default function UniversalAIAssistant({
   const endRef = useRef<HTMLDivElement>(null);
 
   const agentOptions = useMemo(() => [
-    { id: 'spirit-guide', name: 'Assistant' },
+    { id: 'spirit-guide', name: 'AI Chat' },
+    { id: 'guided-support', name: 'Guided Help · no AI' },
     ...(isPaid && enableAgents ? [
       { id: 'builder', name: 'Builder' },
       { id: 'designer', name: 'Designer' },
@@ -194,7 +196,7 @@ export default function UniversalAIAssistant({
   const send = useCallback(async () => {
     const prompt = input.trim();
     if (!prompt || loading) return;
-    if (agent === 'spirit-guide' && prompt.length > 1200) {
+    if (agent === 'guided-support' && prompt.length > 1200) {
       setFailure({ code: 'MESSAGE_TOO_LONG', message: 'Support messages are limited to 1200 characters.' });
       return;
     }
@@ -206,33 +208,33 @@ export default function UniversalAIAssistant({
     setLoading(true);
     try {
       const history = messages.slice(-12).map((m) => ({ role: m.role, content: m.content }));
-      const normalChat = agent === 'spirit-guide';
-      const response = normalChat
-        ? await fetch('/api/support/help', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: prompt.slice(0, 1200) }),
-          })
-        : await fetch('/api/unified-ai', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'agent', agent, message: prompt, context: { page: pathname }, history }),
-          });
+      const modelChat = agent === 'spirit-guide';
+      const guidedSupport = agent === 'guided-support';
+      const request = buildAssistantRequest({ agent, message: prompt, modelId, page: pathname, history });
+      const response = await fetch(request.url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request.body),
+      });
       const data = await response.json().catch(() => ({}));
       if (response.status === 402 || data.upgrade) {
         throw { code: 'UPGRADE_REQUIRED', message: `${data.label || 'This AI feature'} requires a paid plan.` };
       }
       if (!response.ok || data.error) {
-        throw { code: data.code || (response.status === 401 ? 'AUTH_REQUIRED' : 'REQUEST_FAILED'), message: data.error || `AI request failed (${response.status}).` };
+        const apiError = typeof data.error === 'string' ? data.error
+          : typeof data.error?.message === 'string' ? data.error.message
+          : `AI request failed (${response.status}).`;
+        throw { code: data.code || data.error?.code || (response.status === 401 ? 'AUTH_REQUIRED' : 'REQUEST_FAILED'), message: apiError };
       }
-      const text = normalChat ? data.text : (data.response || data.answer || data.code || data.result || data.glimpse);
+      const text = modelChat || guidedSupport ? data.text : (data.response || data.answer || data.code || data.result || data.glimpse);
       if (typeof text !== 'string' || !text.trim()) throw { code: 'EMPTY_RESPONSE', message: 'The AI returned no usable response. No action was completed.' };
       setMessages((current) => [...current, { id: `${id}-response`, role: 'assistant', content: text.trim() }]);
-      if (normalChat && data.mode === 'guided-support') {
+      if (guidedSupport && data.mode === 'guided-support') {
         // Deterministic help is not a model completion and creates no AI confession.
-      } else if (normalChat && Array.isArray(data.confessions)) {
+      } else if (modelChat && Array.isArray(data.confessions)) {
         const entries = data.confessions.map(asConfession).filter((item: Confession | null): item is Confession => item !== null);
         setSessionConfessions((current) => [...entries.map((entry: Confession) => ({ ...entry, saved: data.confessionsStored === true })), ...current]);
         if (data.confessionsStored) setConfessionsRefresh((value) => value + 1);
-      } else if (!normalChat) {
+      } else if (!modelChat && !guidedSupport) {
         setSessionConfessions((current) => [{
           traceId: id,
           title: 'Agent response',
@@ -248,7 +250,7 @@ export default function UniversalAIAssistant({
       const problem = error as { code?: string; message?: string };
       setMessages((current) => current.filter((message) => message.id !== id));
       setInput(prompt);
-      const message = problem.message || 'Unable to reach the assistant. Your message was not processed.';
+      const message = typeof problem.message === 'string' ? problem.message : 'Unable to reach the assistant. Your message was not processed.';
       setFailure({ code: problem.code || 'NETWORK_ERROR', message });
       setSessionConfessions((current) => [{
         traceId: id,
@@ -272,9 +274,9 @@ export default function UniversalAIAssistant({
 
     {open && <section role="dialog" aria-label="AI Assistant" style={{ left: panelPos.x, top: panelPos.y, width: `min(${PANEL_W}px, calc(100vw - 24px))`, height: `min(${PANEL_H}px, calc(100dvh - 24px))` }} className="fixed z-[90] flex min-h-0 max-h-[calc(100dvh-24px)] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#09090b] text-white shadow-[0_24px_90px_rgba(0,0,0,.7)]">
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-white/[.04] px-3 py-3">
-        <div onPointerDown={(event) => startDrag('panel', event)} className="min-w-0 flex-1 cursor-move touch-none select-none" title="Drag to move the assistant"><h3 className="text-sm font-bold">AI Assistant</h3><p className="truncate text-[11px] text-white/55">Site guidance and project help</p></div>
+        <div onPointerDown={(event) => startDrag('panel', event)} className="min-w-0 flex-1 cursor-move touch-none select-none" title="Drag to move the assistant"><h3 className="text-sm font-bold">AI Assistant</h3><p className="truncate text-[11px] text-white/55">{agent === 'guided-support' ? 'Guided support · no AI' : agent === 'spirit-guide' ? `${MODELS.find((model) => model.id === modelId)?.name || 'Alice'} · real AI chat` : `${agent} agent`}</p></div>
         <div className="flex shrink-0 items-center gap-1">
-          <button type="button" disabled={agent === 'spirit-guide'} title={agent === 'spirit-guide' ? 'Guided support does not use an AI model' : 'Select model'} onClick={() => { setShowModels((v) => !v); setShowAgents(false); }} aria-expanded={showModels} className="rounded-lg border border-white/15 px-2 py-1.5 text-xs font-semibold text-white/85">Model</button>
+          <button type="button" disabled={agent !== 'spirit-guide'} title={agent !== 'spirit-guide' ? 'Model selection is only available in AI Chat' : 'Select model'} onClick={() => { setShowModels((v) => !v); setShowAgents(false); }} aria-expanded={showModels} className="rounded-lg border border-white/15 px-2 py-1.5 text-xs font-semibold text-white/85 disabled:opacity-40">Model</button>
           {enableAgents && <button type="button" onClick={() => { setShowAgents((v) => !v); setShowModels(false); }} aria-expanded={showAgents} className="rounded-lg border border-white/15 px-2 py-1.5 text-xs font-semibold text-white/85">Agent</button>}
           <button type="button" onClick={() => setOpen(false)} aria-label="Close AI Assistant" className="grid h-8 w-8 place-items-center rounded-lg text-xl text-white/75 hover:bg-white/10">×</button>
         </div>
@@ -288,9 +290,9 @@ export default function UniversalAIAssistant({
       {showAgents && tab === 'chat' && <div className="flex shrink-0 flex-wrap gap-2 border-b border-white/10 bg-[#101014] p-3">{agentOptions.map((item) => <button type="button" key={item.id} onClick={() => { setAgent(item.id); setShowAgents(false); setShowModels(false); }} className={`rounded-lg border px-3 py-2 text-xs font-bold ${agent === item.id ? 'border-violet-400/50 bg-violet-500/20' : 'border-white/15 text-white/75'}`}>{item.name}</button>)}{!isPaid && <Link href="/subscription" className="rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70">Builder agent plans</Link>}</div>}
 
       {tab === 'chat' ? <div role="tabpanel" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3" aria-label="Conversation" aria-live="polite">
-        {messages.length === 0 && <div className="rounded-xl border border-white/10 bg-white/[.04] p-4"><p className="text-sm font-bold">How can I help?</p><p className="mt-1 text-sm leading-5 text-white/65">Ask about this page or an error. Support replies are guided help, not AI-generated. They do not inspect accounts or edit files.</p></div>}
+        {messages.length === 0 && <div className="rounded-xl border border-white/10 bg-white/[.04] p-4"><p className="text-sm font-bold">How can I help?</p><p className="mt-1 text-sm leading-5 text-white/65">{agent === 'guided-support' ? 'Guided Help gives predefined support guidance without using a model.' : 'AI Chat sends questions to a real model and uses your plan’s AI allowance. It cannot inspect accounts or edit project files.'}</p></div>}
         {messages.map((message) => <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[90%] break-words rounded-2xl border px-3 py-2.5 text-sm leading-6 ${message.role === 'user' ? 'border-violet-400/30 bg-violet-500/20' : 'border-white/10 bg-white/[.06]'}`}><p className="whitespace-pre-wrap">{message.content}</p></div></div>)}
-        {loading && <p className="w-fit rounded-xl border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white/70" role="status">Finding support guidance…</p>}
+        {loading && <p className="w-fit rounded-xl border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white/70" role="status">{agent === 'guided-support' ? 'Finding support guidance…' : 'Waiting for AI response…'}</p>}
         <div ref={endRef} />
       </div> : <div role="tabpanel" aria-label="Confessions" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3">
         <div className="flex items-center justify-between gap-2"><p className="text-xs text-white/65">Read-only records of what the assistant actually did.</p><button type="button" onClick={() => setConfessionsRefresh((value) => value + 1)} disabled={confessionsLoading} className="rounded-lg border border-white/20 px-2 py-1 text-xs disabled:opacity-40">Refresh</button></div>
