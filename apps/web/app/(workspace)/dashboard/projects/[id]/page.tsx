@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
@@ -25,7 +25,6 @@ import {
   Users,
 } from "lucide-react";
 import WonderRealtimeWidget from "@/app/(workspace)/dashboard/components/WonderRealtimeWidget";
-import RepositoryFileBrowser from "./RepositoryFileBrowser";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import ProjectDeleteButton from "@/app/(workspace)/dashboard/components/ProjectDeleteButton";
@@ -101,7 +100,6 @@ const formatBytes = (bytes: number) => {
 export default function ProjectHubPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const projectId = params.id as string;
   const [project, setProject] = useState<Project | null>(null);
   const [files, setFiles] = useState<Record<string, string>>({});
@@ -323,9 +321,11 @@ export default function ProjectHubPage() {
                 <Link href={primaryAction.href} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2.5 text-sm font-bold shadow-lg shadow-violet-950/30">
                   <PrimaryIcon size={15}/> {primaryAction.label}
                 </Link>
-                <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/files`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
-                  <Code2 size={15}/> Open files
-                </Link>
+                {!isCodeProject && (
+                  <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/files`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[.035] px-4 py-2 text-sm font-semibold hover:bg-white/10">
+                    <Code2 size={15}/> Open files
+                  </Link>
+                )}
                 <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/ide`} className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-4 py-2.5 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/15">
                   <Code2 size={15}/> Open IDE
                 </Link>
@@ -370,21 +370,12 @@ export default function ProjectHubPage() {
             ))}
           </div>
 
-          <RepositoryFileBrowser
-            projectId={project.id}
-            projectType={tool}
-            files={files}
-            initialPath={searchParams.get("path")}
-            updatedLabel={formatRelativeTime(project.updatedAt || project.updated_at)}
-            onFilesChange={setFiles}
-          />
         </main>
 
         <aside className="space-y-4">
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-bold">Project Details</h2>
-              <Link href={`/dashboard/settings?${projectQuery}`} className="text-xs text-blue-400">Edit</Link>
             </div>
             <dl className="divide-y divide-white/10 text-sm">
               <div className="flex justify-between gap-3 py-3">
@@ -417,9 +408,6 @@ export default function ProjectHubPage() {
           <section className="rounded-xl border border-white/10 bg-[#0d1625] p-4">
             <h2 className="mb-3 font-bold">Quick Actions</h2>
             <div className="space-y-2">
-              <Link href={`/dashboard/projects/${project.id}/files`} className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-sm hover:bg-white/5">
-                <Code2 size={15}/> Manage project files
-              </Link>
               <button
                 type="button"
                 onClick={() => void duplicateProject()}
