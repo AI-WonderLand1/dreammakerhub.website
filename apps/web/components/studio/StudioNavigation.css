@@ -96,3 +96,6 @@ body:has(.wonderplay-app) aside.fixed {
 .wonderplay-publish-action:hover{background:#0891b2}
 @media(max-width:650px){.wonderplay-library-switch{gap:4px;padding-inline:5px}.wonderplay-library-switch button{padding-inline:5px}.wonderplay-project{display:none}}
 
+
+/* Keep the canvas full height until the user explicitly opens the asset library. */
+.wonderplay-stack--focused { grid-template-rows: minmax(0, 1fr) !important; }
