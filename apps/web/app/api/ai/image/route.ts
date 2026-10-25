@@ -264,6 +264,7 @@ export async function POST(req: Request) {
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from("ai-assets").getPublicUrl(path);
 
+      let savedToLibrary = false;
       if (saveTo === "library") {
         const safeName = prompt.replace(/[^a-zA-Z0-9\s-_]/g, "").trim().slice(0, 80) || "Generated image";
         const { error: libraryError } = await supabase.from("user_assets").insert({
@@ -275,6 +276,7 @@ export async function POST(req: Request) {
           downloaded_at: new Date().toISOString(),
         });
         if (libraryError) logger.warn("Generated image could not be added to the user asset library:", libraryError.message);
+        else savedToLibrary = true;
       }
 
       return NextResponse.json({
@@ -283,7 +285,7 @@ export async function POST(req: Request) {
         provider: generated.provider,
         model: generated.model,
         size,
-        savedToLibrary: saveTo === "library",
+        savedToLibrary,
       });
     }
 
@@ -296,6 +298,7 @@ export async function POST(req: Request) {
     provider: generated.provider,
     model: generated.model,
     size,
+    savedToLibrary: false,
   });
 }
 
