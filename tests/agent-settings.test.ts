@@ -31,12 +31,14 @@ describe('agent settings', () => {
 
   it('makes dashboard Agents the home for real workspace agents without inventing Playground records', () => {
     const agents = read('apps/web/app/(workspace)/dashboard/agents/page.tsx');
-    expect(agents).toContain('useState<View>("library")');
+    expect(agents).toContain('>My agents</h2>');
+    expect(agents).not.toContain('useState<View>');
     expect(agents).toContain('.from("swarm_agents")');
     expect(agents).toContain('.eq("owner_id", auth.user.id)');
-    expect(agents).toContain('Manage models and credentials');
+    expect(agents).toContain('href="/dashboard/settings/agents"');
     expect(agents).toContain('/node-builder');
-    expect(agents).toContain('not yet synced into this workspace list');
+    expect(agents).toContain('not yet synced to this workspace');
+    expect(agents).not.toContain('Agent sessions are not connected');
     expect(agents).not.toContain('fakeAgentData');
   });
 
