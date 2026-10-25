@@ -7,6 +7,7 @@ type ProviderConfig = {
   provider?: string;
   model?: string;
   baseUrl?: string;
+  hasApiKey?: boolean;
 };
 
 type ProviderResponse = {
@@ -48,6 +49,12 @@ const PLATFORM_AGENTS = [
 
 const PROVIDERS = [
   {
+    id: "opencode",
+    name: "OpenCode",
+    defaultModel: "opencode/big-pickle",
+    description: "WonderSpace's OpenCode provider. Bring a key when required by your account.",
+  },
+  {
     id: "openrouter",
     name: "OpenRouter",
     defaultModel: "meta-llama/llama-3.3-70b-instruct",
@@ -72,10 +79,35 @@ const PROVIDERS = [
     description: "Use your own Google AI / Gemini key.",
   },
   {
+    id: "github",
+    name: "GitHub Models",
+    defaultModel: "gpt-4o-mini",
+    description: "Use your own GitHub Models credentials.",
+  },
+  {
+    id: "cerebras",
+    name: "Cerebras",
+    defaultModel: "llama-3.3-70b",
+    description: "Use your Cerebras inference API key.",
+  },
+  {
+    id: "n8n",
+    name: "n8n Workflows",
+    defaultModel: "user-choice",
+    description: "Connect an automation workflow with your credentials.",
+  },
+  {
     id: "groq",
     name: "Groq",
     defaultModel: "openai/gpt-oss-120b",
     description: "Use your own Groq key and model.",
+  },
+  {
+    id: "webhook",
+    name: "Webhook",
+    defaultModel: "webhook",
+    description: "Connect an HTTPS webhook endpoint for custom AI processing.",
+    supportsBaseUrl: true,
   },
   {
     id: "custom-api",
@@ -97,7 +129,9 @@ function initialDrafts(): Record<string, DraftConfig> {
 
 export default function AgentSettingsPage() {
   const [drafts, setDrafts] = useState<Record<string, DraftConfig>>(initialDrafts);
-  const [configured, setConfigured] = useState<Record<string, boolean>>({});
+  const [savedProviders, setSavedProviders] = useState<Record<string, boolean>>({});
+  const [savedKeys, setSavedKeys] = useState<Record<string, boolean>>({});
+  const [editedProviders, setEditedProviders] = useState<Record<string, boolean>>({});
   const [activeProvider, setActiveProvider] = useState("openrouter");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -120,8 +154,11 @@ export default function AgentSettingsPage() {
         if (cancelled) return;
 
         setActiveProvider(data.activeProvider || "openrouter");
-        setConfigured(
+        setSavedProviders(
           Object.fromEntries(Object.keys(data.configs || {}).map((provider) => [provider, true])),
+        );
+        setSavedKeys(
+          Object.fromEntries(Object.entries(data.configs || {}).map(([provider, config]) => [provider, Boolean(config.hasApiKey)])),
         );
         setDrafts((current) => {
           const next = { ...current };
@@ -149,19 +186,15 @@ export default function AgentSettingsPage() {
     };
   }, []);
 
-  const dirtyProviders = useMemo(
-    () =>
-      PROVIDERS.filter((provider) => {
-        const draft = drafts[provider.id];
-        return Boolean(
-          draft &&
-          (draft.apiKey.trim() || draft.model.trim() || draft.baseUrl.trim() || configured[provider.id]),
-        );
-      }),
-    [configured, drafts],
+  const providersToSave = useMemo(
+    () => PROVIDERS.filter((provider) =>
+      Boolean(savedProviders[provider.id] || editedProviders[provider.id] || activeProvider === provider.id),
+    ),
+    [savedProviders, editedProviders, activeProvider],
   );
 
   const updateDraft = (providerId: string, patch: Partial<DraftConfig>) => {
+    setEditedProviders((current) => ({ ...current, [providerId]: true }));
     setDrafts((current) => ({
       ...current,
       [providerId]: {
@@ -178,7 +211,7 @@ export default function AgentSettingsPage() {
 
     try {
       const configs = Object.fromEntries(
-        dirtyProviders.map((provider) => {
+        providersToSave.map((provider) => {
           const draft = drafts[provider.id];
           return [
             provider.id,
@@ -206,10 +239,17 @@ export default function AgentSettingsPage() {
         throw new Error(data?.error || "Could not save agent settings.");
       }
 
-      setConfigured((current) => ({
+      setSavedProviders((current) => ({
         ...current,
-        ...Object.fromEntries(dirtyProviders.map((provider) => [provider.id, true])),
+        ...Object.fromEntries(providersToSave.map((provider) => [provider.id, true])),
       }));
+      setSavedKeys((current) => ({
+        ...current,
+        ...Object.fromEntries(providersToSave
+          .filter((provider) => drafts[provider.id]?.apiKey.trim())
+          .map((provider) => [provider.id, true])),
+      }));
+      setEditedProviders({});
       setDrafts((current) =>
         Object.fromEntries(
           Object.entries(current).map(([provider, draft]) => [
@@ -350,13 +390,13 @@ export default function AgentSettingsPage() {
                     ) : null}
 
                     <label className="block text-xs font-semibold text-white/70">
-                      API key {configured[provider.id] ? "(saved — enter a new value only to replace it)" : ""}
+                      API key {savedKeys[provider.id] ? "(saved — enter a new value only to replace it)" : ""}
                       <input
                         type="password"
                         autoComplete="new-password"
                         value={draft.apiKey}
                         onChange={(event) => updateDraft(provider.id, { apiKey: event.target.value })}
-                        placeholder={configured[provider.id] ? "•••••••• saved" : "Paste your own key"}
+                        placeholder={savedKeys[provider.id] ? "•••••••• saved" : "Paste your own key"}
                         className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/50"
                       />
                     </label>
