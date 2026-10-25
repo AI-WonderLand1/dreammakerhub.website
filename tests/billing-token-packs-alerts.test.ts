@@ -8,14 +8,16 @@ describe("billing center token packs and usage alarms", () => {
   it("keeps one canonical dashboard with live billable usage, token purchases and alarm controls", () => {
     const page = read("apps/web/components/billing/BillingLiveUsagePanel.tsx");
     expect(page).toContain("Live metered usage for the current billing period.");
-    expect(page).toContain("Buy AI credits");
+    const sliders = read("apps/web/components/billing/CreditPurchaseSliders.tsx");
+    expect(page).toContain("<CreditPurchaseSliders");
+    expect(sliders).toContain("Buy additional usage");
     expect(page).toContain("Purchased AI credit balance");
     const alarms = read("apps/web/components/billing/UsageAlertsPanel.tsx");
     expect(alarms).toContain("Budgets & alerts");
     expect(alarms).toContain("New alarm");
     expect(alarms).toContain("3D generations");
     expect(alarms).toContain('fetch("/api/billing/alerts"');
-    expect(page).toContain('fetch("/api/billing/token-packs"');
+    expect(sliders).toContain('fetch("/api/billing/token-packs"');
     const account = read("apps/web/components/billing/BillingAccountSections.tsx");
     expect(account).not.toContain('fetch("/api/subscription/portal"');
   });
