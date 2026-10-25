@@ -18,13 +18,14 @@ describe("real-only dashboard navigation",()=>{
     expect(files).not.toContain("BrowserTerminalPanel");
   });
 
-  it("keeps account and SimpleRick as real dashboard settings subpages",()=>{
+  it("keeps account and the canonical AI provider settings route",()=>{
     const layout=read("apps/web/app/(workspace)/dashboard/layout.tsx");
     const settings=read("apps/web/app/(workspace)/dashboard/settings/layout.tsx");
     expect(layout).toContain('href="/dashboard/settings/account"');
-    expect(layout).toContain('href="/dashboard/settings/simplerick"');
+    expect(layout).toContain('href="/dashboard/settings/agents"');
     expect(settings).toContain('"/dashboard/settings/account"');
-    expect(settings).toContain('"/dashboard/settings/simplerick"');
+    expect(settings).toContain('"/dashboard/settings/agents"');
+    expect(read("apps/web/app/(workspace)/dashboard/settings/simplerick/page.tsx")).toContain('redirect("/dashboard/settings/agents")');
     expect(settings).not.toContain('"/dashboard/settings/coder"');
     expect(settings).not.toContain('"/dashboard/settings/byoc"');
   });
