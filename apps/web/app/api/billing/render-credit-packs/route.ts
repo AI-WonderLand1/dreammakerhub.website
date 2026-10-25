@@ -59,9 +59,9 @@ export async function POST(request: Request) {
   }
 
   const base = publicSiteUrl();
-  const success = new URL("/dashboard/usage/additional-details", base);
+  const success = new URL("/dashboard/usage/ai", base);
   success.searchParams.set("credit_purchase", "success");
-  const cancel = new URL("/dashboard/usage/additional-details", base);
+  const cancel = new URL("/dashboard/usage/ai", base);
   cancel.searchParams.set("credit_purchase", "canceled");
 
   const session = await stripe.checkout.sessions.create({
