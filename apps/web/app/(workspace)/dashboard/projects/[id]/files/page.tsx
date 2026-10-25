@@ -1,17 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import {
-  Code2,
-  Eye,
-  FileCode2,
-  HardDrive,
-  ShieldCheck,
-  Sparkles,
-  WandSparkles,
-} from "lucide-react";
+import { Eye, Sparkles } from "lucide-react";
 import RepositoryFileBrowser from "../RepositoryFileBrowser";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import WonderSpaceProjectNavigation from "@/components/dashboard/WonderSpaceProjectNavigation";
@@ -36,14 +28,6 @@ const projectTypeLabel = (value?: string | null) => {
   if (type === "npc") return "NPC AI";
   if (["ai", "ai_app", "ai-playground", "ai_playground"].includes(type)) return "AI App";
   return "Website";
-};
-
-const formatBytes = (files: Record<string, string>) => {
-  const encoder = new TextEncoder();
-  const bytes = Object.values(files).reduce((total, value) => total + encoder.encode(value || "").byteLength, 0);
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 export default function ProjectCodeManagerPage() {
@@ -165,7 +149,6 @@ export default function ProjectCodeManagerPage() {
   const tool = project?.tool || project?.type || "wonderbuild";
   const projectQuery = `projectId=${encodeURIComponent(projectId)}`;
   const initialPath = searchParams.get("path");
-  const storage = useMemo(() => formatBytes(files), [files]);
 
 
   if (loading) {
@@ -245,71 +228,6 @@ export default function ProjectCodeManagerPage() {
 
         <aside className="space-y-4">
           <WonderSpaceSourceHistory key={project.id} projectId={project.id} />
-          <section className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-[#0c1425] p-4">
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_10%,rgba(124,58,237,.28),transparent_34%),radial-gradient(circle_at_10%_90%,rgba(6,182,212,.16),transparent_38%)]" />
-            <div className="relative">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.2em] text-violet-300">
-                <WandSparkles size={14}/> AI Wonderland
-              </div>
-              <h2 className="mt-3 text-lg font-black">Code Companion</h2>
-              <p className="mt-2 text-xs leading-5 text-white/45">
-                Keep project context beside the editor instead of bouncing through disconnected tools.
-              </p>
-              <Link href={`/dashboard/agents?${projectQuery}`} className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2.5 text-xs font-bold">
-                <Sparkles size={14}/> Open AI Agents
-              </Link>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
-            <h2 className="text-sm font-bold">Browser editor</h2>
-            <dl className="mt-3 divide-y divide-white/10 text-xs">
-              <div className="flex items-center justify-between gap-3 py-2.5">
-                <dt className="flex items-center gap-2 text-white/40"><FileCode2 size={14}/> Files</dt>
-                <dd className="font-semibold">{Object.keys(files).length}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 py-2.5">
-                <dt className="flex items-center gap-2 text-white/40"><HardDrive size={14}/> Storage</dt>
-                <dd className="font-semibold">{storage}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 py-2.5">
-                <dt className="flex items-center gap-2 text-white/40"><Code2 size={14}/> Mode</dt>
-                <dd className="text-right font-semibold">Browser editor</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section className="rounded-2xl border border-cyan-400/15 bg-[#0c1625] p-4">
-            <h2 className="text-sm font-bold">WonderSpace project tools</h2>
-            <p className="mt-2 text-xs text-white/50">This project and its repository tools are stored by AI WONDERLAND, not GitHub.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/issues`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Issues</Link>
-              <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/discussions`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Discussions</Link>
-              <Link href={`/dashboard/projects/${encodeURIComponent(project.id)}/wiki`} className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">Wiki</Link>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-[#0c1625] p-4">
-            <h2 className="text-sm font-bold">Wonderland Tools</h2>
-            <div className="mt-3 space-y-2">
-              <Link href={`/wonder-build/builder?${projectQuery}`} className="flex items-center gap-2 rounded-lg border border-violet-400/15 bg-violet-400/[.035] px-3 py-2.5 text-xs text-violet-100 hover:bg-violet-400/[.07]">
-                <WandSparkles size={14}/> WonderBuild
-              </Link>
-              <Link href={`/dashboard/aetherguard?${projectQuery}`} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/65 hover:bg-white/5 hover:text-white">
-                <ShieldCheck size={14}/> Security & Quality
-              </Link>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/10 bg-[linear-gradient(145deg,#10172a,#0a1320)] p-4">
-            <p className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-300/70">Project route</p>
-            <code className="mt-2 block break-all rounded-lg border border-white/10 bg-black/20 px-2.5 py-2 text-[10px] text-white/45">
-              /dashboard/projects/{project.id}/files
-            </code>
-            <Link href={`/dashboard/projects/${project.id}`} className="mt-3 inline-block text-xs text-cyan-300 hover:underline">
-              Project overview →
-            </Link>
-          </section>
         </aside>
       </div>
     </div>
