@@ -60,9 +60,9 @@ export async function POST(request: Request) {
   }
 
   const base = publicSiteUrl();
-  const success = new URL("/dashboard/usage", base);
+  const success = new URL("/dashboard/usage/ai", base);
   success.searchParams.set("token_purchase", "success");
-  const cancel = new URL("/dashboard/usage", base);
+  const cancel = new URL("/dashboard/usage/ai", base);
   cancel.searchParams.set("token_purchase", "canceled");
 
   const session = await stripe.checkout.sessions.create({
