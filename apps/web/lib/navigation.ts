@@ -41,7 +41,6 @@ export const PAGES: NavPage[] = [
   { path: "/wonderspace", label: "WonderSpace", icon: "💻", category: "workspace", description: "Private cloud development workspace with files, terminal, Git, and AI coding tools." },
   { path: "https://playground.dreammakerhub.website/", label: "AI Playground", icon: "🤖", category: "workspace", description: "Test prompts, providers, models, and agent workflows.", external: true },
   { path: "/dashboard/3dhub", label: "WonderPlay", icon: "🎮", category: "tools", description: "Start and manage 3D scenes, games, worlds, and assets." },
-  { path: "/wonder-play", label: "NPC-AI-SIM", icon: "🧙", category: "tools", description: "Create and test intelligent 3D characters." },
   { path: "/community", label: "Community", icon: "👥", category: "community", description: "Join builders and community discussions." },
   { path: "/blog", label: "Blog", icon: "📝", category: "community", description: "Read AI WONDERLAND product updates, founder notes, and build-in-public posts." },
   { path: "/docs", label: "Docs", icon: "📖", category: "docs", description: "Read product and API documentation." },
@@ -83,10 +82,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
     tagline: "Worlds, scenes & NPCs",
     icon: "🎮",
     href: "/dashboard/3dhub",
-    items: [
-      { label: "WonderPlay Creator Studio", href: "/dashboard/3dhub", description: "Pick from your library and generate assets, edit worlds and movies, then save or export in one studio." },
-      { label: "NPC-AI-SIM", href: "/wonder-play", description: "Create, configure, test, and export intelligent characters." },
-    ],
+    items: [],
   },
 ];
 
