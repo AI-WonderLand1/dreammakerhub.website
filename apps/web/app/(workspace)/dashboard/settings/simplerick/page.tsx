@@ -1,5 +1,5 @@
-import AIProvidersSettingsPage from "@/app/settings/ai-providers/page";
+import { redirect } from "next/navigation";
 
-export default function SimpleRickSettingsPage() {
-  return <AIProvidersSettingsPage />;
+export default function LegacySimpleRickSettingsPage() {
+  redirect("/dashboard/settings/agents");
 }

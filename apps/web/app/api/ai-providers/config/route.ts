@@ -7,6 +7,7 @@ interface AIProviderConfig {
   apiKey?: string;
   baseUrl?: string;
   model?: string;
+  hasApiKey?: boolean;
 }
 
 const PROVIDER_ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -112,7 +113,7 @@ export async function GET() {
   try {
     const { data: configs, error } = await supabase
       .from("ai_provider_configs")
-      .select("provider, default_model, base_url, is_active")
+      .select("provider, default_model, base_url, is_active, api_key_encrypted")
       .eq("user_id", user.id);
 
     if (error) {
@@ -127,6 +128,7 @@ export async function GET() {
         provider: row.provider,
         model: row.default_model,
         baseUrl: row.base_url || undefined,
+        hasApiKey: Boolean(row.api_key_encrypted),
       };
       if (row.is_active) activeProvider = row.provider;
     }

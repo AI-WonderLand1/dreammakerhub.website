@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import InlineBillingEditor from "@/components/billing/InlineBillingEditor";
-import CreditPurchaseSliders from "@/components/billing/CreditPurchaseSliders";
 import { CreditCard, ReceiptText, RefreshCw } from "lucide-react";
 
 type Money = { amount: number; currency: string };
@@ -80,7 +79,6 @@ export function BillingCenterSidebar() {
     ["/dashboard/usage/licensing", "Licensing"],
     ["/dashboard/usage/payment-information", "Payment information"],
     ["/dashboard/usage/payment-history", "Payment history"],
-    ["/dashboard/usage/additional-details", "Additional billing details"],
   ] as const;
 
   return (
@@ -110,7 +108,7 @@ export function BillingCenterSidebar() {
   );
 }
 
-export function BillingAccountSections({ section = "overview" }: { section?: "overview" | "payment-information" | "payment-history" | "additional-details" }) {
+export function BillingAccountSections({ section = "overview" }: { section?: "overview" | "payment-information" | "payment-history" }) {
   const [account, setAccount] = useState<BillingAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,10 +116,13 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
   const load = async () => {
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
       const response = await fetch("/api/billing/account", {
         credentials: "same-origin",
         cache: "no-store",
+        signal: controller.signal,
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload?.account) throw new Error(payload?.error || "Could not load billing account.");
@@ -129,6 +130,7 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load billing account.");
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
     }
   };
@@ -137,6 +139,13 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
 
   if (loading) {
     return <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/50">Loading billing account…</div>;
+  }
+
+  if (!account) {
+    return <div role="alert" className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+      <p>{error || "Billing information is unavailable."}</p>
+      <button type="button" onClick={() => void load()} className="mt-3 rounded-lg border border-white/20 px-3 py-2 font-semibold hover:bg-white/10">Retry billing</button>
+    </div>;
   }
 
   const customer = account?.customer;
@@ -280,20 +289,6 @@ export function BillingAccountSections({ section = "overview" }: { section?: "ov
         </div>
       </section>}
 
-      {section === "additional-details" && <section className="mb-6 rounded-xl border border-white/10 bg-white/[.025] p-4">
-        <h2 className="text-lg font-semibold">Additional billing details</h2>
-        <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-          <div className="rounded-lg border border-white/10 p-3">
-            <div className="text-white/45">Billing email</div>
-            <div className="mt-1">{customer?.email || account?.email || "Not available"}</div>
-          </div>
-          <div className="rounded-lg border border-white/10 p-3">
-            <div className="text-white/45">Billing account</div>
-            <div className="mt-1 font-mono text-xs">{customer?.id ? `••••${customer.id.slice(-8)}` : "Not created yet"}</div>
-          </div>
-        </div>
-        <CreditPurchaseSliders />
-      </section>}
     </>
   );
 }

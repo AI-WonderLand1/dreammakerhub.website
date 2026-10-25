@@ -13,7 +13,7 @@ const SETTINGS_NAV_ITEMS = [
   { href: "/settings/account", label: "Account" },
   { href: "/settings/notifications", label: "Notifications" },
   { href: "/settings/accessibility", label: "Accessibility" },
-  { href: "/settings/ai-providers", label: "AI Providers" },
+  { href: "/dashboard/settings/agents", label: "AI Providers" },
   { href: "/dashboard/usage", label: "Billing, Usage & Licensing" },
   { href: "/settings/security", label: "Security" },
   { href: "/settings/privacy", label: "Privacy & Data" },

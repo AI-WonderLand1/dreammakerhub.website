@@ -26,10 +26,10 @@ describe("reference-style dashboard side menus", () => {
     expect(layout).toContain('"/dashboard#projects"');
   });
 
-  it("replaces the reference Copilot settings concept with SimpleRickSettings", () => {
-    expect(layout).toContain('label: "SimpleRickSettings"');
-    expect(layout).toContain("<Sparkles size={16} /> SimpleRickSettings");
-    expect(layout).toContain('href="/dashboard/settings/simplerick"');
+  it("links to the canonical AI provider settings", () => {
+    expect(layout).toContain('label: "AI Providers"');
+    expect(layout).toContain("<Sparkles size={16} /> AI Providers");
+    expect(layout).toContain('href="/dashboard/settings/agents"');
     expect(layout).not.toContain(">Copilot<");
     expect(layout).not.toContain("Copilot settings");
   });

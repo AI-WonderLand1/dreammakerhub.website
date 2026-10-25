@@ -48,8 +48,8 @@ describe("unified cross-repo billing and credit purchases",()=>{
   it("renders AI and 3D purchase sliders from configured Stripe pack prices",()=>{
     const sliders=read("apps/web/components/billing/CreditPurchaseSliders.tsx");
     const renderPacks=read("apps/web/lib/billing/render-credit-packs.server.ts");
-    const account=read("apps/web/components/billing/BillingAccountSections.tsx");
-    expect(account).toContain("<CreditPurchaseSliders");
+    const aiUsage=read("apps/web/components/billing/BillingLiveUsagePanel.tsx");
+    expect(aiUsage).toContain("<CreditPurchaseSliders");
     expect(sliders).toContain('type="range"');
     expect(sliders).toContain("Amount");
     expect(sliders).toContain("Cost");

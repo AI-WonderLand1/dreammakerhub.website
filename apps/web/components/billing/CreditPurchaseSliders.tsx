@@ -157,13 +157,29 @@ export default function CreditPurchaseSliders() {
   const [render, setRender] = useState<Pack[]>([]);
   const [balance, setBalance] = useState<Balance>({ purchased_tokens: 0, purchased_render_credits: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [checkoutStatus, setCheckoutStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCheckoutStatus(new URLSearchParams(window.location.search).get("credit_purchase") || new URLSearchParams(window.location.search).get("token_purchase"));
+  }, []);
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const deadline = window.setTimeout(() => controller.abort(), 15000);
     void Promise.all([
-      fetch("/api/billing/token-packs", { credentials: "same-origin", cache: "no-store" }).then((r) => r.json()),
-      fetch("/api/billing/render-credit-packs", { credentials: "same-origin", cache: "no-store" }).then((r) => r.json()),
-      fetch("/api/usage", { credentials: "same-origin", cache: "no-store" }).then(async (r) => {
+      fetch("/api/billing/token-packs", { credentials: "same-origin", cache: "no-store", signal: controller.signal }).then(async (r) => {
+        const payload = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(payload?.error || "Could not load AI credit packs.");
+        return payload;
+      }),
+      fetch("/api/billing/render-credit-packs", { credentials: "same-origin", cache: "no-store", signal: controller.signal }).then(async (r) => {
+        const payload = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(payload?.error || "Could not load 3D credit packs.");
+        return payload;
+      }),
+      fetch("/api/usage", { credentials: "same-origin", cache: "no-store", signal: controller.signal }).then(async (r) => {
         const payload = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(payload?.error || "Could not load credit balances.");
         return payload;
@@ -178,8 +194,11 @@ export default function CreditPurchaseSliders() {
       });
     }).catch((cause) => {
       if (active) setError(cause instanceof Error ? cause.message : "Could not load credit purchases.");
+    }).finally(() => {
+      window.clearTimeout(deadline);
+      if (active) setLoading(false);
     });
-    return () => { active = false; };
+    return () => { active = false; window.clearTimeout(deadline); controller.abort(); };
   }, []);
 
   return (
@@ -190,8 +209,11 @@ export default function CreditPurchaseSliders() {
           Add AI credits or 3D credits to the same AI WONDERLAND account used across all connected product services.
         </p>
       </div>
-      {error && <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      {checkoutStatus === "success" && <p role="status" className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">Checkout returned successfully. Credits will appear after payment confirmation; refresh if the balance has not updated yet.</p>}
+      {checkoutStatus === "canceled" && <p role="status" className="mt-3 rounded-lg border border-white/15 bg-white/5 p-3 text-sm text-white/70">Checkout was canceled.</p>}
+      {loading && <p className="mt-3 text-sm text-white/50" role="status">Loading available credit packs…</p>}
+      {error && <div role="alert" className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
+      {!loading && !error && <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <PurchaseSlider
           title="AI credits"
           description="Used by AI WONDERLAND, AI Playground, and NPC AI calls."
@@ -210,7 +232,7 @@ export default function CreditPurchaseSliders() {
           balance={balance.purchased_render_credits}
           endpoint="/api/billing/render-credit-packs"
         />
-      </div>
+      </div>}
     </div>
   );
 }

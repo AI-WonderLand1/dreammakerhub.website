@@ -15,7 +15,8 @@ describe("billing center user ownership and reference layout", () => {
     expect(sections).toContain('"/dashboard/usage/licensing"');
     expect(sections).toContain('"/dashboard/usage/payment-information"');
     expect(sections).toContain('"/dashboard/usage/payment-history"');
-    expect(sections).toContain('"/dashboard/usage/additional-details"');
+    expect(sections).not.toContain('"/dashboard/usage/additional-details"');
+    expect(read("apps/web/app/(workspace)/dashboard/usage/additional-details/page.tsx")).toContain('redirect("/dashboard/usage/ai")');
     expect(sections).not.toContain('"#billing-');
   });
 

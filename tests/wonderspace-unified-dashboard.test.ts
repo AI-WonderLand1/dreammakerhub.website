@@ -178,6 +178,8 @@ describe("one dashboard/project/browser navigation", () => {
     expect(overview).toContain("<WonderSpaceProjectNavigation projectId={project.id}");
     expect(manager).toContain('<WonderSpaceProjectNavigation projectId={project.id} active="code" />');
     expect(manager).toContain("<RepositoryFileBrowser");
+    expect(overview).not.toContain("<RepositoryFileBrowser");
+    expect(manager).not.toContain("Wonderland Tools");
     expect(layout).toContain("<WonderSpaceProjectNavigation projectId={currentProject.id}");
     expect(browser).toContain("wonderSpaceProjectFiles");
     expect(browser).toContain("WONDERSPACE_CODE_HOME");

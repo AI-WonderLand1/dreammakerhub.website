@@ -15,7 +15,7 @@ function cx(...xs: Array<string | false | undefined | null>) {
 const TABS = [
   { href: "/dashboard/settings", label: "Overview" },
   { href: "/dashboard/settings/account", label: "Account" },
-  { href: "/dashboard/settings/simplerick", label: "SimpleRickSettings" },
+  { href: "/dashboard/settings/agents", label: "AI Providers" },
   { href: "/dashboard/usage", label: "Usage & Billing" },
   { href: "/dashboard/settings/webhooks", label: "Webhooks" },
 ];
@@ -35,14 +35,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           }
           title="Dashboard Settings"
           subtitle="Manage features, subscriptions, and developer integrations."
-          action={
-            <Link
-              href="/dashboard"
-              className="inline-flex h-10 items-center rounded-lg border border-white/15 bg-white/5 px-4 text-sm font-semibold hover:bg-white/10"
-            >
-              Back to Dashboard
-            </Link>
-          }
         />
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-2">

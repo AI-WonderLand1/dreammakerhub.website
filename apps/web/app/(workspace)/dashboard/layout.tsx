@@ -157,7 +157,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           icon: Code2,
         },
         { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
-        { href: "/dashboard/settings/simplerick", label: "SimpleRickSettings", icon: Sparkles },
+        { href: "/dashboard/settings/agents", label: "AI Providers", icon: Sparkles },
       ],
     },
     {
@@ -409,8 +409,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <Link href={withProject("/dashboard/settings")} onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <Settings size={16} /> Settings
                     </Link>
-                    <Link href="/dashboard/settings/simplerick" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
-                      <Sparkles size={16} /> SimpleRickSettings
+                    <Link href="/dashboard/settings/agents" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
+                      <Sparkles size={16} /> AI Providers
                     </Link>
                     <Link href="/dashboard/usage" onClick={() => setAccountMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 hover:bg-white/5 hover:text-white">
                       <CreditCard size={16} /> Billing & usage
