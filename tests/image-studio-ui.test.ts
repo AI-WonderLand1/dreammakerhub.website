@@ -36,6 +36,8 @@ describe("AI WONDERLAND Image Studio", () => {
     expect(page).not.toContain(">Save to Project</button>");
     expect(page).not.toContain("setQuality(");
     expect(page).toContain("Reuse Prompt");
+    expect(page).toContain('activeViewRef.current === "assets"');
+    expect(page).toContain('onClick={() => showView(view)}');
     expect(page).toContain("View Project Files");
   });
 
