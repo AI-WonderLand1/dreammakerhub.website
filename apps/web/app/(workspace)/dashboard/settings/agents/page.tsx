@@ -47,7 +47,7 @@ const PLATFORM_AGENTS = [
   },
 ] as const;
 
-const PROVIDERS = [
+const PROVIDERS: Array<{ id: string; name: string; defaultModel: string; description: string; supportsBaseUrl?: boolean }> = [
   {
     id: "opencode",
     name: "OpenCode",
@@ -116,7 +116,7 @@ const PROVIDERS = [
     description: "Connect an HTTPS OpenAI-compatible endpoint you control.",
     supportsBaseUrl: true,
   },
-] as const;
+];
 
 function initialDrafts(): Record<string, DraftConfig> {
   return Object.fromEntries(
