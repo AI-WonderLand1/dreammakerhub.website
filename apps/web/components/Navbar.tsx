@@ -103,35 +103,8 @@ const PRODUCT_MENUS = [
     product: 'WonderPlay',
     href: '/dashboard/3dhub',
     icon: Cuboid,
-    description: 'Build worlds, interactive experiences, assets, and NPCs.',
-    items: [
-      {
-        label: 'WonderPlay',
-        href: '/dashboard/3dhub',
-        description: 'Start and manage realtime 3D projects.',
-      },
-      {
-        label: '3D Tools',
-        description: 'Assets, command-line tools, and intelligent characters.',
-        children: [
-          {
-            label: '3D Library',
-            href: '/3d-library',
-            description: 'Browse your 3D assets and creation resources.',
-          },
-          {
-            label: '3D CLI',
-            href: '/3d-cli',
-            description: 'Use AI WONDERLAND 3D tooling from the command line.',
-          },
-          {
-            label: 'NPC-AI-SIM',
-            href: '/wonder-play',
-            description: 'Create, configure, and test intelligent characters.',
-          },
-        ],
-      },
-    ],
+    description: 'Generate models, edit worlds, and export in one studio.',
+    items: [],
   },
 ] as const;
 
@@ -246,6 +219,14 @@ export default function Navbar() {
             const MenuIcon = menu.icon;
             const menuOpen = openMenu === menu.key;
             const active = productIsActive(menu.key);
+            if (menu.key === '3d') {
+              return (
+                <Link key={menu.key} href={menu.href}
+                  className={`flex items-center rounded-lg px-3 py-2 text-[13px] font-bold transition ${active ? 'bg-white/10 text-white' : 'text-white/72 hover:bg-white/[.06] hover:text-white'}`}>
+                  3D
+                </Link>
+              );
+            }
 
             return (
               <div
@@ -469,6 +450,14 @@ export default function Navbar() {
             {PRODUCT_MENUS.map((menu) => {
               const Icon = menu.icon;
               const sectionOpen = mobileSection === menu.key;
+              if (menu.key === '3d') {
+                return (
+                  <Link key={menu.key} href={menu.href} onClick={closeMenus}
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-white/80 hover:bg-white/[.05]">
+                    <Icon className="h-4 w-4 text-cyan-300" />3D
+                  </Link>
+                );
+              }
 
               return (
                 <div key={menu.key} className="rounded-xl border border-transparent data-[open=true]:border-white/10" data-open={sectionOpen}>
