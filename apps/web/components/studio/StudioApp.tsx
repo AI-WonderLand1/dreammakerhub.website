@@ -1,13 +1,12 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, Box, ChevronDown, Code2, Download, Eye, Film,
-  FolderOpen, Gamepad2, Home, Image as ImageIcon, LayoutTemplate,
-  Menu, Pencil, Save, Settings, Sparkles, UploadCloud, Users,
+  ArrowLeft, ChevronDown, Code2, Download, Eye, Film,
+  FolderOpen, Home, Menu, Pencil, Save, Settings, Users,
   type LucideIcon,
 } from "lucide-react";
 import Studio3DFactory from "@/components/studio/Studio3DFactory";
@@ -33,31 +32,13 @@ type Step = "pick" | "edit" | "publish";
 type PickTool = "3d" | "image";
 type EditTool = "game" | "factory" | "model" | "movie" | "panorama";
 type LibraryView = "assets" | "templates";
-type ToolOption = { id: string; label: string; icon: LucideIcon };
-
-const STEPS: { id: Step; label: string; icon: LucideIcon }[] = [
-  { id: "pick", label: "1. Pick", icon: FolderOpen },
-  { id: "edit", label: "2. Edit", icon: Pencil },
-  { id: "publish", label: "3. Publish", icon: UploadCloud },
-];
-const PICK_TOOLS: ToolOption[] = [
-  { id: "3d", label: "3D Assets", icon: Box },
-  { id: "image", label: "Image Assets", icon: ImageIcon },
-];
-const EDIT_TOOLS: ToolOption[] = [
-  { id: "game", label: "PlayCanvas Game & World", icon: Gamepad2 },
-  { id: "factory", label: "Scene Editor", icon: Box },
-  { id: "model", label: "3D Model Preview", icon: Sparkles },
-  { id: "movie", label: "Movie & Shots", icon: Film },
-  { id: "panorama", label: "360 View", icon: Eye },
-];
-
 const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
   { href: "/wonder-build/builder", label: "WonderBuild", icon: Pencil },
   { href: "/wonderspace", label: "WonderSpace IDE", icon: Code2 },
   { href: "/dashboard/npc", label: "My NPCs", icon: Users },
+  { href: "/wonder-play", label: "NPC-AI-SIM", icon: Users },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -68,6 +49,7 @@ const SITE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 export default function StudioApp() {
   const router = useRouter();
   const params = useSearchParams();
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const legacyTab = params.get("tab");
   const rawStep = params.get("step");
   const step: Step = rawStep === "pick" || rawStep === "edit" || rawStep === "publish"
@@ -98,10 +80,6 @@ export default function StudioApp() {
     router.replace("/dashboard/3dhub?" + next.toString(), { scroll: false });
   }
 
-  function chooseTool(id: string) {
-    if (step === "pick") navigate("pick", { pickTool: id });
-    if (step === "edit") navigate("edit", { editTool: id });
-  }
 
   return (
     <div className="wonderplay-app">
@@ -116,56 +94,79 @@ export default function StudioApp() {
             ))}
           </nav>
         </details>
-        <span className="wonderplay-project">Pick assets & templates → Edit worlds, games & shots → Save & export</span>
       </div>
       <div className="wonderplay-toolbar">
-        <div className="flex min-w-0 items-center gap-3">
-          <nav className="wonderplay-tabs" aria-label="WonderPlay three-step workflow">
-            {STEPS.map(({ id, label, icon: Icon }) => (
-              <button key={id} type="button" aria-pressed={step === id} onClick={() => navigate(id)}>
-                <Icon size={14} aria-hidden="true" /> {label}
-              </button>
-            ))}
-          </nav>
-          {step !== "publish" && (
-            <nav className="wonderplay-context-tools" aria-label={step === "pick" ? "Asset generation tools" : "Creative editing tools"}>
-              {(step === "pick" ? PICK_TOOLS : EDIT_TOOLS).map(({ id, label, icon: Icon }) => (
-                <button key={id} type="button" aria-pressed={(step === "pick" ? pickTool : editTool) === id} onClick={() => chooseTool(id)}>
-                  <Icon size={13} aria-hidden="true" /> {label}
-                </button>
-              ))}
-            </nav>
-          )}
+        <label className="flex min-w-0 items-center gap-3 text-xs font-semibold text-slate-200">
+          <span className="hidden sm:inline">Workspace</span>
+          <select
+            aria-label="WonderPlay workspace"
+            className="w-[min(74vw,370px)] max-w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
+            value={step === "pick" ? pickTool : step === "edit" ? editTool : "publish"}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "3d" || value === "image") navigate("pick", { pickTool: value });
+              else if (value === "publish") navigate("publish");
+              else navigate("edit", { editTool: value });
+            }}
+          >
+            <optgroup label="Create">
+              <option value="3d">Generate 3D — Text or Image</option>
+              <option value="image">Generate Image</option>
+            </optgroup>
+            <optgroup label="Edit">
+              <option value="game">PlayCanvas Game & World</option>
+              <option value="factory">Scene Editor</option>
+              <option value="model">3D Model Preview</option>
+              <option value="movie">Movie & Shots</option>
+              <option value="panorama">360 View</option>
+            </optgroup>
+            <option value="publish">Save & Export</option>
+          </select>
+        </label>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLibraryOpen((open) => !open)}
+            aria-expanded={libraryOpen}
+            aria-controls="wonderplay-assets-panel"
+            className="inline-flex items-center gap-1.5 rounded border border-slate-600 px-3 py-2 text-xs text-slate-200 hover:bg-slate-700"
+          >
+            <FolderOpen size={14} aria-hidden="true" /> {libraryOpen ? "Hide library" : "Library"}
+          </button>
+          <Link className="wonderplay-back" href="/dashboard/projects"><ArrowLeft size={14} aria-hidden="true" /><span>Projects</span></Link>
         </div>
-        <Link className="wonderplay-back" href="/dashboard/projects"><ArrowLeft size={14} aria-hidden="true" /><span>Projects</span></Link>
       </div>
       <main className="wonderplay-main">
         <Suspense fallback={<p className="m-auto text-sm text-slate-400">Loading WonderPlay…</p>}>
           {step === "pick" ? (
-            <div className="wonderplay-stack" aria-label="Pick assets, generate models and browse your library">
+            <div className={libraryOpen ? "wonderplay-stack" : "wonderplay-stack wonderplay-stack--focused"} aria-label="Pick assets, generate models and browse your library">
               <section className="min-h-0 min-w-0 overflow-hidden" aria-label="3D and image asset generators">
                 {pickTool === "3d"
                   ? <SandboxStudio availableAssets={[]} embedded />
                   : <div className="h-full w-full overflow-y-auto"><ImageStudioWorkspace /></div>}
               </section>
-              <section className="wonderplay-library-dock" aria-label="Library and scene templates">
+              {libraryOpen && <section id="wonderplay-assets-panel" className="wonderplay-library-dock" aria-label="Library and scene templates">
                 <div className="wonderplay-library-switch">
-                  <span className="font-semibold text-slate-200">Library</span>
-                  <button type="button" aria-pressed={libraryView === "assets"} onClick={() => navigate("pick", { view: "assets" })}>
-                    <FolderOpen size={13} /> Project assets
-                  </button>
-                  <button type="button" aria-pressed={libraryView === "templates"} onClick={() => navigate("pick", { view: "templates" })}>
-                    <LayoutTemplate size={13} /> Scene templates
-                  </button>
-                  <button type="button" className="wonderplay-next-step" onClick={() => navigate("edit")}>Next: Edit →</button>
+                  <label className="flex items-center gap-2 text-xs text-slate-200">
+                    Library
+                    <select
+                      aria-label="3D library contents"
+                      className="rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-xs text-white"
+                      value={libraryView}
+                      onChange={(event) => navigate("pick", { view: event.target.value })}
+                    >
+                      <option value="assets">Project assets</option>
+                      <option value="templates">Scene templates</option>
+                    </select>
+                  </label>
                 </div>
                 <div className="wonderplay-library-content">
                   {libraryView === "templates" ? <StudioTemplatesPanel /> : <StudioContentBrowser />}
                 </div>
-              </section>
+              </section>}
             </div>
           ) : step === "edit" ? (
-            <div className="wonderplay-stack" aria-label="Edit 3D models, game worlds, scenes and movies">
+            <div className={libraryOpen ? "wonderplay-stack" : "wonderplay-stack wonderplay-stack--focused"} aria-label="Edit 3D models, game worlds, scenes and movies">
               <section className={editTool === "factory" ? "wonderplay-factory" : "flex min-h-0 min-w-0 overflow-hidden"}
                 aria-label="3D creative editor">
                 {editTool === "game" && <StudioGameFoundation />}
@@ -174,16 +175,16 @@ export default function StudioApp() {
                 {editTool === "movie" && <StudioMovieMaker />}
                 {editTool === "panorama" && <Studio360View />}
               </section>
-              <div className="wonderplay-edit-dock">
+              {libraryOpen && <div id="wonderplay-assets-panel" className="wonderplay-edit-dock">
                 <div className="wonderplay-library-switch">
                   <span>Saved project assets</span>
-                  <button type="button" className="wonderplay-next-step" onClick={() => navigate("publish")}>Next: Publish →</button>
+
                 </div>
                 <div className="wonderplay-library-content"><StudioContentBrowser /></div>
-              </div>
+              </div>}
             </div>
           ) : (
-            <div className="wonderplay-stack" aria-label="Publish and export options">
+            <div className={libraryOpen ? "wonderplay-stack" : "wonderplay-stack wonderplay-stack--focused"} aria-label="Publish and export options">
               <section className="wonderplay-publish overflow-y-auto bg-[#101724] p-4 sm:p-7">
                 <div className="mx-auto max-w-5xl">
                   <h1 className="text-xl font-bold text-white">Publish & Export</h1>
@@ -219,10 +220,10 @@ export default function StudioApp() {
                   {!projectId && <p className="mt-3 text-xs text-slate-400">Open a project from Projects to enable project-level saves and file downloads.</p>}
                 </div>
               </section>
-              <div className="wonderplay-edit-dock">
+              {libraryOpen && <div id="wonderplay-assets-panel" className="wonderplay-edit-dock">
                 <div className="wonderplay-library-switch"><span>Saved project files · Select an asset to download</span></div>
                 <div className="wonderplay-library-content"><StudioContentBrowser /></div>
-              </div>
+              </div>}
             </div>
           )}
         </Suspense>

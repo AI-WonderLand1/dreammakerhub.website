@@ -205,9 +205,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       label: "3D",
       icon: Box,
       items: [
-        { href: withProject("/dashboard/3dhub"), label: "WonderPlay Creator Studio", icon: Box },
-        { href: withProject("/dashboard/npc"), label: "My NPCs", icon: Bot },
-        { href: withProject("/wonder-play"), label: "NPC-AI-SIM", icon: Bot },
+        { href: withProject("/dashboard/3dhub"), label: "Open WonderPlay", icon: Box },
       ],
     },
     {
