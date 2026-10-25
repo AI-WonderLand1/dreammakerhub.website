@@ -11,11 +11,11 @@ describe('WonderPlay unified editor layout', () => {
     for (const component of ['Studio3DFactory', 'Studio360View', 'StudioGameFoundation', 'StudioMovieMaker']) {
       expect(studio).toContain(`<${component} />`);
     }
-    expect(studio).toContain('aria-label="WonderPlay three-step workflow"');
-    for (const tab of ["1. Pick", "2. Edit", "3. Publish"]) {
-      expect(studio).toContain(`label: "${tab}"`);
+    expect(studio).toContain('aria-label="WonderPlay workspace"');
+    for (const mode of ['value="3d"', 'value="image"', 'value="game"', 'value="factory"', 'value="model"', 'value="movie"', 'value="panorama"', 'value="publish"']) {
+      expect(studio).toContain(mode);
     }
-    expect(studio).toContain('"Creative editing tools"');
+    expect(studio).not.toContain('aria-label="WonderPlay three-step workflow"');
     expect(studio).toContain('<SandboxStudio availableAssets={[]} embedded />');
     expect(studio).toContain('<StudioGameFoundation />');
     expect(studio).toContain('<ImageStudioWorkspace />');
@@ -48,7 +48,8 @@ describe('WonderPlay unified editor layout', () => {
     for (const href of ['/dashboard', '/dashboard/projects', '/wonder-build/builder', '/wonderspace', '/dashboard/settings']) {
       expect(studio).toContain(`href: "${href}"`);
     }
-    expect(studio).toContain('className="wonderplay-tabs"');
+    expect(studio).toContain('aria-expanded={libraryOpen}');
+    expect(navigation).toContain('.wonderplay-stack--focused');
     expect(navigation).toContain('body:has(.wonderplay-app) aside.fixed');
     expect(navigation).toContain('body:has(.wonderplay-app) header.fixed');
     expect(navigation).toContain('position: absolute;');
