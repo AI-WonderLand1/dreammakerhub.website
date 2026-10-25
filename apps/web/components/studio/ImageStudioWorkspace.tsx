@@ -11,11 +11,9 @@ import {
   FolderOpen,
   Image as ImageIcon,
   Loader2,
-  MoreVertical,
   RefreshCw,
   Settings2,
   Sparkles,
-  WandSparkles,
 } from "lucide-react";
 
 type UserAsset = {
@@ -33,6 +31,7 @@ type Generation = {
   model?: string;
   size: string;
   createdAt: number;
+  savedToLibrary: boolean;
 };
 
 const STYLES = [
@@ -61,37 +60,36 @@ export default function ImageStudioPage() {
   const [style, setStyle] = useState("cinematic");
   const [size, setSize] = useState("1536x1024");
   const [count, setCount] = useState(1);
-  const [quality, setQuality] = useState<"fast" | "balanced" | "high">("balanced");
-  const [seed, setSeed] = useState("Random");
-  const [steps, setSteps] = useState(4);
-  const [guidance, setGuidance] = useState(3.5);
-  const [creativity, setCreativity] = useState(70);
-  const [format, setFormat] = useState("PNG");
-  const [background, setBackground] = useState("Auto");
   const [saveTo, setSaveTo] = useState<"library" | "project" | "download">("library");
-  const [settingsOpen, setSettingsOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeView, setActiveView] = useState<"generate" | "history" | "assets">("generate");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [current, setCurrent] = useState<Generation | null>(null);
   const [recent, setRecent] = useState<Generation[]>([]);
   const [assets, setAssets] = useState<UserAsset[]>([]);
-  const [assetsLoading, setAssetsLoading] = useState(true);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [assetsError, setAssetsError] = useState("");
   const [assetFilter, setAssetFilter] = useState("All");
 
   async function loadAssets() {
     setAssetsLoading(true);
+    setAssetsError("");
     try {
       const response = await fetch("/api/assets/user", { cache: "no-store" });
       const data = await response.json().catch(() => ({}));
-      if (response.ok) setAssets(Array.isArray(data.assets) ? data.assets : []);
+      if (!response.ok) throw new Error(data.error || "Unable to load your assets.");
+      setAssets(Array.isArray(data.assets) ? data.assets : []);
+    } catch (cause) {
+      setAssetsError(cause instanceof Error ? cause.message : "Unable to load your assets.");
     } finally {
       setAssetsLoading(false);
     }
   }
 
   useEffect(() => {
-    void loadAssets();
-  }, []);
+    if (activeView === "assets") void loadAssets();
+  }, [activeView]);
 
   async function generate() {
     if (!prompt.trim() || generating) return;
@@ -130,14 +128,15 @@ export default function ImageStudioPage() {
           model: data.model,
           size: data.size || size,
           createdAt: Date.now() + index,
+          savedToLibrary: data.savedToLibrary === true,
         });
       }
 
       if (results.length) {
         setCurrent(results[0]);
         setRecent((existing) => [...results, ...existing].slice(0, 12));
-        if (saveTo === "library") {
-          window.setTimeout(() => void loadAssets(), 600);
+        if (saveTo === "library" && results.some((item) => !item.savedToLibrary)) {
+          setError("Image generated, but it was not saved to your library. Download it from the preview.");
         }
       }
     } catch (cause) {
@@ -186,32 +185,34 @@ export default function ImageStudioPage() {
           </button>
         </header>
 
-        <nav className="flex items-center gap-1 overflow-x-auto border-b border-white/10 px-3">
-          {[
-            ["Generate", "#generate"],
-            ["History", "#history"],
-            ["My Assets", "#my-assets"],
-            ["Project Assets", projectId ? `/dashboard/projects/${encodeURIComponent(projectId)}/files` : "/dashboard#projects"],
-            ["Send to 3D", projectId ? `/dashboard/3dhub?step=pick&pickTool=3d&projectId=${encodeURIComponent(projectId)}` : "/dashboard/3dhub?step=pick&pickTool=3d"],
-            ["API Docs", "/api-reference"],
-          ].map(([label, href], index) => (
-            <Link
-              key={label}
-              href={href}
-              className={`shrink-0 border-b-2 px-4 py-3 text-sm ${index === 0 ? "border-violet-500 bg-violet-500/10 font-semibold text-white" : "border-transparent text-white/55 hover:text-white"}`}
+        <nav aria-label="Image Studio views" className="flex items-center gap-1 overflow-x-auto border-b border-white/10 px-3">
+          {([
+            ["generate", "Generate"],
+            ["history", "History"],
+            ["assets", "My Assets"],
+          ] as const).map(([view, label]) => (
+            <button
+              key={view}
+              type="button"
+              aria-current={activeView === view ? "page" : undefined}
+              onClick={() => setActiveView(view)}
+              className={`shrink-0 border-b-2 px-4 py-3 text-sm ${activeView === view ? "border-violet-500 bg-violet-500/10 font-semibold text-white" : "border-transparent text-white/55 hover:text-white"}`}
             >
               {label}
-            </Link>
+            </button>
           ))}
+          {projectId && (
+            <Link href={`/dashboard/projects/${encodeURIComponent(projectId)}/files`} className="ml-auto shrink-0 px-4 py-3 text-xs text-white/60 hover:text-white">
+              Project Files
+            </Link>
+          )}
         </nav>
 
-        <div id="generate" className={`grid gap-3 p-3 ${settingsOpen ? "2xl:grid-cols-[minmax(360px,.88fr)_minmax(520px,1.35fr)_330px]" : "xl:grid-cols-[minmax(360px,.8fr)_minmax(540px,1.4fr)]"}`}>
+        {activeView === "generate" && <div id="generate" className={`grid gap-3 p-3 ${settingsOpen ? "2xl:grid-cols-[minmax(360px,.88fr)_minmax(520px,1.35fr)_330px]" : "xl:grid-cols-[minmax(360px,.8fr)_minmax(540px,1.4fr)]"}`}>
           <section className="rounded-xl border border-white/10 bg-[#0b1726] p-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="font-bold">Prompt</h2>
-              <button type="button" className="inline-flex items-center gap-1 rounded-lg bg-violet-500/15 px-2.5 py-1.5 text-xs font-semibold text-violet-200">
-                <WandSparkles size={13} /> Prompt Enhance
-              </button>
+
             </div>
 
             <textarea
@@ -226,7 +227,7 @@ export default function ImageStudioPage() {
             <div className="mt-3">
               <div className="mb-2 flex items-center justify-between text-xs font-semibold">
                 <span>Quick Prompts</span>
-                <span className="text-blue-400">View All</span>
+
               </div>
               <div className="flex flex-wrap gap-2">
                 {quickPrompts.map((item) => (
@@ -281,11 +282,11 @@ export default function ImageStudioPage() {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 font-bold"><FileImage size={17} className="text-violet-300" /> Generated Image</h2>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] text-white/60 hover:bg-white/5">Upscale</button>
-                <button type="button" onClick={() => current && setPrompt(current.prompt)} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] text-white/60 hover:bg-white/5">Variations</button>
-                <button type="button" className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] text-white/60 hover:bg-white/5">Edit</button>
+
+                <button type="button" disabled={!current} onClick={() => current && setPrompt(current.prompt)} className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] text-white/60 hover:bg-white/5 disabled:opacity-30">Reuse Prompt</button>
+
                 <button type="button" onClick={downloadCurrent} disabled={!current} className="rounded-lg border border-white/10 p-1.5 text-white/60 hover:bg-white/5 disabled:opacity-30"><Download size={15} /></button>
-                <button type="button" className="rounded-lg border border-white/10 p-1.5 text-white/60"><MoreVertical size={15} /></button>
+
               </div>
             </div>
 
@@ -304,9 +305,9 @@ export default function ImageStudioPage() {
             </div>
 
             <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <Link href={projectId ? `/wonder-build/builder?projectId=${encodeURIComponent(projectId)}` : "/wonder-build"} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Use in Builder</Link>
-              <button type="button" onClick={() => setSaveTo("project")} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-xs font-semibold hover:bg-white/[.06]">Save to Project</button>
-              <Link href="/dashboard/3dhub?step=pick&pickTool=3d" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Send to 3D AI</Link>
+              <Link href={projectId ? `/wonder-build/builder?projectId=${encodeURIComponent(projectId)}` : "/wonder-build"} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Open Builder</Link>
+              {projectId && <Link href={`/dashboard/projects/${encodeURIComponent(projectId)}/files`} className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">View Project Files</Link>}
+              <Link href="/dashboard/3dhub?step=pick&pickTool=3d" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Open 3D Studio</Link>
               <Link href="/dashboard/3dhub?step=edit&editTool=game" className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2.5 text-center text-xs font-semibold hover:bg-white/[.06]">Open PlayCanvas</Link>
             </div>
           </section>
@@ -318,75 +319,27 @@ export default function ImageStudioPage() {
                 <button type="button" onClick={() => setSettingsOpen(false)} className="text-white/35 hover:text-white">×</button>
               </div>
 
-              <label className="text-xs font-semibold">Model</label>
-              <select className="mt-2 w-full rounded-lg border border-white/10 bg-[#0c1928] px-3 py-2.5 text-xs">
-                <option>Auto — best available provider</option>
-                <option>Flux Schnell</option>
-                <option>OpenAI Image</option>
-                <option>Gemini Image</option>
-              </select>
-              <p className="mt-1 text-[9px] text-white/30">The backend falls back safely when a configured provider is unavailable.</p>
-
-              <label className="mt-4 block text-xs font-semibold">Image Size</label>
-              <select value={size} onChange={(event) => setSize(event.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-[#0c1928] px-3 py-2.5 text-xs">
-                <option value="1536x1024">1536 × 1024 (Landscape)</option>
-                <option value="1024x1024">1024 × 1024 (Square)</option>
-                <option value="1024x1536">1024 × 1536 (Portrait)</option>
-              </select>
-
-              <div className="mt-4">
-                <span className="text-xs font-semibold">Quality</span>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {(["fast", "balanced", "high"] as const).map((value) => (
-                    <button key={value} type="button" onClick={() => setQuality(value)} className={`rounded-lg border px-2 py-2 text-[10px] capitalize ${quality === value ? "border-violet-500 bg-violet-500/10" : "border-white/10 text-white/55"}`}>{value}</button>
-                  ))}
-                </div>
-              </div>
-
-              <label className="mt-4 block text-xs font-semibold">Seed</label>
-              <div className="mt-2 flex gap-2">
-                <input value={seed} onChange={(event) => setSeed(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#0c1928] px-3 py-2.5 text-xs" />
-                <button type="button" onClick={() => setSeed(String(Math.floor(Math.random() * 1_000_000)))} className="rounded-lg border border-white/10 px-3"><RefreshCw size={14} /></button>
-              </div>
-
+              <p className="text-xs text-white/50">Image provider: automatic (configured on the server).</p>
               <label className="mt-4 block text-xs font-semibold">Negative Prompt</label>
               <textarea value={negativePrompt} onChange={(event) => setNegativePrompt(event.target.value)} rows={4} className="mt-2 w-full resize-none rounded-lg border border-white/10 bg-[#0c1928] p-3 text-xs leading-5" />
-
-              <details className="mt-4" open>
-                <summary className="cursor-pointer text-xs font-semibold">Advanced Settings</summary>
-                <div className="mt-3 space-y-4">
-                  <label className="block text-[10px] text-white/50">Steps <span className="float-right text-white">{steps}</span><input type="range" min={1} max={20} value={steps} onChange={(event) => setSteps(Number(event.target.value))} className="mt-2 w-full accent-violet-500" /></label>
-                  <label className="block text-[10px] text-white/50">Guidance <span className="float-right text-white">{guidance.toFixed(1)}</span><input type="range" min={1} max={10} step={0.5} value={guidance} onChange={(event) => setGuidance(Number(event.target.value))} className="mt-2 w-full accent-violet-500" /></label>
-                  <label className="block text-[10px] text-white/50">Creativity <span className="float-right text-white">{creativity}%</span><input type="range" min={0} max={100} value={creativity} onChange={(event) => setCreativity(Number(event.target.value))} className="mt-2 w-full accent-violet-500" /></label>
-                </div>
-              </details>
-
-              <div className="mt-5 border-t border-white/10 pt-4">
-                <h3 className="text-xs font-semibold">Output</h3>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <label className="text-[10px] text-white/45">Format<select value={format} onChange={(event) => setFormat(event.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-[#0c1928] px-2 py-2 text-xs text-white"><option>PNG</option><option>JPG</option><option>WEBP</option></select></label>
-                  <label className="text-[10px] text-white/45">Background<select value={background} onChange={(event) => setBackground(event.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-[#0c1928] px-2 py-2 text-xs text-white"><option>Auto</option><option>Opaque</option></select></label>
-                </div>
-              </div>
 
               <div className="mt-5">
                 <h3 className="text-xs font-semibold">Save To</h3>
                 <div className="mt-2 space-y-2 text-xs">
                   <label className="flex items-center gap-2"><input type="radio" checked={saveTo === "library"} onChange={() => setSaveTo("library")} /> AI WONDERLAND Library</label>
-                  <label className={`flex items-center gap-2 ${!projectId ? "text-white/30" : ""}`}><input type="radio" disabled={!projectId} checked={saveTo === "project"} onChange={() => setSaveTo("project")} /> Current Project Assets</label>
-                  <label className="flex items-center gap-2"><input type="radio" checked={saveTo === "download"} onChange={() => setSaveTo("download")} /> Download Only</label>
+                  <label className="flex items-center gap-2"><input type="radio" checked={saveTo === "download"} onChange={() => setSaveTo("download")} /> Do not add to library</label>
                 </div>
               </div>
 
-              <button type="button" onClick={() => { setQuality("balanced"); setSeed("Random"); setSteps(4); setGuidance(3.5); setCreativity(70); setFormat("PNG"); setBackground("Auto"); }} className="mt-6 w-full rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/60 hover:bg-white/[.04]">
+              <button type="button" onClick={() => { setNegativePrompt("blurry, low quality, distorted, text, watermark"); setSaveTo("library"); }} className="mt-6 w-full rounded-lg border border-white/10 px-3 py-2.5 text-xs text-white/60 hover:bg-white/[.04]">
                 Reset to Defaults
               </button>
             </aside>
           )}
-        </div>
+        </div>}
       </section>
 
-      <section id="history" className="mt-8 rounded-2xl border border-white/10 bg-[#091522] p-5">
+      {activeView === "history" && <section id="history" className="mt-8 rounded-2xl border border-white/10 bg-[#091522] p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold">Recent Generations</h2>
@@ -396,7 +349,7 @@ export default function ImageStudioPage() {
         {recent.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {recent.map((item) => (
-              <button key={item.createdAt} type="button" onClick={() => setCurrent(item)} className="overflow-hidden rounded-xl border border-white/10 bg-[#07111d] text-left hover:border-violet-500/50">
+              <button key={item.createdAt} type="button" onClick={() => { setCurrent(item); setActiveView("generate"); }} className="overflow-hidden rounded-xl border border-white/10 bg-[#07111d] text-left hover:border-violet-500/50">
                 <img src={item.url} alt={item.prompt} className="aspect-video w-full object-cover" />
                 <div className="p-2"><p className="truncate text-[11px] font-semibold">{item.prompt}</p><p className="mt-1 text-[9px] text-white/35">{item.size}</p></div>
               </button>
@@ -405,14 +358,14 @@ export default function ImageStudioPage() {
         ) : (
           <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-white/30">Your recent generations will appear here.</div>
         )}
-      </section>
+      </section>}
 
-      <section id="my-assets" className="mt-12 mb-16 rounded-2xl border border-white/10 bg-[#091522] p-5">
+      {activeView === "assets" && <section id="my-assets" className="mt-12 mb-16 rounded-2xl border border-white/10 bg-[#091522] p-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-300">Your library</p>
             <h2 className="mt-1 text-2xl font-black">My Assets</h2>
-            <p className="mt-2 max-w-2xl text-sm text-white/45">Your saved images, generated media, 3D models, uploads and other reusable assets live here. This library continues below the generator instead of being squeezed into the generation panel.</p>
+            <p className="mt-2 max-w-2xl text-sm text-white/45">Your saved images, generated media, 3D models, uploads and other reusable assets live here. Browse your saved images and other assets in this dedicated view. The full asset library is also available from the dashboard.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {["All", "Images", "3D Models", "Generated"].map((filter) => (
@@ -423,7 +376,9 @@ export default function ImageStudioPage() {
         </div>
 
         <div className="mt-6">
-          {assetsLoading ? (
+          {assetsError ? (
+            <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{assetsError} <button type="button" onClick={() => void loadAssets()} className="ml-3 underline">Retry</button></div>
+          ) : assetsLoading ? (
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">{Array.from({ length: 12 }).map((_, index) => <div key={index} className="aspect-square animate-pulse rounded-xl bg-white/[.05]" />)}</div>
           ) : filteredAssets.length ? (
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
@@ -458,7 +413,7 @@ export default function ImageStudioPage() {
             </div>
           )}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }
