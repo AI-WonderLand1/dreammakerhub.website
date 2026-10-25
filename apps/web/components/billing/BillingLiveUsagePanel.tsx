@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Box, Coins, Database, FolderKanban, Key, RefreshCw, Zap } from "lucide-react";
+import { ArrowUpRight, Box, Database, FolderKanban, Key, RefreshCw, Zap } from "lucide-react";
+import CreditPurchaseSliders from "@/components/billing/CreditPurchaseSliders";
 import { createClient, ensureSupabaseConfig } from "@/lib/supabase/client";
 import { fetchAuthenticatedProject } from "@/lib/wonderspace/browser-project-fetch";
 import { formatBytes, formatNumber, PLAN_LIMITS } from "@/lib/billing/limits";
@@ -36,7 +37,6 @@ type UsageSummary = {
   recent_activity:UsageActivity[];
 };
 type ApiKeyRow = { id:string; name:string; prefix:string; last_used_at:string|null; revoked_at:string|null };
-type TokenPack = { id:string; label:string; tokens:number; available:boolean; amount:number|null; currency:string|null };
 const normalizePlan=(value:unknown):PlanName=>{
   const plan=typeof value==="string"?value.toLowerCase():"free";
   return plan==="trial"||plan==="creator"||plan==="pro"||plan==="studio"||plan==="team"||plan==="enterprise"?plan:"free";
@@ -55,36 +55,47 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
   const [plan,setPlan]=useState<PlanName>("free");
   const [usage,setUsage]=useState<UsageSummary|null>(null);
   const [apiKeys,setApiKeys]=useState<ApiKeyRow[]>([]);
-  const [tokenPacks,setTokenPacks]=useState<TokenPack[]>([]);
   const [projectCount,setProjectCount]=useState(0);
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
   const [live,setLive]=useState(false);
   const [error,setError]=useState<string|null>(null);
-  const [buyingPack,setBuyingPack]=useState<string|null>(null);
   const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
   const load=useCallback(async()=>{
     setRefreshing(true); setError(null);
+    const controller=new AbortController();
+    let deadline:ReturnType<typeof setTimeout>|undefined;
     try{
-      const [ur,kr,pr,tr]=await Promise.all([
-        fetch("/api/usage",{credentials:"same-origin",cache:"no-store"}),
-        fetch("/api/keys",{credentials:"same-origin",cache:"no-store"}),
-        fetchAuthenticatedProject("/api/projects"),
-        fetch("/api/billing/token-packs",{credentials:"same-origin",cache:"no-store"}),
+      const responses=Promise.all([
+        fetch("/api/usage",{credentials:"same-origin",cache:"no-store",signal:controller.signal}),
+        view==="usage" ? fetch("/api/keys",{credentials:"same-origin",cache:"no-store",signal:controller.signal}) : Promise.resolve(null),
+        view==="usage" ? fetchAuthenticatedProject("/api/projects") : Promise.resolve(null),
       ]);
-      const [u,k,p,t]=await Promise.all([ur.json().catch(()=>({})),kr.json().catch(()=>({})),pr.json().catch(()=>({})),tr.json().catch(()=>({}))]);
+      const [ur,kr,pr]=await Promise.race([
+        responses,
+        new Promise<never>((_,reject)=>{
+          deadline=setTimeout(()=>{controller.abort();reject(new Error("Billing data timed out. Please retry."));},15000);
+        }),
+      ]);
+      const u=await ur.json().catch(()=>({}));
       if(!ur.ok||!u?.usage)throw new Error(u?.error||"Live usage could not be loaded.");
-      if(!kr.ok)throw new Error(k?.error||"API keys could not be loaded.");
-      if(!pr.ok||!Array.isArray(p?.projects))throw new Error("Projects could not be loaded.");
       setUsage(u.usage as UsageSummary);
       setPlan(normalizePlan(u.usage.plan));
-      setApiKeys(Array.isArray(k?.keys)?k.keys:[]);
-      setProjectCount(p.projects.length);
-      setTokenPacks(Array.isArray(t?.packs)?t.packs.filter((pack:TokenPack)=>pack.available):[]);
+
+      if(view==="usage"&&kr&&pr){
+        const [k,p]=await Promise.all([kr.json().catch(()=>({})),pr.json().catch(()=>({}))]);
+        if(!kr.ok)throw new Error(k?.error||"API keys could not be loaded.");
+        if(!pr.ok||!Array.isArray(p?.projects))throw new Error("Projects could not be loaded.");
+        setApiKeys(Array.isArray(k?.keys)?k.keys:[]);
+        setProjectCount(p.projects.length);
+      }
     }catch(cause){setError(cause instanceof Error?cause.message:"Failed to load billing data.");}
-    finally{setLoading(false);setRefreshing(false);}
-  },[]);
+    finally{
+      if(deadline)clearTimeout(deadline);
+      setLoading(false);setRefreshing(false);
+    }
+  },[view]);
 
   useEffect(()=>{void load();},[load]);
 
@@ -107,17 +118,8 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
     return()=>{cancelled=true;if(timer.current)clearTimeout(timer.current);if(channel&&supabase)void supabase.removeChannel(channel);};
   },[load]);
 
-  const buy=async(id:string)=>{
-    setBuyingPack(id);setError(null);
-    try{
-      const response=await fetch("/api/billing/token-packs",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({pack:id})});
-      const payload=await response.json().catch(()=>({}));
-      if(!response.ok||!payload?.url)throw new Error(payload?.error||"Could not start AI credit checkout.");
-      window.location.assign(payload.url);
-    }catch(cause){setError(cause instanceof Error?cause.message:"Could not start AI credit checkout.");setBuyingPack(null);}
-  };
-
   if(loading)return <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/50">Loading live billing data…</div>;
+  if(!usage)return <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-100"><p>{error||"Usage data is unavailable."}</p><button type="button" onClick={()=>void load()} className="mt-3 rounded-lg border border-white/20 px-3 py-2 font-semibold hover:bg-white/10">Retry usage</button></div>;
 
   const limits=PLAN_LIMITS[plan];
   const tokens=Number(usage?.tokens_used??0);
@@ -176,7 +178,7 @@ export default function BillingLiveUsagePanel({view}:{view:"usage"|"ai"|"licensi
 
     {view==="ai"&&<>
       <div className="grid gap-4 md:grid-cols-3"><div className="rounded-xl border border-violet-400/20 bg-violet-500/5 p-4"><div className="text-sm text-white/50">Included AI credits used</div><div className="mt-2 text-3xl font-bold">{formatNumber(tokens)}</div></div><div className="rounded-xl border border-violet-400/20 bg-violet-500/5 p-4"><div className="text-sm text-white/50">Included allowance</div><div className="mt-2 text-3xl font-bold">{formatNumber(limits.aiTokensMonthly)}</div></div><div className="rounded-xl border border-violet-400/20 bg-violet-500/5 p-4"><div className="text-sm text-white/50">Purchased AI credit balance</div><div className="mt-2 text-3xl font-bold">{formatNumber(purchased)}</div></div></div>
-      {tokenPacks.length>0&&<section className="mt-6 rounded-xl border border-violet-500/25 bg-violet-500/5 p-4"><div className="flex items-center gap-2 text-violet-200"><Coins size={17}/><h2 className="font-semibold">Buy AI credits</h2></div><div className="mt-4 grid gap-3 md:grid-cols-3">{tokenPacks.map(pack=><div key={pack.id} className="rounded-lg border border-white/10 bg-black/20 p-4"><div className="font-medium">{pack.label}</div><div className="mt-1 text-2xl font-bold">{formatNumber(pack.tokens)}</div><div className="mt-1 text-xs text-white/45">{pack.amount!==null&&pack.currency?new Intl.NumberFormat(undefined,{style:"currency",currency:pack.currency.toUpperCase()}).format(pack.amount/100):""}</div><button type="button" onClick={()=>void buy(pack.id)} disabled={buyingPack!==null} className="mt-4 w-full rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold disabled:opacity-50">{buyingPack===pack.id?"Opening checkout…":"Buy credits"}</button></div>)}</div></section>}
+      <CreditPurchaseSliders />
     </>}
 
     {view==="licensing"&&<section className="rounded-xl border border-white/10 bg-white/5 p-4"><h2 className="font-semibold">Active membership: <span>{getPublicPlanDisplayName(plan)}</span></h2><div className="mt-4 grid gap-3 text-sm md:grid-cols-2"><div className="flex justify-between"><span className="text-white/60">Projects</span><span>{limits.projectsLimit}</span></div><div className="flex justify-between"><span className="text-white/60">AI credits / month</span><span>{formatNumber(limits.aiTokensMonthly)}</span></div><div className="flex justify-between"><span className="text-white/60">API requests / month</span><span>{formatNumber(limits.apiCallsMonthly)}</span></div><div className="flex justify-between"><span className="text-white/60">Storage allowance</span><span>{formatBytes(limits.storageLimit)}</span></div></div><Link href="/subscription" className="mt-5 inline-flex rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold">View plans</Link></section>}
