@@ -58,7 +58,7 @@ describe("public AI WONDERLAND membership catalog", () => {
     expect(panel).toContain("getPublicPlanDisplayName(plan)");
     expect(panel).toContain('"AI Credits"');
     expect(panel).not.toContain('"AI Tokens"');
-    expect(panel).toContain('"Buy credits"');
+    expect(panel).toContain("<CreditPurchaseSliders");
   });
 
   it("shows the resolved membership name beside live Stripe subscriptions", () => {
