@@ -41,7 +41,7 @@ export default function SettingsMenu() {
           {[
             ["/dashboard/settings","Settings Home"],
             ["/dashboard/settings/account","Account"],
-            ["/dashboard/settings/simplerick","SimpleRickSettings"],
+            ["/dashboard/settings/agents","AI Providers"],
             ["/dashboard/usage","Usage & Billing"],
             ["/dashboard/settings/webhooks","Webhooks"],
             ["/support","Support"],
