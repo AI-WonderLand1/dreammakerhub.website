@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -63,6 +63,7 @@ export default function ImageStudioPage() {
   const [saveTo, setSaveTo] = useState<"library" | "project" | "download">("library");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeView, setActiveView] = useState<"generate" | "history" | "assets">("generate");
+  const activeViewRef = useRef<"generate" | "history" | "assets">("generate");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [current, setCurrent] = useState<Generation | null>(null);
@@ -71,6 +72,11 @@ export default function ImageStudioPage() {
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [assetsError, setAssetsError] = useState("");
   const [assetFilter, setAssetFilter] = useState("All");
+
+  function showView(view: "generate" | "history" | "assets") {
+    activeViewRef.current = view;
+    setActiveView(view);
+  }
 
   async function loadAssets() {
     setAssetsLoading(true);
@@ -135,8 +141,14 @@ export default function ImageStudioPage() {
       if (results.length) {
         setCurrent(results[0]);
         setRecent((existing) => [...results, ...existing].slice(0, 12));
-        if (saveTo === "library" && results.some((item) => !item.savedToLibrary)) {
-          setError("Image generated, but it was not saved to your library. Download it from the preview.");
+        if (saveTo === "library") {
+          if (results.some((item) => !item.savedToLibrary)) {
+            setError("Image generated, but it was not saved to your library. Download it from the preview.");
+          }
+          // The user can open Assets while this async generation is still running.
+          if (activeViewRef.current === "assets" && results.some((item) => item.savedToLibrary)) {
+            void loadAssets();
+          }
         }
       }
     } catch (cause) {
@@ -195,7 +207,7 @@ export default function ImageStudioPage() {
               key={view}
               type="button"
               aria-current={activeView === view ? "page" : undefined}
-              onClick={() => setActiveView(view)}
+              onClick={() => showView(view)}
               className={`shrink-0 border-b-2 px-4 py-3 text-sm ${activeView === view ? "border-violet-500 bg-violet-500/10 font-semibold text-white" : "border-transparent text-white/55 hover:text-white"}`}
             >
               {label}
@@ -349,7 +361,7 @@ export default function ImageStudioPage() {
         {recent.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {recent.map((item) => (
-              <button key={item.createdAt} type="button" onClick={() => { setCurrent(item); setActiveView("generate"); }} className="overflow-hidden rounded-xl border border-white/10 bg-[#07111d] text-left hover:border-violet-500/50">
+              <button key={item.createdAt} type="button" onClick={() => { setCurrent(item); showView("generate"); }} className="overflow-hidden rounded-xl border border-white/10 bg-[#07111d] text-left hover:border-violet-500/50">
                 <img src={item.url} alt={item.prompt} className="aspect-video w-full object-cover" />
                 <div className="p-2"><p className="truncate text-[11px] font-semibold">{item.prompt}</p><p className="mt-1 text-[9px] text-white/35">{item.size}</p></div>
               </button>
