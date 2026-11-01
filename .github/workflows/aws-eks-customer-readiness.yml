@@ -27,7 +27,7 @@ jobs:
       READ_ONLY_ROLE: ${{ vars.AWS_EKS_READ_ONLY_ROLE_ARN }}
       EXPECTED_ACCOUNT: ${{ vars.AWS_EKS_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: Master
           persist-credentials: false

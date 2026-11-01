@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Check out production source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: Master
           persist-credentials: false
