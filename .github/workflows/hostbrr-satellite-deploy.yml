@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 20
     environment: hostbrr-production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify satellite source repository built this exact image
         shell: bash

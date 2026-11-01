@@ -26,7 +26,7 @@ jobs:
     environment: hostbrr-production
     steps:
       - name: Checkout approved deployment script
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify successful Master image build
         shell: bash
